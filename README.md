@@ -34,3 +34,7 @@ public void testExecuteStatement() throws ClassNotFoundException, SQLException {
     Sniffer.verifyNotMore();
 }
 ```
+
+GPG
+============
+> gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys E8A7A294
