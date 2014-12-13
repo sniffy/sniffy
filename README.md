@@ -6,7 +6,7 @@ It is very useful in unit tests and allows you to test if particular method does
 
 Download
 ============
-https://github.com/bedrin/jdbc-sniffer/raw/master/jdbc-sniffer-1.0-SNAPSHOT.jar
+https://github.com/bedrin/jdbc-sniffer/raw/develop/jdbc-sniffer-1.0-SNAPSHOT.jar
 
 Setup
 ============
