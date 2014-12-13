@@ -27,7 +27,8 @@ public class Sniffer {
     }
 
     public static void verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
-        if (executedStatements() > allowedStatements)
+        int actualStatements = executedStatements();
+        if (actualStatements > allowedStatements)
             throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", allowedStatements, actualStatements));
         reset();
     }    
