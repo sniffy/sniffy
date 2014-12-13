@@ -38,3 +38,15 @@ public void testExecuteStatement() throws ClassNotFoundException, SQLException {
 GPG
 ============
 > gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys E8A7A294
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQEbBAABAgAGBQJUjKoDAAoJEHs8iZrop6KUnGwH+LylA8nvKI91O2GZ9LCK8lbZ
+DoGf6z6eSpBjJjWL0SCsE7oosG6EcuBUZIICvA6w1gO2IokUe8is1dCvf4WgAi0Y
+xIiQ9ogAhHfvuE8y6izgIDJ6TcBVAgJMqzdC2XHDkPB0fkfUE4R3Vmd5IFVCObUD
+tp5CQLtIDAfuacsHP4FEpglj9q9wSDkGHfdiizSYty7bCFYxuQ2N+EhJF0WPgQ0O
+F0+lGY+QuB32f01wcU4KPspiiuWJcESulyXPRzWfMLHzOQZRSHI054JU0sm0oWNA
+aYzR4LpXlmKkZfPn32qk2uZAWfr09/oMkCxQhx5U6rByMC0oE5giIKcmvBLeZg==
+=Bm0g
+-----END PGP SIGNATURE-----
