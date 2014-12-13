@@ -4,20 +4,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Sniffer {
 
-    private static final AtomicInteger counter = new AtomicInteger();
+    private final AtomicInteger counter = new AtomicInteger();
 
-    public static void executeStatement() {
-        counter.incrementAndGet();
-    }
+    private final static Sniffer INSTANCE = new Sniffer();
 
-    public static int executedStatements() {
+    int executedStatementsImpl() {
         return counter.get();
     }
 
-    public static void reset() {
+    void resetImpl() {
         counter.set(0);
     }
-    
+
+    int executeStatementImpl() {
+        return counter.incrementAndGet();
+    }
+
+    static void executeStatement() {
+        INSTANCE.executeStatementImpl();
+        ThreadLocalSniffer.executeStatement();
+    }
+
+    public static int executedStatements() {
+        return INSTANCE.executedStatementsImpl();
+    }
+
+    public static void reset() {
+        INSTANCE.resetImpl();
+    }
+
     public static void verifyNotMore() {
         verifyNotMoreThan(0);
     }
