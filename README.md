@@ -1,12 +1,26 @@
 JDBC Sniffer
 ============
+[![CI Status](https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=develop)](https://travis-ci.org/bedrin/jdbc-sniffer)
 
 JDBC Sniffer counts the number of executed SQL queries and provides an API for validating it and reseting to 0
 It is very useful in unit tests and allows you to test if particular method doesn't make more than N SQL queries
 
+Maven
+============
+JDBC Sniffer is available from Maven Central repository
+```xml
+<dependency>
+    <groupId>com.github.bedrin</groupId>
+    <artifactId>jdbc-sniffer</artifactId>
+    <version>1.1</version>
+</dependency>
+```
+
 Download
 ============
-[jdbc-sniffer-1.0.jar](https://github.com/bedrin/jdbc-sniffer/raw/1.0/jdbc-sniffer-1.0.jar)
+- [jdbc-sniffer-1.1.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.1/jdbc-sniffer-1.1.jar) 
+- [jdbc-sniffer-1.1-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.1/jdbc-sniffer-1.1-sources.jar)
+- [jdbc-sniffer-1.1-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.1/jdbc-sniffer-1.1-javadoc.jar)
 
 Setup
 ============
@@ -35,20 +49,10 @@ public void testExecuteStatement() throws ClassNotFoundException, SQLException {
 }
 ```
 
-GPG
+Building
 ============
-gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys E8A7A294
+JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and type `mvn install`
 
-```
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQEbBAABAgAGBQJUjKoDAAoJEHs8iZrop6KUnGwH+LylA8nvKI91O2GZ9LCK8lbZ
-DoGf6z6eSpBjJjWL0SCsE7oosG6EcuBUZIICvA6w1gO2IokUe8is1dCvf4WgAi0Y
-xIiQ9ogAhHfvuE8y6izgIDJ6TcBVAgJMqzdC2XHDkPB0fkfUE4R3Vmd5IFVCObUD
-tp5CQLtIDAfuacsHP4FEpglj9q9wSDkGHfdiizSYty7bCFYxuQ2N+EhJF0WPgQ0O
-F0+lGY+QuB32f01wcU4KPspiiuWJcESulyXPRzWfMLHzOQZRSHI054JU0sm0oWNA
-aYzR4LpXlmKkZfPn32qk2uZAWfr09/oMkCxQhx5U6rByMC0oE5giIKcmvBLeZg==
-=Bm0g
------END PGP SIGNATURE-----
-```
+Checksum
+============
+SHA-1 checksum for jdbc-sniffer-1.1.jar is 4fc23d8c868fba5fca54f6081555510ba6d297c6
