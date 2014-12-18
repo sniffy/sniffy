@@ -55,4 +55,4 @@ JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and t
 
 Checksum
 ============
-SHA-1 checksum for jdbc-sniffer-1.1.jar is 4fc23d8c868fba5fca54f6081555510ba6d297c6
+SHA-1 checksum for `jdbc-sniffer-1.2.jar` is `524778edf2eabbd22c2ae69a0ca1382cc79318c2`
