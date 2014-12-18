@@ -18,9 +18,9 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
     }
 
     /**
-     * @return the number of executed queries in current thread since the last call of {@link #reset()} method or to
-     * any of verify methods family like {@link #verifyNotMore)}, {@link #verifyNotMoreThanOne)}
-     * or {@link #verifyNotMoreThanOne)}
+     * @return the number of executed queries in current thread since the last call of
+     * {@link #reset() reset} method or to any of verify methods family like {@link #verifyNotMore() verifyNotMore},
+     * {@link #verifyNotMoreThanOne() verifyNotMoreThanOne} or {@link #verifyNotMoreThan(int) verifyNotMoreThan}
      */
     public static int executedStatements() {
         return INSTANCE.get().executedStatementsImpl();
@@ -34,7 +34,7 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
     }
 
     /**
-     * Verifies that no queries has been executed in current thread since the last call of {@link #reset()} method
+     * Verifies that no queries has been executed in current thread since the last call of {@link #reset() reset} method
      * or to any of verify methods family
      * @throws IllegalStateException if actual number of executed statements exceeded 0
      */
@@ -43,7 +43,7 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
     }
 
     /**
-     * Verifies that at most 1 query has been executed in current thread since the last call of {@link #reset()} method
+     * Verifies that at most 1 query has been executed in current thread since the last call of {@link #reset() reset} method
      * or to any of verify methods family
      * @throws IllegalStateException if actual number of executed statements exceeded 1
      */
@@ -53,9 +53,9 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
 
     /**
      * Verifies that at most {@code allowedStatements} query has been executed  in current thread since the last call
-     * of {@link #reset()} method or to any of verify methods family
+     * of {@link #reset() reset} method or to any of verify methods family
      * @param allowedStatements maximum number of statements which could have been executed previously since
-     *                          last {@link #reset()} call
+     *                          last {@link #reset() reset} call
      * @throws IllegalStateException if actual number of executed statements exceeded {@code allowedStatements}
      */
     public static void verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
