@@ -1,9 +1,9 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -40,7 +40,7 @@ public class MockDriverTest {
     public void testGetMockConnection() throws ClassNotFoundException, SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         assertNotNull(connection);
-        assertEquals(MockConnection.class, connection.getClass());
+        assertTrue(Proxy.isProxyClass(connection.getClass()));
     }
 
     @Test

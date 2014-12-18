@@ -12,15 +12,15 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
 </dependency>
 ```
 
 Download
 ============
-- [jdbc-sniffer-1.1.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.1/jdbc-sniffer-1.1.jar) 
-- [jdbc-sniffer-1.1-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.1/jdbc-sniffer-1.1-sources.jar)
-- [jdbc-sniffer-1.1-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.1/jdbc-sniffer-1.1-javadoc.jar)
+- [jdbc-sniffer-1.2.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.1.jar)
+- [jdbc-sniffer-1.2-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.1-sources.jar)
+- [jdbc-sniffer-1.2-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.1-javadoc.jar)
 
 Setup
 ============
@@ -55,4 +55,4 @@ JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and t
 
 Checksum
 ============
-SHA-1 checksum for jdbc-sniffer-1.1.jar is 4fc23d8c868fba5fca54f6081555510ba6d297c6
+SHA-1 checksum for `jdbc-sniffer-1.2.jar` is `524778edf2eabbd22c2ae69a0ca1382cc79318c2`
