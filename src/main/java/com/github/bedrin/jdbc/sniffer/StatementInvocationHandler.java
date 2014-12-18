@@ -5,11 +5,11 @@ import java.sql.*;
 /**
  * Created by bedrin on 12.12.2014.
  */
-public class MockStatement implements Statement {
+public class StatementInvocationHandler implements Statement {
 
     private final Statement delegate;
 
-    public MockStatement(Statement delegate) {
+    public StatementInvocationHandler(Statement delegate) {
         this.delegate = delegate;
     }
 

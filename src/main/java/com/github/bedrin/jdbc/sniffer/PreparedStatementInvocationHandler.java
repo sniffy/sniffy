@@ -10,11 +10,11 @@ import java.util.Calendar;
 /**
  * Created by bedrin on 12.12.2014.
  */
-public class MockPreparedStatement extends MockStatement implements PreparedStatement {
+public class PreparedStatementInvocationHandler extends StatementInvocationHandler implements PreparedStatement {
 
     private final PreparedStatement delegate;
 
-    public MockPreparedStatement(PreparedStatement delegate) {
+    public PreparedStatementInvocationHandler(PreparedStatement delegate) {
         super(delegate);
         this.delegate = delegate;
     }
