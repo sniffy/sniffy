@@ -18,9 +18,9 @@ JDBC Sniffer is available from Maven Central repository
 
 Download
 ============
-- [jdbc-sniffer-1.2.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.1.jar)
-- [jdbc-sniffer-1.2-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.1-sources.jar)
-- [jdbc-sniffer-1.2-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.1-javadoc.jar)
+- [jdbc-sniffer-1.2.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.2.jar)
+- [jdbc-sniffer-1.2-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.2-sources.jar)
+- [jdbc-sniffer-1.2-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.2-javadoc.jar)
 
 Setup
 ============
