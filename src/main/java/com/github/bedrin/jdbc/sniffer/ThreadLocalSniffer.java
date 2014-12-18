@@ -1,8 +1,5 @@
 package com.github.bedrin.jdbc.sniffer;
 
-/**
- * Created by bedrin on 13.12.2014.
- */
 public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
 
     private final static ThreadLocalSniffer INSTANCE = new ThreadLocalSniffer();

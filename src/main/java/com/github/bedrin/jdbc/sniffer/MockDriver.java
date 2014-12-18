@@ -1,5 +1,6 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -20,7 +21,13 @@ public class MockDriver implements Driver {
     public Connection connect(String url, Properties info) throws SQLException {
         String originUrl = extractOriginUrl(url);
         Driver originDriver = DriverManager.getDriver(originUrl);
-        return new MockConnection(originDriver.connect(originUrl, info));
+        Connection delegateConnection = originDriver.connect(originUrl, info);
+
+        return Connection.class.cast(Proxy.newProxyInstance(
+                MockDriver.class.getClassLoader(),
+                new Class[]{Connection.class},
+                new ConnectionInvocationHandler(delegateConnection)
+        ));
     }
 
     private Driver getOriginDriver(String url) throws SQLException {
