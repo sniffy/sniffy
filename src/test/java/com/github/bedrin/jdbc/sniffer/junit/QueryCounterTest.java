@@ -37,4 +37,21 @@ public class QueryCounterTest {
         thrown.expect(IllegalStateException.class);
     }
 
+    @Test
+    @AllowedQueries(1)
+    public void testAllowedOneQueryExecutedTwo() throws SQLException {
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        connection.createStatement().execute("SELECT 1 FROM DUAL");
+        connection.createStatement().execute("SELECT 1 FROM DUAL");
+        thrown.expect(IllegalStateException.class);
+    }
+
+    @Test
+    @AllowedQueries(2)
+    public void testAllowedTwoQueries() throws SQLException {
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        connection.createStatement().execute("SELECT 1 FROM DUAL");
+        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    }
+
 }
