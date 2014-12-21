@@ -75,6 +75,35 @@ public class Sniffer {
         if (actualStatements > allowedStatements)
             throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", allowedStatements, actualStatements));
         reset();
-    }    
+    }
+
+    public static RecordedQueries recordQueries(Runnable runnable) {
+        int queries = executedStatements();
+        runnable.run();
+        return new RecordedQueries(executedStatements() - queries);
+    }
+
+    public static class RecordedQueries {
+
+        private final int executedStatements;
+
+        public RecordedQueries(int executedStatements) {
+            this.executedStatements = executedStatements;
+        }
+
+        public void verifyNotMore() {
+            verifyNotMoreThan(0);
+        }
+
+        public void verifyNotMoreThanOne() {
+            verifyNotMoreThan(1);
+        }
+
+        public void verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
+            if (executedStatements > allowedStatements)
+                throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", allowedStatements, executedStatements));
+        }
+
+    }
 
 }
