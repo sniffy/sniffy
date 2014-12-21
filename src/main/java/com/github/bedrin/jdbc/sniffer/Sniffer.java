@@ -71,9 +71,42 @@ public class Sniffer {
      * @throws IllegalStateException if actual number of executed statements exceeded {@code allowedStatements}
      */
     public static void verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
+        verifyRange(0, allowedStatements);
+    }
+
+    /**
+     *
+     * @param allowedStatements
+     * @throws IllegalStateException
+     * @since 1.3
+     */
+    public static void verifyExact(int allowedStatements) throws IllegalStateException {
+        verifyRange(allowedStatements, allowedStatements);
+    }
+
+    /**
+     *
+     * @param allowedStatements
+     * @throws IllegalStateException
+     * @since 1.3
+     */
+    public static void verifyNotLessThan(int allowedStatements) throws IllegalStateException {
+        verifyRange(allowedStatements, Integer.MAX_VALUE);
+    }
+
+    /**
+     *
+     * @param minAllowedStatements
+     * @param maxAllowedStatements
+     * @throws IllegalStateException
+     * @since 1.3
+     */
+    public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
         int actualStatements = executedStatements();
-        if (actualStatements > allowedStatements)
-            throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", allowedStatements, actualStatements));
+        if (actualStatements > maxAllowedStatements)
+            throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, actualStatements));
+        if (actualStatements < minAllowedStatements)
+            throw new IllegalStateException(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, actualStatements));
         reset();
     }    
 
