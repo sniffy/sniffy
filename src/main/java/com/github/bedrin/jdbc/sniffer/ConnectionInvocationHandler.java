@@ -1,6 +1,7 @@
 package com.github.bedrin.jdbc.sniffer;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.*;
@@ -15,7 +16,14 @@ public class ConnectionInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Object result = method.invoke(delegate, args);
+        Object result;
+        try {
+            result = method.invoke(delegate, args);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
+        } catch (Exception e) {
+            throw e;
+        }
         if ("createStatement".equals(method.getName())) {
             return Proxy.newProxyInstance(
                     ConnectionInvocationHandler.class.getClassLoader(),

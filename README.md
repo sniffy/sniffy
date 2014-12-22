@@ -12,15 +12,15 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>1.2</version>
+    <version>1.3</version>
 </dependency>
 ```
 
 Download
 ============
-- [jdbc-sniffer-1.2.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.2.jar)
-- [jdbc-sniffer-1.2-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.2-sources.jar)
-- [jdbc-sniffer-1.2-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.2/jdbc-sniffer-1.2-javadoc.jar)
+- [jdbc-sniffer-1.3.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.3/jdbc-sniffer-1.1.jar)
+- [jdbc-sniffer-1.3-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.3/jdbc-sniffer-1.1-sources.jar)
+- [jdbc-sniffer-1.3-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.3/jdbc-sniffer-1.1-javadoc.jar)
 
 Setup
 ============
@@ -49,10 +49,55 @@ public void testExecuteStatement() throws ClassNotFoundException, SQLException {
 }
 ```
 
+JUnit Integration
+============
+JDBC Sniffer supports integration with JUnit framework via `@Rule`
+
+Add a `QueryCounter` rule to your test and assert the maximum number of queries allowed for particular test using `@AllowedQueries(n)` and `@NotAllowedQueries` annotations
+
+```java
+package com.github.bedrin.jdbc.sniffer.junit;
+
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class QueryCounterTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Rule
+    public QueryCounter queryCounter = new QueryCounter();
+
+    @BeforeClass
+    public static void loadDriver() throws ClassNotFoundException {
+        Class.forName("com.github.bedrin.jdbc.sniffer.MockDriver");
+    }
+
+    @Test
+    @AllowedQueries(1)
+    public void testAllowedOneQuery() throws SQLException {
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    }
+
+    @Test
+    @NotAllowedQueries
+    public void testNotAllowedQueries() throws SQLException {
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        connection.createStatement().execute("SELECT 1 FROM DUAL");
+        thrown.expect(IllegalStateException.class);
+    }
+
+}
+```
+
 Building
 ============
 JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and type `mvn install`
-
-Checksum
-============
-SHA-1 checksum for `jdbc-sniffer-1.2.jar` is `524778edf2eabbd22c2ae69a0ca1382cc79318c2`

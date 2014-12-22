@@ -6,7 +6,7 @@
 
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>1.2</version>
+    <version>1.3</version>
 
     <name>JDBC Sniffer</name>
     <url>https://bedrin.github.io/jdbc-sniffer/</url>
@@ -116,7 +116,7 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
-            <scope>test</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
