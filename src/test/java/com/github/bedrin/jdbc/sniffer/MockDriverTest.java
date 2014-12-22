@@ -3,6 +3,7 @@ package com.github.bedrin.jdbc.sniffer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -50,6 +51,19 @@ public class MockDriverTest {
         assertEquals(1, Sniffer.executedStatements());
         Sniffer.verifyNotMoreThanOne();
         Sniffer.verifyNotMore();
+    }
+
+    @Test
+    public void testExecuteStatementThrowsException() throws ClassNotFoundException, SQLException {
+        Sniffer.reset();
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        try {
+            connection.createStatement().execute("SELECT 1 FROM DUAL_HUAL");
+        } catch (Exception e) {
+            assertFalse(InvocationTargetException.class.isAssignableFrom(e.getClass()));
+            assertTrue(SQLException.class.isAssignableFrom(e.getClass()));
+        }
+        assertEquals(1, Sniffer.executedStatements());
     }
 
 }
