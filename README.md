@@ -95,7 +95,8 @@ public class QueryCounterTest {
         thrown.expect(IllegalStateException.class);
     }
 
-}```
+}
+```
 
 Building
 ============
