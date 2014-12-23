@@ -12,5 +12,5 @@ public @interface AllowedQueries {
     int maximum() default 0;
     int minimum() default 0;
     int exact() default 0;
-    boolean threadLocal();
+    boolean threadLocal() default false;
 }
