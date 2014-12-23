@@ -1,6 +1,7 @@
 JDBC Sniffer
 ============
 [![CI Status](https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=develop)](https://travis-ci.org/bedrin/jdbc-sniffer)
+[![Coverage Status](https://coveralls.io/repos/bedrin/jdbc-sniffer/badge.png?branch=develop)](https://coveralls.io/r/bedrin/jdbc-sniffer?branch=develop)
 
 JDBC Sniffer counts the number of executed SQL queries and provides an API for validating it and reseting to 0
 It is very useful in unit tests and allows you to test if particular method doesn't make more than N SQL queries
