@@ -1,58 +1,80 @@
-<!DOCTYPE html>
+<!doctype html>
+<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
+<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
 <html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="Jdbc-sniffer : JDBC Sniffer">
+  <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen">
+  <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script type="text/javascript" src="javascripts/script.js"></script>
 
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+  <title>Jdbc-sniffer</title>
+  <meta name="description" content="JDBC Sniffer">
 
-    <title>Jdbc-sniffer</title>
-  </head>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <body>
+</head>
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/bedrin/jdbc-sniffer">View on GitHub</a>
+<body>
 
-          <h1 id="project_title">Jdbc-sniffer</h1>
-          <h2 id="project_tagline">JDBC Sniffer</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/bedrin/jdbc-sniffer/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/bedrin/jdbc-sniffer/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h1>
+  <div class="wrapper">
+    <header>
+      <h1 class="title">Jdbc-sniffer</h1>
+    </header>
+    <div id="container">
+      <p class="tagline">JDBC Sniffer</p>
+      <div id="main" role="main">
+        <div class="download-bar">
+        <div class="inner">
+          <a href="https://github.com/bedrin/jdbc-sniffer/tarball/master" class="download-button tar"><span>Download</span></a>
+          <a href="https://github.com/bedrin/jdbc-sniffer/zipball/master" class="download-button zip"><span>Download</span></a>
+          <a href="https://github.com/bedrin/jdbc-sniffer" class="code">View Jdbc-sniffer on GitHub</a>
+        </div>
+        <span class="blc"></span><span class="trc"></span>
+        </div>
+        <article class="markdown-body">
+          <h1>
 <a id="jdbc-sniffer" class="anchor" href="#jdbc-sniffer" aria-hidden="true"><span class="octicon octicon-link"></span></a>JDBC Sniffer</h1>
+
+<p><a href="https://travis-ci.org/bedrin/jdbc-sniffer"><img src="https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=develop" alt="CI Status"></a></p>
 
 <p>JDBC Sniffer counts the number of executed SQL queries and provides an API for validating it and reseting to 0
 It is very useful in unit tests and allows you to test if particular method doesn't make more than N SQL queries</p>
 
 <h1>
+<a id="maven" class="anchor" href="#maven" aria-hidden="true"><span class="octicon octicon-link"></span></a>Maven</h1>
+
+<p>JDBC Sniffer is available from Maven Central repository</p>
+
+<div class="highlight highlight-xml"><pre>&lt;<span class="pl-ent">dependency</span>&gt;
+    &lt;<span class="pl-ent">groupId</span>&gt;com.github.bedrin&lt;/<span class="pl-ent">groupId</span>&gt;
+    &lt;<span class="pl-ent">artifactId</span>&gt;jdbc-sniffer&lt;/<span class="pl-ent">artifactId</span>&gt;
+    &lt;<span class="pl-ent">version</span>&gt;1.3&lt;/<span class="pl-ent">version</span>&gt;
+&lt;/<span class="pl-ent">dependency</span>&gt;</pre></div>
+
+<h1>
 <a id="download" class="anchor" href="#download" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download</h1>
 
-<p><a href="https://github.com/bedrin/jdbc-sniffer/raw/1.0/jdbc-sniffer-1.0.jar">jdbc-sniffer-1.0.jar</a></p>
+<ul>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/1.3/jdbc-sniffer-1.1.jar">jdbc-sniffer-1.3.jar</a></li>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/1.3/jdbc-sniffer-1.1-sources.jar">jdbc-sniffer-1.3-sources.jar</a></li>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/1.3/jdbc-sniffer-1.1-javadoc.jar">jdbc-sniffer-1.3-javadoc.jar</a></li>
+</ul>
 
 <h1>
 <a id="setup" class="anchor" href="#setup" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setup</h1>
 
-<p>Simply add jdbc-sniffer.jar to your classpath and add "sniffer:" prefix to the JDBC connection url
-For example "jdbc:h2:~/test" should be changed to "sniffer:jdbc:h2:~/test"</p>
+<p>Simply add jdbc-sniffer.jar to your classpath and add <code>sniffer:</code> prefix to the JDBC connection url
+For example <code>jdbc:h2:~/test</code> should be changed to <code>sniffer:jdbc:h2:~/test</code></p>
 
 <h1>
 <a id="validating-the-number-of-queries" class="anchor" href="#validating-the-number-of-queries" aria-hidden="true"><span class="octicon octicon-link"></span></a>Validating the number of queries</h1>
 
 <p>The number of executed queries is available via static methods of two classes:
-com.github.bedrin.jdbc.sniffer.Sniffer and com.github.bedrin.jdbc.sniffer.ThreadLocalSniffer</p>
+<code>com.github.bedrin.jdbc.sniffer.Sniffer</code> and <code>com.github.bedrin.jdbc.sniffer.ThreadLocalSniffer</code></p>
 
 <p>First one holds the number of SQL queries executed by all threads, while the later holds the number of SQL queries generated by current thread only</p>
 
@@ -68,18 +90,80 @@ com.github.bedrin.jdbc.sniffer.Sniffer and com.github.bedrin.jdbc.sniffer.Thread
     <span class="pl-c">// Sniffer.verifyNotMore() throws an IllegalStateException if any query was executed</span>
     <span class="pl-stj">Sniffer</span><span class="pl-k">.</span>verifyNotMore();
 }</pre></div>
-      </section>
-    </div>
 
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Jdbc-sniffer maintained by <a href="https://github.com/bedrin">bedrin</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
+<h1>
+<a id="junit-integration" class="anchor" href="#junit-integration" aria-hidden="true"><span class="octicon octicon-link"></span></a>JUnit Integration</h1>
 
-              <script type="text/javascript">
+<p>JDBC Sniffer supports integration with JUnit framework via <code>@Rule</code></p>
+
+<p>Add a <code>QueryCounter</code> rule to your test and assert the maximum number of queries allowed for particular test using <code>@AllowedQueries(n)</code> and <code>@NotAllowedQueries</code> annotations</p>
+
+<div class="highlight highlight-java"><pre><span class="pl-k">package</span> <span class="pl-smp">com.github.bedrin.jdbc.sniffer.junit</span>;
+
+<span class="pl-k">import</span> <span class="pl-smi">org.junit.BeforeClass</span>;
+<span class="pl-k">import</span> <span class="pl-smi">org.junit.Rule</span>;
+<span class="pl-k">import</span> <span class="pl-smi">org.junit.Test</span>;
+<span class="pl-k">import</span> <span class="pl-smi">org.junit.rules.ExpectedException</span>;
+
+<span class="pl-k">import</span> <span class="pl-smi">java.sql.Connection</span>;
+<span class="pl-k">import</span> <span class="pl-smi">java.sql.DriverManager</span>;
+<span class="pl-k">import</span> <span class="pl-smi">java.sql.SQLException</span>;
+
+<span class="pl-s">public</span> <span class="pl-s">class</span> <span class="pl-en">QueryCounterTest</span> {
+
+    <span class="pl-st">@Rule</span>
+    <span class="pl-s">public</span> <span class="pl-stj">ExpectedException</span> thrown <span class="pl-k">=</span> <span class="pl-stj">ExpectedException</span><span class="pl-k">.</span>none();
+
+    <span class="pl-st">@Rule</span>
+    <span class="pl-s">public</span> <span class="pl-stj">QueryCounter</span> queryCounter <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-stj">QueryCounter</span>();
+
+    <span class="pl-st">@BeforeClass</span>
+    <span class="pl-s">public</span> <span class="pl-s">static</span> <span class="pl-st">void</span> <span class="pl-en">loadDriver</span>() <span class="pl-s">throws</span> <span class="pl-stj">ClassNotFoundException</span> {
+        <span class="pl-stj">Class</span><span class="pl-k">.</span>forName(<span class="pl-s1"><span class="pl-pds">"</span>com.github.bedrin.jdbc.sniffer.MockDriver<span class="pl-pds">"</span></span>);
+    }
+
+    <span class="pl-st">@Test</span>
+    <span class="pl-st">@AllowedQueries</span>(<span class="pl-c1">1</span>)
+    <span class="pl-s">public</span> <span class="pl-st">void</span> <span class="pl-en">testAllowedOneQuery</span>() <span class="pl-s">throws</span> <span class="pl-stj">SQLException</span> {
+        <span class="pl-stj">Connection</span> connection <span class="pl-k">=</span> <span class="pl-stj">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s1"><span class="pl-pds">"</span>sniffer:jdbc:h2:~/test<span class="pl-pds">"</span></span>, <span class="pl-s1"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s1"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
+        connection<span class="pl-k">.</span>createStatement()<span class="pl-k">.</span>execute(<span class="pl-s1"><span class="pl-pds">"</span>SELECT 1 FROM DUAL<span class="pl-pds">"</span></span>);
+    }
+
+    <span class="pl-st">@Test</span>
+    <span class="pl-st">@NotAllowedQueries</span>
+    <span class="pl-s">public</span> <span class="pl-st">void</span> <span class="pl-en">testNotAllowedQueries</span>() <span class="pl-s">throws</span> <span class="pl-stj">SQLException</span> {
+        <span class="pl-stj">Connection</span> connection <span class="pl-k">=</span> <span class="pl-stj">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s1"><span class="pl-pds">"</span>sniffer:jdbc:h2:~/test<span class="pl-pds">"</span></span>, <span class="pl-s1"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s1"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
+        connection<span class="pl-k">.</span>createStatement()<span class="pl-k">.</span>execute(<span class="pl-s1"><span class="pl-pds">"</span>SELECT 1 FROM DUAL<span class="pl-pds">"</span></span>);
+        thrown<span class="pl-k">.</span>expect(<span class="pl-stj">IllegalStateException</span><span class="pl-k">.</span>class);
+    }
+
+}</pre></div>
+
+<h1>
+<a id="building" class="anchor" href="#building" aria-hidden="true"><span class="octicon octicon-link"></span></a>Building</h1>
+
+<p>JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and type <code>mvn install</code></p>
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="owner">
+      <p><a href="https://github.com/bedrin" class="avatar"><img src="https://avatars0.githubusercontent.com/u/4654384?v=3&amp;s=60" width="48" height="48"></a> <a href="https://github.com/bedrin">bedrin</a> maintains <a href="https://github.com/bedrin/jdbc-sniffer">Jdbc-sniffer</a></p>
+
+
+      </div>
+      <div class="creds">
+        <small>This page generated using <a href="http://pages.github.com/">GitHub Pages</a><br>theme by <a href="https://twitter.com/jonrohan/">Jon Rohan</a></small>
+      </div>
+    </footer>
+  </div>
+  <div class="current-section">
+    <a href="#top">Scroll to top</a>
+    <a href="https://github.com/bedrin/jdbc-sniffer/tarball/master" class="tar">tar</a><a href="https://github.com/bedrin/jdbc-sniffer/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
+    <p class="name"></p>
+  </div>
+
+            <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
           </script>
@@ -90,6 +174,5 @@ com.github.bedrin.jdbc.sniffer.Sniffer and com.github.bedrin.jdbc.sniffer.Thread
             } catch(err) {}
           </script>
 
-
-  </body>
+</body>
 </html>
