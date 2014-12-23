@@ -46,6 +46,7 @@ public class MockDriverTest {
 
     @Test
     public void testExecuteStatement() throws ClassNotFoundException, SQLException {
+        Sniffer.reset();
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
         assertEquals(1, Sniffer.executedStatements());
