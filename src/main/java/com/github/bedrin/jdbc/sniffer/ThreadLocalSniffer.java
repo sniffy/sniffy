@@ -66,7 +66,7 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      *
      * @param allowedStatements
      * @throws IllegalStateException
-     * @since 1.3
+     * @since 1.4
      */
     public static void verifyExact(int allowedStatements) throws IllegalStateException {
         verifyRange(allowedStatements, allowedStatements);
@@ -76,7 +76,7 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      *
      * @param allowedStatements
      * @throws IllegalStateException
-     * @since 1.3
+     * @since 1.4
      */
     public static void verifyNotLessThan(int allowedStatements) throws IllegalStateException {
         verifyRange(allowedStatements, Integer.MAX_VALUE);
@@ -87,7 +87,7 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      * @param minAllowedStatements
      * @param maxAllowedStatements
      * @throws IllegalStateException
-     * @since 1.3
+     * @since 1.4
      */
     public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
         int actualStatements = executedStatements();

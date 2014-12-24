@@ -67,10 +67,23 @@ public class QueryCounter implements TestRule {
         public void evaluate() throws Throwable {
             int count = threadLocal ? ThreadLocalSniffer.executedStatements() : Sniffer.executedStatements();
             delegate.evaluate();
-            if (threadLocal)
-                ThreadLocalSniffer.verifyNotMoreThan(count + maximumQueries);
-            else
-                Sniffer.verifyNotMoreThan(count + maximumQueries);
+            if (threadLocal) {
+                if (null != minimumQueries && null != maximumQueries) {
+                    ThreadLocalSniffer.verifyRange(count + minimumQueries, count + maximumQueries);
+                } else if (null != minimumQueries) {
+                    ThreadLocalSniffer.verifyNotLessThan(count + minimumQueries);
+                } else if (null != maximumQueries) {
+                    ThreadLocalSniffer.verifyNotMoreThan(count + maximumQueries);
+                }
+            } else {
+                if (null != minimumQueries && null != maximumQueries) {
+                    Sniffer.verifyRange(count + minimumQueries, count + maximumQueries);
+                } else if (null != minimumQueries) {
+                    Sniffer.verifyNotLessThan(count + minimumQueries);
+                } else if (null != maximumQueries) {
+                    Sniffer.verifyNotMoreThan(count + maximumQueries);
+                }
+            }
         }
 
     }
