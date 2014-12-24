@@ -8,9 +8,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
 public @interface AllowedQueries {
-    int value();
-    int max() default 0;
-    int min() default 0;
-    int exact() default 0;
+    int value() default -1;
+    int max() default -1;
+    int min() default -1;
+    int exact() default -1;
     boolean threadLocal() default false;
 }
