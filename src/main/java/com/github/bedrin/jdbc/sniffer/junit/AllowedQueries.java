@@ -9,8 +9,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 public @interface AllowedQueries {
     int value();
-    int maximum() default 0;
-    int minimum() default 0;
+    int max() default 0;
+    int min() default 0;
     int exact() default 0;
     boolean threadLocal() default false;
 }
