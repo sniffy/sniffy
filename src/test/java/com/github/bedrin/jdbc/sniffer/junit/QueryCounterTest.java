@@ -47,6 +47,14 @@ public class QueryCounterTest {
     }
 
     @Test
+    @AllowedQueries(min = 1)
+    public void testAllowedMinOneQueryExecutedTwo() throws SQLException {
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        connection.createStatement().execute("SELECT 1 FROM DUAL");
+        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    }
+
+    @Test
     @AllowedQueries(2)
     public void testAllowedTwoQueries() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
