@@ -5,10 +5,7 @@ import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Enumeration;
 
 import static org.junit.Assert.*;
@@ -49,6 +46,38 @@ public class MockDriverTest {
         Sniffer.reset();
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
+        assertEquals(1, Sniffer.executedStatements());
+        Sniffer.verifyNotMoreThanOne();
+        Sniffer.verifyNotMore();
+    }
+
+    @Test
+    public void testExecuteQueryStatement() throws ClassNotFoundException, SQLException {
+        Sniffer.reset();
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        connection.createStatement().executeQuery("SELECT 1 FROM DUAL");
+        assertEquals(1, Sniffer.executedStatements());
+        Sniffer.verifyNotMoreThanOne();
+        Sniffer.verifyNotMore();
+    }
+
+    @Test
+    public void testExecutePreparedStatement() throws ClassNotFoundException, SQLException {
+        Sniffer.reset();
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM DUAL");
+        preparedStatement.execute();
+        assertEquals(1, Sniffer.executedStatements());
+        Sniffer.verifyNotMoreThanOne();
+        Sniffer.verifyNotMore();
+    }
+
+    @Test
+    public void testExecuteQueryPreparedStatement() throws ClassNotFoundException, SQLException {
+        Sniffer.reset();
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM DUAL");
+        preparedStatement.executeQuery();
         assertEquals(1, Sniffer.executedStatements());
         Sniffer.verifyNotMoreThanOne();
         Sniffer.verifyNotMore();
