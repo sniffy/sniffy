@@ -5,10 +5,7 @@ import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Enumeration;
 
 import static org.junit.Assert.*;
@@ -55,6 +52,38 @@ public class MockDriverTest {
     }
 
     @Test
+    public void testExecuteQueryStatement() throws ClassNotFoundException, SQLException {
+        Sniffer.reset();
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        connection.createStatement().executeQuery("SELECT 1 FROM DUAL");
+        assertEquals(1, Sniffer.executedStatements());
+        Sniffer.verifyNotMoreThanOne();
+        Sniffer.verifyNotMore();
+    }
+
+    @Test
+    public void testExecutePreparedStatement() throws ClassNotFoundException, SQLException {
+        Sniffer.reset();
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM DUAL");
+        preparedStatement.execute();
+        assertEquals(1, Sniffer.executedStatements());
+        Sniffer.verifyNotMoreThanOne();
+        Sniffer.verifyNotMore();
+    }
+
+    @Test
+    public void testExecuteQueryPreparedStatement() throws ClassNotFoundException, SQLException {
+        Sniffer.reset();
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM DUAL");
+        preparedStatement.executeQuery();
+        assertEquals(1, Sniffer.executedStatements());
+        Sniffer.verifyNotMoreThanOne();
+        Sniffer.verifyNotMore();
+    }
+
+    @Test
     public void testExecuteStatementThrowsException() throws ClassNotFoundException, SQLException {
         Sniffer.reset();
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
@@ -65,6 +94,25 @@ public class MockDriverTest {
             assertTrue(SQLException.class.isAssignableFrom(e.getClass()));
         }
         assertEquals(1, Sniffer.executedStatements());
+    }
+
+    @SuppressWarnings("unused")
+    public static int timesTwo(int arg) {
+        return arg * 2;
+    }
+
+    @Test
+    public void testCallStatement() throws ClassNotFoundException, SQLException {
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        connection.createStatement().execute("CREATE ALIAS IF NOT EXISTS TIMES_TWO FOR \"com.github.bedrin.jdbc.sniffer.MockDriverTest.timesTwo\"");
+
+        Sniffer.reset();
+        CallableStatement callableStatement = connection.prepareCall("CALL TIMES_TWO(?)");
+        callableStatement.setInt(1, 1);
+        callableStatement.execute();
+        assertEquals(1, Sniffer.executedStatements());
+        Sniffer.verifyNotMoreThanOne();
+        Sniffer.verifyNotMore();
     }
 
 }
