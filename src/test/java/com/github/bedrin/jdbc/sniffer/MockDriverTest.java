@@ -96,4 +96,23 @@ public class MockDriverTest {
         assertEquals(1, Sniffer.executedStatements());
     }
 
+    @SuppressWarnings("unused")
+    public static int timesTwo(int arg) {
+        return arg * 2;
+    }
+
+    @Test
+    public void testCallStatement() throws ClassNotFoundException, SQLException {
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        connection.createStatement().execute("CREATE ALIAS IF NOT EXISTS TIMES_TWO FOR \"com.github.bedrin.jdbc.sniffer.MockDriverTest.timesTwo\"");
+
+        Sniffer.reset();
+        CallableStatement callableStatement = connection.prepareCall("CALL TIMES_TWO(?)");
+        callableStatement.setInt(1, 1);
+        callableStatement.execute();
+        assertEquals(1, Sniffer.executedStatements());
+        Sniffer.verifyNotMoreThanOne();
+        Sniffer.verifyNotMore();
+    }
+
 }
