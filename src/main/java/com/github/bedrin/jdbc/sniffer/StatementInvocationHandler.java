@@ -1,6 +1,7 @@
 package com.github.bedrin.jdbc.sniffer;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -23,6 +24,11 @@ public class StatementInvocationHandler implements InvocationHandler {
         if (executeMethodNames.contains(method.getName())) {
             Sniffer.executeStatement();
         }
-        return method.invoke(delegate, args);
+        try {
+            return method.invoke(delegate, args);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
+        }
     }
+
 }
