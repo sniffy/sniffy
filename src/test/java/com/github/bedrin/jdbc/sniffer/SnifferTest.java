@@ -25,27 +25,13 @@ public class SnifferTest {
 
     @Test
     public void testRecordQueriesPositive() throws Exception {
-        Sniffer.recordQueries(new Runnable() {
-
-            @Override
-            public void run() {
-                Sniffer.executeStatement();
-            }
-
-        }).verifyNotMoreThanOne();
+        Sniffer.recordQueries(Sniffer::executeStatement).verifyNotMoreThanOne();
     }
 
     @Test
     public void testRecordQueriesNegative() throws Exception {
         try {
-            Sniffer.recordQueries(new Runnable() {
-
-                @Override
-                public void run() {
-                    Sniffer.executeStatement();
-                }
-
-            }).verifyNotMore();
+            Sniffer.recordQueries(Sniffer::executeStatement).verifyNotMore();
             fail();
         } catch (IllegalStateException e) {
             assertNotNull(e);
