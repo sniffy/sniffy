@@ -13,8 +13,12 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
         return Sniffer.registerThreadLocalSniffer(new Sniffer());
     }
 
+    static Sniffer getSniffer() {
+        return INSTANCE.get();
+    }
+    
     static void executeStatement() {
-        INSTANCE.get().executeStatementImpl();
+        getSniffer().executeStatementImpl();
     }
 
     /**
@@ -23,14 +27,14 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      * {@link #verifyNotMoreThanOne() verifyNotMoreThanOne} or {@link #verifyNotMoreThan(int) verifyNotMoreThan}
      */
     public static int executedStatements() {
-        return INSTANCE.get().executedStatementsImpl();
+        return getSniffer().executedStatementsImpl();
     }
 
     /**
      * Resets the queries counter to 0
      */
     public static void reset() {
-        INSTANCE.get().resetImpl();
+        getSniffer().resetImpl();
     }
 
     /**

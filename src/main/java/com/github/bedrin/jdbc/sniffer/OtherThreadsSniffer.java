@@ -3,14 +3,23 @@ package com.github.bedrin.jdbc.sniffer;
 public class OtherThreadsSniffer {
 
     public static int executedStatements() {
-        int executedStatements = Sniffer.executedStatements() - ThreadLocalSniffer.executedStatements();
-        return executedStatements > 0 ? executedStatements : 0;
+        int executedStatements = 0;
+        Sniffer currentThreadSniffer = ThreadLocalSniffer.getSniffer();
+        for (Sniffer sniffer : Sniffer.getThreadLocalSniffers()) {
+            if (sniffer != currentThreadSniffer) {
+                executedStatements += sniffer.executedStatementsImpl();
+            }
+        }
+        return executedStatements;
     }
 
-    // TODO: this method should reset other threads' sniffers as well
     public static void reset() {
-        Sniffer.reset();
-        ThreadLocalSniffer.reset();
+        Sniffer currentThreadSniffer = ThreadLocalSniffer.getSniffer();
+        for (Sniffer sniffer : Sniffer.getThreadLocalSniffers()) {
+            if (sniffer != currentThreadSniffer) {
+                sniffer.resetImpl();
+            }
+        }
     }
 
     public static void verifyNotMore() {
