@@ -10,7 +10,7 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
 
     @Override
     protected Sniffer initialValue() {
-        return new Sniffer();
+        return Sniffer.registerThreadLocalSniffer(new Sniffer());
     }
 
     static void executeStatement() {

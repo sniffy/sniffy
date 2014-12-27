@@ -1,5 +1,8 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -22,6 +25,15 @@ public class Sniffer {
 
     int executeStatementImpl() {
         return counter.incrementAndGet();
+    }
+
+    final static Set<Sniffer> threadLocalSniffers = Collections.newSetFromMap(
+            new ConcurrentHashMap<Sniffer, Boolean>()
+    );
+
+    static Sniffer registerThreadLocalSniffer(Sniffer tlSniffer) {
+        threadLocalSniffers.add(tlSniffer);
+        return tlSniffer;
     }
 
     static void executeStatement() {
