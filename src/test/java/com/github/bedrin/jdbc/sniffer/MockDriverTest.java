@@ -103,16 +103,20 @@ public class MockDriverTest {
 
     @Test
     public void testCallStatement() throws ClassNotFoundException, SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("CREATE ALIAS IF NOT EXISTS TIMES_TWO FOR \"com.github.bedrin.jdbc.sniffer.MockDriverTest.timesTwo\"");
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa")) {
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("CREATE ALIAS IF NOT EXISTS TIMES_TWO FOR \"com.github.bedrin.jdbc.sniffer.MockDriverTest.timesTwo\"");
+            }
 
-        Sniffer.reset();
-        CallableStatement callableStatement = connection.prepareCall("CALL TIMES_TWO(?)");
-        callableStatement.setInt(1, 1);
-        callableStatement.execute();
-        assertEquals(1, Sniffer.executedStatements());
-        Sniffer.verifyNotMoreThanOne();
-        Sniffer.verifyNotMore();
+            Sniffer.reset();
+            try (CallableStatement callableStatement = connection.prepareCall("CALL TIMES_TWO(?)")) {
+                callableStatement.setInt(1, 1);
+                callableStatement.execute();
+            }
+            assertEquals(1, Sniffer.executedStatements());
+            Sniffer.verifyNotMoreThanOne();
+            Sniffer.verifyNotMore();
+        }
     }
 
 }
