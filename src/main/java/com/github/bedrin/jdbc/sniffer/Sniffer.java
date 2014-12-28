@@ -150,8 +150,22 @@ public class Sniffer {
         }
 
         public void verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
-            if (executedStatements > allowedStatements)
-                throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", allowedStatements, executedStatements));
+            verifyRange(0, allowedStatements);
+        }
+
+        public void verifyExact(int allowedStatements) throws IllegalStateException {
+            verifyRange(allowedStatements, allowedStatements);
+        }
+
+        public void verifyNotLessThan(int allowedStatements) throws IllegalStateException {
+            verifyRange(allowedStatements, Integer.MAX_VALUE);
+        }
+
+        public void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
+            if (executedStatements > maxAllowedStatements)
+                throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, executedStatements));
+            if (executedStatements < minAllowedStatements)
+                throw new IllegalStateException(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, executedStatements));
         }
 
     }
