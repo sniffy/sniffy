@@ -18,6 +18,13 @@ JDBC Sniffer is available from Maven Central repository
 </dependency>
 ```
 
+For Gradle users:
+```javascript
+dependencies {
+    compile 'com.github.bedrin:jdbc-sniffer:1.3'
+}
+```
+
 Download
 ============
 - [jdbc-sniffer-1.3.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.3/jdbc-sniffer-1.1.jar)
@@ -28,6 +35,7 @@ Setup
 ============
 Simply add jdbc-sniffer.jar to your classpath and add `sniffer:` prefix to the JDBC connection url
 For example `jdbc:h2:~/test` should be changed to `sniffer:jdbc:h2:~/test`
+The sniffer JDBC driver class name is `com.github.bedrin.jdbc.sniffer.MockDriver`
 
 Validating the number of queries
 ============
