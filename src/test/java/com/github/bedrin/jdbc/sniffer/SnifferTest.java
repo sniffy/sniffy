@@ -68,11 +68,8 @@ public class SnifferTest {
             Sniffer.executeStatement();
             Thread thread = new Thread(Sniffer::executeStatement);
             thread.start();
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                fail(e.getMessage());
-            }
+            thread.join();
+            return null;
         }).verifyNotMoreThanOneOtherThreads();
     }
 
@@ -83,11 +80,8 @@ public class SnifferTest {
                 Sniffer.executeStatement();
                 Thread thread = new Thread(Sniffer::executeStatement);
                 thread.start();
-                try {
-                    thread.join();
-                } catch (InterruptedException e) {
-                    fail(e.getMessage());
-                }
+                thread.join();
+                return null;
             }).verifyNotMoreOtherThreads();
             fail();
         } catch (IllegalStateException e) {

@@ -3,6 +3,7 @@ package com.github.bedrin.jdbc.sniffer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -139,7 +140,19 @@ public class Sniffer {
         );
     }
 
-    // TODO consider extending to Closeable interface
+    public static <T> RecordedQueriesWithValue<T> recordQueries(Callable<T> callable) throws Exception {
+        int queries = executedStatements();
+        int tlQueries = ThreadLocalSniffer.executedStatements();
+        int otQueries = OtherThreadsSniffer.executedStatements();
+        T value = callable.call();
+        return new RecordedQueriesWithValue<T>(
+                value,
+                executedStatements() - queries,
+                ThreadLocalSniffer.executedStatements() - tlQueries,
+                OtherThreadsSniffer.executedStatements() - otQueries
+        );
+    }
+
     public static class RecordedQueries {
 
         private final int executedStatements;
@@ -234,6 +247,21 @@ public class Sniffer {
             if (executedOtherThreadsStatements < minAllowedStatements)
                 throw new IllegalStateException(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedOtherThreadsStatements));
             return this;
+        }
+
+    }
+
+    public static class RecordedQueriesWithValue<T> extends RecordedQueries {
+
+        private final T value;
+
+        public RecordedQueriesWithValue(T value, int executedStatements, int executedThreadLocalStatements, int executedOtherThreadsStatements) {
+            super(executedStatements, executedThreadLocalStatements, executedOtherThreadsStatements);
+            this.value = value;
+        }
+
+        public T getValue() {
+            return value;
         }
 
     }
