@@ -180,6 +180,34 @@ public class Sniffer {
             return this;
         }
 
+        public RecordedQueries verifyNotMoreThreadLocal() {
+            return verifyNotMoreThanThreadLocal(0);
+        }
+
+        public RecordedQueries verifyNotMoreThanOneThreadLocal() {
+            return verifyNotMoreThanThreadLocal(1);
+        }
+
+        public RecordedQueries verifyNotMoreThanThreadLocal(int allowedStatements) throws IllegalStateException {
+            return verifyRangeThreadLocal(0, allowedStatements);
+        }
+
+        public RecordedQueries verifyExactThreadLocal(int allowedStatements) throws IllegalStateException {
+            return verifyRangeThreadLocal(allowedStatements, allowedStatements);
+        }
+
+        public RecordedQueries verifyNotLessThanThreadLocal(int allowedStatements) throws IllegalStateException {
+            return verifyRangeThreadLocal(allowedStatements, Integer.MAX_VALUE);
+        }
+
+        public RecordedQueries verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
+            if (executedThreadLocalStatements > maxAllowedStatements)
+                throw new IllegalStateException(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedStatements));
+            if (executedThreadLocalStatements < minAllowedStatements)
+                throw new IllegalStateException(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedStatements));
+            return this;
+        }
+
     }
 
 }
