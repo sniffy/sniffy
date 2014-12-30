@@ -129,43 +129,55 @@ public class Sniffer {
 
     public static RecordedQueries recordQueries(Runnable runnable) {
         int queries = executedStatements();
+        int tlQueries = ThreadLocalSniffer.executedStatements();
+        int otQueries = OtherThreadsSniffer.executedStatements();
         runnable.run();
-        return new RecordedQueries(executedStatements() - queries);
+        return new RecordedQueries(
+                executedStatements() - queries,
+                ThreadLocalSniffer.executedStatements() - tlQueries,
+                OtherThreadsSniffer.executedStatements() - otQueries
+        );
     }
 
+    // TODO consider extending to Closeable interface
     public static class RecordedQueries {
 
         private final int executedStatements;
+        private final int executedThreadLocalStatements;
+        private final int executedOtherThreadsStatements;
 
-        public RecordedQueries(int executedStatements) {
+        public RecordedQueries(int executedStatements, int executedThreadLocalStatements, int executedOtherThreadsStatements) {
             this.executedStatements = executedStatements;
+            this.executedThreadLocalStatements = executedThreadLocalStatements;
+            this.executedOtherThreadsStatements = executedOtherThreadsStatements;
         }
 
-        public void verifyNotMore() {
-            verifyNotMoreThan(0);
+        public RecordedQueries verifyNotMore() {
+            return verifyNotMoreThan(0);
         }
 
-        public void verifyNotMoreThanOne() {
-            verifyNotMoreThan(1);
+        public RecordedQueries verifyNotMoreThanOne() {
+            return verifyNotMoreThan(1);
         }
 
-        public void verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
-            verifyRange(0, allowedStatements);
+        public RecordedQueries verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
+            return verifyRange(0, allowedStatements);
         }
 
-        public void verifyExact(int allowedStatements) throws IllegalStateException {
-            verifyRange(allowedStatements, allowedStatements);
+        public RecordedQueries verifyExact(int allowedStatements) throws IllegalStateException {
+            return verifyRange(allowedStatements, allowedStatements);
         }
 
-        public void verifyNotLessThan(int allowedStatements) throws IllegalStateException {
-            verifyRange(allowedStatements, Integer.MAX_VALUE);
+        public RecordedQueries verifyNotLessThan(int allowedStatements) throws IllegalStateException {
+            return verifyRange(allowedStatements, Integer.MAX_VALUE);
         }
 
-        public void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
+        public RecordedQueries verifyRange(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
             if (executedStatements > maxAllowedStatements)
                 throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, executedStatements));
             if (executedStatements < minAllowedStatements)
                 throw new IllegalStateException(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, executedStatements));
+            return this;
         }
 
     }
