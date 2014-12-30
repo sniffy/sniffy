@@ -202,9 +202,37 @@ public class Sniffer {
 
         public RecordedQueries verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
             if (executedThreadLocalStatements > maxAllowedStatements)
-                throw new IllegalStateException(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedStatements));
+                throw new IllegalStateException(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedThreadLocalStatements));
             if (executedThreadLocalStatements < minAllowedStatements)
-                throw new IllegalStateException(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedStatements));
+                throw new IllegalStateException(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedThreadLocalStatements));
+            return this;
+        }
+
+        public RecordedQueries verifyNotMoreOtherThreads() {
+            return verifyNotMoreThanOtherThreads(0);
+        }
+
+        public RecordedQueries verifyNotMoreThanOneOtherThreads() {
+            return verifyNotMoreThanOtherThreads(1);
+        }
+
+        public RecordedQueries verifyNotMoreThanOtherThreads(int allowedStatements) throws IllegalStateException {
+            return verifyRangeOtherThreads(0, allowedStatements);
+        }
+
+        public RecordedQueries verifyExactOtherThreads(int allowedStatements) throws IllegalStateException {
+            return verifyRangeOtherThreads(allowedStatements, allowedStatements);
+        }
+
+        public RecordedQueries verifyNotLessThanOtherThreads(int allowedStatements) throws IllegalStateException {
+            return verifyRangeOtherThreads(allowedStatements, Integer.MAX_VALUE);
+        }
+
+        public RecordedQueries verifyRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
+            if (executedOtherThreadsStatements > maxAllowedStatements)
+                throw new IllegalStateException(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedOtherThreadsStatements));
+            if (executedOtherThreadsStatements < minAllowedStatements)
+                throw new IllegalStateException(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedOtherThreadsStatements));
             return this;
         }
 

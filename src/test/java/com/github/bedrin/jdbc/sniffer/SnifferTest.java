@@ -38,4 +38,61 @@ public class SnifferTest {
         }
     }
 
+    @Test
+    public void testRecordQueriesThreadLocalPositive() throws Exception {
+        Sniffer.recordQueries(() -> {
+            Sniffer.executeStatement();
+            Thread thread = new Thread(Sniffer::executeStatement);
+            thread.start();
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                fail(e.getMessage());
+            }
+        }).verifyNotMoreThanOneThreadLocal();
+    }
+
+    @Test
+    public void testRecordQueriesThreadLocalNegative() throws Exception {
+        try {
+            Sniffer.recordQueries(Sniffer::executeStatement).verifyNotMoreThreadLocal();
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testRecordQueriesOtherThreadsPositive() throws Exception {
+        Sniffer.recordQueries(() -> {
+            Sniffer.executeStatement();
+            Thread thread = new Thread(Sniffer::executeStatement);
+            thread.start();
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                fail(e.getMessage());
+            }
+        }).verifyNotMoreThanOneOtherThreads();
+    }
+
+    @Test
+    public void testRecordQueriesOtherThreadsNegative() throws Exception {
+        try {
+            Sniffer.recordQueries(() -> {
+                Sniffer.executeStatement();
+                Thread thread = new Thread(Sniffer::executeStatement);
+                thread.start();
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    fail(e.getMessage());
+                }
+            }).verifyNotMoreOtherThreads();
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+    }
+
 }
