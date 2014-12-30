@@ -128,7 +128,27 @@ public class Sniffer {
         reset();
     }
 
-    public static RecordedQueries recordQueries(Runnable runnable) {
+    public static interface Executable {
+        void execute() throws Exception;
+    }
+
+    public static RecordedQueries execute(Executable executable) {
+        int queries = executedStatements();
+        int tlQueries = ThreadLocalSniffer.executedStatements();
+        int otQueries = OtherThreadsSniffer.executedStatements();
+        try {
+            executable.execute();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return new RecordedQueries(
+                executedStatements() - queries,
+                ThreadLocalSniffer.executedStatements() - tlQueries,
+                OtherThreadsSniffer.executedStatements() - otQueries
+        );
+    }
+
+    public static RecordedQueries run(Runnable runnable) {
         int queries = executedStatements();
         int tlQueries = ThreadLocalSniffer.executedStatements();
         int otQueries = OtherThreadsSniffer.executedStatements();
@@ -140,12 +160,12 @@ public class Sniffer {
         );
     }
 
-    public static <T> RecordedQueriesWithValue<T> recordQueries(Callable<T> callable) throws Exception {
+    public static <T> RecordedQueriesWithValue<T> call(Callable<T> callable) throws Exception {
         int queries = executedStatements();
         int tlQueries = ThreadLocalSniffer.executedStatements();
         int otQueries = OtherThreadsSniffer.executedStatements();
         T value = callable.call();
-        return new RecordedQueriesWithValue<T>(
+        return new RecordedQueriesWithValue<>(
                 value,
                 executedStatements() - queries,
                 ThreadLocalSniffer.executedStatements() - tlQueries,

@@ -25,13 +25,13 @@ public class SnifferTest {
 
     @Test
     public void testRecordQueriesPositive() throws Exception {
-        Sniffer.recordQueries(Sniffer::executeStatement).verifyNotMoreThanOne();
+        Sniffer.run(Sniffer::executeStatement).verifyNotMoreThanOne();
     }
 
     @Test
     public void testRecordQueriesNegative() throws Exception {
         try {
-            Sniffer.recordQueries(Sniffer::executeStatement).verifyNotMore();
+            Sniffer.run(Sniffer::executeStatement).verifyNotMore();
             fail();
         } catch (IllegalStateException e) {
             assertNotNull(e);
@@ -40,22 +40,18 @@ public class SnifferTest {
 
     @Test
     public void testRecordQueriesThreadLocalPositive() throws Exception {
-        Sniffer.recordQueries(() -> {
+        Sniffer.execute(() -> {
             Sniffer.executeStatement();
             Thread thread = new Thread(Sniffer::executeStatement);
             thread.start();
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                fail(e.getMessage());
-            }
+            thread.join();
         }).verifyNotMoreThanOneThreadLocal();
     }
 
     @Test
     public void testRecordQueriesThreadLocalNegative() throws Exception {
         try {
-            Sniffer.recordQueries(Sniffer::executeStatement).verifyNotMoreThreadLocal();
+            Sniffer.run(Sniffer::executeStatement).verifyNotMoreThreadLocal();
             fail();
         } catch (IllegalStateException e) {
             assertNotNull(e);
@@ -64,24 +60,22 @@ public class SnifferTest {
 
     @Test
     public void testRecordQueriesOtherThreadsPositive() throws Exception {
-        Sniffer.recordQueries(() -> {
+        Sniffer.execute(() -> {
             Sniffer.executeStatement();
             Thread thread = new Thread(Sniffer::executeStatement);
             thread.start();
             thread.join();
-            return null;
         }).verifyNotMoreThanOneOtherThreads();
     }
 
     @Test
     public void testRecordQueriesOtherThreadsNegative() throws Exception {
         try {
-            Sniffer.recordQueries(() -> {
+            Sniffer.execute(() -> {
                 Sniffer.executeStatement();
                 Thread thread = new Thread(Sniffer::executeStatement);
                 thread.start();
                 thread.join();
-                return null;
             }).verifyNotMoreOtherThreads();
             fail();
         } catch (IllegalStateException e) {
