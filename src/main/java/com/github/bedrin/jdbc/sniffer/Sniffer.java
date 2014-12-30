@@ -165,7 +165,7 @@ public class Sniffer {
         int tlQueries = ThreadLocalSniffer.executedStatements();
         int otQueries = OtherThreadsSniffer.executedStatements();
         T value = callable.call();
-        return new RecordedQueriesWithValue<>(
+        return new RecordedQueriesWithValue<T>(
                 value,
                 executedStatements() - queries,
                 ThreadLocalSniffer.executedStatements() - tlQueries,
