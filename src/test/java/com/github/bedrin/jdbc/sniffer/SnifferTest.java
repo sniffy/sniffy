@@ -83,4 +83,12 @@ public class SnifferTest {
         }
     }
 
+    @Test
+    public void testRecordQueriesWithValue() throws Exception {
+        assertEquals("test", Sniffer.call(() -> {
+            Sniffer.executeStatement();
+            return "test";
+        }).verifyNotMoreThanOne().getValue());
+    }
+
 }
