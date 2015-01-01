@@ -105,4 +105,103 @@ public class RecordedQueriesTest {
         }
     }
 
+    @Test
+    public void testVerifyNotMoreThreadLocal() throws Exception {
+        RecordedQueries recordedQueries = new RecordedQueries(0,0,0);
+        recordedQueries.verifyNotMoreThreadLocal();
+        recordedQueries = new RecordedQueries(1,1,1);
+        try {
+            recordedQueries.verifyNotMoreThreadLocal();
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testVerifyNotMoreThanOneThreadLocal() throws Exception {
+        RecordedQueries recordedQueries = new RecordedQueries(0,0,0);
+        recordedQueries.verifyNotMoreThanOneThreadLocal();
+        recordedQueries = new RecordedQueries(1,1,1);
+        recordedQueries.verifyNotMoreThanOneThreadLocal();
+        recordedQueries = new RecordedQueries(2,2,2);
+        try {
+            recordedQueries.verifyNotMoreThanOneThreadLocal();
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testVerifyNotMoreThanThreadLocal() throws Exception {
+        RecordedQueries recordedQueries = new RecordedQueries(0,0,0);
+        recordedQueries.verifyNotMoreThanThreadLocal(2);
+        recordedQueries = new RecordedQueries(1,1,1);
+        recordedQueries.verifyNotMoreThanThreadLocal(2);
+        recordedQueries = new RecordedQueries(2,2,2);
+        recordedQueries.verifyNotMoreThanThreadLocal(2);
+        recordedQueries = new RecordedQueries(3,3,3);
+        try {
+            recordedQueries.verifyNotMoreThanThreadLocal(2);
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testVerifyExactThreadLocal() throws Exception {
+        RecordedQueries recordedQueries = new RecordedQueries(1,1,1);
+        recordedQueries.verifyExactThreadLocal(1);
+        recordedQueries = new RecordedQueries(0,0,0);
+        try {
+            recordedQueries.verifyExactThreadLocal(1);
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+        recordedQueries = new RecordedQueries(2,2,2);
+        try {
+            recordedQueries.verifyExactThreadLocal(1);
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testVerifyNotLessThanThreadLocal() throws Exception {
+        RecordedQueries recordedQueries = new RecordedQueries(2,2,2);
+        recordedQueries.verifyNotLessThanThreadLocal(2);
+        recordedQueries.verifyNotLessThanThreadLocal(1);
+        try {
+            recordedQueries.verifyNotLessThanThreadLocal(3);
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testVerifyRangeThreadLocal() throws Exception {
+        RecordedQueries recordedQueries = new RecordedQueries(2,2,2);
+        recordedQueries.verifyRangeThreadLocal(2, 2);
+        recordedQueries.verifyRangeThreadLocal(1, 2);
+        recordedQueries.verifyRangeThreadLocal(2, 3);
+        recordedQueries.verifyRangeThreadLocal(1, 3);
+        try {
+            recordedQueries.verifyRangeThreadLocal(3, 4);
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+        try {
+            recordedQueries.verifyRangeThreadLocal(0,1);
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e);
+        }
+    }
+
 }
