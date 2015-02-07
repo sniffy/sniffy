@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.util.Enumeration;
+import java.util.Properties;
 
 import static org.junit.Assert.*;
 
@@ -43,6 +44,31 @@ public class MockDriverTest {
     }
 
     @Test
+    public void testGetMockConnectionRaisesException() throws ClassNotFoundException, SQLException {
+        try {
+            DriverManager.getConnection("sniffer:unknown:jdbc:url");
+            fail();
+        } catch (SQLException e) {
+            assertNotNull(e);
+        } catch (Exception e) {
+            assertNull(e);
+        }
+    }
+
+    @Test
+    public void testGetPropertyInfo() throws ClassNotFoundException, SQLException {
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
+        DriverPropertyInfo[] propertyInfo = driver.getPropertyInfo("jdbc:h2:~/test", new Properties());
+        assertNotNull(propertyInfo);
+    }
+
+    @Test
+    public void testJdbcComplaint() throws ClassNotFoundException, SQLException {
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
+        assertTrue(driver.jdbcCompliant());
+    }
+
+    @Test
     public void testExecuteStatement() throws ClassNotFoundException, SQLException {
         Sniffer.reset();
         try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
@@ -52,6 +78,24 @@ public class MockDriverTest {
         assertEquals(1, Sniffer.executedStatements());
         Sniffer.verifyNotMoreThanOne();
         Sniffer.verifyNotMore();
+    }
+
+    @Test
+    public void testVersion() throws ClassNotFoundException, SQLException {
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
+        assertEquals(Constants.MAJOR_VERSION, driver.getMajorVersion());
+        assertEquals(Constants.MINOR_VERSION, driver.getMinorVersion());
+    }
+
+    @Test
+    public void testGetParentLogger() throws ClassNotFoundException, SQLException {
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
+        try {
+            driver.getParentLogger();
+            fail();
+        } catch (SQLFeatureNotSupportedException e) {
+            assertNotNull(e);
+        }
     }
 
     @Test
