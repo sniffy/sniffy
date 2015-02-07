@@ -21,8 +21,6 @@ class ConnectionInvocationHandler implements InvocationHandler {
             result = method.invoke(delegate, args);
         } catch (InvocationTargetException e) {
             throw e.getTargetException();
-        } catch (Exception e) {
-            throw e;
         }
         if ("createStatement".equals(method.getName())) {
             return Proxy.newProxyInstance(
