@@ -3,7 +3,7 @@ package com.github.bedrin.jdbc.sniffer;
 /**
  * Holds immutable counters with a number of queries executed by given thread, other threads and all threads all together
  */
-public class RecordedQueries {
+public class RecordedQueries<C extends RecordedQueries<C>> {
 
     private final int executedStatements;
     private final int executedThreadLocalStatements;
@@ -21,7 +21,7 @@ public class RecordedQueries {
      * @since 1.4
      * @return self for the chaining purposes
      */
-    public RecordedQueries verifyNotMore() {
+    public C verifyNotMore() {
         return verifyNotMoreThan(0);
     }
 
@@ -31,7 +31,7 @@ public class RecordedQueries {
      * @since 1.4
      * @return self for the chaining purposes
      */
-    public RecordedQueries verifyNotMoreThanOne() {
+    public C verifyNotMoreThanOne() {
         return verifyNotMoreThan(1);
     }
 
@@ -42,7 +42,7 @@ public class RecordedQueries {
      * @since 1.4
      * @return self for the chaining purposes
      */
-    public RecordedQueries verifyNotMoreThan(int allowedStatements) throws AssertionError {
+    public C verifyNotMoreThan(int allowedStatements) throws AssertionError {
         return verifyRange(0, allowedStatements);
     }
 
@@ -53,7 +53,7 @@ public class RecordedQueries {
      * @since 1.4
      * @return self for the chaining purposes
      */
-    public RecordedQueries verifyExact(int allowedStatements) throws AssertionError {
+    public C verifyExact(int allowedStatements) throws AssertionError {
         return verifyRange(allowedStatements, allowedStatements);
     }
 
@@ -63,72 +63,77 @@ public class RecordedQueries {
      * @since 1.4
      * @return self for the chaining purposes
      */
-    public RecordedQueries verifyNotLessThan(int allowedStatements) throws AssertionError {
+    public C verifyNotLessThan(int allowedStatements) throws AssertionError {
         return verifyRange(allowedStatements, Integer.MAX_VALUE);
     }
 
-    public RecordedQueries verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
+    public C verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         if (executedStatements > maxAllowedStatements)
             throw new AssertionError(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, executedStatements));
         if (executedStatements < minAllowedStatements)
             throw new AssertionError(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, executedStatements));
-        return this;
+        return self();
     }
 
-    public RecordedQueries verifyNotMoreThreadLocal() {
+    public C verifyNotMoreThreadLocal() {
         return verifyNotMoreThanThreadLocal(0);
     }
 
-    public RecordedQueries verifyNotMoreThanOneThreadLocal() {
+    public C verifyNotMoreThanOneThreadLocal() {
         return verifyNotMoreThanThreadLocal(1);
     }
 
-    public RecordedQueries verifyNotMoreThanThreadLocal(int allowedStatements) throws AssertionError {
+    public C verifyNotMoreThanThreadLocal(int allowedStatements) throws AssertionError {
         return verifyRangeThreadLocal(0, allowedStatements);
     }
 
-    public RecordedQueries verifyExactThreadLocal(int allowedStatements) throws AssertionError {
+    public C verifyExactThreadLocal(int allowedStatements) throws AssertionError {
         return verifyRangeThreadLocal(allowedStatements, allowedStatements);
     }
 
-    public RecordedQueries verifyNotLessThanThreadLocal(int allowedStatements) throws AssertionError {
+    public C verifyNotLessThanThreadLocal(int allowedStatements) throws AssertionError {
         return verifyRangeThreadLocal(allowedStatements, Integer.MAX_VALUE);
     }
 
-    public RecordedQueries verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
+    public C verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         if (executedThreadLocalStatements > maxAllowedStatements)
             throw new AssertionError(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedThreadLocalStatements));
         if (executedThreadLocalStatements < minAllowedStatements)
             throw new AssertionError(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedThreadLocalStatements));
-        return this;
+        return self();
     }
 
-    public RecordedQueries verifyNotMoreOtherThreads() {
+    public C verifyNotMoreOtherThreads() {
         return verifyNotMoreThanOtherThreads(0);
     }
 
-    public RecordedQueries verifyNotMoreThanOneOtherThreads() {
+    public C verifyNotMoreThanOneOtherThreads() {
         return verifyNotMoreThanOtherThreads(1);
     }
 
-    public RecordedQueries verifyNotMoreThanOtherThreads(int allowedStatements) throws AssertionError {
+    public C verifyNotMoreThanOtherThreads(int allowedStatements) throws AssertionError {
         return verifyRangeOtherThreads(0, allowedStatements);
     }
 
-    public RecordedQueries verifyExactOtherThreads(int allowedStatements) throws AssertionError {
+    public C verifyExactOtherThreads(int allowedStatements) throws AssertionError {
         return verifyRangeOtherThreads(allowedStatements, allowedStatements);
     }
 
-    public RecordedQueries verifyNotLessThanOtherThreads(int allowedStatements) throws AssertionError {
+    public C verifyNotLessThanOtherThreads(int allowedStatements) throws AssertionError {
         return verifyRangeOtherThreads(allowedStatements, Integer.MAX_VALUE);
     }
 
-    public RecordedQueries verifyRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
+    public C verifyRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         if (executedOtherThreadsStatements > maxAllowedStatements)
             throw new AssertionError(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedOtherThreadsStatements));
         if (executedOtherThreadsStatements < minAllowedStatements)
             throw new AssertionError(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedOtherThreadsStatements));
-        return this;
+        return self();
+    }
+
+    @SuppressWarnings("unchecked")
+    private C self() {
+        return (C) this;
     }
 
 }
