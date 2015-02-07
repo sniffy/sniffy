@@ -98,6 +98,9 @@ First one holds the number of SQL queries executed by all threads, second one ho
 public void testExecuteStatement() throws ClassNotFoundException, SQLException {
     // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
     Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+    // Sniffer.reset() sets the internal counter of queries to zero
+    Sniffer.reset();
+    // You do not need to modify your JDBC code
     connection.createStatement().execute("SELECT 1 FROM DUAL");
     // Sniffer.executedStatements() returns count of execute queries
     assertEquals(1, Sniffer.executedStatements());
