@@ -81,6 +81,22 @@ public class MockDriverTest {
     }
 
     @Test
+    public void testExecuteIncorrectStatement() throws ClassNotFoundException, SQLException {
+        Sniffer.reset();
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+             Statement statement = connection.createStatement()) {
+            try {
+                statement.execute("this is an incorrect SQL query");
+            } catch (SQLException e) {
+                assertNotNull(e);
+            }
+        }
+        assertEquals(1, Sniffer.executedStatements());
+        Sniffer.verifyNotMoreThanOne();
+        Sniffer.verifyNotMore();
+    }
+
+    @Test
     public void testVersion() throws ClassNotFoundException, SQLException {
         Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
         assertEquals(Constants.MAJOR_VERSION, driver.getMajorVersion());
