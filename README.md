@@ -27,9 +27,9 @@ dependencies {
 
 Download
 ============
-- [jdbc-sniffer-1.4.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.4/jdbc-sniffer-1.1.jar)
-- [jdbc-sniffer-1.4-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.4/jdbc-sniffer-1.1-sources.jar)
-- [jdbc-sniffer-1.4-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.4/jdbc-sniffer-1.1-javadoc.jar)
+- [jdbc-sniffer-1.4.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.4/jdbc-sniffer-1.4.jar)
+- [jdbc-sniffer-1.4-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.4/jdbc-sniffer-1.4-sources.jar)
+- [jdbc-sniffer-1.4-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/1.4/jdbc-sniffer-1.4-javadoc.jar)
 
 Setup
 ============
