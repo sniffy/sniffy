@@ -24,6 +24,32 @@ public class SnifferTest {
     }
 
     @Test
+    public void testVerifyExact() throws Exception {
+        // test positive
+        Sniffer.reset();
+        Sniffer.executeStatement();
+        Sniffer.verifyExact(1);
+
+        // test negative case 1
+        try {
+            Sniffer.verifyExact(1);
+            fail();
+        } catch (AssertionError e) {
+            assertNotNull(e);
+        }
+
+        // test negative case 2
+        Sniffer.executeStatement();
+        Sniffer.executeStatement();
+        try {
+            Sniffer.verifyExact(1);
+            fail();
+        } catch (AssertionError e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
     public void testRecordQueriesPositive() throws Exception {
         Sniffer.run(Sniffer::executeStatement).verifyNotMoreThanOne();
     }
