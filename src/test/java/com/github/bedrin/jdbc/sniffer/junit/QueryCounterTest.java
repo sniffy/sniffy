@@ -34,7 +34,7 @@ public class QueryCounterTest {
     public void testNotAllowedQueries() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(IllegalStateException.class);
+        thrown.expect(AssertionError.class);
     }
 
     @Test
@@ -43,7 +43,7 @@ public class QueryCounterTest {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(IllegalStateException.class);
+        thrown.expect(AssertionError.class);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class QueryCounterTest {
     public void testAllowedMinTwoQueriesExecutedOne() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(IllegalStateException.class);
+        thrown.expect(AssertionError.class);
     }
 
     @Test
@@ -77,7 +77,7 @@ public class QueryCounterTest {
         connection.createStatement().execute("SELECT 1 FROM DUAL");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(IllegalStateException.class);
+        thrown.expect(AssertionError.class);
     }
 
     @Test

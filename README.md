@@ -52,9 +52,9 @@ public void testExecuteStatement() throws ClassNotFoundException, SQLException {
     connection.createStatement().execute("SELECT 1 FROM DUAL");
     // Sniffer.executedStatements() returns count of execute queries
     assertEquals(1, Sniffer.executedStatements());
-    // Sniffer.verifyNotMoreThanOne() throws an IllegalStateException if more than one query was executed; it also resets the counter to 0
+    // Sniffer.verifyNotMoreThanOne() throws an AssertionError if more than one query was executed; it also resets the counter to 0
     Sniffer.verifyNotMoreThanOne();
-    // Sniffer.verifyNotMore() throws an IllegalStateException if any query was executed
+    // Sniffer.verifyNotMore() throws an AssertionError if any query was executed
     Sniffer.verifyNotMore();
 }
 ```
@@ -102,7 +102,7 @@ public class QueryCounterTest {
     public void testNotAllowedQueries() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(IllegalStateException.class);
+        thrown.expect(AssertionError.class);
     }
 
 }

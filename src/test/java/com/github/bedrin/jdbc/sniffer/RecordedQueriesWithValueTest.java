@@ -16,7 +16,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotMore();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -32,7 +32,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotMoreThanOne();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -50,7 +50,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotMoreThan(2);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -64,14 +64,14 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyExact(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
         try {
             recordedQueries.verifyExact(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -85,7 +85,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotLessThan(3);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -101,13 +101,13 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyRange(3,4);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         try {
             recordedQueries.verifyRange(0,1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -121,7 +121,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotMoreThreadLocal();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -137,7 +137,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotMoreThanOneThreadLocal();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -155,7 +155,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotMoreThanThreadLocal(2);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -169,14 +169,14 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyExactThreadLocal(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
         try {
             recordedQueries.verifyExactThreadLocal(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -190,7 +190,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotLessThanThreadLocal(3);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -206,13 +206,13 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyRangeThreadLocal(3, 4);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         try {
             recordedQueries.verifyRangeThreadLocal(0, 1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -226,7 +226,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotMoreOtherThreads();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -242,7 +242,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotMoreThanOneOtherThreads();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -260,7 +260,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotMoreThanOtherThreads(2);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -274,14 +274,14 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyExactOtherThreads(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
         try {
             recordedQueries.verifyExactOtherThreads(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -295,7 +295,7 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyNotLessThanOtherThreads(3);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -311,13 +311,13 @@ public class RecordedQueriesWithValueTest {
         try {
             recordedQueries.verifyRangeOtherThreads(3, 4);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         try {
             recordedQueries.verifyRangeOtherThreads(0, 1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());

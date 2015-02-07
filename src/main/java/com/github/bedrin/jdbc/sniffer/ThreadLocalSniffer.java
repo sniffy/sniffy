@@ -42,7 +42,7 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
     /**
      * Verifies that no queries has been executed in current thread since the last call of {@link #reset() reset} method
      * or to any of verify methods family
-     * @throws IllegalStateException if actual number of executed statements exceeded 0
+     * @throws AssertionError if actual number of executed statements exceeded 0
      * @since 1.0
      */
     public static void verifyNotMore() {
@@ -52,7 +52,7 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
     /**
      * Verifies that at most 1 query has been executed in current thread since the last call of {@link #reset() reset} method
      * or to any of verify methods family
-     * @throws IllegalStateException if actual number of executed statements exceeded 1
+     * @throws AssertionError if actual number of executed statements exceeded 1
      * @since 1.0
      */
     public static void verifyNotMoreThanOne() {
@@ -64,10 +64,10 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      * of {@link #reset() reset} method or to any of verify methods family
      * @param allowedStatements maximum number of statements which could have been executed previously since
      *                          last {@link #reset() reset} call
-     * @throws IllegalStateException if actual number of executed statements exceeded {@code allowedStatements}
+     * @throws AssertionError if actual number of executed statements exceeded {@code allowedStatements}
      * @since 1.0
      */
-    public static void verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
+    public static void verifyNotMoreThan(int allowedStatements) throws AssertionError {
         verifyRange(0, allowedStatements);
     }
 
@@ -76,10 +76,10 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      * of {@link #reset() reset} method or to any of verify methods family
      * @param allowedStatements number of statements which could have been executed previously since
      *                          last {@link #reset() reset} call
-     * @throws IllegalStateException
+     * @throws AssertionError
      * @since 1.3
      */
-    public static void verifyExact(int allowedStatements) throws IllegalStateException {
+    public static void verifyExact(int allowedStatements) throws AssertionError {
         verifyRange(allowedStatements, allowedStatements);
     }
 
@@ -88,10 +88,10 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      * of {@link #reset() reset} method or to any of verify methods family
      * @param allowedStatements minimum number of statements which could have been executed previously since
      *                          last {@link #reset() reset} call
-     * @throws IllegalStateException
+     * @throws AssertionError
      * @since 1.4
      */
-    public static void verifyNotLessThan(int allowedStatements) throws IllegalStateException {
+    public static void verifyNotLessThan(int allowedStatements) throws AssertionError {
         verifyRange(allowedStatements, Integer.MAX_VALUE);
     }
 
@@ -102,15 +102,15 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      *                             last {@link #reset() reset} call
      * @param maxAllowedStatements maximum number of statements which could have been executed previously since
      *                             last {@link #reset() reset} call
-     * @throws IllegalStateException
+     * @throws AssertionError
      * @since 1.4
      */
-    public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
+    public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         int actualStatements = executedStatements();
         if (actualStatements > maxAllowedStatements)
-            throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, actualStatements));
+            throw new AssertionError(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, actualStatements));
         if (actualStatements < minAllowedStatements)
-            throw new IllegalStateException(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, actualStatements));
+            throw new AssertionError(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, actualStatements));
         reset();
     }
 

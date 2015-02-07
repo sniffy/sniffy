@@ -33,7 +33,7 @@ public class SnifferTest {
         try {
             Sniffer.run(Sniffer::executeStatement).verifyNotMore();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -53,7 +53,7 @@ public class SnifferTest {
         try {
             Sniffer.run(Sniffer::executeStatement).verifyNotMoreThreadLocal();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -78,7 +78,7 @@ public class SnifferTest {
                 thread.join();
             }).verifyNotMoreOtherThreads();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }

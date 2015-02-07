@@ -14,7 +14,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotMore();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -29,7 +29,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotMoreThanOne();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -46,7 +46,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotMoreThan(2);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -59,14 +59,14 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyExact(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         recordedQueries = new RecordedQueries(2,2,2);
         try {
             recordedQueries.verifyExact(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -79,7 +79,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotLessThan(3);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -94,13 +94,13 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyRange(3,4);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         try {
             recordedQueries.verifyRange(0,1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -113,7 +113,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotMoreThreadLocal();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -128,7 +128,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotMoreThanOneThreadLocal();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -145,7 +145,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotMoreThanThreadLocal(2);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -158,14 +158,14 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyExactThreadLocal(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         recordedQueries = new RecordedQueries(2,2,2);
         try {
             recordedQueries.verifyExactThreadLocal(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -178,7 +178,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotLessThanThreadLocal(3);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -193,13 +193,13 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyRangeThreadLocal(3, 4);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         try {
             recordedQueries.verifyRangeThreadLocal(0, 1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -212,7 +212,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotMoreOtherThreads();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -227,7 +227,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotMoreThanOneOtherThreads();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -244,7 +244,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotMoreThanOtherThreads(2);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -257,14 +257,14 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyExactOtherThreads(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         recordedQueries = new RecordedQueries(2,2,2);
         try {
             recordedQueries.verifyExactOtherThreads(1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -277,7 +277,7 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyNotLessThanOtherThreads(3);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }
@@ -292,13 +292,13 @@ public class RecordedQueriesTest {
         try {
             recordedQueries.verifyRangeOtherThreads(3, 4);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
         try {
             recordedQueries.verifyRangeOtherThreads(0,1);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (AssertionError e) {
             assertNotNull(e);
         }
     }

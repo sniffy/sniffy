@@ -20,23 +20,23 @@ public class RecordedQueries {
         return verifyNotMoreThan(1);
     }
 
-    public RecordedQueries verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyNotMoreThan(int allowedStatements) throws AssertionError {
         return verifyRange(0, allowedStatements);
     }
 
-    public RecordedQueries verifyExact(int allowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyExact(int allowedStatements) throws AssertionError {
         return verifyRange(allowedStatements, allowedStatements);
     }
 
-    public RecordedQueries verifyNotLessThan(int allowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyNotLessThan(int allowedStatements) throws AssertionError {
         return verifyRange(allowedStatements, Integer.MAX_VALUE);
     }
 
-    public RecordedQueries verifyRange(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         if (executedStatements > maxAllowedStatements)
-            throw new IllegalStateException(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, executedStatements));
+            throw new AssertionError(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, executedStatements));
         if (executedStatements < minAllowedStatements)
-            throw new IllegalStateException(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, executedStatements));
+            throw new AssertionError(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, executedStatements));
         return this;
     }
 
@@ -48,23 +48,23 @@ public class RecordedQueries {
         return verifyNotMoreThanThreadLocal(1);
     }
 
-    public RecordedQueries verifyNotMoreThanThreadLocal(int allowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyNotMoreThanThreadLocal(int allowedStatements) throws AssertionError {
         return verifyRangeThreadLocal(0, allowedStatements);
     }
 
-    public RecordedQueries verifyExactThreadLocal(int allowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyExactThreadLocal(int allowedStatements) throws AssertionError {
         return verifyRangeThreadLocal(allowedStatements, allowedStatements);
     }
 
-    public RecordedQueries verifyNotLessThanThreadLocal(int allowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyNotLessThanThreadLocal(int allowedStatements) throws AssertionError {
         return verifyRangeThreadLocal(allowedStatements, Integer.MAX_VALUE);
     }
 
-    public RecordedQueries verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         if (executedThreadLocalStatements > maxAllowedStatements)
-            throw new IllegalStateException(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedThreadLocalStatements));
+            throw new AssertionError(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedThreadLocalStatements));
         if (executedThreadLocalStatements < minAllowedStatements)
-            throw new IllegalStateException(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedThreadLocalStatements));
+            throw new AssertionError(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedThreadLocalStatements));
         return this;
     }
 
@@ -76,23 +76,23 @@ public class RecordedQueries {
         return verifyNotMoreThanOtherThreads(1);
     }
 
-    public RecordedQueries verifyNotMoreThanOtherThreads(int allowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyNotMoreThanOtherThreads(int allowedStatements) throws AssertionError {
         return verifyRangeOtherThreads(0, allowedStatements);
     }
 
-    public RecordedQueries verifyExactOtherThreads(int allowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyExactOtherThreads(int allowedStatements) throws AssertionError {
         return verifyRangeOtherThreads(allowedStatements, allowedStatements);
     }
 
-    public RecordedQueries verifyNotLessThanOtherThreads(int allowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyNotLessThanOtherThreads(int allowedStatements) throws AssertionError {
         return verifyRangeOtherThreads(allowedStatements, Integer.MAX_VALUE);
     }
 
-    public RecordedQueries verifyRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) throws IllegalStateException {
+    public RecordedQueries verifyRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         if (executedOtherThreadsStatements > maxAllowedStatements)
-            throw new IllegalStateException(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedOtherThreadsStatements));
+            throw new AssertionError(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedOtherThreadsStatements));
         if (executedOtherThreadsStatements < minAllowedStatements)
-            throw new IllegalStateException(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedOtherThreadsStatements));
+            throw new AssertionError(String.format("Allowed not less than %d statements in current threads, but actually caught %d statements", minAllowedStatements, executedOtherThreadsStatements));
         return this;
     }
 
