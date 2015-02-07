@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class StatementInvocationHandler implements InvocationHandler {
+class StatementInvocationHandler implements InvocationHandler {
 
     private final Object delegate;
 

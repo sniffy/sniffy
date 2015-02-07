@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 
-public class ConnectionInvocationHandler implements InvocationHandler {
+class ConnectionInvocationHandler implements InvocationHandler {
 
     private final Connection delegate;
 
@@ -21,8 +21,6 @@ public class ConnectionInvocationHandler implements InvocationHandler {
             result = method.invoke(delegate, args);
         } catch (InvocationTargetException e) {
             throw e.getTargetException();
-        } catch (Exception e) {
-            throw e;
         }
         if ("createStatement".equals(method.getName())) {
             return Proxy.newProxyInstance(

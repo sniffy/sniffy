@@ -9,7 +9,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class QueryCounterTest {
+public class ThreadLocalQueryCounterTest {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -23,14 +23,14 @@ public class QueryCounterTest {
     }
 
     @Test
-    @AllowedQueries(1)
+    @AllowedQueries(value = 1, threadLocal = true)
     public void testAllowedOneQuery() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
     }
 
     @Test
-    @NotAllowedQueries
+    @NotAllowedQueries(threadLocal = true)
     public void testNotAllowedQueries() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
@@ -38,7 +38,7 @@ public class QueryCounterTest {
     }
 
     @Test
-    @AllowedQueries(1)
+    @AllowedQueries(value = 1, threadLocal = true)
     public void testAllowedOneQueryExecutedTwo() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
@@ -47,7 +47,7 @@ public class QueryCounterTest {
     }
 
     @Test
-    @AllowedQueries(min = 1)
+    @AllowedQueries(min = 1, threadLocal = true)
     public void testAllowedMinOneQueryExecutedTwo() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
@@ -55,7 +55,7 @@ public class QueryCounterTest {
     }
 
     @Test
-    @AllowedQueries(min = 2)
+    @AllowedQueries(min = 2, threadLocal = true)
     public void testAllowedMinTwoQueriesExecutedOne() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
@@ -63,7 +63,7 @@ public class QueryCounterTest {
     }
 
     @Test
-    @AllowedQueries(exact = 2)
+    @AllowedQueries(exact = 2, threadLocal = true)
     public void testAllowedExactTwoQueriesExecutedTwo() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
@@ -71,7 +71,7 @@ public class QueryCounterTest {
     }
 
     @Test
-    @AllowedQueries(exact = 2)
+    @AllowedQueries(exact = 2, threadLocal = true)
     public void testAllowedExactTwoQueriesExecutedThree() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
@@ -81,7 +81,7 @@ public class QueryCounterTest {
     }
 
     @Test
-    @AllowedQueries(2)
+    @AllowedQueries(value = 2, threadLocal = true)
     public void testAllowedTwoQueries() throws SQLException {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
         connection.createStatement().execute("SELECT 1 FROM DUAL");
