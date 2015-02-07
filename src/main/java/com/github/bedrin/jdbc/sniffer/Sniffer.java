@@ -102,7 +102,7 @@ public class Sniffer {
      * of {@link #reset() reset} method or to any of verify methods family
      * @param allowedStatements number of statements which could have been executed previously since
      *                          last {@link #reset() reset} call
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.3
      */
     public static void verifyExact(int allowedStatements) throws AssertionError {
@@ -114,7 +114,7 @@ public class Sniffer {
      * of {@link #reset() reset} method or to any of verify methods family
      * @param allowedStatements minimum number of statements which could have been executed previously since
      *                          last {@link #reset() reset} call
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.3
      */
     public static void verifyNotLessThan(int allowedStatements) throws AssertionError {
@@ -128,7 +128,7 @@ public class Sniffer {
      *                             last {@link #reset() reset} call
      * @param maxAllowedStatements maximum number of statements which could have been executed previously since
      *                             last {@link #reset() reset} call
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.3
      */
     public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
@@ -150,7 +150,7 @@ public class Sniffer {
          * When {@link com.github.bedrin.jdbc.sniffer.Sniffer#execute(com.github.bedrin.jdbc.sniffer.Sniffer.Executable)}
          * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
          * {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
-         * @throws Exception
+         * @throws Exception code under test can throw any exception
          */
         void execute() throws Exception;
 
@@ -201,6 +201,7 @@ public class Sniffer {
      * Execute the {@link Callable#call()} method, record the SQL queries
      * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueriesWithValue} object with stats
      * @param callable code to test
+     * @param <T> type of return value
      * @return statistics on executed queries
      * @throws Exception if underlying code under test throws an Exception
      */

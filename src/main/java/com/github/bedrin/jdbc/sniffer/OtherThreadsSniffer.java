@@ -74,7 +74,7 @@ public class OtherThreadsSniffer {
      * the last call of {@link #reset() reset} method or to any of verify methods family
      * @param allowedStatements number of statements which could have been executed previously since
      *                          last {@link #reset() reset} call
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      */
     public static void verifyExact(int allowedStatements) throws AssertionError {
@@ -86,7 +86,7 @@ public class OtherThreadsSniffer {
      * the last call of {@link #reset() reset} method or to any of verify methods family
      * @param allowedStatements minimum number of statements which could have been executed previously since
      *                          last {@link #reset() reset} call
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      */
     public static void verifyNotLessThan(int allowedStatements) throws AssertionError {
@@ -101,7 +101,7 @@ public class OtherThreadsSniffer {
      *                             last {@link #reset() reset} call
      * @param maxAllowedStatements maximum number of statements which could have been executed previously since
      *                             last {@link #reset() reset} call
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      */
     public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
