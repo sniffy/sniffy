@@ -49,7 +49,7 @@ public class RecordedQueries<C extends RecordedQueries<C>> {
     /**
      * Verifies that exactly {@code allowedStatements} queries has been executed during the observed period
      * @param allowedStatements number of statements which could have been executed during the observed period
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      * @return self for the chaining purposes
      */
@@ -72,7 +72,7 @@ public class RecordedQueries<C extends RecordedQueries<C>> {
      * executed during the observed period
      * @param minAllowedStatements minimum number of statements which could have been executed during the observed period
      * @param maxAllowedStatements maximum number of statements which could have been executed during the observed period
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      * @return self for the chaining purposes
      */
@@ -118,7 +118,7 @@ public class RecordedQueries<C extends RecordedQueries<C>> {
     /**
      * Verifies that exactly {@code allowedStatements} queries has been executed by current thread during the observed period
      * @param allowedStatements number of statements which could have been executed during the observed period
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      * @return self for the chaining purposes
      */
@@ -141,7 +141,7 @@ public class RecordedQueries<C extends RecordedQueries<C>> {
      * executed by current thread during the observed period
      * @param minAllowedStatements minimum number of statements which could have been executed during the observed period
      * @param maxAllowedStatements maximum number of statements which could have been executed during the observed period
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      * @return self for the chaining purposes
      */
@@ -189,7 +189,7 @@ public class RecordedQueries<C extends RecordedQueries<C>> {
      * Verifies that exactly {@code allowedStatements} queries has been executed in all threads except current
      * during the observed period
      * @param allowedStatements number of statements which could have been executed during the observed period
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      * @return self for the chaining purposes
      */
@@ -213,7 +213,7 @@ public class RecordedQueries<C extends RecordedQueries<C>> {
      * executed in all threads except current during the observed period
      * @param minAllowedStatements minimum number of statements which could have been executed during the observed period
      * @param maxAllowedStatements maximum number of statements which could have been executed during the observed period
-     * @throws AssertionError
+     * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      * @return self for the chaining purposes
      */
