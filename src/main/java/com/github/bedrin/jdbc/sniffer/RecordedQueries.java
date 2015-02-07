@@ -1,33 +1,68 @@
 package com.github.bedrin.jdbc.sniffer;
 
+/**
+ * Holds immutable counters with a number of queries executed by given thread, other threads and all threads all together
+ */
 public class RecordedQueries {
 
     private final int executedStatements;
     private final int executedThreadLocalStatements;
     private final int executedOtherThreadsStatements;
 
-    public RecordedQueries(int executedStatements, int executedThreadLocalStatements, int executedOtherThreadsStatements) {
+    RecordedQueries(int executedStatements, int executedThreadLocalStatements, int executedOtherThreadsStatements) {
         this.executedStatements = executedStatements;
         this.executedThreadLocalStatements = executedThreadLocalStatements;
         this.executedOtherThreadsStatements = executedOtherThreadsStatements;
     }
 
+    /**
+     * Verifies that no queries has been executed during the observed period
+     * @throws AssertionError if actual number of executed statements exceeded 0
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public RecordedQueries verifyNotMore() {
         return verifyNotMoreThan(0);
     }
 
+    /**
+     * Verifies that at most 1 query has been executed during the observed period
+     * @throws AssertionError if actual number of executed statements exceeded 1
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public RecordedQueries verifyNotMoreThanOne() {
         return verifyNotMoreThan(1);
     }
 
+    /**
+     * Verifies that at most {@code allowedStatements} query has been executed during the observed period
+     * @param allowedStatements maximum number of statements which could have been executed during the observed period
+     * @throws AssertionError if actual number of executed statements exceeded {@code allowedStatements}
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public RecordedQueries verifyNotMoreThan(int allowedStatements) throws AssertionError {
         return verifyRange(0, allowedStatements);
     }
 
+    /**
+     * Verifies that exactly {@code allowedStatements} queries has been executed during the observed period
+     * @param allowedStatements number of statements which could have been executed during the observed period
+     * @throws AssertionError
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public RecordedQueries verifyExact(int allowedStatements) throws AssertionError {
         return verifyRange(allowedStatements, allowedStatements);
     }
 
+    /**
+     * Verifies that at least {@code allowedStatements} queries has been executed during the observed period
+     * @param allowedStatements minimum number of statements which could have been executed during the observed period
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public RecordedQueries verifyNotLessThan(int allowedStatements) throws AssertionError {
         return verifyRange(allowedStatements, Integer.MAX_VALUE);
     }

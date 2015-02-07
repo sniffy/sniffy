@@ -4,7 +4,7 @@ public class RecordedQueriesWithValue<T> extends RecordedQueries {
 
     private final T value;
 
-    public RecordedQueriesWithValue(T value, int executedStatements, int executedThreadLocalStatements, int executedOtherThreadsStatements) {
+    RecordedQueriesWithValue(T value, int executedStatements, int executedThreadLocalStatements, int executedOtherThreadsStatements) {
         super(executedStatements, executedThreadLocalStatements, executedOtherThreadsStatements);
         this.value = value;
     }

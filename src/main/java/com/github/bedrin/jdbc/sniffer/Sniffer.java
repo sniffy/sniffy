@@ -114,7 +114,6 @@ public class Sniffer {
      * of {@link #reset() reset} method or to any of verify methods family
      * @param allowedStatements minimum number of statements which could have been executed previously since
      *                          last {@link #reset() reset} call
-     * @param allowedStatements
      * @throws AssertionError
      * @since 1.3
      */
