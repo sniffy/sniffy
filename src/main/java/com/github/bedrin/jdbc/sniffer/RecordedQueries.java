@@ -67,6 +67,15 @@ public class RecordedQueries<C extends RecordedQueries<C>> {
         return verifyRange(allowedStatements, Integer.MAX_VALUE);
     }
 
+    /**
+     * Verifies that at least {@code minAllowedStatements} queries and at most {@code maxAllowedStatements} has been
+     * executed during the observed period
+     * @param minAllowedStatements minimum number of statements which could have been executed during the observed period
+     * @param maxAllowedStatements maximum number of statements which could have been executed during the observed period
+     * @throws AssertionError
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public C verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         if (executedStatements > maxAllowedStatements)
             throw new AssertionError(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, executedStatements));
@@ -75,26 +84,67 @@ public class RecordedQueries<C extends RecordedQueries<C>> {
         return self();
     }
 
+    /**
+     * Verifies that no queries has been executed by current thread during the observed period
+     * @throws AssertionError if actual number of executed statements exceeded 0
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public C verifyNotMoreThreadLocal() {
         return verifyNotMoreThanThreadLocal(0);
     }
 
+    /**
+     * Verifies that at most 1 query has been executed by current thread during the observed period
+     * @throws AssertionError if actual number of executed statements exceeded 1
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public C verifyNotMoreThanOneThreadLocal() {
         return verifyNotMoreThanThreadLocal(1);
     }
 
+    /**
+     * Verifies that at most {@code allowedStatements} query has been executed by current thread during the observed period
+     * @param allowedStatements maximum number of statements which could have been executed during the observed period
+     * @throws AssertionError if actual number of executed statements exceeded {@code allowedStatements}
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public C verifyNotMoreThanThreadLocal(int allowedStatements) throws AssertionError {
         return verifyRangeThreadLocal(0, allowedStatements);
     }
 
+    /**
+     * Verifies that exactly {@code allowedStatements} queries has been executed by current thread during the observed period
+     * @param allowedStatements number of statements which could have been executed during the observed period
+     * @throws AssertionError
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public C verifyExactThreadLocal(int allowedStatements) throws AssertionError {
         return verifyRangeThreadLocal(allowedStatements, allowedStatements);
     }
 
+    /**
+     * Verifies that at least {@code allowedStatements} queries has been executed by current thread during the observed period
+     * @param allowedStatements minimum number of statements which could have been executed during the observed period
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public C verifyNotLessThanThreadLocal(int allowedStatements) throws AssertionError {
         return verifyRangeThreadLocal(allowedStatements, Integer.MAX_VALUE);
     }
 
+    /**
+     * Verifies that at least {@code minAllowedStatements} queries and at most {@code maxAllowedStatements} has been
+     * executed by current thread during the observed period
+     * @param minAllowedStatements minimum number of statements which could have been executed during the observed period
+     * @param maxAllowedStatements maximum number of statements which could have been executed during the observed period
+     * @throws AssertionError
+     * @since 1.4
+     * @return self for the chaining purposes
+     */
     public C verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         if (executedThreadLocalStatements > maxAllowedStatements)
             throw new AssertionError(String.format("Allowed not more than %d statements in current threads, but actually caught %d statements", maxAllowedStatements, executedThreadLocalStatements));
