@@ -51,6 +51,7 @@ public class Sniffer {
      * @return the number of executed queries since the last call of {@link #reset() reset} method or to any of verify
      * methods family like {@link #verifyNotMore() verifyNotMore}, {@link #verifyNotMoreThanOne() verifyNotMoreThanOne}
      * or {@link #verifyNotMoreThan(int) verifyNotMoreThan}
+     * @since 1.0
      */
     public static int executedStatements() {
         return INSTANCE.executedStatementsImpl();
@@ -58,6 +59,7 @@ public class Sniffer {
 
     /**
      * Resets the queries counter to 0
+     * @since 1.0
      */
     public static void reset() {
         INSTANCE.resetImpl();
@@ -67,6 +69,7 @@ public class Sniffer {
      * Verifies that no queries has been executed since the last call of {@link #reset() reset} method or to any of verify
      * methods family
      * @throws IllegalStateException if actual number of executed statements exceeded 0
+     * @since 1.0
      */
     public static void verifyNotMore() {
         verifyNotMoreThan(0);
@@ -76,6 +79,7 @@ public class Sniffer {
      * Verifies that at most 1 query has been executed since the last call of {@link #reset() reset} method or to any of verify
      * methods family
      * @throws IllegalStateException if actual number of executed statements exceeded 1
+     * @since 1.0
      */
     public static void verifyNotMoreThanOne() {
         verifyNotMoreThan(1);
@@ -87,14 +91,17 @@ public class Sniffer {
      * @param allowedStatements maximum number of statements which could have been executed previously since
      *                          last {@link #reset() resetC} call
      * @throws IllegalStateException if actual number of executed statements exceeded {@code allowedStatements}
+     * @since 1.0
      */
     public static void verifyNotMoreThan(int allowedStatements) throws IllegalStateException {
         verifyRange(0, allowedStatements);
     }
 
     /**
-     *
-     * @param allowedStatements
+     * Verifies that exactly {@code allowedStatements} queries has been executed since the last call
+     * of {@link #reset() reset} method or to any of verify methods family
+     * @param allowedStatements number of statements which could have been executed previously since
+     *                          last {@link #reset() reset} call
      * @throws IllegalStateException
      * @since 1.3
      */
@@ -103,7 +110,10 @@ public class Sniffer {
     }
 
     /**
-     *
+     * Verifies that at least {@code allowedStatements} queries has been executed since the last call
+     * of {@link #reset() reset} method or to any of verify methods family
+     * @param allowedStatements minimum number of statements which could have been executed previously since
+     *                          last {@link #reset() reset} call
      * @param allowedStatements
      * @throws IllegalStateException
      * @since 1.3
@@ -113,9 +123,12 @@ public class Sniffer {
     }
 
     /**
-     *
-     * @param minAllowedStatements
-     * @param maxAllowedStatements
+     * Verifies that at least {@code minAllowedStatements} queries and at most {@code maxAllowedStatements} has been
+     * executed since the last call of {@link #reset() reset} method or to any of verify methods family
+     * @param minAllowedStatements minimum number of statements which could have been executed previously since
+     *                             last {@link #reset() reset} call
+     * @param maxAllowedStatements maximum number of statements which could have been executed previously since
+     *                             last {@link #reset() reset} call
      * @throws IllegalStateException
      * @since 1.3
      */
@@ -128,10 +141,29 @@ public class Sniffer {
         reset();
     }
 
+    /**
+     * Executable interface is similar to {@link java.lang.Runnable} but it allows throwing {@link java.lang.Exception}
+     * from it's {@link #execute()} method
+     */
     public static interface Executable {
+
+        /**
+         * When {@link com.github.bedrin.jdbc.sniffer.Sniffer#execute(com.github.bedrin.jdbc.sniffer.Sniffer.Executable)}
+         * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
+         * {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
+         * @throws Exception
+         */
         void execute() throws Exception;
+
     }
 
+    /**
+     * Execute the {@link com.github.bedrin.jdbc.sniffer.Sniffer.Executable#execute()} method, record the SQL queries
+     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
+     * @param executable code to test
+     * @return statistics on executed queries
+     * @throws RuntimeException if underlying code under test throws an Exception
+     */
     public static RecordedQueries execute(Executable executable) {
         int queries = executedStatements();
         int tlQueries = ThreadLocalSniffer.executedStatements();
@@ -148,6 +180,12 @@ public class Sniffer {
         );
     }
 
+    /**
+     * Execute the {@link Runnable#run()} method, record the SQL queries
+     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
+     * @param runnable code to test
+     * @return statistics on executed queries
+     */
     public static RecordedQueries run(Runnable runnable) {
         int queries = executedStatements();
         int tlQueries = ThreadLocalSniffer.executedStatements();
@@ -160,6 +198,13 @@ public class Sniffer {
         );
     }
 
+    /**
+     * Execute the {@link Callable#call()} method, record the SQL queries
+     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueriesWithValue} object with stats
+     * @param callable code to test
+     * @return statistics on executed queries
+     * @throws Exception if underlying code under test throws an Exception
+     */
     public static <T> RecordedQueriesWithValue<T> call(Callable<T> callable) throws Exception {
         int queries = executedStatements();
         int tlQueries = ThreadLocalSniffer.executedStatements();

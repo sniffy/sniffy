@@ -77,7 +77,7 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      * @param allowedStatements number of statements which could have been executed previously since
      *                          last {@link #reset() reset} call
      * @throws IllegalStateException
-     * @since 1.4
+     * @since 1.3
      */
     public static void verifyExact(int allowedStatements) throws IllegalStateException {
         verifyRange(allowedStatements, allowedStatements);
