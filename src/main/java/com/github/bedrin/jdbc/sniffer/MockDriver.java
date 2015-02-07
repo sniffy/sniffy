@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 
 public class MockDriver implements Driver {
 
-    private final static String DRIVER_PREFIX = "sniffer:";
+
 
     public MockDriver() {
         try {
@@ -37,13 +37,13 @@ public class MockDriver implements Driver {
 
     private static String extractOriginUrl(String url) {
         if (null == url) return null;
-        if (url.startsWith(DRIVER_PREFIX)) return url.substring(DRIVER_PREFIX.length());
+        if (url.startsWith(Constants.DRIVER_PREFIX)) return url.substring(Constants.DRIVER_PREFIX.length());
         return url;
     }
 
     @Override
     public boolean acceptsURL(String url) throws SQLException {
-        return null != url && url.startsWith(DRIVER_PREFIX);
+        return null != url && url.startsWith(Constants.DRIVER_PREFIX);
     }
 
     @Override
@@ -54,12 +54,12 @@ public class MockDriver implements Driver {
 
     @Override
     public int getMajorVersion() {
-        return 1;
+        return Constants.MAJOR_VERSION;
     }
 
     @Override
     public int getMinorVersion() {
-        return 4;
+        return Constants.MINOR_VERSION;
     }
 
     @Override
