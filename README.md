@@ -1,7 +1,7 @@
 JDBC Sniffer
 ============
 [![CI Status](https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=develop)](https://travis-ci.org/bedrin/jdbc-sniffer)
-[![Coverage Status](https://coveralls.io/repos/bedrin/jdbc-sniffer/badge.png?branch=develop)](https://coveralls.io/r/bedrin/jdbc-sniffer?branch=develop)
+[![Coverage Status](https://coveralls.io/repos/bedrin/jdbc-sniffer/badge.png?branch=master)](https://coveralls.io/r/bedrin/jdbc-sniffer?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer)
 
 JDBC Sniffer counts the number of executed SQL queries and provides an API for validating it
