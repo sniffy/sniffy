@@ -127,4 +127,4 @@ public void testFunctionalApi() throws SQLException {
 Building
 ============
 JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and type `mvn install`
-JDK8 is required only for building the project - once it's built, you can use JBC sniffer with JRE 1.6+
+JDK8 is required only for building the project - once it's built, you can use JDBC sniffer with JRE 1.6+
