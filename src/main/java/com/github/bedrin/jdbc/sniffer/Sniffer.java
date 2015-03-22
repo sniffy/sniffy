@@ -61,6 +61,7 @@ public class Sniffer {
      * Resets the queries counter to 0
      * @since 1.0
      */
+    @Deprecated
     public static void reset() {
         INSTANCE.resetImpl();
     }
@@ -71,6 +72,7 @@ public class Sniffer {
      * @throws AssertionError if actual number of executed statements exceeded 0
      * @since 1.0
      */
+    @Deprecated
     public static void verifyNotMore() {
         verifyNotMoreThan(0);
     }
@@ -81,6 +83,7 @@ public class Sniffer {
      * @throws AssertionError if actual number of executed statements exceeded 1
      * @since 1.0
      */
+    @Deprecated
     public static void verifyNotMoreThanOne() {
         verifyNotMoreThan(1);
     }
@@ -93,6 +96,7 @@ public class Sniffer {
      * @throws AssertionError if actual number of executed statements exceeded {@code allowedStatements}
      * @since 1.0
      */
+    @Deprecated
     public static void verifyNotMoreThan(int allowedStatements) throws AssertionError {
         verifyRange(0, allowedStatements);
     }
@@ -105,6 +109,7 @@ public class Sniffer {
      * @throws AssertionError if illegal number of queries were performed
      * @since 1.3
      */
+    @Deprecated
     public static void verifyExact(int allowedStatements) throws AssertionError {
         verifyRange(allowedStatements, allowedStatements);
     }
@@ -117,6 +122,7 @@ public class Sniffer {
      * @throws AssertionError if illegal number of queries were performed
      * @since 1.3
      */
+    @Deprecated
     public static void verifyNotLessThan(int allowedStatements) throws AssertionError {
         verifyRange(allowedStatements, Integer.MAX_VALUE);
     }
@@ -131,6 +137,7 @@ public class Sniffer {
      * @throws AssertionError if illegal number of queries were performed
      * @since 1.3
      */
+    @Deprecated
     public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         int actualStatements = executedStatements();
         if (actualStatements > maxAllowedStatements)
