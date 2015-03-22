@@ -18,7 +18,7 @@ public class OtherThreadsSniffer {
         Sniffer currentThreadSniffer = ThreadLocalSniffer.getSniffer();
         for (Sniffer sniffer : Sniffer.getThreadLocalSniffers()) {
             if (sniffer != currentThreadSniffer) {
-                executedStatements += sniffer.executedStatementsImpl();
+                executedStatements += sniffer.executedThreadLocalStatementsImpl();
             }
         }
         return executedStatements;

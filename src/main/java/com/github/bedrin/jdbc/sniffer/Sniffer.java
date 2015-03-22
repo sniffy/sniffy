@@ -15,14 +15,12 @@ public class Sniffer {
 
     private final AtomicInteger counter = new AtomicInteger();
 
-    private final static Sniffer INSTANCE = new Sniffer();
+    private volatile ExpectedQueries expectedQueries = new ExpectedQueries(this, 0, 0, 0);
 
-    int executedStatementsImpl() {
+    private static final Sniffer INSTANCE = new Sniffer();
+
+    int totalExecutedStatementsImpl() {
         return counter.get();
-    }
-
-    void resetImpl() {
-        counter.set(0);
     }
 
     int executeStatementImpl() {
@@ -47,12 +45,32 @@ public class Sniffer {
         ThreadLocalSniffer.executeStatement();
     }
 
+    static int totalExecutedStatements() {
+        return null == INSTANCE ? 0 : INSTANCE.totalExecutedStatementsImpl();
+    }
+
+    @Deprecated
+    int executedStatementsImpl() {
+        return expectedQueries.executedStatements();
+    }
+
+    @Deprecated
+    int executedThreadLocalStatementsImpl() {
+        return expectedQueries.executedThreadLocalStatements();
+    }
+
+    @Deprecated
+    ExpectedQueries resetImpl() {
+        return expectedQueries = new ExpectedQueries(this);
+    }
+
     /**
      * @return the number of executed queries since the last call of {@link #reset() reset} method or to any of verify
      * methods family like {@link #verifyNotMore() verifyNotMore}, {@link #verifyNotMoreThanOne() verifyNotMoreThanOne}
      * or {@link #verifyNotMoreThan(int) verifyNotMoreThan}
      * @since 1.0
      */
+    @Deprecated
     public static int executedStatements() {
         return INSTANCE.executedStatementsImpl();
     }
@@ -62,8 +80,8 @@ public class Sniffer {
      * @since 1.0
      */
     @Deprecated
-    public static void reset() {
-        INSTANCE.resetImpl();
+    public static ExpectedQueries reset() {
+        return INSTANCE.resetImpl();
     }
 
     /**
@@ -73,8 +91,8 @@ public class Sniffer {
      * @since 1.0
      */
     @Deprecated
-    public static void verifyNotMore() {
-        verifyNotMoreThan(0);
+    public static ExpectedQueries verifyNotMore() {
+        return verifyNotMoreThan(0);
     }
 
     /**
@@ -84,8 +102,8 @@ public class Sniffer {
      * @since 1.0
      */
     @Deprecated
-    public static void verifyNotMoreThanOne() {
-        verifyNotMoreThan(1);
+    public static ExpectedQueries verifyNotMoreThanOne() {
+        return verifyNotMoreThan(1);
     }
 
     /**
@@ -97,8 +115,8 @@ public class Sniffer {
      * @since 1.0
      */
     @Deprecated
-    public static void verifyNotMoreThan(int allowedStatements) throws AssertionError {
-        verifyRange(0, allowedStatements);
+    public static ExpectedQueries verifyNotMoreThan(int allowedStatements) throws AssertionError {
+        return verifyRange(0, allowedStatements);
     }
 
     /**
@@ -110,8 +128,8 @@ public class Sniffer {
      * @since 1.3
      */
     @Deprecated
-    public static void verifyExact(int allowedStatements) throws AssertionError {
-        verifyRange(allowedStatements, allowedStatements);
+    public static ExpectedQueries verifyExact(int allowedStatements) throws AssertionError {
+        return verifyRange(allowedStatements, allowedStatements);
     }
 
     /**
@@ -123,8 +141,8 @@ public class Sniffer {
      * @since 1.3
      */
     @Deprecated
-    public static void verifyNotLessThan(int allowedStatements) throws AssertionError {
-        verifyRange(allowedStatements, Integer.MAX_VALUE);
+    public static ExpectedQueries verifyNotLessThan(int allowedStatements) throws AssertionError {
+        return verifyRange(allowedStatements, Integer.MAX_VALUE);
     }
 
     /**
@@ -138,13 +156,9 @@ public class Sniffer {
      * @since 1.3
      */
     @Deprecated
-    public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
-        int actualStatements = executedStatements();
-        if (actualStatements > maxAllowedStatements)
-            throw new AssertionError(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, actualStatements));
-        if (actualStatements < minAllowedStatements)
-            throw new AssertionError(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, actualStatements));
-        reset();
+    public static ExpectedQueries verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
+        INSTANCE.expectedQueries.verifyRange(minAllowedStatements, maxAllowedStatements);
+        return reset();
     }
 
     /**
@@ -193,15 +207,7 @@ public class Sniffer {
      * @return statistics on executed queries
      */
     public static RecordedQueries run(Runnable runnable) {
-        int queries = executedStatements();
-        int tlQueries = ThreadLocalSniffer.executedStatements();
-        int otQueries = OtherThreadsSniffer.executedStatements();
-        runnable.run();
-        return new RecordedQueries(
-                executedStatements() - queries,
-                ThreadLocalSniffer.executedStatements() - tlQueries,
-                OtherThreadsSniffer.executedStatements() - otQueries
-        );
+        return new ExpectedQueries(INSTANCE).run(runnable);
     }
 
     /**

@@ -27,8 +27,18 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      * {@link #verifyNotMoreThanOne() verifyNotMoreThanOne} or {@link #verifyNotMoreThan(int) verifyNotMoreThan}
      * @since 1.0
      */
+    public static int totalExecutedStatements() {
+        return getSniffer().totalExecutedStatementsImpl();
+    }
+
+    /**
+     * @return the number of executed queries in current thread since the last call of
+     * {@link #reset() reset} method or to any of verify methods family like {@link #verifyNotMore() verifyNotMore},
+     * {@link #verifyNotMoreThanOne() verifyNotMoreThanOne} or {@link #verifyNotMoreThan(int) verifyNotMoreThan}
+     * @since 1.0
+     */
     public static int executedStatements() {
-        return getSniffer().executedStatementsImpl();
+        return getSniffer().executedThreadLocalStatementsImpl();
     }
 
     /**
