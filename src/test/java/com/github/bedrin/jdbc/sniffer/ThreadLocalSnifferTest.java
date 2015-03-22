@@ -12,7 +12,7 @@ public class ThreadLocalSnifferTest {
     public void testResetImpl() throws Exception {
         ThreadLocalSniffer.reset();
         assertEquals(0, ThreadLocalSniffer.executedStatements());
-        ThreadLocalSniffer.executeStatement();
+        Sniffer.executeStatement();
         ThreadLocalSniffer.reset();
         assertEquals(0, ThreadLocalSniffer.executedStatements());
     }
@@ -21,7 +21,7 @@ public class ThreadLocalSnifferTest {
     public void testExecuteStatement() throws Exception {
         ThreadLocalSniffer.reset();
         assertEquals(0, ThreadLocalSniffer.executedStatements());
-        ThreadLocalSniffer.executeStatement();
+        Sniffer.executeStatement();
         assertEquals(1, ThreadLocalSniffer.executedStatements());
         Sniffer.executeStatement();
         assertEquals(2, ThreadLocalSniffer.executedStatements());

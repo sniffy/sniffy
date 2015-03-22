@@ -40,12 +40,6 @@ public class OtherThreadsSniffer {
      */
     @Deprecated
     public static void reset() {
-        Sniffer currentThreadSniffer = ThreadLocalSniffer.getSniffer();
-        for (Sniffer sniffer : Sniffer.getThreadLocalSniffers()) {
-            if (sniffer != currentThreadSniffer) {
-                sniffer.resetImpl();
-            }
-        }
         checkpoint = executedStatements(false);
     }
 
