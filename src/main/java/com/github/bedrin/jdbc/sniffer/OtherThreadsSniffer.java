@@ -7,6 +7,9 @@ package com.github.bedrin.jdbc.sniffer;
  */
 public class OtherThreadsSniffer {
 
+    @Deprecated
+    private static volatile int checkpoint = 0;
+
     /**
      * @return the number of executed queries in all threads except current since the last call of
      * {@link #reset() reset} method or to any of verify methods family like {@link #verifyNotMore() verifyNotMore},
@@ -17,15 +20,18 @@ public class OtherThreadsSniffer {
         return executedStatements(true);
     }
 
+    /**
+     * @since 2.0
+     */
     public static int executedStatements(boolean sinceLastReset) {
         int executedStatements = 0;
         Sniffer currentThreadSniffer = ThreadLocalSniffer.getSniffer();
         for (Sniffer sniffer : Sniffer.getThreadLocalSniffers()) {
             if (sniffer != currentThreadSniffer) {
-                executedStatements += sniffer.executedStatementsImpl(sinceLastReset);
+                executedStatements += sniffer.executedStatementsImpl(false);
             }
         }
-        return executedStatements;
+        return sinceLastReset ? executedStatements - checkpoint : executedStatements;
     }
 
     /**
@@ -40,6 +46,7 @@ public class OtherThreadsSniffer {
                 sniffer.resetImpl();
             }
         }
+        checkpoint = executedStatements(false);
     }
 
     /**
