@@ -1,5 +1,6 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import junit.framework.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -115,6 +116,21 @@ public class SnifferTest {
             Sniffer.executeStatement();
             return "test";
         }).verifyNotMoreThanOne().getValue());
+    }
+
+    @Test
+    public void testTryWithResourceApi() throws Exception {
+        try {
+            try (ExpectedQueries ignored = Sniffer.expectNoMoreQueries()) {
+                Sniffer.executeStatement();
+                throw new RuntimeException("This is a test exception");
+            }
+        } catch (RuntimeException e) {
+            assertEquals("This is a test exception", e.getMessage());
+            assertNotNull(e.getSuppressed());
+            assertEquals(1, e.getSuppressed().length);
+            assertTrue(AssertionError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
+        }
     }
 
 }

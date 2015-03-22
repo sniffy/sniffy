@@ -73,6 +73,13 @@ public class Sniffer {
     }
 
     /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNoMoreQueries() {
+        return new ExpectedQueries().expectNoMoreQueries();
+    }
+
+    /**
      * Resets the queries counter to 0
      * @since 1.0
      */
