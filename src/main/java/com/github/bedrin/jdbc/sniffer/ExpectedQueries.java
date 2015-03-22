@@ -8,11 +8,8 @@ import java.util.List;
 
 public class ExpectedQueries implements Closeable {
 
-    private final Sniffer sniffer;
-
     private final int initialQueries;
     private final int initialThreadLocalQueries;
-    private final int initialOtherThreadsQueries;
 
     private final static Method addSuppressedMethod = getAddSuppressedMethod();
 
@@ -25,24 +22,13 @@ public class ExpectedQueries implements Closeable {
         }
     }
 
-    public ExpectedQueries(Sniffer sniffer) {
-        this(sniffer, Sniffer.totalExecutedStatements(), ThreadLocalSniffer.totalExecutedStatements(), OtherThreadsSniffer.executedStatements());
+    public ExpectedQueries() {
+        this(Sniffer.executedStatements(false), ThreadLocalSniffer.executedStatements(false));
     }
 
-    public ExpectedQueries(Sniffer sniffer, int initialQueries, int initialThreadLocalQueries, int initialOtherThreadsQueries) {
-        this.sniffer = sniffer;
+    public ExpectedQueries(int initialQueries, int initialThreadLocalQueries) {
         this.initialQueries = initialQueries;
         this.initialThreadLocalQueries = initialThreadLocalQueries;
-        this.initialOtherThreadsQueries = initialOtherThreadsQueries;
-    }
-
-    public int executedStatements() {
-        return sniffer.totalExecutedStatementsImpl() - initialQueries;
-    }
-
-    public int executedThreadLocalStatements() {
-        return ThreadLocalSniffer.totalExecutedStatements() - initialThreadLocalQueries;
-        //return sniffer.totalExecutedStatementsImpl() - initialThreadLocalQueries;
     }
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
@@ -148,8 +134,8 @@ public class ExpectedQueries implements Closeable {
 
         verify();
         return new RecordedQueries(
-                sniffer.totalExecutedStatementsImpl() - initialQueries,
-                ThreadLocalSniffer.totalExecutedStatements() - initialThreadLocalQueries,
+                Sniffer.executedStatements(false) - initialQueries,
+                ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries,
                 OtherThreadsSniffer.executedStatements() - initialThreadLocalQueries
         );
     }
@@ -190,7 +176,7 @@ public class ExpectedQueries implements Closeable {
 
         @Override
         public void validate() throws AssertionError {
-            int numQueries = sniffer.totalExecutedStatementsImpl() - initialQueries;
+            int numQueries = Sniffer.executedStatements(false) - initialQueries;
             if (numQueries > maximumQueries || numQueries < minimumQueries)
                 throw new AssertionError(String.format(
                         "Disallowed number of executed statements; expected between %d and %d; observed %d",

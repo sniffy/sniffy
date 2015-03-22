@@ -15,13 +15,7 @@ public class Sniffer {
 
     private final AtomicInteger counter = new AtomicInteger();
 
-    private volatile ExpectedQueries expectedQueries = new ExpectedQueries(this, 0, 0, 0);
-
     private static final Sniffer INSTANCE = new Sniffer();
-
-    int totalExecutedStatementsImpl() {
-        return counter.get();
-    }
 
     int executeStatementImpl() {
         return counter.incrementAndGet();
@@ -45,23 +39,20 @@ public class Sniffer {
         ThreadLocalSniffer.executeStatement();
     }
 
-    static int totalExecutedStatements() {
-        return null == INSTANCE ? 0 : INSTANCE.totalExecutedStatementsImpl();
-    }
-
     @Deprecated
-    int executedStatementsImpl() {
-        return expectedQueries.executedStatements();
-    }
-
+    private volatile int checkpoint = 0;
     @Deprecated
-    int executedThreadLocalStatementsImpl() {
-        return expectedQueries.executedThreadLocalStatements();
+    private volatile ExpectedQueries expectedQueries = new ExpectedQueries(0, 0);
+
+    int executedStatementsImpl(boolean sinceLastReset) {
+        int counter = this.counter.get();
+        return sinceLastReset ? counter - checkpoint : counter;
     }
 
     @Deprecated
     ExpectedQueries resetImpl() {
-        return expectedQueries = new ExpectedQueries(this);
+        checkpoint = executedStatementsImpl(false);
+        return expectedQueries = new ExpectedQueries();
     }
 
     /**
@@ -70,9 +61,15 @@ public class Sniffer {
      * or {@link #verifyNotMoreThan(int) verifyNotMoreThan}
      * @since 1.0
      */
-    @Deprecated
     public static int executedStatements() {
-        return INSTANCE.executedStatementsImpl();
+        return executedStatements(true);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static int executedStatements(boolean sinceLastReset) {
+        return INSTANCE.executedStatementsImpl(sinceLastReset);
     }
 
     /**
@@ -207,7 +204,7 @@ public class Sniffer {
      * @return statistics on executed queries
      */
     public static RecordedQueries run(Runnable runnable) {
-        return new ExpectedQueries(INSTANCE).run(runnable);
+        return new ExpectedQueries().run(runnable);
     }
 
     /**
