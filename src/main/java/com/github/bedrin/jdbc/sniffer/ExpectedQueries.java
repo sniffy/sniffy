@@ -1,27 +1,17 @@
 package com.github.bedrin.jdbc.sniffer;
 
 import java.io.Closeable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+
+import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.addSuppressed;
+import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
 
 public class ExpectedQueries implements Closeable {
 
     private final int initialQueries;
     private final int initialThreadLocalQueries;
-
-    private final static Method addSuppressedMethod = getAddSuppressedMethod();
-
-    private static Method getAddSuppressedMethod() {
-        try {
-            Class<Throwable> throwableClass = Throwable.class;
-            return throwableClass.getMethod("addSuppressed", Throwable.class);
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
-    }
 
     public ExpectedQueries() {
         this(Sniffer.executedStatements(false), ThreadLocalSniffer.executedStatements(false));
@@ -171,32 +161,12 @@ public class ExpectedQueries implements Closeable {
         try {
             verify();
         } catch (AssertionError ae) {
-            if (!addSuppressed(e,ae)) {
+            if (!addSuppressed(e, ae)) {
                 ae.printStackTrace();
             }
         }
-        ExpectedQueries.<RuntimeException>throwAny(e);
+        throwException(e);
         return new RuntimeException(e);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <E extends Throwable> void throwAny(Throwable e) throws E {
-        throw (E)e;
-    }
-
-    private static boolean addSuppressed(Throwable e, Throwable suppressed) {
-        if (null == addSuppressedMethod) {
-            return false;
-        } else {
-            try {
-                addSuppressedMethod.invoke(e, suppressed);
-            } catch (IllegalAccessException iae) {
-                iae.printStackTrace();
-            } catch (InvocationTargetException ite) {
-                ite.printStackTrace();
-            }
-            return true;
-        }
     }
 
     private static interface Expectation {
