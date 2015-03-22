@@ -182,19 +182,7 @@ public class Sniffer {
      * @throws RuntimeException if underlying code under test throws an Exception
      */
     public static RecordedQueries execute(Executable executable) {
-        int queries = executedStatements();
-        int tlQueries = ThreadLocalSniffer.executedStatements();
-        int otQueries = OtherThreadsSniffer.executedStatements();
-        try {
-            executable.execute();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return new RecordedQueries(
-                executedStatements() - queries,
-                ThreadLocalSniffer.executedStatements() - tlQueries,
-                OtherThreadsSniffer.executedStatements() - otQueries
-        );
+        return new ExpectedQueries().execute(executable);
     }
 
     /**
@@ -216,16 +204,7 @@ public class Sniffer {
      * @throws Exception if underlying code under test throws an Exception
      */
     public static <T> RecordedQueriesWithValue<T> call(Callable<T> callable) throws Exception {
-        int queries = executedStatements();
-        int tlQueries = ThreadLocalSniffer.executedStatements();
-        int otQueries = OtherThreadsSniffer.executedStatements();
-        T value = callable.call();
-        return new RecordedQueriesWithValue<T>(
-                value,
-                executedStatements() - queries,
-                ThreadLocalSniffer.executedStatements() - tlQueries,
-                OtherThreadsSniffer.executedStatements() - otQueries
-        );
+        return new ExpectedQueries().call(callable);
     }
 
 }

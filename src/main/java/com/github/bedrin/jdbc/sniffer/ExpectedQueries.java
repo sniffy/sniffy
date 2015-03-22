@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public class ExpectedQueries implements Closeable {
 
@@ -118,26 +119,64 @@ public class ExpectedQueries implements Closeable {
         verify();
     }
 
-    public RecordedQueries run(Runnable runnable) {
+    public RecordedQueries execute(Sniffer.Executable executable) {
         try {
-            runnable.run();
+            executable.execute();
         } catch (Throwable e) {
-            try {
-                verify();
-            } catch (AssertionError ae) {
-                if (!addSuppressed(e,ae)) {
-                    ae.printStackTrace();
-                }
-            }
-            ExpectedQueries.<RuntimeException>throwAny(e);
+            throw verifyAndAddToException(e);
         }
 
         verify();
         return new RecordedQueries(
                 Sniffer.executedStatements(false) - initialQueries,
-                ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries,
-                OtherThreadsSniffer.executedStatements() - initialThreadLocalQueries
+                ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries,
+                OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries
         );
+    }
+
+    public RecordedQueries run(Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Throwable e) {
+            throw verifyAndAddToException(e);
+        }
+
+        verify();
+        return new RecordedQueries(
+                Sniffer.executedStatements(false) - initialQueries,
+                ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries,
+                OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries
+        );
+    }
+
+    public <T> RecordedQueriesWithValue<T> call(Callable<T> callable) {
+        T result;
+
+        try {
+            result = callable.call();
+        } catch (Throwable e) {
+            throw verifyAndAddToException(e);
+        }
+
+        verify();
+        return new RecordedQueriesWithValue<T>(
+                result,
+                Sniffer.executedStatements(false) - initialQueries,
+                ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries,
+                OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries
+        );
+    }
+
+    private RuntimeException verifyAndAddToException(Throwable e) {
+        try {
+            verify();
+        } catch (AssertionError ae) {
+            if (!addSuppressed(e,ae)) {
+                ae.printStackTrace();
+            }
+        }
+        ExpectedQueries.<RuntimeException>throwAny(e);
+        return new RuntimeException(e);
     }
 
     @SuppressWarnings("unchecked")

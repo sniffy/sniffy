@@ -14,11 +14,15 @@ public class OtherThreadsSniffer {
      * @since 1.4
      */
     public static int executedStatements() {
+        return executedStatements(true);
+    }
+
+    public static int executedStatements(boolean sinceLastReset) {
         int executedStatements = 0;
         Sniffer currentThreadSniffer = ThreadLocalSniffer.getSniffer();
         for (Sniffer sniffer : Sniffer.getThreadLocalSniffers()) {
             if (sniffer != currentThreadSniffer) {
-                executedStatements += sniffer.executedStatementsImpl(true);
+                executedStatements += sniffer.executedStatementsImpl(sinceLastReset);
             }
         }
         return executedStatements;
