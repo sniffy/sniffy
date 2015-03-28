@@ -84,6 +84,66 @@ public class ExpectedQueries implements Closeable {
         return this;
     }
 
+    public ExpectedQueries expectNoMoreThreadLocalQueries() {
+        expectations.add(new ThreadLocalExpectation(0, 0));
+        return this;
+    }
+
+    public ExpectedQueries verifyNoMoreThreadLocalQueries() {
+        new ThreadLocalExpectation(0, 0).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectNotMoreThanOneThreadLocal() {
+        expectations.add(new ThreadLocalExpectation(0, 1));
+        return this;
+    }
+
+    public ExpectedQueries verifyNotMoreThanOneThreadLocal() {
+        new ThreadLocalExpectation(0, 1).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectNotMoreThanThreadLocal(int allowedStatements) {
+        expectations.add(new ThreadLocalExpectation(0, allowedStatements));
+        return this;
+    }
+
+    public ExpectedQueries verifyNotMoreThanThreadLocal(int allowedStatements) {
+        new ThreadLocalExpectation(0, allowedStatements).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectExactThreadLocal(int allowedStatements) {
+        expectations.add(new ThreadLocalExpectation(allowedStatements, allowedStatements));
+        return this;
+    }
+
+    public ExpectedQueries verifyExactThreadLocal(int allowedStatements) {
+        new ThreadLocalExpectation(allowedStatements, allowedStatements).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectNotLessThanThreadLocal(int allowedStatements) {
+        expectations.add(new ThreadLocalExpectation(allowedStatements, Integer.MAX_VALUE));
+        return this;
+    }
+
+    public ExpectedQueries verifyNotLessThanThreadLocal(int allowedStatements) {
+        new ThreadLocalExpectation(allowedStatements, Integer.MAX_VALUE).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) {
+        expectations.add(new ThreadLocalExpectation(minAllowedStatements, maxAllowedStatements));
+        return this;
+    }
+
+    public ExpectedQueries verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) {
+        new ThreadLocalExpectation(minAllowedStatements, maxAllowedStatements).validate();
+        return this;
+    }
+
     public void verify() throws AssertionError {
         AssertionError assertionError = null;
         Throwable currentException = null;
@@ -169,7 +229,7 @@ public class ExpectedQueries implements Closeable {
         return new RuntimeException(e);
     }
 
-    private static interface Expectation {
+    private interface Expectation {
         void validate() throws AssertionError;
     }
 
@@ -186,6 +246,28 @@ public class ExpectedQueries implements Closeable {
         @Override
         public void validate() throws AssertionError {
             int numQueries = Sniffer.executedStatements(false) - initialQueries;
+            if (numQueries > maximumQueries || numQueries < minimumQueries)
+                throw new AssertionError(String.format(
+                        "Disallowed number of executed statements; expected between %d and %d; observed %d",
+                        minimumQueries, maximumQueries, numQueries
+                ));
+        }
+
+    }
+
+    private class ThreadLocalExpectation implements Expectation {
+
+        private final int minimumQueries;
+        private final int maximumQueries;
+
+        public ThreadLocalExpectation(int minimumQueries, int maximumQueries) {
+            this.minimumQueries = minimumQueries;
+            this.maximumQueries = maximumQueries;
+        }
+
+        @Override
+        public void validate() throws AssertionError {
+            int numQueries = ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries;
             if (numQueries > maximumQueries || numQueries < minimumQueries)
                 throw new AssertionError(String.format(
                         "Disallowed number of executed statements; expected between %d and %d; observed %d",
