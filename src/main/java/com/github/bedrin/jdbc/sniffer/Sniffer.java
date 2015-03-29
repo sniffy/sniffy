@@ -15,15 +15,7 @@ public class Sniffer {
 
     private final AtomicInteger counter = new AtomicInteger();
 
-    private final static Sniffer INSTANCE = new Sniffer();
-
-    int executedStatementsImpl() {
-        return counter.get();
-    }
-
-    void resetImpl() {
-        counter.set(0);
-    }
+    private static final Sniffer INSTANCE = new Sniffer();
 
     int executeStatementImpl() {
         return counter.incrementAndGet();
@@ -47,6 +39,22 @@ public class Sniffer {
         ThreadLocalSniffer.executeStatement();
     }
 
+    @Deprecated
+    private volatile int checkpoint = 0;
+    @Deprecated
+    private volatile ExpectedQueries expectedQueries = new ExpectedQueries(0, 0);
+
+    int executedStatementsImpl(boolean sinceLastReset) {
+        int counter = this.counter.get();
+        return sinceLastReset ? counter - checkpoint : counter;
+    }
+
+    @Deprecated
+    ExpectedQueries resetImpl() {
+        checkpoint = executedStatementsImpl(false);
+        return expectedQueries = new ExpectedQueries();
+    }
+
     /**
      * @return the number of executed queries since the last call of {@link #reset() reset} method or to any of verify
      * methods family like {@link #verifyNotMore() verifyNotMore}, {@link #verifyNotMoreThanOne() verifyNotMoreThanOne}
@@ -54,15 +62,51 @@ public class Sniffer {
      * @since 1.0
      */
     public static int executedStatements() {
-        return INSTANCE.executedStatementsImpl();
+        return executedStatements(true);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static int executedStatements(boolean sinceLastReset) {
+        return INSTANCE.executedStatementsImpl(sinceLastReset);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNoMoreQueries() {
+        return new ExpectedQueries().expectNoMoreQueries();
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNotMoreThan(int allowedStatements) {
+        return new ExpectedQueries().expectNotMoreThan(allowedStatements);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNotMoreThanThreadLocal(int allowedStatements) {
+        return new ExpectedQueries().expectNotMoreThanThreadLocal(allowedStatements);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNotMoreThanOtherThreads(int allowedStatements) {
+        return new ExpectedQueries().expectNotMoreThanOtherThreads(allowedStatements);
     }
 
     /**
      * Resets the queries counter to 0
      * @since 1.0
      */
-    public static void reset() {
-        INSTANCE.resetImpl();
+    @Deprecated
+    public static ExpectedQueries reset() {
+        return INSTANCE.resetImpl();
     }
 
     /**
@@ -71,8 +115,9 @@ public class Sniffer {
      * @throws AssertionError if actual number of executed statements exceeded 0
      * @since 1.0
      */
-    public static void verifyNotMore() {
-        verifyNotMoreThan(0);
+    @Deprecated
+    public static ExpectedQueries verifyNotMore() {
+        return verifyNotMoreThan(0);
     }
 
     /**
@@ -81,8 +126,9 @@ public class Sniffer {
      * @throws AssertionError if actual number of executed statements exceeded 1
      * @since 1.0
      */
-    public static void verifyNotMoreThanOne() {
-        verifyNotMoreThan(1);
+    @Deprecated
+    public static ExpectedQueries verifyNotMoreThanOne() {
+        return verifyNotMoreThan(1);
     }
 
     /**
@@ -93,8 +139,9 @@ public class Sniffer {
      * @throws AssertionError if actual number of executed statements exceeded {@code allowedStatements}
      * @since 1.0
      */
-    public static void verifyNotMoreThan(int allowedStatements) throws AssertionError {
-        verifyRange(0, allowedStatements);
+    @Deprecated
+    public static ExpectedQueries verifyNotMoreThan(int allowedStatements) throws AssertionError {
+        return verifyRange(0, allowedStatements);
     }
 
     /**
@@ -105,8 +152,9 @@ public class Sniffer {
      * @throws AssertionError if illegal number of queries were performed
      * @since 1.3
      */
-    public static void verifyExact(int allowedStatements) throws AssertionError {
-        verifyRange(allowedStatements, allowedStatements);
+    @Deprecated
+    public static ExpectedQueries verifyExact(int allowedStatements) throws AssertionError {
+        return verifyRange(allowedStatements, allowedStatements);
     }
 
     /**
@@ -117,8 +165,9 @@ public class Sniffer {
      * @throws AssertionError if illegal number of queries were performed
      * @since 1.3
      */
-    public static void verifyNotLessThan(int allowedStatements) throws AssertionError {
-        verifyRange(allowedStatements, Integer.MAX_VALUE);
+    @Deprecated
+    public static ExpectedQueries verifyNotLessThan(int allowedStatements) throws AssertionError {
+        return verifyRange(allowedStatements, Integer.MAX_VALUE);
     }
 
     /**
@@ -131,25 +180,22 @@ public class Sniffer {
      * @throws AssertionError if illegal number of queries were performed
      * @since 1.3
      */
-    public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
-        int actualStatements = executedStatements();
-        if (actualStatements > maxAllowedStatements)
-            throw new AssertionError(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, actualStatements));
-        if (actualStatements < minAllowedStatements)
-            throw new AssertionError(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, actualStatements));
-        reset();
+    @Deprecated
+    public static ExpectedQueries verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
+        INSTANCE.expectedQueries.verifyRange(minAllowedStatements, maxAllowedStatements);
+        return reset();
     }
 
     /**
      * Executable interface is similar to {@link java.lang.Runnable} but it allows throwing {@link java.lang.Exception}
      * from it's {@link #execute()} method
      */
-    public static interface Executable {
+    public interface Executable {
 
         /**
          * When {@link com.github.bedrin.jdbc.sniffer.Sniffer#execute(com.github.bedrin.jdbc.sniffer.Sniffer.Executable)}
          * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
-         * {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
+         * {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
          * @throws Exception code under test can throw any exception
          */
         void execute() throws Exception;
@@ -158,43 +204,23 @@ public class Sniffer {
 
     /**
      * Execute the {@link com.github.bedrin.jdbc.sniffer.Sniffer.Executable#execute()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
+     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
      * @param executable code to test
      * @return statistics on executed queries
      * @throws RuntimeException if underlying code under test throws an Exception
      */
-    public static RecordedQueries execute(Executable executable) {
-        int queries = executedStatements();
-        int tlQueries = ThreadLocalSniffer.executedStatements();
-        int otQueries = OtherThreadsSniffer.executedStatements();
-        try {
-            executable.execute();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return new RecordedQueries(
-                executedStatements() - queries,
-                ThreadLocalSniffer.executedStatements() - tlQueries,
-                OtherThreadsSniffer.executedStatements() - otQueries
-        );
+    public static ExpectedQueries execute(Executable executable) {
+        return new ExpectedQueries().execute(executable);
     }
 
     /**
      * Execute the {@link Runnable#run()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
+     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
      * @param runnable code to test
      * @return statistics on executed queries
      */
-    public static RecordedQueries run(Runnable runnable) {
-        int queries = executedStatements();
-        int tlQueries = ThreadLocalSniffer.executedStatements();
-        int otQueries = OtherThreadsSniffer.executedStatements();
-        runnable.run();
-        return new RecordedQueries(
-                executedStatements() - queries,
-                ThreadLocalSniffer.executedStatements() - tlQueries,
-                OtherThreadsSniffer.executedStatements() - otQueries
-        );
+    public static ExpectedQueries run(Runnable runnable) {
+        return new ExpectedQueries().run(runnable);
     }
 
     /**
@@ -206,16 +232,7 @@ public class Sniffer {
      * @throws Exception if underlying code under test throws an Exception
      */
     public static <T> RecordedQueriesWithValue<T> call(Callable<T> callable) throws Exception {
-        int queries = executedStatements();
-        int tlQueries = ThreadLocalSniffer.executedStatements();
-        int otQueries = OtherThreadsSniffer.executedStatements();
-        T value = callable.call();
-        return new RecordedQueriesWithValue<T>(
-                value,
-                executedStatements() - queries,
-                ThreadLocalSniffer.executedStatements() - tlQueries,
-                OtherThreadsSniffer.executedStatements() - otQueries
-        );
+        return new ExpectedQueries().call(callable);
     }
 
 }

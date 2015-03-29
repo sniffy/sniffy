@@ -7,6 +7,9 @@ package com.github.bedrin.jdbc.sniffer;
  */
 public class OtherThreadsSniffer {
 
+    @Deprecated
+    private static volatile int checkpoint = 0;
+
     /**
      * @return the number of executed queries in all threads except current since the last call of
      * {@link #reset() reset} method or to any of verify methods family like {@link #verifyNotMore() verifyNotMore},
@@ -14,27 +17,30 @@ public class OtherThreadsSniffer {
      * @since 1.4
      */
     public static int executedStatements() {
+        return executedStatements(true);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static int executedStatements(boolean sinceLastReset) {
         int executedStatements = 0;
         Sniffer currentThreadSniffer = ThreadLocalSniffer.getSniffer();
         for (Sniffer sniffer : Sniffer.getThreadLocalSniffers()) {
             if (sniffer != currentThreadSniffer) {
-                executedStatements += sniffer.executedStatementsImpl();
+                executedStatements += sniffer.executedStatementsImpl(false);
             }
         }
-        return executedStatements;
+        return sinceLastReset ? executedStatements - checkpoint : executedStatements;
     }
 
     /**
      * Resets the queries counter to 0
      * @since 1.4
      */
+    @Deprecated
     public static void reset() {
-        Sniffer currentThreadSniffer = ThreadLocalSniffer.getSniffer();
-        for (Sniffer sniffer : Sniffer.getThreadLocalSniffers()) {
-            if (sniffer != currentThreadSniffer) {
-                sniffer.resetImpl();
-            }
-        }
+        checkpoint = executedStatements(false);
     }
 
     /**
@@ -43,6 +49,7 @@ public class OtherThreadsSniffer {
      * @throws AssertionError if actual number of executed statements exceeded 0
      * @since 1.4
      */
+    @Deprecated
     public static void verifyNotMore() {
         verifyNotMoreThan(0);
     }
@@ -53,6 +60,7 @@ public class OtherThreadsSniffer {
      * @throws AssertionError if actual number of executed statements exceeded 1
      * @since 1.4
      */
+    @Deprecated
     public static void verifyNotMoreThanOne() {
         verifyNotMoreThan(1);
     }
@@ -65,6 +73,7 @@ public class OtherThreadsSniffer {
      * @throws AssertionError if actual number of executed statements exceeded {@code allowedStatements}
      * @since 1.4
      */
+    @Deprecated
     public static void verifyNotMoreThan(int allowedStatements) throws AssertionError {
         verifyRange(0, allowedStatements);
     }
@@ -77,6 +86,7 @@ public class OtherThreadsSniffer {
      * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      */
+    @Deprecated
     public static void verifyExact(int allowedStatements) throws AssertionError {
         verifyRange(allowedStatements, allowedStatements);
     }
@@ -89,6 +99,7 @@ public class OtherThreadsSniffer {
      * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      */
+    @Deprecated
     public static void verifyNotLessThan(int allowedStatements) throws AssertionError {
         verifyRange(allowedStatements, Integer.MAX_VALUE);
     }
@@ -104,6 +115,7 @@ public class OtherThreadsSniffer {
      * @throws AssertionError if illegal number of queries were performed
      * @since 1.4
      */
+    @Deprecated
     public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         int actualStatements = executedStatements();
         if (actualStatements > maxAllowedStatements)

@@ -4,14 +4,12 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class OtherThreadsSnifferTest {
+public class OtherThreadsSnifferTest extends BaseTest {
 
     @Test
     public void testVerifyExact() throws Exception {
         OtherThreadsSniffer.reset();
-        Thread thread = new Thread(Sniffer::executeStatement);
-        thread.start();
-        thread.join();
+        executeStatementInOtherThread();
         OtherThreadsSniffer.verifyExact(1);
     }
 
@@ -19,24 +17,15 @@ public class OtherThreadsSnifferTest {
     public void testVerifyNotLessThan() throws Exception {
         // test positive case 1
         OtherThreadsSniffer.reset();
-        Thread thread = new Thread(Sniffer::executeStatement);
-        thread.start();
-        thread.join();
+        executeStatementInOtherThread();
         OtherThreadsSniffer.verifyNotLessThan(1);
 
         // test positive case 2
-        thread = new Thread(Sniffer::executeStatement);
-        thread.start();
-        thread.join();
+        executeStatementInOtherThread();
         OtherThreadsSniffer.verifyNotLessThan(0);
 
         // test positive case 3
-        thread = new Thread(Sniffer::executeStatement);
-        thread.start();
-        thread.join();
-        thread = new Thread(Sniffer::executeStatement);
-        thread.start();
-        thread.join();
+        executeStatementsInOtherThread(2);
         OtherThreadsSniffer.verifyNotLessThan(1);
 
         // test positive case 4

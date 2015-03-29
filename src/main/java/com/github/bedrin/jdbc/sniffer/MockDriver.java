@@ -7,8 +7,6 @@ import java.util.logging.Logger;
 
 public class MockDriver implements Driver {
 
-
-
     public MockDriver() {
         try {
             DriverManager.registerDriver(this);

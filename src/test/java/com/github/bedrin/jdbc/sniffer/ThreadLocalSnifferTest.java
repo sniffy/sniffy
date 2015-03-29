@@ -6,13 +6,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public class ThreadLocalSnifferTest {
+public class ThreadLocalSnifferTest extends BaseTest {
 
     @Test
     public void testResetImpl() throws Exception {
         ThreadLocalSniffer.reset();
         assertEquals(0, ThreadLocalSniffer.executedStatements());
-        ThreadLocalSniffer.executeStatement();
+        executeStatement();
         ThreadLocalSniffer.reset();
         assertEquals(0, ThreadLocalSniffer.executedStatements());
     }
@@ -21,9 +21,9 @@ public class ThreadLocalSnifferTest {
     public void testExecuteStatement() throws Exception {
         ThreadLocalSniffer.reset();
         assertEquals(0, ThreadLocalSniffer.executedStatements());
-        ThreadLocalSniffer.executeStatement();
+        executeStatement();
         assertEquals(1, ThreadLocalSniffer.executedStatements());
-        Sniffer.executeStatement();
+        executeStatement();
         assertEquals(2, ThreadLocalSniffer.executedStatements());
     }
 
@@ -31,12 +31,12 @@ public class ThreadLocalSnifferTest {
     public void testVerifyExact() throws Exception {
         // test positive case 1
         ThreadLocalSniffer.reset();
-        Sniffer.executeStatement();
+        executeStatement();
         ThreadLocalSniffer.verifyExact(1);
 
         // test positive case 2
-        Sniffer.executeStatement();
-        Thread thread = new Thread(Sniffer::executeStatement);
+        executeStatement();
+        Thread thread = new Thread(BaseTest::executeStatement);
         thread.start();
         thread.join();
         ThreadLocalSniffer.verifyExact(1);
@@ -50,8 +50,8 @@ public class ThreadLocalSnifferTest {
         }
 
         // test negative case 2
-        Sniffer.executeStatement();
-        Sniffer.executeStatement();
+        executeStatement();
+        executeStatement();
         try {
             ThreadLocalSniffer.verifyExact(1);
             fail();

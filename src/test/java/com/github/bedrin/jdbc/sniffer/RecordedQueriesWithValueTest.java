@@ -6,15 +6,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public class RecordedQueriesWithValueTest {
+public class RecordedQueriesWithValueTest extends BaseTest {
 
     @Test
     public void testVerifyNotMore() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
-        recordedQueries.verifyNotMore();
-        recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        recordedQueries.verifyNoMoreQueries();
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNotMore();
+            recordedQueries.verifyNoMoreQueries();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -24,11 +24,11 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotMoreThanOne() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanOne();
-        recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanOne();
-        recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyNotMoreThanOne();
             fail();
@@ -40,13 +40,13 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotMoreThan() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThan(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThan(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThan(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val",3,3,3);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyNotMoreThan(2);
             fail();
@@ -58,16 +58,17 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyExact() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        executeStatement();
         recordedQueries.verifyExact(1);
-        recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyExact(1);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
-        recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyExact(1);
             fail();
@@ -79,7 +80,8 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotLessThan() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        executeStatements(2);
         recordedQueries.verifyNotLessThan(2);
         recordedQueries.verifyNotLessThan(1);
         try {
@@ -93,7 +95,8 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyRange() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        executeStatements(2);
         recordedQueries.verifyRange(2, 2);
         recordedQueries.verifyRange(1, 2);
         recordedQueries.verifyRange(2, 3);
@@ -115,11 +118,11 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotMoreThreadLocal() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
-        recordedQueries.verifyNotMoreThreadLocal();
-        recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        recordedQueries.verifyNoMoreThreadLocalQueries();
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNotMoreThreadLocal();
+            recordedQueries.verifyNoMoreThreadLocalQueries();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -129,11 +132,11 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotMoreThanOneThreadLocal() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanOneThreadLocal();
-        recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanOneThreadLocal();
-        recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyNotMoreThanOneThreadLocal();
             fail();
@@ -145,13 +148,13 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotMoreThanThreadLocal() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanThreadLocal(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanThreadLocal(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanThreadLocal(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val",3,3,3);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyNotMoreThanThreadLocal(2);
             fail();
@@ -163,16 +166,17 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyExactThreadLocal() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        executeStatement();
         recordedQueries.verifyExactThreadLocal(1);
-        recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyExactThreadLocal(1);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
-        recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyExactThreadLocal(1);
             fail();
@@ -184,7 +188,8 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotLessThanThreadLocal() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        executeStatements(2);
         recordedQueries.verifyNotLessThanThreadLocal(2);
         recordedQueries.verifyNotLessThanThreadLocal(1);
         try {
@@ -198,7 +203,8 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyRangeThreadLocal() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        executeStatements(2);
         recordedQueries.verifyRangeThreadLocal(2, 2);
         recordedQueries.verifyRangeThreadLocal(1, 2);
         recordedQueries.verifyRangeThreadLocal(2, 3);
@@ -220,11 +226,11 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotMoreOtherThreads() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
-        recordedQueries.verifyNotMoreOtherThreads();
-        recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        recordedQueries.verifyNoMoreOtherThreadsQueries();
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNotMoreOtherThreads();
+            recordedQueries.verifyNoMoreOtherThreadsQueries();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -234,11 +240,11 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotMoreThanOneOtherThreads() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanOneOtherThreads();
-        recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanOneOtherThreads();
-        recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyNotMoreThanOneOtherThreads();
             fail();
@@ -250,13 +256,13 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotMoreThanOtherThreads() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanOtherThreads(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanOtherThreads(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         recordedQueries.verifyNotMoreThanOtherThreads(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val",3,3,3);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyNotMoreThanOtherThreads(2);
             fail();
@@ -268,16 +274,17 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyExactOtherThreads() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",1,1,1);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        executeStatementInOtherThread();
         recordedQueries.verifyExactOtherThreads(1);
-        recordedQueries = new RecordedQueriesWithValue<>("val",0,0,0);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyExactOtherThreads(1);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
-        recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
             recordedQueries.verifyExactOtherThreads(1);
             fail();
@@ -289,7 +296,8 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyNotLessThanOtherThreads() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        executeStatementsInOtherThread(2);
         recordedQueries.verifyNotLessThanOtherThreads(2);
         recordedQueries.verifyNotLessThanOtherThreads(1);
         try {
@@ -303,7 +311,8 @@ public class RecordedQueriesWithValueTest {
 
     @Test
     public void testVerifyRangeOtherThreads() throws Exception {
-        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val",2,2,2);
+        RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
+        executeStatementsInOtherThread(2);
         recordedQueries.verifyRangeOtherThreads(2, 2);
         recordedQueries.verifyRangeOtherThreads(1, 2);
         recordedQueries.verifyRangeOtherThreads(2, 3);
