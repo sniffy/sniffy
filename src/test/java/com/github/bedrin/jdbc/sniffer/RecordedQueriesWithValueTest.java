@@ -6,7 +6,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public class RecordedQueriesWithValueTest {
+public class RecordedQueriesWithValueTest extends BaseTest {
 
     @Test
     public void testVerifyNotMore() throws Exception {
@@ -59,7 +59,7 @@ public class RecordedQueriesWithValueTest {
     @Test
     public void testVerifyExact() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        Sniffer.executeStatement();
+        executeStatement();
         recordedQueries.verifyExact(1);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
@@ -81,8 +81,7 @@ public class RecordedQueriesWithValueTest {
     @Test
     public void testVerifyNotLessThan() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        Sniffer.executeStatement();
-        Sniffer.executeStatement();
+        executeStatements(2);
         recordedQueries.verifyNotLessThan(2);
         recordedQueries.verifyNotLessThan(1);
         try {
@@ -97,8 +96,7 @@ public class RecordedQueriesWithValueTest {
     @Test
     public void testVerifyRange() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        Sniffer.executeStatement();
-        Sniffer.executeStatement();
+        executeStatements(2);
         recordedQueries.verifyRange(2, 2);
         recordedQueries.verifyRange(1, 2);
         recordedQueries.verifyRange(2, 3);
@@ -169,7 +167,7 @@ public class RecordedQueriesWithValueTest {
     @Test
     public void testVerifyExactThreadLocal() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        Sniffer.executeStatement();
+        executeStatement();
         recordedQueries.verifyExactThreadLocal(1);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
@@ -191,8 +189,7 @@ public class RecordedQueriesWithValueTest {
     @Test
     public void testVerifyNotLessThanThreadLocal() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        Sniffer.executeStatement();
-        Sniffer.executeStatement();
+        executeStatements(2);
         recordedQueries.verifyNotLessThanThreadLocal(2);
         recordedQueries.verifyNotLessThanThreadLocal(1);
         try {
@@ -207,8 +204,7 @@ public class RecordedQueriesWithValueTest {
     @Test
     public void testVerifyRangeThreadLocal() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        Sniffer.executeStatement();
-        Sniffer.executeStatement();
+        executeStatements(2);
         recordedQueries.verifyRangeThreadLocal(2, 2);
         recordedQueries.verifyRangeThreadLocal(1, 2);
         recordedQueries.verifyRangeThreadLocal(2, 3);
@@ -279,9 +275,7 @@ public class RecordedQueriesWithValueTest {
     @Test
     public void testVerifyExactOtherThreads() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        Thread t = new Thread(Sniffer::executeStatement);
-        t.start();
-        t.join();
+        executeStatementInOtherThread();
         recordedQueries.verifyExactOtherThreads(1);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
@@ -303,12 +297,7 @@ public class RecordedQueriesWithValueTest {
     @Test
     public void testVerifyNotLessThanOtherThreads() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        Thread t1 = new Thread(Sniffer::executeStatement);
-        Thread t2 = new Thread(Sniffer::executeStatement);
-        t1.start();
-        t2.start();
-        t1.join();
-        t2.join();
+        executeStatementsInOtherThread(2);
         recordedQueries.verifyNotLessThanOtherThreads(2);
         recordedQueries.verifyNotLessThanOtherThreads(1);
         try {
@@ -323,12 +312,7 @@ public class RecordedQueriesWithValueTest {
     @Test
     public void testVerifyRangeOtherThreads() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        Thread t1 = new Thread(Sniffer::executeStatement);
-        Thread t2 = new Thread(Sniffer::executeStatement);
-        t1.start();
-        t2.start();
-        t1.join();
-        t2.join();
+        executeStatementsInOtherThread(2);
         recordedQueries.verifyRangeOtherThreads(2, 2);
         recordedQueries.verifyRangeOtherThreads(1, 2);
         recordedQueries.verifyRangeOtherThreads(2, 3);

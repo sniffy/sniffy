@@ -1,17 +1,16 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import junit.framework.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class SnifferTest {
+public class SnifferTest extends BaseTest {
 
     @Test
     public void testResetImpl() throws Exception {
         Sniffer.reset();
         assertEquals(0, Sniffer.executedStatements());
-        Sniffer.executeStatement();
+        executeStatement();
         Sniffer.reset();
         assertEquals(0, Sniffer.executedStatements());
     }
@@ -20,7 +19,7 @@ public class SnifferTest {
     public void testExecuteStatement() throws Exception {
         Sniffer.reset();
         assertEquals(0, Sniffer.executedStatements());
-        Sniffer.executeStatement();
+        executeStatement();
         assertEquals(1, Sniffer.executedStatements());
     }
 
@@ -28,7 +27,7 @@ public class SnifferTest {
     public void testVerifyExact() throws Exception {
         // test positive
         Sniffer.reset();
-        Sniffer.executeStatement();
+        executeStatement();
         Sniffer.verifyExact(1);
 
         // test negative case 1
@@ -40,8 +39,7 @@ public class SnifferTest {
         }
 
         // test negative case 2
-        Sniffer.executeStatement();
-        Sniffer.executeStatement();
+        executeStatements(2);
         try {
             Sniffer.verifyExact(1);
             fail();
@@ -52,13 +50,13 @@ public class SnifferTest {
 
     @Test
     public void testRecordQueriesPositive() throws Exception {
-        Sniffer.run(Sniffer::executeStatement).verifyNotMoreThanOne();
+        Sniffer.run(BaseTest::executeStatement).verifyNotMoreThanOne();
     }
 
     @Test
     public void testRecordQueriesNegative() throws Exception {
         try {
-            Sniffer.run(Sniffer::executeStatement).verifyNoMoreQueries();
+            Sniffer.run(BaseTest::executeStatement).verifyNoMoreQueries();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -68,8 +66,8 @@ public class SnifferTest {
     @Test
     public void testRecordQueriesThreadLocalPositive() throws Exception {
         Sniffer.execute(() -> {
-            Sniffer.executeStatement();
-            Thread thread = new Thread(Sniffer::executeStatement);
+            executeStatement();
+            Thread thread = new Thread(BaseTest::executeStatement);
             thread.start();
             thread.join();
         }).verifyNotMoreThanOneThreadLocal();
@@ -78,7 +76,7 @@ public class SnifferTest {
     @Test
     public void testRecordQueriesThreadLocalNegative() throws Exception {
         try {
-            Sniffer.run(Sniffer::executeStatement).verifyNoMoreThreadLocalQueries();
+            Sniffer.run(BaseTest::executeStatement).verifyNoMoreThreadLocalQueries();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -88,8 +86,8 @@ public class SnifferTest {
     @Test
     public void testRecordQueriesOtherThreadsPositive() throws Exception {
         Sniffer.execute(() -> {
-            Sniffer.executeStatement();
-            Thread thread = new Thread(Sniffer::executeStatement);
+            executeStatement();
+            Thread thread = new Thread(BaseTest::executeStatement);
             thread.start();
             thread.join();
         }).verifyNotMoreThanOneOtherThreads();
@@ -99,8 +97,8 @@ public class SnifferTest {
     public void testRecordQueriesOtherThreadsNegative() throws Exception {
         try {
             Sniffer.execute(() -> {
-                Sniffer.executeStatement();
-                Thread thread = new Thread(Sniffer::executeStatement);
+                executeStatement();
+                Thread thread = new Thread(BaseTest::executeStatement);
                 thread.start();
                 thread.join();
             }).verifyNoMoreOtherThreadsQueries();
@@ -113,7 +111,7 @@ public class SnifferTest {
     @Test
     public void testRecordQueriesWithValue() throws Exception {
         assertEquals("test", Sniffer.call(() -> {
-            Sniffer.executeStatement();
+            executeStatement();
             return "test";
         }).verifyNotMoreThanOne().getValue());
     }
@@ -122,7 +120,7 @@ public class SnifferTest {
     public void testTryWithResourceApi() throws Exception {
         try {
             try (ExpectedQueries ignored = Sniffer.expectNoMoreQueries()) {
-                Sniffer.executeStatement();
+                executeStatement();
                 throw new RuntimeException("This is a test exception");
             }
         } catch (RuntimeException e) {

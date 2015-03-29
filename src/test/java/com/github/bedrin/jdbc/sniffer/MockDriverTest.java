@@ -1,6 +1,5 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -11,12 +10,7 @@ import java.util.Properties;
 
 import static org.junit.Assert.*;
 
-public class MockDriverTest {
-
-    @BeforeClass
-    public static void loadDriver() throws ClassNotFoundException {
-        Class.forName("com.github.bedrin.jdbc.sniffer.MockDriver");
-    }
+public class MockDriverTest extends BaseTest {
 
     @Test
     public void testRegisterDriver() {
@@ -71,10 +65,7 @@ public class MockDriverTest {
     @Test
     public void testExecuteStatement() throws ClassNotFoundException, SQLException {
         Sniffer.reset();
-        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-             Statement statement = connection.createStatement()) {
-            statement.execute("SELECT 1 FROM DUAL");
-        }
+        executeStatement();
         assertEquals(1, Sniffer.executedStatements());
         Sniffer.verifyNotMoreThanOne();
         Sniffer.verifyNotMore();
@@ -163,6 +154,11 @@ public class MockDriverTest {
         assertEquals(1, Sniffer.executedStatements());
     }
 
+    /**
+     * This method is used in {@link #testCallStatement()} - do NOT remove it
+     * @param arg any integer parameter
+     * @return parameter multiplied by 2
+     */
     @SuppressWarnings("unused")
     public static int timesTwo(int arg) {
         return arg * 2;
