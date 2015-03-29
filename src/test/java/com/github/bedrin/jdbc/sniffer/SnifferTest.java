@@ -58,7 +58,7 @@ public class SnifferTest {
     @Test
     public void testRecordQueriesNegative() throws Exception {
         try {
-            Sniffer.run(Sniffer::executeStatement).verifyNotMore();
+            Sniffer.run(Sniffer::executeStatement).verifyNoMoreQueries();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -78,7 +78,7 @@ public class SnifferTest {
     @Test
     public void testRecordQueriesThreadLocalNegative() throws Exception {
         try {
-            Sniffer.run(Sniffer::executeStatement).verifyNotMoreThreadLocal();
+            Sniffer.run(Sniffer::executeStatement).verifyNoMoreThreadLocalQueries();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -103,7 +103,7 @@ public class SnifferTest {
                 Thread thread = new Thread(Sniffer::executeStatement);
                 thread.start();
                 thread.join();
-            }).verifyNotMoreOtherThreads();
+            }).verifyNoMoreOtherThreadsQueries();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);

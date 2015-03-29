@@ -8,7 +8,7 @@ import java.util.concurrent.Callable;
 import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.addSuppressed;
 import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
 
-public class ExpectedQueries implements Closeable {
+public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable {
 
     private final int initialQueries;
     private final int initialThreadLocalQueries;
@@ -24,184 +24,184 @@ public class ExpectedQueries implements Closeable {
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
-    public ExpectedQueries expectNoMoreQueries() {
+    public C expectNoMoreQueries() {
         expectations.add(new AllThreadsExpectation(0, 0));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNoMoreQueries() {
+    public C verifyNoMoreQueries() {
         new AllThreadsExpectation(0, 0).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNotMoreThanOne() {
+    public C expectNotMoreThanOne() {
         expectations.add(new AllThreadsExpectation(0, 1));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNotMoreThanOne() {
+    public C verifyNotMoreThanOne() {
         new AllThreadsExpectation(0, 1).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNotMoreThan(int allowedStatements) {
+    public C expectNotMoreThan(int allowedStatements) {
         expectations.add(new AllThreadsExpectation(0, allowedStatements));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNotMoreThan(int allowedStatements) {
+    public C verifyNotMoreThan(int allowedStatements) {
         new AllThreadsExpectation(0, allowedStatements).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectExact(int allowedStatements) {
+    public C expectExact(int allowedStatements) {
         expectations.add(new AllThreadsExpectation(allowedStatements, allowedStatements));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyExact(int allowedStatements) {
+    public C verifyExact(int allowedStatements) {
         new AllThreadsExpectation(allowedStatements, allowedStatements).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNotLessThan(int allowedStatements) {
+    public C expectNotLessThan(int allowedStatements) {
         expectations.add(new AllThreadsExpectation(allowedStatements, Integer.MAX_VALUE));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNotLessThan(int allowedStatements) {
+    public C verifyNotLessThan(int allowedStatements) {
         new AllThreadsExpectation(allowedStatements, Integer.MAX_VALUE).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectRange(int minAllowedStatements, int maxAllowedStatements) {
+    public C expectRange(int minAllowedStatements, int maxAllowedStatements) {
         expectations.add(new AllThreadsExpectation(minAllowedStatements, maxAllowedStatements));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyRange(int minAllowedStatements, int maxAllowedStatements) {
+    public C verifyRange(int minAllowedStatements, int maxAllowedStatements) {
         new AllThreadsExpectation(minAllowedStatements, maxAllowedStatements).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNoMoreThreadLocalQueries() {
+    public C expectNoMoreThreadLocalQueries() {
         expectations.add(new ThreadLocalExpectation(0, 0));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNoMoreThreadLocalQueries() {
+    public C verifyNoMoreThreadLocalQueries() {
         new ThreadLocalExpectation(0, 0).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNotMoreThanOneThreadLocal() {
+    public C expectNotMoreThanOneThreadLocal() {
         expectations.add(new ThreadLocalExpectation(0, 1));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNotMoreThanOneThreadLocal() {
+    public C verifyNotMoreThanOneThreadLocal() {
         new ThreadLocalExpectation(0, 1).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNotMoreThanThreadLocal(int allowedStatements) {
+    public C expectNotMoreThanThreadLocal(int allowedStatements) {
         expectations.add(new ThreadLocalExpectation(0, allowedStatements));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNotMoreThanThreadLocal(int allowedStatements) {
+    public C verifyNotMoreThanThreadLocal(int allowedStatements) {
         new ThreadLocalExpectation(0, allowedStatements).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectExactThreadLocal(int allowedStatements) {
+    public C expectExactThreadLocal(int allowedStatements) {
         expectations.add(new ThreadLocalExpectation(allowedStatements, allowedStatements));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyExactThreadLocal(int allowedStatements) {
+    public C verifyExactThreadLocal(int allowedStatements) {
         new ThreadLocalExpectation(allowedStatements, allowedStatements).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNotLessThanThreadLocal(int allowedStatements) {
+    public C expectNotLessThanThreadLocal(int allowedStatements) {
         expectations.add(new ThreadLocalExpectation(allowedStatements, Integer.MAX_VALUE));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNotLessThanThreadLocal(int allowedStatements) {
+    public C verifyNotLessThanThreadLocal(int allowedStatements) {
         new ThreadLocalExpectation(allowedStatements, Integer.MAX_VALUE).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) {
+    public C expectRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) {
         expectations.add(new ThreadLocalExpectation(minAllowedStatements, maxAllowedStatements));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) {
+    public C verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) {
         new ThreadLocalExpectation(minAllowedStatements, maxAllowedStatements).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNoMoreOtherThreadsQueries() {
+    public C expectNoMoreOtherThreadsQueries() {
         expectations.add(new OtherThreadsExpectation(0, 0));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNoMoreOtherThreadsQueries() {
+    public C verifyNoMoreOtherThreadsQueries() {
         new OtherThreadsExpectation(0, 0).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNotMoreThanOtherThreads() {
+    public C expectNotMoreThanOtherThreads() {
         expectations.add(new OtherThreadsExpectation(0, 1));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNotMoreThanOneOtherThreads() {
+    public C verifyNotMoreThanOneOtherThreads() {
         new OtherThreadsExpectation(0, 1).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNotMoreThanOtherThreads(int allowedStatements) {
+    public C expectNotMoreThanOtherThreads(int allowedStatements) {
         expectations.add(new OtherThreadsExpectation(0, allowedStatements));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNotMoreThanOtherThreads(int allowedStatements) {
+    public C verifyNotMoreThanOtherThreads(int allowedStatements) {
         new OtherThreadsExpectation(0, allowedStatements).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectExactOtherThreads(int allowedStatements) {
+    public C expectExactOtherThreads(int allowedStatements) {
         expectations.add(new OtherThreadsExpectation(allowedStatements, allowedStatements));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyExactOtherThreads(int allowedStatements) {
+    public C verifyExactOtherThreads(int allowedStatements) {
         new OtherThreadsExpectation(allowedStatements, allowedStatements).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectNotLessThanOtherThreads(int allowedStatements) {
+    public C expectNotLessThanOtherThreads(int allowedStatements) {
         expectations.add(new OtherThreadsExpectation(allowedStatements, Integer.MAX_VALUE));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyNotLessThanOtherThreads(int allowedStatements) {
+    public C verifyNotLessThanOtherThreads(int allowedStatements) {
         new OtherThreadsExpectation(allowedStatements, Integer.MAX_VALUE).validate();
-        return this;
+        return self();
     }
 
-    public ExpectedQueries expectRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) {
+    public C expectRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) {
         expectations.add(new OtherThreadsExpectation(minAllowedStatements, maxAllowedStatements));
-        return this;
+        return self();
     }
 
-    public ExpectedQueries verifyRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) {
+    public C verifyRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) {
         new OtherThreadsExpectation(minAllowedStatements, maxAllowedStatements).validate();
-        return this;
+        return self();
     }
 
     public void verify() throws AssertionError {
@@ -229,7 +229,7 @@ public class ExpectedQueries implements Closeable {
         verify();
     }
 
-    public RecordedQueries execute(Sniffer.Executable executable) {
+    public C execute(Sniffer.Executable executable) {
         try {
             executable.execute();
         } catch (Throwable e) {
@@ -237,14 +237,10 @@ public class ExpectedQueries implements Closeable {
         }
 
         verify();
-        return new RecordedQueries(
-                Sniffer.executedStatements(false) - initialQueries,
-                ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries,
-                OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries
-        );
+        return self();
     }
 
-    public RecordedQueries run(Runnable runnable) {
+    public C run(Runnable runnable) {
         try {
             runnable.run();
         } catch (Throwable e) {
@@ -252,11 +248,7 @@ public class ExpectedQueries implements Closeable {
         }
 
         verify();
-        return new RecordedQueries(
-                Sniffer.executedStatements(false) - initialQueries,
-                ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries,
-                OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries
-        );
+        return self();
     }
 
     public <T> RecordedQueriesWithValue<T> call(Callable<T> callable) {
@@ -269,12 +261,7 @@ public class ExpectedQueries implements Closeable {
         }
 
         verify();
-        return new RecordedQueriesWithValue<T>(
-                result,
-                Sniffer.executedStatements(false) - initialQueries,
-                ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries,
-                OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries
-        );
+        return new RecordedQueriesWithValue<T>(result);
     }
 
     private RuntimeException verifyAndAddToException(Throwable e) {
@@ -357,6 +344,11 @@ public class ExpectedQueries implements Closeable {
                 ));
         }
 
+    }
+
+    @SuppressWarnings("unchecked")
+    private C self() {
+        return (C) this;
     }
 
 }

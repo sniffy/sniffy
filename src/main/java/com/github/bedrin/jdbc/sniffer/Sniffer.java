@@ -190,12 +190,12 @@ public class Sniffer {
      * Executable interface is similar to {@link java.lang.Runnable} but it allows throwing {@link java.lang.Exception}
      * from it's {@link #execute()} method
      */
-    public static interface Executable {
+    public interface Executable {
 
         /**
          * When {@link com.github.bedrin.jdbc.sniffer.Sniffer#execute(com.github.bedrin.jdbc.sniffer.Sniffer.Executable)}
          * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
-         * {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
+         * {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
          * @throws Exception code under test can throw any exception
          */
         void execute() throws Exception;
@@ -204,22 +204,22 @@ public class Sniffer {
 
     /**
      * Execute the {@link com.github.bedrin.jdbc.sniffer.Sniffer.Executable#execute()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
+     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
      * @param executable code to test
      * @return statistics on executed queries
      * @throws RuntimeException if underlying code under test throws an Exception
      */
-    public static RecordedQueries execute(Executable executable) {
+    public static ExpectedQueries execute(Executable executable) {
         return new ExpectedQueries().execute(executable);
     }
 
     /**
      * Execute the {@link Runnable#run()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueries} object with stats
+     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
      * @param runnable code to test
      * @return statistics on executed queries
      */
-    public static RecordedQueries run(Runnable runnable) {
+    public static ExpectedQueries run(Runnable runnable) {
         return new ExpectedQueries().run(runnable);
     }
 
