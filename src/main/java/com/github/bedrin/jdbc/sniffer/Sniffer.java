@@ -80,6 +80,27 @@ public class Sniffer {
     }
 
     /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNotMoreThan(int allowedStatements) {
+        return new ExpectedQueries().expectNotMoreThan(allowedStatements);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNotMoreThanThreadLocal(int allowedStatements) {
+        return new ExpectedQueries().expectNotMoreThanThreadLocal(allowedStatements);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNotMoreThanOtherThreads(int allowedStatements) {
+        return new ExpectedQueries().expectNotMoreThanOtherThreads(allowedStatements);
+    }
+
+    /**
      * Resets the queries counter to 0
      * @since 1.0
      */

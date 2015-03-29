@@ -144,6 +144,66 @@ public class ExpectedQueries implements Closeable {
         return this;
     }
 
+    public ExpectedQueries expectNoMoreOtherThreadsQueries() {
+        expectations.add(new OtherThreadsExpectation(0, 0));
+        return this;
+    }
+
+    public ExpectedQueries verifyNoMoreOtherThreadsQueries() {
+        new OtherThreadsExpectation(0, 0).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectNotMoreThanOtherThreads() {
+        expectations.add(new OtherThreadsExpectation(0, 1));
+        return this;
+    }
+
+    public ExpectedQueries verifyNotMoreThanOneOtherThreads() {
+        new OtherThreadsExpectation(0, 1).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectNotMoreThanOtherThreads(int allowedStatements) {
+        expectations.add(new OtherThreadsExpectation(0, allowedStatements));
+        return this;
+    }
+
+    public ExpectedQueries verifyNotMoreThanOtherThreads(int allowedStatements) {
+        new OtherThreadsExpectation(0, allowedStatements).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectExactOtherThreads(int allowedStatements) {
+        expectations.add(new OtherThreadsExpectation(allowedStatements, allowedStatements));
+        return this;
+    }
+
+    public ExpectedQueries verifyExactOtherThreads(int allowedStatements) {
+        new OtherThreadsExpectation(allowedStatements, allowedStatements).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectNotLessThanOtherThreads(int allowedStatements) {
+        expectations.add(new OtherThreadsExpectation(allowedStatements, Integer.MAX_VALUE));
+        return this;
+    }
+
+    public ExpectedQueries verifyNotLessThanOtherThreads(int allowedStatements) {
+        new OtherThreadsExpectation(allowedStatements, Integer.MAX_VALUE).validate();
+        return this;
+    }
+
+    public ExpectedQueries expectRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) {
+        expectations.add(new OtherThreadsExpectation(minAllowedStatements, maxAllowedStatements));
+        return this;
+    }
+
+    public ExpectedQueries verifyRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) {
+        new OtherThreadsExpectation(minAllowedStatements, maxAllowedStatements).validate();
+        return this;
+    }
+
     public void verify() throws AssertionError {
         AssertionError assertionError = null;
         Throwable currentException = null;
@@ -268,6 +328,28 @@ public class ExpectedQueries implements Closeable {
         @Override
         public void validate() throws AssertionError {
             int numQueries = ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries;
+            if (numQueries > maximumQueries || numQueries < minimumQueries)
+                throw new AssertionError(String.format(
+                        "Disallowed number of executed statements; expected between %d and %d; observed %d",
+                        minimumQueries, maximumQueries, numQueries
+                ));
+        }
+
+    }
+
+    private class OtherThreadsExpectation implements Expectation {
+
+        private final int minimumQueries;
+        private final int maximumQueries;
+
+        public OtherThreadsExpectation(int minimumQueries, int maximumQueries) {
+            this.minimumQueries = minimumQueries;
+            this.maximumQueries = maximumQueries;
+        }
+
+        @Override
+        public void validate() throws AssertionError {
+            int numQueries = OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries;
             if (numQueries > maximumQueries || numQueries < minimumQueries)
                 throw new AssertionError(String.format(
                         "Disallowed number of executed statements; expected between %d and %d; observed %d",
