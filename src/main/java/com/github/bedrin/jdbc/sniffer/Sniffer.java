@@ -13,9 +13,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Sniffer {
 
-    private final AtomicInteger counter = new AtomicInteger();
-
     private static final Sniffer INSTANCE = new Sniffer();
+
+    private final AtomicInteger counter = new AtomicInteger();
 
     int executeStatementImpl() {
         return counter.incrementAndGet();
@@ -39,20 +39,9 @@ public class Sniffer {
         ThreadLocalSniffer.executeStatement();
     }
 
-    @Deprecated
-    private volatile int checkpoint = 0;
-    @Deprecated
-    private volatile ExpectedQueries expectedQueries = new ExpectedQueries(0, 0);
-
     int executedStatementsImpl(boolean sinceLastReset) {
         int counter = this.counter.get();
         return sinceLastReset ? counter - checkpoint : counter;
-    }
-
-    @Deprecated
-    ExpectedQueries resetImpl() {
-        checkpoint = executedStatementsImpl(false);
-        return expectedQueries = new ExpectedQueries();
     }
 
     /**
@@ -125,6 +114,90 @@ public class Sniffer {
      */
     public static ExpectedQueries expectNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
         return expectedQueries().expectNotMoreThan(allowedStatements, threadMatcher);
+    }
+
+    /**
+     * Executable interface is similar to {@link java.lang.Runnable} but it allows throwing {@link java.lang.Exception}
+     * from it's {@link #execute()} method
+     */
+    public interface Executable {
+
+        /**
+         * When {@link com.github.bedrin.jdbc.sniffer.Sniffer#execute(com.github.bedrin.jdbc.sniffer.Sniffer.Executable)}
+         * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
+         * {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
+         * @throws Exception code under test can throw any exception
+         */
+        void execute() throws Exception;
+
+    }
+
+    /**
+     * Execute the {@link com.github.bedrin.jdbc.sniffer.Sniffer.Executable#execute()} method, record the SQL queries
+     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
+     * @param executable code to test
+     * @return statistics on executed queries
+     * @throws RuntimeException if underlying code under test throws an Exception
+     */
+    public static ExpectedQueries execute(Executable executable) {
+        return expectedQueries().execute(executable);
+    }
+
+    /**
+     * Execute the {@link Runnable#run()} method, record the SQL queries
+     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
+     * @param runnable code to test
+     * @return statistics on executed queries
+     */
+    public static ExpectedQueries run(Runnable runnable) {
+        return expectedQueries().run(runnable);
+    }
+
+    /**
+     * Execute the {@link Callable#call()} method, record the SQL queries
+     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueriesWithValue} object with stats
+     * @param callable code to test
+     * @param <T> type of return value
+     * @return statistics on executed queries
+     * @throws Exception if underlying code under test throws an Exception
+     */
+    public static <T> RecordedQueriesWithValue<T> call(Callable<T> callable) throws Exception {
+        return expectedQueries().call(callable);
+    }
+
+    public static final AnyThread ANY_THREAD = new AnyThread();
+    public static final CurrentThread CURRENT_THREAD = new CurrentThread();
+    public static final OtherThreads OTHER_THREADS = new OtherThreads();
+
+    protected final static ThreadMatcher DEFAULT_THREAD_MATCHER = ANY_THREAD;
+
+    protected abstract static class ThreadMatcher {
+
+    }
+
+    public static class AnyThread extends ThreadMatcher {
+
+    }
+
+    public static class CurrentThread extends ThreadMatcher {
+
+    }
+
+    public static class OtherThreads extends ThreadMatcher {
+
+    }
+
+    // Deprecated v1 API
+
+    @Deprecated
+    private volatile int checkpoint = 0;
+    @Deprecated
+    protected volatile ExpectedQueries expectedQueries = new ExpectedQueries(0, 0);
+
+    @Deprecated
+    ExpectedQueries resetImpl() {
+        checkpoint = executedStatementsImpl(false);
+        return expectedQueries = new ExpectedQueries();
     }
 
     /**
@@ -211,89 +284,6 @@ public class Sniffer {
     public static ExpectedQueries verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
         INSTANCE.expectedQueries.verifyRange(minAllowedStatements, maxAllowedStatements);
         return reset();
-    }
-
-    /**
-     * Executable interface is similar to {@link java.lang.Runnable} but it allows throwing {@link java.lang.Exception}
-     * from it's {@link #execute()} method
-     */
-    public interface Executable {
-
-        /**
-         * When {@link com.github.bedrin.jdbc.sniffer.Sniffer#execute(com.github.bedrin.jdbc.sniffer.Sniffer.Executable)}
-         * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
-         * {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
-         * @throws Exception code under test can throw any exception
-         */
-        void execute() throws Exception;
-
-    }
-
-    /**
-     * Execute the {@link com.github.bedrin.jdbc.sniffer.Sniffer.Executable#execute()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
-     * @param executable code to test
-     * @return statistics on executed queries
-     * @throws RuntimeException if underlying code under test throws an Exception
-     */
-    public static ExpectedQueries execute(Executable executable) {
-        return expectedQueries().execute(executable);
-    }
-
-    /**
-     * Execute the {@link Runnable#run()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
-     * @param runnable code to test
-     * @return statistics on executed queries
-     */
-    public static ExpectedQueries run(Runnable runnable) {
-        return expectedQueries().run(runnable);
-    }
-
-    /**
-     * Execute the {@link Callable#call()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueriesWithValue} object with stats
-     * @param callable code to test
-     * @param <T> type of return value
-     * @return statistics on executed queries
-     * @throws Exception if underlying code under test throws an Exception
-     */
-    public static <T> RecordedQueriesWithValue<T> call(Callable<T> callable) throws Exception {
-        return expectedQueries().call(callable);
-    }
-
-    public static final AnyThread ANY_THREAD = new AnyThread();
-    public static final CurrentThread CURRENT_THREAD = new CurrentThread();
-    public static final OtherThreads OTHER_THREADS = new OtherThreads();
-
-    protected final static ThreadMatcher DEFAULT_THREAD_MATCHER = ANY_THREAD;
-
-    public static AnyThread anyThread() {
-        return ANY_THREAD;
-    }
-
-    public static CurrentThread currentThread() {
-        return CURRENT_THREAD;
-    }
-
-    public static OtherThreads otherThreads() {
-        return OTHER_THREADS;
-    }
-
-    protected abstract static class ThreadMatcher {
-
-    }
-
-    public static class AnyThread extends ThreadMatcher {
-
-    }
-
-    public static class CurrentThread extends ThreadMatcher {
-
-    }
-
-    public static class OtherThreads extends ThreadMatcher {
-
     }
 
 }

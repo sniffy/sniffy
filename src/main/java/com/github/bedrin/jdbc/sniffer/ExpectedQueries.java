@@ -344,6 +344,7 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
 
         /**
          * @since 2.0
+         * @todo should throw some more specific exception
          */
         @Override
         public void validate() throws AssertionError {
@@ -363,7 +364,8 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
                             minimumQueries, maximumQueries, numQueries
                     ));
             } else if (threadMatcher instanceof Sniffer.OtherThreads) {
-                int numQueries = OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries;
+                int numQueries = Sniffer.executedStatements(false) - ThreadLocalSniffer.executedStatements(false)
+                        - initialQueries + initialThreadLocalQueries;
                 if (numQueries > maximumQueries || numQueries < minimumQueries)
                     throw new AssertionError(String.format(
                             "Disallowed number of executed statements; expected between %d and %d; observed %d",

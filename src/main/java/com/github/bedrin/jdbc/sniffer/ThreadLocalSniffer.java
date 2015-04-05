@@ -40,8 +40,8 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      * @since 1.0
      */
     @Deprecated
-    public static void reset() {
-        getSniffer().resetImpl();
+    public static ExpectedQueries reset() {
+        return getSniffer().resetImpl();
     }
 
     /**
@@ -116,13 +116,15 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
      * @since 1.4
      */
     @Deprecated
-    public static void verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
-        int actualStatements = executedStatements();
+    public static ExpectedQueries verifyRange(int minAllowedStatements, int maxAllowedStatements) throws AssertionError {
+        INSTANCE.get().expectedQueries.verifyRange(minAllowedStatements, maxAllowedStatements, Sniffer.CURRENT_THREAD);
+        return reset();
+        /*int actualStatements = executedStatements();
         if (actualStatements > maxAllowedStatements)
             throw new AssertionError(String.format("Allowed not more than %d statements, but actually caught %d statements", maxAllowedStatements, actualStatements));
         if (actualStatements < minAllowedStatements)
             throw new AssertionError(String.format("Allowed not less than %d statements, but actually caught %d statements", minAllowedStatements, actualStatements));
-        reset();
+        reset();*/
     }
 
 }

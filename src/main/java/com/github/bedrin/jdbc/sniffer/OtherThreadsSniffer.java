@@ -5,6 +5,7 @@ package com.github.bedrin.jdbc.sniffer;
  * for accessing them
  * @since 1.0
  */
+@Deprecated
 public class OtherThreadsSniffer {
 
     @Deprecated
