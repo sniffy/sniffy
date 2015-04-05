@@ -1,13 +1,19 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import com.github.bedrin.jdbc.sniffer.Sniffer.ThreadMatcher;
+
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import static com.github.bedrin.jdbc.sniffer.Sniffer.DEFAULT_THREAD_MATCHER;
 import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.addSuppressed;
 import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
 
+/**
+ * @since 2.0
+ */
 public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable {
 
     private final int initialQueries;
@@ -24,186 +30,203 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
-    public C expectNoMoreQueries() {
-        expectations.add(new AllThreadsExpectation(0, 0));
+    // noMore methods
+
+    /**
+     * @since 2.0
+     */
+    public C expectNoMore() {
+        return expectNoMore(DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C expectNoMore(ThreadMatcher threadMatcher) {
+        expectations.add(new ThreadMatcherExpectation(0, 0, threadMatcher));
         return self();
     }
 
-    public C verifyNoMoreQueries() {
-        new AllThreadsExpectation(0, 0).validate();
+    /**
+     * @since 2.0
+     */
+    public C verifyNoMore() {
+        return verifyNoMore(DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C verifyNoMore(ThreadMatcher threadMatcher) {
+        new ThreadMatcherExpectation(0, 0, threadMatcher).validate();
         return self();
     }
 
+    // notMoreThanOne methods
+
+    /**
+     * @since 2.0
+     */
     public C expectNotMoreThanOne() {
-        expectations.add(new AllThreadsExpectation(0, 1));
+        return expectNotMoreThanOne(DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C expectNotMoreThanOne(ThreadMatcher threadMatcher) {
+        expectations.add(new ThreadMatcherExpectation(0, 1, threadMatcher));
         return self();
     }
 
+    /**
+     * @since 2.0
+     */
     public C verifyNotMoreThanOne() {
-        new AllThreadsExpectation(0, 1).validate();
+        return verifyNotMoreThanOne(DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C verifyNotMoreThanOne(ThreadMatcher threadMatcher) {
+        new ThreadMatcherExpectation(0, 1, threadMatcher).validate();
         return self();
     }
 
+    // notMoreThan methods
+
+    /**
+     * @since 2.0
+     */
     public C expectNotMoreThan(int allowedStatements) {
-        expectations.add(new AllThreadsExpectation(0, allowedStatements));
+        return expectNotMoreThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C expectNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
+        expectations.add(new ThreadMatcherExpectation(0, allowedStatements, threadMatcher));
         return self();
     }
 
+    /**
+     * @since 2.0
+     */
     public C verifyNotMoreThan(int allowedStatements) {
-        new AllThreadsExpectation(0, allowedStatements).validate();
+        return verifyNotMoreThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C verifyNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
+        new ThreadMatcherExpectation(0, allowedStatements, threadMatcher).validate();
         return self();
     }
 
+    // exact methods
+
+    /**
+     * @since 2.0
+     */
     public C expectExact(int allowedStatements) {
-        expectations.add(new AllThreadsExpectation(allowedStatements, allowedStatements));
+        return expectExact(allowedStatements, DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C expectExact(int allowedStatements, ThreadMatcher threadMatcher) {
+        expectations.add(new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher));
         return self();
     }
 
+    /**
+     * @since 2.0
+     */
     public C verifyExact(int allowedStatements) {
-        new AllThreadsExpectation(allowedStatements, allowedStatements).validate();
+        return verifyExact(allowedStatements, DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C verifyExact(int allowedStatements, ThreadMatcher threadMatcher) {
+        new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher).validate();
         return self();
     }
 
+    // notLessThan methods
+
+    /**
+     * @since 2.0
+     */
     public C expectNotLessThan(int allowedStatements) {
-        expectations.add(new AllThreadsExpectation(allowedStatements, Integer.MAX_VALUE));
+        return expectNotLessThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C expectNotLessThan(int allowedStatements, ThreadMatcher threadMatcher) {
+        expectations.add(new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher));
         return self();
     }
 
+    /**
+     * @since 2.0
+     */
     public C verifyNotLessThan(int allowedStatements) {
-        new AllThreadsExpectation(allowedStatements, Integer.MAX_VALUE).validate();
+        return verifyNotLessThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C verifyNotLessThan(int allowedStatements, ThreadMatcher threadMatcher) {
+        new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher).validate();
         return self();
     }
 
+    // range methods
+
+    /**
+     * @since 2.0
+     */
     public C expectRange(int minAllowedStatements, int maxAllowedStatements) {
-        expectations.add(new AllThreadsExpectation(minAllowedStatements, maxAllowedStatements));
+        return expectRange(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C expectRange(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) {
+        expectations.add(new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher));
         return self();
     }
 
+    /**
+     * @since 2.0
+     */
     public C verifyRange(int minAllowedStatements, int maxAllowedStatements) {
-        new AllThreadsExpectation(minAllowedStatements, maxAllowedStatements).validate();
+        return verifyRange(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public C verifyRange(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) {
+        new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher).validate();
         return self();
     }
 
-    public C expectNoMoreThreadLocalQueries() {
-        expectations.add(new ThreadLocalExpectation(0, 0));
-        return self();
-    }
+    // end
 
-    public C verifyNoMoreThreadLocalQueries() {
-        new ThreadLocalExpectation(0, 0).validate();
-        return self();
-    }
-
-    public C expectNotMoreThanOneThreadLocal() {
-        expectations.add(new ThreadLocalExpectation(0, 1));
-        return self();
-    }
-
-    public C verifyNotMoreThanOneThreadLocal() {
-        new ThreadLocalExpectation(0, 1).validate();
-        return self();
-    }
-
-    public C expectNotMoreThanThreadLocal(int allowedStatements) {
-        expectations.add(new ThreadLocalExpectation(0, allowedStatements));
-        return self();
-    }
-
-    public C verifyNotMoreThanThreadLocal(int allowedStatements) {
-        new ThreadLocalExpectation(0, allowedStatements).validate();
-        return self();
-    }
-
-    public C expectExactThreadLocal(int allowedStatements) {
-        expectations.add(new ThreadLocalExpectation(allowedStatements, allowedStatements));
-        return self();
-    }
-
-    public C verifyExactThreadLocal(int allowedStatements) {
-        new ThreadLocalExpectation(allowedStatements, allowedStatements).validate();
-        return self();
-    }
-
-    public C expectNotLessThanThreadLocal(int allowedStatements) {
-        expectations.add(new ThreadLocalExpectation(allowedStatements, Integer.MAX_VALUE));
-        return self();
-    }
-
-    public C verifyNotLessThanThreadLocal(int allowedStatements) {
-        new ThreadLocalExpectation(allowedStatements, Integer.MAX_VALUE).validate();
-        return self();
-    }
-
-    public C expectRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) {
-        expectations.add(new ThreadLocalExpectation(minAllowedStatements, maxAllowedStatements));
-        return self();
-    }
-
-    public C verifyRangeThreadLocal(int minAllowedStatements, int maxAllowedStatements) {
-        new ThreadLocalExpectation(minAllowedStatements, maxAllowedStatements).validate();
-        return self();
-    }
-
-    public C expectNoMoreOtherThreadsQueries() {
-        expectations.add(new OtherThreadsExpectation(0, 0));
-        return self();
-    }
-
-    public C verifyNoMoreOtherThreadsQueries() {
-        new OtherThreadsExpectation(0, 0).validate();
-        return self();
-    }
-
-    public C expectNotMoreThanOtherThreads() {
-        expectations.add(new OtherThreadsExpectation(0, 1));
-        return self();
-    }
-
-    public C verifyNotMoreThanOneOtherThreads() {
-        new OtherThreadsExpectation(0, 1).validate();
-        return self();
-    }
-
-    public C expectNotMoreThanOtherThreads(int allowedStatements) {
-        expectations.add(new OtherThreadsExpectation(0, allowedStatements));
-        return self();
-    }
-
-    public C verifyNotMoreThanOtherThreads(int allowedStatements) {
-        new OtherThreadsExpectation(0, allowedStatements).validate();
-        return self();
-    }
-
-    public C expectExactOtherThreads(int allowedStatements) {
-        expectations.add(new OtherThreadsExpectation(allowedStatements, allowedStatements));
-        return self();
-    }
-
-    public C verifyExactOtherThreads(int allowedStatements) {
-        new OtherThreadsExpectation(allowedStatements, allowedStatements).validate();
-        return self();
-    }
-
-    public C expectNotLessThanOtherThreads(int allowedStatements) {
-        expectations.add(new OtherThreadsExpectation(allowedStatements, Integer.MAX_VALUE));
-        return self();
-    }
-
-    public C verifyNotLessThanOtherThreads(int allowedStatements) {
-        new OtherThreadsExpectation(allowedStatements, Integer.MAX_VALUE).validate();
-        return self();
-    }
-
-    public C expectRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) {
-        expectations.add(new OtherThreadsExpectation(minAllowedStatements, maxAllowedStatements));
-        return self();
-    }
-
-    public C verifyRangeOtherThreads(int minAllowedStatements, int maxAllowedStatements) {
-        new OtherThreadsExpectation(minAllowedStatements, maxAllowedStatements).validate();
-        return self();
-    }
-
+    /**
+     * @since 2.0
+     */
     public void verify() throws AssertionError {
         AssertionError assertionError = null;
         Throwable currentException = null;
@@ -225,10 +248,16 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     }
 
     @Override
+    /**
+     * @since 2.0
+     */
     public void close() {
         verify();
     }
 
+    /**
+     * @since 2.0
+     */
     public C execute(Sniffer.Executable executable) {
         try {
             executable.execute();
@@ -240,6 +269,9 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
         return self();
     }
 
+    /**
+     * @since 2.0
+     */
     public C run(Runnable runnable) {
         try {
             runnable.run();
@@ -251,6 +283,9 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
         return self();
     }
 
+    /**
+     * @since 2.0
+     */
     public <T> RecordedQueriesWithValue<T> call(Callable<T> callable) {
         T result;
 
@@ -264,6 +299,9 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
         return new RecordedQueriesWithValue<T>(result);
     }
 
+    /**
+     * @since 2.0
+     */
     private RuntimeException verifyAndAddToException(Throwable e) {
         try {
             verify();
@@ -276,76 +314,72 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
         return new RuntimeException(e);
     }
 
+    /**
+     * @since 2.0
+     */
     private interface Expectation {
+        /**
+         * @since 2.0
+         */
         void validate() throws AssertionError;
     }
 
-    private class AllThreadsExpectation implements Expectation {
+    /**
+     * @since 2.0
+     */
+    private class ThreadMatcherExpectation implements Expectation {
 
         private final int minimumQueries;
         private final int maximumQueries;
+        private final ThreadMatcher threadMatcher;
 
-        public AllThreadsExpectation(int minimumQueries, int maximumQueries) {
+        /**
+         * @since 2.0
+         */
+        public ThreadMatcherExpectation(int minimumQueries, int maximumQueries, ThreadMatcher threadMatcher) {
             this.minimumQueries = minimumQueries;
             this.maximumQueries = maximumQueries;
+            this.threadMatcher = threadMatcher;
         }
 
+        /**
+         * @since 2.0
+         */
         @Override
         public void validate() throws AssertionError {
-            int numQueries = Sniffer.executedStatements(false) - initialQueries;
-            if (numQueries > maximumQueries || numQueries < minimumQueries)
-                throw new AssertionError(String.format(
-                        "Disallowed number of executed statements; expected between %d and %d; observed %d",
-                        minimumQueries, maximumQueries, numQueries
-                ));
+
+            if (threadMatcher instanceof Sniffer.AnyThread) {
+                int numQueries = Sniffer.executedStatements(false) - initialQueries;
+                if (numQueries > maximumQueries || numQueries < minimumQueries)
+                    throw new AssertionError(String.format(
+                            "Disallowed number of executed statements; expected between %d and %d; observed %d",
+                            minimumQueries, maximumQueries, numQueries
+                    ));
+            } else if (threadMatcher instanceof Sniffer.CurrentThread) {
+                int numQueries = ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries;
+                if (numQueries > maximumQueries || numQueries < minimumQueries)
+                    throw new AssertionError(String.format(
+                            "Disallowed number of executed statements; expected between %d and %d; observed %d",
+                            minimumQueries, maximumQueries, numQueries
+                    ));
+            } else if (threadMatcher instanceof Sniffer.OtherThreads) {
+                int numQueries = OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries;
+                if (numQueries > maximumQueries || numQueries < minimumQueries)
+                    throw new AssertionError(String.format(
+                            "Disallowed number of executed statements; expected between %d and %d; observed %d",
+                            minimumQueries, maximumQueries, numQueries
+                    ));
+            } else {
+                throw new AssertionError(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
+            }
+
         }
 
     }
 
-    private class ThreadLocalExpectation implements Expectation {
-
-        private final int minimumQueries;
-        private final int maximumQueries;
-
-        public ThreadLocalExpectation(int minimumQueries, int maximumQueries) {
-            this.minimumQueries = minimumQueries;
-            this.maximumQueries = maximumQueries;
-        }
-
-        @Override
-        public void validate() throws AssertionError {
-            int numQueries = ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries;
-            if (numQueries > maximumQueries || numQueries < minimumQueries)
-                throw new AssertionError(String.format(
-                        "Disallowed number of executed statements; expected between %d and %d; observed %d",
-                        minimumQueries, maximumQueries, numQueries
-                ));
-        }
-
-    }
-
-    private class OtherThreadsExpectation implements Expectation {
-
-        private final int minimumQueries;
-        private final int maximumQueries;
-
-        public OtherThreadsExpectation(int minimumQueries, int maximumQueries) {
-            this.minimumQueries = minimumQueries;
-            this.maximumQueries = maximumQueries;
-        }
-
-        @Override
-        public void validate() throws AssertionError {
-            int numQueries = OtherThreadsSniffer.executedStatements(false) - initialQueries + initialThreadLocalQueries;
-            if (numQueries > maximumQueries || numQueries < minimumQueries)
-                throw new AssertionError(String.format(
-                        "Disallowed number of executed statements; expected between %d and %d; observed %d",
-                        minimumQueries, maximumQueries, numQueries
-                ));
-        }
-
-    }
-
+    /**
+     * @since 2.0
+     */
     @SuppressWarnings("unchecked")
     private C self() {
         return (C) this;

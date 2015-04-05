@@ -56,7 +56,7 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testRecordQueriesNegative() throws Exception {
         try {
-            Sniffer.run(BaseTest::executeStatement).verifyNoMoreQueries();
+            Sniffer.run(BaseTest::executeStatement).verifyNoMore();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -70,13 +70,13 @@ public class SnifferTest extends BaseTest {
             Thread thread = new Thread(BaseTest::executeStatement);
             thread.start();
             thread.join();
-        }).verifyNotMoreThanOneThreadLocal();
+        }).verifyNotMoreThanOne(Sniffer.CURRENT_THREAD);
     }
 
     @Test
     public void testRecordQueriesThreadLocalNegative() throws Exception {
         try {
-            Sniffer.run(BaseTest::executeStatement).verifyNoMoreThreadLocalQueries();
+            Sniffer.run(BaseTest::executeStatement).verifyNoMore(Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -90,7 +90,7 @@ public class SnifferTest extends BaseTest {
             Thread thread = new Thread(BaseTest::executeStatement);
             thread.start();
             thread.join();
-        }).verifyNotMoreThanOneOtherThreads();
+        }).verifyNotMoreThanOne(Sniffer.OTHER_THREADS);
     }
 
     @Test
@@ -101,7 +101,7 @@ public class SnifferTest extends BaseTest {
                 Thread thread = new Thread(BaseTest::executeStatement);
                 thread.start();
                 thread.join();
-            }).verifyNoMoreOtherThreadsQueries();
+            }).verifyNoMore(Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -119,7 +119,7 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testTryWithResourceApi() throws Exception {
         try {
-            try (ExpectedQueries ignored = Sniffer.expectNoMoreQueries()) {
+            try (ExpectedQueries ignored = Sniffer.expectNoMore()) {
                 executeStatement();
                 throw new RuntimeException("This is a test exception");
             }

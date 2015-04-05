@@ -13,7 +13,7 @@ public class SnifferExpectApiTest extends BaseTest {
 
     @Test
     public void testNotMoreThanAllThreads() throws Exception {
-        try (ExpectedQueries eq = Sniffer.expectNotMoreThanThreadLocal(1)) {
+        try (ExpectedQueries eq = Sniffer.expectNotMoreThan(1, Sniffer.CURRENT_THREAD)) {
             executeStatementInOtherThread();
             executeStatement();
         }
@@ -21,7 +21,7 @@ public class SnifferExpectApiTest extends BaseTest {
 
     @Test
     public void testNotMoreThanOtherThreads() throws Exception {
-        try (ExpectedQueries eq = Sniffer.expectNotMoreThanOtherThreads(1)) {
+        try (ExpectedQueries eq = Sniffer.expectNotMoreThan(1, Sniffer.OTHER_THREADS)) {
             executeStatementInOtherThread();
             executeStatements(2);
         }

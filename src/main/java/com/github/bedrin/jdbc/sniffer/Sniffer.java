@@ -75,29 +75,56 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static ExpectedQueries expectNoMoreQueries() {
-        return new ExpectedQueries().expectNoMoreQueries();
+    public static ExpectedQueries expectedQueries() {
+        return new ExpectedQueries();
     }
+
+    // noMore methods
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNoMore() {
+        return expectNoMore(DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNoMore(ThreadMatcher threadMatcher) {
+        return expectedQueries().expectNoMore(threadMatcher);
+    }
+
+    // notMoreThanOne methods
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNotMoreThanOne() {
+        return expectNotMoreThanOne(DEFAULT_THREAD_MATCHER);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static ExpectedQueries expectNotMoreThanOne(ThreadMatcher threadMatcher) {
+        return expectedQueries().expectNotMoreThanOne(threadMatcher);
+    }
+
+    // notMoreThan methods
 
     /**
      * @since 2.0
      */
     public static ExpectedQueries expectNotMoreThan(int allowedStatements) {
-        return new ExpectedQueries().expectNotMoreThan(allowedStatements);
+        return expectNotMoreThan(allowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public static ExpectedQueries expectNotMoreThanThreadLocal(int allowedStatements) {
-        return new ExpectedQueries().expectNotMoreThanThreadLocal(allowedStatements);
-    }
-
-    /**
-     * @since 2.0
-     */
-    public static ExpectedQueries expectNotMoreThanOtherThreads(int allowedStatements) {
-        return new ExpectedQueries().expectNotMoreThanOtherThreads(allowedStatements);
+    public static ExpectedQueries expectNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
+        return expectedQueries().expectNotMoreThan(allowedStatements, threadMatcher);
     }
 
     /**
@@ -210,7 +237,7 @@ public class Sniffer {
      * @throws RuntimeException if underlying code under test throws an Exception
      */
     public static ExpectedQueries execute(Executable executable) {
-        return new ExpectedQueries().execute(executable);
+        return expectedQueries().execute(executable);
     }
 
     /**
@@ -220,7 +247,7 @@ public class Sniffer {
      * @return statistics on executed queries
      */
     public static ExpectedQueries run(Runnable runnable) {
-        return new ExpectedQueries().run(runnable);
+        return expectedQueries().run(runnable);
     }
 
     /**
@@ -232,7 +259,41 @@ public class Sniffer {
      * @throws Exception if underlying code under test throws an Exception
      */
     public static <T> RecordedQueriesWithValue<T> call(Callable<T> callable) throws Exception {
-        return new ExpectedQueries().call(callable);
+        return expectedQueries().call(callable);
+    }
+
+    public static final AnyThread ANY_THREAD = new AnyThread();
+    public static final CurrentThread CURRENT_THREAD = new CurrentThread();
+    public static final OtherThreads OTHER_THREADS = new OtherThreads();
+
+    protected final static ThreadMatcher DEFAULT_THREAD_MATCHER = ANY_THREAD;
+
+    public static AnyThread anyThread() {
+        return ANY_THREAD;
+    }
+
+    public static CurrentThread currentThread() {
+        return CURRENT_THREAD;
+    }
+
+    public static OtherThreads otherThreads() {
+        return OTHER_THREADS;
+    }
+
+    protected abstract static class ThreadMatcher {
+
+    }
+
+    public static class AnyThread extends ThreadMatcher {
+
+    }
+
+    public static class CurrentThread extends ThreadMatcher {
+
+    }
+
+    public static class OtherThreads extends ThreadMatcher {
+
     }
 
 }
