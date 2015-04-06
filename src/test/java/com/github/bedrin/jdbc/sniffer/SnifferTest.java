@@ -26,22 +26,24 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testVerifyExact() throws Exception {
         // test positive
-        Sniffer.reset();
+        ExpectedQueries expectedQueries = Sniffer.expectedQueries();
         executeStatement();
-        Sniffer.verifyExact(1);
+        expectedQueries.verifyExact(1);
 
         // test negative case 1
+        expectedQueries = Sniffer.expectedQueries();
         try {
-            Sniffer.verifyExact(1);
+            expectedQueries.verifyExact(1);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
 
         // test negative case 2
+        expectedQueries = Sniffer.expectedQueries();
         executeStatements(2);
         try {
-            Sniffer.verifyExact(1);
+            expectedQueries.verifyExact(1);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);

@@ -30,6 +30,29 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
+    public ExpectedQueries reset() {
+        return new ExpectedQueries();
+    }
+
+    public int executedStatements() {
+        return executedStatements(DEFAULT_THREAD_MATCHER);
+    }
+
+    public int executedStatements(ThreadMatcher threadMatcher) {
+
+        if (threadMatcher instanceof Sniffer.AnyThread) {
+            return Sniffer.executedStatements(false) - initialQueries;
+        } else if (threadMatcher instanceof Sniffer.CurrentThread) {
+            return ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries;
+        } else if (threadMatcher instanceof Sniffer.OtherThreads) {
+            return Sniffer.executedStatements(false) - ThreadLocalSniffer.executedStatements(false)
+                    - initialQueries + initialThreadLocalQueries;
+        } else {
+            throw new AssertionError(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
+        }
+
+    }
+
     // noMore methods
 
     /**
