@@ -20,7 +20,7 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     private final int initialThreadLocalQueries;
 
     public ExpectedQueries() {
-        this(Sniffer.executedStatements(false), ThreadLocalSniffer.executedStatements(false));
+        this(Sniffer.executedStatements(), ThreadLocalSniffer.executedStatements());
     }
 
     public ExpectedQueries(int initialQueries, int initialThreadLocalQueries) {
@@ -41,11 +41,11 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     public int executedStatements(ThreadMatcher threadMatcher) {
 
         if (threadMatcher instanceof Sniffer.AnyThread) {
-            return Sniffer.executedStatements(false) - initialQueries;
+            return Sniffer.executedStatements() - initialQueries;
         } else if (threadMatcher instanceof Sniffer.CurrentThread) {
-            return ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries;
+            return ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
         } else if (threadMatcher instanceof Sniffer.OtherThreads) {
-            return Sniffer.executedStatements(false) - ThreadLocalSniffer.executedStatements(false)
+            return Sniffer.executedStatements() - ThreadLocalSniffer.executedStatements()
                     - initialQueries + initialThreadLocalQueries;
         } else {
             throw new AssertionError(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
@@ -373,21 +373,21 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
         public void validate() throws AssertionError {
 
             if (threadMatcher instanceof Sniffer.AnyThread) {
-                int numQueries = Sniffer.executedStatements(false) - initialQueries;
+                int numQueries = Sniffer.executedStatements() - initialQueries;
                 if (numQueries > maximumQueries || numQueries < minimumQueries)
                     throw new AssertionError(String.format(
                             "Disallowed number of executed statements; expected between %d and %d; observed %d",
                             minimumQueries, maximumQueries, numQueries
                     ));
             } else if (threadMatcher instanceof Sniffer.CurrentThread) {
-                int numQueries = ThreadLocalSniffer.executedStatements(false) - initialThreadLocalQueries;
+                int numQueries = ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
                 if (numQueries > maximumQueries || numQueries < minimumQueries)
                     throw new AssertionError(String.format(
                             "Disallowed number of executed statements; expected between %d and %d; observed %d",
                             minimumQueries, maximumQueries, numQueries
                     ));
             } else if (threadMatcher instanceof Sniffer.OtherThreads) {
-                int numQueries = Sniffer.executedStatements(false) - ThreadLocalSniffer.executedStatements(false)
+                int numQueries = Sniffer.executedStatements() - ThreadLocalSniffer.executedStatements()
                         - initialQueries + initialThreadLocalQueries;
                 if (numQueries > maximumQueries || numQueries < minimumQueries)
                     throw new AssertionError(String.format(

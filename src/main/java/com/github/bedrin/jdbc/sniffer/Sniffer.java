@@ -1,6 +1,5 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -30,35 +29,20 @@ public class Sniffer {
         return tlSniffer;
     }
 
-    static Collection<Sniffer> getThreadLocalSniffers() {
-        return threadLocalSniffers;
-    }
-
     static void executeStatement() {
         INSTANCE.executeStatementImpl();
         ThreadLocalSniffer.executeStatement();
     }
 
-    int executedStatementsImpl(boolean sinceLastReset) {
-        int counter = this.counter.get();
-        return sinceLastReset ? counter - checkpoint : counter;
+    int executedStatementsImpl() {
+        return this.counter.get();
     }
 
     /**
-     * @return the number of executed queries since the last call of {@link #reset() reset} method or to any of verify
-     * methods family like {@link #verifyNotMore() verifyNotMore}, {@link #verifyNotMoreThanOne() verifyNotMoreThanOne}
-     * or {@link #verifyNotMoreThan(int) verifyNotMoreThan}
      * @since 1.0
      */
     public static int executedStatements() {
-        return executedStatements(true);
-    }
-
-    /**
-     * @since 2.0
-     */
-    public static int executedStatements(boolean sinceLastReset) {
-        return INSTANCE.executedStatementsImpl(sinceLastReset);
+        return INSTANCE.executedStatementsImpl();
     }
 
     /**
@@ -185,28 +169,6 @@ public class Sniffer {
 
     public static class OtherThreads extends ThreadMatcher {
 
-    }
-
-    // Deprecated v1 API
-
-    @Deprecated
-    private volatile int checkpoint = 0;
-    @Deprecated
-    protected volatile ExpectedQueries expectedQueries = new ExpectedQueries(0, 0);
-
-    @Deprecated
-    ExpectedQueries resetImpl() {
-        checkpoint = executedStatementsImpl(false);
-        return expectedQueries = new ExpectedQueries();
-    }
-
-    /**
-     * Resets the queries counter to 0
-     * @since 1.0
-     */
-    @Deprecated
-    public static ExpectedQueries reset() {
-        return INSTANCE.resetImpl();
     }
 
 }

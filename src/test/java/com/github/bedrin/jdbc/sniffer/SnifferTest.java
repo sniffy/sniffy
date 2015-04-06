@@ -7,20 +7,10 @@ import static org.junit.Assert.*;
 public class SnifferTest extends BaseTest {
 
     @Test
-    public void testResetImpl() throws Exception {
-        Sniffer.reset();
-        assertEquals(0, Sniffer.executedStatements());
-        executeStatement();
-        Sniffer.reset();
-        assertEquals(0, Sniffer.executedStatements());
-    }
-
-    @Test
     public void testExecuteStatement() throws Exception {
-        Sniffer.reset();
-        assertEquals(0, Sniffer.executedStatements());
+        int actual = Sniffer.executedStatements();
         executeStatement();
-        assertEquals(1, Sniffer.executedStatements());
+        assertEquals(1, Sniffer.executedStatements() - actual);
     }
 
     @Test

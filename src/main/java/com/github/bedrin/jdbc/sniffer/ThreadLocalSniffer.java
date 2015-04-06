@@ -21,18 +21,8 @@ public class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
         getSniffer().executeStatementImpl();
     }
 
-    /**
-     * @return the number of executed queries in current thread since the last call of
-     * {@link #reset() reset} method or to any of verify methods family like {@link #verifyNotMore() verifyNotMore},
-     * {@link #verifyNotMoreThanOne() verifyNotMoreThanOne} or {@link #verifyNotMoreThan(int) verifyNotMoreThan}
-     * @since 1.0
-     */
     public static int executedStatements() {
-        return executedStatements(true);
-    }
-
-    public static int executedStatements(boolean sinceLastReset) {
-        return getSniffer().executedStatementsImpl(sinceLastReset);
+        return getSniffer().executedStatementsImpl();
     }
 
 }
