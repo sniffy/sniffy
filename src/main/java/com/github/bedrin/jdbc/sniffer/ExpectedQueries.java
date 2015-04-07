@@ -20,7 +20,7 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     private final int initialThreadLocalQueries;
 
     public ExpectedQueries() {
-        this(Sniffer.executedStatements(), ThreadLocalSniffer.executedStatements());
+        this(Sniffer.executedStatements(), Sniffer.ThreadLocalSniffer.executedStatements());
     }
 
     public ExpectedQueries(int initialQueries, int initialThreadLocalQueries) {
@@ -43,9 +43,9 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
         if (threadMatcher instanceof Sniffer.AnyThread) {
             return Sniffer.executedStatements() - initialQueries;
         } else if (threadMatcher instanceof Sniffer.CurrentThread) {
-            return ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
+            return Sniffer.ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
         } else if (threadMatcher instanceof Sniffer.OtherThreads) {
-            return Sniffer.executedStatements() - ThreadLocalSniffer.executedStatements()
+            return Sniffer.executedStatements() - Sniffer.ThreadLocalSniffer.executedStatements()
                     - initialQueries + initialThreadLocalQueries;
         } else {
             throw new AssertionError(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
@@ -309,8 +309,8 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public <T> RecordedQueriesWithValue<T> call(Callable<T> callable) {
-        T result;
+    public <V> RecordedQueriesWithValue<V> call(Callable<V> callable) {
+        V result;
 
         try {
             result = callable.call();
@@ -319,7 +319,7 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
         }
 
         verify();
-        return new RecordedQueriesWithValue<T>(result);
+        return new RecordedQueriesWithValue<V>(result);
     }
 
     /**
@@ -380,14 +380,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
                             minimumQueries, maximumQueries, numQueries
                     ));
             } else if (threadMatcher instanceof Sniffer.CurrentThread) {
-                int numQueries = ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
+                int numQueries = Sniffer.ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
                 if (numQueries > maximumQueries || numQueries < minimumQueries)
                     throw new AssertionError(String.format(
                             "Disallowed number of executed statements; expected between %d and %d; observed %d",
                             minimumQueries, maximumQueries, numQueries
                     ));
             } else if (threadMatcher instanceof Sniffer.OtherThreads) {
-                int numQueries = Sniffer.executedStatements() - ThreadLocalSniffer.executedStatements()
+                int numQueries = Sniffer.executedStatements() - Sniffer.ThreadLocalSniffer.executedStatements()
                         - initialQueries + initialThreadLocalQueries;
                 if (numQueries > maximumQueries || numQueries < minimumQueries)
                     throw new AssertionError(String.format(

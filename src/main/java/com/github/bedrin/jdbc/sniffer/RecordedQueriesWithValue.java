@@ -1,14 +1,14 @@
 package com.github.bedrin.jdbc.sniffer;
 
-public class RecordedQueriesWithValue<T> extends ExpectedQueries<RecordedQueriesWithValue<T>> {
+public class RecordedQueriesWithValue<V> extends ExpectedQueries<RecordedQueriesWithValue<V>> {
 
-    private final T value;
+    private final V value;
 
-    RecordedQueriesWithValue(T value) {
+    RecordedQueriesWithValue(V value) {
         this.value = value;
     }
 
-    public T getValue() {
+    public V getValue() {
         return value;
     }
 

@@ -9,15 +9,6 @@ import static org.junit.Assert.fail;
 public class ThreadLocalSnifferTest extends BaseTest {
 
     @Test
-    public void testExecuteStatement() throws Exception {
-        int c = ThreadLocalSniffer.executedStatements();
-        executeStatement();
-        assertEquals(1, ThreadLocalSniffer.executedStatements() - c);
-        executeStatement();
-        assertEquals(2, ThreadLocalSniffer.executedStatements() - c);
-    }
-
-    @Test
     public void testVerifyExact() throws Exception {
         // test positive case 1
         ExpectedQueries expectedQueries = Sniffer.expectedQueries();

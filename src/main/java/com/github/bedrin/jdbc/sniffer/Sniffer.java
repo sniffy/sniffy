@@ -1,9 +1,6 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import java.util.Collections;
-import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -18,15 +15,6 @@ public class Sniffer {
 
     int executeStatementImpl() {
         return counter.incrementAndGet();
-    }
-
-    final static Set<Sniffer> threadLocalSniffers = Collections.newSetFromMap(
-            new ConcurrentHashMap<Sniffer, Boolean>()
-    );
-
-    static Sniffer registerThreadLocalSniffer(Sniffer tlSniffer) {
-        threadLocalSniffers.add(tlSniffer);
-        return tlSniffer;
     }
 
     static void executeStatement() {
@@ -48,8 +36,8 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static ExpectedQueries expectedQueries() {
-        return new ExpectedQueries();
+    public static <T extends ExpectedQueries<T>> ExpectedQueries<T> expectedQueries() {
+        return new ExpectedQueries<T>();
     }
 
     // noMore methods
@@ -141,11 +129,11 @@ public class Sniffer {
      * Execute the {@link Callable#call()} method, record the SQL queries
      * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueriesWithValue} object with stats
      * @param callable code to test
-     * @param <T> type of return value
+     * @param <V> type of return value
      * @return statistics on executed queries
      * @throws Exception if underlying code under test throws an Exception
      */
-    public static <T> RecordedQueriesWithValue<T> call(Callable<T> callable) throws Exception {
+    public static <V> RecordedQueriesWithValue<V> call(Callable<V> callable) throws Exception {
         return expectedQueries().call(callable);
     }
 
@@ -159,15 +147,38 @@ public class Sniffer {
 
     }
 
-    public static class AnyThread extends ThreadMatcher {
+    static class AnyThread extends ThreadMatcher {
 
     }
 
-    public static class CurrentThread extends ThreadMatcher {
+    static class CurrentThread extends ThreadMatcher {
 
     }
 
-    public static class OtherThreads extends ThreadMatcher {
+    static class OtherThreads extends ThreadMatcher {
+
+    }
+
+    static class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
+
+        private final static ThreadLocalSniffer INSTANCE = new ThreadLocalSniffer();
+
+        @Override
+        protected Sniffer initialValue() {
+            return new Sniffer();
+        }
+
+        static Sniffer getSniffer() {
+            return INSTANCE.get();
+        }
+
+        static void executeStatement() {
+            getSniffer().executeStatementImpl();
+        }
+
+        static int executedStatements() {
+            return getSniffer().executedStatementsImpl();
+        }
 
     }
 

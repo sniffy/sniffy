@@ -2,7 +2,6 @@ package com.github.bedrin.jdbc.sniffer.junit;
 
 import com.github.bedrin.jdbc.sniffer.ExpectedQueries;
 import com.github.bedrin.jdbc.sniffer.Sniffer;
-import com.github.bedrin.jdbc.sniffer.ThreadLocalSniffer;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
