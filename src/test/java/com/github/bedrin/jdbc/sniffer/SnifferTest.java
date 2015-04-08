@@ -1,5 +1,6 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -120,6 +121,27 @@ public class SnifferTest extends BaseTest {
             assertNotNull(e.getSuppressed());
             assertEquals(1, e.getSuppressed().length);
             assertTrue(AssertionError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
+        }
+    }
+
+    @Test
+    public void testExpectNotMoreThanOne() {
+        // positive
+        try (ExpectedQueries ignored = Sniffer.expectNotMoreThanOne()) {
+            executeStatement();
+        }
+        // negative
+        try {
+            try (ExpectedQueries ignored = Sniffer.expectNotMoreThanOne()) {
+                executeStatements(2);
+            }
+        } catch (AssertionError e) {
+            assertNotNull(e);
+        }
+        // positive thread local
+        try (ExpectedQueries ignored = Sniffer.expectNotMoreThanOne(Sniffer.CURRENT_THREAD)) {
+            executeStatement();
+            executeStatementInOtherThread();
         }
     }
 
