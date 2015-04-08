@@ -11,10 +11,10 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMore() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNoMoreQueries();
+        recordedQueries.verifyNoMore();
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNoMoreQueries();
+            recordedQueries.verifyNoMore();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -119,10 +119,10 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreThreadLocal() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNoMoreThreadLocalQueries();
+        recordedQueries.verifyNoMore(Sniffer.CURRENT_THREAD);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNoMoreThreadLocalQueries();
+            recordedQueries.verifyNoMore(Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -133,12 +133,12 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreThanOneThreadLocal() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanOneThreadLocal();
+        recordedQueries.verifyNotMoreThanOne(Sniffer.CURRENT_THREAD);
         recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanOneThreadLocal();
+        recordedQueries.verifyNotMoreThanOne(Sniffer.CURRENT_THREAD);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNotMoreThanOneThreadLocal();
+            recordedQueries.verifyNotMoreThanOne(Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -149,14 +149,12 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreThanThreadLocal() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanThreadLocal(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanThreadLocal(2);
-        recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanThreadLocal(2);
+        executeStatementsInOtherThread(3);
+        recordedQueries.verifyNotMoreThan(2, Sniffer.CURRENT_THREAD);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNotMoreThanThreadLocal(2);
+            executeStatements(3);
+            recordedQueries.verifyNotMoreThan(2, Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -168,17 +166,17 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     public void testVerifyExactThreadLocal() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         executeStatement();
-        recordedQueries.verifyExactThreadLocal(1);
+        recordedQueries.verifyExact(1, Sniffer.CURRENT_THREAD);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyExactThreadLocal(1);
+            recordedQueries.verifyExact(1, Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyExactThreadLocal(1);
+            recordedQueries.verifyExact(1, Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -190,10 +188,10 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     public void testVerifyNotLessThanThreadLocal() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         executeStatements(2);
-        recordedQueries.verifyNotLessThanThreadLocal(2);
-        recordedQueries.verifyNotLessThanThreadLocal(1);
+        recordedQueries.verifyNotLessThan(2, Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyNotLessThan(1, Sniffer.CURRENT_THREAD);
         try {
-            recordedQueries.verifyNotLessThanThreadLocal(3);
+            recordedQueries.verifyNotLessThan(3, Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -205,18 +203,18 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     public void testVerifyRangeThreadLocal() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         executeStatements(2);
-        recordedQueries.verifyRangeThreadLocal(2, 2);
-        recordedQueries.verifyRangeThreadLocal(1, 2);
-        recordedQueries.verifyRangeThreadLocal(2, 3);
-        recordedQueries.verifyRangeThreadLocal(1, 3);
+        recordedQueries.verifyRange(2, 2, Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyRange(1, 2, Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyRange(2, 3, Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyRange(1, 3, Sniffer.CURRENT_THREAD);
         try {
-            recordedQueries.verifyRangeThreadLocal(3, 4);
+            recordedQueries.verifyRange(3, 4, Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
         try {
-            recordedQueries.verifyRangeThreadLocal(0, 1);
+            recordedQueries.verifyRange(0, 1, Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -227,10 +225,10 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreOtherThreads() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNoMoreOtherThreadsQueries();
+        recordedQueries.verifyNoMore(Sniffer.OTHER_THREADS);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNoMoreOtherThreadsQueries();
+            recordedQueries.verifyNoMore(Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -241,12 +239,12 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreThanOneOtherThreads() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanOneOtherThreads();
+        recordedQueries.verifyNotMoreThanOne(Sniffer.OTHER_THREADS);
         recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanOneOtherThreads();
+        recordedQueries.verifyNotMoreThanOne(Sniffer.OTHER_THREADS);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNotMoreThanOneOtherThreads();
+            recordedQueries.verifyNotMoreThanOne(Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -257,14 +255,14 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreThanOtherThreads() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanOtherThreads(2);
+        recordedQueries.verifyNotMoreThan(2, Sniffer.OTHER_THREADS);
         recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanOtherThreads(2);
+        recordedQueries.verifyNotMoreThan(2, Sniffer.OTHER_THREADS);
         recordedQueries = new RecordedQueriesWithValue<>("val");
-        recordedQueries.verifyNotMoreThanOtherThreads(2);
+        recordedQueries.verifyNotMoreThan(2, Sniffer.OTHER_THREADS);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyNotMoreThanOtherThreads(2);
+            recordedQueries.verifyNotMoreThan(2, Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -276,17 +274,17 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     public void testVerifyExactOtherThreads() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         executeStatementInOtherThread();
-        recordedQueries.verifyExactOtherThreads(1);
+        recordedQueries.verifyExact(1, Sniffer.OTHER_THREADS);
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyExactOtherThreads(1);
+            recordedQueries.verifyExact(1, Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
         recordedQueries = new RecordedQueriesWithValue<>("val");
         try {
-            recordedQueries.verifyExactOtherThreads(1);
+            recordedQueries.verifyExact(1, Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -298,10 +296,10 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     public void testVerifyNotLessThanOtherThreads() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         executeStatementsInOtherThread(2);
-        recordedQueries.verifyNotLessThanOtherThreads(2);
-        recordedQueries.verifyNotLessThanOtherThreads(1);
+        recordedQueries.verifyNotLessThan(2, Sniffer.OTHER_THREADS);
+        recordedQueries.verifyNotLessThan(1, Sniffer.OTHER_THREADS);
         try {
-            recordedQueries.verifyNotLessThanOtherThreads(3);
+            recordedQueries.verifyNotLessThan(3, Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -313,18 +311,18 @@ public class RecordedQueriesWithValueTest extends BaseTest {
     public void testVerifyRangeOtherThreads() throws Exception {
         RecordedQueriesWithValue<String> recordedQueries = new RecordedQueriesWithValue<>("val");
         executeStatementsInOtherThread(2);
-        recordedQueries.verifyRangeOtherThreads(2, 2);
-        recordedQueries.verifyRangeOtherThreads(1, 2);
-        recordedQueries.verifyRangeOtherThreads(2, 3);
-        recordedQueries.verifyRangeOtherThreads(1, 3);
+        recordedQueries.verifyRange(2, 2, Sniffer.OTHER_THREADS);
+        recordedQueries.verifyRange(1, 2, Sniffer.OTHER_THREADS);
+        recordedQueries.verifyRange(2, 3, Sniffer.OTHER_THREADS);
+        recordedQueries.verifyRange(1, 3, Sniffer.OTHER_THREADS);
         try {
-            recordedQueries.verifyRangeOtherThreads(3, 4);
+            recordedQueries.verifyRange(3, 4, Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
         try {
-            recordedQueries.verifyRangeOtherThreads(0, 1);
+            recordedQueries.verifyRange(0, 1, Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);

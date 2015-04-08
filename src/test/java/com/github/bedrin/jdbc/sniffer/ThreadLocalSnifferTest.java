@@ -9,51 +9,33 @@ import static org.junit.Assert.fail;
 public class ThreadLocalSnifferTest extends BaseTest {
 
     @Test
-    public void testResetImpl() throws Exception {
-        ThreadLocalSniffer.reset();
-        assertEquals(0, ThreadLocalSniffer.executedStatements());
-        executeStatement();
-        ThreadLocalSniffer.reset();
-        assertEquals(0, ThreadLocalSniffer.executedStatements());
-    }
-
-    @Test
-    public void testExecuteStatement() throws Exception {
-        ThreadLocalSniffer.reset();
-        assertEquals(0, ThreadLocalSniffer.executedStatements());
-        executeStatement();
-        assertEquals(1, ThreadLocalSniffer.executedStatements());
-        executeStatement();
-        assertEquals(2, ThreadLocalSniffer.executedStatements());
-    }
-
-    @Test
     public void testVerifyExact() throws Exception {
         // test positive case 1
-        ThreadLocalSniffer.reset();
+        ExpectedQueries expectedQueries = Sniffer.expectedQueries();
         executeStatement();
-        ThreadLocalSniffer.verifyExact(1);
+        expectedQueries.verifyExact(1, Sniffer.CURRENT_THREAD);
 
         // test positive case 2
+        expectedQueries = Sniffer.expectedQueries();
         executeStatement();
-        Thread thread = new Thread(BaseTest::executeStatement);
-        thread.start();
-        thread.join();
-        ThreadLocalSniffer.verifyExact(1);
+        executeStatementInOtherThread();
+        expectedQueries.verifyExact(1, Sniffer.CURRENT_THREAD);
 
         // test negative case 1
+        expectedQueries = Sniffer.expectedQueries();
         try {
-            ThreadLocalSniffer.verifyExact(1);
+            expectedQueries.verifyExact(1, Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
 
         // test negative case 2
+        expectedQueries = Sniffer.expectedQueries();
         executeStatement();
         executeStatement();
         try {
-            ThreadLocalSniffer.verifyExact(1);
+            expectedQueries.verifyExact(2, Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);

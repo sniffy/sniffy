@@ -1,7 +1,7 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
+import com.github.bedrin.jdbc.sniffer.ExpectedQueries;
 import com.github.bedrin.jdbc.sniffer.Sniffer;
-import com.github.bedrin.jdbc.sniffer.ThreadLocalSniffer;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -65,23 +65,25 @@ public class QueryCounter implements TestRule {
 
         @Override
         public void evaluate() throws Throwable {
-            int count = threadLocal ? ThreadLocalSniffer.executedStatements() : Sniffer.executedStatements();
+
+            ExpectedQueries expectedQueries = Sniffer.expectedQueries();
             delegate.evaluate();
+
             if (threadLocal) {
                 if (null != minimumQueries && null != maximumQueries) {
-                    ThreadLocalSniffer.verifyRange(count + minimumQueries, count + maximumQueries);
+                    expectedQueries.verifyRange(minimumQueries, maximumQueries, Sniffer.CURRENT_THREAD);
                 } else if (null != minimumQueries) {
-                    ThreadLocalSniffer.verifyNotLessThan(count + minimumQueries);
+                    expectedQueries.verifyNotLessThan(minimumQueries, Sniffer.CURRENT_THREAD);
                 } else if (null != maximumQueries) {
-                    ThreadLocalSniffer.verifyNotMoreThan(count + maximumQueries);
+                    expectedQueries.verifyNotMoreThan(maximumQueries, Sniffer.CURRENT_THREAD);
                 }
             } else {
                 if (null != minimumQueries && null != maximumQueries) {
-                    Sniffer.verifyRange(count + minimumQueries, count + maximumQueries);
+                    expectedQueries.verifyRange(minimumQueries, maximumQueries, Sniffer.ANY_THREAD);
                 } else if (null != minimumQueries) {
-                    Sniffer.verifyNotLessThan(count + minimumQueries);
+                    expectedQueries.verifyNotLessThan(minimumQueries, Sniffer.ANY_THREAD);
                 } else if (null != maximumQueries) {
-                    Sniffer.verifyNotMoreThan(count + maximumQueries);
+                    expectedQueries.verifyNotMoreThan(maximumQueries, Sniffer.ANY_THREAD);
                 }
             }
         }

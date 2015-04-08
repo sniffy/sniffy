@@ -1,5 +1,6 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -7,41 +8,33 @@ import static org.junit.Assert.*;
 public class SnifferTest extends BaseTest {
 
     @Test
-    public void testResetImpl() throws Exception {
-        Sniffer.reset();
-        assertEquals(0, Sniffer.executedStatements());
-        executeStatement();
-        Sniffer.reset();
-        assertEquals(0, Sniffer.executedStatements());
-    }
-
-    @Test
     public void testExecuteStatement() throws Exception {
-        Sniffer.reset();
-        assertEquals(0, Sniffer.executedStatements());
+        int actual = Sniffer.executedStatements();
         executeStatement();
-        assertEquals(1, Sniffer.executedStatements());
+        assertEquals(1, Sniffer.executedStatements() - actual);
     }
 
     @Test
     public void testVerifyExact() throws Exception {
         // test positive
-        Sniffer.reset();
+        ExpectedQueries expectedQueries = Sniffer.expectedQueries();
         executeStatement();
-        Sniffer.verifyExact(1);
+        expectedQueries.verifyExact(1);
 
         // test negative case 1
+        expectedQueries = Sniffer.expectedQueries();
         try {
-            Sniffer.verifyExact(1);
+            expectedQueries.verifyExact(1);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
         }
 
         // test negative case 2
+        expectedQueries = Sniffer.expectedQueries();
         executeStatements(2);
         try {
-            Sniffer.verifyExact(1);
+            expectedQueries.verifyExact(1);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -56,7 +49,7 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testRecordQueriesNegative() throws Exception {
         try {
-            Sniffer.run(BaseTest::executeStatement).verifyNoMoreQueries();
+            Sniffer.run(BaseTest::executeStatement).verifyNoMore();
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -70,13 +63,13 @@ public class SnifferTest extends BaseTest {
             Thread thread = new Thread(BaseTest::executeStatement);
             thread.start();
             thread.join();
-        }).verifyNotMoreThanOneThreadLocal();
+        }).verifyNotMoreThanOne(Sniffer.CURRENT_THREAD);
     }
 
     @Test
     public void testRecordQueriesThreadLocalNegative() throws Exception {
         try {
-            Sniffer.run(BaseTest::executeStatement).verifyNoMoreThreadLocalQueries();
+            Sniffer.run(BaseTest::executeStatement).verifyNoMore(Sniffer.CURRENT_THREAD);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -90,7 +83,7 @@ public class SnifferTest extends BaseTest {
             Thread thread = new Thread(BaseTest::executeStatement);
             thread.start();
             thread.join();
-        }).verifyNotMoreThanOneOtherThreads();
+        }).verifyNotMoreThanOne(Sniffer.OTHER_THREADS);
     }
 
     @Test
@@ -101,7 +94,7 @@ public class SnifferTest extends BaseTest {
                 Thread thread = new Thread(BaseTest::executeStatement);
                 thread.start();
                 thread.join();
-            }).verifyNoMoreOtherThreadsQueries();
+            }).verifyNoMore(Sniffer.OTHER_THREADS);
             fail();
         } catch (AssertionError e) {
             assertNotNull(e);
@@ -119,7 +112,7 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testTryWithResourceApi() throws Exception {
         try {
-            try (ExpectedQueries ignored = Sniffer.expectNoMoreQueries()) {
+            try (ExpectedQueries ignored = Sniffer.expectNoMore()) {
                 executeStatement();
                 throw new RuntimeException("This is a test exception");
             }
@@ -128,6 +121,27 @@ public class SnifferTest extends BaseTest {
             assertNotNull(e.getSuppressed());
             assertEquals(1, e.getSuppressed().length);
             assertTrue(AssertionError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
+        }
+    }
+
+    @Test
+    public void testExpectNotMoreThanOne() {
+        // positive
+        try (ExpectedQueries ignored = Sniffer.expectNotMoreThanOne()) {
+            executeStatement();
+        }
+        // negative
+        try {
+            try (ExpectedQueries ignored = Sniffer.expectNotMoreThanOne()) {
+                executeStatements(2);
+            }
+        } catch (AssertionError e) {
+            assertNotNull(e);
+        }
+        // positive thread local
+        try (ExpectedQueries ignored = Sniffer.expectNotMoreThanOne(Sniffer.CURRENT_THREAD)) {
+            executeStatement();
+            executeStatementInOtherThread();
         }
     }
 
