@@ -14,24 +14,24 @@ import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
 /**
  * @since 2.0
  */
-public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable {
+public class Spy<C extends Spy<C>> implements Closeable {
 
     private final int initialQueries;
     private final int initialThreadLocalQueries;
 
-    public ExpectedQueries() {
+    public Spy() {
         this(Sniffer.executedStatements(), Sniffer.ThreadLocalSniffer.executedStatements());
     }
 
-    public ExpectedQueries(int initialQueries, int initialThreadLocalQueries) {
+    public Spy(int initialQueries, int initialThreadLocalQueries) {
         this.initialQueries = initialQueries;
         this.initialThreadLocalQueries = initialThreadLocalQueries;
     }
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
-    public ExpectedQueries reset() {
-        return new ExpectedQueries();
+    public Spy reset() {
+        return new Spy();
     }
 
     public int executedStatements() {
@@ -58,14 +58,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C expectNoMore() {
-        return expectNoMore(DEFAULT_THREAD_MATCHER);
+    public C expectNever() {
+        return expectNever(DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C expectNoMore(ThreadMatcher threadMatcher) {
+    public C expectNever(ThreadMatcher threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(0, 0, threadMatcher));
         return self();
     }
@@ -73,14 +73,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C verifyNoMore() {
-        return verifyNoMore(DEFAULT_THREAD_MATCHER);
+    public C verifyNever() {
+        return verifyNever(DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C verifyNoMore(ThreadMatcher threadMatcher) {
+    public C verifyNever(ThreadMatcher threadMatcher) {
         new ThreadMatcherExpectation(0, 0, threadMatcher).validate();
         return self();
     }
@@ -90,14 +90,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C expectNotMoreThanOne() {
-        return expectNotMoreThanOne(DEFAULT_THREAD_MATCHER);
+    public C expectAtMostOnce() {
+        return expectAtMostOnce(DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C expectNotMoreThanOne(ThreadMatcher threadMatcher) {
+    public C expectAtMostOnce(ThreadMatcher threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(0, 1, threadMatcher));
         return self();
     }
@@ -105,14 +105,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C verifyNotMoreThanOne() {
-        return verifyNotMoreThanOne(DEFAULT_THREAD_MATCHER);
+    public C verifyAtMostOnce() {
+        return verifyAtMostOnce(DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C verifyNotMoreThanOne(ThreadMatcher threadMatcher) {
+    public C verifyAtMostOnce(ThreadMatcher threadMatcher) {
         new ThreadMatcherExpectation(0, 1, threadMatcher).validate();
         return self();
     }
@@ -122,14 +122,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C expectNotMoreThan(int allowedStatements) {
-        return expectNotMoreThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    public C expectAtMost(int allowedStatements) {
+        return expectAtMost(allowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C expectNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
+    public C expectAtMost(int allowedStatements, ThreadMatcher threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(0, allowedStatements, threadMatcher));
         return self();
     }
@@ -137,14 +137,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C verifyNotMoreThan(int allowedStatements) {
-        return verifyNotMoreThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    public C verifyAtMost(int allowedStatements) {
+        return verifyAtMost(allowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C verifyNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
+    public C verifyAtMost(int allowedStatements, ThreadMatcher threadMatcher) {
         new ThreadMatcherExpectation(0, allowedStatements, threadMatcher).validate();
         return self();
     }
@@ -154,14 +154,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C expectExact(int allowedStatements) {
-        return expectExact(allowedStatements, DEFAULT_THREAD_MATCHER);
+    public C expect(int allowedStatements) {
+        return expect(allowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C expectExact(int allowedStatements, ThreadMatcher threadMatcher) {
+    public C expect(int allowedStatements, ThreadMatcher threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher));
         return self();
     }
@@ -169,14 +169,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C verifyExact(int allowedStatements) {
-        return verifyExact(allowedStatements, DEFAULT_THREAD_MATCHER);
+    public C verify(int allowedStatements) {
+        return verify(allowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C verifyExact(int allowedStatements, ThreadMatcher threadMatcher) {
+    public C verify(int allowedStatements, ThreadMatcher threadMatcher) {
         new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher).validate();
         return self();
     }
@@ -186,14 +186,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C expectNotLessThan(int allowedStatements) {
-        return expectNotLessThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    public C expectAtLeast(int allowedStatements) {
+        return expectAtLeast(allowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C expectNotLessThan(int allowedStatements, ThreadMatcher threadMatcher) {
+    public C expectAtLeast(int allowedStatements, ThreadMatcher threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher));
         return self();
     }
@@ -201,14 +201,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C verifyNotLessThan(int allowedStatements) {
-        return verifyNotLessThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    public C verifyAtLeast(int allowedStatements) {
+        return verifyAtLeast(allowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C verifyNotLessThan(int allowedStatements, ThreadMatcher threadMatcher) {
+    public C verifyAtLeast(int allowedStatements, ThreadMatcher threadMatcher) {
         new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher).validate();
         return self();
     }
@@ -218,14 +218,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C expectRange(int minAllowedStatements, int maxAllowedStatements) {
-        return expectRange(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER);
+    public C expectBetween(int minAllowedStatements, int maxAllowedStatements) {
+        return expectBetween(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C expectRange(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) {
+    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher));
         return self();
     }
@@ -233,14 +233,14 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public C verifyRange(int minAllowedStatements, int maxAllowedStatements) {
-        return verifyRange(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER);
+    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements) {
+        return verifyBetween(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public C verifyRange(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) {
+    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) {
         new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher).validate();
         return self();
     }
@@ -309,7 +309,7 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
     /**
      * @since 2.0
      */
-    public <V> RecordedQueriesWithValue<V> call(Callable<V> callable) {
+    public <V> SpyWithValue<V> call(Callable<V> callable) {
         V result;
 
         try {
@@ -319,7 +319,7 @@ public class ExpectedQueries<C extends ExpectedQueries<C>> implements Closeable 
         }
 
         verify();
-        return new RecordedQueriesWithValue<V>(result);
+        return new SpyWithValue<V>(result);
     }
 
     /**

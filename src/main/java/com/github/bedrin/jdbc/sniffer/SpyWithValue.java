@@ -1,10 +1,10 @@
 package com.github.bedrin.jdbc.sniffer;
 
-public class RecordedQueriesWithValue<V> extends ExpectedQueries<RecordedQueriesWithValue<V>> {
+public class SpyWithValue<V> extends Spy<SpyWithValue<V>> {
 
     private final V value;
 
-    RecordedQueriesWithValue(V value) {
+    SpyWithValue(V value) {
         this.value = value;
     }
 

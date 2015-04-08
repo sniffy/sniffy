@@ -36,8 +36,8 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static <T extends ExpectedQueries<T>> ExpectedQueries<T> expectedQueries() {
-        return new ExpectedQueries<T>();
+    public static <T extends Spy<T>> Spy<T> spy() {
+        return new Spy<T>();
     }
 
     // noMore methods
@@ -45,15 +45,15 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static ExpectedQueries expectNoMore() {
+    public static Spy expectNoMore() {
         return expectNoMore(DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public static ExpectedQueries expectNoMore(ThreadMatcher threadMatcher) {
-        return expectedQueries().expectNoMore(threadMatcher);
+    public static Spy expectNoMore(ThreadMatcher threadMatcher) {
+        return spy().expectNever(threadMatcher);
     }
 
     // notMoreThanOne methods
@@ -61,15 +61,15 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static ExpectedQueries expectNotMoreThanOne() {
+    public static Spy expectNotMoreThanOne() {
         return expectNotMoreThanOne(DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public static ExpectedQueries expectNotMoreThanOne(ThreadMatcher threadMatcher) {
-        return expectedQueries().expectNotMoreThanOne(threadMatcher);
+    public static Spy expectNotMoreThanOne(ThreadMatcher threadMatcher) {
+        return spy().expectAtMostOnce(threadMatcher);
     }
 
     // notMoreThan methods
@@ -77,15 +77,15 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static ExpectedQueries expectNotMoreThan(int allowedStatements) {
+    public static Spy expectNotMoreThan(int allowedStatements) {
         return expectNotMoreThan(allowedStatements, DEFAULT_THREAD_MATCHER);
     }
 
     /**
      * @since 2.0
      */
-    public static ExpectedQueries expectNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
-        return expectedQueries().expectNotMoreThan(allowedStatements, threadMatcher);
+    public static Spy expectNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
+        return spy().expectAtMost(allowedStatements, threadMatcher);
     }
 
     /**
@@ -97,7 +97,7 @@ public class Sniffer {
         /**
          * When {@link com.github.bedrin.jdbc.sniffer.Sniffer#execute(com.github.bedrin.jdbc.sniffer.Sniffer.Executable)}
          * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
-         * {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
+         * {@link Spy} object with stats
          * @throws Exception code under test can throw any exception
          */
         void execute() throws Exception;
@@ -106,35 +106,35 @@ public class Sniffer {
 
     /**
      * Execute the {@link com.github.bedrin.jdbc.sniffer.Sniffer.Executable#execute()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
+     * and return the {@link Spy} object with stats
      * @param executable code to test
      * @return statistics on executed queries
      * @throws RuntimeException if underlying code under test throws an Exception
      */
-    public static ExpectedQueries execute(Executable executable) {
-        return expectedQueries().execute(executable);
+    public static Spy execute(Executable executable) {
+        return spy().execute(executable);
     }
 
     /**
      * Execute the {@link Runnable#run()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
+     * and return the {@link Spy} object with stats
      * @param runnable code to test
      * @return statistics on executed queries
      */
-    public static ExpectedQueries run(Runnable runnable) {
-        return expectedQueries().run(runnable);
+    public static Spy run(Runnable runnable) {
+        return spy().run(runnable);
     }
 
     /**
      * Execute the {@link Callable#call()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueriesWithValue} object with stats
+     * and return the {@link SpyWithValue} object with stats
      * @param callable code to test
      * @param <V> type of return value
      * @return statistics on executed queries
      * @throws Exception if underlying code under test throws an Exception
      */
-    public static <V> RecordedQueriesWithValue<V> call(Callable<V> callable) throws Exception {
-        return expectedQueries().call(callable);
+    public static <V> SpyWithValue<V> call(Callable<V> callable) throws Exception {
+        return spy().call(callable);
     }
 
     public static final AnyThread ANY_THREAD = new AnyThread();
