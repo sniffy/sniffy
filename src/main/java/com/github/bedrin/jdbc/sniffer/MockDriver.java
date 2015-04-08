@@ -7,9 +7,15 @@ import java.util.logging.Logger;
 
 public class MockDriver implements Driver {
 
-    public MockDriver() {
+    private static final MockDriver INSTANCE = new MockDriver();
+
+    static {
+        load();
+    }
+
+    private static void load() {
         try {
-            DriverManager.registerDriver(this);
+            DriverManager.registerDriver(INSTANCE);
         } catch (SQLException e) {
             e.printStackTrace();
         }
