@@ -30,14 +30,27 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
+    /**
+     * Wrapper for {@link Sniffer#spy()} method; useful for chaining
+     * @return a new {@link Spy} instance
+     */
     public Spy reset() {
-        return new Spy();
+        return Sniffer.spy();
     }
 
+    /**
+     * @return number of SQL statements executed by current thread since some fixed moment of time
+     * @since 2.0
+     */
     public int executedStatements() {
         return executedStatements(DEFAULT_THREAD_MATCHER);
     }
 
+    /**
+     * @param threadMatcher chooses {@link Thread}s for calculating the number of executed queries
+     * @return number of SQL statements executed since some fixed moment of time
+     * @since 2.0
+     */
     public int executedStatements(ThreadMatcher threadMatcher) {
 
         if (threadMatcher instanceof Sniffer.AnyThread) {
@@ -56,6 +69,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // noMore methods
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 0, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectNever() {
@@ -63,6 +77,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 0, {@code threadMatcher}
      * @since 2.0
      */
     public C expectNever(ThreadMatcher threadMatcher) {
@@ -71,6 +86,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, 0, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verifyNever() {
@@ -78,6 +94,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, 0, {@code threadMatcher}
      * @since 2.0
      */
     public C verifyNever(ThreadMatcher threadMatcher) {
@@ -88,6 +105,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // notMoreThanOne methods
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 1, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectAtMostOnce() {
@@ -95,6 +113,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 1, {@code threadMatcher}
      * @since 2.0
      */
     public C expectAtMostOnce(ThreadMatcher threadMatcher) {
@@ -103,6 +122,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, 1, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verifyAtMostOnce() {
@@ -110,6 +130,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, 1, {@code threadMatcher}
      * @since 2.0
      */
     public C verifyAtMostOnce(ThreadMatcher threadMatcher) {
@@ -120,6 +141,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // notMoreThan methods
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectAtMost(int allowedStatements) {
@@ -127,6 +149,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, {@code allowedStatements}, {@code threadMatcher}
      * @since 2.0
      */
     public C expectAtMost(int allowedStatements, ThreadMatcher threadMatcher) {
@@ -135,6 +158,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verifyAtMost(int allowedStatements) {
@@ -142,6 +166,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, {@code allowedStatements}, {@code threadMatcher}
      * @since 2.0
      */
     public C verifyAtMost(int allowedStatements, ThreadMatcher threadMatcher) {
@@ -152,6 +177,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // exact methods
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expect(int allowedStatements) {
@@ -159,6 +185,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threadMatcher}
      * @since 2.0
      */
     public C expect(int allowedStatements, ThreadMatcher threadMatcher) {
@@ -167,6 +194,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verify(int allowedStatements) {
@@ -174,6 +202,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threadMatcher}
      * @since 2.0
      */
     public C verify(int allowedStatements, ThreadMatcher threadMatcher) {
@@ -184,6 +213,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // notLessThan methods
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectAtLeast(int allowedStatements) {
@@ -191,6 +221,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threadMatcher}
      * @since 2.0
      */
     public C expectAtLeast(int allowedStatements, ThreadMatcher threadMatcher) {
@@ -199,6 +230,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verifyAtLeast(int allowedStatements) {
@@ -206,6 +238,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
+     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threadMatcher}
      * @since 2.0
      */
     public C verifyAtLeast(int allowedStatements, ThreadMatcher threadMatcher) {
@@ -216,6 +249,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // range methods
 
     /**
+     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements) {
