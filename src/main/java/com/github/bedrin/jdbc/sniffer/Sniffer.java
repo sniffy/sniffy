@@ -141,7 +141,7 @@ public class Sniffer {
     public static final CurrentThread CURRENT_THREAD = new CurrentThread();
     public static final OtherThreads OTHER_THREADS = new OtherThreads();
 
-    protected final static ThreadMatcher DEFAULT_THREAD_MATCHER = ANY_THREAD;
+    protected final static ThreadMatcher DEFAULT_THREAD_MATCHER = CURRENT_THREAD;
 
     protected abstract static class ThreadMatcher {
 
