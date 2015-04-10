@@ -1,6 +1,7 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
 import com.github.bedrin.jdbc.sniffer.BaseTest;
+import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -23,14 +24,14 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     @NotAllowedQueries(threadLocal = true)
     public void testNotAllowedQueries() {
         executeStatement();
-        thrown.expect(AssertionError.class);
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
     @AllowedQueries(value = 1, threadLocal = true)
     public void testAllowedOneQueryExecutedTwo() {
         executeStatements(2);
-        thrown.expect(AssertionError.class);
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
@@ -43,7 +44,7 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     @AllowedQueries(min = 2, threadLocal = true)
     public void testAllowedMinTwoQueriesExecutedOne() {
         executeStatement();
-        thrown.expect(AssertionError.class);
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
@@ -56,7 +57,7 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     @AllowedQueries(exact = 2, threadLocal = true)
     public void testAllowedExactTwoQueriesExecutedThree() {
         executeStatements(3);
-        thrown.expect(AssertionError.class);
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test

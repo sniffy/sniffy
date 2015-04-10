@@ -4,7 +4,7 @@ import org.junit.Test;
 
 public class SnifferExpectApiTest extends BaseTest {
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = WrongNumberOfQueriesError.class)
     public void testNotMoreThan() throws Exception {
         try (Spy eq = Sniffer.expectNotMoreThan(1)) {
             executeStatements(2);

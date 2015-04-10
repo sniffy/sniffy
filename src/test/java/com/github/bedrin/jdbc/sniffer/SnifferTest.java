@@ -25,7 +25,7 @@ public class SnifferTest extends BaseTest {
         try {
             spy.verify(1);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
 
@@ -35,7 +35,7 @@ public class SnifferTest extends BaseTest {
         try {
             spy.verify(1);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
     }
@@ -50,7 +50,7 @@ public class SnifferTest extends BaseTest {
         try {
             Sniffer.run(BaseTest::executeStatement).verifyNever();
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
     }
@@ -70,7 +70,7 @@ public class SnifferTest extends BaseTest {
         try {
             Sniffer.run(BaseTest::executeStatement).verifyNever(Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
     }
@@ -95,7 +95,7 @@ public class SnifferTest extends BaseTest {
                 thread.join();
             }).verifyNever(Sniffer.OTHER_THREADS);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
     }
@@ -119,7 +119,7 @@ public class SnifferTest extends BaseTest {
             assertEquals("This is a test exception", e.getMessage());
             assertNotNull(e.getSuppressed());
             assertEquals(1, e.getSuppressed().length);
-            assertTrue(AssertionError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
+            assertTrue(WrongNumberOfQueriesError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
         }
     }
 
@@ -134,7 +134,7 @@ public class SnifferTest extends BaseTest {
             try (Spy ignored = Sniffer.expectNotMoreThanOne()) {
                 executeStatements(2);
             }
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         // positive thread local

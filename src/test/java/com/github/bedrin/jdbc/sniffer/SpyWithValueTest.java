@@ -14,9 +14,10 @@ public class SpyWithValueTest extends BaseTest {
         recordedQueries.verifyNever();
         recordedQueries = new SpyWithValue<>("val");
         try {
+            executeStatement();
             recordedQueries.verifyNever();
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -30,9 +31,10 @@ public class SpyWithValueTest extends BaseTest {
         recordedQueries.verifyAtMostOnce();
         recordedQueries = new SpyWithValue<>("val");
         try {
+            executeStatements(2);
             recordedQueries.verifyAtMostOnce();
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -48,9 +50,10 @@ public class SpyWithValueTest extends BaseTest {
         recordedQueries.verifyAtMost(2);
         recordedQueries = new SpyWithValue<>("val");
         try {
+            executeStatements(3);
             recordedQueries.verifyAtMost(2);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -65,14 +68,14 @@ public class SpyWithValueTest extends BaseTest {
         try {
             recordedQueries.verify(1);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         recordedQueries = new SpyWithValue<>("val");
         try {
             recordedQueries.verify(1);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -87,7 +90,7 @@ public class SpyWithValueTest extends BaseTest {
         try {
             recordedQueries.verifyAtLeast(3);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -104,13 +107,13 @@ public class SpyWithValueTest extends BaseTest {
         try {
             recordedQueries.verifyBetween(3, 4);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         try {
             recordedQueries.verifyBetween(0, 1);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -122,9 +125,11 @@ public class SpyWithValueTest extends BaseTest {
         recordedQueries.verifyNever(Sniffer.CURRENT_THREAD);
         recordedQueries = new SpyWithValue<>("val");
         try {
+            executeStatementsInOtherThread(5);
+            executeStatement();
             recordedQueries.verifyNever(Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -138,9 +143,10 @@ public class SpyWithValueTest extends BaseTest {
         recordedQueries.verifyAtMostOnce(Sniffer.CURRENT_THREAD);
         recordedQueries = new SpyWithValue<>("val");
         try {
+            executeStatements(2);
             recordedQueries.verifyAtMostOnce(Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -156,7 +162,7 @@ public class SpyWithValueTest extends BaseTest {
             executeStatements(3);
             recordedQueries.verifyAtMost(2, Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -171,14 +177,14 @@ public class SpyWithValueTest extends BaseTest {
         try {
             recordedQueries.verify(1, Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         recordedQueries = new SpyWithValue<>("val");
         try {
             recordedQueries.verify(1, Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -193,7 +199,7 @@ public class SpyWithValueTest extends BaseTest {
         try {
             recordedQueries.verifyAtLeast(3, Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -210,13 +216,13 @@ public class SpyWithValueTest extends BaseTest {
         try {
             recordedQueries.verifyBetween(3, 4, Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         try {
             recordedQueries.verifyBetween(0, 1, Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -228,9 +234,10 @@ public class SpyWithValueTest extends BaseTest {
         recordedQueries.verifyNever(Sniffer.OTHER_THREADS);
         recordedQueries = new SpyWithValue<>("val");
         try {
+            executeStatementInOtherThread();
             recordedQueries.verifyNever(Sniffer.OTHER_THREADS);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -244,9 +251,10 @@ public class SpyWithValueTest extends BaseTest {
         recordedQueries.verifyAtMostOnce(Sniffer.OTHER_THREADS);
         recordedQueries = new SpyWithValue<>("val");
         try {
+            executeStatementsInOtherThread(2);
             recordedQueries.verifyAtMostOnce(Sniffer.OTHER_THREADS);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -262,9 +270,10 @@ public class SpyWithValueTest extends BaseTest {
         recordedQueries.verifyAtMost(2, Sniffer.OTHER_THREADS);
         recordedQueries = new SpyWithValue<>("val");
         try {
+            executeStatementsInOtherThread(3);
             recordedQueries.verifyAtMost(2, Sniffer.OTHER_THREADS);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -279,14 +288,14 @@ public class SpyWithValueTest extends BaseTest {
         try {
             recordedQueries.verify(1, Sniffer.OTHER_THREADS);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         recordedQueries = new SpyWithValue<>("val");
         try {
             recordedQueries.verify(1, Sniffer.OTHER_THREADS);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -301,7 +310,7 @@ public class SpyWithValueTest extends BaseTest {
         try {
             recordedQueries.verifyAtLeast(3, Sniffer.OTHER_THREADS);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());
@@ -318,13 +327,13 @@ public class SpyWithValueTest extends BaseTest {
         try {
             recordedQueries.verifyBetween(3, 4, Sniffer.OTHER_THREADS);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         try {
             recordedQueries.verifyBetween(0, 1, Sniffer.OTHER_THREADS);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         assertEquals("val", recordedQueries.getValue());

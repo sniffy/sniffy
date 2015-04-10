@@ -26,18 +26,18 @@ public class ThreadLocalSnifferTest extends BaseTest {
         try {
             spy.verify(1, Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
 
         // test negative case 2
         spy = Sniffer.spy();
         executeStatement();
-        executeStatement();
+        executeStatementInOtherThread();
         try {
             spy.verify(2, Sniffer.CURRENT_THREAD);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
     }

@@ -5,6 +5,7 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import static org.junit.Assert.*;
 
@@ -31,6 +32,15 @@ public class UsageTest {
         // Sniffer.execute() method executes the lambda expression and returns an instance of RecordedQueries
         // this class provides methods for validating the number of executed queries
         Sniffer.execute(() -> connection.createStatement().execute("SELECT 1 FROM DUAL")).verifyAtMostOnce();
+    }
+
+    @Test
+    public void testTryWithResourceApi() throws SQLException {
+        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        try (@SuppressWarnings("unused") Spy s = Sniffer.expectNotMoreThanOne();
+             Statement statement = connection.createStatement()) {
+            statement.execute("SELECT 1 FROM DUAL");
+        }
     }
 
 }
