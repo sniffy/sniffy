@@ -66,7 +66,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     }
 
-    // noMore methods
+    // never methods
 
     /**
      * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 0, {#link Sniffer#CURRENT_THREAD}
@@ -102,7 +102,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         return self();
     }
 
-    // notMoreThanOne methods
+    // atMostOnce methods
 
     /**
      * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 1, {#link Sniffer#CURRENT_THREAD}
@@ -138,7 +138,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         return self();
     }
 
-    // notMoreThan methods
+    // atMost methods
 
     /**
      * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
@@ -210,7 +210,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         return self();
     }
 
-    // notLessThan methods
+    // atLeast methods
 
     /**
      * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {#link Sniffer#CURRENT_THREAD}
@@ -246,7 +246,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         return self();
     }
 
-    // range methods
+    // between methods
 
     /**
      * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {#link Sniffer#CURRENT_THREAD}
@@ -321,7 +321,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      *     @Test
      *     public void testTryWithResourceApi() throws SQLException {
      *         final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-     *         try (@SuppressWarnings("unused") Spy s = Sniffer.expectNotMoreThanOne();
+     *         try (@SuppressWarnings("unused") Spy s = Sniffer.expectAtMostOnce();
      *              Statement statement = connection.createStatement()) {
      *             statement.execute("SELECT 1 FROM DUAL");
      *         }

@@ -111,7 +111,7 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testTryWithResourceApi() throws Exception {
         try {
-            try (Spy ignored = Sniffer.expectNoMore()) {
+            try (Spy ignored = Sniffer.expectNever()) {
                 executeStatement();
                 throw new RuntimeException("This is a test exception");
             }
@@ -126,19 +126,19 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testExpectNotMoreThanOne() {
         // positive
-        try (Spy ignored = Sniffer.expectNotMoreThanOne()) {
+        try (Spy ignored = Sniffer.expectAtMostOnce()) {
             executeStatement();
         }
         // negative
         try {
-            try (Spy ignored = Sniffer.expectNotMoreThanOne()) {
+            try (Spy ignored = Sniffer.expectAtMostOnce()) {
                 executeStatements(2);
             }
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         // positive thread local
-        try (Spy ignored = Sniffer.expectNotMoreThanOne(Sniffer.CURRENT_THREAD)) {
+        try (Spy ignored = Sniffer.expectAtMostOnce(Sniffer.CURRENT_THREAD)) {
             executeStatement();
             executeStatementInOtherThread();
         }

@@ -37,7 +37,7 @@ public class UsageTest {
     @Test
     public void testTryWithResourceApi() throws SQLException {
         final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        try (@SuppressWarnings("unused") Spy s = Sniffer.expectNotMoreThanOne();
+        try (@SuppressWarnings("unused") Spy s = Sniffer.expectAtMostOnce();
              Statement statement = connection.createStatement()) {
             statement.execute("SELECT 1 FROM DUAL");
         }

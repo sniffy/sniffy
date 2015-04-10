@@ -40,35 +40,35 @@ public class Sniffer {
         return new Spy<T>();
     }
 
-    // noMore methods
+    // never methods
 
     /**
      * @since 2.0
      */
-    public static Spy expectNoMore() {
-        return expectNoMore(DEFAULT_THREAD_MATCHER);
+    public static Spy expectNever() {
+        return spy().expectNever();
     }
 
     /**
      * @since 2.0
      */
-    public static Spy expectNoMore(ThreadMatcher threadMatcher) {
+    public static Spy expectNever(ThreadMatcher threadMatcher) {
         return spy().expectNever(threadMatcher);
     }
 
-    // notMoreThanOne methods
+    // atMostOnce methods
 
     /**
      * @since 2.0
      */
-    public static Spy expectNotMoreThanOne() {
-        return expectNotMoreThanOne(DEFAULT_THREAD_MATCHER);
+    public static Spy expectAtMostOnce() {
+        return spy().expectAtMostOnce();
     }
 
     /**
      * @since 2.0
      */
-    public static Spy expectNotMoreThanOne(ThreadMatcher threadMatcher) {
+    public static Spy expectAtMostOnce(ThreadMatcher threadMatcher) {
         return spy().expectAtMostOnce(threadMatcher);
     }
 
@@ -77,15 +77,63 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static Spy expectNotMoreThan(int allowedStatements) {
-        return expectNotMoreThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    public static Spy expectAtMost(int allowedStatements) {
+        return spy().expectAtMost(allowedStatements);
     }
 
     /**
      * @since 2.0
      */
-    public static Spy expectNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
+    public static Spy expectAtMost(int allowedStatements, ThreadMatcher threadMatcher) {
         return spy().expectAtMost(allowedStatements, threadMatcher);
+    }
+
+    // exact methods
+
+    /**
+     * @since 2.0
+     */
+    public static Spy expect(int allowedStatements) {
+        return spy().expect(allowedStatements);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static Spy expect(int allowedStatements, ThreadMatcher threadMatcher) {
+        return spy().expect(allowedStatements, threadMatcher);
+    }
+
+    // atLeast methods
+
+    /**
+     * @since 2.0
+     */
+    public static Spy expectAtLeast(int allowedStatements) {
+        return spy().expect(allowedStatements);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static Spy expectAtLeast(int allowedStatements, ThreadMatcher threadMatcher) {
+        return spy().expect(allowedStatements, threadMatcher);
+    }
+
+    // between methods methods
+
+    /**
+     * @since 2.0
+     */
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements);
+    }
+
+    /**
+     * @since 2.0
+     */
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher);
     }
 
     /**
