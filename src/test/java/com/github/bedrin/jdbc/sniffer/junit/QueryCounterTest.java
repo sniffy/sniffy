@@ -21,7 +21,7 @@ public class QueryCounterTest extends BaseTest {
     }
 
     @Test
-    @NotAllowedQueries
+    @NoQueriesAllowed
     public void testNotAllowedQueries() {
         executeStatement();
         thrown.expect(WrongNumberOfQueriesError.class);

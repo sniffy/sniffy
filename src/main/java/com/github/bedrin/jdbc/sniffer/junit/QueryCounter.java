@@ -8,11 +8,21 @@ import org.junit.runners.model.Statement;
 
 public class QueryCounter implements TestRule {
 
+    private final boolean disallowByDefault;
+
+    public QueryCounter() {
+        this(false);
+    }
+
+    public QueryCounter(boolean disallowByDefault) {
+        this.disallowByDefault = disallowByDefault;
+    }
+
     @Override
     public Statement apply(Statement statement, Description description) {
 
         AllowedQueries allowedQueries = description.getAnnotation(AllowedQueries.class);
-        NotAllowedQueries notAllowedQueries = description.getAnnotation(NotAllowedQueries.class);
+        NoQueriesAllowed notAllowedQueries = description.getAnnotation(NoQueriesAllowed.class);
 
         if (null != allowedQueries && null != notAllowedQueries) {
             throw new IllegalArgumentException("Cannot specify @AllowedQueries and @NotAllowedQueries on one test method");

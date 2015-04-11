@@ -21,7 +21,7 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     }
 
     @Test
-    @NotAllowedQueries(threadLocal = true)
+    @NoQueriesAllowed(threadLocal = true)
     public void testNotAllowedQueries() {
         executeStatement();
         thrown.expect(WrongNumberOfQueriesError.class);
