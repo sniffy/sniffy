@@ -62,13 +62,13 @@ public class SnifferTest extends BaseTest {
             Thread thread = new Thread(BaseTest::executeStatement);
             thread.start();
             thread.join();
-        }).verifyAtMostOnce(Sniffer.CURRENT_THREAD);
+        }).verifyAtMostOnce(Threads.CURRENT);
     }
 
     @Test
     public void testRecordQueriesThreadLocalNegative() throws Exception {
         try {
-            Sniffer.run(BaseTest::executeStatement).verifyNever(Sniffer.CURRENT_THREAD);
+            Sniffer.run(BaseTest::executeStatement).verifyNever(Threads.CURRENT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -82,7 +82,7 @@ public class SnifferTest extends BaseTest {
             Thread thread = new Thread(BaseTest::executeStatement);
             thread.start();
             thread.join();
-        }).verifyAtMostOnce(Sniffer.OTHER_THREADS);
+        }).verifyAtMostOnce(Threads.OTHERS);
     }
 
     @Test
@@ -93,7 +93,7 @@ public class SnifferTest extends BaseTest {
                 Thread thread = new Thread(BaseTest::executeStatement);
                 thread.start();
                 thread.join();
-            }).verifyNever(Sniffer.OTHER_THREADS);
+            }).verifyNever(Threads.OTHERS);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -138,7 +138,7 @@ public class SnifferTest extends BaseTest {
             assertNotNull(e);
         }
         // positive thread local
-        try (Spy ignored = Sniffer.expectAtMostOnce(Sniffer.CURRENT_THREAD)) {
+        try (Spy ignored = Sniffer.expectAtMostOnce(Threads.CURRENT)) {
             executeStatement();
             executeStatementInOtherThread();
         }

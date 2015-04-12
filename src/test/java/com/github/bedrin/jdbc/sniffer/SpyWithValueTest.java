@@ -122,12 +122,12 @@ public class SpyWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreThreadLocal() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
-        recordedQueries.verifyNever(Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyNever(Threads.CURRENT);
         recordedQueries = new SpyWithValue<>("val");
         try {
             executeStatementsInOtherThread(5);
             executeStatement();
-            recordedQueries.verifyNever(Sniffer.CURRENT_THREAD);
+            recordedQueries.verifyNever(Threads.CURRENT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -138,13 +138,13 @@ public class SpyWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreThanOneThreadLocal() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
-        recordedQueries.verifyAtMostOnce(Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyAtMostOnce(Threads.CURRENT);
         recordedQueries = new SpyWithValue<>("val");
-        recordedQueries.verifyAtMostOnce(Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyAtMostOnce(Threads.CURRENT);
         recordedQueries = new SpyWithValue<>("val");
         try {
             executeStatements(2);
-            recordedQueries.verifyAtMostOnce(Sniffer.CURRENT_THREAD);
+            recordedQueries.verifyAtMostOnce(Threads.CURRENT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -156,11 +156,11 @@ public class SpyWithValueTest extends BaseTest {
     public void testVerifyNotMoreThanThreadLocal() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
         executeStatementsInOtherThread(3);
-        recordedQueries.verifyAtMost(2, Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyAtMost(2, Threads.CURRENT);
         recordedQueries = new SpyWithValue<>("val");
         try {
             executeStatements(3);
-            recordedQueries.verifyAtMost(2, Sniffer.CURRENT_THREAD);
+            recordedQueries.verifyAtMost(2, Threads.CURRENT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -172,17 +172,17 @@ public class SpyWithValueTest extends BaseTest {
     public void testVerifyExactThreadLocal() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
         executeStatement();
-        recordedQueries.verify(1, Sniffer.CURRENT_THREAD);
+        recordedQueries.verify(1, Threads.CURRENT);
         recordedQueries = new SpyWithValue<>("val");
         try {
-            recordedQueries.verify(1, Sniffer.CURRENT_THREAD);
+            recordedQueries.verify(1, Threads.CURRENT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         recordedQueries = new SpyWithValue<>("val");
         try {
-            recordedQueries.verify(1, Sniffer.CURRENT_THREAD);
+            recordedQueries.verify(1, Threads.CURRENT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -194,10 +194,10 @@ public class SpyWithValueTest extends BaseTest {
     public void testVerifyNotLessThanThreadLocal() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
         executeStatements(2);
-        recordedQueries.verifyAtLeast(2, Sniffer.CURRENT_THREAD);
-        recordedQueries.verifyAtLeast(1, Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyAtLeast(2, Threads.CURRENT);
+        recordedQueries.verifyAtLeast(1, Threads.CURRENT);
         try {
-            recordedQueries.verifyAtLeast(3, Sniffer.CURRENT_THREAD);
+            recordedQueries.verifyAtLeast(3, Threads.CURRENT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -209,18 +209,18 @@ public class SpyWithValueTest extends BaseTest {
     public void testVerifyRangeThreadLocal() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
         executeStatements(2);
-        recordedQueries.verifyBetween(2, 2, Sniffer.CURRENT_THREAD);
-        recordedQueries.verifyBetween(1, 2, Sniffer.CURRENT_THREAD);
-        recordedQueries.verifyBetween(2, 3, Sniffer.CURRENT_THREAD);
-        recordedQueries.verifyBetween(1, 3, Sniffer.CURRENT_THREAD);
+        recordedQueries.verifyBetween(2, 2, Threads.CURRENT);
+        recordedQueries.verifyBetween(1, 2, Threads.CURRENT);
+        recordedQueries.verifyBetween(2, 3, Threads.CURRENT);
+        recordedQueries.verifyBetween(1, 3, Threads.CURRENT);
         try {
-            recordedQueries.verifyBetween(3, 4, Sniffer.CURRENT_THREAD);
+            recordedQueries.verifyBetween(3, 4, Threads.CURRENT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         try {
-            recordedQueries.verifyBetween(0, 1, Sniffer.CURRENT_THREAD);
+            recordedQueries.verifyBetween(0, 1, Threads.CURRENT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -231,11 +231,11 @@ public class SpyWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreOtherThreads() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
-        recordedQueries.verifyNever(Sniffer.OTHER_THREADS);
+        recordedQueries.verifyNever(Threads.OTHERS);
         recordedQueries = new SpyWithValue<>("val");
         try {
             executeStatementInOtherThread();
-            recordedQueries.verifyNever(Sniffer.OTHER_THREADS);
+            recordedQueries.verifyNever(Threads.OTHERS);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -246,13 +246,13 @@ public class SpyWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreThanOneOtherThreads() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
-        recordedQueries.verifyAtMostOnce(Sniffer.OTHER_THREADS);
+        recordedQueries.verifyAtMostOnce(Threads.OTHERS);
         recordedQueries = new SpyWithValue<>("val");
-        recordedQueries.verifyAtMostOnce(Sniffer.OTHER_THREADS);
+        recordedQueries.verifyAtMostOnce(Threads.OTHERS);
         recordedQueries = new SpyWithValue<>("val");
         try {
             executeStatementsInOtherThread(2);
-            recordedQueries.verifyAtMostOnce(Sniffer.OTHER_THREADS);
+            recordedQueries.verifyAtMostOnce(Threads.OTHERS);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -263,15 +263,15 @@ public class SpyWithValueTest extends BaseTest {
     @Test
     public void testVerifyNotMoreThanOtherThreads() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
-        recordedQueries.verifyAtMost(2, Sniffer.OTHER_THREADS);
+        recordedQueries.verifyAtMost(2, Threads.OTHERS);
         recordedQueries = new SpyWithValue<>("val");
-        recordedQueries.verifyAtMost(2, Sniffer.OTHER_THREADS);
+        recordedQueries.verifyAtMost(2, Threads.OTHERS);
         recordedQueries = new SpyWithValue<>("val");
-        recordedQueries.verifyAtMost(2, Sniffer.OTHER_THREADS);
+        recordedQueries.verifyAtMost(2, Threads.OTHERS);
         recordedQueries = new SpyWithValue<>("val");
         try {
             executeStatementsInOtherThread(3);
-            recordedQueries.verifyAtMost(2, Sniffer.OTHER_THREADS);
+            recordedQueries.verifyAtMost(2, Threads.OTHERS);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -283,17 +283,17 @@ public class SpyWithValueTest extends BaseTest {
     public void testVerifyExactOtherThreads() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
         executeStatementInOtherThread();
-        recordedQueries.verify(1, Sniffer.OTHER_THREADS);
+        recordedQueries.verify(1, Threads.OTHERS);
         recordedQueries = new SpyWithValue<>("val");
         try {
-            recordedQueries.verify(1, Sniffer.OTHER_THREADS);
+            recordedQueries.verify(1, Threads.OTHERS);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         recordedQueries = new SpyWithValue<>("val");
         try {
-            recordedQueries.verify(1, Sniffer.OTHER_THREADS);
+            recordedQueries.verify(1, Threads.OTHERS);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -305,10 +305,10 @@ public class SpyWithValueTest extends BaseTest {
     public void testVerifyNotLessThanOtherThreads() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
         executeStatementsInOtherThread(2);
-        recordedQueries.verifyAtLeast(2, Sniffer.OTHER_THREADS);
-        recordedQueries.verifyAtLeast(1, Sniffer.OTHER_THREADS);
+        recordedQueries.verifyAtLeast(2, Threads.OTHERS);
+        recordedQueries.verifyAtLeast(1, Threads.OTHERS);
         try {
-            recordedQueries.verifyAtLeast(3, Sniffer.OTHER_THREADS);
+            recordedQueries.verifyAtLeast(3, Threads.OTHERS);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -320,18 +320,18 @@ public class SpyWithValueTest extends BaseTest {
     public void testVerifyRangeOtherThreads() throws Exception {
         SpyWithValue<String> recordedQueries = new SpyWithValue<>("val");
         executeStatementsInOtherThread(2);
-        recordedQueries.verifyBetween(2, 2, Sniffer.OTHER_THREADS);
-        recordedQueries.verifyBetween(1, 2, Sniffer.OTHER_THREADS);
-        recordedQueries.verifyBetween(2, 3, Sniffer.OTHER_THREADS);
-        recordedQueries.verifyBetween(1, 3, Sniffer.OTHER_THREADS);
+        recordedQueries.verifyBetween(2, 2, Threads.OTHERS);
+        recordedQueries.verifyBetween(1, 2, Threads.OTHERS);
+        recordedQueries.verifyBetween(2, 3, Threads.OTHERS);
+        recordedQueries.verifyBetween(1, 3, Threads.OTHERS);
         try {
-            recordedQueries.verifyBetween(3, 4, Sniffer.OTHER_THREADS);
+            recordedQueries.verifyBetween(3, 4, Threads.OTHERS);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
         try {
-            recordedQueries.verifyBetween(0, 1, Sniffer.OTHER_THREADS);
+            recordedQueries.verifyBetween(0, 1, Threads.OTHERS);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);

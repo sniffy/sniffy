@@ -52,7 +52,7 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static Spy expectNever(ThreadMatcher threadMatcher) {
+    public static Spy expectNever(Threads threadMatcher) {
         return spy().expectNever(threadMatcher);
     }
 
@@ -68,7 +68,7 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static Spy expectAtMostOnce(ThreadMatcher threadMatcher) {
+    public static Spy expectAtMostOnce(Threads threadMatcher) {
         return spy().expectAtMostOnce(threadMatcher);
     }
 
@@ -84,7 +84,7 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static Spy expectAtMost(int allowedStatements, ThreadMatcher threadMatcher) {
+    public static Spy expectAtMost(int allowedStatements, Threads threadMatcher) {
         return spy().expectAtMost(allowedStatements, threadMatcher);
     }
 
@@ -100,7 +100,7 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static Spy expect(int allowedStatements, ThreadMatcher threadMatcher) {
+    public static Spy expect(int allowedStatements, Threads threadMatcher) {
         return spy().expect(allowedStatements, threadMatcher);
     }
 
@@ -116,7 +116,7 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static Spy expectAtLeast(int allowedStatements, ThreadMatcher threadMatcher) {
+    public static Spy expectAtLeast(int allowedStatements, Threads threadMatcher) {
         return spy().expect(allowedStatements, threadMatcher);
     }
 
@@ -132,7 +132,7 @@ public class Sniffer {
     /**
      * @since 2.0
      */
-    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) {
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
         return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher);
     }
 
@@ -185,29 +185,9 @@ public class Sniffer {
         return spy().call(callable);
     }
 
-    public static final AnyThread ANY_THREAD = new AnyThread();
-    public static final CurrentThread CURRENT_THREAD = new CurrentThread();
-    public static final OtherThreads OTHER_THREADS = new OtherThreads();
+    protected final static Threads DEFAULT_THREAD_MATCHER = Threads.CURRENT;
 
-    protected final static ThreadMatcher DEFAULT_THREAD_MATCHER = CURRENT_THREAD;
-
-    protected abstract static class ThreadMatcher {
-
-    }
-
-    static class AnyThread extends ThreadMatcher {
-
-    }
-
-    static class CurrentThread extends ThreadMatcher {
-
-    }
-
-    static class OtherThreads extends ThreadMatcher {
-
-    }
-
-    static class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
+    public static class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
 
         private final static ThreadLocalSniffer INSTANCE = new ThreadLocalSniffer();
 

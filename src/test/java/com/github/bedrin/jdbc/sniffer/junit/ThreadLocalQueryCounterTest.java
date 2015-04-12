@@ -1,6 +1,7 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
 import com.github.bedrin.jdbc.sniffer.BaseTest;
+import com.github.bedrin.jdbc.sniffer.Threads;
 import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
 import org.junit.Rule;
 import org.junit.Test;
@@ -15,53 +16,53 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     public QueryCounter queryCounter = new QueryCounter();
 
     @Test
-    @AllowedQueries(value = 1, threadLocal = true)
+    @ExpectedQueries(value = 1, threads = Threads.CURRENT)
     public void testAllowedOneQuery() {
         executeStatement();
     }
 
     @Test
-    @NoQueriesAllowed(threadLocal = true)
+    @NoQueriesAllowed()
     public void testNotAllowedQueries() {
         executeStatement();
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(value = 1, threadLocal = true)
+    @ExpectedQueries(value = 1, threads = Threads.CURRENT)
     public void testAllowedOneQueryExecutedTwo() {
         executeStatements(2);
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(min = 1, threadLocal = true)
+    @ExpectedQueries(atLeast = 1, threads = Threads.CURRENT)
     public void testAllowedMinOneQueryExecutedTwo() {
         executeStatements(2);
     }
 
     @Test
-    @AllowedQueries(min = 2, threadLocal = true)
+    @ExpectedQueries(atLeast = 2, threads = Threads.CURRENT)
     public void testAllowedMinTwoQueriesExecutedOne() {
         executeStatement();
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(exact = 2, threadLocal = true)
+    @ExpectedQueries(value = 2, threads = Threads.CURRENT)
     public void testAllowedExactTwoQueriesExecutedTwo() {
         executeStatements(2);
     }
 
     @Test
-    @AllowedQueries(exact = 2, threadLocal = true)
+    @ExpectedQueries(value = 2, threads = Threads.CURRENT)
     public void testAllowedExactTwoQueriesExecutedThree() {
         executeStatements(3);
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(value = 2, threadLocal = true)
+    @ExpectedQueries(value = 2, threads = Threads.CURRENT)
     public void testAllowedTwoQueries() {
         executeStatements(2);
     }

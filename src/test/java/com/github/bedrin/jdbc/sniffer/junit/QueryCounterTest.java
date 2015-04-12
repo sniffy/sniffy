@@ -15,7 +15,7 @@ public class QueryCounterTest extends BaseTest {
     public QueryCounter queryCounter = new QueryCounter();
 
     @Test
-    @AllowedQueries(1)
+    @ExpectedQueries(1)
     public void testAllowedOneQuery() {
         executeStatement();
     }
@@ -28,40 +28,40 @@ public class QueryCounterTest extends BaseTest {
     }
 
     @Test
-    @AllowedQueries(1)
+    @ExpectedQueries(1)
     public void testAllowedOneQueryExecutedTwo() {
         executeStatements(2);
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(min = 1)
+    @ExpectedQueries(atLeast = 1)
     public void testAllowedMinOneQueryExecutedTwo() {
         executeStatements(2);
     }
 
     @Test
-    @AllowedQueries(min = 2)
+    @ExpectedQueries(atLeast = 2)
     public void testAllowedMinTwoQueriesExecutedOne() {
         executeStatement();
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(exact = 2)
+    @ExpectedQueries(value = 2)
     public void testAllowedExactTwoQueriesExecutedTwo() {
         executeStatements(2);
     }
 
     @Test
-    @AllowedQueries(exact = 2)
+    @ExpectedQueries(value = 2)
     public void testAllowedExactTwoQueriesExecutedThree() {
         executeStatements(3);
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(2)
+    @ExpectedQueries(2)
     public void testAllowedTwoQueries() {
         executeStatements(2);
     }

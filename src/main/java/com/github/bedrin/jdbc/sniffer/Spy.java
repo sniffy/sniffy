@@ -1,7 +1,5 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import com.github.bedrin.jdbc.sniffer.Sniffer.ThreadMatcher;
-
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,17 +49,18 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @return number of SQL statements executed since some fixed moment of time
      * @since 2.0
      */
-    public int executedStatements(ThreadMatcher threadMatcher) {
+    public int executedStatements(Threads threadMatcher) {
 
-        if (threadMatcher instanceof Sniffer.AnyThread) {
-            return Sniffer.executedStatements() - initialQueries;
-        } else if (threadMatcher instanceof Sniffer.CurrentThread) {
-            return Sniffer.ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
-        } else if (threadMatcher instanceof Sniffer.OtherThreads) {
-            return Sniffer.executedStatements() - Sniffer.ThreadLocalSniffer.executedStatements()
-                    - initialQueries + initialThreadLocalQueries;
-        } else {
-            throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
+        switch (threadMatcher) {
+            case ANY:
+                return Sniffer.executedStatements() - initialQueries;
+            case CURRENT:
+                return Sniffer.ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
+            case OTHERS:
+                return Sniffer.executedStatements() - Sniffer.ThreadLocalSniffer.executedStatements()
+                        - initialQueries + initialThreadLocalQueries;
+            default:
+                throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
         }
 
     }
@@ -69,7 +68,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // never methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 0, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments 0, 0, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectNever() {
@@ -77,16 +76,16 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 0, {@code threadMatcher}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments 0, 0, {@code threads}
      * @since 2.0
      */
-    public C expectNever(ThreadMatcher threadMatcher) {
+    public C expectNever(Threads threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(0, 0, threadMatcher));
         return self();
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, 0, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments 0, 0, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verifyNever() throws WrongNumberOfQueriesError {
@@ -94,10 +93,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, 0, {@code threadMatcher}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments 0, 0, {@code threads}
      * @since 2.0
      */
-    public C verifyNever(ThreadMatcher threadMatcher) throws WrongNumberOfQueriesError {
+    public C verifyNever(Threads threadMatcher) throws WrongNumberOfQueriesError {
         new ThreadMatcherExpectation(0, 0, threadMatcher).validate();
         return self();
     }
@@ -105,7 +104,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // atMostOnce methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 1, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments 0, 1, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectAtMostOnce() {
@@ -113,16 +112,16 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, 1, {@code threadMatcher}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments 0, 1, {@code threads}
      * @since 2.0
      */
-    public C expectAtMostOnce(ThreadMatcher threadMatcher) {
+    public C expectAtMostOnce(Threads threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(0, 1, threadMatcher));
         return self();
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, 1, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments 0, 1, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verifyAtMostOnce() throws WrongNumberOfQueriesError {
@@ -130,10 +129,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, 1, {@code threadMatcher}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments 0, 1, {@code threads}
      * @since 2.0
      */
-    public C verifyAtMostOnce(ThreadMatcher threadMatcher) throws WrongNumberOfQueriesError {
+    public C verifyAtMostOnce(Threads threadMatcher) throws WrongNumberOfQueriesError {
         new ThreadMatcherExpectation(0, 1, threadMatcher).validate();
         return self();
     }
@@ -141,7 +140,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // atMost methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments 0, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectAtMost(int allowedStatements) {
@@ -149,16 +148,16 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments 0, {@code allowedStatements}, {@code threadMatcher}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments 0, {@code allowedStatements}, {@code threads}
      * @since 2.0
      */
-    public C expectAtMost(int allowedStatements, ThreadMatcher threadMatcher) {
+    public C expectAtMost(int allowedStatements, Threads threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(0, allowedStatements, threadMatcher));
         return self();
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments 0, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verifyAtMost(int allowedStatements) throws WrongNumberOfQueriesError {
@@ -166,10 +165,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments 0, {@code allowedStatements}, {@code threadMatcher}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments 0, {@code allowedStatements}, {@code threads}
      * @since 2.0
      */
-    public C verifyAtMost(int allowedStatements, ThreadMatcher threadMatcher) throws WrongNumberOfQueriesError {
+    public C verifyAtMost(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
         new ThreadMatcherExpectation(0, allowedStatements, threadMatcher).validate();
         return self();
     }
@@ -177,7 +176,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // exact methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments {@code allowedStatements}, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expect(int allowedStatements) {
@@ -185,16 +184,16 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threadMatcher}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}
      * @since 2.0
      */
-    public C expect(int allowedStatements, ThreadMatcher threadMatcher) {
+    public C expect(int allowedStatements, Threads threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher));
         return self();
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments {@code allowedStatements}, {@code allowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verify(int allowedStatements) throws WrongNumberOfQueriesError {
@@ -202,10 +201,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threadMatcher}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}
      * @since 2.0
      */
-    public C verify(int allowedStatements, ThreadMatcher threadMatcher) throws WrongNumberOfQueriesError {
+    public C verify(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
         new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher).validate();
         return self();
     }
@@ -213,7 +212,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // atLeast methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectAtLeast(int allowedStatements) {
@@ -221,16 +220,16 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threadMatcher}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}
      * @since 2.0
      */
-    public C expectAtLeast(int allowedStatements, ThreadMatcher threadMatcher) {
+    public C expectAtLeast(int allowedStatements, Threads threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher));
         return self();
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C verifyAtLeast(int allowedStatements) throws WrongNumberOfQueriesError {
@@ -238,10 +237,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threadMatcher}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}
      * @since 2.0
      */
-    public C verifyAtLeast(int allowedStatements, ThreadMatcher threadMatcher) throws WrongNumberOfQueriesError {
+    public C verifyAtLeast(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
         new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher).validate();
         return self();
     }
@@ -249,7 +248,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // between methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, ThreadMatcher)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {#link Sniffer#CURRENT_THREAD}
+     * Alias for {@link #expectBetween(int, int, Threads)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {#link Sniffer#CURRENT_THREAD}
      * @since 2.0
      */
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements) {
@@ -262,13 +261,13 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * and a call to {@link #verify()} method
      * @since 2.0
      */
-    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) {
+    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
         expectations.add(new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher));
         return self();
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, ThreadMatcher)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {@code threadMatcher}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {@code threads}
      * @since 2.0
      */
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements) throws WrongNumberOfQueriesError {
@@ -282,7 +281,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @throws WrongNumberOfQueriesError if wrong number of queries was executed
      * @since 2.0
      */
-    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, ThreadMatcher threadMatcher) throws WrongNumberOfQueriesError {
+    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
         new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher).validate();
         return self();
     }
@@ -407,9 +406,9 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
         private final int minimumQueries;
         private final int maximumQueries;
-        private final ThreadMatcher threadMatcher;
+        private final Threads threadMatcher;
 
-        public ThreadMatcherExpectation(int minimumQueries, int maximumQueries, ThreadMatcher threadMatcher) {
+        public ThreadMatcherExpectation(int minimumQueries, int maximumQueries, Threads threadMatcher) {
             this.minimumQueries = minimumQueries;
             this.maximumQueries = maximumQueries;
             this.threadMatcher = threadMatcher;
@@ -418,30 +417,37 @@ public class Spy<C extends Spy<C>> implements Closeable {
         @Override
         public void validate() throws WrongNumberOfQueriesError {
 
-            if (threadMatcher instanceof Sniffer.AnyThread) {
-                int numQueries = Sniffer.executedStatements() - initialQueries;
-                if (numQueries > maximumQueries || numQueries < minimumQueries)
-                    throw new WrongNumberOfQueriesError(String.format(
-                            "Disallowed number of executed statements; expected between %d and %d; observed %d",
-                            minimumQueries, maximumQueries, numQueries
-                    ));
-            } else if (threadMatcher instanceof Sniffer.CurrentThread) {
-                int numQueries = Sniffer.ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
-                if (numQueries > maximumQueries || numQueries < minimumQueries)
-                    throw new WrongNumberOfQueriesError(String.format(
-                            "Disallowed number of executed statements; expected between %d and %d; observed %d",
-                            minimumQueries, maximumQueries, numQueries
-                    ));
-            } else if (threadMatcher instanceof Sniffer.OtherThreads) {
-                int numQueries = Sniffer.executedStatements() - Sniffer.ThreadLocalSniffer.executedStatements()
-                        - initialQueries + initialThreadLocalQueries;
-                if (numQueries > maximumQueries || numQueries < minimumQueries)
-                    throw new WrongNumberOfQueriesError(String.format(
-                            "Disallowed number of executed statements; expected between %d and %d; observed %d",
-                            minimumQueries, maximumQueries, numQueries
-                    ));
-            } else {
-                throw new WrongNumberOfQueriesError(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
+            switch (threadMatcher) {
+                case ANY:
+                {
+                    int numQueries = Sniffer.executedStatements() - initialQueries;
+                    if (numQueries > maximumQueries || numQueries < minimumQueries)
+                        throw new WrongNumberOfQueriesError(String.format(
+                                "Disallowed number of executed statements; expected between %d and %d; observed %d",
+                                minimumQueries, maximumQueries, numQueries
+                        ));
+                }
+                break;
+                case CURRENT:
+                {
+                    int numQueries = Sniffer.ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
+                    if (numQueries > maximumQueries || numQueries < minimumQueries)
+                        throw new WrongNumberOfQueriesError(String.format(
+                                "Disallowed number of executed statements; expected between %d and %d; observed %d",
+                                minimumQueries, maximumQueries, numQueries
+                        ));
+                }
+                break;
+                case OTHERS: {
+                    int numQueries = Sniffer.executedStatements() - Sniffer.ThreadLocalSniffer.executedStatements()
+                            - initialQueries + initialThreadLocalQueries;
+                    if (numQueries > maximumQueries || numQueries < minimumQueries)
+                        throw new WrongNumberOfQueriesError(String.format(
+                                "Disallowed number of executed statements; expected between %d and %d; observed %d",
+                                minimumQueries, maximumQueries, numQueries
+                        ));
+                }
+                break;
             }
 
         }

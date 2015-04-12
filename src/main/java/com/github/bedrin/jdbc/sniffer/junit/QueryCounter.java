@@ -2,6 +2,7 @@ package com.github.bedrin.jdbc.sniffer.junit;
 
 import com.github.bedrin.jdbc.sniffer.Spy;
 import com.github.bedrin.jdbc.sniffer.Sniffer;
+import com.github.bedrin.jdbc.sniffer.Threads;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -21,7 +22,7 @@ public class QueryCounter implements TestRule {
     @Override
     public Statement apply(Statement statement, Description description) {
 
-        AllowedQueries allowedQueries = description.getAnnotation(AllowedQueries.class);
+        ExpectedQueries allowedQueries = description.getAnnotation(ExpectedQueries.class);
         NoQueriesAllowed notAllowedQueries = description.getAnnotation(NoQueriesAllowed.class);
 
         if (null != allowedQueries && null != notAllowedQueries) {
@@ -31,28 +32,20 @@ public class QueryCounter implements TestRule {
             Integer min = null, max = null;
 
             if (allowedQueries.value() != -1) {
-                if (allowedQueries.max() != -1 || allowedQueries.min() != -1 ||
-                        allowedQueries.exact() != -1) {
-                    throw new IllegalArgumentException("Cannot specify value parameter together with other parameters");
+                if (allowedQueries.atMost() != -1 || allowedQueries.atLeast() != -1) {
+                    throw new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters");
                 }
                 max = allowedQueries.value();
             }
 
-            if (allowedQueries.min() != -1) {
-                min = allowedQueries.min();
+            if (allowedQueries.atLeast() != -1) {
+                min = allowedQueries.atLeast();
             }
 
-            if (allowedQueries.exact() != -1) {
-                if (null != min || null != max) {
-                    throw new IllegalArgumentException("Cannot specify exact parameter together with min or max parameters");
-                }
-                min = max = allowedQueries.exact();
-            }
-
-            return new SnifferStatement(statement, min, max, allowedQueries.threadLocal());
+            return new SnifferStatement(statement, min, max, allowedQueries.threads());
 
         } else if (null != notAllowedQueries) {
-            return new SnifferStatement(statement, 0, 0, notAllowedQueries.threadLocal());
+            return new SnifferStatement(statement, 0, 0, Threads.ANY);
         } else {
             return statement;
         }
@@ -64,13 +57,13 @@ public class QueryCounter implements TestRule {
         private final Statement delegate;
         private final Integer minimumQueries;
         private final Integer maximumQueries;
-        private final boolean threadLocal;
+        private final Threads threadMatcher;
 
-        public SnifferStatement(Statement delegate, Integer minimumQueries, Integer maximumQueries, boolean threadLocal) {
+        public SnifferStatement(Statement delegate, Integer minimumQueries, Integer maximumQueries, Threads threadMatcher) {
             this.delegate = delegate;
             this.minimumQueries = minimumQueries;
             this.maximumQueries = maximumQueries;
-            this.threadLocal = threadLocal;
+            this.threadMatcher = threadMatcher;
         }
 
         @Override
@@ -79,22 +72,12 @@ public class QueryCounter implements TestRule {
             Spy spy = Sniffer.spy();
             delegate.evaluate();
 
-            if (threadLocal) {
-                if (null != minimumQueries && null != maximumQueries) {
-                    spy.verifyBetween(minimumQueries, maximumQueries, Sniffer.CURRENT_THREAD);
-                } else if (null != minimumQueries) {
-                    spy.verifyAtLeast(minimumQueries, Sniffer.CURRENT_THREAD);
-                } else if (null != maximumQueries) {
-                    spy.verifyAtMost(maximumQueries, Sniffer.CURRENT_THREAD);
-                }
-            } else {
-                if (null != minimumQueries && null != maximumQueries) {
-                    spy.verifyBetween(minimumQueries, maximumQueries, Sniffer.ANY_THREAD);
-                } else if (null != minimumQueries) {
-                    spy.verifyAtLeast(minimumQueries, Sniffer.ANY_THREAD);
-                } else if (null != maximumQueries) {
-                    spy.verifyAtMost(maximumQueries, Sniffer.ANY_THREAD);
-                }
+            if (null != minimumQueries && null != maximumQueries) {
+                spy.verifyBetween(minimumQueries, maximumQueries, threadMatcher);
+            } else if (null != minimumQueries) {
+                spy.verifyAtLeast(minimumQueries, threadMatcher);
+            } else if (null != maximumQueries) {
+                spy.verifyAtMost(maximumQueries, threadMatcher);
             }
         }
 
