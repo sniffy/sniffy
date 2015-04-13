@@ -109,7 +109,7 @@ public class SnifferTest extends BaseTest {
     }
 
     @Test
-    public void testTryWithResourceApi() throws Exception {
+    public void testTryWithResourceApi_Never() throws Exception {
         try {
             try (Spy ignored = Sniffer.expectNever()) {
                 executeStatement();
@@ -120,6 +120,65 @@ public class SnifferTest extends BaseTest {
             assertNotNull(e.getSuppressed());
             assertEquals(1, e.getSuppressed().length);
             assertTrue(WrongNumberOfQueriesError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
+        }
+    }
+
+    @Test
+    public void testTryWithResourceApi_NeverOtherThread() throws Exception {
+        try {
+            try (Spy ignored = Sniffer.expectNever(Threads.OTHERS)) {
+                executeStatementInOtherThread();
+                throw new RuntimeException("This is a test exception");
+            }
+        } catch (Exception e) {
+            assertEquals("This is a test exception", e.getMessage());
+            assertNotNull(e.getSuppressed());
+            assertEquals(1, e.getSuppressed().length);
+            assertTrue(WrongNumberOfQueriesError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
+        }
+    }
+
+    @Test
+    public void testTryWithResourceApi_Exact() throws Exception {
+        try (Spy ignored = Sniffer.expect(2)) {
+            executeStatements(2);
+        }
+    }
+
+    @Test
+    public void testTryWithResourceApi_ExactCurrentThread() throws Exception {
+        try (Spy ignored = Sniffer.expect(2, Threads.CURRENT)) {
+            executeStatements(2);
+        }
+    }
+
+    @Test
+    public void testTryWithResourceApi_AtLeast() throws Exception {
+        try (Spy ignored = Sniffer.expectAtLeast(2)) {
+            executeStatements(5);
+        }
+    }
+
+    @Test
+    public void testTryWithResourceApi_AtLeastCurrentThread() throws Exception {
+        try (Spy ignored = Sniffer.expectAtLeast(2, Threads.CURRENT)) {
+            executeStatements(5);
+            executeStatementsInOtherThread(1);
+        }
+    }
+
+    @Test
+    public void testTryWithResourceApi_Between() throws Exception {
+        try (Spy ignored = Sniffer.expectBetween(2,10)) {
+            executeStatements(7);
+        }
+    }
+
+    @Test
+    public void testTryWithResourceApi_BetweenOtherThreads() throws Exception {
+        try (Spy ignored = Sniffer.expectBetween(2, 10, Threads.OTHERS)) {
+            executeStatements(7);
+            executeStatementsInOtherThread(7);
         }
     }
 

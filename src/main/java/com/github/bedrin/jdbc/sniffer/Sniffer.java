@@ -110,14 +110,14 @@ public class Sniffer {
      * @since 2.0
      */
     public static Spy expectAtLeast(int allowedStatements) {
-        return spy().expect(allowedStatements);
+        return spy().expectAtLeast(allowedStatements);
     }
 
     /**
      * @since 2.0
      */
     public static Spy expectAtLeast(int allowedStatements, Threads threadMatcher) {
-        return spy().expect(allowedStatements, threadMatcher);
+        return spy().expectAtLeast(allowedStatements, threadMatcher);
     }
 
     // between methods methods

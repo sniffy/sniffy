@@ -6,11 +6,4 @@ public class WrongNumberOfQueriesError extends AssertionError {
         super(detailMessage);
     }
 
-    public WrongNumberOfQueriesError() {
-    }
-
-    public WrongNumberOfQueriesError(String message, Throwable cause) {
-        super(message, cause);
-    }
-
 }
