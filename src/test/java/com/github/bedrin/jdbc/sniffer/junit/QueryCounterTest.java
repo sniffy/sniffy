@@ -1,6 +1,7 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
 import com.github.bedrin.jdbc.sniffer.BaseTest;
+import com.github.bedrin.jdbc.sniffer.Threads;
 import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,6 +29,12 @@ public class QueryCounterTest extends BaseTest {
     }
 
     @Test
+    @Expectation(value = 5, atLeast = 2)
+    public void testAmbiguousAnnotations() {
+        thrown.expect(IllegalArgumentException.class);
+    }
+
+    @Test
     @NoQueriesAllowed
     public void testNotAllowedQueries() {
         executeStatement();
@@ -39,6 +46,16 @@ public class QueryCounterTest extends BaseTest {
     public void testAllowedOneQueryExecutedTwo() {
         executeStatements(2);
         thrown.expect(WrongNumberOfQueriesError.class);
+    }
+
+    @Test
+    @Expectations({
+            @Expectation(atMost = 1, threads = Threads.CURRENT),
+            @Expectation(atMost = 1, threads = Threads.OTHERS),
+    })
+    public void testExpectations() {
+        executeStatement();
+        executeStatementInOtherThread();
     }
 
     @Test

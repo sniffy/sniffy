@@ -22,6 +22,11 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     }
 
     @Test
+    public void testNoExpectations() {
+        executeStatement();
+    }
+
+    @Test
     @NoQueriesAllowed()
     public void testNotAllowedQueries() {
         executeStatement();

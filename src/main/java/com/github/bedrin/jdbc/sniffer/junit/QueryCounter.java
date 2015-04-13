@@ -30,9 +30,13 @@ public class QueryCounter implements TestRule {
         }
 
         if (null != expectation && null != notAllowedQueries) {
-            throw new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method");
+            return new InvalidAnnotationsStatement(statement,
+                    new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method")
+            );
         } else if (null != expectations && null != notAllowedQueries) {
-            throw new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method");
+            return new InvalidAnnotationsStatement(statement,
+                    new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method")
+            );
         } else if (null != expectations || null != expectation) {
 
             List<Expectation> expectationList = new ArrayList<Expectation>();
@@ -45,7 +49,15 @@ public class QueryCounter implements TestRule {
                 expectationList.addAll(Arrays.asList(expectations.value()));
             }
 
-            validateExpectation(expectationList);
+            for (Expectation expectation1 : expectationList) {
+                if (expectation1.value() != -1) {
+                    if (expectation1.atMost() != -1 || expectation1.atLeast() != -1) {
+                        return new InvalidAnnotationsStatement(statement,
+                                new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters")
+                        );
+                    }
+                }
+            }
 
             return new SnifferStatement(statement, expectationList);
 
@@ -58,14 +70,25 @@ public class QueryCounter implements TestRule {
 
     }
 
-    private void validateExpectation(List<Expectation> expectationList) {
-        for (Expectation expectation : expectationList) {
-            if (expectation.value() != -1) {
-                if (expectation.atMost() != -1 || expectation.atLeast() != -1) {
-                    throw new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters");
-                }
+    private static class InvalidAnnotationsStatement extends Statement {
+
+        private final Statement delegate;
+        private final Throwable exception;
+
+        public InvalidAnnotationsStatement(Statement delegate, Throwable exception) {
+            this.delegate = delegate;
+            this.exception = exception;
+        }
+
+        @Override
+        public void evaluate() throws Throwable {
+            try {
+                delegate.evaluate();
+            } finally {
+                throw exception;
             }
         }
+
     }
 
     private static class SnifferStatement extends Statement {
@@ -96,11 +119,12 @@ public class QueryCounter implements TestRule {
                 }
             }
 
-            try {
-                delegate.evaluate();
-            } finally {
-                spy.verify();
-            }
+            spy.execute(new Sniffer.Executable() {
+                @Override
+                public void execute() throws Throwable{
+                    delegate.evaluate();
+                }
+            });
 
         }
 

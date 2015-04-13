@@ -148,7 +148,7 @@ public class Sniffer {
          * {@link Spy} object with stats
          * @throws Exception code under test can throw any exception
          */
-        void execute() throws Exception;
+        void execute() throws Throwable;
 
     }
 
