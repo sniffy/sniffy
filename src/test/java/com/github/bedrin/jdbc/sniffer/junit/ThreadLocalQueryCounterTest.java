@@ -16,7 +16,7 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     public QueryCounter queryCounter = new QueryCounter();
 
     @Test
-    @ExpectedQueries(value = 1, threads = Threads.CURRENT)
+    @Expectation(value = 1, threads = Threads.CURRENT)
     public void testAllowedOneQuery() {
         executeStatement();
     }
@@ -29,40 +29,40 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     }
 
     @Test
-    @ExpectedQueries(value = 1, threads = Threads.CURRENT)
+    @Expectation(value = 1, threads = Threads.CURRENT)
     public void testAllowedOneQueryExecutedTwo() {
         executeStatements(2);
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @ExpectedQueries(atLeast = 1, threads = Threads.CURRENT)
+    @Expectation(atLeast = 1, threads = Threads.CURRENT)
     public void testAllowedMinOneQueryExecutedTwo() {
         executeStatements(2);
     }
 
     @Test
-    @ExpectedQueries(atLeast = 2, threads = Threads.CURRENT)
+    @Expectation(atLeast = 2, threads = Threads.CURRENT)
     public void testAllowedMinTwoQueriesExecutedOne() {
         executeStatement();
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @ExpectedQueries(value = 2, threads = Threads.CURRENT)
+    @Expectation(value = 2, threads = Threads.CURRENT)
     public void testAllowedExactTwoQueriesExecutedTwo() {
         executeStatements(2);
     }
 
     @Test
-    @ExpectedQueries(value = 2, threads = Threads.CURRENT)
+    @Expectation(value = 2, threads = Threads.CURRENT)
     public void testAllowedExactTwoQueriesExecutedThree() {
         executeStatements(3);
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @ExpectedQueries(value = 2, threads = Threads.CURRENT)
+    @Expectation(value = 2, threads = Threads.CURRENT)
     public void testAllowedTwoQueries() {
         executeStatements(2);
     }

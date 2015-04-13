@@ -8,11 +8,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
-public @interface ExpectedQueries {
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+public @interface Expectation {
 
     int value() default -1;
-
     int atMost() default -1;
     int atLeast() default -1;
 

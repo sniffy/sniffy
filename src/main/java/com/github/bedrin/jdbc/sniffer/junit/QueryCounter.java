@@ -2,83 +2,98 @@ package com.github.bedrin.jdbc.sniffer.junit;
 
 import com.github.bedrin.jdbc.sniffer.Spy;
 import com.github.bedrin.jdbc.sniffer.Sniffer;
-import com.github.bedrin.jdbc.sniffer.Threads;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+// TODO: allow annotating the rule or the class itself with the same annotation
 public class QueryCounter implements TestRule {
-
-    private final boolean disallowByDefault;
-
-    public QueryCounter() {
-        this(false);
-    }
-
-    public QueryCounter(boolean disallowByDefault) {
-        this.disallowByDefault = disallowByDefault;
-    }
 
     @Override
     public Statement apply(Statement statement, Description description) {
 
-        ExpectedQueries allowedQueries = description.getAnnotation(ExpectedQueries.class);
+        Expectations expectations = description.getAnnotation(Expectations.class);
+        Expectation expectation = description.getAnnotation(Expectation.class);
         NoQueriesAllowed notAllowedQueries = description.getAnnotation(NoQueriesAllowed.class);
 
-        if (null != allowedQueries && null != notAllowedQueries) {
-            throw new IllegalArgumentException("Cannot specify @AllowedQueries and @NotAllowedQueries on one test method");
-        } else if (null != allowedQueries) {
+        if (null != expectation && null != notAllowedQueries) {
+            throw new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method");
+        } else if (null != expectations && null != notAllowedQueries) {
+            throw new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method");
+        } else if (null != expectations || null != expectation) {
 
-            Integer min = null, max = null;
+            List<Expectation> expectationList = new ArrayList<Expectation>();
 
-            if (allowedQueries.value() != -1) {
-                if (allowedQueries.atMost() != -1 || allowedQueries.atLeast() != -1) {
-                    throw new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters");
-                }
-                max = allowedQueries.value();
+            if (null != expectation) {
+                expectationList.add(expectation);
             }
 
-            if (allowedQueries.atLeast() != -1) {
-                min = allowedQueries.atLeast();
+            if (null != expectations) {
+                expectationList.addAll(Arrays.asList(expectations.value()));
             }
 
-            return new SnifferStatement(statement, min, max, allowedQueries.threads());
+            validateExpectation(expectationList);
+
+            return new SnifferStatement(statement, expectationList);
 
         } else if (null != notAllowedQueries) {
-            return new SnifferStatement(statement, 0, 0, Threads.ANY);
+            Expectation annotation = NoQueriesAllowed.class.getAnnotation(Expectation.class);
+            return new SnifferStatement(statement, Collections.singletonList(annotation));
         } else {
             return statement;
         }
 
     }
 
+    private void validateExpectation(List<Expectation> expectationList) {
+        for (Expectation expectation : expectationList) {
+            if (expectation.value() != -1) {
+                if (expectation.atMost() != -1 || expectation.atLeast() != -1) {
+                    throw new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters");
+                }
+            }
+        }
+    }
+
     private static class SnifferStatement extends Statement {
 
         private final Statement delegate;
-        private final Integer minimumQueries;
-        private final Integer maximumQueries;
-        private final Threads threadMatcher;
+        private final List<Expectation> expectationList;
 
-        public SnifferStatement(Statement delegate, Integer minimumQueries, Integer maximumQueries, Threads threadMatcher) {
+        public SnifferStatement(Statement delegate, List<Expectation> expectationList) {
             this.delegate = delegate;
-            this.minimumQueries = minimumQueries;
-            this.maximumQueries = maximumQueries;
-            this.threadMatcher = threadMatcher;
+            this.expectationList = expectationList;
         }
 
         @Override
         public void evaluate() throws Throwable {
 
             Spy spy = Sniffer.spy();
-            delegate.evaluate();
 
-            if (null != minimumQueries && null != maximumQueries) {
-                spy.verifyBetween(minimumQueries, maximumQueries, threadMatcher);
-            } else if (null != minimumQueries) {
-                spy.verifyAtLeast(minimumQueries, threadMatcher);
-            } else if (null != maximumQueries) {
-                spy.verifyAtMost(maximumQueries, threadMatcher);
+            for (Expectation expectation : expectationList) {
+                if (-1 != expectation.value()) {
+                    spy.expect(expectation.value(), expectation.threads());
+                }
+                if (-1 != expectation.atLeast() && -1 != expectation.atMost()) {
+                    spy.expectBetween(expectation.atLeast(), expectation.atMost(), expectation.threads());
+                } else if (-1 != expectation.atLeast()) {
+                    spy.expectAtLeast(expectation.atLeast(), expectation.threads());
+                } else if (-1 != expectation.atMost()) {
+                    spy.expectAtMost(expectation.atMost(), expectation.threads());
+                }
             }
+
+            try {
+                delegate.evaluate();
+            } finally {
+                spy.verify();
+            }
+
         }
 
     }
