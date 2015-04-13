@@ -7,10 +7,26 @@ import static org.junit.Assert.*;
 public class SnifferTest extends BaseTest {
 
     @Test
-    public void testExecuteStatement() throws Exception {
+    public void testExecuteStatements() throws Exception {
         int actual = Sniffer.executedStatements();
         executeStatement();
         assertEquals(1, Sniffer.executedStatements() - actual);
+    }
+
+    @Test
+    public void testExecuteStatementsCurrentThread() throws Exception {
+        Spy spy = Sniffer.spy();
+        int actual = spy.executedStatements(Threads.CURRENT);
+        executeStatement();
+        assertEquals(1, spy.executedStatements(Threads.CURRENT) - actual);
+    }
+
+    @Test
+    public void testExecuteStatementsOtherThreads() throws Exception {
+        Spy spy = Sniffer.spy();
+        int actual = spy.executedStatements(Threads.OTHERS);
+        executeStatementInOtherThread();
+        assertEquals(1, spy.executedStatements(Threads.OTHERS) - actual);
     }
 
     @Test
@@ -37,6 +53,54 @@ public class SnifferTest extends BaseTest {
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testVerifyMultipleFailures() throws Exception {
+        try {
+            Sniffer.expectAtLeast(1, Threads.CURRENT).expectAtLeast(1, Threads.OTHERS).verify();
+        } catch (WrongNumberOfQueriesError e) {
+            assertNotNull(e);
+            assertNotNull(e.getCause());
+            assertTrue(WrongNumberOfQueriesError.class.isAssignableFrom(e.getCause().getClass()));
+            assertNull(e.getCause().getCause());
+        }
+    }
+
+    @Test
+    public void testExecuteThrowsException() throws Exception {
+        try {
+            Sniffer.expect(1).execute(() -> {throw new RuntimeException();});
+        } catch (RuntimeException e) {
+            assertNotNull(e);
+            assertNull(e.getCause());
+            assertEquals(1, e.getSuppressed().length);
+            assertTrue(WrongNumberOfQueriesError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
+        }
+    }
+
+    @Test
+    public void testRunThrowsException() throws Exception {
+        try {
+            Sniffer.expect(1).run(() -> {throw new RuntimeException();});
+        } catch (RuntimeException e) {
+            assertNotNull(e);
+            assertNull(e.getCause());
+            assertEquals(1, e.getSuppressed().length);
+            assertTrue(WrongNumberOfQueriesError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
+        }
+    }
+
+    @Test
+    public void testCallThrowsException() throws Exception {
+        try {
+            Sniffer.expect(1).call(() -> {throw new RuntimeException();});
+        } catch (RuntimeException e) {
+            assertNotNull(e);
+            assertNull(e.getCause());
+            assertEquals(1, e.getSuppressed().length);
+            assertTrue(WrongNumberOfQueriesError.class.isAssignableFrom(e.getSuppressed()[0].getClass()));
         }
     }
 
