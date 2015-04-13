@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-// TODO: allow annotating the rule or the class itself with the same annotation
 public class QueryCounter implements TestRule {
 
     @Override
@@ -20,6 +19,14 @@ public class QueryCounter implements TestRule {
         Expectations expectations = description.getAnnotation(Expectations.class);
         Expectation expectation = description.getAnnotation(Expectation.class);
         NoQueriesAllowed notAllowedQueries = description.getAnnotation(NoQueriesAllowed.class);
+
+        // If no annotations present, check the test class
+        if (null == expectations && null == expectation && null == notAllowedQueries) {
+            Class<?> testClass = description.getTestClass();
+            expectations = testClass.getAnnotation(Expectations.class);
+            expectation = testClass.getAnnotation(Expectation.class);
+            notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
+        }
 
         if (null != expectation && null != notAllowedQueries) {
             throw new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method");

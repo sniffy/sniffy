@@ -6,6 +6,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+@NoQueriesAllowed
 public class QueryCounterTest extends BaseTest {
 
     @Rule
@@ -13,6 +14,12 @@ public class QueryCounterTest extends BaseTest {
 
     @Rule
     public QueryCounter queryCounter = new QueryCounter();
+
+    @Test
+    public void testNotAllowedQueriesByDefault() {
+        executeStatement();
+        thrown.expect(WrongNumberOfQueriesError.class);
+    }
 
     @Test
     @Expectation(1)
