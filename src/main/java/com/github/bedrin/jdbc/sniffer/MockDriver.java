@@ -5,6 +5,14 @@ import java.sql.*;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+/**
+ * Enable JDBC Sniffer by adding a {@code sniffer:} prefix to your JDBC URL.
+ * For example:
+ * {@code sniffer:jdbc:h2:~/test}
+ *
+ * After that you'll be able to verify the number of executed statements using the {@link Sniffer} class
+ * @see Sniffer
+ */
 public class MockDriver implements Driver {
 
     private static final MockDriver INSTANCE = new MockDriver();
