@@ -20,12 +20,13 @@ public class QueryCounter implements TestRule {
         Expectation expectation = description.getAnnotation(Expectation.class);
         NoQueriesAllowed notAllowedQueries = description.getAnnotation(NoQueriesAllowed.class);
 
-        // If no annotations present, check the test class
-        if (null == expectations && null == expectation && null == notAllowedQueries) {
-            Class<?> testClass = description.getTestClass();
-            expectations = testClass.getAnnotation(Expectations.class);
-            expectation = testClass.getAnnotation(Expectation.class);
-            notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
+        // If no annotations present, check the test class and its superclasses
+        for (Class<?> testClass = description.getTestClass();
+             null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
+                testClass = testClass.getSuperclass()) {
+            expectations = testClass.getDeclaredAnnotation(Expectations.class);
+            expectation = testClass.getDeclaredAnnotation(Expectation.class);
+            notAllowedQueries = testClass.getDeclaredAnnotation(NoQueriesAllowed.class);
         }
 
         if (null != expectation && null != notAllowedQueries) {

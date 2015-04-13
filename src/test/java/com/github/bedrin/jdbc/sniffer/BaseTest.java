@@ -7,9 +7,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-/**
- * Created by bedrin on 29.03.2015.
- */
 public abstract class BaseTest {
 
     @BeforeClass
