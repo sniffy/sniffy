@@ -30,7 +30,24 @@ public class QueryCounterTest extends BaseTest {
 
     @Test
     @Expectation(value = 5, atLeast = 2)
+    public void testAmbiguousExpectationAnnotation() {
+        thrown.expect(IllegalArgumentException.class);
+    }
+
+    @Test
+    @Expectation(2)
+    @NoQueriesAllowed
     public void testAmbiguousAnnotations() {
+        thrown.expect(IllegalArgumentException.class);
+    }
+
+    @Test
+    @Expectations({
+            @Expectation(2),
+            @Expectation(value = 2, threads = Threads.OTHERS)
+    })
+    @NoQueriesAllowed
+    public void testAmbiguousAnnotations2() {
         thrown.expect(IllegalArgumentException.class);
     }
 
@@ -87,6 +104,12 @@ public class QueryCounterTest extends BaseTest {
     @Test
     @Expectation(2)
     public void testAllowedTwoQueries() {
+        executeStatements(2);
+    }
+
+    @Test
+    @Expectation(atLeast = 1, atMost = 3)
+    public void testBetween() {
         executeStatements(2);
     }
 
