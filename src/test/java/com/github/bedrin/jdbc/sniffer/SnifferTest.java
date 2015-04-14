@@ -7,22 +7,23 @@ import static org.junit.Assert.*;
 public class SnifferTest extends BaseTest {
 
     @Test
-    public void testExecuteStatements() throws Exception {
-        int actual = Sniffer.executedStatements();
+    public void testExecutedStatements() throws Exception {
+        Spy spy = Sniffer.spy();
+        int actual = spy.executedStatements(Threads.OTHERS);
         executeStatement();
-        assertEquals(1, Sniffer.executedStatements() - actual);
+        assertEquals(1, spy.executedStatements(Threads.OTHERS) - actual);
     }
 
     @Test
-    public void testExecuteStatementsCurrentThread() throws Exception {
+    public void testExecutedStatementsCurrentThread() throws Exception {
         Spy spy = Sniffer.spy();
         int actual = spy.executedStatements(Threads.CURRENT);
         executeStatement();
-        assertEquals(1, spy.executedStatements(Threads.CURRENT) - actual);
+        assertEquals(1, spy.executedStatements() - actual);
     }
 
     @Test
-    public void testExecuteStatementsOtherThreads() throws Exception {
+    public void testExecutedStatementsOtherThreads() throws Exception {
         Spy spy = Sniffer.spy();
         int actual = spy.executedStatements(Threads.OTHERS);
         executeStatementInOtherThread();
