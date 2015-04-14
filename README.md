@@ -7,6 +7,13 @@ JDBC Sniffer
 JDBC Sniffer counts the number of executed SQL queries and provides an API for validating it
 It is very useful in unit tests and allows you to test if particular method doesn't make more than N SQL queries
 
+```java
+try (Spy s = Sniffer.expectAtMostOnce().expectNever(Threads.OTHERS);
+     Statement statement = connection.createStatement()) {
+    statement.execute("SELECT 1 FROM DUAL");
+}
+```
+
 Maven
 ============
 JDBC Sniffer is available from Maven Central repository
