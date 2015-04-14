@@ -64,15 +64,15 @@ public class MockDriverTest extends BaseTest {
 
     @Test
     public void testExecuteStatement() throws ClassNotFoundException, SQLException {
-        ExpectedQueries expectedQueries = Sniffer.expectedQueries();
+        Spy spy = Sniffer.spy();
         executeStatement();
-        assertEquals(1, expectedQueries.executedStatements());
-        expectedQueries.verifyNotMoreThanOne().reset().verifyNoMore();
+        assertEquals(1, spy.executedStatements());
+        spy.verifyAtMostOnce().reset().verifyNever();
     }
 
     @Test
     public void testExecuteIncorrectStatement() throws ClassNotFoundException, SQLException {
-        ExpectedQueries expectedQueries = Sniffer.expectedQueries();
+        Spy spy = Sniffer.spy();
         try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
              Statement statement = connection.createStatement()) {
             try {
@@ -81,8 +81,8 @@ public class MockDriverTest extends BaseTest {
                 assertNotNull(e);
             }
         }
-        assertEquals(1, expectedQueries.executedStatements());
-        expectedQueries.verifyNotMoreThanOne().reset().verifyNoMore();
+        assertEquals(1, spy.executedStatements());
+        spy.verifyAtMostOnce().reset().verifyNever();
     }
 
     @Test
@@ -105,40 +105,40 @@ public class MockDriverTest extends BaseTest {
 
     @Test
     public void testExecuteQueryStatement() throws ClassNotFoundException, SQLException {
-        ExpectedQueries expectedQueries = Sniffer.expectedQueries();
+        Spy spy = Sniffer.spy();
         try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
              Statement statement = connection.createStatement()) {
             statement.executeQuery("SELECT 1 FROM DUAL");
         }
-        assertEquals(1, expectedQueries.executedStatements());
-        expectedQueries.verifyNotMoreThanOne().reset().verifyNoMore();
+        assertEquals(1, spy.executedStatements());
+        spy.verifyAtMostOnce().reset().verifyNever();
     }
 
     @Test
     public void testExecutePreparedStatement() throws ClassNotFoundException, SQLException {
-        ExpectedQueries expectedQueries = Sniffer.expectedQueries();
+        Spy spy = Sniffer.spy();
         try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
              PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM DUAL")) {
             preparedStatement.execute();
         }
-        assertEquals(1, expectedQueries.executedStatements());
-        expectedQueries.verifyNotMoreThanOne().reset().verifyNoMore();
+        assertEquals(1, spy.executedStatements());
+        spy.verifyAtMostOnce().reset().verifyNever();
     }
 
     @Test
     public void testExecuteQueryPreparedStatement() throws ClassNotFoundException, SQLException {
-        ExpectedQueries expectedQueries = Sniffer.expectedQueries();
+        Spy spy = Sniffer.spy();
         try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
              PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM DUAL")) {
             preparedStatement.executeQuery();
         }
-        assertEquals(1, expectedQueries.executedStatements());
-        expectedQueries.verifyNotMoreThanOne().reset().verifyNoMore();
+        assertEquals(1, spy.executedStatements());
+        spy.verifyAtMostOnce().reset().verifyNever();
     }
 
     @Test
     public void testExecuteStatementThrowsException() throws ClassNotFoundException, SQLException {
-        ExpectedQueries expectedQueries = Sniffer.expectedQueries();
+        Spy spy = Sniffer.spy();
         try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
              Statement statement = connection.createStatement()) {
             statement.execute("SELECT 1 FROM DUAL_HUAL");
@@ -146,7 +146,7 @@ public class MockDriverTest extends BaseTest {
             assertFalse(InvocationTargetException.class.isAssignableFrom(e.getClass()));
             assertTrue(SQLException.class.isAssignableFrom(e.getClass()));
         }
-        assertEquals(1, expectedQueries.executedStatements());
+        assertEquals(1, spy.executedStatements());
     }
 
     /**
@@ -166,16 +166,16 @@ public class MockDriverTest extends BaseTest {
                 statement.execute("CREATE ALIAS IF NOT EXISTS TIMES_TWO FOR \"com.github.bedrin.jdbc.sniffer.MockDriverTest.timesTwo\"");
             }
 
-            ExpectedQueries expectedQueries = Sniffer.expectedQueries();
+            Spy spy = Sniffer.spy();
             try (CallableStatement callableStatement = connection.prepareCall("CALL TIMES_TWO(?)")) {
                 callableStatement.setInt(1, 1);
                 callableStatement.execute();
             }
-            assertEquals(1, expectedQueries.executedStatements());
-            expectedQueries.
-                    verifyNotMoreThanOne().
+            assertEquals(1, spy.executedStatements());
+            spy.
+                    verifyAtMostOnce().
                     reset().
-                    verifyNoMore();
+                    verifyNever();
         }
     }
 

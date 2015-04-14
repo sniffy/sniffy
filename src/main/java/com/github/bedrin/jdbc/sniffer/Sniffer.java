@@ -27,6 +27,7 @@ public class Sniffer {
     }
 
     /**
+     * @return number of SQL statements executed by current thread since some fixed moment of time
      * @since 1.0
      */
     public static int executedStatements() {
@@ -34,58 +35,143 @@ public class Sniffer {
     }
 
     /**
+     * @return a new {@link Spy} instance
      * @since 2.0
      */
-    public static <T extends ExpectedQueries<T>> ExpectedQueries<T> expectedQueries() {
-        return new ExpectedQueries<T>();
+    public static <T extends Spy<T>> Spy<T> spy() {
+        return new Spy<T>();
     }
 
-    // noMore methods
+    // never methods
 
     /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectNever()}
      * @since 2.0
      */
-    public static ExpectedQueries expectNoMore() {
-        return expectNoMore(DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * @since 2.0
-     */
-    public static ExpectedQueries expectNoMore(ThreadMatcher threadMatcher) {
-        return expectedQueries().expectNoMore(threadMatcher);
-    }
-
-    // notMoreThanOne methods
-
-    /**
-     * @since 2.0
-     */
-    public static ExpectedQueries expectNotMoreThanOne() {
-        return expectNotMoreThanOne(DEFAULT_THREAD_MATCHER);
+    public static Spy expectNever() {
+        return spy().expectNever();
     }
 
     /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectNever(Threads)}
      * @since 2.0
      */
-    public static ExpectedQueries expectNotMoreThanOne(ThreadMatcher threadMatcher) {
-        return expectedQueries().expectNotMoreThanOne(threadMatcher);
+    public static Spy expectNever(Threads threadMatcher) {
+        return spy().expectNever(threadMatcher);
+    }
+
+    // atMostOnce methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectAtMostOnce()}
+     * @since 2.0
+     */
+    public static Spy expectAtMostOnce() {
+        return spy().expectAtMostOnce();
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectAtMostOnce(Threads)}
+     * @since 2.0
+     */
+    public static Spy expectAtMostOnce(Threads threadMatcher) {
+        return spy().expectAtMostOnce(threadMatcher);
     }
 
     // notMoreThan methods
 
     /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectAtMost(int)}
      * @since 2.0
      */
-    public static ExpectedQueries expectNotMoreThan(int allowedStatements) {
-        return expectNotMoreThan(allowedStatements, DEFAULT_THREAD_MATCHER);
+    public static Spy expectAtMost(int allowedStatements) {
+        return spy().expectAtMost(allowedStatements);
     }
 
     /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectAtMost(int, Threads)}
      * @since 2.0
      */
-    public static ExpectedQueries expectNotMoreThan(int allowedStatements, ThreadMatcher threadMatcher) {
-        return expectedQueries().expectNotMoreThan(allowedStatements, threadMatcher);
+    public static Spy expectAtMost(int allowedStatements, Threads threadMatcher) {
+        return spy().expectAtMost(allowedStatements, threadMatcher);
+    }
+
+    // exact methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expect(int)}
+     * @since 2.0
+     */
+    public static Spy expect(int allowedStatements) {
+        return spy().expect(allowedStatements);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expect(int, Threads)}
+     * @since 2.0
+     */
+    public static Spy expect(int allowedStatements, Threads threadMatcher) {
+        return spy().expect(allowedStatements, threadMatcher);
+    }
+
+    // atLeast methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectAtLeast(int)}
+     * @since 2.0
+     */
+    public static Spy expectAtLeast(int allowedStatements) {
+        return spy().expectAtLeast(allowedStatements);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectAtLeast(int, Threads)}
+     * @since 2.0
+     */
+    public static Spy expectAtLeast(int allowedStatements, Threads threadMatcher) {
+        return spy().expectAtLeast(allowedStatements, threadMatcher);
+    }
+
+    // between methods methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectBetween(int, int)}
+     * @since 2.0
+     */
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see {@link #spy()}
+     * @see {@link Spy#expectBetween(int, int, Threads)}
+     * @since 2.0
+     */
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher);
     }
 
     /**
@@ -97,67 +183,47 @@ public class Sniffer {
         /**
          * When {@link com.github.bedrin.jdbc.sniffer.Sniffer#execute(com.github.bedrin.jdbc.sniffer.Sniffer.Executable)}
          * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
-         * {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
+         * {@link Spy} object with stats
          * @throws Exception code under test can throw any exception
          */
-        void execute() throws Exception;
+        void execute() throws Throwable;
 
     }
 
     /**
      * Execute the {@link com.github.bedrin.jdbc.sniffer.Sniffer.Executable#execute()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
+     * and return the {@link Spy} object with stats
      * @param executable code to test
      * @return statistics on executed queries
      * @throws RuntimeException if underlying code under test throws an Exception
      */
-    public static ExpectedQueries execute(Executable executable) {
-        return expectedQueries().execute(executable);
+    public static Spy execute(Executable executable) {
+        return spy().execute(executable);
     }
 
     /**
      * Execute the {@link Runnable#run()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.ExpectedQueries} object with stats
+     * and return the {@link Spy} object with stats
      * @param runnable code to test
      * @return statistics on executed queries
      */
-    public static ExpectedQueries run(Runnable runnable) {
-        return expectedQueries().run(runnable);
+    public static Spy run(Runnable runnable) {
+        return spy().run(runnable);
     }
 
     /**
      * Execute the {@link Callable#call()} method, record the SQL queries
-     * and return the {@link com.github.bedrin.jdbc.sniffer.RecordedQueriesWithValue} object with stats
+     * and return the {@link SpyWithValue} object with stats
      * @param callable code to test
      * @param <V> type of return value
      * @return statistics on executed queries
      * @throws Exception if underlying code under test throws an Exception
      */
-    public static <V> RecordedQueriesWithValue<V> call(Callable<V> callable) throws Exception {
-        return expectedQueries().call(callable);
+    public static <V> SpyWithValue<V> call(Callable<V> callable) throws Exception {
+        return spy().call(callable);
     }
 
-    public static final AnyThread ANY_THREAD = new AnyThread();
-    public static final CurrentThread CURRENT_THREAD = new CurrentThread();
-    public static final OtherThreads OTHER_THREADS = new OtherThreads();
-
-    protected final static ThreadMatcher DEFAULT_THREAD_MATCHER = ANY_THREAD;
-
-    protected abstract static class ThreadMatcher {
-
-    }
-
-    static class AnyThread extends ThreadMatcher {
-
-    }
-
-    static class CurrentThread extends ThreadMatcher {
-
-    }
-
-    static class OtherThreads extends ThreadMatcher {
-
-    }
+    protected final static Threads DEFAULT_THREAD_MATCHER = Threads.CURRENT;
 
     static class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
 
