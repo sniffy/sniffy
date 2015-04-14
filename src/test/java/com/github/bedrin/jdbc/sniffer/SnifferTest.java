@@ -9,9 +9,9 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testExecutedStatements() throws Exception {
         Spy spy = Sniffer.spy();
-        int actual = spy.executedStatements(Threads.OTHERS);
+        int actual = spy.executedStatements(Threads.ANY);
         executeStatement();
-        assertEquals(1, spy.executedStatements(Threads.OTHERS) - actual);
+        assertEquals(1, spy.executedStatements(Threads.ANY) - actual);
     }
 
     @Test
