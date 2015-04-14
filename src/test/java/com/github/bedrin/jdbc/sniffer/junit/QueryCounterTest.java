@@ -11,10 +11,10 @@ import org.junit.rules.ExpectedException;
 public class QueryCounterTest extends BaseTest {
 
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
 
     @Rule
-    public QueryCounter queryCounter = new QueryCounter();
+    public final QueryCounter queryCounter = new QueryCounter();
 
     @Test
     public void testNotAllowedQueriesByDefault() {
