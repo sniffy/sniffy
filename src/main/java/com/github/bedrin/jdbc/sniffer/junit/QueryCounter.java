@@ -11,6 +11,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Provides integration with JUnit. Add following field to your test class:
+ * <pre>
+ * <code>
+ * {@literal @}Rule
+ * public final QueryCounter queryCounter = new QueryCounter();
+ * }
+ * </code>
+ * </pre>
+ * @see Expectations
+ * @see Expectation
+ * @see NoQueriesAllowed
+ */
 public class QueryCounter implements TestRule {
 
     @Override

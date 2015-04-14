@@ -10,6 +10,9 @@ import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.addSuppressed;
 import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
 
 /**
+ * Spy holds a number of queries which were executed at some point of time and uses it as a base for further assertions
+ * @see Sniffer#spy()
+ * @see Sniffer#expect(int)
  * @since 2.0
  */
 public class Spy<C extends Spy<C>> implements Closeable {
@@ -316,8 +319,8 @@ public class Spy<C extends Spy<C>> implements Closeable {
     /**
      * Alias for {@link #verify()} method; it is useful for try-with-resource API:
      * <pre>
-     * {@code
-     *     @Test
+     * <code>
+     *     {@literal @}Test
      *     public void testTryWithResourceApi() throws SQLException {
      *         final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
      *         try (@SuppressWarnings("unused") Spy s = Sniffer.expectAtMostOnce();
@@ -326,6 +329,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      *         }
      *     }
      * }
+     * </code>
      * </pre>
      * @since 2.0
      */

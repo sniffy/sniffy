@@ -4,7 +4,11 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Sniffer holds the number of executed queries and provides static methods for accessing them
+ * Sniffer is an entry point for using JDBC Sniffer library
+ * See the
+ * <a href="{@docRoot}/com/github/bedrin/jdbc/sniffer/package-summary.html#package_description">
+ *    package overview
+ * </a> for more information.
  * @since 1.0
  */
 public class Sniffer {
@@ -46,8 +50,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectNever()}
+     * @see #spy()
+     * @see Spy#expectNever()
      * @since 2.0
      */
     public static Spy expectNever() {
@@ -56,8 +60,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectNever(Threads)}
+     * @see #spy()
+     * @see Spy#expectNever(Threads)
      * @since 2.0
      */
     public static Spy expectNever(Threads threadMatcher) {
@@ -68,8 +72,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectAtMostOnce()}
+     * @see #spy()
+     * @see Spy#expectAtMostOnce()
      * @since 2.0
      */
     public static Spy expectAtMostOnce() {
@@ -78,8 +82,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectAtMostOnce(Threads)}
+     * @see #spy()
+     * @see Spy#expectAtMostOnce(Threads)
      * @since 2.0
      */
     public static Spy expectAtMostOnce(Threads threadMatcher) {
@@ -90,8 +94,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectAtMost(int)}
+     * @see #spy()
+     * @see Spy#expectAtMost(int)
      * @since 2.0
      */
     public static Spy expectAtMost(int allowedStatements) {
@@ -100,8 +104,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectAtMost(int, Threads)}
+     * @see #spy()
+     * @see Spy#expectAtMost(int, Threads)
      * @since 2.0
      */
     public static Spy expectAtMost(int allowedStatements, Threads threadMatcher) {
@@ -112,8 +116,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expect(int)}
+     * @see #spy()
+     * @see Spy#expect(int)
      * @since 2.0
      */
     public static Spy expect(int allowedStatements) {
@@ -122,8 +126,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expect(int, Threads)}
+     * @see #spy()
+     * @see Spy#expect(int, Threads)
      * @since 2.0
      */
     public static Spy expect(int allowedStatements, Threads threadMatcher) {
@@ -134,8 +138,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectAtLeast(int)}
+     * @see #spy()
+     * @see Spy#expectAtLeast(int)
      * @since 2.0
      */
     public static Spy expectAtLeast(int allowedStatements) {
@@ -144,8 +148,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectAtLeast(int, Threads)}
+     * @see #spy()
+     * @see Spy#expectAtLeast(int, Threads)
      * @since 2.0
      */
     public static Spy expectAtLeast(int allowedStatements, Threads threadMatcher) {
@@ -156,8 +160,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectBetween(int, int)}
+     * @see #spy
+     * @see Spy#expectBetween(int, int)
      * @since 2.0
      */
     public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements) {
@@ -166,8 +170,8 @@ public class Sniffer {
 
     /**
      * @return a new {@link Spy} instance with an expectation initialized
-     * @see {@link #spy()}
-     * @see {@link Spy#expectBetween(int, int, Threads)}
+     * @see #spy()
+     * @see Spy#expectBetween(int, int, Threads)
      * @since 2.0
      */
     public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
