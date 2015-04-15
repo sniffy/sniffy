@@ -5,8 +5,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Container for multiple {@link Expectation} annotations
+ * @see QueryCounter
+ */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
-public @interface NotAllowedQueries {
-    boolean threadLocal() default false;
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface Expectations {
+    Expectation[] value() default {};
 }

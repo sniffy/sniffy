@@ -6,56 +6,38 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public class ThreadLocalSnifferTest {
-
-    @Test
-    public void testResetImpl() throws Exception {
-        ThreadLocalSniffer.reset();
-        assertEquals(0, ThreadLocalSniffer.executedStatements());
-        ThreadLocalSniffer.executeStatement();
-        ThreadLocalSniffer.reset();
-        assertEquals(0, ThreadLocalSniffer.executedStatements());
-    }
-
-    @Test
-    public void testExecuteStatement() throws Exception {
-        ThreadLocalSniffer.reset();
-        assertEquals(0, ThreadLocalSniffer.executedStatements());
-        ThreadLocalSniffer.executeStatement();
-        assertEquals(1, ThreadLocalSniffer.executedStatements());
-        Sniffer.executeStatement();
-        assertEquals(2, ThreadLocalSniffer.executedStatements());
-    }
+public class ThreadLocalSnifferTest extends BaseTest {
 
     @Test
     public void testVerifyExact() throws Exception {
         // test positive case 1
-        ThreadLocalSniffer.reset();
-        Sniffer.executeStatement();
-        ThreadLocalSniffer.verifyExact(1);
+        Spy spy = Sniffer.spy();
+        executeStatement();
+        spy.verify(1, Threads.CURRENT);
 
         // test positive case 2
-        Sniffer.executeStatement();
-        Thread thread = new Thread(Sniffer::executeStatement);
-        thread.start();
-        thread.join();
-        ThreadLocalSniffer.verifyExact(1);
+        spy = Sniffer.spy();
+        executeStatement();
+        executeStatementInOtherThread();
+        spy.verify(1, Threads.CURRENT);
 
         // test negative case 1
+        spy = Sniffer.spy();
         try {
-            ThreadLocalSniffer.verifyExact(1);
+            spy.verify(1, Threads.CURRENT);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
 
         // test negative case 2
-        Sniffer.executeStatement();
-        Sniffer.executeStatement();
+        spy = Sniffer.spy();
+        executeStatement();
+        executeStatementInOtherThread();
         try {
-            ThreadLocalSniffer.verifyExact(1);
+            spy.verify(2, Threads.CURRENT);
             fail();
-        } catch (AssertionError e) {
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
         }
     }

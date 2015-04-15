@@ -1,7 +1,27 @@
 package com.github.bedrin.jdbc.sniffer;
 
-public final class Constants {
-    public final static String DRIVER_PREFIX = "sniffer:";
-    public final static int MAJOR_VERSION = 1;
-    public final static int MINOR_VERSION = 4;
+import java.sql.Driver;
+
+/**
+ * Utility interface for storing the JDBC Sniffer constants
+ */
+public interface Constants {
+
+    /**
+     * Prefix to be used in JDBC URL, for exaple {@code sniffer:jdbc:h2:~/test}
+     */
+    String DRIVER_PREFIX = "sniffer:";
+
+    /**
+     * The major version of JDBC Sniffer
+     * @see Driver#getMajorVersion()
+     */
+    int MAJOR_VERSION = 2;
+
+    /**
+     * The major version of JDBC Sniffer
+     * @see Driver#getMinorVersion() ()
+     */
+    int MINOR_VERSION = 0;
+
 }

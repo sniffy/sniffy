@@ -1,91 +1,116 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
-import org.junit.BeforeClass;
+import com.github.bedrin.jdbc.sniffer.BaseTest;
+import com.github.bedrin.jdbc.sniffer.Threads;
+import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
-public class QueryCounterTest {
+@NoQueriesAllowed
+public class QueryCounterTest extends BaseTest {
 
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
 
     @Rule
-    public QueryCounter queryCounter = new QueryCounter();
+    public final QueryCounter queryCounter = new QueryCounter();
 
-    @BeforeClass
-    public static void loadDriver() throws ClassNotFoundException {
-        Class.forName("com.github.bedrin.jdbc.sniffer.MockDriver");
+    @Test
+    public void testNotAllowedQueriesByDefault() {
+        executeStatement();
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(1)
-    public void testAllowedOneQuery() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    @Expectation(1)
+    public void testAllowedOneQuery() {
+        executeStatement();
     }
 
     @Test
-    @NotAllowedQueries
-    public void testNotAllowedQueries() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(AssertionError.class);
+    @Expectation(value = 5, atLeast = 2)
+    public void testAmbiguousExpectationAnnotation() {
+        thrown.expect(IllegalArgumentException.class);
     }
 
     @Test
-    @AllowedQueries(1)
-    public void testAllowedOneQueryExecutedTwo() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(AssertionError.class);
+    @Expectation(2)
+    @NoQueriesAllowed
+    public void testAmbiguousAnnotations() {
+        thrown.expect(IllegalArgumentException.class);
     }
 
     @Test
-    @AllowedQueries(min = 1)
-    public void testAllowedMinOneQueryExecutedTwo() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    @Expectations({
+            @Expectation(2),
+            @Expectation(value = 2, threads = Threads.OTHERS)
+    })
+    @NoQueriesAllowed
+    public void testAmbiguousAnnotations2() {
+        thrown.expect(IllegalArgumentException.class);
     }
 
     @Test
-    @AllowedQueries(min = 2)
-    public void testAllowedMinTwoQueriesExecutedOne() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(AssertionError.class);
+    @NoQueriesAllowed
+    public void testNotAllowedQueries() {
+        executeStatement();
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(exact = 2)
-    public void testAllowedExactTwoQueriesExecutedTwo() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    @Expectation(1)
+    public void testAllowedOneQueryExecutedTwo() {
+        executeStatements(2);
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(exact = 2)
-    public void testAllowedExactTwoQueriesExecutedThree() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(AssertionError.class);
+    @Expectations({
+            @Expectation(atMost = 1, threads = Threads.CURRENT),
+            @Expectation(atMost = 1, threads = Threads.OTHERS),
+    })
+    public void testExpectations() {
+        executeStatement();
+        executeStatementInOtherThread();
     }
 
     @Test
-    @AllowedQueries(2)
-    public void testAllowedTwoQueries() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    @Expectation(atLeast = 1)
+    public void testAllowedMinOneQueryExecutedTwo() {
+        executeStatements(2);
+    }
+
+    @Test
+    @Expectation(atLeast = 2)
+    public void testAllowedMinTwoQueriesExecutedOne() {
+        executeStatement();
+        thrown.expect(WrongNumberOfQueriesError.class);
+    }
+
+    @Test
+    @Expectation(value = 2)
+    public void testAllowedExactTwoQueriesExecutedTwo() {
+        executeStatements(2);
+    }
+
+    @Test
+    @Expectation(value = 2)
+    public void testAllowedExactTwoQueriesExecutedThree() {
+        executeStatements(3);
+        thrown.expect(WrongNumberOfQueriesError.class);
+    }
+
+    @Test
+    @Expectation(2)
+    public void testAllowedTwoQueries() {
+        executeStatements(2);
+    }
+
+    @Test
+    @Expectation(atLeast = 1, atMost = 3)
+    public void testBetween() {
+        executeStatements(2);
     }
 
 }

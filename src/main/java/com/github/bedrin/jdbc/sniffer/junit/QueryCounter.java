@@ -1,50 +1,105 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
+import com.github.bedrin.jdbc.sniffer.Spy;
 import com.github.bedrin.jdbc.sniffer.Sniffer;
-import com.github.bedrin.jdbc.sniffer.ThreadLocalSniffer;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Provides integration with JUnit. Add following field to your test class:
+ * <pre>
+ * <code>
+ * {@literal @}Rule
+ * public final QueryCounter queryCounter = new QueryCounter();
+ * }
+ * </code>
+ * </pre>
+ * @see Expectations
+ * @see Expectation
+ * @see NoQueriesAllowed
+ */
 public class QueryCounter implements TestRule {
 
     @Override
     public Statement apply(Statement statement, Description description) {
 
-        AllowedQueries allowedQueries = description.getAnnotation(AllowedQueries.class);
-        NotAllowedQueries notAllowedQueries = description.getAnnotation(NotAllowedQueries.class);
+        Expectations expectations = description.getAnnotation(Expectations.class);
+        Expectation expectation = description.getAnnotation(Expectation.class);
+        NoQueriesAllowed notAllowedQueries = description.getAnnotation(NoQueriesAllowed.class);
 
-        if (null != allowedQueries && null != notAllowedQueries) {
-            throw new IllegalArgumentException("Cannot specify @AllowedQueries and @NotAllowedQueries on one test method");
-        } else if (null != allowedQueries) {
+        // If no annotations present, check the test class and its superclasses
+        for (Class<?> testClass = description.getTestClass();
+             null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
+                testClass = testClass.getSuperclass()) {
+            expectations = testClass.getDeclaredAnnotation(Expectations.class);
+            expectation = testClass.getDeclaredAnnotation(Expectation.class);
+            notAllowedQueries = testClass.getDeclaredAnnotation(NoQueriesAllowed.class);
+        }
 
-            Integer min = null, max = null;
+        if (null != expectation && null != notAllowedQueries) {
+            return new InvalidAnnotationsStatement(statement,
+                    new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method")
+            );
+        } else if (null != expectations && null != notAllowedQueries) {
+            return new InvalidAnnotationsStatement(statement,
+                    new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method")
+            );
+        } else if (null != expectations || null != expectation) {
 
-            if (allowedQueries.value() != -1) {
-                if (allowedQueries.max() != -1 || allowedQueries.min() != -1 ||
-                        allowedQueries.exact() != -1) {
-                    throw new IllegalArgumentException("Cannot specify value parameter together with other parameters");
+            List<Expectation> expectationList = new ArrayList<Expectation>();
+
+            if (null != expectation) {
+                expectationList.add(expectation);
+            }
+
+            if (null != expectations) {
+                expectationList.addAll(Arrays.asList(expectations.value()));
+            }
+
+            for (Expectation expectation1 : expectationList) {
+                if (expectation1.value() != -1) {
+                    if (expectation1.atMost() != -1 || expectation1.atLeast() != -1) {
+                        return new InvalidAnnotationsStatement(statement,
+                                new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters")
+                        );
+                    }
                 }
-                max = allowedQueries.value();
             }
 
-            if (allowedQueries.min() != -1) {
-                min = allowedQueries.min();
-            }
-
-            if (allowedQueries.exact() != -1) {
-                if (null != min || null != max) {
-                    throw new IllegalArgumentException("Cannot specify exact parameter together with min or max parameters");
-                }
-                min = max = allowedQueries.exact();
-            }
-
-            return new SnifferStatement(statement, min, max, allowedQueries.threadLocal());
+            return new SnifferStatement(statement, expectationList);
 
         } else if (null != notAllowedQueries) {
-            return new SnifferStatement(statement, 0, 0, notAllowedQueries.threadLocal());
+            Expectation annotation = NoQueriesAllowed.class.getAnnotation(Expectation.class);
+            return new SnifferStatement(statement, Collections.singletonList(annotation));
         } else {
             return statement;
+        }
+
+    }
+
+    private static class InvalidAnnotationsStatement extends Statement {
+
+        private final Statement delegate;
+        private final Throwable exception;
+
+        public InvalidAnnotationsStatement(Statement delegate, Throwable exception) {
+            this.delegate = delegate;
+            this.exception = exception;
+        }
+
+        @Override
+        public void evaluate() throws Throwable {
+            try {
+                delegate.evaluate();
+            } finally {
+                throw exception;
+            }
         }
 
     }
@@ -52,38 +107,38 @@ public class QueryCounter implements TestRule {
     private static class SnifferStatement extends Statement {
 
         private final Statement delegate;
-        private final Integer minimumQueries;
-        private final Integer maximumQueries;
-        private final boolean threadLocal;
+        private final List<Expectation> expectationList;
 
-        public SnifferStatement(Statement delegate, Integer minimumQueries, Integer maximumQueries, boolean threadLocal) {
+        public SnifferStatement(Statement delegate, List<Expectation> expectationList) {
             this.delegate = delegate;
-            this.minimumQueries = minimumQueries;
-            this.maximumQueries = maximumQueries;
-            this.threadLocal = threadLocal;
+            this.expectationList = expectationList;
         }
 
         @Override
         public void evaluate() throws Throwable {
-            int count = threadLocal ? ThreadLocalSniffer.executedStatements() : Sniffer.executedStatements();
-            delegate.evaluate();
-            if (threadLocal) {
-                if (null != minimumQueries && null != maximumQueries) {
-                    ThreadLocalSniffer.verifyRange(count + minimumQueries, count + maximumQueries);
-                } else if (null != minimumQueries) {
-                    ThreadLocalSniffer.verifyNotLessThan(count + minimumQueries);
-                } else if (null != maximumQueries) {
-                    ThreadLocalSniffer.verifyNotMoreThan(count + maximumQueries);
+
+            Spy spy = Sniffer.spy();
+
+            for (Expectation expectation : expectationList) {
+                if (-1 != expectation.value()) {
+                    spy.expect(expectation.value(), expectation.threads());
                 }
-            } else {
-                if (null != minimumQueries && null != maximumQueries) {
-                    Sniffer.verifyRange(count + minimumQueries, count + maximumQueries);
-                } else if (null != minimumQueries) {
-                    Sniffer.verifyNotLessThan(count + minimumQueries);
-                } else if (null != maximumQueries) {
-                    Sniffer.verifyNotMoreThan(count + maximumQueries);
+                if (-1 != expectation.atLeast() && -1 != expectation.atMost()) {
+                    spy.expectBetween(expectation.atLeast(), expectation.atMost(), expectation.threads());
+                } else if (-1 != expectation.atLeast()) {
+                    spy.expectAtLeast(expectation.atLeast(), expectation.threads());
+                } else if (-1 != expectation.atMost()) {
+                    spy.expectAtMost(expectation.atMost(), expectation.threads());
                 }
             }
+
+            spy.execute(new Sniffer.Executable() {
+                @Override
+                public void execute() throws Throwable{
+                    delegate.evaluate();
+                }
+            });
+
         }
 
     }

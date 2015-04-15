@@ -1,15 +1,13 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
-import org.junit.BeforeClass;
+import com.github.bedrin.jdbc.sniffer.BaseTest;
+import com.github.bedrin.jdbc.sniffer.Threads;
+import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
-public class ThreadLocalQueryCounterTest {
+public class ThreadLocalQueryCounterTest extends BaseTest {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -17,75 +15,61 @@ public class ThreadLocalQueryCounterTest {
     @Rule
     public QueryCounter queryCounter = new QueryCounter();
 
-    @BeforeClass
-    public static void loadDriver() throws ClassNotFoundException {
-        Class.forName("com.github.bedrin.jdbc.sniffer.MockDriver");
+    @Test
+    @Expectation(value = 1, threads = Threads.CURRENT)
+    public void testAllowedOneQuery() {
+        executeStatement();
     }
 
     @Test
-    @AllowedQueries(value = 1, threadLocal = true)
-    public void testAllowedOneQuery() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    public void testNoExpectations() {
+        executeStatement();
     }
 
     @Test
-    @NotAllowedQueries(threadLocal = true)
-    public void testNotAllowedQueries() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(AssertionError.class);
+    @NoQueriesAllowed()
+    public void testNotAllowedQueries() {
+        executeStatement();
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(value = 1, threadLocal = true)
-    public void testAllowedOneQueryExecutedTwo() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(AssertionError.class);
+    @Expectation(value = 1, threads = Threads.CURRENT)
+    public void testAllowedOneQueryExecutedTwo() {
+        executeStatements(2);
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(min = 1, threadLocal = true)
-    public void testAllowedMinOneQueryExecutedTwo() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    @Expectation(atLeast = 1, threads = Threads.CURRENT)
+    public void testAllowedMinOneQueryExecutedTwo() {
+        executeStatements(2);
     }
 
     @Test
-    @AllowedQueries(min = 2, threadLocal = true)
-    public void testAllowedMinTwoQueriesExecutedOne() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(AssertionError.class);
+    @Expectation(atLeast = 2, threads = Threads.CURRENT)
+    public void testAllowedMinTwoQueriesExecutedOne() {
+        executeStatement();
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(exact = 2, threadLocal = true)
-    public void testAllowedExactTwoQueriesExecutedTwo() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    @Expectation(value = 2, threads = Threads.CURRENT)
+    public void testAllowedExactTwoQueriesExecutedTwo() {
+        executeStatements(2);
     }
 
     @Test
-    @AllowedQueries(exact = 2, threadLocal = true)
-    public void testAllowedExactTwoQueriesExecutedThree() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        thrown.expect(AssertionError.class);
+    @Expectation(value = 2, threads = Threads.CURRENT)
+    public void testAllowedExactTwoQueriesExecutedThree() {
+        executeStatements(3);
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
     @Test
-    @AllowedQueries(value = 2, threadLocal = true)
-    public void testAllowedTwoQueries() throws SQLException {
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
-        connection.createStatement().execute("SELECT 1 FROM DUAL");
+    @Expectation(value = 2, threads = Threads.CURRENT)
+    public void testAllowedTwoQueries() {
+        executeStatements(2);
     }
 
 }
