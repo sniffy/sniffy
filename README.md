@@ -128,6 +128,6 @@ JDK8 is required only for building the project - once it's built, you can use JD
 
 Contribute
 ============
-You are most welcome to contribute to RESTEasy!
+You are most welcome to contribute to JDBC Sniffer!
 
 Read the [Contribution guidelines](./CONTRIBUTING.md)
