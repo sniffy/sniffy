@@ -23,6 +23,7 @@ import java.util.List;
  * @see Expectations
  * @see Expectation
  * @see NoQueriesAllowed
+ * @since 1.3
  */
 public class QueryCounter implements TestRule {
 
@@ -117,20 +118,7 @@ public class QueryCounter implements TestRule {
         @Override
         public void evaluate() throws Throwable {
 
-            Spy spy = Sniffer.spy();
-
-            for (Expectation expectation : expectationList) {
-                if (-1 != expectation.value()) {
-                    spy.expect(expectation.value(), expectation.threads());
-                }
-                if (-1 != expectation.atLeast() && -1 != expectation.atMost()) {
-                    spy.expectBetween(expectation.atLeast(), expectation.atMost(), expectation.threads());
-                } else if (-1 != expectation.atLeast()) {
-                    spy.expectAtLeast(expectation.atLeast(), expectation.threads());
-                } else if (-1 != expectation.atMost()) {
-                    spy.expectAtMost(expectation.atMost(), expectation.threads());
-                }
-            }
+            Spy spy = Sniffer.expect(expectationList);
 
             spy.execute(new Sniffer.Executable() {
                 @Override

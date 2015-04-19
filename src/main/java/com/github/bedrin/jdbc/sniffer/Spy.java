@@ -297,6 +297,18 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @since 2.0
      */
     public void verify() throws WrongNumberOfQueriesError {
+        WrongNumberOfQueriesError assertionError = getWrongNumberOfQueriesError();
+        if (null != assertionError) {
+            throw assertionError;
+        }
+    }
+
+    /**
+     *
+     * @return WrongNumberOfQueriesError or null if there are no errors
+     * @since 2.1
+     */
+    public WrongNumberOfQueriesError getWrongNumberOfQueriesError() {
         WrongNumberOfQueriesError assertionError = null;
         Throwable currentException = null;
         for (Expectation expectation : expectations) {
@@ -311,9 +323,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
                 }
             }
         }
-        if (null != assertionError) {
-            throw assertionError;
-        }
+        return assertionError;
     }
 
     /**
