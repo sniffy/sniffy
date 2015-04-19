@@ -54,6 +54,22 @@
     <build>
         <plugins>
             <plugin>
+                <!-- The gmavenplus plugin is used to compile Groovy code. To learn more about this plugin,
+                visit https://github.com/groovy/GMavenPlus/wiki -->
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>1.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.18.1</version>
@@ -63,6 +79,23 @@
                     <skip>true</skip>
                 </configuration>
                 <executions>
+                    <execution>
+                        <id>Spock-execution</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <useFile>false</useFile>
+                            <skip>false</skip>
+                            <testNGArtifactName>dev:null</testNGArtifactName>
+                            <includes>
+                                <include>**/*Spec.java</include>
+                            </includes>
+                            <!-- to continue on next execution in case of failures here -->
+                            <testFailureIgnore>true</testFailureIgnore>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>TestNg-execution</id>
                         <phase>test</phase>
@@ -166,6 +199,12 @@
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>6.8.21</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.spockframework</groupId>
+            <artifactId>spock-core</artifactId>
+            <version>1.0-groovy-2.4</version>
             <optional>true</optional>
         </dependency>
         <dependency>
