@@ -59,7 +59,41 @@
                 <version>2.18.1</version>
                 <configuration>
                     <runOrder>alphabetical</runOrder>
+                    <!-- skip the default execution, we have separate for Ng and for JUnit -->
+                    <skip>true</skip>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>TestNg-execution</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <junitArtifactName>dev:null</junitArtifactName>
+                            <includes>
+                                <include>%regex[.*TestNg.*]</include>
+                            </includes>
+                            <!-- to continue on next execution in case of failures here -->
+                            <testFailureIgnore>true</testFailureIgnore>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>JUnit-execution</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <testNGArtifactName>dev:null</testNGArtifactName>
+                            <excludes>
+                                <exclude>%regex[.*TestNg.*]</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
@@ -126,6 +160,12 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>6.8.21</version>
             <optional>true</optional>
         </dependency>
         <dependency>
