@@ -1,5 +1,8 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import com.github.bedrin.jdbc.sniffer.junit.Expectation;
+
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -176,6 +179,31 @@ public class Sniffer {
      */
     public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
         return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher);
+    }
+
+    /**
+     * @param expectationList a list of {@link Expectation} annotations
+     * @return a new {@link Spy} instance with given expectations
+     * @see #spy()
+     * @since 2.1
+     */
+    public static Spy expect(List<Expectation> expectationList) {
+        Spy spy = Sniffer.spy();
+
+        for (Expectation expectation : expectationList) {
+            if (-1 != expectation.value()) {
+                spy.expect(expectation.value(), expectation.threads());
+            }
+            if (-1 != expectation.atLeast() && -1 != expectation.atMost()) {
+                spy.expectBetween(expectation.atLeast(), expectation.atMost(), expectation.threads());
+            } else if (-1 != expectation.atLeast()) {
+                spy.expectAtLeast(expectation.atLeast(), expectation.threads());
+            } else if (-1 != expectation.atMost()) {
+                spy.expectAtMost(expectation.atMost(), expectation.threads());
+            }
+        }
+
+        return spy;
     }
 
     /**
