@@ -3,7 +3,7 @@ JDBC Sniffer
 [![CI Status](https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=master)](https://travis-ci.org/bedrin/jdbc-sniffer)
 [![Coverage Status](https://coveralls.io/repos/bedrin/jdbc-sniffer/badge.png?branch=master)](https://coveralls.io/r/bedrin/jdbc-sniffer?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer)
-[ ![Download](https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg) ](https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion)
+[![Download](https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg) ](https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion)
 
 JDBC Sniffer counts the number of executed SQL queries and provides an API for validating it
 It is very useful in unit tests and allows you to test if particular method doesn't make more than N SQL queries
@@ -131,4 +131,4 @@ Contribute
 ============
 You are most welcome to contribute to JDBC Sniffer!
 
-Read the [Contribution guidelines](./CONTRIBUTING.md)
+Read the [Contribution guidelines](https://github.com/bedrin/jdbc-sniffer/blob/master/CONTRIBUTING.md)

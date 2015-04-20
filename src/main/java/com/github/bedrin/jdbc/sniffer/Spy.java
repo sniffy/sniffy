@@ -17,13 +17,21 @@ import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
  */
 public class Spy<C extends Spy<C>> implements Closeable {
 
-    private final int initialQueries;
-    private final int initialThreadLocalQueries;
+    private int initialQueries;
+    private int initialThreadLocalQueries;
 
+    /**
+     * @since 2.0
+     */
     public Spy() {
         this(Sniffer.executedStatements(), Sniffer.ThreadLocalSniffer.executedStatements());
     }
 
+    /**
+     * @param initialQueries total number of queries executed since some point of time
+     * @param initialThreadLocalQueries total number of queries executed by current thread since some point of time
+     * @since 2.0
+     */
     public Spy(int initialQueries, int initialThreadLocalQueries) {
         this.initialQueries = initialQueries;
         this.initialThreadLocalQueries = initialThreadLocalQueries;
@@ -34,9 +42,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     /**
      * Wrapper for {@link Sniffer#spy()} method; useful for chaining
      * @return a new {@link Spy} instance
+     * @since 2.0
      */
     public Spy reset() {
-        return Sniffer.spy();
+        this.initialQueries = Sniffer.executedStatements();
+        this.initialThreadLocalQueries =  Sniffer.ThreadLocalSniffer.executedStatements();
+        return self();
     }
 
     /**
