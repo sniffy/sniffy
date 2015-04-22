@@ -24,7 +24,7 @@ public class Sniffer {
         return counter.incrementAndGet();
     }
 
-    static void executeStatement() {
+    static void executeStatement(String sql, long millis) {
         INSTANCE.executeStatementImpl();
         ThreadLocalSniffer.executeStatement();
     }
