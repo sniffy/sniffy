@@ -1,6 +1,6 @@
 package com.github.bedrin.jdbc.sniffer;
 
-public class SpyWithValue<V> extends Spy<SpyWithValue<V>> {
+public final class SpyWithValue<V> extends Spy<SpyWithValue<V>> {
 
     private final V value;
 

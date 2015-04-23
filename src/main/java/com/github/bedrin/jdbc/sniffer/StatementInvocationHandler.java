@@ -75,7 +75,7 @@ class StatementInvocationHandler implements InvocationHandler {
         }
     }
 
-    protected void addBatch(String sql) {
+    protected synchronized void addBatch(String sql) {
 
         if (null == sql) return;
 
@@ -89,11 +89,11 @@ class StatementInvocationHandler implements InvocationHandler {
         }
     }
 
-    protected void clearBatch() {
+    protected synchronized void clearBatch() {
         batchedSql = null;
     }
 
-    protected String getBatchedSql() {
+    protected synchronized String getBatchedSql() {
         if (null == batchedSql || batchedSql.isEmpty()) return null;
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, Integer> entry : batchedSql.entrySet()) {

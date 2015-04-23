@@ -1,7 +1,9 @@
 package com.github.bedrin.jdbc.sniffer;
 
 import java.io.Closeable;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -20,10 +22,21 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private int initialQueries;
     private int initialThreadLocalQueries;
 
+    private final List<String> executedSqls = new LinkedList<String>();
+    private final WeakReference<Spy> selfReference;
+
+    synchronized void addExecutedSql(String sql) {
+        executedSqls.add(sql);
+    }
+
+    synchronized void resetExecutedSqls() {
+        executedSqls.clear();
+    }
+
     /**
      * @since 2.0
      */
-    public Spy() {
+    Spy() {
         this(Sniffer.executedStatements(), Sniffer.ThreadLocalSniffer.executedStatements());
     }
 
@@ -32,9 +45,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @param initialThreadLocalQueries total number of queries executed by current thread since some point of time
      * @since 2.0
      */
-    public Spy(int initialQueries, int initialThreadLocalQueries) {
+    Spy(int initialQueries, int initialThreadLocalQueries) {
         this.initialQueries = initialQueries;
         this.initialThreadLocalQueries = initialThreadLocalQueries;
+        this.selfReference = Sniffer.registerSpy(this);
     }
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
@@ -47,6 +61,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     public Spy reset() {
         this.initialQueries = Sniffer.executedStatements();
         this.initialThreadLocalQueries =  Sniffer.ThreadLocalSniffer.executedStatements();
+        resetExecutedSqls();
         return self();
     }
 
@@ -357,6 +372,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     @Override
     public void close() {
         verify();
+        Sniffer.removeSpyReference(selfReference);
     }
 
     /**
@@ -446,31 +462,25 @@ public class Spy<C extends Spy<C>> implements Closeable {
                 case ANY:
                 {
                     int numQueries = Sniffer.executedStatements() - initialQueries;
-                    if (numQueries > maximumQueries || numQueries < minimumQueries)
-                        throw new WrongNumberOfQueriesError(String.format(
-                                "Disallowed number of executed statements; expected between %d and %d; observed %d",
-                                minimumQueries, maximumQueries, numQueries
-                        ));
+                    if (numQueries > maximumQueries || numQueries < minimumQueries) synchronized (Spy.this) {
+                        throw new WrongNumberOfQueriesError(threadMatcher, minimumQueries, maximumQueries, numQueries, executedSqls);
+                    }
                 }
                 break;
                 case CURRENT:
                 {
                     int numQueries = Sniffer.ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
-                    if (numQueries > maximumQueries || numQueries < minimumQueries)
-                        throw new WrongNumberOfQueriesError(String.format(
-                                "Disallowed number of executed statements; expected between %d and %d; observed %d",
-                                minimumQueries, maximumQueries, numQueries
-                        ));
+                    if (numQueries > maximumQueries || numQueries < minimumQueries) synchronized (Spy.this) {
+                        throw new WrongNumberOfQueriesError(threadMatcher, minimumQueries, maximumQueries, numQueries, executedSqls);
+                    }
                 }
                 break;
                 case OTHERS: {
                     int numQueries = Sniffer.executedStatements() - Sniffer.ThreadLocalSniffer.executedStatements()
                             - initialQueries + initialThreadLocalQueries;
-                    if (numQueries > maximumQueries || numQueries < minimumQueries)
-                        throw new WrongNumberOfQueriesError(String.format(
-                                "Disallowed number of executed statements; expected between %d and %d; observed %d",
-                                minimumQueries, maximumQueries, numQueries
-                        ));
+                    if (numQueries > maximumQueries || numQueries < minimumQueries) synchronized (Spy.this) {
+                        throw new WrongNumberOfQueriesError(threadMatcher, minimumQueries, maximumQueries, numQueries, executedSqls);
+                    }
                 }
                 break;
             }
