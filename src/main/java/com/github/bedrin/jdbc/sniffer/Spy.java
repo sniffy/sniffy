@@ -373,6 +373,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     public void close() {
         verify();
         Sniffer.removeSpyReference(selfReference);
+        // TODO set isClosed (with a stackrace) which will trigger exception if methods are later called on thi Spy instance
     }
 
     /**

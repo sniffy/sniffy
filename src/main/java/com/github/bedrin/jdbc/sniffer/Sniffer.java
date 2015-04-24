@@ -1,8 +1,10 @@
 package com.github.bedrin.jdbc.sniffer;
 
 import com.github.bedrin.jdbc.sniffer.junit.Expectation;
+import com.github.bedrin.jdbc.sniffer.log.QueryLogger;
 
 import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,10 +62,15 @@ public class Sniffer {
         INSTANCE.removeSpyReferenceImpl(spyReference);
     }
 
-    static void executeStatement(String sql, long millis) {
+    static void executeStatement(String sql, long nanos) {
+        QueryLogger.logQuery(sql, nanos);
         INSTANCE.executeStatementImpl();
         INSTANCE.notifyListeners(sql);
         ThreadLocalSniffer.executeStatement();
+    }
+
+    static List<WeakReference<Spy>> registeredSpies() {
+        return Collections.unmodifiableList(INSTANCE.registeredSpies);
     }
 
     int executedStatementsImpl() {
