@@ -72,7 +72,9 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testExecuteThrowsException() throws Exception {
         try {
-            Sniffer.expect(1).execute(() -> {throw new RuntimeException();});
+            Sniffer.expect(1).execute(() -> {
+                throw new RuntimeException();
+            });
         } catch (RuntimeException e) {
             assertNotNull(e);
             assertNull(e.getCause());
@@ -84,7 +86,9 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testRunThrowsException() throws Exception {
         try {
-            Sniffer.expect(1).run(() -> {throw new RuntimeException();});
+            Sniffer.expect(1).run(() -> {
+                throw new RuntimeException();
+            });
         } catch (RuntimeException e) {
             assertNotNull(e);
             assertNull(e.getCause());
@@ -96,7 +100,9 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testCallThrowsException() throws Exception {
         try {
-            Sniffer.expect(1).call(() -> {throw new RuntimeException();});
+            Sniffer.expect(1).call(() -> {
+                throw new RuntimeException();
+            });
         } catch (RuntimeException e) {
             assertNotNull(e);
             assertNull(e.getCause());
@@ -234,7 +240,7 @@ public class SnifferTest extends BaseTest {
 
     @Test
     public void testTryWithResourceApi_Between() throws Exception {
-        try (Spy ignored = Sniffer.expectBetween(2,10)) {
+        try (Spy ignored = Sniffer.expectBetween(2, 10)) {
             executeStatements(7);
         }
     }
@@ -265,6 +271,27 @@ public class SnifferTest extends BaseTest {
         try (Spy ignored = Sniffer.expectAtMostOnce(Threads.CURRENT)) {
             executeStatement();
             executeStatementInOtherThread();
+        }
+    }
+
+    @Test
+    public void testSpyClosed() throws Exception {
+        Spy spy = Sniffer.execute(() -> {
+            executeStatement();
+            Thread thread = new Thread(BaseTest::executeStatement);
+            thread.start();
+            thread.join();
+        }).expectAtMostOnce(Threads.OTHERS);
+        spy.close();
+        try {
+            spy.verify(1);
+        } catch (SpyClosedException e) {
+            assertNotNull(e);
+            assertNotNull(e.getCloseStackTrace());
+            assertNotNull(e.getCloseStackTrace()[1]);
+            StackTraceElement stackTraceElement = e.getCloseStackTrace()[1];
+            assertEquals("com.github.bedrin.jdbc.sniffer.SnifferTest", stackTraceElement.getClassName());
+            assertEquals("testSpyClosed", stackTraceElement.getMethodName());
         }
     }
 

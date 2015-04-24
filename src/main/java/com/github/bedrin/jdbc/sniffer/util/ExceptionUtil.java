@@ -3,6 +3,8 @@ package com.github.bedrin.jdbc.sniffer.util;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import static com.github.bedrin.jdbc.sniffer.util.StringUtil.LINE_SEPARATOR;
+
 /**
  * Created by bedrin on 22.03.2015.
  */
@@ -45,6 +47,14 @@ public class ExceptionUtil {
             }
             return true;
         }
+    }
+
+    public static String generateMessage(String s, StackTraceElement[] closeStackTrace) {
+        StringBuilder sb = new StringBuilder(s);
+        for (StackTraceElement traceElement : closeStackTrace) {
+            sb.append(LINE_SEPARATOR).append("\tat ").append(traceElement);
+        }
+        return sb.toString();
     }
 
 }

@@ -1,14 +1,16 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import com.github.bedrin.jdbc.sniffer.util.StringUtil;
+
 import java.util.Collections;
 import java.util.List;
+
+import static com.github.bedrin.jdbc.sniffer.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * @since 2.0
  */
 public class WrongNumberOfQueriesError extends AssertionError {
-
-    private final static String LINE_SEPARATOR = System.getProperty("line.separator");
 
     private final Threads threadMatcher;
     private final int minimumQueries;
