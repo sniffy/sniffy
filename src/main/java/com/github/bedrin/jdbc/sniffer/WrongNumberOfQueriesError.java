@@ -1,5 +1,6 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -9,8 +10,39 @@ public class WrongNumberOfQueriesError extends AssertionError {
 
     private final static String LINE_SEPARATOR = System.getProperty("line.separator");
 
+    private final Threads threadMatcher;
+    private final int minimumQueries;
+    private final int maximumQueries;
+    private final int numQueries;
+    private final List<String> executedSqls;
+
     public WrongNumberOfQueriesError(Threads threadMatcher, int minimumQueries, int maximumQueries, int numQueries, List<String> executedSqls) {
         super(buildDetailMessage(threadMatcher, minimumQueries, maximumQueries, numQueries, executedSqls));
+        this.threadMatcher = threadMatcher;
+        this.minimumQueries = minimumQueries;
+        this.maximumQueries = maximumQueries;
+        this.numQueries = numQueries;
+        this.executedSqls = Collections.unmodifiableList(executedSqls);
+    }
+
+    public Threads getThreadMatcher() {
+        return threadMatcher;
+    }
+
+    public int getMinimumQueries() {
+        return minimumQueries;
+    }
+
+    public int getMaximumQueries() {
+        return maximumQueries;
+    }
+
+    public int getNumQueries() {
+        return numQueries;
+    }
+
+    public List<String> getExecutedSqls() {
+        return executedSqls;
     }
 
     private static String buildDetailMessage(
