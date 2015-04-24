@@ -1,6 +1,5 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.ref.WeakReference;
@@ -24,18 +23,27 @@ public class SnifferListenersTest extends BaseTest {
     }
 
     @Test
-    @Ignore("H2 doesn't seem to support batch queries against DUAL table")
     public void testBatchIsLogged() throws Exception {
-        try { try (Spy spy = Sniffer.expectNever();
-             Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM DUAL WHERE 1 = ?")) {
-            preparedStatement.setLong(1, 1);
-            preparedStatement.addBatch();
-            preparedStatement.setLong(1, 2);
-            preparedStatement.addBatch();
-            preparedStatement.executeBatch();
-        } } catch (WrongNumberOfQueriesError e) {
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa")) {
+            connection.createStatement().execute("CREATE TEMPORARY TABLE TEMPORARY_TABLE (BAZ VARCHAR(255))");
+            try (@SuppressWarnings("unused") Spy spy = Sniffer.expectNever();
+                 PreparedStatement preparedStatement = connection.prepareStatement(
+                         "INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?)")) {
+                preparedStatement.setString(1, "foo");
+                preparedStatement.addBatch();
+                preparedStatement.setString(1, "bar");
+                preparedStatement.addBatch();
+                preparedStatement.executeBatch();
+            }
+        } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
+            assertEquals(0, e.getMinimumQueries());
+            assertEquals(0, e.getMaximumQueries());
+            assertEquals(1, e.getNumQueries());
+            assertEquals(1, e.getExecutedSqls().size());
+            assertEquals("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/", e.getExecutedSqls().get(0));
+            assertEquals(Threads.CURRENT, e.getThreadMatcher());
+            assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/"));
         }
 
     }
