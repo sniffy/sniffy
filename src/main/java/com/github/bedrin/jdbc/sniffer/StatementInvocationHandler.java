@@ -98,7 +98,7 @@ class StatementInvocationHandler implements InvocationHandler {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, Integer> entry : batchedSql.entrySet()) {
             if (0 != sb.length()) sb.append("; ");
-            sb.append(entry.getKey()).append(" (x").append(entry.getValue()).append(')');
+            sb.append(entry.getKey()).append(" /*").append(entry.getValue()).append(" times*/");
         }
         return sb.toString();
     }
