@@ -65,13 +65,13 @@ class StatementInvocationHandler implements InvocationHandler {
     }
 
     protected Object invokeTargetAndRecord(Method method, Object[] args, String sql) throws Throwable {
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         try {
             return method.invoke(delegate, args);
         } catch (InvocationTargetException e) {
             throw e.getTargetException();
         } finally {
-            Sniffer.executeStatement(sql, System.currentTimeMillis() - start);
+            Sniffer.executeStatement(sql, System.nanoTime() - start);
         }
     }
 
