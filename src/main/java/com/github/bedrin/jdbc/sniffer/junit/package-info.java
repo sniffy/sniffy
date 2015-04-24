@@ -13,7 +13,7 @@
  *     {@literal @}Expectation(1)
  *     public void testJUnitIntegration() throws SQLException {
  *         // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
- *         final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+ *         final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
  *         // Do not make any changes in your code - just add the @Rule QueryCounter and put annotations on your test method
  *         connection.createStatement().execute("SELECT 1 FROM DUAL");
  *     }

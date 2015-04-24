@@ -8,7 +8,7 @@ import spock.lang.*
 class QueryCounterSpec extends Specification {
 
     @Shared
-    def sql = Sql.newInstance("sniffer:jdbc:h2:~/test", "sa", "sa")
+    def sql = Sql.newInstance("sniffer:jdbc:h2:mem:", "sa", "sa")
 
     def spy = Sniffer.spy()
 

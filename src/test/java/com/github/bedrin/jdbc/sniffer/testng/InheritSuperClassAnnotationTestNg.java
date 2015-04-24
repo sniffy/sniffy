@@ -23,7 +23,7 @@ public class InheritSuperClassAnnotationTestNg extends BasedNoQueriesAllowedTest
     @MustFail
     public void testNoQueriesAllowedBySuperTest() {
         try {
-            try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+            try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
                  Statement statement = connection.createStatement()) {
                 statement.execute("SELECT 1 FROM DUAL");
             }

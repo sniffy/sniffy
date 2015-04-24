@@ -358,7 +358,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * <code>
      *     {@literal @}Test
      *     public void testTryWithResourceApi() throws SQLException {
-     *         final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+     *         final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
      *         try (@SuppressWarnings("unused") Spy s = Sniffer.expectAtMostOnce();
      *              Statement statement = connection.createStatement()) {
      *             statement.execute("SELECT 1 FROM DUAL");
