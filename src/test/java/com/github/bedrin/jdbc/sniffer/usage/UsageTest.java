@@ -20,7 +20,7 @@ public class UsageTest {
     @Test
     public void testVerifyApi() throws SQLException {
         // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
         // Spy holds the amount of queries executed till the given amount of time
         // It acts as a base for further assertions
         Spy spy = Sniffer.spy();
@@ -37,7 +37,7 @@ public class UsageTest {
     @Test
     public void testFunctionalApi() throws SQLException {
         // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
-        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
         // Sniffer.execute() method executes the lambda expression and returns an instance of Spy
         // which provides methods for validating the number of executed queries in given lambda
         Sniffer.execute(() -> connection.createStatement().execute("SELECT 1 FROM DUAL")).verifyAtMostOnce();
@@ -46,7 +46,7 @@ public class UsageTest {
     @Test
     public void testResourceApi() throws SQLException {
         // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
-        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
         // You can use Sniffer in a try-with-resource block using expect methods instead of verify
         // When the try-with-resource block is completed, JDBC Sniffer will verify all the expectations defined
         try (@SuppressWarnings("unused") Spy s = Sniffer.expectAtMostOnce().expectNever(Threads.OTHERS);
@@ -64,7 +64,7 @@ public class UsageTest {
     @Expectation(1)
     public void testJUnitIntegration() throws SQLException {
         // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
-        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
         // Do not make any changes in your code - just add the @Rule QueryCounter and put annotations on your test method
         connection.createStatement().execute("SELECT 1 FROM DUAL");
     }

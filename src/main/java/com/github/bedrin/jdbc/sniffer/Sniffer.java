@@ -1,7 +1,12 @@
 package com.github.bedrin.jdbc.sniffer;
 
 import com.github.bedrin.jdbc.sniffer.junit.Expectation;
+import com.github.bedrin.jdbc.sniffer.log.QueryLogger;
 
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,13 +25,52 @@ public class Sniffer {
 
     private final AtomicInteger counter = new AtomicInteger();
 
+    private final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+
+    synchronized WeakReference<Spy> registerSpyImpl(Spy spy) {
+        WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
+        registeredSpies.add(spyReference);
+        return spyReference;
+    }
+
+    synchronized void removeSpyReferenceImpl(WeakReference<Spy> spyReference) {
+        registeredSpies.remove(spyReference);
+    }
+
+    synchronized void notifyListeners(String sql) {
+        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+        while (iterator.hasNext()) {
+            WeakReference<Spy> spyReference = iterator.next();
+            Spy spy = spyReference.get();
+            if (null == spy) {
+                iterator.remove();
+            } else {
+                spy.addExecutedSql(sql);
+            }
+        }
+    }
+
     int executeStatementImpl() {
         return counter.incrementAndGet();
     }
 
-    static void executeStatement() {
+    static WeakReference<Spy> registerSpy(Spy spy) {
+        return INSTANCE.registerSpyImpl(spy);
+    }
+
+    static void removeSpyReference(WeakReference<Spy> spyReference) {
+        INSTANCE.removeSpyReferenceImpl(spyReference);
+    }
+
+    static void executeStatement(String sql, long nanos) {
+        QueryLogger.logQuery(sql, nanos);
         INSTANCE.executeStatementImpl();
+        INSTANCE.notifyListeners(sql);
         ThreadLocalSniffer.executeStatement();
+    }
+
+    static List<WeakReference<Spy>> registeredSpies() {
+        return Collections.unmodifiableList(INSTANCE.registeredSpies);
     }
 
     int executedStatementsImpl() {

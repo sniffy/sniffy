@@ -25,13 +25,13 @@ public class MockDriverTest extends BaseTest {
 
     @Test
     public void testGetDriver() throws ClassNotFoundException, SQLException {
-        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:mem:");
         assertNotNull(driver);
     }
 
     @Test
     public void testGetMockConnection() throws ClassNotFoundException, SQLException {
-        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa")) {
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa")) {
             assertNotNull(connection);
             assertTrue(Proxy.isProxyClass(connection.getClass()));
         }
@@ -51,14 +51,14 @@ public class MockDriverTest extends BaseTest {
 
     @Test
     public void testGetPropertyInfo() throws ClassNotFoundException, SQLException {
-        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:mem:");
         DriverPropertyInfo[] propertyInfo = driver.getPropertyInfo("jdbc:h2:~/test", new Properties());
         assertNotNull(propertyInfo);
     }
 
     @Test
     public void testJdbcComplaint() throws ClassNotFoundException, SQLException {
-        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:mem:");
         assertTrue(driver.jdbcCompliant());
     }
 
@@ -73,7 +73,7 @@ public class MockDriverTest extends BaseTest {
     @Test
     public void testExecuteIncorrectStatement() throws ClassNotFoundException, SQLException {
         Spy spy = Sniffer.spy();
-        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
              Statement statement = connection.createStatement()) {
             try {
                 statement.execute("this is an incorrect SQL query");
@@ -87,14 +87,14 @@ public class MockDriverTest extends BaseTest {
 
     @Test
     public void testVersion() throws ClassNotFoundException, SQLException {
-        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:mem:");
         assertEquals(Constants.MAJOR_VERSION, driver.getMajorVersion());
         assertEquals(Constants.MINOR_VERSION, driver.getMinorVersion());
     }
 
     @Test
     public void testGetParentLogger() throws ClassNotFoundException, SQLException {
-        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:~/test");
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:mem:");
         try {
             driver.getParentLogger();
             fail();
@@ -106,7 +106,7 @@ public class MockDriverTest extends BaseTest {
     @Test
     public void testExecuteQueryStatement() throws ClassNotFoundException, SQLException {
         Spy spy = Sniffer.spy();
-        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
              Statement statement = connection.createStatement()) {
             statement.executeQuery("SELECT 1 FROM DUAL");
         }
@@ -117,7 +117,7 @@ public class MockDriverTest extends BaseTest {
     @Test
     public void testExecutePreparedStatement() throws ClassNotFoundException, SQLException {
         Spy spy = Sniffer.spy();
-        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
              PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM DUAL")) {
             preparedStatement.execute();
         }
@@ -128,7 +128,7 @@ public class MockDriverTest extends BaseTest {
     @Test
     public void testExecuteQueryPreparedStatement() throws ClassNotFoundException, SQLException {
         Spy spy = Sniffer.spy();
-        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
              PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM DUAL")) {
             preparedStatement.executeQuery();
         }
@@ -139,7 +139,7 @@ public class MockDriverTest extends BaseTest {
     @Test
     public void testExecuteStatementThrowsException() throws ClassNotFoundException, SQLException {
         Spy spy = Sniffer.spy();
-        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
              Statement statement = connection.createStatement()) {
             statement.execute("SELECT 1 FROM DUAL_HUAL");
         } catch (Exception e) {
@@ -161,7 +161,7 @@ public class MockDriverTest extends BaseTest {
 
     @Test
     public void testCallStatement() throws ClassNotFoundException, SQLException {
-        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa")) {
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa")) {
             try (Statement statement = connection.createStatement()) {
                 statement.execute("CREATE ALIAS IF NOT EXISTS TIMES_TWO FOR \"com.github.bedrin.jdbc.sniffer.MockDriverTest.timesTwo\"");
             }

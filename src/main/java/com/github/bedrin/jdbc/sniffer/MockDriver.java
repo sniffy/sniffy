@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 /**
  * Enable JDBC Sniffer by adding a {@code sniffer:} prefix to your JDBC URL.
  * For example:
- * {@code sniffer:jdbc:h2:~/test}
+ * {@code sniffer:jdbc:h2:mem:}
  *
  * After that you'll be able to verify the number of executed statements using the {@link Sniffer} class
  * @see Sniffer

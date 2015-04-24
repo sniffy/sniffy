@@ -103,9 +103,9 @@ public class QueryCounter implements IInvokedMethodListener {
 
             Spy spy = (Spy) spyAttribute;
 
-            WrongNumberOfQueriesError jdbcSnifferError = spy.getWrongNumberOfQueriesError();
-
-            if (null != jdbcSnifferError) {
+            try {
+                spy.close();
+            } catch (WrongNumberOfQueriesError jdbcSnifferError) {
 
                 testResult.setStatus(FAILURE);
 

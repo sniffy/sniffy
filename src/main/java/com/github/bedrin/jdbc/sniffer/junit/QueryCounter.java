@@ -125,7 +125,7 @@ public class QueryCounter implements TestRule {
                 public void execute() throws Throwable{
                     delegate.evaluate();
                 }
-            });
+            }).close();
 
         }
 

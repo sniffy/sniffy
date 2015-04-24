@@ -8,7 +8,7 @@ import java.sql.Driver;
 public interface Constants {
 
     /**
-     * Prefix to be used in JDBC URL, for exaple {@code sniffer:jdbc:h2:~/test}
+     * Prefix to be used in JDBC URL, for exaple {@code sniffer:jdbc:h2:mem:}
      */
     String DRIVER_PREFIX = "sniffer:";
 
