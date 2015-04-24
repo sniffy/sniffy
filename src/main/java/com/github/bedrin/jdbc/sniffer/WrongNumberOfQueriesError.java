@@ -55,7 +55,7 @@ public class WrongNumberOfQueriesError extends AssertionError {
             sb.append(" other threads ");
         }
         sb.append(" queries").append(LINE_SEPARATOR);
-        sb.append("Observer ").append(numQueries).append(" queries instead:").append(LINE_SEPARATOR);
+        sb.append("Observed ").append(numQueries).append(" queries instead:").append(LINE_SEPARATOR);
         if (null != executedSqls) for (String sql : executedSqls) {
             sb.append(sql).append(';').append(LINE_SEPARATOR);
         }
