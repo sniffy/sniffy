@@ -3,6 +3,7 @@ package com.github.bedrin.jdbc.sniffer.util;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 import static org.junit.Assert.*;
 
@@ -21,6 +22,19 @@ public class ExceptionUtilTest {
         assertEquals("Test Exception", ex.getMessage());
         assertEquals(1, ex.getSuppressed().length);
         assertEquals("Suppressed Exception", ex.getSuppressed()[0].getMessage());
+    }
+
+    @Test
+    public void testThrowGivenException() {
+        try {
+            ExceptionUtil.throwException("java.sql.SQLException", "test");
+            fail();
+        } catch (Exception e) {
+            assertEquals(SQLException.class, e.getClass());
+            assertEquals("test", e.getMessage());
+        }
+
+        assertFalse(ExceptionUtil.throwException("unknown.exception.class", "test"));
     }
 
 }

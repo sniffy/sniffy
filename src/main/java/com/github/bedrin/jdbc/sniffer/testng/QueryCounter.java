@@ -43,7 +43,6 @@ public class QueryCounter implements IInvokedMethodListener {
         throw throwable;
     }
 
-    @Override
     public void beforeInvocation(IInvokedMethod invokedMethod, ITestResult testResult) {
 
         Method method = invokedMethod.getTestMethod().getConstructorOrMethod().getMethod();
@@ -56,9 +55,9 @@ public class QueryCounter implements IInvokedMethodListener {
         for (Class<?> testClass = method.getDeclaringClass();
              null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
              testClass = testClass.getSuperclass()) {
-            expectations = testClass.getDeclaredAnnotation(Expectations.class);
-            expectation = testClass.getDeclaredAnnotation(Expectation.class);
-            notAllowedQueries = testClass.getDeclaredAnnotation(NoQueriesAllowed.class);
+            expectations = testClass.getAnnotation(Expectations.class);
+            expectation = testClass.getAnnotation(Expectation.class);
+            notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
         }
 
         if (null != expectation && null != notAllowedQueries) {
@@ -94,7 +93,6 @@ public class QueryCounter implements IInvokedMethodListener {
 
     }
 
-    @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
 
         Object spyAttribute = testResult.getAttribute(SPY_ATTRIBUTE_NAME);

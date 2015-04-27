@@ -1,5 +1,6 @@
 package com.github.bedrin.jdbc.sniffer.util;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -24,6 +25,27 @@ public class ExceptionUtil {
             return null;
         }
     }
+
+    public static boolean throwException(String className, String message) {
+        try {
+            Class<Throwable> throwableClass = (Class<Throwable>)Class.forName(className);
+            Constructor<Throwable> constructor = throwableClass.getConstructor(String.class);
+            Throwable throwable = constructor.newInstance(message);
+            throwException(throwable);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        } catch (NoSuchMethodException e) {
+            return false;
+        } catch (InvocationTargetException e) {
+            return false;
+        } catch (InstantiationException e) {
+            return false;
+        } catch (IllegalAccessException e) {
+            return false;
+        }
+    }
+
 
     public static void throwException(Throwable e) {
         ExceptionUtil.<RuntimeException>throwAny(e);
