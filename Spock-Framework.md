@@ -53,3 +53,5 @@ class QueryCounterSpec extends Specification {
 
 }
 ```
+
+Do not forget to call `reset()` method on the spy object if you have multiple when-then blocks in a single test method
