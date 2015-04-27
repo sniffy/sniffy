@@ -14,7 +14,6 @@ class ConnectionInvocationHandler implements InvocationHandler {
         this.delegate = delegate;
     }
 
-    @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Object result;
         try {

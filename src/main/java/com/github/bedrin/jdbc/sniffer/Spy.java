@@ -402,7 +402,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * </pre>
      * @since 2.0
      */
-    @Override
     public void close() {
         checkOpened();
         try {
@@ -505,7 +504,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
             this.threadMatcher = threadMatcher;
         }
 
-        @Override
         public void validate() throws WrongNumberOfQueriesError {
 
             switch (threadMatcher) {

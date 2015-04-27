@@ -38,7 +38,6 @@ class StatementInvocationHandler implements InvocationHandler {
         }
     }
 
-    @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         switch (StatementMethodType.parse(method.getName())) {
             case ADD_BATCH:

@@ -27,7 +27,6 @@ import java.util.List;
  */
 public class QueryCounter implements TestRule {
 
-    @Override
     public Statement apply(Statement statement, Description description) {
 
         Expectations expectations = description.getAnnotation(Expectations.class);
@@ -38,9 +37,9 @@ public class QueryCounter implements TestRule {
         for (Class<?> testClass = description.getTestClass();
              null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
                 testClass = testClass.getSuperclass()) {
-            expectations = testClass.getDeclaredAnnotation(Expectations.class);
-            expectation = testClass.getDeclaredAnnotation(Expectation.class);
-            notAllowedQueries = testClass.getDeclaredAnnotation(NoQueriesAllowed.class);
+            expectations = testClass.getAnnotation(Expectations.class);
+            expectation = testClass.getAnnotation(Expectation.class);
+            notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
         }
 
         if (null != expectation && null != notAllowedQueries) {
@@ -121,7 +120,6 @@ public class QueryCounter implements TestRule {
             Spy spy = Sniffer.expect(expectationList);
 
             spy.execute(new Sniffer.Executable() {
-                @Override
                 public void execute() throws Throwable{
                     delegate.evaluate();
                 }

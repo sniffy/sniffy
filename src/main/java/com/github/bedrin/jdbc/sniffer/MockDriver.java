@@ -1,5 +1,7 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import com.github.bedrin.jdbc.sniffer.util.ExceptionUtil;
+
 import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.util.Properties;
@@ -29,7 +31,6 @@ public class MockDriver implements Driver {
         }
     }
 
-    @Override
     public Connection connect(String url, Properties info) throws SQLException {
         String originUrl = extractOriginUrl(url);
         Driver originDriver = DriverManager.getDriver(originUrl);
@@ -53,34 +54,33 @@ public class MockDriver implements Driver {
         return url;
     }
 
-    @Override
     public boolean acceptsURL(String url) throws SQLException {
         return null != url && url.startsWith(Constants.DRIVER_PREFIX);
     }
 
-    @Override
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
         Driver originDriver = getOriginDriver(url);
         return originDriver.getPropertyInfo(url, info);
     }
 
-    @Override
     public int getMajorVersion() {
         return Constants.MAJOR_VERSION;
     }
 
-    @Override
     public int getMinorVersion() {
         return Constants.MINOR_VERSION;
     }
 
-    @Override
     public boolean jdbcCompliant() {
         return true;
     }
 
-    @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        throw new SQLFeatureNotSupportedException();
+    public Logger getParentLogger() {
+        String message = "getParentLogger() method is not implemented in JDBC Sniffer";
+        if (!ExceptionUtil.throwException("java.sql.SQLFeatureNotSupportedException", message)) {
+            throw new UnsupportedOperationException(message);
+        }
+        return null;
     }
+
 }
