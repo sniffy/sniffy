@@ -22,22 +22,22 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>2.0</version>
+    <version>2.1</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'com.github.bedrin:jdbc-sniffer:2.0'
+    compile 'com.github.bedrin:jdbc-sniffer:2.1'
 }
 ```
 
 Download
 ============
-- [jdbc-sniffer-2.0.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0.jar)
-- [jdbc-sniffer-2.0-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0-sources.jar)
-- [jdbc-sniffer-2.0-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0-javadoc.jar)
+- [jdbc-sniffer-2.1.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1.jar)
+- [jdbc-sniffer-2.1-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-sources.jar)
+- [jdbc-sniffer-2.1-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-javadoc.jar)
 
 Setup
 ============
@@ -125,7 +125,7 @@ public class UsageTest {
 Building
 ============
 JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and type `mvn install`
-JDK8 is required only for building the project - once it's built, you can use JDBC sniffer with JRE 1.5+
+JDK8 is required only for building the project - once it's built, you can use JDBC Sniffer with JRE 1.5+
 
 Contribute
 ============
