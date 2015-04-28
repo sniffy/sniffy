@@ -22,22 +22,22 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>2.0</version>
+    <version>2.2</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'com.github.bedrin:jdbc-sniffer:2.0'
+    compile 'com.github.bedrin:jdbc-sniffer:2.2'
 }
 ```
 
 Download
 ============
-- [jdbc-sniffer-2.0.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0.jar)
-- [jdbc-sniffer-2.0-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0-sources.jar)
-- [jdbc-sniffer-2.0-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0-javadoc.jar)
+- [jdbc-sniffer-2.2.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2.jar)
+- [jdbc-sniffer-2.2-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-sources.jar)
+- [jdbc-sniffer-2.2-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-javadoc.jar)
 
 Setup
 ============
