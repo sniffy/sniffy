@@ -42,14 +42,17 @@
 <p><a href="https://travis-ci.org/bedrin/jdbc-sniffer"><img src="https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=master" alt="CI Status"></a>
 <a href="https://coveralls.io/r/bedrin/jdbc-sniffer?branch=master"><img src="https://coveralls.io/repos/bedrin/jdbc-sniffer/badge.png?branch=master" alt="Coverage Status"></a>
 <a href="https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer"><img src="https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer/badge.svg?style=flat" alt="Maven Central"></a>
-<a href="https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion"> <img src="https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg" alt="Download"> </a></p>
+<a href="https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion"><img src="https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg" alt="Download"> </a></p>
 
-<p>JDBC Sniffer counts the number of executed SQL queries and provides an API for validating it
-It is very useful in unit tests and allows you to test if particular method doesn't make more than N SQL queries</p>
+<p>JDBC Sniffer counts the number of executed SQL queries and provides an API for validating them
+It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
+Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue">N+1 problem</a> at easrly stages </p>
 
 <div class="highlight highlight-java"><pre><span class="pl-k">try</span> (<span class="pl-smi">Spy</span> s <span class="pl-k">=</span> <span class="pl-smi">Sniffer</span><span class="pl-k">.</span>expectAtMostOnce()<span class="pl-k">.</span>expectNever(<span class="pl-smi">Threads</span><span class="pl-c1"><span class="pl-k">.</span>OTHERS</span>);
      <span class="pl-smi">Statement</span> statement <span class="pl-k">=</span> connection<span class="pl-k">.</span>createStatement()) {
     statement<span class="pl-k">.</span>execute(<span class="pl-s"><span class="pl-pds">"</span>SELECT 1 FROM DUAL<span class="pl-pds">"</span></span>);
+    <span class="pl-c">// JDBC Sniffer will throw an Exception if you uncomment line below</span>
+    <span class="pl-c">//statement.execute("SELECT 1 FROM DUAL");</span>
 }</pre></div>
 
 <h1>
@@ -60,35 +63,35 @@ It is very useful in unit tests and allows you to test if particular method does
 <div class="highlight highlight-xml"><pre>&lt;<span class="pl-ent">dependency</span>&gt;
     &lt;<span class="pl-ent">groupId</span>&gt;com.github.bedrin&lt;/<span class="pl-ent">groupId</span>&gt;
     &lt;<span class="pl-ent">artifactId</span>&gt;jdbc-sniffer&lt;/<span class="pl-ent">artifactId</span>&gt;
-    &lt;<span class="pl-ent">version</span>&gt;2.0&lt;/<span class="pl-ent">version</span>&gt;
+    &lt;<span class="pl-ent">version</span>&gt;2.1&lt;/<span class="pl-ent">version</span>&gt;
 &lt;/<span class="pl-ent">dependency</span>&gt;</pre></div>
 
 <p>For Gradle users:</p>
 
 <div class="highlight highlight-javascript"><pre>dependencies {
-    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.0<span class="pl-pds">'</span></span>
+    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.1<span class="pl-pds">'</span></span>
 }</pre></div>
 
 <h1>
 <a id="download" class="anchor" href="#download" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download</h1>
 
 <ul>
-<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0.jar">jdbc-sniffer-2.0.jar</a></li>
-<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0-sources.jar">jdbc-sniffer-2.0-sources.jar</a></li>
-<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0-javadoc.jar">jdbc-sniffer-2.0-javadoc.jar</a></li>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1.jar">jdbc-sniffer-2.1.jar</a></li>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-sources.jar">jdbc-sniffer-2.1-sources.jar</a></li>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-javadoc.jar">jdbc-sniffer-2.1-javadoc.jar</a></li>
 </ul>
 
 <h1>
 <a id="setup" class="anchor" href="#setup" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setup</h1>
 
 <p>Simply add jdbc-sniffer.jar to your classpath and add <code>sniffer:</code> prefix to the JDBC connection url
-For example <code>jdbc:h2:~/test</code> should be changed to <code>sniffer:jdbc:h2:~/test</code>
+For example <code>jdbc:h2:~/test</code> should be changed to <code>sniffer:jdbc:h2:mem:</code>
 The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockDriver</code></p>
 
 <h1>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h1>
 
-<p>Following test shows all ways of integrating JDBC Sniffer into your project:</p>
+<p>Following test shows the main ways of integrating JDBC Sniffer into your project:</p>
 
 <div class="highlight highlight-java"><pre><span class="pl-k">import</span> <span class="pl-smi">com.github.bedrin.jdbc.sniffer.Sniffer</span>;
 <span class="pl-k">import</span> <span class="pl-smi">com.github.bedrin.jdbc.sniffer.Spy</span>;
@@ -110,7 +113,7 @@ The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockD
     <span class="pl-k">@Test</span>
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">testVerifyApi</span>() <span class="pl-k">throws</span> <span class="pl-smi">SQLException</span> {
         <span class="pl-c">// Just add sniffer: in front of your JDBC connection URL in order to enable sniffer</span>
-        <span class="pl-smi">Connection</span> connection <span class="pl-k">=</span> <span class="pl-smi">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s"><span class="pl-pds">"</span>sniffer:jdbc:h2:~/test<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
+        <span class="pl-smi">Connection</span> connection <span class="pl-k">=</span> <span class="pl-smi">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s"><span class="pl-pds">"</span>sniffer:jdbc:h2:mem:<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
         <span class="pl-c">// Spy holds the amount of queries executed till the given amount of time</span>
         <span class="pl-c">// It acts as a base for further assertions</span>
         <span class="pl-smi">Spy</span> spy <span class="pl-k">=</span> <span class="pl-smi">Sniffer</span><span class="pl-k">.</span>spy();
@@ -127,7 +130,7 @@ The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockD
     <span class="pl-k">@Test</span>
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">testFunctionalApi</span>() <span class="pl-k">throws</span> <span class="pl-smi">SQLException</span> {
         <span class="pl-c">// Just add sniffer: in front of your JDBC connection URL in order to enable sniffer</span>
-        <span class="pl-k">final</span> <span class="pl-smi">Connection</span> connection <span class="pl-k">=</span> <span class="pl-smi">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s"><span class="pl-pds">"</span>sniffer:jdbc:h2:~/test<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
+        <span class="pl-k">final</span> <span class="pl-smi">Connection</span> connection <span class="pl-k">=</span> <span class="pl-smi">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s"><span class="pl-pds">"</span>sniffer:jdbc:h2:mem:<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
         <span class="pl-c">// Sniffer.execute() method executes the lambda expression and returns an instance of Spy</span>
         <span class="pl-c">// which provides methods for validating the number of executed queries in given lambda</span>
         <span class="pl-smi">Sniffer</span><span class="pl-k">.</span>execute(() <span class="pl-k">-</span><span class="pl-k">&gt;</span> connection<span class="pl-k">.</span>createStatement()<span class="pl-k">.</span>execute(<span class="pl-s"><span class="pl-pds">"</span>SELECT 1 FROM DUAL<span class="pl-pds">"</span></span>))<span class="pl-k">.</span>verifyAtMostOnce();
@@ -136,7 +139,7 @@ The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockD
     <span class="pl-k">@Test</span>
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">testResourceApi</span>() <span class="pl-k">throws</span> <span class="pl-smi">SQLException</span> {
         <span class="pl-c">// Just add sniffer: in front of your JDBC connection URL in order to enable sniffer</span>
-        <span class="pl-k">final</span> <span class="pl-smi">Connection</span> connection <span class="pl-k">=</span> <span class="pl-smi">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s"><span class="pl-pds">"</span>sniffer:jdbc:h2:~/test<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
+        <span class="pl-k">final</span> <span class="pl-smi">Connection</span> connection <span class="pl-k">=</span> <span class="pl-smi">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s"><span class="pl-pds">"</span>sniffer:jdbc:h2:mem:<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
         <span class="pl-c">// You can use Sniffer in a try-with-resource block using expect methods instead of verify</span>
         <span class="pl-c">// When the try-with-resource block is completed, JDBC Sniffer will verify all the expectations defined</span>
         <span class="pl-k">try</span> (@SuppressWarnings(<span class="pl-s"><span class="pl-pds">"</span>unused<span class="pl-pds">"</span></span>) <span class="pl-smi">Spy</span> s <span class="pl-k">=</span> <span class="pl-smi">Sniffer</span><span class="pl-k">.</span>expectAtMostOnce()<span class="pl-k">.</span>expectNever(<span class="pl-smi">Threads</span><span class="pl-c1"><span class="pl-k">.</span>OTHERS</span>);
@@ -154,7 +157,7 @@ The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockD
     <span class="pl-k">@Expectation</span>(<span class="pl-c1">1</span>)
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">testJUnitIntegration</span>() <span class="pl-k">throws</span> <span class="pl-smi">SQLException</span> {
         <span class="pl-c">// Just add sniffer: in front of your JDBC connection URL in order to enable sniffer</span>
-        <span class="pl-k">final</span> <span class="pl-smi">Connection</span> connection <span class="pl-k">=</span> <span class="pl-smi">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s"><span class="pl-pds">"</span>sniffer:jdbc:h2:~/test<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
+        <span class="pl-k">final</span> <span class="pl-smi">Connection</span> connection <span class="pl-k">=</span> <span class="pl-smi">DriverManager</span><span class="pl-k">.</span>getConnection(<span class="pl-s"><span class="pl-pds">"</span>sniffer:jdbc:h2:mem:<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>sa<span class="pl-pds">"</span></span>);
         <span class="pl-c">// Do not make any changes in your code - just add the @Rule QueryCounter and put annotations on your test method</span>
         connection<span class="pl-k">.</span>createStatement()<span class="pl-k">.</span>execute(<span class="pl-s"><span class="pl-pds">"</span>SELECT 1 FROM DUAL<span class="pl-pds">"</span></span>);
     }
@@ -162,17 +165,28 @@ The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockD
 }</pre></div>
 
 <h1>
+<a id="integrating-with-test-frameworks" class="anchor" href="#integrating-with-test-frameworks" aria-hidden="true"><span class="octicon octicon-link"></span></a>Integrating with test frameworks</h1>
+
+<p>JDBC Sniffer provides integration with popular testing frameworks - see our wiki for details</p>
+
+<ul>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/wiki/JUnit">JUnit</a></li>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/wiki/Spock-Framework">Spock Framework</a></li>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/wiki/Test-NG">Test NG</a></li>
+</ul>
+
+<h1>
 <a id="building" class="anchor" href="#building" aria-hidden="true"><span class="octicon octicon-link"></span></a>Building</h1>
 
-<p>JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and type <code>mvn install</code>
-JDK8 is required only for building the project - once it's built, you can use JDBC sniffer with JRE 1.5+</p>
+<p>JDBC sniffer is built using JDK8+ and Maven 3.2+ - just checkout the project and type <code>mvn install</code>
+JDK8 is required only for building the project - once it's built, you can use JDBC Sniffer with any JRE 1.5+</p>
 
 <h1>
 <a id="contribute" class="anchor" href="#contribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contribute</h1>
 
 <p>You are most welcome to contribute to JDBC Sniffer!</p>
 
-<p>Read the <a href="./CONTRIBUTING.md">Contribution guidelines</a></p>
+<p>Read the <a href="https://github.com/bedrin/jdbc-sniffer/blob/master/CONTRIBUTING.md">Contribution guidelines</a></p>
         </article>
       </div>
     </div>
