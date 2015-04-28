@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * Container for multiple {@link Expectation} annotations
+ * todo consider making Inherited
  * @see QueryCounter
  */
 @Retention(RetentionPolicy.RUNTIME)

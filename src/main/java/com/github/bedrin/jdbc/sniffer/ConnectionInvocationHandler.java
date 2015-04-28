@@ -14,7 +14,6 @@ class ConnectionInvocationHandler implements InvocationHandler {
         this.delegate = delegate;
     }
 
-    @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Object result;
         try {
@@ -32,13 +31,13 @@ class ConnectionInvocationHandler implements InvocationHandler {
             return Proxy.newProxyInstance(
                     ConnectionInvocationHandler.class.getClassLoader(),
                     new Class[]{PreparedStatement.class},
-                    new StatementInvocationHandler(result)
+                    new PreparedStatementInvocationHandler(result, String.class.cast(args[0]))
             );
         }  else if ("prepareCall".equals(method.getName())) {
             return Proxy.newProxyInstance(
                     ConnectionInvocationHandler.class.getClassLoader(),
                     new Class[]{CallableStatement.class},
-                    new StatementInvocationHandler(result)
+                    new PreparedStatementInvocationHandler(result, String.class.cast(args[0]))
             );
         } else {
             return result;

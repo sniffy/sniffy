@@ -8,7 +8,7 @@ import java.sql.Driver;
 public interface Constants {
 
     /**
-     * Prefix to be used in JDBC URL, for exaple {@code sniffer:jdbc:h2:~/test}
+     * Prefix to be used in JDBC URL, for exaple {@code sniffer:jdbc:h2:mem:}
      */
     String DRIVER_PREFIX = "sniffer:";
 
@@ -22,6 +22,6 @@ public interface Constants {
      * The major version of JDBC Sniffer
      * @see Driver#getMinorVersion() ()
      */
-    int MINOR_VERSION = 0;
+    int MINOR_VERSION = 1;
 
 }

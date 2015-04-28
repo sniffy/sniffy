@@ -20,7 +20,7 @@ public abstract class BaseTest {
 
     protected static void executeStatements(int count) {
         try {
-            try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+            try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
                  Statement statement = connection.createStatement()) {
                 for (int i = 0; i < count; i++) {
                     statement.execute("SELECT 1 FROM DUAL");

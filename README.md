@@ -3,15 +3,18 @@ JDBC Sniffer
 [![CI Status](https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=master)](https://travis-ci.org/bedrin/jdbc-sniffer)
 [![Coverage Status](https://coveralls.io/repos/bedrin/jdbc-sniffer/badge.png?branch=master)](https://coveralls.io/r/bedrin/jdbc-sniffer?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer)
-[ ![Download](https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg) ](https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion)
+[![Download](https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg) ](https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion)
 
-JDBC Sniffer counts the number of executed SQL queries and provides an API for validating it
-It is very useful in unit tests and allows you to test if particular method doesn't make more than N SQL queries
+JDBC Sniffer counts the number of executed SQL queries and provides an API for validating them
+It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
+Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at easrly stages 
 
 ```java
 try (Spy s = Sniffer.expectAtMostOnce().expectNever(Threads.OTHERS);
      Statement statement = connection.createStatement()) {
     statement.execute("SELECT 1 FROM DUAL");
+    // JDBC Sniffer will throw an Exception if you uncomment line below
+    //statement.execute("SELECT 1 FROM DUAL");
 }
 ```
 
@@ -22,32 +25,32 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>2.0</version>
+    <version>2.1</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'com.github.bedrin:jdbc-sniffer:2.0'
+    compile 'com.github.bedrin:jdbc-sniffer:2.1'
 }
 ```
 
 Download
 ============
-- [jdbc-sniffer-2.0.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0.jar)
-- [jdbc-sniffer-2.0-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0-sources.jar)
-- [jdbc-sniffer-2.0-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.0/jdbc-sniffer-2.0-javadoc.jar)
+- [jdbc-sniffer-2.1.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1.jar)
+- [jdbc-sniffer-2.1-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-sources.jar)
+- [jdbc-sniffer-2.1-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-javadoc.jar)
 
 Setup
 ============
 Simply add jdbc-sniffer.jar to your classpath and add `sniffer:` prefix to the JDBC connection url
-For example `jdbc:h2:~/test` should be changed to `sniffer:jdbc:h2:~/test`
+For example `jdbc:h2:~/test` should be changed to `sniffer:jdbc:h2:mem:`
 The sniffer JDBC driver class name is `com.github.bedrin.jdbc.sniffer.MockDriver`
 
 Usage
 ============
-Following test shows all ways of integrating JDBC Sniffer into your project:
+Following test shows the main ways of integrating JDBC Sniffer into your project:
 
 ```java
 import com.github.bedrin.jdbc.sniffer.Sniffer;
@@ -70,7 +73,7 @@ public class UsageTest {
     @Test
     public void testVerifyApi() throws SQLException {
         // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
-        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
         // Spy holds the amount of queries executed till the given amount of time
         // It acts as a base for further assertions
         Spy spy = Sniffer.spy();
@@ -87,7 +90,7 @@ public class UsageTest {
     @Test
     public void testFunctionalApi() throws SQLException {
         // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
-        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
         // Sniffer.execute() method executes the lambda expression and returns an instance of Spy
         // which provides methods for validating the number of executed queries in given lambda
         Sniffer.execute(() -> connection.createStatement().execute("SELECT 1 FROM DUAL")).verifyAtMostOnce();
@@ -96,7 +99,7 @@ public class UsageTest {
     @Test
     public void testResourceApi() throws SQLException {
         // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
-        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
         // You can use Sniffer in a try-with-resource block using expect methods instead of verify
         // When the try-with-resource block is completed, JDBC Sniffer will verify all the expectations defined
         try (@SuppressWarnings("unused") Spy s = Sniffer.expectAtMostOnce().expectNever(Threads.OTHERS);
@@ -114,7 +117,7 @@ public class UsageTest {
     @Expectation(1)
     public void testJUnitIntegration() throws SQLException {
         // Just add sniffer: in front of your JDBC connection URL in order to enable sniffer
-        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:~/test", "sa", "sa");
+        final Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
         // Do not make any changes in your code - just add the @Rule QueryCounter and put annotations on your test method
         connection.createStatement().execute("SELECT 1 FROM DUAL");
     }
@@ -122,13 +125,21 @@ public class UsageTest {
 }
 ```
 
+Integrating with test frameworks
+============
+JDBC Sniffer provides integration with popular testing frameworks - see our wiki for details
+ 
+ * [JUnit](https://github.com/bedrin/jdbc-sniffer/wiki/JUnit)
+ * [Spock Framework](https://github.com/bedrin/jdbc-sniffer/wiki/Spock-Framework)
+ * [Test NG](https://github.com/bedrin/jdbc-sniffer/wiki/Test-NG)
+
 Building
 ============
-JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and type `mvn install`
-JDK8 is required only for building the project - once it's built, you can use JDBC sniffer with JRE 1.5+
+JDBC sniffer is built using JDK8+ and Maven 3.2+ - just checkout the project and type `mvn install`
+JDK8 is required only for building the project - once it's built, you can use JDBC Sniffer with any JRE 1.5+
 
 Contribute
 ============
 You are most welcome to contribute to JDBC Sniffer!
 
-Read the [Contribution guidelines](./CONTRIBUTING.md)
+Read the [Contribution guidelines](https://github.com/bedrin/jdbc-sniffer/blob/master/CONTRIBUTING.md)
