@@ -5,13 +5,16 @@ JDBC Sniffer
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer)
 [![Download](https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg) ](https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion)
 
-JDBC Sniffer counts the number of executed SQL queries and provides an API for validating it
-It is very useful in unit tests and allows you to test if particular method doesn't make more than N SQL queries
+JDBC Sniffer counts the number of executed SQL queries and provides an API for validating them
+It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
+Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at easrly stages 
 
 ```java
 try (Spy s = Sniffer.expectAtMostOnce().expectNever(Threads.OTHERS);
      Statement statement = connection.createStatement()) {
     statement.execute("SELECT 1 FROM DUAL");
+    // JDBC Sniffer will throw an Exception if you uncomment line below
+    //statement.execute("SELECT 1 FROM DUAL");
 }
 ```
 
@@ -47,7 +50,7 @@ The sniffer JDBC driver class name is `com.github.bedrin.jdbc.sniffer.MockDriver
 
 Usage
 ============
-Following test shows all ways of integrating JDBC Sniffer into your project:
+Following test shows the main ways of integrating JDBC Sniffer into your project:
 
 ```java
 import com.github.bedrin.jdbc.sniffer.Sniffer;
@@ -122,10 +125,18 @@ public class UsageTest {
 }
 ```
 
+Integrating with test frameworks
+============
+JDBC Sniffer provides integration with popular testing frameworks - see our wiki for details
+ 
+ * [JUnit](https://github.com/bedrin/jdbc-sniffer/wiki/JUnit)
+ * [Spock Framework](https://github.com/bedrin/jdbc-sniffer/wiki/Spock-Framework)
+ * [Test NG](https://github.com/bedrin/jdbc-sniffer/wiki/Test-NG)
+
 Building
 ============
-JDBC sniffer is built using JDK8+ and Maven 3+ - just checkout the project and type `mvn install`
-JDK8 is required only for building the project - once it's built, you can use JDBC Sniffer with JRE 1.5+
+JDBC sniffer is built using JDK8+ and Maven 3.2+ - just checkout the project and type `mvn install`
+JDK8 is required only for building the project - once it's built, you can use JDBC Sniffer with any JRE 1.5+
 
 Contribute
 ============
