@@ -5,7 +5,7 @@ import java.sql.Driver;
 /**
  * Utility interface for storing the JDBC Sniffer constants
  */
-public interface Constants {
+interface Constants {
 
     /**
      * Prefix to be used in JDBC URL, for exaple {@code sniffer:jdbc:h2:mem:}
