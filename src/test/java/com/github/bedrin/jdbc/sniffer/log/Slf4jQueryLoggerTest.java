@@ -17,6 +17,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class Slf4jQueryLoggerTest extends BaseTest {
 
@@ -65,7 +66,7 @@ public class Slf4jQueryLoggerTest extends BaseTest {
 
         appender.stop();
 
-        assertEquals("SELECT 1 FROM DUAL", new String(baos.toByteArray()));
+        assertTrue(new String(baos.toByteArray()).contains("SELECT 1 FROM DUAL"));
     }
 
 }

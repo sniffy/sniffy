@@ -45,7 +45,7 @@ public class JavaUtilQueryLoggerTest extends BaseTest {
 
         handler.flush();
 
-        assertEquals("SELECT 1 FROM DUAL\n", new String(baos.toByteArray()));
+        assertTrue(new String(baos.toByteArray()).contains("SELECT 1 FROM DUAL"));
     }
 
 }

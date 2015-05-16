@@ -9,7 +9,12 @@ class Slf4jQueryLogger extends QueryLogger {
 
     @Override
     protected void log(String message) {
-        LOG.trace(message);
+        LOG.debug(message);
+    }
+
+    @Override
+    protected boolean isVerboseImpl() {
+        return LOG.isTraceEnabled();
     }
 
 }

@@ -12,4 +12,9 @@ class JavaUtilQueryLogger extends QueryLogger {
         LOG.log(Level.FINE, message);
     }
 
+    @Override
+    protected boolean isVerboseImpl() {
+        return LOG.isLoggable(Level.FINEST);
+    }
+
 }
