@@ -2,6 +2,7 @@ package com.github.bedrin.jdbc.sniffer;
 
 import com.github.bedrin.jdbc.sniffer.junit.Expectation;
 import com.github.bedrin.jdbc.sniffer.log.QueryLogger;
+import com.github.bedrin.jdbc.sniffer.sql.Query;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -23,7 +24,11 @@ public class Sniffer {
 
     private static final Sniffer INSTANCE = new Sniffer();
 
-    private final AtomicInteger counter = new AtomicInteger();
+    private final AtomicInteger counterSelect = new AtomicInteger();
+    private final AtomicInteger counterInsert = new AtomicInteger();
+    private final AtomicInteger counterUpdate = new AtomicInteger();
+    private final AtomicInteger counterDelete = new AtomicInteger();
+    private final AtomicInteger counterOther = new AtomicInteger();
 
     private final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
 
@@ -50,8 +55,20 @@ public class Sniffer {
         }
     }
 
-    int executeStatementImpl() {
-        return counter.incrementAndGet();
+    int executeStatementImpl(Query.Type queryType) {
+        switch (queryType) {
+            case SELECT:
+                return counterSelect.incrementAndGet();
+            case INSERT:
+                return counterInsert.incrementAndGet();
+            case UPDATE:
+                return counterUpdate.incrementAndGet();
+            case DELETE:
+                return counterDelete.incrementAndGet();
+            case OTHER:
+            default:
+                return counterOther.incrementAndGet();
+        }
     }
 
     static WeakReference<Spy> registerSpy(Spy spy) {
@@ -64,17 +81,36 @@ public class Sniffer {
 
     static void executeStatement(String sql, long nanos) {
         QueryLogger.logQuery(sql, nanos);
-        INSTANCE.executeStatementImpl();
+        Query query = Query.parse(sql);
+        INSTANCE.executeStatementImpl(query.type);
         INSTANCE.notifyListeners(sql);
-        ThreadLocalSniffer.executeStatement();
+        ThreadLocalSniffer.executeStatement(query.type);
     }
 
     static List<WeakReference<Spy>> registeredSpies() {
         return Collections.unmodifiableList(INSTANCE.registeredSpies);
     }
 
+    int executedStatementsImpl(Query.Type queryType) {
+        switch (queryType) {
+            case ALL:
+                return counterSelect.get() + counterInsert.get() + counterUpdate.get() + counterDelete.get() + counterOther.get();
+            case SELECT:
+                return counterSelect.get();
+            case INSERT:
+                return counterInsert.get();
+            case UPDATE:
+                return counterUpdate.get();
+            case DELETE:
+                return counterDelete.get();
+            case OTHER:
+            default:
+                return counterOther.get();
+        }
+    }
+
     int executedStatementsImpl() {
-        return this.counter.get();
+        return executedStatementsImpl(Query.Type.ALL);
     }
 
     /**
@@ -314,8 +350,12 @@ public class Sniffer {
             return INSTANCE.get();
         }
 
-        static void executeStatement() {
-            getSniffer().executeStatementImpl();
+        static void executeStatement(Query.Type queryType) {
+            getSniffer().executeStatementImpl(queryType);
+        }
+
+        static int executedStatements(Query.Type queryType) {
+            return getSniffer().executedStatementsImpl(queryType);
         }
 
         static int executedStatements() {

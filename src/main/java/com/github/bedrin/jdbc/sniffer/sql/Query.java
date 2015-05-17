@@ -2,7 +2,7 @@ package com.github.bedrin.jdbc.sniffer.sql;
 
 public class Query {
 
-    protected final Type type;
+    public final Type type;
 
     public Query(Type type) {
         this.type = type;
@@ -13,7 +13,8 @@ public class Query {
         INSERT,
         UPDATE,
         DELETE,
-        OTHER
+        OTHER,
+        ALL
     }
 
     public static Query parse(String sql) {
