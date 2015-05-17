@@ -12,8 +12,13 @@ public abstract class QueryLogger {
         try {
             Class.forName("org.slf4j.Logger");
             return new Slf4jQueryLogger();
-        } catch (ClassNotFoundException e) {
-            return new JavaUtilQueryLogger();
+        } catch (ClassNotFoundException e1) {
+            try {
+                Class.forName("org.apache.log4j.Logger");
+                return new Log4JQueryLogger();
+            } catch (ClassNotFoundException e2) {
+                return new JavaUtilQueryLogger();
+            }
         }
     }
 

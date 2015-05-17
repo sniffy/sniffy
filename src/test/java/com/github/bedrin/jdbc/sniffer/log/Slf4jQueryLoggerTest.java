@@ -7,30 +7,19 @@ import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.OutputStreamAppender;
 import ch.qos.logback.core.encoder.EchoEncoder;
-import com.github.bedrin.jdbc.sniffer.BaseTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class Slf4jQueryLoggerTest extends BaseTest {
+public class Slf4jQueryLoggerTest extends BaseQueryLoggerTest {
 
     @BeforeClass
     public static void setupJavaUtilLogger() throws Exception {
-        Field declaredField = QueryLogger.class.getDeclaredField("INSTANCE");
-        declaredField.setAccessible(true);
-
-        Field modifiersField = Field.class.getDeclaredField( "modifiers" );
-        modifiersField.setAccessible( true );
-        modifiersField.setInt( declaredField, declaredField.getModifiers() & ~Modifier.FINAL );
-
-        declaredField.set(null, new Slf4jQueryLogger());
+        setQueryLoggerImplementation(new Slf4jQueryLogger());
     }
 
     @Test

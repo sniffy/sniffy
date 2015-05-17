@@ -1,29 +1,19 @@
 package com.github.bedrin.jdbc.sniffer.log;
 
-import com.github.bedrin.jdbc.sniffer.BaseTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.testng.log.TextFormatter;
 
 import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.logging.*;
 
 import static org.junit.Assert.*;
 
-public class JavaUtilQueryLoggerTest extends BaseTest {
+public class JavaUtilQueryLoggerTest extends BaseQueryLoggerTest {
 
     @BeforeClass
     public static void setupJavaUtilLogger() throws Exception {
-        Field declaredField = QueryLogger.class.getDeclaredField("INSTANCE");
-        declaredField.setAccessible(true);
-
-        Field modifiersField = Field.class.getDeclaredField( "modifiers" );
-        modifiersField.setAccessible( true );
-        modifiersField.setInt( declaredField, declaredField.getModifiers() & ~Modifier.FINAL );
-
-        declaredField.set(null, new JavaUtilQueryLogger());
+        setQueryLoggerImplementation(new JavaUtilQueryLogger());
     }
 
     @Test
