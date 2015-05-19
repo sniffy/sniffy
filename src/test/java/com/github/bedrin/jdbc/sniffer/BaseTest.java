@@ -76,8 +76,15 @@ public abstract class BaseTest {
         executeStatementsInOtherThread(1);
     }
 
+    protected static void executeStatementInOtherThread(Query.Type queryType) {
+        executeStatementsInOtherThread(1, queryType);
+    }
+
     protected static void executeStatementsInOtherThread(int count) {
-        Thread thread = new Thread(() -> {BaseTest.executeStatements(count);});
+        executeStatementsInOtherThread(count, Query.Type.SELECT);
+    }
+    protected static void executeStatementsInOtherThread(int count, Query.Type queryType) {
+        Thread thread = new Thread(() -> {BaseTest.executeStatements(count, queryType);});
         thread.start();
         try {
             thread.join();
