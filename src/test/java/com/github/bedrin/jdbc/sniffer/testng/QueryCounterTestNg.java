@@ -7,13 +7,16 @@ import com.github.bedrin.jdbc.sniffer.junit.Expectations;
 import com.github.bedrin.jdbc.sniffer.junit.NoQueriesAllowed;
 import org.testng.annotations.*;
 
+import java.sql.SQLException;
+
 @Listeners({QueryCounter.class, MustFailListener.class})
 @NoQueriesAllowed
 public class QueryCounterTestNg extends BaseTest {
 
     @BeforeClass
-    public void setUp() throws ClassNotFoundException {
-        BaseTest.loadDriver();
+    @Expectation(atLeast = 0) // TODO: introduce @AnyQueriesAllowed annotation
+    public void setUp() throws ClassNotFoundException, SQLException {
+        BaseTest.loadDriverAndCreateTables();
     }
 
     @Test
