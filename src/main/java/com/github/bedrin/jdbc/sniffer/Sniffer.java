@@ -83,7 +83,7 @@ public class Sniffer {
      * @since 1.0
      */
     public static int executedStatements() {
-        return COUNTER.executedStatements(Query.ALL);
+        return COUNTER.executedStatements(Query.ANY);
     }
 
     /**
@@ -417,14 +417,17 @@ public class Sniffer {
 
         for (Expectation expectation : expectationList) {
             if (-1 != expectation.value()) {
-                spy.expect(expectation.value(), expectation.threads());
+                spy.expect(expectation.value(), expectation.threads(), expectation.query());
             }
             if (-1 != expectation.atLeast() && -1 != expectation.atMost()) {
-                spy.expectBetween(expectation.atLeast(), expectation.atMost(), expectation.threads());
+                spy.expectBetween(expectation.atLeast(), expectation.atMost(),
+                        expectation.threads(), expectation.query());
             } else if (-1 != expectation.atLeast()) {
-                spy.expectAtLeast(expectation.atLeast(), expectation.threads());
+                spy.expectAtLeast(expectation.atLeast(),
+                        expectation.threads(), expectation.query());
             } else if (-1 != expectation.atMost()) {
-                spy.expectAtMost(expectation.atMost(), expectation.threads());
+                spy.expectAtMost(expectation.atMost(),
+                        expectation.threads(), expectation.query());
             }
         }
 

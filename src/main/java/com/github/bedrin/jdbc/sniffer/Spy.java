@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import static com.github.bedrin.jdbc.sniffer.Sniffer.DEFAULT_THREAD_MATCHER;
-import static com.github.bedrin.jdbc.sniffer.Query.ALL;
+import static com.github.bedrin.jdbc.sniffer.Query.ANY;
 import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.addSuppressed;
 import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
 
@@ -75,7 +75,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @since 2.0
      */
     public int executedStatements(Threads threadMatcher) {
-        return executedStatements(threadMatcher, Query.ALL);
+        return executedStatements(threadMatcher, Query.ANY);
     }
 
     /**
@@ -104,7 +104,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // never methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C expectNever() {
@@ -113,12 +113,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C expectNever(Threads threadMatcher) {
         checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 0, threadMatcher, ALL));
+        expectations.add(new ThreadMatcherExpectation(0, 0, threadMatcher, ANY));
         return self();
     }
 
@@ -153,7 +153,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C verifyNever() throws WrongNumberOfQueriesError {
@@ -162,12 +162,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C verifyNever(Threads threadMatcher) throws WrongNumberOfQueriesError {
         checkOpened();
-        new ThreadMatcherExpectation(0, 0, threadMatcher, ALL).validate();
+        new ThreadMatcherExpectation(0, 0, threadMatcher, ANY).validate();
         return self();
     }
 
@@ -204,7 +204,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // atMostOnce methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C expectAtMostOnce() {
@@ -213,12 +213,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C expectAtMostOnce(Threads threadMatcher) {
         checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 1, threadMatcher, ALL));
+        expectations.add(new ThreadMatcherExpectation(0, 1, threadMatcher, ANY));
         return self();
     }
 
@@ -253,7 +253,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C verifyAtMostOnce() throws WrongNumberOfQueriesError {
@@ -262,12 +262,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C verifyAtMostOnce(Threads threadMatcher) throws WrongNumberOfQueriesError {
         checkOpened();
-        new ThreadMatcherExpectation(0, 1, threadMatcher, ALL).validate();
+        new ThreadMatcherExpectation(0, 1, threadMatcher, ANY).validate();
         return self();
     }
 
@@ -304,7 +304,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // atMost methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C expectAtMost(int allowedStatements) {
@@ -313,12 +313,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C expectAtMost(int allowedStatements, Threads threadMatcher) {
         checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, ALL));
+        expectations.add(new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, ANY));
         return self();
     }
 
@@ -353,7 +353,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C verifyAtMost(int allowedStatements) throws WrongNumberOfQueriesError {
@@ -362,12 +362,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C verifyAtMost(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
         checkOpened();
-        new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, ALL).validate();
+        new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, ANY).validate();
         return self();
     }
 
@@ -404,7 +404,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // exact methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C expect(int allowedStatements) {
@@ -413,12 +413,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C expect(int allowedStatements, Threads threadMatcher) {
         checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, ALL));
+        expectations.add(new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, ANY));
         return self();
     }
 
@@ -453,7 +453,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C verify(int allowedStatements) throws WrongNumberOfQueriesError {
@@ -462,12 +462,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C verify(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
         checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, ALL).validate();
+        new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, ANY).validate();
         return self();
     }
 
@@ -504,7 +504,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // atLeast methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C expectAtLeast(int allowedStatements) {
@@ -513,12 +513,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C expectAtLeast(int allowedStatements, Threads threadMatcher) {
         checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, ALL));
+        expectations.add(new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, ANY));
         return self();
     }
 
@@ -553,7 +553,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C verifyAtLeast(int allowedStatements) throws WrongNumberOfQueriesError {
@@ -562,12 +562,12 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@link Query#ANY}
      * @since 2.0
      */
     public C verifyAtLeast(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
         checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, ALL).validate();
+        new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, ANY).validate();
         return self();
     }
 
@@ -604,7 +604,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // between methods
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements) {
@@ -620,7 +620,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
         checkOpened();
-        expectations.add(new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, ALL));
+        expectations.add(new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, ANY));
         return self();
     }
 
@@ -661,7 +661,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments {@code minAllowedStatements}, {@link Threads#CURRENT}, {@link Query#ALL}
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments {@code minAllowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
      * @since 2.0
      */
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements) throws WrongNumberOfQueriesError {
@@ -678,7 +678,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
         checkOpened();
-        new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, ALL).validate();
+        new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, ANY).validate();
         return self();
     }
 

@@ -67,7 +67,7 @@ class Counter {
 
     int executedStatements(Query query) {
         switch (query) {
-            case ALL:
+            case ANY:
                 return select.get() + insert.get() + update.get() + delete.get() + merge.get() + other.get();
             case SELECT:
                 return select.get();

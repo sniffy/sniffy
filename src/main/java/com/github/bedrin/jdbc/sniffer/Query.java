@@ -10,5 +10,5 @@ public enum Query {
     DELETE,
     MERGE,
     OTHER,
-    ALL
+    ANY
 }

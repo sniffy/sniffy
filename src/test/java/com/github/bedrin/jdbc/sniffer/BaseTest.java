@@ -59,7 +59,7 @@ public abstract class BaseTest {
                             statement.executeUpdate("DELETE FROM PUBLIC.PROJECT");
                             break;
                         case SELECT:
-                        case ALL:
+                        case ANY:
                         case OTHER:
                         default:
                             statement.execute("SELECT 1 FROM DUAL");

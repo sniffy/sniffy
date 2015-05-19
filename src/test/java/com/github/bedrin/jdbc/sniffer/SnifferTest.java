@@ -77,7 +77,7 @@ public class SnifferTest extends BaseTest {
         executeStatement(Query.MERGE);
         executeStatement(Query.OTHER);
         spy.verify(1, Query.UPDATE);
-        spy.verify(6, Query.ALL);
+        spy.verify(6, Query.ANY);
 
         // test negative case 1
         spy = Sniffer.spy();
