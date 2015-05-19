@@ -22,28 +22,73 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Sniffer {
 
-    private static final Sniffer INSTANCE = new Sniffer();
+    static class Counter {
 
-    private final AtomicInteger counterSelect = new AtomicInteger();
-    private final AtomicInteger counterInsert = new AtomicInteger();
-    private final AtomicInteger counterUpdate = new AtomicInteger();
-    private final AtomicInteger counterDelete = new AtomicInteger();
-    private final AtomicInteger counterMerge = new AtomicInteger();
-    private final AtomicInteger counterOther = new AtomicInteger();
+        final AtomicInteger counterSelect = new AtomicInteger();
+        final AtomicInteger counterInsert = new AtomicInteger();
+        final AtomicInteger counterUpdate = new AtomicInteger();
+        final AtomicInteger counterDelete = new AtomicInteger();
+        final AtomicInteger counterMerge = new AtomicInteger();
+        final AtomicInteger counterOther = new AtomicInteger();
 
-    private final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+        int executeStatement(Query.Type queryType) {
+            switch (queryType) {
+                case SELECT:
+                    return counterSelect.incrementAndGet();
+                case INSERT:
+                    return counterInsert.incrementAndGet();
+                case UPDATE:
+                    return counterUpdate.incrementAndGet();
+                case DELETE:
+                    return counterDelete.incrementAndGet();
+                case MERGE:
+                    return counterMerge.incrementAndGet();
+                case OTHER:
+                default:
+                    return counterOther.incrementAndGet();
+            }
+        }
 
-    synchronized WeakReference<Spy> registerSpyImpl(Spy spy) {
+        int executedStatements(Query.Type queryType) {
+            switch (queryType) {
+                case ALL:
+                    return counterSelect.get() + counterInsert.get() + counterUpdate.get() + counterDelete.get() + counterMerge.get() + counterOther.get();
+                case SELECT:
+                    return counterSelect.get();
+                case INSERT:
+                    return counterInsert.get();
+                case UPDATE:
+                    return counterUpdate.get();
+                case DELETE:
+                    return counterDelete.get();
+                case MERGE:
+                    return counterMerge.get();
+                case OTHER:
+                default:
+                    return counterOther.get();
+            }
+        }
+
+        int executedStatements() {
+            return executedStatements(Query.Type.ALL);
+        }
+
+    }
+
+    private static final Counter COUNTER = new Counter();
+    private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+
+    static synchronized WeakReference<Spy> registerSpy(Spy spy) {
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
         registeredSpies.add(spyReference);
         return spyReference;
     }
 
-    synchronized void removeSpyReferenceImpl(WeakReference<Spy> spyReference) {
+    static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
         registeredSpies.remove(spyReference);
     }
 
-    synchronized void notifyListeners(String sql) {
+    static synchronized void notifyListeners(String sql) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -56,66 +101,16 @@ public class Sniffer {
         }
     }
 
-    int executeStatementImpl(Query.Type queryType) {
-        switch (queryType) {
-            case SELECT:
-                return counterSelect.incrementAndGet();
-            case INSERT:
-                return counterInsert.incrementAndGet();
-            case UPDATE:
-                return counterUpdate.incrementAndGet();
-            case DELETE:
-                return counterDelete.incrementAndGet();
-            case MERGE:
-                return counterMerge.incrementAndGet();
-            case OTHER:
-            default:
-                return counterOther.incrementAndGet();
-        }
-    }
-
-    static WeakReference<Spy> registerSpy(Spy spy) {
-        return INSTANCE.registerSpyImpl(spy);
-    }
-
-    static void removeSpyReference(WeakReference<Spy> spyReference) {
-        INSTANCE.removeSpyReferenceImpl(spyReference);
-    }
-
     static void executeStatement(String sql, long nanos) {
         QueryLogger.logQuery(sql, nanos);
         Query query = Query.parse(sql);
-        INSTANCE.executeStatementImpl(query.type);
-        INSTANCE.notifyListeners(sql);
+        COUNTER.executeStatement(query.type);
+        notifyListeners(sql);
         ThreadLocalSniffer.executeStatement(query.type);
     }
 
     static List<WeakReference<Spy>> registeredSpies() {
-        return Collections.unmodifiableList(INSTANCE.registeredSpies);
-    }
-
-    int executedStatementsImpl(Query.Type queryType) {
-        switch (queryType) {
-            case ALL:
-                return counterSelect.get() + counterInsert.get() + counterUpdate.get() + counterDelete.get() + counterMerge.get() + counterOther.get();
-            case SELECT:
-                return counterSelect.get();
-            case INSERT:
-                return counterInsert.get();
-            case UPDATE:
-                return counterUpdate.get();
-            case DELETE:
-                return counterDelete.get();
-            case MERGE:
-                return counterMerge.get();
-            case OTHER:
-            default:
-                return counterOther.get();
-        }
-    }
-
-    int executedStatementsImpl() {
-        return executedStatementsImpl(Query.Type.ALL);
+        return Collections.unmodifiableList(registeredSpies);
     }
 
     /**
@@ -123,7 +118,7 @@ public class Sniffer {
      * @since 1.0
      */
     public static int executedStatements() {
-        return INSTANCE.executedStatementsImpl();
+        return COUNTER.executedStatements();
     }
 
     /**
@@ -456,35 +451,36 @@ public class Sniffer {
      * @return statistics on executed queries
      * @throws Exception if underlying code under test throws an Exception
      */
+    @SuppressWarnings("unchecked")
     public static <V> SpyWithValue<V> call(Callable<V> callable) throws Exception {
         return spy().call(callable);
     }
 
     protected final static Threads DEFAULT_THREAD_MATCHER = Threads.CURRENT;
 
-    static class ThreadLocalSniffer extends ThreadLocal<Sniffer> {
+    static class ThreadLocalSniffer extends ThreadLocal<Counter> {
 
         private final static ThreadLocalSniffer INSTANCE = new ThreadLocalSniffer();
 
         @Override
-        protected Sniffer initialValue() {
-            return new Sniffer();
+        protected Counter initialValue() {
+            return new Counter();
         }
 
-        static Sniffer getSniffer() {
+        static Counter getSniffer() {
             return INSTANCE.get();
         }
 
         static void executeStatement(Query.Type queryType) {
-            getSniffer().executeStatementImpl(queryType);
+            getSniffer().executeStatement(queryType);
         }
 
         static int executedStatements(Query.Type queryType) {
-            return getSniffer().executedStatementsImpl(queryType);
+            return getSniffer().executedStatements(queryType);
         }
 
         static int executedStatements() {
-            return getSniffer().executedStatementsImpl();
+            return getSniffer().executedStatements();
         }
 
     }
