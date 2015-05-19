@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Sniffer is an entry point for using JDBC Sniffer library
@@ -22,61 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Sniffer {
 
-    static class Counter {
+    // Registered listeners (i.e. spies)
 
-        final AtomicInteger counterSelect = new AtomicInteger();
-        final AtomicInteger counterInsert = new AtomicInteger();
-        final AtomicInteger counterUpdate = new AtomicInteger();
-        final AtomicInteger counterDelete = new AtomicInteger();
-        final AtomicInteger counterMerge = new AtomicInteger();
-        final AtomicInteger counterOther = new AtomicInteger();
-
-        int executeStatement(Query.Type queryType) {
-            switch (queryType) {
-                case SELECT:
-                    return counterSelect.incrementAndGet();
-                case INSERT:
-                    return counterInsert.incrementAndGet();
-                case UPDATE:
-                    return counterUpdate.incrementAndGet();
-                case DELETE:
-                    return counterDelete.incrementAndGet();
-                case MERGE:
-                    return counterMerge.incrementAndGet();
-                case OTHER:
-                default:
-                    return counterOther.incrementAndGet();
-            }
-        }
-
-        int executedStatements(Query.Type queryType) {
-            switch (queryType) {
-                case ALL:
-                    return counterSelect.get() + counterInsert.get() + counterUpdate.get() + counterDelete.get() + counterMerge.get() + counterOther.get();
-                case SELECT:
-                    return counterSelect.get();
-                case INSERT:
-                    return counterInsert.get();
-                case UPDATE:
-                    return counterUpdate.get();
-                case DELETE:
-                    return counterDelete.get();
-                case MERGE:
-                    return counterMerge.get();
-                case OTHER:
-                default:
-                    return counterOther.get();
-            }
-        }
-
-        int executedStatements() {
-            return executedStatements(Query.Type.ALL);
-        }
-
-    }
-
-    private static final Counter COUNTER = new Counter();
-    private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+    static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
 
     static synchronized WeakReference<Spy> registerSpy(Spy spy) {
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
@@ -86,6 +33,10 @@ public class Sniffer {
 
     static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
         registeredSpies.remove(spyReference);
+    }
+
+    static List<WeakReference<Spy>> registeredSpies() {
+        return Collections.unmodifiableList(registeredSpies);
     }
 
     static synchronized void notifyListeners(String sql) {
@@ -101,16 +52,30 @@ public class Sniffer {
         }
     }
 
+    // query counters
+
+    static final Counter COUNTER = new Counter();
+
+    static final ThreadLocal<Counter> THREAD_LOCAL_COUNTER = new ThreadLocal<Counter>() {
+
+        @Override
+        protected Counter initialValue() {
+            return new Counter();
+        }
+
+    };
+
     static void executeStatement(String sql, long nanos) {
+        // log query
         QueryLogger.logQuery(sql, nanos);
+
+        // increment counters
         Query query = Query.parse(sql);
         COUNTER.executeStatement(query.type);
-        notifyListeners(sql);
-        ThreadLocalSniffer.executeStatement(query.type);
-    }
+        THREAD_LOCAL_COUNTER.get().executeStatement(query.type);
 
-    static List<WeakReference<Spy>> registeredSpies() {
-        return Collections.unmodifiableList(registeredSpies);
+        // notify listeners
+        notifyListeners(sql);
     }
 
     /**
@@ -118,7 +83,7 @@ public class Sniffer {
      * @since 1.0
      */
     public static int executedStatements() {
-        return COUNTER.executedStatements();
+        return COUNTER.executedStatements(Query.Type.ALL);
     }
 
     /**
@@ -457,32 +422,5 @@ public class Sniffer {
     }
 
     protected final static Threads DEFAULT_THREAD_MATCHER = Threads.CURRENT;
-
-    static class ThreadLocalSniffer extends ThreadLocal<Counter> {
-
-        private final static ThreadLocalSniffer INSTANCE = new ThreadLocalSniffer();
-
-        @Override
-        protected Counter initialValue() {
-            return new Counter();
-        }
-
-        static Counter getSniffer() {
-            return INSTANCE.get();
-        }
-
-        static void executeStatement(Query.Type queryType) {
-            getSniffer().executeStatement(queryType);
-        }
-
-        static int executedStatements(Query.Type queryType) {
-            return getSniffer().executedStatements(queryType);
-        }
-
-        static int executedStatements() {
-            return getSniffer().executedStatements();
-        }
-
-    }
 
 }

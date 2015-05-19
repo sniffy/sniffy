@@ -22,8 +22,8 @@ import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
  */
 public class Spy<C extends Spy<C>> implements Closeable {
 
-    private int initialQueries;
-    private int initialThreadLocalQueries;
+    private Counter initialCount;
+    private Counter initialThreadLocalCount;
 
     private final List<String> executedSqls = new LinkedList<String>();
     private final WeakReference<Spy> selfReference;
@@ -39,17 +39,14 @@ public class Spy<C extends Spy<C>> implements Closeable {
         executedSqls.clear();
     }
 
-    /**
-     * @since 2.0
-     */
     Spy() {
         initNumberOfQueries();
         this.selfReference = Sniffer.registerSpy(this);
     }
 
     private void initNumberOfQueries() {
-        this.initialQueries = Sniffer.executedStatements();
-        this.initialThreadLocalQueries = Sniffer.ThreadLocalSniffer.executedStatements();
+        this.initialCount = new Counter(Sniffer.COUNTER);
+        this.initialThreadLocalCount = new Counter(Sniffer.THREAD_LOCAL_COUNTER.get());
     }
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
@@ -71,7 +68,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @since 2.0
      */
     public int executedStatements() {
-        checkOpened();
         return executedStatements(DEFAULT_THREAD_MATCHER);
     }
 
@@ -81,17 +77,26 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @since 2.0
      */
     public int executedStatements(Threads threadMatcher) {
+        return executedStatements(threadMatcher, Query.Type.ALL);
+    }
+
+    /**
+     * @param threadMatcher chooses {@link Thread}s for calculating the number of executed queries
+     * @return number of SQL statements executed since some fixed moment of time
+     * @since 2.2
+     */
+    public int executedStatements(Threads threadMatcher, Query.Type queryType) {
 
         checkOpened();
 
         switch (threadMatcher) {
             case ANY:
-                return Sniffer.executedStatements() - initialQueries;
+                return Sniffer.COUNTER.executedStatements(queryType) - initialCount.executedStatements(queryType);
             case CURRENT:
-                return Sniffer.ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
+                return Sniffer.THREAD_LOCAL_COUNTER.get().executedStatements(queryType) - initialThreadLocalCount.executedStatements(queryType);
             case OTHERS:
-                return Sniffer.executedStatements() - Sniffer.ThreadLocalSniffer.executedStatements()
-                        - initialQueries + initialThreadLocalQueries;
+                return Sniffer.COUNTER.executedStatements(queryType) - Sniffer.THREAD_LOCAL_COUNTER.get().executedStatements(queryType)
+                        - initialCount.executedStatements(queryType) + initialThreadLocalCount.executedStatements(queryType);
             default:
                 throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
         }
@@ -755,31 +760,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
         public void validate() throws WrongNumberOfQueriesError {
 
-            switch (threadMatcher) {
-                case ANY:
-                {
-                    int numQueries = Sniffer.executedStatements() - initialQueries;
-                    if (numQueries > maximumQueries || numQueries < minimumQueries) synchronized (Spy.this) {
-                        throw new WrongNumberOfQueriesError(threadMatcher, minimumQueries, maximumQueries, numQueries, executedSqls);
-                    }
-                }
-                break;
-                case CURRENT:
-                {
-                    int numQueries = Sniffer.ThreadLocalSniffer.executedStatements() - initialThreadLocalQueries;
-                    if (numQueries > maximumQueries || numQueries < minimumQueries) synchronized (Spy.this) {
-                        throw new WrongNumberOfQueriesError(threadMatcher, minimumQueries, maximumQueries, numQueries, executedSqls);
-                    }
-                }
-                break;
-                case OTHERS: {
-                    int numQueries = Sniffer.executedStatements() - Sniffer.ThreadLocalSniffer.executedStatements()
-                            - initialQueries + initialThreadLocalQueries;
-                    if (numQueries > maximumQueries || numQueries < minimumQueries) synchronized (Spy.this) {
-                        throw new WrongNumberOfQueriesError(threadMatcher, minimumQueries, maximumQueries, numQueries, executedSqls);
-                    }
-                }
-                break;
+            int numQueries = executedStatements(threadMatcher, queryType);
+
+            if (numQueries > maximumQueries || numQueries < minimumQueries) synchronized (Spy.this) {
+                throw new WrongNumberOfQueriesError(threadMatcher, minimumQueries, maximumQueries, numQueries, executedSqls);
             }
 
         }
