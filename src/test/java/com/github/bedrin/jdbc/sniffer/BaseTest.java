@@ -1,6 +1,5 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import com.github.bedrin.jdbc.sniffer.sql.Query;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -33,23 +32,23 @@ public abstract class BaseTest {
     }
 
     protected static void executeStatement() {
-        executeStatements(1, Query.Type.SELECT);
+        executeStatements(1, Query.SELECT);
     }
 
-    protected static void executeStatement(Query.Type queryType) {
-        executeStatements(1, queryType);
+    protected static void executeStatement(Query query) {
+        executeStatements(1, query);
     }
 
     protected static void executeStatements(int count) {
-        executeStatements(count, Query.Type.SELECT);
+        executeStatements(count, Query.SELECT);
     }
 
-    protected static void executeStatements(int count, Query.Type queryType) {
+    protected static void executeStatements(int count, Query query) {
         try {
             try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:project", "sa", "sa");
                  Statement statement = connection.createStatement()) {
                 for (int i = 0; i < count; i++) {
-                    switch (queryType) {
+                    switch (query) {
                         case INSERT:
                             statement.executeUpdate("INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, 'foo')");
                             break;
@@ -76,15 +75,15 @@ public abstract class BaseTest {
         executeStatementsInOtherThread(1);
     }
 
-    protected static void executeStatementInOtherThread(Query.Type queryType) {
-        executeStatementsInOtherThread(1, queryType);
+    protected static void executeStatementInOtherThread(Query query) {
+        executeStatementsInOtherThread(1, query);
     }
 
     protected static void executeStatementsInOtherThread(int count) {
-        executeStatementsInOtherThread(count, Query.Type.SELECT);
+        executeStatementsInOtherThread(count, Query.SELECT);
     }
-    protected static void executeStatementsInOtherThread(int count, Query.Type queryType) {
-        Thread thread = new Thread(() -> {BaseTest.executeStatements(count, queryType);});
+    protected static void executeStatementsInOtherThread(int count, Query query) {
+        Thread thread = new Thread(() -> {BaseTest.executeStatements(count, query);});
         thread.start();
         try {
             thread.join();

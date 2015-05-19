@@ -1,6 +1,5 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import com.github.bedrin.jdbc.sniffer.sql.Query;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -34,10 +33,10 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testExecutedDeleteStatements() throws Exception {
         Spy spy = Sniffer.spy();
-        int actual = spy.executedStatements(Threads.ANY, Query.Type.DELETE);
+        int actual = spy.executedStatements(Threads.ANY, Query.DELETE);
         executeStatement();
-        executeStatement(Query.Type.DELETE);
-        assertEquals(1, spy.executedStatements(Threads.ANY, Query.Type.DELETE) - actual);
+        executeStatement(Query.DELETE);
+        assertEquals(1, spy.executedStatements(Threads.ANY, Query.DELETE) - actual);
     }
 
     @Test
@@ -71,14 +70,14 @@ public class SnifferTest extends BaseTest {
     public void testVerifyExactUpdate() throws Exception {
         // test positive
         Spy spy = Sniffer.spy();
-        executeStatement(Query.Type.SELECT);
-        executeStatement(Query.Type.INSERT);
-        executeStatement(Query.Type.UPDATE);
-        executeStatement(Query.Type.DELETE);
-        executeStatement(Query.Type.MERGE);
-        executeStatement(Query.Type.OTHER);
-        spy.verify(1, Query.Type.UPDATE);
-        spy.verify(6, Query.Type.ALL);
+        executeStatement(Query.SELECT);
+        executeStatement(Query.INSERT);
+        executeStatement(Query.UPDATE);
+        executeStatement(Query.DELETE);
+        executeStatement(Query.MERGE);
+        executeStatement(Query.OTHER);
+        spy.verify(1, Query.UPDATE);
+        spy.verify(6, Query.ALL);
 
         // test negative case 1
         spy = Sniffer.spy();
@@ -91,9 +90,9 @@ public class SnifferTest extends BaseTest {
 
         // test negative case 2
         spy = Sniffer.spy();
-        executeStatements(2, Query.Type.UPDATE);
+        executeStatements(2, Query.UPDATE);
         try {
-            spy.verify(1, Query.Type.UPDATE);
+            spy.verify(1, Query.UPDATE);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -172,7 +171,7 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testRecordQueriesNegativeQueryType() throws Exception {
         try {
-            Sniffer.run(BaseTest::executeStatement).verify(1, Query.Type.INSERT);
+            Sniffer.run(BaseTest::executeStatement).verify(1, Query.INSERT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);

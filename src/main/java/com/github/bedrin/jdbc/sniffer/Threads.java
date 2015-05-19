@@ -6,6 +6,7 @@ package com.github.bedrin.jdbc.sniffer;
  * all threads except current (OTHERS)
  * @see Sniffer
  * @see Spy
+ * @since 2.2
  */
 public enum Threads {
     ANY,

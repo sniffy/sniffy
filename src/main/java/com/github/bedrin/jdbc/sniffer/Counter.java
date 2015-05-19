@@ -1,7 +1,5 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import com.github.bedrin.jdbc.sniffer.sql.Query;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 // TODO: consider making counters hierarchical, i.e. DML, DDL as top level , INSERT, CREATE TABLE as 2 level, e.t.c
@@ -49,8 +47,8 @@ class Counter {
         this.other = new AtomicInteger(that.other.intValue());
     }
 
-    int executeStatement(Query.Type queryType) {
-        switch (queryType) {
+    int executeStatement(Query query) {
+        switch (query) {
             case SELECT:
                 return select.incrementAndGet();
             case INSERT:
@@ -67,8 +65,8 @@ class Counter {
         }
     }
 
-    int executedStatements(Query.Type queryType) {
-        switch (queryType) {
+    int executedStatements(Query query) {
+        switch (query) {
             case ALL:
                 return select.get() + insert.get() + update.get() + delete.get() + merge.get() + other.get();
             case SELECT:

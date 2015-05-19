@@ -1,48 +1,40 @@
 package com.github.bedrin.jdbc.sniffer.sql;
 
-public class Query {
+import com.github.bedrin.jdbc.sniffer.Query;
 
-    public final Type type;
+public class StatementMetaData {
 
-    public Query(Type type) {
-        this.type = type;
+    public final Query query;
+
+    public StatementMetaData(Query query) {
+        this.query = query;
     }
 
-    public enum Type {
-        SELECT,
-        INSERT,
-        UPDATE,
-        DELETE,
-        MERGE,
-        OTHER,
-        ALL
-    }
-
-    public static Query parse(String sql) {
+    public static StatementMetaData parse(String sql) {
 
         if (null == sql) return null;
 
         String normalized = sql.trim().toLowerCase();
 
-        Type type;
+        Query query;
 
         if (normalized.startsWith("select ")) {
             // TODO: can start with "WITH" statement
-            type = Type.SELECT;
+            query = Query.SELECT;
         } else if (normalized.startsWith("insert ")) {
-            type = Type.INSERT;
+            query = Query.INSERT;
         } else if (normalized.startsWith("update ")) {
-            type = Type.UPDATE;
+            query = Query.UPDATE;
         } else if (normalized.startsWith("delete ")) {
-            type = Type.DELETE;
+            query = Query.DELETE;
         } else if (normalized.startsWith("merge ")) {
             // TODO: can start with "WITH" statement
-            type = Type.MERGE;
+            query = Query.MERGE;
         } else {
-            type = Type.OTHER;
+            query = Query.OTHER;
         }
 
-        return new Query(type);
+        return new StatementMetaData(query);
     }
 
 }
