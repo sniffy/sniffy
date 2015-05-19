@@ -26,7 +26,8 @@ public class Query {
 
         Type type;
 
-        if (normalized.startsWith("select ") || normalized.startsWith("with ")) {
+        if (normalized.startsWith("select ")) {
+            // TODO: can start with "WITH" statement
             type = Type.SELECT;
         } else if (normalized.startsWith("insert ")) {
             type = Type.INSERT;
@@ -35,6 +36,7 @@ public class Query {
         } else if (normalized.startsWith("delete ")) {
             type = Type.DELETE;
         } else if (normalized.startsWith("merge ")) {
+            // TODO: can start with "WITH" statement
             type = Type.MERGE;
         } else {
             type = Type.OTHER;
