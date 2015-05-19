@@ -136,6 +136,16 @@ public class Sniffer {
         return spy().expectNever(threadMatcher, queryType);
     }
 
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectNever(Threads,Query.Type)
+     * @since 2.2
+     */
+    public static Spy expectNever(Query.Type queryType, Threads threadMatcher) {
+        return spy().expectNever(threadMatcher, queryType);
+    }
+
     // atMostOnce methods
 
     /**
@@ -175,6 +185,16 @@ public class Sniffer {
      * @since 2.2
      */
     public static Spy expectAtMostOnce(Threads threadMatcher, Query.Type queryType) {
+        return spy().expectAtMostOnce(threadMatcher, queryType);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMostOnce(Threads,Query.Type)
+     * @since 2.2
+     */
+    public static Spy expectAtMostOnce(Query.Type queryType, Threads threadMatcher) {
         return spy().expectAtMostOnce(threadMatcher, queryType);
     }
 
@@ -220,6 +240,16 @@ public class Sniffer {
         return spy().expectAtMost(allowedStatements, threadMatcher, queryType);
     }
 
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMost(int, Threads, Query.Type)
+     * @since 2.2
+     */
+    public static Spy expectAtMost(int allowedStatements, Query.Type queryType, Threads threadMatcher) {
+        return spy().expectAtMost(allowedStatements, threadMatcher, queryType);
+    }
+
     // exact methods
 
     /**
@@ -259,6 +289,16 @@ public class Sniffer {
      * @since 2.2
      */
     public static Spy expect(int allowedStatements, Threads threadMatcher, Query.Type queryType) {
+        return spy().expect(allowedStatements, threadMatcher, queryType);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expect(int, Threads, Query.Type)
+     * @since 2.2
+     */
+    public static Spy expect(int allowedStatements, Query.Type queryType, Threads threadMatcher) {
         return spy().expect(allowedStatements, threadMatcher, queryType);
     }
 
@@ -304,6 +344,16 @@ public class Sniffer {
         return spy().expectAtLeast(allowedStatements, threadMatcher, queryType);
     }
 
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtLeast(int, Threads, Query.Type)
+     * @since 2.2
+     */
+    public static Spy expectAtLeast(int allowedStatements, Query.Type queryType, Threads threadMatcher) {
+        return spy().expectAtLeast(allowedStatements, threadMatcher, queryType);
+    }
+
     // between methods methods
 
     /**
@@ -343,6 +393,16 @@ public class Sniffer {
      * @since 2.0
      */
     public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query.Type queryType) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher, queryType);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectBetween(int, int, Threads, Query.Type)
+     * @since 2.0
+     */
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Query.Type queryType, Threads threadMatcher) {
         return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher, queryType);
     }
 
