@@ -21,6 +21,10 @@ public @interface Expectation {
     int atLeast() default -1;
 
     Threads threads() default Threads.CURRENT;
+
+    /**
+     * @since 2.2
+     */
     Query query() default Query.ANY;
 
 }
