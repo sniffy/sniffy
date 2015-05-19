@@ -13,6 +13,7 @@ public class Query {
         INSERT,
         UPDATE,
         DELETE,
+        MERGE,
         OTHER,
         ALL
     }
@@ -33,6 +34,8 @@ public class Query {
             type = Type.UPDATE;
         } else if (normalized.startsWith("delete ")) {
             type = Type.DELETE;
+        } else if (normalized.startsWith("merge ")) {
+            type = Type.MERGE;
         } else {
             type = Type.OTHER;
         }
