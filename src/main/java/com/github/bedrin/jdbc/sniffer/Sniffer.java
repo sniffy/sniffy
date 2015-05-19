@@ -28,6 +28,7 @@ public class Sniffer {
     private final AtomicInteger counterInsert = new AtomicInteger();
     private final AtomicInteger counterUpdate = new AtomicInteger();
     private final AtomicInteger counterDelete = new AtomicInteger();
+    private final AtomicInteger counterMerge = new AtomicInteger();
     private final AtomicInteger counterOther = new AtomicInteger();
 
     private final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
@@ -65,6 +66,8 @@ public class Sniffer {
                 return counterUpdate.incrementAndGet();
             case DELETE:
                 return counterDelete.incrementAndGet();
+            case MERGE:
+                return counterMerge.incrementAndGet();
             case OTHER:
             default:
                 return counterOther.incrementAndGet();
@@ -94,7 +97,7 @@ public class Sniffer {
     int executedStatementsImpl(Query.Type queryType) {
         switch (queryType) {
             case ALL:
-                return counterSelect.get() + counterInsert.get() + counterUpdate.get() + counterDelete.get() + counterOther.get();
+                return counterSelect.get() + counterInsert.get() + counterUpdate.get() + counterDelete.get() + counterMerge.get() + counterOther.get();
             case SELECT:
                 return counterSelect.get();
             case INSERT:
@@ -103,6 +106,8 @@ public class Sniffer {
                 return counterUpdate.get();
             case DELETE:
                 return counterDelete.get();
+            case MERGE:
+                return counterMerge.get();
             case OTHER:
             default:
                 return counterOther.get();
