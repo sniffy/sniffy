@@ -43,18 +43,13 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @since 2.0
      */
     Spy() {
-        this(Sniffer.executedStatements(), Sniffer.ThreadLocalSniffer.executedStatements());
+        initNumberOfQueries();
+        this.selfReference = Sniffer.registerSpy(this);
     }
 
-    /**
-     * @param initialQueries total number of queries executed since some point of time
-     * @param initialThreadLocalQueries total number of queries executed by current thread since some point of time
-     * @since 2.0
-     */
-    Spy(int initialQueries, int initialThreadLocalQueries) {
-        this.initialQueries = initialQueries;
-        this.initialThreadLocalQueries = initialThreadLocalQueries;
-        this.selfReference = Sniffer.registerSpy(this);
+    private void initNumberOfQueries() {
+        this.initialQueries = Sniffer.executedStatements();
+        this.initialThreadLocalQueries = Sniffer.ThreadLocalSniffer.executedStatements();
     }
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
@@ -66,8 +61,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     public Spy reset() {
         checkOpened();
-        this.initialQueries = Sniffer.executedStatements();
-        this.initialThreadLocalQueries =  Sniffer.ThreadLocalSniffer.executedStatements();
+        initNumberOfQueries();
         resetExecutedSqls();
         return self();
     }
