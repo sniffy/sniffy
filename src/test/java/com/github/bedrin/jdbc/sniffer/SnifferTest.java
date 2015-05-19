@@ -1,5 +1,6 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import com.github.bedrin.jdbc.sniffer.sql.Query;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -31,6 +32,15 @@ public class SnifferTest extends BaseTest {
     }
 
     @Test
+    public void testExecutedDeleteStatements() throws Exception {
+        Spy spy = Sniffer.spy();
+        int actual = spy.executedStatements(Threads.ANY, Query.Type.DELETE);
+        executeStatement();
+        executeStatement(Query.Type.DELETE);
+        assertEquals(1, spy.executedStatements(Threads.ANY, Query.Type.DELETE) - actual);
+    }
+
+    @Test
     public void testVerifyExact() throws Exception {
         // test positive
         Spy spy = Sniffer.spy();
@@ -51,6 +61,39 @@ public class SnifferTest extends BaseTest {
         executeStatements(2);
         try {
             spy.verify(1);
+            fail();
+        } catch (WrongNumberOfQueriesError e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testVerifyExactUpdate() throws Exception {
+        // test positive
+        Spy spy = Sniffer.spy();
+        executeStatement(Query.Type.SELECT);
+        executeStatement(Query.Type.INSERT);
+        executeStatement(Query.Type.UPDATE);
+        executeStatement(Query.Type.DELETE);
+        executeStatement(Query.Type.MERGE);
+        executeStatement(Query.Type.OTHER);
+        spy.verify(1, Query.Type.UPDATE);
+        spy.verify(6, Query.Type.ALL);
+
+        // test negative case 1
+        spy = Sniffer.spy();
+        try {
+            spy.verify(1);
+            fail();
+        } catch (WrongNumberOfQueriesError e) {
+            assertNotNull(e);
+        }
+
+        // test negative case 2
+        spy = Sniffer.spy();
+        executeStatements(2, Query.Type.UPDATE);
+        try {
+            spy.verify(1, Query.Type.UPDATE);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -120,6 +163,16 @@ public class SnifferTest extends BaseTest {
     public void testRecordQueriesNegative() throws Exception {
         try {
             Sniffer.run(BaseTest::executeStatement).verifyNever();
+            fail();
+        } catch (WrongNumberOfQueriesError e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testRecordQueriesNegativeQueryType() throws Exception {
+        try {
+            Sniffer.run(BaseTest::executeStatement).verify(1, Query.Type.INSERT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
