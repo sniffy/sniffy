@@ -58,6 +58,9 @@ public abstract class BaseTest {
                         case DELETE:
                             statement.executeUpdate("DELETE FROM PUBLIC.PROJECT");
                             break;
+                        case MERGE:
+                            statement.executeUpdate("MERGE INTO PUBLIC.PROJECT (ID, NAME) KEY (ID) VALUES (SEQ_PROJECT.NEXTVAL, 'bar')");
+                            break;
                         case SELECT:
                         case ANY:
                         case OTHER:
