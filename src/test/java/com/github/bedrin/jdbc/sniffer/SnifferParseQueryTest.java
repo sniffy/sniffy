@@ -37,36 +37,36 @@ public class SnifferParseQueryTest extends BaseTest {
     }
 
     @Test
-    public void testAtMostOnceInsertPositive() throws Exception {
-        try (Spy ignored = Sniffer.expectAtMostOnce(INSERT)) {
+    public void testAtMostOnceUpdatePositive() throws Exception {
+        try (Spy ignored = Sniffer.expectAtMostOnce(UPDATE)) {
             executeStatement(UPDATE);
         }
-        try (Spy ignored = Sniffer.expectAtMostOnce(INSERT)) {
+        try (Spy ignored = Sniffer.expectAtMostOnce(UPDATE)) {
             executeStatement(DELETE);
-            executeStatement(INSERT);
+            executeStatement(UPDATE);
         }
     }
 
     @Test(expected = WrongNumberOfQueriesError.class)
-    public void testAtMostOnceInsertNegative() throws Exception {
-        try (Spy ignored = Sniffer.expectAtMostOnce(INSERT)) {
-            executeStatements(2, INSERT);
+    public void testAtMostOnceUpdateNegative() throws Exception {
+        try (Spy ignored = Sniffer.expectAtMostOnce(UPDATE)) {
+            executeStatements(2, UPDATE);
         }
     }
 
     @Test
-    public void testAtMostOnceInsertOtherThreadPositive() throws Exception {
-        try (Spy ignored = Sniffer.expectAtMostOnce(Threads.OTHERS, INSERT)) {
+    public void testAtMostOnceUpdateOtherThreadPositive() throws Exception {
+        try (Spy ignored = Sniffer.expectAtMostOnce(Threads.OTHERS, UPDATE)) {
             executeStatementInOtherThread(SELECT);
-            executeStatementInOtherThread(INSERT);
-            executeStatements(5, INSERT);
+            executeStatementInOtherThread(UPDATE);
+            executeStatements(5, UPDATE);
         }
     }
 
     @Test(expected = WrongNumberOfQueriesError.class)
-    public void testAtMostOnceInsertOtherThreadNegative() throws Exception {
-        try (Spy ignored = Sniffer.expectAtMostOnce(INSERT, Threads.OTHERS)) {
-            executeStatementsInOtherThread(2,INSERT);
+    public void testAtMostOnceUpdateOtherThreadNegative() throws Exception {
+        try (Spy ignored = Sniffer.expectAtMostOnce(UPDATE, Threads.OTHERS)) {
+            executeStatementsInOtherThread(2,UPDATE);
         }
     }
 
