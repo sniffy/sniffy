@@ -133,4 +133,33 @@ public class SnifferParseQueryTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testBetweenOtherPositive() throws Exception {
+        try (Spy ignored = Sniffer.expectBetween(2, 4, OTHER)) {
+            executeStatements(3, OTHER);
+        }
+    }
+
+    @Test(expected = WrongNumberOfQueriesError.class)
+    public void testBetweenOtherNegative() throws Exception {
+        try (Spy ignored = Sniffer.expectBetween(2, 4, OTHER)) {
+            executeStatements(5, OTHER);
+        }
+    }
+
+    @Test
+    public void testBetweenOtherOtherThreadPositive() throws Exception {
+        try (Spy ignored = Sniffer.expectBetween(1, 3, Threads.OTHERS, OTHER)) {
+            executeStatementsInOtherThread(2, OTHER);
+        }
+    }
+
+    @Test(expected = WrongNumberOfQueriesError.class)
+    public void testBetweenOtherOtherThreadNegative() throws Exception {
+        try (Spy ignored = Sniffer.expectBetween(2, 4, OTHER, Threads.OTHERS)) {
+            executeStatementInOtherThread(OTHER);
+            executeStatements(2, OTHER);
+        }
+    }
+
 }

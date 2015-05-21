@@ -61,9 +61,11 @@ public abstract class BaseTest {
                         case MERGE:
                             statement.executeUpdate("MERGE INTO PUBLIC.PROJECT (ID, NAME) KEY (ID) VALUES (SEQ_PROJECT.NEXTVAL, 'bar')");
                             break;
+                        case OTHER:
+                            statement.execute("CREATE TABLE IF NOT EXISTS PROJECT (ID NUMBER PRIMARY KEY, NAME VARCHAR(255))");
+                            break;
                         case SELECT:
                         case ANY:
-                        case OTHER:
                         default:
                             statement.execute("SELECT 1 FROM DUAL");
                     }
