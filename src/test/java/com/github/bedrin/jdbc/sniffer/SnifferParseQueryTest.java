@@ -3,7 +3,6 @@ package com.github.bedrin.jdbc.sniffer;
 import org.junit.Test;
 
 import static com.github.bedrin.jdbc.sniffer.Query.*;
-import static org.junit.Assert.*;
 
 public class SnifferParseQueryTest extends BaseTest {
 
@@ -66,7 +65,41 @@ public class SnifferParseQueryTest extends BaseTest {
     @Test(expected = WrongNumberOfQueriesError.class)
     public void testAtMostOnceUpdateOtherThreadNegative() throws Exception {
         try (Spy ignored = Sniffer.expectAtMostOnce(UPDATE, Threads.OTHERS)) {
-            executeStatementsInOtherThread(2,UPDATE);
+            executeStatementsInOtherThread(2, UPDATE);
+        }
+    }
+
+    @Test
+    public void testAtMostMergePositive() throws Exception {
+        try (Spy ignored = Sniffer.expectAtMost(2, MERGE)) {
+            executeStatement(MERGE);
+        }
+        try (Spy ignored = Sniffer.expectAtMost(2, MERGE)) {
+            executeStatement(DELETE);
+            executeStatements(2, MERGE);
+        }
+    }
+
+    @Test(expected = WrongNumberOfQueriesError.class)
+    public void testAtMostMergeNegative() throws Exception {
+        try (Spy ignored = Sniffer.expectAtMost(2, MERGE)) {
+            executeStatements(3, MERGE);
+        }
+    }
+
+    @Test
+    public void testAtMostMergeOtherThreadPositive() throws Exception {
+        try (Spy ignored = Sniffer.expectAtMost(2, Threads.OTHERS, MERGE)) {
+            executeStatementInOtherThread(SELECT);
+            executeStatementInOtherThread(MERGE);
+            executeStatements(5, MERGE);
+        }
+    }
+
+    @Test(expected = WrongNumberOfQueriesError.class)
+    public void testAtMostMergeOtherThreadNegative() throws Exception {
+        try (Spy ignored = Sniffer.expectAtMost(2, MERGE, Threads.OTHERS)) {
+            executeStatementsInOtherThread(3, MERGE);
         }
     }
 
