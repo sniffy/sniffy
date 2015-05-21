@@ -2,6 +2,7 @@ package com.github.bedrin.jdbc.sniffer.testng;
 
 import com.github.bedrin.jdbc.sniffer.BaseTest;
 import com.github.bedrin.jdbc.sniffer.junit.BasedNoQueriesAllowedTest;
+import com.github.bedrin.jdbc.sniffer.junit.Expectation;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
@@ -15,8 +16,9 @@ import java.sql.Statement;
 public class InheritSuperClassAnnotationTestNg extends BasedNoQueriesAllowedTest {
 
     @BeforeClass
-    public void setUp() throws ClassNotFoundException {
-        BaseTest.loadDriver();
+    @Expectation(atLeast = 0)
+    public void setUp() throws ClassNotFoundException, SQLException {
+        BaseTest.loadDriverAndCreateTables();
     }
 
     @Test

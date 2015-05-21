@@ -1,19 +1,23 @@
 package com.github.bedrin.jdbc.sniffer.testng;
 
 import com.github.bedrin.jdbc.sniffer.BaseTest;
+import com.github.bedrin.jdbc.sniffer.Query;
 import com.github.bedrin.jdbc.sniffer.Threads;
 import com.github.bedrin.jdbc.sniffer.junit.Expectation;
 import com.github.bedrin.jdbc.sniffer.junit.Expectations;
 import com.github.bedrin.jdbc.sniffer.junit.NoQueriesAllowed;
 import org.testng.annotations.*;
 
+import java.sql.SQLException;
+
 @Listeners({QueryCounter.class, MustFailListener.class})
 @NoQueriesAllowed
 public class QueryCounterTestNg extends BaseTest {
 
     @BeforeClass
-    public void setUp() throws ClassNotFoundException {
-        BaseTest.loadDriver();
+    @Expectation(atLeast = 0) // TODO: introduce @AnyQueriesAllowed annotation
+    public void setUp() throws ClassNotFoundException, SQLException {
+        BaseTest.loadDriverAndCreateTables();
     }
 
     @Test
@@ -109,4 +113,21 @@ public class QueryCounterTestNg extends BaseTest {
     public void testBetween() {
         executeStatements(2);
     }
+
+    @Test
+    @Expectations({
+            @Expectation(value = 1, query = Query.SELECT),
+            @Expectation(value = 1, query = Query.INSERT),
+            @Expectation(value = 1, query = Query.UPDATE),
+            @Expectation(value = 1, query = Query.DELETE),
+            @Expectation(value = 1, query = Query.MERGE)
+    })
+    public void testDifferentQueries() {
+        executeStatement(Query.SELECT);
+        executeStatement(Query.INSERT);
+        executeStatement(Query.UPDATE);
+        executeStatement(Query.DELETE);
+        executeStatement(Query.MERGE);
+    }
+
 }

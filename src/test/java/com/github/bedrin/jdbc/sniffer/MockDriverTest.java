@@ -63,6 +63,17 @@ public class MockDriverTest extends BaseTest {
     }
 
     @Test
+    public void testGetParentLoggerThrowsException() throws ClassNotFoundException, SQLException {
+        Driver driver = DriverManager.getDriver("sniffer:jdbc:h2:mem:");
+        try {
+            driver.getParentLogger();
+            fail("getParentLogger() should have thrown an exception");
+        } catch (SQLFeatureNotSupportedException e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
     public void testExecuteStatement() throws ClassNotFoundException, SQLException {
         Spy spy = Sniffer.spy();
         executeStatement();

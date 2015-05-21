@@ -1,5 +1,6 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
+import com.github.bedrin.jdbc.sniffer.Query;
 import com.github.bedrin.jdbc.sniffer.Threads;
 
 import java.lang.annotation.ElementType;
@@ -20,5 +21,10 @@ public @interface Expectation {
     int atLeast() default -1;
 
     Threads threads() default Threads.CURRENT;
+
+    /**
+     * @since 2.2
+     */
+    Query query() default Query.ANY;
 
 }

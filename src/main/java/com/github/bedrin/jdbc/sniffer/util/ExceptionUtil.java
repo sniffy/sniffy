@@ -6,9 +6,6 @@ import java.lang.reflect.Method;
 
 import static com.github.bedrin.jdbc.sniffer.util.StringUtil.LINE_SEPARATOR;
 
-/**
- * Created by bedrin on 22.03.2015.
- */
 public class ExceptionUtil {
 
     protected ExceptionUtil() {
@@ -28,7 +25,7 @@ public class ExceptionUtil {
 
     public static boolean throwException(String className, String message) {
         try {
-            Class<Throwable> throwableClass = (Class<Throwable>)Class.forName(className);
+            Class<Throwable> throwableClass = forName(className);
             Constructor<Throwable> constructor = throwableClass.getConstructor(String.class);
             Throwable throwable = constructor.newInstance(message);
             throwException(throwable);
@@ -46,6 +43,10 @@ public class ExceptionUtil {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private static Class<Throwable> forName(String className) throws ClassNotFoundException {
+        return (Class<Throwable>)Class.forName(className);
+    }
 
     public static void throwException(Throwable e) {
         ExceptionUtil.<RuntimeException>throwAny(e);
