@@ -8,35 +8,39 @@ public class SnifferTest extends BaseTest {
 
     @Test
     public void testExecutedStatements() throws Exception {
-        Spy spy = Sniffer.spy();
-        int actual = spy.executedStatements(Threads.ANY);
+        int actual = Sniffer.executedStatements();
         executeStatement();
-        assertEquals(1, spy.executedStatements(Threads.ANY) - actual);
-    }
-
-    @Test
-    public void testExecutedStatementsCurrentThread() throws Exception {
-        Spy spy = Sniffer.spy();
-        int actual = spy.executedStatements(Threads.CURRENT);
-        executeStatement();
-        assertEquals(1, spy.executedStatements() - actual);
-    }
-
-    @Test
-    public void testExecutedStatementsOtherThreads() throws Exception {
-        Spy spy = Sniffer.spy();
-        int actual = spy.executedStatements(Threads.OTHERS);
         executeStatementInOtherThread();
-        assertEquals(1, spy.executedStatements(Threads.OTHERS) - actual);
+        assertEquals(2, Sniffer.executedStatements() - actual);
     }
 
     @Test
-    public void testExecutedDeleteStatements() throws Exception {
+    public void testSpyExecutedStatements() throws Exception {
         Spy spy = Sniffer.spy();
-        int actual = spy.executedStatements(Threads.ANY, Query.DELETE);
+        executeStatement();
+        assertEquals(1, spy.executedStatements(Threads.ANY));
+    }
+
+    @Test
+    public void testSpyExecutedStatementsCurrentThread() throws Exception {
+        Spy spy = Sniffer.spy();
+        executeStatement();
+        assertEquals(1, spy.executedStatements());
+    }
+
+    @Test
+    public void testSpyExecutedStatementsOtherThreads() throws Exception {
+        Spy spy = Sniffer.spy();
+        executeStatementInOtherThread();
+        assertEquals(1, spy.executedStatements(Threads.OTHERS));
+    }
+
+    @Test
+    public void testSpyExecutedDeleteStatements() throws Exception {
+        Spy spy = Sniffer.spy();
         executeStatement();
         executeStatement(Query.DELETE);
-        assertEquals(1, spy.executedStatements(Threads.ANY, Query.DELETE) - actual);
+        assertEquals(1, spy.executedStatements(Threads.ANY, Query.DELETE));
     }
 
     @Test
