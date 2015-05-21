@@ -143,7 +143,7 @@ public class Sniffer {
      * @since 2.2
      */
     public static Spy expectNever(Query query, Threads threadMatcher) {
-        return spy().expectNever(threadMatcher, query);
+        return spy().expectNever(query, threadMatcher);
     }
 
     // atMostOnce methods
@@ -195,7 +195,7 @@ public class Sniffer {
      * @since 2.2
      */
     public static Spy expectAtMostOnce(Query query, Threads threadMatcher) {
-        return spy().expectAtMostOnce(threadMatcher, query);
+        return spy().expectAtMostOnce(query, threadMatcher);
     }
 
     // notMoreThan methods
@@ -247,7 +247,7 @@ public class Sniffer {
      * @since 2.2
      */
     public static Spy expectAtMost(int allowedStatements, Query query, Threads threadMatcher) {
-        return spy().expectAtMost(allowedStatements, threadMatcher, query);
+        return spy().expectAtMost(allowedStatements, query, threadMatcher);
     }
 
     // exact methods
@@ -299,7 +299,7 @@ public class Sniffer {
      * @since 2.2
      */
     public static Spy expect(int allowedStatements, Query query, Threads threadMatcher) {
-        return spy().expect(allowedStatements, threadMatcher, query);
+        return spy().expect(allowedStatements, query, threadMatcher);
     }
 
     // atLeast methods
@@ -351,7 +351,7 @@ public class Sniffer {
      * @since 2.2
      */
     public static Spy expectAtLeast(int allowedStatements, Query query, Threads threadMatcher) {
-        return spy().expectAtLeast(allowedStatements, threadMatcher, query);
+        return spy().expectAtLeast(allowedStatements, query, threadMatcher);
     }
 
     // between methods methods
@@ -403,7 +403,7 @@ public class Sniffer {
      * @since 2.0
      */
     public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) {
-        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher, query);
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, query, threadMatcher);
     }
 
     /**
