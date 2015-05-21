@@ -103,4 +103,34 @@ public class SnifferParseQueryTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testAtLeastDeletePositive() throws Exception {
+        try (Spy ignored = Sniffer.expectAtLeast(2, DELETE)) {
+            executeStatements(3, DELETE);
+        }
+    }
+
+    @Test(expected = WrongNumberOfQueriesError.class)
+    public void testAtLeastDeleteNegative() throws Exception {
+        try (Spy ignored = Sniffer.expectAtLeast(2, DELETE)) {
+            executeStatement(DELETE);
+            executeStatement(OTHER);
+        }
+    }
+
+    @Test
+    public void testAtLeastDeleteOtherThreadPositive() throws Exception {
+        try (Spy ignored = Sniffer.expectAtLeast(2, Threads.OTHERS, DELETE)) {
+            executeStatementsInOtherThread(2, DELETE);
+        }
+    }
+
+    @Test(expected = WrongNumberOfQueriesError.class)
+    public void testAtLeastDeleteOtherThreadNegative() throws Exception {
+        try (Spy ignored = Sniffer.expectAtLeast(2, DELETE, Threads.OTHERS)) {
+            executeStatementInOtherThread(DELETE);
+            executeStatement(DELETE);
+        }
+    }
+
 }
