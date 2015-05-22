@@ -26,4 +26,11 @@ public class QueryCounterTest extends BaseTest {
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
+    @Test
+    public void testSuppressedException() {
+        thrown.expect(RuntimeException.class);
+        executeStatement();
+        throw new RuntimeException();
+    }
+
 }
