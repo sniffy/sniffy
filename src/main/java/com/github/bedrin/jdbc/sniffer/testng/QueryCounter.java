@@ -2,9 +2,9 @@ package com.github.bedrin.jdbc.sniffer.testng;
 
 import com.github.bedrin.jdbc.sniffer.Spy;
 import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
-import com.github.bedrin.jdbc.sniffer.junit.Expectation;
-import com.github.bedrin.jdbc.sniffer.junit.Expectations;
-import com.github.bedrin.jdbc.sniffer.junit.NoQueriesAllowed;
+import com.github.bedrin.jdbc.sniffer.Expectation;
+import com.github.bedrin.jdbc.sniffer.Expectations;
+import com.github.bedrin.jdbc.sniffer.NoQueriesAllowed;
 import com.github.bedrin.jdbc.sniffer.util.ExceptionUtil;
 import org.testng.*;
 

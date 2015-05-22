@@ -1,6 +1,5 @@
 package com.github.bedrin.jdbc.sniffer;
 
-import com.github.bedrin.jdbc.sniffer.junit.Expectation;
 import com.github.bedrin.jdbc.sniffer.log.QueryLogger;
 import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
 

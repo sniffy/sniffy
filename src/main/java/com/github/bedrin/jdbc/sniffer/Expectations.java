@@ -1,6 +1,6 @@
-package com.github.bedrin.jdbc.sniffer.junit;
+package com.github.bedrin.jdbc.sniffer;
 
-import com.github.bedrin.jdbc.sniffer.Threads;
+import com.github.bedrin.jdbc.sniffer.junit.QueryCounter;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -8,13 +8,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Alias for {@code @Expectation(0)}
- * @see Expectation
+ * Container for multiple {@link Expectation} annotations
+ * todo consider making Inherited
  * @see QueryCounter
  * @since 2.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
-@Expectation(value = 0, threads = Threads.ANY)
-public @interface NoQueriesAllowed {
+public @interface Expectations {
+    Expectation[] value() default {};
 }

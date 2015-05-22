@@ -2,7 +2,7 @@ package com.github.bedrin.jdbc.sniffer.testng;
 
 import com.github.bedrin.jdbc.sniffer.BaseTest;
 import com.github.bedrin.jdbc.sniffer.junit.BasedNoQueriesAllowedTest;
-import com.github.bedrin.jdbc.sniffer.junit.Expectation;
+import com.github.bedrin.jdbc.sniffer.Expectation;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;

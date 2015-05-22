@@ -1,7 +1,8 @@
-package com.github.bedrin.jdbc.sniffer.junit;
+package com.github.bedrin.jdbc.sniffer;
 
 import com.github.bedrin.jdbc.sniffer.Query;
 import com.github.bedrin.jdbc.sniffer.Threads;
+import com.github.bedrin.jdbc.sniffer.junit.QueryCounter;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

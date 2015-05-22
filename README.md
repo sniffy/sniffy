@@ -58,7 +58,7 @@ Following test shows the main ways of integrating JDBC Sniffer into your project
 import com.github.bedrin.jdbc.sniffer.Sniffer;
 import com.github.bedrin.jdbc.sniffer.Spy;
 import com.github.bedrin.jdbc.sniffer.Threads;
-import com.github.bedrin.jdbc.sniffer.junit.Expectation;
+import com.github.bedrin.jdbc.sniffer.Expectation;
 import com.github.bedrin.jdbc.sniffer.junit.QueryCounter;
 import org.junit.Rule;
 import org.junit.Test;

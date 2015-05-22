@@ -22,8 +22,8 @@
  * </code>
  * </pre>
  * @see com.github.bedrin.jdbc.sniffer.junit.QueryCounter
- * @see com.github.bedrin.jdbc.sniffer.junit.Expectations
- * @see com.github.bedrin.jdbc.sniffer.junit.Expectation
- * @see com.github.bedrin.jdbc.sniffer.junit.NoQueriesAllowed
+ * @see com.github.bedrin.jdbc.sniffer.Expectations
+ * @see com.github.bedrin.jdbc.sniffer.Expectation
+ * @see com.github.bedrin.jdbc.sniffer.NoQueriesAllowed
  */
 package com.github.bedrin.jdbc.sniffer.junit;

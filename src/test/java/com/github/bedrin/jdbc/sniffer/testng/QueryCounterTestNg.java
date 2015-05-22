@@ -3,9 +3,9 @@ package com.github.bedrin.jdbc.sniffer.testng;
 import com.github.bedrin.jdbc.sniffer.BaseTest;
 import com.github.bedrin.jdbc.sniffer.Query;
 import com.github.bedrin.jdbc.sniffer.Threads;
-import com.github.bedrin.jdbc.sniffer.junit.Expectation;
-import com.github.bedrin.jdbc.sniffer.junit.Expectations;
-import com.github.bedrin.jdbc.sniffer.junit.NoQueriesAllowed;
+import com.github.bedrin.jdbc.sniffer.Expectation;
+import com.github.bedrin.jdbc.sniffer.Expectations;
+import com.github.bedrin.jdbc.sniffer.NoQueriesAllowed;
 import org.testng.annotations.*;
 
 import java.sql.SQLException;

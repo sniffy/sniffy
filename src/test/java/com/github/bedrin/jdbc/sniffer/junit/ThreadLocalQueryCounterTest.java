@@ -1,9 +1,6 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
-import com.github.bedrin.jdbc.sniffer.BaseTest;
-import com.github.bedrin.jdbc.sniffer.Query;
-import com.github.bedrin.jdbc.sniffer.Threads;
-import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
+import com.github.bedrin.jdbc.sniffer.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
