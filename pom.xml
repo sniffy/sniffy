@@ -231,6 +231,7 @@
     </build>
 
     <dependencies>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -244,6 +245,19 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>4.1.6.RELEASE</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>4.1.6.RELEASE</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.spockframework</groupId>
             <artifactId>spock-core</artifactId>
             <version>1.0-groovy-2.4</version>
@@ -255,6 +269,7 @@
             <version>1.4.187</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <profiles>
