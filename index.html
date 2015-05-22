@@ -7,7 +7,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
   <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen">
-  <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+  <link rel="stylesheet" href="stylesheets/github-dark.css">
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
   <script type="text/javascript" src="javascripts/script.js"></script>
 
@@ -39,7 +39,8 @@
           <h1>
 <a id="jdbc-sniffer" class="anchor" href="#jdbc-sniffer" aria-hidden="true"><span class="octicon octicon-link"></span></a>JDBC Sniffer</h1>
 
-<p><a href="https://travis-ci.org/bedrin/jdbc-sniffer"><img src="https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=master" alt="CI Status"></a>
+<p><a href="https://gitter.im/bedrin/jdbc-sniffer?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://badges.gitter.im/Join%20Chat.svg" alt="Join the chat at https://gitter.im/bedrin/jdbc-sniffer"></a>
+<a href="https://travis-ci.org/bedrin/jdbc-sniffer"><img src="https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=master" alt="CI Status"></a>
 <a href="https://coveralls.io/r/bedrin/jdbc-sniffer?branch=master"><img src="https://coveralls.io/repos/bedrin/jdbc-sniffer/badge.png?branch=master" alt="Coverage Status"></a>
 <a href="https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer"><img src="https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer/badge.svg?style=flat" alt="Maven Central"></a>
 <a href="https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion"><img src="https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg" alt="Download"> </a></p>
@@ -63,22 +64,27 @@ Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questi
 <div class="highlight highlight-xml"><pre>&lt;<span class="pl-ent">dependency</span>&gt;
     &lt;<span class="pl-ent">groupId</span>&gt;com.github.bedrin&lt;/<span class="pl-ent">groupId</span>&gt;
     &lt;<span class="pl-ent">artifactId</span>&gt;jdbc-sniffer&lt;/<span class="pl-ent">artifactId</span>&gt;
-    &lt;<span class="pl-ent">version</span>&gt;2.1&lt;/<span class="pl-ent">version</span>&gt;
+    &lt;<span class="pl-ent">version</span>&gt;2.2&lt;/<span class="pl-ent">version</span>&gt;
 &lt;/<span class="pl-ent">dependency</span>&gt;</pre></div>
 
 <p>For Gradle users:</p>
 
 <div class="highlight highlight-javascript"><pre>dependencies {
-    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.1<span class="pl-pds">'</span></span>
+    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.2<span class="pl-pds">'</span></span>
 }</pre></div>
 
 <h1>
 <a id="download" class="anchor" href="#download" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download</h1>
 
+<p><a href="https://bintray.com/bedrin/github/jdbc-sniffer/view?source=watch"><img src="https://www.bintray.com/docs/images/bintray_badge_color.png" alt='Get automatic notifications about new "jdbc-sniffer" versions'> </a></p>
+
 <ul>
-<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1.jar">jdbc-sniffer-2.1.jar</a></li>
-<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-sources.jar">jdbc-sniffer-2.1-sources.jar</a></li>
-<li><a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-javadoc.jar">jdbc-sniffer-2.1-javadoc.jar</a></li>
+<li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2.jar">jdbc-sniffer-2.2.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.jar">bintray mirror</a>)</li>
+<li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-sources.jar">jdbc-sniffer-2.2-sources.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2-sources.jar">bintray mirror</a>)</li>
+<li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-javadoc.jar">jdbc-sniffer-2.2-javadoc.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2-javadoc.jar">bintray mirror</a>)</li>
 </ul>
 
 <h1>
@@ -96,7 +102,7 @@ The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockD
 <div class="highlight highlight-java"><pre><span class="pl-k">import</span> <span class="pl-smi">com.github.bedrin.jdbc.sniffer.Sniffer</span>;
 <span class="pl-k">import</span> <span class="pl-smi">com.github.bedrin.jdbc.sniffer.Spy</span>;
 <span class="pl-k">import</span> <span class="pl-smi">com.github.bedrin.jdbc.sniffer.Threads</span>;
-<span class="pl-k">import</span> <span class="pl-smi">com.github.bedrin.jdbc.sniffer.junit.Expectation</span>;
+<span class="pl-k">import</span> <span class="pl-smi">com.github.bedrin.jdbc.sniffer.Expectation</span>;
 <span class="pl-k">import</span> <span class="pl-smi">com.github.bedrin.jdbc.sniffer.junit.QueryCounter</span>;
 <span class="pl-k">import</span> <span class="pl-smi">org.junit.Rule</span>;
 <span class="pl-k">import</span> <span class="pl-smi">org.junit.Test</span>;
@@ -171,6 +177,7 @@ The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockD
 
 <ul>
 <li><a href="https://github.com/bedrin/jdbc-sniffer/wiki/JUnit">JUnit</a></li>
+<li><a href="https://github.com/bedrin/jdbc-sniffer/wiki/Spring-Framework">Spring Framework</a></li>
 <li><a href="https://github.com/bedrin/jdbc-sniffer/wiki/Spock-Framework">Spock Framework</a></li>
 <li><a href="https://github.com/bedrin/jdbc-sniffer/wiki/Test-NG">Test NG</a></li>
 </ul>
