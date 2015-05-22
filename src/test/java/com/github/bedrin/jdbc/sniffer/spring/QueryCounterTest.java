@@ -1,7 +1,11 @@
 package com.github.bedrin.jdbc.sniffer.spring;
 
 import com.github.bedrin.jdbc.sniffer.BaseTest;
+import com.github.bedrin.jdbc.sniffer.Query;
+import com.github.bedrin.jdbc.sniffer.Threads;
 import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
+import com.github.bedrin.jdbc.sniffer.junit.Expectation;
+import com.github.bedrin.jdbc.sniffer.junit.Expectations;
 import com.github.bedrin.jdbc.sniffer.junit.NoQueriesAllowed;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,6 +35,23 @@ public class QueryCounterTest extends BaseTest {
         thrown.expect(RuntimeException.class);
         executeStatement();
         throw new RuntimeException();
+    }
+
+    @Test
+    @Expectations({
+            @Expectation(atMost = 1, threads = Threads.CURRENT),
+            @Expectation(atMost = 1, threads = Threads.OTHERS, query = Query.DELETE),
+    })
+    public void testExpectations() {
+        executeStatement();
+        executeStatementInOtherThread(Query.DELETE);
+    }
+
+    @Test
+    @Expectation(1)
+    public void testAllowedOneQueryExecutedTwo() {
+        executeStatements(2);
+        thrown.expect(WrongNumberOfQueriesError.class);
     }
 
 }
