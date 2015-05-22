@@ -2,9 +2,11 @@ package com.github.bedrin.jdbc.sniffer.spring;
 
 import com.github.bedrin.jdbc.sniffer.Sniffer;
 import com.github.bedrin.jdbc.sniffer.Spy;
+import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
 import com.github.bedrin.jdbc.sniffer.junit.Expectation;
 import com.github.bedrin.jdbc.sniffer.junit.Expectations;
 import com.github.bedrin.jdbc.sniffer.junit.NoQueriesAllowed;
+import com.github.bedrin.jdbc.sniffer.util.ExceptionUtil;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
 
@@ -16,7 +18,7 @@ import java.util.List;
 
 public class QueryCounterListener extends AbstractTestExecutionListener {
 
-    private Spy spy;
+    private static final String SPY_ATTRIBUTE_NAME = "spy";
 
     @Override
     public void beforeTestMethod(TestContext testContext) throws Exception {
@@ -37,13 +39,12 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
         }
 
         if (null != expectation && null != notAllowedQueries) {
-            // TODO: should we put it to testContext instead?
             throw new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method");
         } else if (null != expectations && null != notAllowedQueries) {
             throw new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method");
         } else if (null != expectations || null != expectation) {
 
-            List<Expectation> expectationList = new ArrayList<>();
+            List<Expectation> expectationList = new ArrayList<Expectation>();
 
             if (null != expectation) {
                 expectationList.add(expectation);
@@ -61,10 +62,14 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
                 }
             }
 
-            spy = Sniffer.expect(expectationList);
+            testContext.setAttribute(SPY_ATTRIBUTE_NAME,
+                    Sniffer.expect(expectationList)
+            );
 
         } else if (null != notAllowedQueries) {
-            spy = Sniffer.expect(Collections.singletonList(NoQueriesAllowed.class.getAnnotation(Expectation.class)));
+            testContext.setAttribute(SPY_ATTRIBUTE_NAME,
+                    Sniffer.expect(Collections.singletonList(NoQueriesAllowed.class.getAnnotation(Expectation.class)))
+            );
         }
 
     }
@@ -72,8 +77,28 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
     @Override
     public void afterTestMethod(TestContext testContext) throws Exception {
 
-        // TODO: set the exception to testContet instead of throwing it
-        spy.verify();
+        Object spyAttribute = testContext.getAttribute(SPY_ATTRIBUTE_NAME);
+
+        if (null != spyAttribute) {
+
+            Spy spy = (Spy) spyAttribute;
+
+            try {
+                spy.close();
+            } catch (WrongNumberOfQueriesError jdbcSnifferError) {
+
+                Throwable throwable = testContext.getTestException();
+                if (null != throwable) {
+                    if (!ExceptionUtil.addSuppressed(throwable, jdbcSnifferError)) {
+                        jdbcSnifferError.printStackTrace();
+                    }
+                } else {
+                    throw jdbcSnifferError;
+                }
+
+            }
+
+        }
 
     }
 }
