@@ -54,4 +54,11 @@ public class QueryCounterTest extends BaseTest {
         thrown.expect(WrongNumberOfQueriesError.class);
     }
 
+    @Test
+    @Expectation(value = 1, query = Query.SELECT)
+    public void testAllowedSelectExecutedUpdate() {
+        executeStatement(Query.UPDATE);
+        thrown.expect(WrongNumberOfQueriesError.class);
+    }
+
 }
