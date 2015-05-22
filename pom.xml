@@ -80,7 +80,8 @@
                         <Export-Package>
                             com.github.bedrin.jdbc.sniffer,
                             com.github.bedrin.jdbc.sniffer.junit,
-                            com.github.bedrin.jdbc.sniffer.testng,
+                            com.github.bedrin.jdbc.sniffer.spring,
+                            com.github.bedrin.jdbc.sniffer.testng
                         </Export-Package>
                     </instructions>
                 </configuration>
