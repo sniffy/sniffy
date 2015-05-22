@@ -27,13 +27,16 @@ public class ExceptionUtilTest {
     @Test
     public void testThrowGivenException() {
         try {
-            ExceptionUtil.throwException("java.sql.SQLException", "test");
+            assertTrue(ExceptionUtil.throwException("java.sql.SQLException", "test"));
             fail();
         } catch (Exception e) {
             assertEquals(SQLException.class, e.getClass());
             assertEquals("test", e.getMessage());
         }
+    }
 
+    @Test
+    public void testThrowUnknownException() {
         assertFalse(ExceptionUtil.throwException("unknown.exception.class", "test"));
     }
 

@@ -1,8 +1,6 @@
 package com.github.bedrin.jdbc.sniffer.junit;
 
-import com.github.bedrin.jdbc.sniffer.BaseTest;
-import com.github.bedrin.jdbc.sniffer.Threads;
-import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
+import com.github.bedrin.jdbc.sniffer.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -70,6 +68,22 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     @Expectation(value = 2, threads = Threads.CURRENT)
     public void testAllowedTwoQueries() {
         executeStatements(2);
+    }
+
+    @Test
+    @Expectations({
+            @Expectation(value = 1, query = Query.SELECT, threads = Threads.CURRENT),
+            @Expectation(value = 1, query = Query.INSERT, threads = Threads.CURRENT),
+            @Expectation(value = 1, query = Query.UPDATE, threads = Threads.CURRENT),
+            @Expectation(value = 1, query = Query.DELETE, threads = Threads.CURRENT),
+            @Expectation(value = 1, query = Query.MERGE, threads = Threads.OTHERS)
+    })
+    public void testDifferentQueries() {
+        executeStatement(Query.SELECT);
+        executeStatement(Query.INSERT);
+        executeStatement(Query.UPDATE);
+        executeStatement(Query.DELETE);
+        executeStatementInOtherThread(Query.MERGE);
     }
 
 }

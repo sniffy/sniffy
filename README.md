@@ -27,23 +27,22 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>2.1</version>
+    <version>2.2</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'com.github.bedrin:jdbc-sniffer:2.1'
+    compile 'com.github.bedrin:jdbc-sniffer:2.2'
 }
 ```
 
 Download
 ============
-[![Get automatic notifications about new "jdbc-sniffer" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/jdbc-sniffer/view?source=watch)
-- [jdbc-sniffer-2.1.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.1.jar))
-- [jdbc-sniffer-2.1-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.1-sources.jar))
-- [jdbc-sniffer-2.1-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.1/jdbc-sniffer-2.1-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.1-javadoc.jar))
+- [jdbc-sniffer-2.2.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2.jar)
+- [jdbc-sniffer-2.2-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-sources.jar)
+- [jdbc-sniffer-2.2-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-javadoc.jar)
 
 Setup
 ============
@@ -59,7 +58,7 @@ Following test shows the main ways of integrating JDBC Sniffer into your project
 import com.github.bedrin.jdbc.sniffer.Sniffer;
 import com.github.bedrin.jdbc.sniffer.Spy;
 import com.github.bedrin.jdbc.sniffer.Threads;
-import com.github.bedrin.jdbc.sniffer.junit.Expectation;
+import com.github.bedrin.jdbc.sniffer.Expectation;
 import com.github.bedrin.jdbc.sniffer.junit.QueryCounter;
 import org.junit.Rule;
 import org.junit.Test;

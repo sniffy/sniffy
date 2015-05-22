@@ -1,12 +1,14 @@
-package com.github.bedrin.jdbc.sniffer.testng;
+package com.github.bedrin.jdbc.sniffer.spring;
 
+import com.github.bedrin.jdbc.sniffer.Sniffer;
 import com.github.bedrin.jdbc.sniffer.Spy;
 import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
 import com.github.bedrin.jdbc.sniffer.Expectation;
 import com.github.bedrin.jdbc.sniffer.Expectations;
 import com.github.bedrin.jdbc.sniffer.NoQueriesAllowed;
 import com.github.bedrin.jdbc.sniffer.util.ExceptionUtil;
-import org.testng.*;
+import org.springframework.test.context.TestContext;
+import org.springframework.test.context.support.AbstractTestExecutionListener;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -14,45 +16,24 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.github.bedrin.jdbc.sniffer.Sniffer.expect;
-import static org.testng.ITestResult.FAILURE;
-
 /**
- * Provides integration with TestNG. Add {@code QueryCounter} as a listener to your TestNG test:
- * <pre>
- * <code>
- * {@literal @}Listeners(QueryCounter.class)
- * public class SampleTestNgTestSuite {
- *     // ... here goes some test methods
- * }
- * </code>
- * </pre>
- * @see Expectations
- * @see Expectation
- * @see NoQueriesAllowed
- * @since 2.1
+ * @since 2.2
  */
-public class QueryCounter implements IInvokedMethodListener {
+public class QueryCounterListener extends AbstractTestExecutionListener {
 
     private static final String SPY_ATTRIBUTE_NAME = "spy";
 
-    private static void fail(ITestResult testResult, String message) {
-        testResult.setStatus(FAILURE);
-        IllegalArgumentException throwable = new IllegalArgumentException(message);
-        testResult.setThrowable(throwable);
-        throw throwable;
-    }
+    @Override
+    public void beforeTestMethod(TestContext testContext) throws Exception {
 
-    public void beforeInvocation(IInvokedMethod invokedMethod, ITestResult testResult) {
+        Method testMethod = testContext.getTestMethod();
 
-        Method method = invokedMethod.getTestMethod().getConstructorOrMethod().getMethod();
-
-        Expectations expectations = method.getAnnotation(Expectations.class);
-        Expectation expectation = method.getAnnotation(Expectation.class);
-        NoQueriesAllowed notAllowedQueries = method.getAnnotation(NoQueriesAllowed.class);
+        Expectations expectations = testMethod.getAnnotation(Expectations.class);
+        Expectation expectation = testMethod.getAnnotation(Expectation.class);
+        NoQueriesAllowed notAllowedQueries = testMethod.getAnnotation(NoQueriesAllowed.class);
 
         // If no annotations present, check the test class and its superclasses
-        for (Class<?> testClass = method.getDeclaringClass();
+        for (Class<?> testClass = testMethod.getDeclaringClass();
              null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
              testClass = testClass.getSuperclass()) {
             expectations = testClass.getAnnotation(Expectations.class);
@@ -61,9 +42,9 @@ public class QueryCounter implements IInvokedMethodListener {
         }
 
         if (null != expectation && null != notAllowedQueries) {
-            fail(testResult, "Cannot specify @Expectation and @NotAllowedQueries on one test method");
+            throw new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method");
         } else if (null != expectations && null != notAllowedQueries) {
-            fail(testResult, "Cannot specify @Expectations and @NotAllowedQueries on one test method");
+            throw new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method");
         } else if (null != expectations || null != expectation) {
 
             List<Expectation> expectationList = new ArrayList<Expectation>();
@@ -79,23 +60,27 @@ public class QueryCounter implements IInvokedMethodListener {
             for (Expectation expectation1 : expectationList) {
                 if (expectation1.value() != -1) {
                     if (expectation1.atMost() != -1 || expectation1.atLeast() != -1) {
-                        fail(testResult, "Cannot specify value parameter together with atLeast or atMost parameters");
+                        throw new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters");
                     }
                 }
             }
 
-            testResult.setAttribute(SPY_ATTRIBUTE_NAME, expect(expectationList));
+            testContext.setAttribute(SPY_ATTRIBUTE_NAME,
+                    Sniffer.expect(expectationList)
+            );
 
         } else if (null != notAllowedQueries) {
-            Expectation annotation = NoQueriesAllowed.class.getAnnotation(Expectation.class);
-            testResult.setAttribute(SPY_ATTRIBUTE_NAME, expect(Collections.singletonList(annotation)));
+            testContext.setAttribute(SPY_ATTRIBUTE_NAME,
+                    Sniffer.expect(Collections.singletonList(NoQueriesAllowed.class.getAnnotation(Expectation.class)))
+            );
         }
 
     }
 
-    public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
+    @Override
+    public void afterTestMethod(TestContext testContext) throws Exception {
 
-        Object spyAttribute = testResult.getAttribute(SPY_ATTRIBUTE_NAME);
+        Object spyAttribute = testContext.getAttribute(SPY_ATTRIBUTE_NAME);
 
         if (null != spyAttribute) {
 
@@ -105,23 +90,18 @@ public class QueryCounter implements IInvokedMethodListener {
                 spy.close();
             } catch (WrongNumberOfQueriesError jdbcSnifferError) {
 
-                testResult.setStatus(FAILURE);
-
-                Throwable throwable = testResult.getThrowable();
+                Throwable throwable = testContext.getTestException();
                 if (null != throwable) {
                     if (!ExceptionUtil.addSuppressed(throwable, jdbcSnifferError)) {
                         jdbcSnifferError.printStackTrace();
                     }
                 } else {
-                    throwable = jdbcSnifferError;
+                    throw jdbcSnifferError;
                 }
-
-                testResult.setThrowable(throwable);
 
             }
 
         }
 
     }
-
 }

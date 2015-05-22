@@ -8,26 +8,39 @@ public class SnifferTest extends BaseTest {
 
     @Test
     public void testExecutedStatements() throws Exception {
-        Spy spy = Sniffer.spy();
-        int actual = spy.executedStatements(Threads.ANY);
+        int actual = Sniffer.executedStatements();
         executeStatement();
-        assertEquals(1, spy.executedStatements(Threads.ANY) - actual);
-    }
-
-    @Test
-    public void testExecutedStatementsCurrentThread() throws Exception {
-        Spy spy = Sniffer.spy();
-        int actual = spy.executedStatements(Threads.CURRENT);
-        executeStatement();
-        assertEquals(1, spy.executedStatements() - actual);
-    }
-
-    @Test
-    public void testExecutedStatementsOtherThreads() throws Exception {
-        Spy spy = Sniffer.spy();
-        int actual = spy.executedStatements(Threads.OTHERS);
         executeStatementInOtherThread();
-        assertEquals(1, spy.executedStatements(Threads.OTHERS) - actual);
+        assertEquals(2, Sniffer.executedStatements() - actual);
+    }
+
+    @Test
+    public void testSpyExecutedStatements() throws Exception {
+        Spy spy = Sniffer.spy();
+        executeStatement();
+        assertEquals(1, spy.executedStatements(Threads.ANY));
+    }
+
+    @Test
+    public void testSpyExecutedStatementsCurrentThread() throws Exception {
+        Spy spy = Sniffer.spy();
+        executeStatement();
+        assertEquals(1, spy.executedStatements());
+    }
+
+    @Test
+    public void testSpyExecutedStatementsOtherThreads() throws Exception {
+        Spy spy = Sniffer.spy();
+        executeStatementInOtherThread();
+        assertEquals(1, spy.executedStatements(Threads.OTHERS));
+    }
+
+    @Test
+    public void testSpyExecutedDeleteStatements() throws Exception {
+        Spy spy = Sniffer.spy();
+        executeStatement();
+        executeStatement(Query.DELETE);
+        assertEquals(1, spy.executedStatements(Threads.ANY, Query.DELETE));
     }
 
     @Test
@@ -51,6 +64,39 @@ public class SnifferTest extends BaseTest {
         executeStatements(2);
         try {
             spy.verify(1);
+            fail();
+        } catch (WrongNumberOfQueriesError e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testVerifyExactUpdate() throws Exception {
+        // test positive
+        Spy spy = Sniffer.spy();
+        executeStatement(Query.SELECT);
+        executeStatement(Query.INSERT);
+        executeStatement(Query.UPDATE);
+        executeStatement(Query.DELETE);
+        executeStatement(Query.MERGE);
+        executeStatement(Query.OTHER);
+        spy.verify(1, Query.UPDATE);
+        spy.verify(6, Query.ANY);
+
+        // test negative case 1
+        spy = Sniffer.spy();
+        try {
+            spy.verify(1);
+            fail();
+        } catch (WrongNumberOfQueriesError e) {
+            assertNotNull(e);
+        }
+
+        // test negative case 2
+        spy = Sniffer.spy();
+        executeStatements(2, Query.UPDATE);
+        try {
+            spy.verify(1, Query.UPDATE);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
@@ -120,6 +166,16 @@ public class SnifferTest extends BaseTest {
     public void testRecordQueriesNegative() throws Exception {
         try {
             Sniffer.run(BaseTest::executeStatement).verifyNever();
+            fail();
+        } catch (WrongNumberOfQueriesError e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testRecordQueriesNegativeQueryType() throws Exception {
+        try {
+            Sniffer.run(BaseTest::executeStatement).verify(1, Query.INSERT);
             fail();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
