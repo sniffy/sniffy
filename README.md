@@ -133,6 +133,7 @@ Integrating with test frameworks
 JDBC Sniffer provides integration with popular testing frameworks - see our wiki for details
  
  * [JUnit](https://github.com/bedrin/jdbc-sniffer/wiki/JUnit)
+ * [Spring Framework](https://github.com/bedrin/jdbc-sniffer/wiki/Spring-Framework)
  * [Spock Framework](https://github.com/bedrin/jdbc-sniffer/wiki/Spock-Framework)
  * [Test NG](https://github.com/bedrin/jdbc-sniffer/wiki/Test-NG)
 
