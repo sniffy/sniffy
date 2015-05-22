@@ -1,5 +1,7 @@
 JDBC Sniffer
 ============
+
+[![Join the chat at https://gitter.im/bedrin/jdbc-sniffer](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bedrin/jdbc-sniffer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![CI Status](https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=master)](https://travis-ci.org/bedrin/jdbc-sniffer)
 [![Coverage Status](https://coveralls.io/repos/bedrin/jdbc-sniffer/badge.png?branch=master)](https://coveralls.io/r/bedrin/jdbc-sniffer?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer)
