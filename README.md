@@ -40,9 +40,10 @@ dependencies {
 
 Download
 ============
-- [jdbc-sniffer-2.2.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2.jar)
-- [jdbc-sniffer-2.2-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-sources.jar)
-- [jdbc-sniffer-2.2-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-javadoc.jar)
+[![Get automatic notifications about new "jdbc-sniffer" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/jdbc-sniffer/view?source=watch)
+- [jdbc-sniffer-2.2.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.jar))
+- [jdbc-sniffer-2.2-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2-sources.jar))
+- [jdbc-sniffer-2.2-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2-javadoc.jar))
 
 Setup
 ============
