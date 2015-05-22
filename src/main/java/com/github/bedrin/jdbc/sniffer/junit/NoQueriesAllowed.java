@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
  * Alias for {@code @Expectation(0)}
  * @see Expectation
  * @see QueryCounter
+ * @since 2.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})

@@ -16,6 +16,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * @since 2.2
+ */
 public class QueryCounterListener extends AbstractTestExecutionListener {
 
     private static final String SPY_ATTRIBUTE_NAME = "spy";
