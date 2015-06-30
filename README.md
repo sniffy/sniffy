@@ -12,10 +12,10 @@ It is designed for unit tests and allows you to test if particular method doesn'
 Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at easrly stages 
 
 ```java
-try (Spy s = Sniffer.expectAtMostOnce().expectNever(Threads.OTHERS);
+try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
      Statement statement = connection.createStatement()) {
     statement.execute("SELECT 1 FROM DUAL");
-    // JDBC Sniffer will throw an Exception if you uncomment line below
+    // JDBC Sniffer will throw an Exception if you execute query other than SELECT or uncomment line below
     //statement.execute("SELECT 1 FROM DUAL");
 }
 ```
@@ -27,23 +27,23 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>2.3</version>
+    <version>2.2.1</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'com.github.bedrin:jdbc-sniffer:2.3'
+    compile 'com.github.bedrin:jdbc-sniffer:2.2.1'
 }
 ```
 
 Download
 ============
 [![Get automatic notifications about new "jdbc-sniffer" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/jdbc-sniffer/view?source=watch)
-- [jdbc-sniffer-2.3.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3/jdbc-sniffer-2.3.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.jar))
-- [jdbc-sniffer-2.3-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3/jdbc-sniffer-2.3-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3-sources.jar))
-- [jdbc-sniffer-2.3-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3/jdbc-sniffer-2.3-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3-javadoc.jar))
+- [jdbc-sniffer-2.2.1.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.1/jdbc-sniffer-2.2.1.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.1.jar))
+- [jdbc-sniffer-2.2.1-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.1/jdbc-sniffer-2.2.1-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.1-sources.jar))
+- [jdbc-sniffer-2.2.1-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.1/jdbc-sniffer-2.2.1-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.1-javadoc.jar))
 
 Setup
 ============
