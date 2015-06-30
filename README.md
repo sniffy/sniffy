@@ -12,10 +12,10 @@ It is designed for unit tests and allows you to test if particular method doesn'
 Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at easrly stages 
 
 ```java
-try (Spy s = Sniffer.expectAtMostOnce().expectNever(Threads.OTHERS);
+try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
      Statement statement = connection.createStatement()) {
     statement.execute("SELECT 1 FROM DUAL");
-    // JDBC Sniffer will throw an Exception if you uncomment line below
+    // JDBC Sniffer will throw an Exception if you execute query other than SELECT or uncomment line below
     //statement.execute("SELECT 1 FROM DUAL");
 }
 ```
