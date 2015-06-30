@@ -18,8 +18,8 @@ public abstract class BaseTest {
     @BeforeClass
     public static void loadDriverAndCreateTables() throws ClassNotFoundException, SQLException {
         Class.forName("com.github.bedrin.jdbc.sniffer.MockDriver");
-        keepAlive = DriverManager.getConnection("sniffer:jdbc:h2:mem:project", "sa", "sa");
-        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:project", "sa", "sa");
+        keepAlive = openConnection();
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE IF NOT EXISTS PROJECT (ID NUMBER PRIMARY KEY, NAME VARCHAR(255))");
             statement.execute("CREATE SEQUENCE IF NOT EXISTS SEQ_PROJECT");
@@ -45,7 +45,7 @@ public abstract class BaseTest {
 
     protected static void executeStatements(int count, Query query) {
         try {
-            try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:project", "sa", "sa");
+            try (Connection connection = openConnection();
                  Statement statement = connection.createStatement()) {
                 for (int i = 0; i < count; i++) {
                     switch (query) {
@@ -74,6 +74,10 @@ public abstract class BaseTest {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected static Connection openConnection() throws SQLException {
+        return DriverManager.getConnection("sniffer:jdbc:h2:mem:project", "sa", "sa");
     }
 
     protected static void executeStatementInOtherThread() {
