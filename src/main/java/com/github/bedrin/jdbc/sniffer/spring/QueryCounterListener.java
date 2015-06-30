@@ -10,6 +10,7 @@ import com.github.bedrin.jdbc.sniffer.util.ExceptionUtil;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,10 +24,55 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
 
     private static final String SPY_ATTRIBUTE_NAME = "spy";
 
+    private static final Method GET_TEST_METHOD;
+    private static final Method SET_ATTRIBUTE_METHOD;
+    private static final Method GET_ATTRIBUTE_METHOD;
+
+    private static final NoSuchMethodException INITIALIZATION_EXCEPTION;
+
+    static {
+        Method getTestMethod = null;
+        Method setAttributeMethod = null;
+        Method getAttributeMethod = null;
+
+        NoSuchMethodException initializationException = null;
+
+        try {
+            getTestMethod = TestContext.class.getMethod("getTestMethod");
+            setAttributeMethod = TestContext.class.getMethod("setAttribute", String.class, Object.class);
+            getAttributeMethod = TestContext.class.getMethod("getAttribute", String.class);
+        } catch (NoSuchMethodException e) {
+            initializationException = e;
+        }
+
+        INITIALIZATION_EXCEPTION = initializationException;
+        GET_TEST_METHOD = getTestMethod;
+        SET_ATTRIBUTE_METHOD = setAttributeMethod;
+        GET_ATTRIBUTE_METHOD = getAttributeMethod;
+    }
+
+    private static Method getTestMethod(TestContext testContext) throws InvocationTargetException, IllegalAccessException {
+        return Method.class.cast(GET_TEST_METHOD.invoke(testContext));
+    }
+
+    private static void setAttribute(TestContext testContext, String name, Object value) throws InvocationTargetException, IllegalAccessException {
+        SET_ATTRIBUTE_METHOD.invoke(testContext, name, value);
+    }
+
+    private static Object getAttribute(TestContext testContext, String name) throws InvocationTargetException, IllegalAccessException {
+        return GET_ATTRIBUTE_METHOD.invoke(testContext, name);
+    }
+
+    private static void checkInitialized() throws NoSuchMethodException {
+        if (null != INITIALIZATION_EXCEPTION) throw INITIALIZATION_EXCEPTION;
+    }
+
     @Override
     public void beforeTestMethod(TestContext testContext) throws Exception {
 
-        Method testMethod = testContext.getTestMethod();
+        checkInitialized();
+
+        Method testMethod = getTestMethod(testContext);
 
         Expectations expectations = testMethod.getAnnotation(Expectations.class);
         Expectation expectation = testMethod.getAnnotation(Expectation.class);
@@ -65,12 +111,10 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
                 }
             }
 
-            testContext.setAttribute(SPY_ATTRIBUTE_NAME,
-                    Sniffer.expect(expectationList)
-            );
+            setAttribute(testContext, SPY_ATTRIBUTE_NAME, Sniffer.expect(expectationList));
 
         } else if (null != notAllowedQueries) {
-            testContext.setAttribute(SPY_ATTRIBUTE_NAME,
+            setAttribute(testContext, SPY_ATTRIBUTE_NAME,
                     Sniffer.expect(Collections.singletonList(NoQueriesAllowed.class.getAnnotation(Expectation.class)))
             );
         }
@@ -80,7 +124,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
     @Override
     public void afterTestMethod(TestContext testContext) throws Exception {
 
-        Object spyAttribute = testContext.getAttribute(SPY_ATTRIBUTE_NAME);
+        Object spyAttribute = getAttribute(testContext, SPY_ATTRIBUTE_NAME);
 
         if (null != spyAttribute) {
 
