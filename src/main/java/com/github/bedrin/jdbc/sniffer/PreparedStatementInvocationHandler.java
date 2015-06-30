@@ -29,4 +29,10 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
         return invokeTarget(method, args);
     }
 
+    @Override
+    protected synchronized String getBatchedSql() {
+        String batchedSql = super.getBatchedSql();
+        return null == batchedSql ? sql : batchedSql;
+    }
+
 }
