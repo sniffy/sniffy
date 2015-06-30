@@ -28,17 +28,24 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
     private static final Method SET_ATTRIBUTE_METHOD;
     private static final Method GET_ATTRIBUTE_METHOD;
 
+    private static final NoSuchMethodException INITIALIZATION_EXCEPTION;
+
     static {
         Method getTestMethod = null;
         Method setAttributeMethod = null;
         Method getAttributeMethod = null;
+
+        NoSuchMethodException initializationException = null;
+
         try {
             getTestMethod = TestContext.class.getMethod("getTestMethod");
             setAttributeMethod = TestContext.class.getMethod("setAttribute", String.class, Object.class);
             getAttributeMethod = TestContext.class.getMethod("getAttribute", String.class);
         } catch (NoSuchMethodException e) {
-            e.printStackTrace(); // TODO: what to do with the exception?
+            initializationException = e;
         }
+
+        INITIALIZATION_EXCEPTION = initializationException;
         GET_TEST_METHOD = getTestMethod;
         SET_ATTRIBUTE_METHOD = setAttributeMethod;
         GET_ATTRIBUTE_METHOD = getAttributeMethod;
@@ -56,8 +63,14 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
         return GET_ATTRIBUTE_METHOD.invoke(testContext, name);
     }
 
+    private static void checkInitialized() throws NoSuchMethodException {
+        if (null != INITIALIZATION_EXCEPTION) throw INITIALIZATION_EXCEPTION;
+    }
+
     @Override
     public void beforeTestMethod(TestContext testContext) throws Exception {
+
+        checkInitialized();
 
         Method testMethod = getTestMethod(testContext);
 
