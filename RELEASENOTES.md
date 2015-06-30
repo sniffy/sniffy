@@ -2,13 +2,7 @@
 
 ## Development
 
-[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.2.1...master)
-
-## v2.2.1 - July 1st, 2015
- * [Spring integration doesn't work with spring 3](https://github.com/bedrin/jdbc-sniffer/issues/42)
- * [NPE when calling executeBatch on PS without calling addBatch](https://github.com/bedrin/jdbc-sniffer/issues/44)
- 
-[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.2...2.2.1)
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.2...master)
 
 ## v2.2 - May 22th, 2015
  * Parse executed query and count different statements (SELECT, UPDATE, e.t.c.) separatelly ([Issue 35](https://github.com/bedrin/jdbc-sniffer/issues/35))
