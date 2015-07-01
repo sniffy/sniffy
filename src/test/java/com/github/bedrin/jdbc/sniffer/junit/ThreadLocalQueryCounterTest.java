@@ -5,6 +5,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import static org.junit.Assert.assertTrue;
+
 public class ThreadLocalQueryCounterTest extends BaseTest {
 
     @Rule
@@ -36,6 +38,11 @@ public class ThreadLocalQueryCounterTest extends BaseTest {
     public void testAllowedOneQueryExecutedTwo() {
         executeStatements(2);
         thrown.expect(WrongNumberOfQueriesError.class);
+    }
+
+    @Test
+    public void testWithoutExpectations() {
+        assertTrue(true);
     }
 
     @Test
