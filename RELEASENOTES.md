@@ -2,7 +2,12 @@
 
 ## Development
 
-[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.2.1...master)
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.2.2...master)
+
+## v2.2.2 - July 2nd, 2015
+ * [Spring integration does not work if there methods wo sniffer annotations](https://github.com/bedrin/jdbc-sniffer/issues/47)
+ 
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.2.1...2.2.2)
 
 ## v2.2.1 - July 1st, 2015
  * [Spring integration doesn't work with spring 3](https://github.com/bedrin/jdbc-sniffer/issues/42)
