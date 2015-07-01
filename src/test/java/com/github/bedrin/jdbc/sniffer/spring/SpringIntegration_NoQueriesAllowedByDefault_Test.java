@@ -17,9 +17,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @NoQueriesAllowed
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = QueryCounterTest.class)
+@ContextConfiguration(classes = SpringIntegration_NoQueriesAllowedByDefault_Test.class)
 @TestExecutionListeners(QueryCounterListener.class)
-public class QueryCounterTest extends BaseTest {
+public class SpringIntegration_NoQueriesAllowedByDefault_Test extends BaseTest {
 
     @Rule
     public final ExpectedException thrown = ExpectedException.none();

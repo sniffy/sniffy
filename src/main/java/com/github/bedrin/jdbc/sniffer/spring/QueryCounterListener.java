@@ -24,9 +24,13 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
 
     private static final String SPY_ATTRIBUTE_NAME = "spy";
 
+    // In different version of spring org.springframework.test.context.TestContext is either class or interface
+    // In order to keep binary compatibility with all version we should use reflection
+
     private static final Method GET_TEST_METHOD;
     private static final Method SET_ATTRIBUTE_METHOD;
     private static final Method GET_ATTRIBUTE_METHOD;
+    private static final Method REMOVE_ATTRIBUTE_METHOD;
 
     private static final NoSuchMethodException INITIALIZATION_EXCEPTION;
 
@@ -34,6 +38,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
         Method getTestMethod = null;
         Method setAttributeMethod = null;
         Method getAttributeMethod = null;
+        Method removeAttributeMethod = null;
 
         NoSuchMethodException initializationException = null;
 
@@ -41,6 +46,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
             getTestMethod = TestContext.class.getMethod("getTestMethod");
             setAttributeMethod = TestContext.class.getMethod("setAttribute", String.class, Object.class);
             getAttributeMethod = TestContext.class.getMethod("getAttribute", String.class);
+            removeAttributeMethod = TestContext.class.getMethod("removeAttribute", String.class);
         } catch (NoSuchMethodException e) {
             initializationException = e;
         }
@@ -49,6 +55,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
         GET_TEST_METHOD = getTestMethod;
         SET_ATTRIBUTE_METHOD = setAttributeMethod;
         GET_ATTRIBUTE_METHOD = getAttributeMethod;
+        REMOVE_ATTRIBUTE_METHOD = removeAttributeMethod;
     }
 
     private static Method getTestMethod(TestContext testContext) throws InvocationTargetException, IllegalAccessException {
@@ -61,6 +68,10 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
 
     private static Object getAttribute(TestContext testContext, String name) throws InvocationTargetException, IllegalAccessException {
         return GET_ATTRIBUTE_METHOD.invoke(testContext, name);
+    }
+
+    private static Object removeAttribute(TestContext testContext, String name) throws InvocationTargetException, IllegalAccessException {
+        return REMOVE_ATTRIBUTE_METHOD.invoke(testContext, name);
     }
 
     private static void checkInitialized() throws NoSuchMethodException {
@@ -125,6 +136,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
     public void afterTestMethod(TestContext testContext) throws Exception {
 
         Object spyAttribute = getAttribute(testContext, SPY_ATTRIBUTE_NAME);
+        removeAttribute(testContext, SPY_ATTRIBUTE_NAME);
 
         if (null != spyAttribute) {
 
