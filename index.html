@@ -49,10 +49,10 @@
 It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
 Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue">N+1 problem</a> at easrly stages </p>
 
-<div class="highlight highlight-java"><pre><span class="pl-k">try</span> (<span class="pl-smi">Spy</span> s <span class="pl-k">=</span> <span class="pl-smi">Sniffer</span><span class="pl-k">.</span>expectAtMostOnce()<span class="pl-k">.</span>expectNever(<span class="pl-smi">Threads</span><span class="pl-c1"><span class="pl-k">.</span>OTHERS</span>);
+<div class="highlight highlight-java"><pre><span class="pl-k">try</span> (<span class="pl-smi">Spy</span> s <span class="pl-k">=</span> <span class="pl-smi">Sniffer</span><span class="pl-k">.</span>expectAtMostOnce(<span class="pl-smi">Query</span><span class="pl-c1"><span class="pl-k">.</span>SELECT</span>)<span class="pl-k">.</span>expectNever(<span class="pl-smi">Threads</span><span class="pl-c1"><span class="pl-k">.</span>OTHERS</span>);
      <span class="pl-smi">Statement</span> statement <span class="pl-k">=</span> connection<span class="pl-k">.</span>createStatement()) {
     statement<span class="pl-k">.</span>execute(<span class="pl-s"><span class="pl-pds">"</span>SELECT 1 FROM DUAL<span class="pl-pds">"</span></span>);
-    <span class="pl-c">// JDBC Sniffer will throw an Exception if you uncomment line below</span>
+    <span class="pl-c">// JDBC Sniffer will throw an Exception if you execute query other than SELECT or uncomment line below</span>
     <span class="pl-c">//statement.execute("SELECT 1 FROM DUAL");</span>
 }</pre></div>
 
@@ -64,13 +64,13 @@ Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questi
 <div class="highlight highlight-xml"><pre>&lt;<span class="pl-ent">dependency</span>&gt;
     &lt;<span class="pl-ent">groupId</span>&gt;com.github.bedrin&lt;/<span class="pl-ent">groupId</span>&gt;
     &lt;<span class="pl-ent">artifactId</span>&gt;jdbc-sniffer&lt;/<span class="pl-ent">artifactId</span>&gt;
-    &lt;<span class="pl-ent">version</span>&gt;2.2&lt;/<span class="pl-ent">version</span>&gt;
+    &lt;<span class="pl-ent">version</span>&gt;2.2.2&lt;/<span class="pl-ent">version</span>&gt;
 &lt;/<span class="pl-ent">dependency</span>&gt;</pre></div>
 
 <p>For Gradle users:</p>
 
 <div class="highlight highlight-javascript"><pre>dependencies {
-    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.2<span class="pl-pds">'</span></span>
+    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.2.2<span class="pl-pds">'</span></span>
 }</pre></div>
 
 <h1>
@@ -80,11 +80,11 @@ Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questi
 
 <ul>
 <li>
-<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2.jar">jdbc-sniffer-2.2.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.jar">bintray mirror</a>)</li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.2/jdbc-sniffer-2.2.2.jar">jdbc-sniffer-2.2.2.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.2.jar">bintray mirror</a>)</li>
 <li>
-<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-sources.jar">jdbc-sniffer-2.2-sources.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2-sources.jar">bintray mirror</a>)</li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.2/jdbc-sniffer-2.2.2-sources.jar">jdbc-sniffer-2.2.2-sources.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.2-sources.jar">bintray mirror</a>)</li>
 <li>
-<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2/jdbc-sniffer-2.2-javadoc.jar">jdbc-sniffer-2.2-javadoc.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2-javadoc.jar">bintray mirror</a>)</li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.2/jdbc-sniffer-2.2.2-javadoc.jar">jdbc-sniffer-2.2.2-javadoc.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.2-javadoc.jar">bintray mirror</a>)</li>
 </ul>
 
 <h1>
