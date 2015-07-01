@@ -778,7 +778,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @since 2.0
      */
     public void close() {
-        checkOpened();
         try {
             verify();
         } finally {
