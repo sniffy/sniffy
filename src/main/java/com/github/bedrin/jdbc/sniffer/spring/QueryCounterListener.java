@@ -31,6 +31,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
     private static final Method SET_ATTRIBUTE_METHOD;
     private static final Method GET_ATTRIBUTE_METHOD;
     private static final Method REMOVE_ATTRIBUTE_METHOD;
+    private static final Method GET_TEST_EXCEPTION_METHOD;
 
     private static final NoSuchMethodException INITIALIZATION_EXCEPTION;
 
@@ -39,6 +40,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
         Method setAttributeMethod = null;
         Method getAttributeMethod = null;
         Method removeAttributeMethod = null;
+        Method getTestExceptionMethod = null;
 
         NoSuchMethodException initializationException = null;
 
@@ -47,6 +49,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
             setAttributeMethod = TestContext.class.getMethod("setAttribute", String.class, Object.class);
             getAttributeMethod = TestContext.class.getMethod("getAttribute", String.class);
             removeAttributeMethod = TestContext.class.getMethod("removeAttribute", String.class);
+            getTestExceptionMethod = TestContext.class.getMethod("getTestException");
         } catch (NoSuchMethodException e) {
             initializationException = e;
         }
@@ -56,6 +59,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
         SET_ATTRIBUTE_METHOD = setAttributeMethod;
         GET_ATTRIBUTE_METHOD = getAttributeMethod;
         REMOVE_ATTRIBUTE_METHOD = removeAttributeMethod;
+        GET_TEST_EXCEPTION_METHOD = getTestExceptionMethod;
     }
 
     private static Method getTestMethod(TestContext testContext) throws InvocationTargetException, IllegalAccessException {
@@ -72,6 +76,10 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
 
     private static Object removeAttribute(TestContext testContext, String name) throws InvocationTargetException, IllegalAccessException {
         return REMOVE_ATTRIBUTE_METHOD.invoke(testContext, name);
+    }
+
+    private static Throwable getTestException(TestContext testContext) throws InvocationTargetException, IllegalAccessException {
+        return Throwable.class.cast(GET_TEST_EXCEPTION_METHOD.invoke(testContext));
     }
 
     private static void checkInitialized() throws NoSuchMethodException {
@@ -146,7 +154,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
                 spy.close();
             } catch (WrongNumberOfQueriesError jdbcSnifferError) {
 
-                Throwable throwable = testContext.getTestException();
+                Throwable throwable = getTestException(testContext);
                 if (null != throwable) {
                     if (!ExceptionUtil.addSuppressed(throwable, jdbcSnifferError)) {
                         jdbcSnifferError.printStackTrace();
