@@ -8,9 +8,14 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+/**
+ * HTTP Filter will capture the number of executed queries for given HTTP request and return it
+ * as a 'X-JDBC-SNIFFER-NUMBER-QUERIES' header in response.
+ * @since 2.3.0
+ */
 public class SnifferFilter implements Filter {
 
-    public final static String HEADER_NAME = "X-JDBC-SNIFFER-NUMBER-QUERIES";
+    public final static String HEADER_NAME = "X-Sql-Queries";
 
     public void init(FilterConfig filterConfig) throws ServletException {
 
