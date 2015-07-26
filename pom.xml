@@ -6,7 +6,7 @@
 
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>2.2.3</version>
+    <version>2.3.0-SNAPSHOT</version>
 
     <name>JDBC Sniffer</name>
     <url>https://bedrin.github.io/jdbc-sniffer/</url>
