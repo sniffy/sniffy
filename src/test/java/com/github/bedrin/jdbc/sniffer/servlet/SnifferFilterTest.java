@@ -1,8 +1,10 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
 import com.github.bedrin.jdbc.sniffer.BaseTest;
-import com.github.bedrin.jdbc.sniffer.Sniffer;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -14,14 +16,18 @@ import java.io.IOException;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SnifferFilterTest extends BaseTest {
+
+    @Mock
+    private HttpServletRequest httpServletRequest;
+    @Mock
+    private HttpServletResponse httpServletResponse;
+    @Mock
+    private FilterChain filterChain;
 
     @Test
     public void testFilterNoQueries() throws IOException, ServletException {
-
-        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
-        HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
-        FilterChain filterChain = mock(FilterChain.class);
 
         SnifferFilter filter = new SnifferFilter();
 
@@ -34,11 +40,8 @@ public class SnifferFilterTest extends BaseTest {
     @Test
     public void testFilterOneQuery() throws IOException, ServletException {
 
-        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
-        HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
-        FilterChain filterChain = mock(FilterChain.class);
-
-        doAnswer(invocation -> {executeStatement();return null;}).when(filterChain).doFilter(any(), any());
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
 
         SnifferFilter filter = new SnifferFilter();
 
