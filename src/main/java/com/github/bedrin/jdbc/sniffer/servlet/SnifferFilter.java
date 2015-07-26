@@ -6,7 +6,9 @@ import com.github.bedrin.jdbc.sniffer.Threads;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
@@ -25,18 +27,20 @@ public class SnifferFilter implements Filter {
             throws IOException, ServletException {
 
         Spy spy = null;
+        BufferedServletResponseWrapper responseWrapper = null;
 
         try {
             try {
                 spy = Sniffer.spy();
+                response = responseWrapper = new BufferedServletResponseWrapper(HttpServletResponse.class.cast(response));
             } catch (Exception e) {
                 e.printStackTrace();
             }
             chain.doFilter(request, response);
         } finally {
-            if (null != spy) try {
-                HttpServletResponse httpServletResponse = HttpServletResponse.class.cast(response);
-                httpServletResponse.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
+            if (null != spy && null != responseWrapper) try {
+                responseWrapper.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
+                responseWrapper.doFlushAndClose();
             } catch (Exception e) {
                 e.printStackTrace();
             }
