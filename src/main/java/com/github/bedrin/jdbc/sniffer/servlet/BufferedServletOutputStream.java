@@ -10,17 +10,18 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     private final BufferedServletResponseWrapper responseWrapper;
 
-    private final OutputStream target;
+    private final ServletOutputStream target;
     private final Buffer buffer = new Buffer();
 
     private boolean closed;
     private boolean flushed;
 
-    protected BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, OutputStream target) {
+    protected BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, ServletOutputStream target) {
         this.responseWrapper = responseWrapper;
         this.target = target;
     }
 
+    // TODO: remove doFlush(); id developer wants to flush the buffer we should do it
     protected void doFlush() throws IOException {
         responseWrapper.notifyBeforeFlush();
         buffer.writeTo(target);
@@ -86,6 +87,7 @@ class BufferedServletOutputStream extends ServletOutputStream {
         buffer.reset();
     }
 
+    // TODO: flush buffer automatically after some threshold (say 100 kilobytes for start?) or analyze content-length headedr
     private static class Buffer extends ByteArrayOutputStream {
 
         public int getCapacity() {
