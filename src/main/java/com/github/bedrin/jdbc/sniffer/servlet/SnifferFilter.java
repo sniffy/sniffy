@@ -26,24 +26,29 @@ public class SnifferFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-        Spy spy = null;
         BufferedServletResponseWrapper responseWrapper = null;
 
         try {
-            try {
-                spy = Sniffer.spy();
-                response = responseWrapper = new BufferedServletResponseWrapper(HttpServletResponse.class.cast(response));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            chain.doFilter(request, response);
-        } finally {
-            if (null != spy && null != responseWrapper) try {
-                responseWrapper.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
-                responseWrapper.doFlushAndClose();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            final Spy spy = Sniffer.spy();
+            responseWrapper = new BufferedServletResponseWrapper((HttpServletResponse) response);
+
+            responseWrapper.addServletResponseListener(new ServletResponseListener() {
+                @Override
+                public void beforeFlush(HttpServletResponse response) throws IOException {
+                    response.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
+                }
+            });
+
+            response = responseWrapper;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        chain.doFilter(request, response);
+
+        if (null != responseWrapper) {
+            responseWrapper.doFlush();
         }
 
     }

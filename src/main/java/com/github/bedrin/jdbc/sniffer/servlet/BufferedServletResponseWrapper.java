@@ -1,41 +1,86 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
 import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletResponse;
-import javax.servlet.ServletResponseWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
-    private BufferedServletOutputStream bufferedServletOutputStream;
+    private Collection<ServletResponseListener> listeners = new ArrayList<ServletResponseListener>();
 
+    private BufferedServletOutputStream bufferedServletOutputStream;
     private ServletOutputStream outputStream;
     private PrintWriter writer;
 
+    private boolean committed;
+
+    private final HttpServletResponse delegate;
+
     public BufferedServletResponseWrapper(HttpServletResponse response) {
         super(response);
+        delegate = response;
+    }
+
+    public void addServletResponseListener(ServletResponseListener listener) {
+        listeners.add(listener);
+    }
+
+    protected void notifyBeforeFlush() throws IOException {
+        Iterator<ServletResponseListener> listenersIt = listeners.iterator();
+        while (listenersIt.hasNext()) {
+            ServletResponseListener listener = listenersIt.next();
+            listener.beforeFlush(delegate);
+            listenersIt.remove();
+        }
     }
 
     protected BufferedServletOutputStream getBufferedServletOutputStream() throws IOException {
         if (null == bufferedServletOutputStream) {
-            bufferedServletOutputStream = new BufferedServletOutputStream(super.getOutputStream());
+            bufferedServletOutputStream = new BufferedServletOutputStream(this, super.getOutputStream());
         }
         return bufferedServletOutputStream;
     }
 
-    public void doFlushAndClose() throws IOException {
-        bufferedServletOutputStream.doFlushAndClose();
+    public void doFlush() throws IOException {
+        notifyBeforeFlush();
+        if (null != bufferedServletOutputStream) bufferedServletOutputStream.doFlush();
     }
 
     // headers relates methods
 
     @Override
     public void sendError(int sc, String msg) throws IOException {
-        bufferedServletOutputStream.checkNotFlushed();
+        if (isCommitted()) {
+            throw new IllegalStateException("Cannot set error status - response is already committed");
+        }
+        notifyBeforeFlush();
         super.sendError(sc, msg);
+        setCommitted();
+    }
+
+    @Override
+    public void sendError(int sc) throws IOException {
+        if (isCommitted()) {
+            throw new IllegalStateException("Cannot set error status - response is already committed");
+        }
+        notifyBeforeFlush();
+        super.sendError(sc);
+        setCommitted();
+    }
+
+    @Override
+    public void sendRedirect(String location) throws IOException {
+        if (isCommitted()) {
+            throw new IllegalStateException("Cannot set error status - response is already committed");
+        }
+        notifyBeforeFlush();
+        super.sendRedirect(location);
+        setCommitted();
     }
 
     // content related methods
@@ -57,12 +102,23 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void resetBuffer() {
+        if (isCommitted()) {
+            throw new IllegalStateException("Cannot reset buffer - response is already committed");
+        }
         if (null != bufferedServletOutputStream) bufferedServletOutputStream.reset();
     }
 
     @Override
     public boolean isCommitted() {
-        return (null != bufferedServletOutputStream && bufferedServletOutputStream.isFlushed());
+        return (committed) || (null != bufferedServletOutputStream && bufferedServletOutputStream.isFlushed());
+    }
+
+    public void setCommitted(boolean committed) {
+        this.committed = committed;
+    }
+
+    protected void setCommitted() {
+        setCommitted(true);
     }
 
     @Override
@@ -78,8 +134,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != writer) {
             throw new IllegalStateException("getWriter() method has been called on this response");
         } else {
-            return outputStream = bufferedServletOutputStream =
-                    new BufferedServletOutputStream(super.getOutputStream());
+            return outputStream = getBufferedServletOutputStream() ;
         }
     }
 
@@ -90,9 +145,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != outputStream) {
             throw new IllegalStateException("getOutputStream() method has been called on this response");
         } else {
-            return writer = new PrintWriter(
-                    bufferedServletOutputStream = new BufferedServletOutputStream(super.getOutputStream())
-            );
+            return writer = new PrintWriter(getBufferedServletOutputStream());
         }
     }
 

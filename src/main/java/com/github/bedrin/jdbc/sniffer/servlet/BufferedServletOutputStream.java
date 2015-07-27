@@ -8,19 +8,23 @@ import java.util.Arrays;
 
 class BufferedServletOutputStream extends ServletOutputStream {
 
+    private final BufferedServletResponseWrapper responseWrapper;
+
     private final OutputStream target;
     private final Buffer buffer = new Buffer();
 
     private boolean closed;
     private boolean flushed;
 
-    public BufferedServletOutputStream(OutputStream target) {
+    public BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, OutputStream target) {
+        this.responseWrapper = responseWrapper;
         this.target = target;
     }
 
-    public void doFlushAndClose() throws IOException {
+    public void doFlush() throws IOException {
+        responseWrapper.notifyBeforeFlush();
         buffer.writeTo(target);
-        if (closed) target.close();
+        if (isFlushed()) target.flush();
     }
 
     public void setBufferSize(int size) {
@@ -74,6 +78,7 @@ class BufferedServletOutputStream extends ServletOutputStream {
     public void flush() throws IOException {
         checkOpen();
         flushed = true;
+        responseWrapper.setCommitted();
     }
 
     public void reset() {
