@@ -3,8 +3,12 @@ package com.github.bedrin.jdbc.sniffer;
 import com.github.bedrin.jdbc.sniffer.util.ExceptionUtil;
 
 import java.lang.reflect.Proxy;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.sql.*;
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
 /**
@@ -33,7 +37,17 @@ public class MockDriver implements Driver {
 
     public Connection connect(String url, Properties info) throws SQLException {
         String originUrl = extractOriginUrl(url);
-        Driver originDriver = DriverManager.getDriver(originUrl);
+        Driver originDriver;
+        try {
+            originDriver = DriverManager.getDriver(originUrl);
+        } catch (SQLException e) {
+            try {
+                reloadServiceProviders();
+                originDriver = DriverManager.getDriver(originUrl);
+            } catch (Exception e2) {
+                throw e;
+            }
+        }
         Connection delegateConnection = originDriver.connect(originUrl, info);
 
         return Connection.class.cast(Proxy.newProxyInstance(
@@ -41,6 +55,27 @@ public class MockDriver implements Driver {
                 new Class[]{Connection.class},
                 new ConnectionInvocationHandler(delegateConnection)
         ));
+    }
+
+    private void reloadServiceProviders() {
+
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+
+                ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
+                Iterator<Driver> driversIterator = loadedDrivers.iterator();
+
+                try {
+                    while (driversIterator.hasNext()) {
+                        driversIterator.next();
+                    }
+                } catch (Throwable t) {
+                    // Do nothing
+                }
+                return null;
+            }
+        });
+
     }
 
     private Driver getOriginDriver(String url) throws SQLException {
