@@ -5,11 +5,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
@@ -23,25 +23,27 @@ import static org.mockito.Mockito.*;
 public class SnifferFilterTest extends BaseTest {
 
     @Mock
-    private HttpServletRequest httpServletRequest;
-    @Mock
-    private HttpServletResponse httpServletResponse;
-    @Mock
     private FilterChain filterChain;
 
     @Test
     public void testFilterNoQueries() throws IOException, ServletException {
 
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
         SnifferFilter filter = new SnifferFilter();
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        verify(httpServletResponse).addIntHeader(SnifferFilter.HEADER_NAME, 0);
+        assertEquals(0, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
 
     }
 
     @Test
     public void testFilterOneQuery() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
 
         doAnswer(invocation -> {executeStatement(); return null;}).
                 when(filterChain).doFilter(any(), any());
@@ -50,7 +52,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        verify(httpServletResponse).addIntHeader(SnifferFilter.HEADER_NAME, 1);
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
 
     }
 
@@ -58,6 +60,7 @@ public class SnifferFilterTest extends BaseTest {
     public void testFilterOneQueryWithOutput() throws IOException, ServletException {
 
         MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
 
         doAnswer(invocation -> {
             HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
