@@ -21,12 +21,12 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     private final HttpServletResponse delegate;
 
-    public BufferedServletResponseWrapper(HttpServletResponse response) {
+    protected BufferedServletResponseWrapper(HttpServletResponse response) {
         super(response);
         delegate = response;
     }
 
-    public void addServletResponseListener(ServletResponseListener listener) {
+    protected void addServletResponseListener(ServletResponseListener listener) {
         listeners.add(listener);
     }
 
@@ -46,9 +46,17 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         return bufferedServletOutputStream;
     }
 
-    public void doFlush() throws IOException {
+    protected void doFlush() throws IOException {
         notifyBeforeFlush();
         if (null != bufferedServletOutputStream) bufferedServletOutputStream.doFlush();
+    }
+
+    protected void setCommitted(boolean committed) {
+        this.committed = committed;
+    }
+
+    protected void setCommitted() {
+        setCommitted(true);
     }
 
     // headers relates methods
@@ -111,14 +119,6 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     @Override
     public boolean isCommitted() {
         return (committed) || (null != bufferedServletOutputStream && bufferedServletOutputStream.isFlushed());
-    }
-
-    public void setCommitted(boolean committed) {
-        this.committed = committed;
-    }
-
-    protected void setCommitted() {
-        setCommitted(true);
     }
 
     @Override

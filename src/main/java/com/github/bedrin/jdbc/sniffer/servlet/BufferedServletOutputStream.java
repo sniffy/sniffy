@@ -16,23 +16,23 @@ class BufferedServletOutputStream extends ServletOutputStream {
     private boolean closed;
     private boolean flushed;
 
-    public BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, OutputStream target) {
+    protected BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, OutputStream target) {
         this.responseWrapper = responseWrapper;
         this.target = target;
     }
 
-    public void doFlush() throws IOException {
+    protected void doFlush() throws IOException {
         responseWrapper.notifyBeforeFlush();
         buffer.writeTo(target);
         if (isFlushed()) target.flush();
     }
 
-    public void setBufferSize(int size) {
+    protected void setBufferSize(int size) {
         checkNotFlushed();
         buffer.ensureCapacity(size);
     }
 
-    public int getBufferSize() {
+    protected int getBufferSize() {
         return buffer.getCapacity();
     }
 
@@ -42,15 +42,15 @@ class BufferedServletOutputStream extends ServletOutputStream {
         closed = true;
     }
 
-    public void checkOpen() throws IOException {
+    protected void checkOpen() throws IOException {
         if (closed) throw new IOException("Output Stream is closed");
     }
 
-    public void checkNotFlushed() throws IllegalStateException {
+    protected void checkNotFlushed() throws IllegalStateException {
         if (flushed) throw new IllegalStateException("Output Stream was already sent to client");
     }
 
-    public boolean isFlushed() {
+    protected boolean isFlushed() {
         return flushed;
     }
 
