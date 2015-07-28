@@ -46,7 +46,7 @@ public class SnifferFilter implements Filter {
         chain.doFilter(request, response);
 
         if (null != responseWrapper) {
-            responseWrapper.doFlush();
+            responseWrapper.flush();
         }
 
     }

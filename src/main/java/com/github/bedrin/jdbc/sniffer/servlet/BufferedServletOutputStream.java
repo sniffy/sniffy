@@ -3,7 +3,6 @@ package com.github.bedrin.jdbc.sniffer.servlet;
 import javax.servlet.ServletOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Arrays;
 
 class BufferedServletOutputStream extends ServletOutputStream {
@@ -21,11 +20,26 @@ class BufferedServletOutputStream extends ServletOutputStream {
         this.target = target;
     }
 
-    // TODO: remove doFlush(); id developer wants to flush the buffer we should do it
-    protected void doFlush() throws IOException {
+    @Override
+    public void flush() throws IOException {
+        flushed = true;
+
         responseWrapper.notifyBeforeFlush();
+
         buffer.writeTo(target);
-        if (isFlushed()) target.flush();
+        target.flush();
+
+        buffer.reset();
+        responseWrapper.setCommitted();
+    }
+
+    public void closeTarget() throws IOException {
+        if (closed) target.close();
+    }
+
+    public void reset() {
+        checkNotFlushed();
+        buffer.reset();
     }
 
     protected void setBufferSize(int size) {
@@ -51,10 +65,6 @@ class BufferedServletOutputStream extends ServletOutputStream {
         if (flushed) throw new IllegalStateException("Output Stream was already sent to client");
     }
 
-    protected boolean isFlushed() {
-        return flushed;
-    }
-
     // delegate all calls to buffer
 
     @Override
@@ -73,18 +83,6 @@ class BufferedServletOutputStream extends ServletOutputStream {
     public void write(byte[] b, int off, int len) throws IOException {
         checkOpen();
         buffer.write(b, off, len);
-    }
-
-    @Override
-    public void flush() throws IOException {
-        checkOpen();
-        flushed = true;
-        responseWrapper.setCommitted();
-    }
-
-    public void reset() {
-        checkNotFlushed();
-        buffer.reset();
     }
 
     // TODO: flush buffer automatically after some threshold (say 100 kilobytes for start?) or analyze content-length headedr

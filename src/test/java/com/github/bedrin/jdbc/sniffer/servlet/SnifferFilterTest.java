@@ -10,9 +10,11 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -75,6 +77,67 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
         assertArrayEquals("Hello, World".getBytes(), httpServletResponse.getContentAsByteArray());
+
+    }
+
+    @Test
+    public void testFilterOneQueryWith100KOutputStream() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            ServletOutputStream outputStream = response.getOutputStream();
+            outputStream.write(new byte[50 * 1024]);
+            executeStatement();
+            outputStream.flush();
+            outputStream.write(new byte[50 * 1024]);
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertEquals(100 * 1024, httpServletResponse.getContentAsByteArray().length);
+
+    }
+
+    @Test
+    public void testFilterOneQueryWith100KPrintWriter() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            PrintWriter printWriter = response.getWriter();
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0 ; i < 1; i++) {
+                sb.append("<sometag>abcdef</sometag>");
+            }
+
+            String content = sb.toString();
+            assertEquals(25 * 1, content.getBytes().length);
+
+            printWriter.write(content);
+            printWriter.write(content);
+            executeStatement();
+            printWriter.flush();
+            printWriter.write(content);
+            printWriter.write(content);
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertEquals(100 * 1, httpServletResponse.getContentAsByteArray().length);
 
     }
 

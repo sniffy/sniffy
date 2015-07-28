@@ -46,9 +46,11 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         return bufferedServletOutputStream;
     }
 
-    protected void doFlush() throws IOException {
+    protected void flush() throws IOException {
         notifyBeforeFlush();
-        if (null != bufferedServletOutputStream) bufferedServletOutputStream.doFlush();
+        if (null != writer) writer.flush();
+        if (null != outputStream) outputStream.flush();
+        if (null != bufferedServletOutputStream) bufferedServletOutputStream.closeTarget();
     }
 
     protected void setCommitted(boolean committed) {
@@ -118,7 +120,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public boolean isCommitted() {
-        return (committed) || (null != bufferedServletOutputStream && bufferedServletOutputStream.isFlushed());
+        return committed;
     }
 
     @Override
