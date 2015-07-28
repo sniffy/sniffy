@@ -11,7 +11,8 @@ import java.util.Iterator;
 
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
-    private Collection<ServletResponseListener> listeners = new ArrayList<ServletResponseListener>();
+    private Collection<FlushResponseListener> flushListeners = new ArrayList<FlushResponseListener>();
+    private Collection<CloseResponseListener> closeListeners = new ArrayList<CloseResponseListener>();
 
     private BufferedServletOutputStream bufferedServletOutputStream;
     private ServletOutputStream outputStream;
@@ -26,16 +27,29 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         delegate = response;
     }
 
-    protected void addServletResponseListener(ServletResponseListener listener) {
-        listeners.add(listener);
+    protected void addFlushResponseListener(FlushResponseListener listener) {
+        flushListeners.add(listener);
+    }
+
+    protected void addCloseResponseListener(CloseResponseListener listener) {
+        closeListeners.add(listener);
     }
 
     protected void notifyBeforeFlush() throws IOException {
-        Iterator<ServletResponseListener> listenersIt = listeners.iterator();
+        Iterator<FlushResponseListener> listenersIt = flushListeners.iterator();
         while (listenersIt.hasNext()) {
-            ServletResponseListener listener = listenersIt.next();
-            listener.beforeFlush(delegate);
+            FlushResponseListener listener = listenersIt.next();
             listenersIt.remove();
+            listener.beforeFlush(delegate, this);
+        }
+    }
+
+    protected void notifyBeforeClose() throws IOException {
+        Iterator<CloseResponseListener> listenersIt = closeListeners.iterator();
+        while (listenersIt.hasNext()) {
+            CloseResponseListener listener = listenersIt.next();
+            listenersIt.remove();
+            listener.beforeClose(delegate, this);
         }
     }
 
@@ -59,6 +73,19 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     protected void setCommitted() {
         setCommitted(true);
+    }
+
+    // capture content length
+
+    private int contentLength;
+
+    @Override
+    public void setContentLength(int len) {
+        super.setContentLength(contentLength = len);
+    }
+
+    public int getContentLength() {
+        return contentLength;
     }
 
     // headers relates methods

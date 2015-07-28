@@ -34,6 +34,7 @@ class BufferedServletOutputStream extends ServletOutputStream {
     }
 
     public void closeTarget() throws IOException {
+        responseWrapper.notifyBeforeClose();
         if (closed) target.close();
     }
 
@@ -54,6 +55,7 @@ class BufferedServletOutputStream extends ServletOutputStream {
     @Override
     public void close() throws IOException {
         flush();
+        responseWrapper.notifyBeforeClose();
         closed = true;
     }
 

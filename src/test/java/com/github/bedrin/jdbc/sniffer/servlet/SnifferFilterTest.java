@@ -18,6 +18,7 @@ import java.io.PrintWriter;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -116,12 +117,12 @@ public class SnifferFilterTest extends BaseTest {
             PrintWriter printWriter = response.getWriter();
 
             StringBuilder sb = new StringBuilder();
-            for (int i = 0 ; i < 1; i++) {
+            for (int i = 0 ; i < 1024; i++) {
                 sb.append("<sometag>abcdef</sometag>");
             }
 
             String content = sb.toString();
-            assertEquals(25 * 1, content.getBytes().length);
+            assertEquals(25 * 1024, content.getBytes().length);
 
             printWriter.write(content);
             printWriter.write(content);
@@ -137,7 +138,39 @@ public class SnifferFilterTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
-        assertEquals(100 * 1, httpServletResponse.getContentAsByteArray().length);
+        assertEquals(100 * 1024, httpServletResponse.getContentAsByteArray().length);
+
+    }
+
+
+
+    @Test
+    public void testInjectHtml() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"jdbc-sniffer-icon\""));
 
     }
 
