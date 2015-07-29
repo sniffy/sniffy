@@ -72,23 +72,37 @@ class BufferedServletOutputStream extends ServletOutputStream {
     @Override
     public void write(int b) throws IOException {
         checkOpen();
+        flushIfOverflow(1);
         buffer.write(b);
+    }
+
+    private int maximumBufferSize = 200 * 1024;
+
+    private void flushIfOverflow(int newBytes) throws IOException {
+        if (buffer.size() + newBytes > maximumBufferSize) {
+            flush();
+        }
     }
 
     @Override
     public void write(byte[] b) throws IOException {
         checkOpen();
+        flushIfOverflow(b.length);
         buffer.write(b);
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         checkOpen();
+        flushIfOverflow(len);
         buffer.write(b, off, len);
     }
 
     // TODO: flush buffer automatically after some threshold (say 100 kilobytes for start?) or analyze content-length headedr
     private static class Buffer extends ByteArrayOutputStream {
+
+
+
 
         public int getCapacity() {
             return null == buf ? 0 : buf.length;
