@@ -9,6 +9,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -165,7 +166,11 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
+        FilterConfig filterConfig = mock(FilterConfig.class);
+        when(filterConfig.getInitParameter("inject-html")).thenReturn("true");
+
         SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
