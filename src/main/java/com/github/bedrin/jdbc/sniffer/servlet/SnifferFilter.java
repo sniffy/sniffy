@@ -17,6 +17,7 @@ import java.io.IOException;
  *
  * Example of web.xml:
  * <pre>
+ * {@code
  *   <filter>
  *        <filter-name>sniffer</filter-name>
  *        <filter-class>com.github.bedrin.jdbc.sniffer.servlet.SnifferFilter</filter-class>
@@ -29,6 +30,7 @@ import java.io.IOException;
  *        <filter-name>sniffer</filter-name>
  *        <url-pattern>/*</url-pattern>
  *    </filter-mapping>
+ * }
  * </pre>
  *
  * @since 2.3.0
