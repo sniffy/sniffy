@@ -46,20 +46,18 @@ public class SnifferFilter implements Filter {
                     if (injectHtml) {
                         String contentType = response.getContentType();
                         if (null != contentType && contentType.startsWith("text/html")) {
-                            // set proper content length
+                            // adjust content length with the size of injected content
+                            int contentLength = wrapper.getContentLength();
+                            if (contentLength > 0) {
+                                wrapper.setContentLength(contentLength + maximumInjectSize());
+                            }
+                            // inject html at the very end of output stream
                             wrapper.addCloseResponseListener(new CloseResponseListener() {
                                 @Override
                                 public void beforeClose(HttpServletResponse response, BufferedServletResponseWrapper wrapper) throws IOException {
                                     BufferedServletOutputStream bufferedServletOutputStream = wrapper.getBufferedServletOutputStream();
                                     bufferedServletOutputStream.write(
-                                            new StringBuilder(HTML_START).
-                                                    append(spy.executedStatements(Threads.CURRENT)).
-                                                    append("</div>").
-                                                    append("<script type=\"application/javascript\">window.document.sqlQueries=").
-                                                    append(spy.executedStatements(Threads.CURRENT)).
-                                                    append(";</script>").
-                                                    toString().
-                                                    getBytes()
+                                            generateAndPadHtml(spy.executedStatements(Threads.CURRENT)).getBytes()
                                     );
                                     bufferedServletOutputStream.flush();
                                 }
@@ -82,6 +80,32 @@ public class SnifferFilter implements Filter {
             responseWrapper.flush();
         }
 
+    }
+
+    private static int MAXIMUM_INJECT_SIZE;
+
+    protected static int maximumInjectSize() {
+        if (MAXIMUM_INJECT_SIZE == 0) {
+            MAXIMUM_INJECT_SIZE = generateHtml(Integer.MAX_VALUE).length();
+        }
+        return MAXIMUM_INJECT_SIZE;
+    }
+
+    protected static String generateAndPadHtml(int executedQueries) {
+        StringBuilder sb = generateHtml(executedQueries);
+        for (int i = sb.length(); i < maximumInjectSize(); i++) {
+            sb.append(" ");
+        }
+        return sb.toString();
+    }
+
+    protected static StringBuilder generateHtml(int executedQueries) {
+        return new StringBuilder(HTML_START).
+                append(executedQueries).
+                append("</div>").
+                append("<script type=\"application/javascript\">window.document.sqlQueries=").
+                append(executedQueries).
+                append(";</script>");
     }
 
     public void destroy() {

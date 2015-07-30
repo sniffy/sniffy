@@ -143,8 +143,6 @@ public class SnifferFilterTest extends BaseTest {
 
     }
 
-
-
     @Test
     public void testInjectHtml() throws IOException, ServletException {
 
@@ -176,6 +174,42 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"jdbc-sniffer-icon\""));
+
+    }
+
+    @Test
+    public void testInjectHtmlSetContentLength() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            response.setContentLength(actualContent.length());
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        FilterConfig filterConfig = mock(FilterConfig.class);
+        when(filterConfig.getInitParameter("inject-html")).thenReturn("true");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"jdbc-sniffer-icon\""));
+        assertTrue(httpServletResponse.getContentLength() > actualContent.length());
 
     }
 
