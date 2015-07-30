@@ -37,6 +37,7 @@ public class SnifferListenersTest extends BaseTest {
             assertEquals(0, e.getMinimumQueries());
             assertEquals(0, e.getMaximumQueries());
             assertEquals(1, e.getNumQueries());
+            assertEquals(1, e.getExecutedStatements().size());
             assertEquals(1, e.getExecutedSqls().size());
             assertEquals(Threads.CURRENT, e.getThreadMatcher());
             assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES ('foo')"));
@@ -68,12 +69,29 @@ public class SnifferListenersTest extends BaseTest {
             assertEquals(0, e.getMinimumQueries());
             assertEquals(0, e.getMaximumQueries());
             assertEquals(1, e.getNumQueries());
+            assertEquals(1, e.getExecutedStatements().size());
             assertEquals(1, e.getExecutedSqls().size());
-            assertEquals("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/", e.getExecutedSqls().get(0));
+            assertEquals("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/", e.getExecutedStatements().get(0).sql);
             assertEquals(Threads.CURRENT, e.getThreadMatcher());
             assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/"));
         }
 
+    }
+
+    @Test
+    public void testQueryFromOtherThread() {
+        try (@SuppressWarnings("unused") Spy spy = Sniffer.expect(1)) {
+            executeStatement();
+            executeStatement();
+            executeStatementInOtherThread();
+        } catch (WrongNumberOfQueriesError e) {
+            assertNotNull(e);
+            assertEquals(1, e.getMinimumQueries());
+            assertEquals(1, e.getMaximumQueries());
+            assertEquals(2, e.getNumQueries());
+            assertEquals(2, e.getExecutedStatements().size());
+            assertEquals(2, e.getExecutedSqls().size());
+        }
     }
 
 }

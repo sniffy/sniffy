@@ -1,5 +1,7 @@
 package com.github.bedrin.jdbc.sniffer;
 
+import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
+
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
 
 /**
  * Spy holds a number of queries which were executed at some point of time and uses it as a base for further assertions
+ * todo: we have some kindergarten level of multithreading implementation here. Should we do some rocket science instead? ConcurrentLinkedQueue ?
  * @see Sniffer#spy()
  * @see Sniffer#expect(int)
  * @since 2.0
@@ -23,23 +26,51 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private Counter initialCount;
     private Counter initialThreadLocalCount;
 
-    private final List<String> executedSqls = new LinkedList<String>();
+    private final List<StatementMetaData> executedStatements = new LinkedList<StatementMetaData>();
     private final WeakReference<Spy> selfReference;
+    private final Thread owner;
 
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
 
-    synchronized void addExecutedSql(String sql) {
-        executedSqls.add(sql);
+    synchronized void addExecutedStatement(StatementMetaData statementMetaData) {
+        executedStatements.add(statementMetaData);
     }
 
-    synchronized void resetExecutedSqls() {
-        executedSqls.clear();
+    synchronized void resetExecutedStatements() {
+        executedStatements.clear();
+    }
+
+    synchronized List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
+        List<StatementMetaData> statements;
+        switch (threadMatcher) {
+            case CURRENT:
+                statements = new ArrayList<StatementMetaData>();
+                for (StatementMetaData statement : executedStatements) {
+                    if (statement.owner == this.owner) {
+                        statements.add(statement);
+                    }
+                }
+                break;
+            case OTHERS:
+                statements = new ArrayList<StatementMetaData>();
+                for (StatementMetaData statement : executedStatements) {
+                    if (statement.owner == this.owner) {
+                        statements.add(statement);
+                    }
+                }
+                break;
+            case ANY:
+            default:
+                statements = executedStatements;
+        }
+        return statements;
     }
 
     Spy() {
-        initNumberOfQueries();
-        this.selfReference = Sniffer.registerSpy(this);
+        owner = Thread.currentThread();
+        selfReference = Sniffer.registerSpy(this);
+        reset();
     }
 
     private void initNumberOfQueries() {
@@ -57,7 +88,8 @@ public class Spy<C extends Spy<C>> implements Closeable {
     public Spy reset() {
         checkOpened();
         initNumberOfQueries();
-        resetExecutedSqls();
+        resetExecutedStatements();
+        expectations.clear();
         return self();
     }
 
@@ -885,7 +917,11 @@ public class Spy<C extends Spy<C>> implements Closeable {
             int numQueries = executedStatements(threadMatcher, query);
 
             if (numQueries > maximumQueries || numQueries < minimumQueries) synchronized (Spy.this) {
-                throw new WrongNumberOfQueriesError(threadMatcher, minimumQueries, maximumQueries, numQueries, executedSqls);
+                throw new WrongNumberOfQueriesError(
+                        threadMatcher,
+                        minimumQueries, maximumQueries, numQueries,
+                        getExecutedStatements(threadMatcher)
+                );
             }
 
         }
