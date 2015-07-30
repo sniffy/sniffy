@@ -45,7 +45,8 @@ public class SnifferFilter implements Filter {
                     response.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
                     if (injectHtml) {
                         String contentType = response.getContentType();
-                        if (null != contentType && contentType.startsWith("text/html")) {
+                        String contentEncoding = wrapper.getContentEncoding();
+                        if (null == contentEncoding && null != contentType && contentType.startsWith("text/html")) {
                             // adjust content length with the size of injected content
                             int contentLength = wrapper.getContentLength();
                             if (contentLength > 0) {

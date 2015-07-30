@@ -83,6 +83,56 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testFilterOneQueryCloseFlushes() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            ServletOutputStream outputStream = response.getOutputStream();
+            outputStream.write("Hello, World".getBytes());
+            executeStatement();
+            outputStream.close();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertArrayEquals("Hello, World".getBytes(), httpServletResponse.getContentAsByteArray());
+
+    }
+
+    @Test
+    public void testFilterOneQueryTargetStreamClosed() throws IOException, ServletException {
+
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        MockHttpServletResponse httpServletResponse = spy(new MockHttpServletResponse());
+        ServletOutputStream sos = mock(ServletOutputStream.class);
+        when(httpServletResponse.getOutputStream()).thenReturn(sos);
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            ServletOutputStream outputStream = response.getOutputStream();
+            outputStream.write("Hello, World".getBytes());
+            executeStatement();
+            outputStream.close();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        verify(sos).close();
+
+    }
+
+    @Test
     public void testFilterOneQueryWith100KOutputStream() throws IOException, ServletException {
 
         MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
@@ -174,6 +224,43 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"jdbc-sniffer-icon\""));
+
+    }
+
+    @Test
+    public void testInjectHtmlFlushResponse() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            response.flushBuffer();
+            executeStatement();
+
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        FilterConfig filterConfig = mock(FilterConfig.class);
+        when(filterConfig.getInitParameter("inject-html")).thenReturn("true");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        String contentAsString = httpServletResponse.getContentAsString();
+        assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"jdbc-sniffer-icon\""));
+        assertTrue(contentAsString.contains("sqlQueries=2"));
 
     }
 
@@ -352,6 +439,40 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"jdbc-sniffer-icon\""));
+
+    }
+
+    @Test
+    public void testFilterBufferSize() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.setBufferSize(200 * 1024);
+            ServletOutputStream outputStream = response.getOutputStream();
+            outputStream.write(new byte[50 * 1024]);
+            executeStatement();
+            outputStream.write(new byte[50 * 1024]);
+            executeStatement();
+            outputStream.write(new byte[50 * 1024]);
+            executeStatement();
+            outputStream.write(new byte[50 * 1024]);
+            executeStatement();
+            // response will be flushed here
+            outputStream.write(new byte[50 * 1024]);
+            executeStatement();
+            assertEquals(200*1024, response.getBufferSize());
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(4, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertEquals(250 * 1024, httpServletResponse.getContentAsByteArray().length);
 
     }
 

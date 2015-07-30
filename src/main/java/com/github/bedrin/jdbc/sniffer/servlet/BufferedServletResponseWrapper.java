@@ -88,6 +88,20 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         return contentLength;
     }
 
+    private String contentEncoding;
+
+    @Override
+    public void addHeader(String name, String value) {
+        super.addHeader(name, value);
+        if ("Content-Encoding".equals(name)) {
+            contentEncoding = value;
+        }
+    }
+
+    public String getContentEncoding() {
+        return contentEncoding;
+    }
+
     // headers relates methods
 
     @Override
