@@ -213,4 +213,72 @@ public class SnifferFilterTest extends BaseTest {
 
     }
 
+    @Test
+    public void testFilterOneQuerySendError() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            executeStatement();
+            response.sendError(HttpServletResponse.SC_CONFLICT);
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertEquals(HttpServletResponse.SC_CONFLICT, httpServletResponse.getStatus());
+
+    }
+
+    @Test
+    public void testFilterOneQuerySendErrorWithBody() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            executeStatement();
+            response.setContentType("text/html");
+            response.sendError(HttpServletResponse.SC_CONFLICT, "Body");
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertEquals(HttpServletResponse.SC_CONFLICT, httpServletResponse.getStatus());
+
+    }
+
+    @Test
+    public void testFilterOneQuerySendRedirect() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            executeStatement();
+            response.sendRedirect("http://www.google.com/");
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertEquals(HttpServletResponse.SC_MOVED_TEMPORARILY, httpServletResponse.getStatus());
+        assertEquals("http://www.google.com/", httpServletResponse.getHeader("Location"));
+
+    }
+
 }
