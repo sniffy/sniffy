@@ -9,7 +9,7 @@ JDBC Sniffer
 
 JDBC Sniffer counts the number of executed SQL queries and provides an API for validating them
 It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
-Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at easrly stages 
+Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at early stages 
 
 ```java
 try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
@@ -19,6 +19,25 @@ try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
     //statement.execute("SELECT 1 FROM DUAL");
 }
 ```
+
+You can also use JDBC Sniffer in your test environments to see the number of SQL queries executed by each HTTP request.
+Just add it to your `web.xml` file:
+```xml
+<filter>
+    <filter-name>sniffer</filter-name>
+    <filter-class>com.github.bedrin.jdbc.sniffer.servlet.SnifferFilter</filter-class>
+    <init-param>
+        <param-name>inject-html</param-name>
+        <param-value>true</param-value>
+    </init-param>
+</filter>
+<filter-mapping>
+    <filter-name>sniffer</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+```
+
+Restart your server and you will see the number of queries in bottom right corner of your app:
 
 Maven
 ============
