@@ -39,6 +39,8 @@ Just add it to your `web.xml` file:
 
 Restart your server and you will see the number of queries in bottom right corner of your app:
 
+![SnifferFilterInjectHtml](https://bedrin.github.io/jdbc-sniffer/SnifferFilterInjectHtml.png)
+
 Maven
 ============
 JDBC Sniffer is available from Maven Central repository
