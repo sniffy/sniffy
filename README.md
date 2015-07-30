@@ -9,7 +9,7 @@ JDBC Sniffer
 
 JDBC Sniffer counts the number of executed SQL queries and provides an API for validating them
 It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
-Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at easrly stages 
+Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at early stages 
 
 ```java
 try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
@@ -20,6 +20,27 @@ try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
 }
 ```
 
+You can also use JDBC Sniffer in your test environments to see the number of SQL queries executed by each HTTP request.
+Just add it to your `web.xml` file:
+```xml
+<filter>
+    <filter-name>sniffer</filter-name>
+    <filter-class>com.github.bedrin.jdbc.sniffer.servlet.SnifferFilter</filter-class>
+    <init-param>
+        <param-name>inject-html</param-name>
+        <param-value>true</param-value>
+    </init-param>
+</filter>
+<filter-mapping>
+    <filter-name>sniffer</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+```
+
+Restart your server and you will see the number of queries in bottom right corner of your app:
+
+![SnifferFilterInjectHtml](https://bedrin.github.io/jdbc-sniffer/SnifferFilterInjectHtml.png)
+
 Maven
 ============
 JDBC Sniffer is available from Maven Central repository
@@ -27,23 +48,23 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>2.2.3</version>
+    <version>2.3.0</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'com.github.bedrin:jdbc-sniffer:2.2.3'
+    compile 'com.github.bedrin:jdbc-sniffer:2.3.0'
 }
 ```
 
 Download
 ============
 [![Get automatic notifications about new "jdbc-sniffer" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/jdbc-sniffer/view?source=watch)
-- [jdbc-sniffer-2.2.3.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.3/jdbc-sniffer-2.2.3.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.3.jar))
-- [jdbc-sniffer-2.2.3-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.3/jdbc-sniffer-2.2.3-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.3-sources.jar))
-- [jdbc-sniffer-2.2.3-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.3/jdbc-sniffer-2.2.3-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.3-javadoc.jar))
+- [jdbc-sniffer-2.3.0.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.0/jdbc-sniffer-2.3.0.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.0.jar))
+- [jdbc-sniffer-2.3.0-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.0/jdbc-sniffer-2.3.0-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.0-sources.jar))
+- [jdbc-sniffer-2.3.0-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.0/jdbc-sniffer-2.3.0-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.0-javadoc.jar))
 
 Setup
 ============
