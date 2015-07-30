@@ -2,7 +2,7 @@
 
 ## Development
 
-[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.0...master)
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3...master)
 
 ## v2.3.0 - July 30th, 2015
  * [Servlet Filter recording the number of SQL queries](https://github.com/bedrin/jdbc-sniffer/issues/51)
