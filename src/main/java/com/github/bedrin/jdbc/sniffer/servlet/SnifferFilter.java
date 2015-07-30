@@ -11,6 +11,26 @@ import java.io.IOException;
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
  * as a 'X-Sql-Queries' header in response.
+ *
+ * It also can inject an icon with a number of executed queries to each HTML page
+ * This feature is experimental and can be enabled using inject-html filter parameter
+ *
+ * Example of web.xml:
+ * <pre>
+ *   <filter>
+ *        <filter-name>sniffer</filter-name>
+ *        <filter-class>com.github.bedrin.jdbc.sniffer.servlet.SnifferFilter</filter-class>
+ *        <init-param>
+ *            <param-name>inject-html</param-name>
+ *            <param-value>true</param-value>
+ *        </init-param>
+ *    </filter>
+ *    <filter-mapping>
+ *        <filter-name>sniffer</filter-name>
+ *        <url-pattern>/*</url-pattern>
+ *    </filter-mapping>
+ * </pre>
+ *
  * @since 2.3.0
  */
 public class SnifferFilter implements Filter {
@@ -22,9 +42,14 @@ public class SnifferFilter implements Filter {
         if (null != injectHtml) {
             this.injectHtml = Boolean.parseBoolean(injectHtml);
         }
+        String enabled = filterConfig.getInitParameter("enabled");
+        if (null != enabled) {
+            this.enabled = Boolean.parseBoolean(enabled);
+        }
     }
 
-    private boolean injectHtml = false;
+    protected boolean injectHtml = false;
+    protected boolean enabled = true;
 
     public final static String HTML_START =
             "<div id=\"jdbc-sniffer-icon\" style=\"color:red;text-align:center;font-weight:bold;position:fixed;right:20px;bottom:20px;width:24px;height:24px;background-size:100%;z-index:9999999990;opacity:0.2;" +
@@ -32,6 +57,11 @@ public class SnifferFilter implements Filter {
 
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
+
+        if (!enabled) {
+            chain.doFilter(request, response);
+            return;
+        }
 
         BufferedServletResponseWrapper responseWrapper = null;
 
@@ -111,6 +141,22 @@ public class SnifferFilter implements Filter {
 
     public void destroy() {
 
+    }
+
+    public boolean isInjectHtml() {
+        return injectHtml;
+    }
+
+    public void setInjectHtml(boolean injectHtml) {
+        this.injectHtml = injectHtml;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
 }

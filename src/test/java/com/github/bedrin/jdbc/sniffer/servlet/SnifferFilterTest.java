@@ -17,9 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -57,6 +55,25 @@ public class SnifferFilterTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+
+    }
+
+
+    @Test
+    public void testDisabledFilterOneQuery() throws IOException, ServletException {
+
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(false);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertFalse(httpServletResponse.containsHeader(SnifferFilter.HEADER_NAME));
 
     }
 
