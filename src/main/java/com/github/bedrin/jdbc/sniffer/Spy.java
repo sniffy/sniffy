@@ -4,10 +4,9 @@ import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
 
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.github.bedrin.jdbc.sniffer.Sniffer.DEFAULT_THREAD_MATCHER;
 import static com.github.bedrin.jdbc.sniffer.Query.ANY;
@@ -16,7 +15,6 @@ import static com.github.bedrin.jdbc.sniffer.util.ExceptionUtil.throwException;
 
 /**
  * Spy holds a number of queries which were executed at some point of time and uses it as a base for further assertions
- * todo: we have some kindergarten level of multithreading implementation here. Should we do some rocket science instead? ConcurrentLinkedQueue ?
  * @see Sniffer#spy()
  * @see Sniffer#expect(int)
  * @since 2.0
@@ -26,22 +24,22 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private Counter initialCount;
     private Counter initialThreadLocalCount;
 
-    private final List<StatementMetaData> executedStatements = new LinkedList<StatementMetaData>();
+    private volatile Collection<StatementMetaData> executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
     private final WeakReference<Spy> selfReference;
     private final Thread owner;
 
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
 
-    synchronized void addExecutedStatement(StatementMetaData statementMetaData) {
+    void addExecutedStatement(StatementMetaData statementMetaData) {
         executedStatements.add(statementMetaData);
     }
 
-    synchronized void resetExecutedStatements() {
-        executedStatements.clear();
+    void resetExecutedStatements() {
+        executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
     }
 
-    synchronized List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
+    List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
         List<StatementMetaData> statements;
         switch (threadMatcher) {
             case CURRENT:
@@ -62,9 +60,9 @@ public class Spy<C extends Spy<C>> implements Closeable {
                 break;
             case ANY:
             default:
-                statements = executedStatements;
+                statements = new ArrayList<StatementMetaData>(executedStatements);
         }
-        return statements;
+        return Collections.unmodifiableList(statements);
     }
 
     Spy() {
@@ -916,7 +914,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
             int numQueries = executedStatements(threadMatcher, query);
 
-            if (numQueries > maximumQueries || numQueries < minimumQueries) synchronized (Spy.this) {
+            if (numQueries > maximumQueries || numQueries < minimumQueries) {
                 throw new WrongNumberOfQueriesError(
                         threadMatcher,
                         minimumQueries, maximumQueries, numQueries,
