@@ -38,7 +38,7 @@ public class Sniffer {
         return Collections.unmodifiableList(registeredSpies);
     }
 
-    static synchronized void notifyListeners(String sql) {
+    static synchronized void notifyListeners(StatementMetaData statementMetaData) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -46,7 +46,7 @@ public class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addExecutedSql(sql);
+                spy.addExecutedStatement(statementMetaData);
             }
         }
     }
@@ -74,7 +74,7 @@ public class Sniffer {
         THREAD_LOCAL_COUNTER.get().executeStatement(statementMetaData.query);
 
         // notify listeners
-        notifyListeners(sql);
+        notifyListeners(statementMetaData);
     }
 
     /**
