@@ -39,7 +39,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
     }
 
-    List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
+    public List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
         List<StatementMetaData> statements;
         switch (threadMatcher) {
             case CURRENT:

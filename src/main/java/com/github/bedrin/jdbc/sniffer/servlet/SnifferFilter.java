@@ -3,10 +3,19 @@ package com.github.bedrin.jdbc.sniffer.servlet;
 import com.github.bedrin.jdbc.sniffer.Sniffer;
 import com.github.bedrin.jdbc.sniffer.Spy;
 import com.github.bedrin.jdbc.sniffer.Threads;
+import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
+import com.github.bedrin.jdbc.sniffer.util.LruCache;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
@@ -38,6 +47,7 @@ import java.io.IOException;
 public class SnifferFilter implements Filter {
 
     public final static String HEADER_NAME = "X-Sql-Queries";
+    public static final String JAVASCRIPT_URI = "/monitor.js";
 
     public void init(FilterConfig filterConfig) throws ServletException {
         String injectHtml = filterConfig.getInitParameter("inject-html");
@@ -48,14 +58,28 @@ public class SnifferFilter implements Filter {
         if (null != enabled) {
             this.enabled = Boolean.parseBoolean(enabled);
         }
+        contextPath = filterConfig.getServletContext().getContextPath();
+
+        try {
+            monitorJs = loadJavaScript();
+        } catch (IOException e) {
+            throw new ServletException(e);
+        }
+
     }
 
     protected boolean injectHtml = false;
+
     protected boolean enabled = true;
 
-    public final static String HTML_START =
-            "<div id=\"jdbc-sniffer-icon\" style=\"color:red;text-align:center;font-weight:bold;position:fixed;right:20px;bottom:20px;width:24px;height:24px;background-size:100%;z-index:9999999990;opacity:1.0;" +
-                    "background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAADAklEQVRIibWWzWscdRzGP59hCEGWEEIstZYQQntICbnqxYuI4E0EPcQ/QQ9eJd7s4lEEUfCil+5JL8WLJ98u6qmEkMUXqgQsNYRYllJKCPN4mNmd2aTZouBv2d1nZn6/5/v6fHcFGOxdB10GNoCNwFXCKuSiupRkAZxTCpICrCLHkJFwGDgQ94FfgT1gl3Bn69o2Dvb6a8i7wAvAcqCQdgXw3+FKOAK+S/J2ibwBbI0JTx/yFB5fzMAFYRl5Rb1dAkXX3RBE7IQxHVFqsm6I52BhvpyKT3CK7uxy4vLZ3DwKFy3fKc/OWWk2pXnNxAkFUJFuMrvRnv1sTraXM7BIAXyPHpzNXxvnNBYUdTbGO8DXAtwYXr8sPg88B2wCVwJLj0rvjHUI/ELYQb4Fvtla377rYNhfS3L4+rV3Rt3dg2G/l3DRWhs9pSR1zRIq5RgYEY6Qg6317fvd8zeG/UVh2cGw/wHwMuGHmB/F3YQ/lFGSh8ix8QSppitkAZTAXMK8spiwhmwIz0CeBT8vSUBXkBXxNQBrspFwL/AAeUA4QaqQohZfSuITSk+zkLCgtppCEooSrcZOpS1oEVgUF22aoyOVutQJ2FQntMKcbK7FWkITuh3LnVym86yma1xoGGdi6jExKU7bKZnyeMr7tN+PxTAqgfeAv0heRTeSLE+8bFg7UbdpoXtzgquQA3UX+CLJZyVwAnwEfpKwhF4CrggrwFPAEtID5gllasGfBB4KI+Ao+CdhX/lNvdu0bqWWJeRN8GnkK+En4NbW+vYt/sMa7PVBFjEvgi8BvzsY9t8H3mpGdYXuQ24b9pFDwt/gCDkmnDRcZcic2kvyJHihbvOsES7VI0iAD8uJ+TqHhbAaXG1SQWwfT+7RGeu2Az6d35E05eoI43/oImsDx2OTCfWYjQ1uzHVw3UVjS4/DVAXwKeRL5F7trnVamvdEaGM8FqKeg6kCRyQ3gY8FGAz7BeEysAnZRK9St+kFYAno0aSzHl0h9QC8b012AOyjPwM7wM74b8s/Owp6BPc7ajsAAAAASUVORK5CYII=);\">";
+    protected byte[] monitorJs;
+
+    protected String contextPath;
+
+    // TODO: consider replacing with some concurrent collection instead
+    protected Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
+                new LruCache<String, List<StatementMetaData>>(10000)
+    );
 
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -65,10 +89,27 @@ public class SnifferFilter implements Filter {
             return;
         }
 
+        if (injectHtml) {
+            HttpServletRequest httpRequest = (HttpServletRequest) request;
+            String path = httpRequest.getRequestURI().substring(contextPath.length());
+            if (JAVASCRIPT_URI.equals(path)) {
+                response.setContentType("application/javascript");
+                response.setContentLength(monitorJs.length);
+
+                ServletOutputStream outputStream = response.getOutputStream();
+                outputStream.write(monitorJs);
+                outputStream.flush();
+
+                return;
+            }
+        }
+
         BufferedServletResponseWrapper responseWrapper = null;
 
+        final Spy spy = Sniffer.spy();
+        final String requestId = UUID.randomUUID().toString();
+
         try {
-            final Spy spy = Sniffer.spy();
             responseWrapper = new BufferedServletResponseWrapper((HttpServletResponse) response);
 
             responseWrapper.addFlushResponseListener(new FlushResponseListener() {
@@ -84,13 +125,15 @@ public class SnifferFilter implements Filter {
                             if (contentLength > 0) {
                                 wrapper.setContentLength(contentLength + maximumInjectSize());
                             }
+                            // add request id
+                            response.addHeader("X-Request-Id", requestId);
                             // inject html at the very end of output stream
                             wrapper.addCloseResponseListener(new CloseResponseListener() {
                                 @Override
                                 public void beforeClose(HttpServletResponse response, BufferedServletResponseWrapper wrapper) throws IOException {
                                     BufferedServletOutputStream bufferedServletOutputStream = wrapper.getBufferedServletOutputStream();
                                     bufferedServletOutputStream.write(
-                                            generateAndPadHtml(spy.executedStatements(Threads.CURRENT)).getBytes()
+                                            generateAndPadHtml(spy.executedStatements(Threads.CURRENT), requestId).getBytes()
                                     );
                                     bufferedServletOutputStream.flush();
                                 }
@@ -113,32 +156,49 @@ public class SnifferFilter implements Filter {
             responseWrapper.flush();
         }
 
+        cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
+
     }
 
     private static int MAXIMUM_INJECT_SIZE;
 
-    protected static int maximumInjectSize() {
+    protected int maximumInjectSize() {
         if (MAXIMUM_INJECT_SIZE == 0) {
-            MAXIMUM_INJECT_SIZE = generateHtml(Integer.MAX_VALUE).length();
+            MAXIMUM_INJECT_SIZE = generateHtml(Integer.MAX_VALUE, UUID.randomUUID().toString()).length();
         }
         return MAXIMUM_INJECT_SIZE;
     }
 
-    protected static String generateAndPadHtml(int executedQueries) {
-        StringBuilder sb = generateHtml(executedQueries);
+    protected String generateAndPadHtml(int executedQueries, String requestId) {
+        StringBuilder sb = generateHtml(executedQueries, requestId);
         for (int i = sb.length(); i < maximumInjectSize(); i++) {
             sb.append(" ");
         }
         return sb.toString();
     }
 
-    protected static StringBuilder generateHtml(int executedQueries) {
-        return new StringBuilder(HTML_START).
+    /**
+     * Generates following HTML snippet
+     * <pre>
+     * {@code
+     * <div style="display:none!important" id="jdbc-sniffer" data-sql-queries="5" data-request-id="abcd"></div>
+     * <script type="application-javascript" src=""></script>
+     * }
+     * </pre>
+     * @param executedQueries
+     * @param requestId
+     * @return
+     */
+    protected StringBuilder generateHtml(int executedQueries, String requestId) {
+        return new StringBuilder().
+                append("<div style=\"display:none!important\" id=\"jdbc-sniffer\" data-sql-queries=\"").
                 append(executedQueries).
-                append("</div>").
-                append("<script type=\"application/javascript\">window.document.sqlQueries=").
-                append(executedQueries).
-                append(";</script>");
+                append("\" data-request-id=\"").
+                append(requestId).
+                append("\"></div>").
+                append("<script type=\"application/javascript\" src=\"").
+                append(contextPath + JAVASCRIPT_URI).
+                append("\"></script>");
     }
 
     public void destroy() {
@@ -159,6 +219,24 @@ public class SnifferFilter implements Filter {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    protected static byte[] loadJavaScript() throws IOException {
+        InputStream is = null;
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            is = SnifferFilter.class.getResourceAsStream("monitor.js");
+            byte[] buff = new byte[1024];
+            int count;
+            while ((count = is.read(buff)) > 0) {
+                baos.write(buff, 0, count);
+            }
+            return baos.toByteArray();
+        } finally {
+            if (null != is) {
+                is.close();
+            }
+        }
     }
 
 }
