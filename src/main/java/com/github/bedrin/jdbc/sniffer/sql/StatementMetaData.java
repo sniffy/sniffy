@@ -2,15 +2,29 @@ package com.github.bedrin.jdbc.sniffer.sql;
 
 import com.github.bedrin.jdbc.sniffer.Query;
 
+/**
+ * Represents an executed query - actual SQL, query type (SELECT, INSERT, e.t.c.) and the calling thread
+ */
 public class StatementMetaData {
 
+    public final String sql;
     public final Query query;
+    public final long elapsedTime;
+    public final Thread owner;
 
-    public StatementMetaData(Query query) {
+
+    protected StatementMetaData(String sql, Query query, long elapsedTime) {
+        this.sql = sql;
         this.query = query;
+        this.elapsedTime = elapsedTime;
+        this.owner = Thread.currentThread();
     }
 
     public static StatementMetaData parse(String sql) {
+        return parse(sql, -1);
+    }
+
+    public static StatementMetaData parse(String sql, long elapsedTime) {
 
         if (null == sql) return null;
 
@@ -34,7 +48,7 @@ public class StatementMetaData {
             query = Query.OTHER;
         }
 
-        return new StatementMetaData(query);
+        return new StatementMetaData(sql, query, elapsedTime);
     }
 
 }

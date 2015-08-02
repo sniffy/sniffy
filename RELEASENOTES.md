@@ -2,7 +2,13 @@
 
 ## Development
 
-[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3...master)
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.1...master)
+
+## v2.3.1 - August 3rd, 2015
+ * [Servlet Filter - view executed queries](https://github.com/bedrin/jdbc-sniffer/issues/54)
+ * [Sniffer shows queries from all threads on error](https://github.com/bedrin/jdbc-sniffer/issues/43)
+ 
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3...2.3.1)
 
 ## v2.3.0 - July 30th, 2015
  * [Servlet Filter recording the number of SQL queries](https://github.com/bedrin/jdbc-sniffer/issues/51)
