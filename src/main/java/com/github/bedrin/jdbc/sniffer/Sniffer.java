@@ -64,12 +64,12 @@ public class Sniffer {
 
     };
 
-    static void executeStatement(String sql, long nanos) {
+    static void executeStatement(String sql, long elapsedTime) {
         // log query
-        QueryLogger.logQuery(sql, nanos);
+        QueryLogger.logQuery(sql, elapsedTime);
 
         // increment counters
-        StatementMetaData statementMetaData = StatementMetaData.parse(sql);
+        StatementMetaData statementMetaData = StatementMetaData.parse(sql, elapsedTime);
         COUNTER.executeStatement(statementMetaData.query);
         THREAD_LOCAL_COUNTER.get().executeStatement(statementMetaData.query);
 
