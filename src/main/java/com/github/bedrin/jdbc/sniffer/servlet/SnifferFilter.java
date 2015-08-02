@@ -7,15 +7,9 @@ import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
 import com.github.bedrin.jdbc.sniffer.util.LruCache;
 
 import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
@@ -50,6 +44,8 @@ public class SnifferFilter implements Filter {
     public static final String JAVASCRIPT_URI = "/jdbcsniffer.min.js";
     public static final String CSS_URI = "/jdbcsniffer.css";
 
+    private SnifferServlet snifferServlet;
+
     public void init(FilterConfig filterConfig) throws ServletException {
         String injectHtml = filterConfig.getInitParameter("inject-html");
         if (null != injectHtml) {
@@ -61,16 +57,8 @@ public class SnifferFilter implements Filter {
         }
         contextPath = filterConfig.getServletContext().getContextPath();
 
-        try {
-            javascript = loadJavaScript();
-        } catch (IOException e) {
-            throw new ServletException(e);
-        }
-        try {
-            css = loadCss();
-        } catch (IOException e) {
-            throw new ServletException(e);
-        }
+        snifferServlet = new SnifferServlet(cache);
+        snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "jdbc-sniffer"));
 
     }
 
@@ -78,37 +66,12 @@ public class SnifferFilter implements Filter {
 
     protected boolean enabled = true;
 
-    protected byte[] javascript;
-    protected byte[] css;
-
     protected String contextPath;
 
     // TODO: consider replacing with some concurrent collection instead
     protected Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
                 new LruCache<String, List<StatementMetaData>>(10000)
     );
-
-    private byte[] getStatementsJson(String requestId) {
-        List<StatementMetaData> statements = cache.get(requestId);
-        if (null == statements) {
-            return null;
-        } else {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[");
-            for (StatementMetaData statement : statements) {
-                if (sb.length() > 1) {
-                    sb.append(",");
-                }
-                sb.
-                        append("{").
-                        append("\"query\":\"").append(statement.sql).append("\",").
-                        append("\"time\":").append(statement.elapsedTime / 1000 / 1000).
-                        append("}");
-            }
-            sb.append("]");
-            return sb.toString().getBytes();
-        }
-    }
 
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -119,44 +82,8 @@ public class SnifferFilter implements Filter {
         }
 
         if (injectHtml) {
-            HttpServletRequest httpRequest = (HttpServletRequest) request;
-            HttpServletResponse httpResponse = (HttpServletResponse) response;
-            String path = httpRequest.getRequestURI().substring(contextPath.length());
-            if (JAVASCRIPT_URI.equals(path)) {
-                response.setContentType("application/javascript");
-                response.setContentLength(javascript.length);
-
-                ServletOutputStream outputStream = response.getOutputStream();
-                outputStream.write(javascript);
-                outputStream.flush();
-
-                return;
-            } else if (CSS_URI.equals(path)) {
-                response.setContentType("text/css");
-                response.setContentLength(css.length);
-
-                ServletOutputStream outputStream = response.getOutputStream();
-                outputStream.write(css);
-                outputStream.flush();
-
-                return;
-            } else if (path.startsWith("/request/")) {
-                byte[] statements = getStatementsJson(path.substring("/request/".length()));
-
-                if (null == statements) {
-                    httpResponse.setStatus(HttpServletResponse.SC_NO_CONTENT);
-                    httpResponse.flushBuffer();
-                } else {
-                    response.setContentType("application/json");
-                    response.setContentLength(statements.length);
-
-                    ServletOutputStream outputStream = response.getOutputStream();
-                    outputStream.write(statements);
-                    outputStream.flush();
-                }
-
-                return;
-            }
+            snifferServlet.service(request, response);
+            if (response.isCommitted()) return;
         }
 
         BufferedServletResponseWrapper responseWrapper = null;
@@ -246,12 +173,11 @@ public class SnifferFilter implements Filter {
      */
     protected StringBuilder generateHtml(int executedQueries, String requestId) {
         return new StringBuilder().
-                append("<div style=\"display:none!important\" id=\"jdbc-sniffer\" data-sql-queries=\"").
+                append("<script id=\"jdbc-sniffer\" type=\"application/javascript\" data-sql-queries=\"").
                 append(executedQueries).
                 append("\" data-request-id=\"").
                 append(requestId).
-                append("\"></div>").
-                append("<script id=\"jdbc-sniffer-script\" type=\"application/javascript\" src=\"").
+                append("\" src=\"").
                 append(contextPath).
                 append(JAVASCRIPT_URI).
                 append("\"></script>");
@@ -275,42 +201,6 @@ public class SnifferFilter implements Filter {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    protected static byte[] loadJavaScript() throws IOException {
-        InputStream is = null;
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            is = SnifferFilter.class.getResourceAsStream("jdbcsniffer.min.js");
-            byte[] buff = new byte[1024];
-            int count;
-            while ((count = is.read(buff)) > 0) {
-                baos.write(buff, 0, count);
-            }
-            return baos.toByteArray();
-        } finally {
-            if (null != is) {
-                is.close();
-            }
-        }
-    }
-
-    protected static byte[] loadCss() throws IOException {
-        InputStream is = null;
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            is = SnifferFilter.class.getResourceAsStream("jdbcsniffer.css");
-            byte[] buff = new byte[1024];
-            int count;
-            while ((count = is.read(buff)) > 0) {
-                baos.write(buff, 0, count);
-            }
-            return baos.toByteArray();
-        } finally {
-            if (null != is) {
-                is.close();
-            }
-        }
     }
 
 }
