@@ -47,7 +47,7 @@
 
 <p>JDBC Sniffer counts the number of executed SQL queries and provides an API for validating them
 It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
-Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue">N+1 problem</a> at easrly stages </p>
+Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue">N+1 problem</a> at early stages </p>
 
 <div class="highlight highlight-java"><pre><span class="pl-k">try</span> (<span class="pl-smi">Spy</span> s <span class="pl-k">=</span> <span class="pl-smi">Sniffer</span><span class="pl-k">.</span>expectAtMostOnce(<span class="pl-smi">Query</span><span class="pl-c1"><span class="pl-k">.</span>SELECT</span>)<span class="pl-k">.</span>expectNever(<span class="pl-smi">Threads</span><span class="pl-c1"><span class="pl-k">.</span>OTHERS</span>);
      <span class="pl-smi">Statement</span> statement <span class="pl-k">=</span> connection<span class="pl-k">.</span>createStatement()) {
@@ -55,6 +55,30 @@ Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questi
     <span class="pl-c">// JDBC Sniffer will throw an Exception if you execute query other than SELECT or uncomment line below</span>
     <span class="pl-c">//statement.execute("SELECT 1 FROM DUAL");</span>
 }</pre></div>
+
+<p>You can also use JDBC Sniffer in your test environments to see the number of SQL queries executed by each HTTP request.
+Just add it to your <code>web.xml</code> file:</p>
+
+<div class="highlight highlight-xml"><pre>&lt;<span class="pl-ent">filter</span>&gt;
+    &lt;<span class="pl-ent">filter-name</span>&gt;sniffer&lt;/<span class="pl-ent">filter-name</span>&gt;
+    &lt;<span class="pl-ent">filter-class</span>&gt;com.github.bedrin.jdbc.sniffer.servlet.SnifferFilter&lt;/<span class="pl-ent">filter-class</span>&gt;
+    &lt;<span class="pl-ent">init-param</span>&gt;
+        &lt;<span class="pl-ent">param-name</span>&gt;inject-html&lt;/<span class="pl-ent">param-name</span>&gt;
+        &lt;<span class="pl-ent">param-value</span>&gt;true&lt;/<span class="pl-ent">param-value</span>&gt;
+    &lt;/<span class="pl-ent">init-param</span>&gt;
+&lt;/<span class="pl-ent">filter</span>&gt;
+&lt;<span class="pl-ent">filter-mapping</span>&gt;
+    &lt;<span class="pl-ent">filter-name</span>&gt;sniffer&lt;/<span class="pl-ent">filter-name</span>&gt;
+    &lt;<span class="pl-ent">url-pattern</span>&gt;/*&lt;/<span class="pl-ent">url-pattern</span>&gt;
+&lt;/<span class="pl-ent">filter-mapping</span>&gt;</pre></div>
+
+<p>Restart your server and you will see the number of queries in bottom right corner of your app:</p>
+
+<p><img src="https://bedrin.github.io/jdbc-sniffer/SnifferFilterInjectHtml.png" alt="SnifferFilterInjectHtml"></p>
+
+<p>Click on the icon to see the actual queries and their elapsed time:</p>
+
+<p><img src="https://bedrin.github.io/jdbc-sniffer/SnifferFilterViewQueries.png" alt="SnifferFilterViewQueries.png"></p>
 
 <h1>
 <a id="maven" class="anchor" href="#maven" aria-hidden="true"><span class="octicon octicon-link"></span></a>Maven</h1>
@@ -64,13 +88,13 @@ Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questi
 <div class="highlight highlight-xml"><pre>&lt;<span class="pl-ent">dependency</span>&gt;
     &lt;<span class="pl-ent">groupId</span>&gt;com.github.bedrin&lt;/<span class="pl-ent">groupId</span>&gt;
     &lt;<span class="pl-ent">artifactId</span>&gt;jdbc-sniffer&lt;/<span class="pl-ent">artifactId</span>&gt;
-    &lt;<span class="pl-ent">version</span>&gt;2.2.3&lt;/<span class="pl-ent">version</span>&gt;
+    &lt;<span class="pl-ent">version</span>&gt;2.3.1&lt;/<span class="pl-ent">version</span>&gt;
 &lt;/<span class="pl-ent">dependency</span>&gt;</pre></div>
 
 <p>For Gradle users:</p>
 
 <div class="highlight highlight-javascript"><pre>dependencies {
-    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.2.3<span class="pl-pds">'</span></span>
+    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.3.1<span class="pl-pds">'</span></span>
 }</pre></div>
 
 <h1>
@@ -80,11 +104,11 @@ Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questi
 
 <ul>
 <li>
-<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.3/jdbc-sniffer-2.2.3.jar">jdbc-sniffer-2.2.3.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.3.jar">bintray mirror</a>)</li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.1/jdbc-sniffer-2.3.1.jar">jdbc-sniffer-2.3.1.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.1.jar">bintray mirror</a>)</li>
 <li>
-<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.3/jdbc-sniffer-2.2.3-sources.jar">jdbc-sniffer-2.2.3-sources.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.3-sources.jar">bintray mirror</a>)</li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.1/jdbc-sniffer-2.3.1-sources.jar">jdbc-sniffer-2.3.1-sources.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.1-sources.jar">bintray mirror</a>)</li>
 <li>
-<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.2.3/jdbc-sniffer-2.2.3-javadoc.jar">jdbc-sniffer-2.2.3-javadoc.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.2.3-javadoc.jar">bintray mirror</a>)</li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.1/jdbc-sniffer-2.3.1-javadoc.jar">jdbc-sniffer-2.3.1-javadoc.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.1-javadoc.jar">bintray mirror</a>)</li>
 </ul>
 
 <h1>
@@ -93,6 +117,31 @@ Especially it's useful to catch the ORM <a href="http://stackoverflow.com/questi
 <p>Simply add jdbc-sniffer.jar to your classpath and add <code>sniffer:</code> prefix to the JDBC connection url
 For example <code>jdbc:h2:~/test</code> should be changed to <code>sniffer:jdbc:h2:mem:</code>
 The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockDriver</code></p>
+
+<p>HTML injection is configured in <code>web.xml</code> file:</p>
+
+<div class="highlight highlight-xml"><pre>&lt;<span class="pl-ent">filter</span>&gt;
+    &lt;<span class="pl-ent">filter-name</span>&gt;sniffer&lt;/<span class="pl-ent">filter-name</span>&gt;
+    &lt;<span class="pl-ent">filter-class</span>&gt;com.github.bedrin.jdbc.sniffer.servlet.SnifferFilter&lt;/<span class="pl-ent">filter-class</span>&gt;
+    &lt;<span class="pl-ent">init-param</span>&gt;
+        <span class="pl-c">&lt;!-- </span>
+<span class="pl-c">        Enables injection of JDBC Sniffer toolbar to HTML</span>
+<span class="pl-c">        If disabled the html remains untouched</span>
+<span class="pl-c">        You still can get the number of executed queries from X-Sql-Queries HTTP header</span>
+<span class="pl-c">         --&gt;</span>
+        &lt;<span class="pl-ent">param-name</span>&gt;inject-html&lt;/<span class="pl-ent">param-name</span>&gt;
+        &lt;<span class="pl-ent">param-value</span>&gt;true&lt;/<span class="pl-ent">param-value</span>&gt; <span class="pl-c">&lt;!-- default: false --&gt;</span>
+    &lt;/<span class="pl-ent">init-param</span>&gt;
+    &lt;<span class="pl-ent">init-param</span>&gt;
+        <span class="pl-c">&lt;!-- Allows disabling the JDBC Sniffer filter in web.xml --&gt;</span>
+        &lt;<span class="pl-ent">param-name</span>&gt;enabled&lt;/<span class="pl-ent">param-name</span>&gt;
+        &lt;<span class="pl-ent">param-value</span>&gt;true&lt;/<span class="pl-ent">param-value</span>&gt; <span class="pl-c">&lt;!-- default: true --&gt;</span>
+    &lt;/<span class="pl-ent">init-param</span>&gt;
+&lt;/<span class="pl-ent">filter</span>&gt;
+&lt;<span class="pl-ent">filter-mapping</span>&gt;
+    &lt;<span class="pl-ent">filter-name</span>&gt;sniffer&lt;/<span class="pl-ent">filter-name</span>&gt;
+    &lt;<span class="pl-ent">url-pattern</span>&gt;/*&lt;/<span class="pl-ent">url-pattern</span>&gt;
+&lt;/<span class="pl-ent">filter-mapping</span>&gt;</pre></div>
 
 <h1>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h1>
