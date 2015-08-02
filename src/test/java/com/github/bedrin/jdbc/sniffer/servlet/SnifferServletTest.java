@@ -96,4 +96,32 @@ public class SnifferServletTest {
 
     }
 
+    @Test
+    public void testGetMissingResource() throws Exception {
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic/foobar").
+                buildRequest(servletContext);
+
+        snifferServlet.service(request, response);
+
+        assertFalse(response.isCommitted());
+
+    }
+
+    @Test
+    public void testPostMissingResource() throws Exception {
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                post("/petclinic/foobar").
+                buildRequest(servletContext);
+
+        snifferServlet.service(request, response);
+
+        assertFalse(response.isCommitted());
+
+    }
+
 }

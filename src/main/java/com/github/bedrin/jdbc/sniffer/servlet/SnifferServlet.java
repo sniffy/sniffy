@@ -45,7 +45,7 @@ public class SnifferServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String path = request.getRequestURI().substring(contextPath.length());
 
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
