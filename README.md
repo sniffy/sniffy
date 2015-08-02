@@ -41,6 +41,10 @@ Restart your server and you will see the number of queries in bottom right corne
 
 ![SnifferFilterInjectHtml](https://bedrin.github.io/jdbc-sniffer/SnifferFilterInjectHtml.png)
 
+Click on the icon to see the actual queries and their elapsed time:
+
+![SnifferFilterViewQueries.png](https://bedrin.github.io/jdbc-sniffer/SnifferFilterViewQueries.png)
+
 Maven
 ============
 JDBC Sniffer is available from Maven Central repository
@@ -71,6 +75,32 @@ Setup
 Simply add jdbc-sniffer.jar to your classpath and add `sniffer:` prefix to the JDBC connection url
 For example `jdbc:h2:~/test` should be changed to `sniffer:jdbc:h2:mem:`
 The sniffer JDBC driver class name is `com.github.bedrin.jdbc.sniffer.MockDriver`
+
+HTML injection is configured in `web.xml` file:
+```xml
+<filter>
+    <filter-name>sniffer</filter-name>
+    <filter-class>com.github.bedrin.jdbc.sniffer.servlet.SnifferFilter</filter-class>
+    <init-param>
+        <!-- 
+        Enables injection of JDBC Sniffer toolbar to HTML
+        If disabled the html remains untouched
+        You still can get the number of executed queries from X-Sql-Queries HTTP header
+         -->
+        <param-name>inject-html</param-name>
+        <param-value>true</param-value> <!-- default: false -->
+    </init-param>
+    <init-param>
+        <!-- Allows disabling the JDBC Sniffer filter in web.xml -->
+        <param-name>enabled</param-name>
+        <param-value>true</param-value> <!-- default: true -->
+    </init-param>
+</filter>
+<filter-mapping>
+    <filter-name>sniffer</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+```
 
 Usage
 ============
