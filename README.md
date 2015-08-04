@@ -95,6 +95,11 @@ HTML injection is configured in `web.xml` file:
         <param-name>enabled</param-name>
         <param-value>true</param-value> <!-- default: true -->
     </init-param>
+    <init-param>
+        <!-- Allows excluding some of the request URL's from Sniffer filter -->
+        <param-name>exclude-pattern</param-name>
+        <param-value>^/vets.html$</param-value> <!-- optional -->
+    </init-param>
 </filter>
 <filter-mapping>
     <filter-name>sniffer</filter-name>
