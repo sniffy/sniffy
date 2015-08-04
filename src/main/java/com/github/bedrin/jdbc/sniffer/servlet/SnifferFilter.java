@@ -96,19 +96,18 @@ public class SnifferFilter implements Filter {
 
             responseWrapper.addFlushResponseListener(new FlushResponseListener() {
                 @Override
-                public void beforeFlush(HttpServletResponse response, BufferedServletResponseWrapper wrapper) throws IOException {
+                public void beforeFlush(HttpServletResponse response, BufferedServletResponseWrapper wrapper, String mimeTypeMagic) throws IOException {
                     response.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
+                    response.addHeader("X-Request-Id", requestId);
                     if (injectHtml) {
                         String contentType = response.getContentType();
                         String contentEncoding = wrapper.getContentEncoding();
-                        if (null == contentEncoding && null != contentType && contentType.startsWith("text/html")) {
+                        if (null == contentEncoding && null != contentType && contentType.startsWith("text/html") && !"application/xml".equals(mimeTypeMagic)) {
                             // adjust content length with the size of injected content
                             int contentLength = wrapper.getContentLength();
                             if (contentLength > 0) {
                                 wrapper.setContentLength(contentLength + maximumInjectSize());
                             }
-                            // add request id
-                            response.addHeader("X-Request-Id", requestId);
                             // inject html at the very end of output stream
                             wrapper.addCloseResponseListener(new CloseResponseListener() {
                                 @Override
