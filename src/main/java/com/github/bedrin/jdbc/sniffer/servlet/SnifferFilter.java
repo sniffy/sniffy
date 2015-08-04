@@ -113,6 +113,7 @@ public class SnifferFilter implements Filter {
                             wrapper.addCloseResponseListener(new CloseResponseListener() {
                                 @Override
                                 public void beforeClose(HttpServletResponse response, BufferedServletResponseWrapper wrapper) throws IOException {
+                                    cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
                                     BufferedServletOutputStream bufferedServletOutputStream = wrapper.getBufferedServletOutputStream();
                                     bufferedServletOutputStream.write(
                                             generateAndPadHtml(spy.executedStatements(Threads.CURRENT), requestId).getBytes()
