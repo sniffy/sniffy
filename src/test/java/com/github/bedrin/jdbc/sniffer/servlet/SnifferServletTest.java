@@ -40,6 +40,8 @@ public class SnifferServletTest {
                 get("/petclinic/jdbcsniffer.min.js").
                 buildRequest(servletContext);
 
+        request.setContextPath("/petclinic");
+
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
@@ -54,6 +56,8 @@ public class SnifferServletTest {
         MockHttpServletRequest request = MockMvcRequestBuilders.
                 get("/petclinic/jdbcsniffer.css").
                 buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
 
         snifferServlet.service(request, response);
 
@@ -74,6 +78,8 @@ public class SnifferServletTest {
                 StatementMetaData.parse("SELECT 1 FROM DUAL", 300100999)
         ));
 
+        request.setContextPath("/petclinic");
+
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
@@ -89,6 +95,8 @@ public class SnifferServletTest {
         MockHttpServletRequest request = MockMvcRequestBuilders.
                 get("/petclinic/request/foo").
                 buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
 
         snifferServlet.service(request, response);
 

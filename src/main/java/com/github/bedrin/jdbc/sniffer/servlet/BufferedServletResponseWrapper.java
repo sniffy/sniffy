@@ -106,6 +106,17 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         return contentEncoding;
     }
 
+    private String contentType;
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    @Override
+    public void setContentType(String contentType) {
+        super.setContentType(this.contentType = contentType);
+    }
+
     // headers relates methods
 
     @Override
