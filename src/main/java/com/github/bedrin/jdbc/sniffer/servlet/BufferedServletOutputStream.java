@@ -1,8 +1,10 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
 import javax.servlet.ServletOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URLConnection;
 import java.util.Arrays;
 
 class BufferedServletOutputStream extends ServletOutputStream {
@@ -22,15 +24,20 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     @Override
     public void flush() throws IOException {
-        flushed = true;
-
-        responseWrapper.notifyBeforeFlush();
+        if (!flushed) {
+            // analyze first chunk of data
+            String mimeTypeMagic =
+                    URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.toByteArray(16)));
+            responseWrapper.notifyBeforeFlush(mimeTypeMagic);
+        }
 
         buffer.writeTo(target);
         target.flush();
 
         buffer.reset();
         responseWrapper.setCommitted();
+
+        flushed = true;
     }
 
     public void closeTarget() throws IOException {
@@ -101,8 +108,9 @@ class BufferedServletOutputStream extends ServletOutputStream {
     // TODO: flush buffer automatically after some threshold (say 100 kilobytes for start?) or analyze content-length headedr
     private static class Buffer extends ByteArrayOutputStream {
 
-
-
+        public synchronized byte[] toByteArray(int maxSize) {
+            return Arrays.copyOf(buf, Math.max(count, maxSize));
+        }
 
         public int getCapacity() {
             return null == buf ? 0 : buf.length;
