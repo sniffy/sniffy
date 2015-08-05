@@ -2,7 +2,13 @@
 
 ## Development
 
-[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.2...master)
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.3...master)
+
+## v2.3.3 - August 6th, 2015
+ * [excludes-filter disabled the SnifferServlet as well](https://github.com/bedrin/jdbc-sniffer/issues/73)
+ * [JSON with queries contains unescaped data in strings](https://github.com/bedrin/jdbc-sniffer/issues/72)
+ 
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.2...2.3.3)
 
 ## v2.3.2 - August 5th, 2015
  * [Sniffer Filter requires Servlet 2.5+](https://github.com/bedrin/jdbc-sniffer/issues/66)
