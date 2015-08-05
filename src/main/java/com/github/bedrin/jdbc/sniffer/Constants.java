@@ -24,4 +24,10 @@ public interface Constants {
      */
     int MINOR_VERSION = 3;
 
+    /**
+     * The major version of JDBC Sniffer
+     * @see Driver#getMinorVersion() ()
+     */
+    int PATCH_VERSION = 2;
+
 }

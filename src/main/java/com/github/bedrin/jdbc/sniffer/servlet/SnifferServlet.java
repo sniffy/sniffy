@@ -49,8 +49,8 @@ public class SnifferServlet extends HttpServlet {
             serveContent(response, "application/javascript", javascript);
         } else if (SnifferFilter.CSS_URI.equals(path)) {
             serveContent(response, "text/css", css);
-        } else if (path.startsWith("/request/")) {
-            byte[] statements = getStatementsJson(path.substring("/request/".length()));
+        } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
+            byte[] statements = getStatementsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
 
             if (null == statements) {
                 response.setStatus(HttpServletResponse.SC_NO_CONTENT);

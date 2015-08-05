@@ -1,8 +1,6 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
-import com.github.bedrin.jdbc.sniffer.Sniffer;
-import com.github.bedrin.jdbc.sniffer.Spy;
-import com.github.bedrin.jdbc.sniffer.Threads;
+import com.github.bedrin.jdbc.sniffer.*;
 import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
 import com.github.bedrin.jdbc.sniffer.util.LruCache;
 
@@ -42,8 +40,18 @@ import java.util.*;
 public class SnifferFilter implements Filter {
 
     public final static String HEADER_NAME = "X-Sql-Queries";
-    public static final String JAVASCRIPT_URI = "/jdbcsniffer.min.js";
-    public static final String CSS_URI = "/jdbcsniffer.css";
+
+    public static final String SNIFFER_URI_PREFIX =
+            "/jdbcsniffer/" +
+                    Constants.MAJOR_VERSION +
+                    "." +
+                    Constants.MINOR_VERSION +
+                    "." +
+                    Constants.PATCH_VERSION;
+
+    public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.min.js";
+    public static final String CSS_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.css";
+    public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
 
     private SnifferServlet snifferServlet;
 
