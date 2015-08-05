@@ -1,15 +1,15 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
-import com.github.bedrin.jdbc.sniffer.Sniffer;
-import com.github.bedrin.jdbc.sniffer.Spy;
-import com.github.bedrin.jdbc.sniffer.Threads;
+import com.github.bedrin.jdbc.sniffer.*;
 import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
 import com.github.bedrin.jdbc.sniffer.util.LruCache;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
@@ -28,6 +28,14 @@ import java.util.*;
  *            <param-name>inject-html</param-name>
  *            <param-value>true</param-value>
  *        </init-param>
+ *        <init-param>
+ *            <param-name>enabled</param-name>
+ *            <param-value>true</param-value>
+ *        </init-param>
+ *        <init-param>
+ *            <param-name>exclude-pattern</param-name>
+ *            <param-value>^/vets.html$</param-value>
+ *        </init-param>
  *    </filter>
  *    <filter-mapping>
  *        <filter-name>sniffer</filter-name>
@@ -41,8 +49,18 @@ import java.util.*;
 public class SnifferFilter implements Filter {
 
     public final static String HEADER_NAME = "X-Sql-Queries";
-    public static final String JAVASCRIPT_URI = "/jdbcsniffer.min.js";
-    public static final String CSS_URI = "/jdbcsniffer.css";
+
+    public static final String SNIFFER_URI_PREFIX =
+            "/jdbcsniffer/" +
+                    Constants.MAJOR_VERSION +
+                    "." +
+                    Constants.MINOR_VERSION +
+                    "." +
+                    Constants.PATCH_VERSION;
+
+    public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.min.js";
+    public static final String CSS_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.css";
+    public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
 
     private SnifferServlet snifferServlet;
 
@@ -55,7 +73,10 @@ public class SnifferFilter implements Filter {
         if (null != enabled) {
             this.enabled = Boolean.parseBoolean(enabled);
         }
-        contextPath = filterConfig.getServletContext().getContextPath();
+        String excludePattern = filterConfig.getInitParameter("exclude-pattern");
+        if (null != excludePattern) {
+            this.excludePattern = Pattern.compile(excludePattern);
+        }
 
         snifferServlet = new SnifferServlet(cache);
         snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "jdbc-sniffer"));
@@ -63,20 +84,27 @@ public class SnifferFilter implements Filter {
     }
 
     protected boolean injectHtml = false;
-
     protected boolean enabled = true;
-
-    protected String contextPath;
+    protected Pattern excludePattern = null;
 
     // TODO: consider replacing with some concurrent collection instead
     protected Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
-                new LruCache<String, List<StatementMetaData>>(10000)
+            new LruCache<String, List<StatementMetaData>>(10000)
     );
 
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+    public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
 
-        if (!enabled) {
+        final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+        final String contextPath = httpServletRequest.getContextPath();
+
+        if (!enabled ||
+                (null != excludePattern &&
+                        excludePattern.matcher(httpServletRequest.getRequestURI().substring(
+                                        httpServletRequest.getContextPath().length())
+                        ).matches())
+                ) {
             chain.doFilter(request, response);
             return;
         }
@@ -92,30 +120,28 @@ public class SnifferFilter implements Filter {
         final String requestId = UUID.randomUUID().toString();
 
         try {
-            responseWrapper = new BufferedServletResponseWrapper((HttpServletResponse) response);
+            responseWrapper = new BufferedServletResponseWrapper(httpServletResponse);
 
             responseWrapper.addFlushResponseListener(new FlushResponseListener() {
-                @Override
-                public void beforeFlush(HttpServletResponse response, BufferedServletResponseWrapper wrapper) throws IOException {
+                public void beforeFlush(HttpServletResponse response, BufferedServletResponseWrapper wrapper, String mimeTypeMagic) throws IOException {
                     response.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
+                    response.addHeader("X-Request-Id", requestId);
                     if (injectHtml) {
-                        String contentType = response.getContentType();
+                        String contentType = wrapper.getContentType();
                         String contentEncoding = wrapper.getContentEncoding();
-                        if (null == contentEncoding && null != contentType && contentType.startsWith("text/html")) {
+                        if (null == contentEncoding && null != contentType && contentType.startsWith("text/html") && !"application/xml".equals(mimeTypeMagic)) {
                             // adjust content length with the size of injected content
                             int contentLength = wrapper.getContentLength();
                             if (contentLength > 0) {
-                                wrapper.setContentLength(contentLength + maximumInjectSize());
+                                wrapper.setContentLength(contentLength + maximumInjectSize(contextPath));
                             }
-                            // add request id
-                            response.addHeader("X-Request-Id", requestId);
                             // inject html at the very end of output stream
                             wrapper.addCloseResponseListener(new CloseResponseListener() {
-                                @Override
                                 public void beforeClose(HttpServletResponse response, BufferedServletResponseWrapper wrapper) throws IOException {
+                                    cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
                                     BufferedServletOutputStream bufferedServletOutputStream = wrapper.getBufferedServletOutputStream();
-                                    bufferedServletOutputStream.write(
-                                            generateAndPadHtml(spy.executedStatements(Threads.CURRENT), requestId).getBytes()
+                                    bufferedServletOutputStream.write(generateAndPadHtml(
+                                                    contextPath, spy.executedStatements(Threads.CURRENT), requestId).getBytes()
                                     );
                                     bufferedServletOutputStream.flush();
                                 }
@@ -144,16 +170,16 @@ public class SnifferFilter implements Filter {
 
     private static int MAXIMUM_INJECT_SIZE;
 
-    protected int maximumInjectSize() {
+    protected static int maximumInjectSize(String contextPath) {
         if (MAXIMUM_INJECT_SIZE == 0) {
-            MAXIMUM_INJECT_SIZE = generateHtml(Integer.MAX_VALUE, UUID.randomUUID().toString()).length();
+            MAXIMUM_INJECT_SIZE = generateHtml(contextPath, Integer.MAX_VALUE, UUID.randomUUID().toString()).length();
         }
         return MAXIMUM_INJECT_SIZE;
     }
 
-    protected String generateAndPadHtml(int executedQueries, String requestId) {
-        StringBuilder sb = generateHtml(executedQueries, requestId);
-        for (int i = sb.length(); i < maximumInjectSize(); i++) {
+    protected static String generateAndPadHtml(String contextPath, int executedQueries, String requestId) {
+        StringBuilder sb = generateHtml(contextPath, executedQueries, requestId);
+        for (int i = sb.length(); i < maximumInjectSize(contextPath); i++) {
             sb.append(" ");
         }
         return sb.toString();
@@ -171,7 +197,7 @@ public class SnifferFilter implements Filter {
      * @param requestId
      * @return
      */
-    protected StringBuilder generateHtml(int executedQueries, String requestId) {
+    protected static StringBuilder generateHtml(String contextPath, int executedQueries, String requestId) {
         return new StringBuilder().
                 append("<script id=\"jdbc-sniffer\" type=\"application/javascript\" data-sql-queries=\"").
                 append(executedQueries).

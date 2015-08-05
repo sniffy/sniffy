@@ -6,6 +6,6 @@ import java.util.EventListener;
 
 interface FlushResponseListener extends EventListener {
 
-    void beforeFlush(HttpServletResponse response, BufferedServletResponseWrapper wrapper) throws IOException;
+    void beforeFlush(HttpServletResponse response, BufferedServletResponseWrapper wrapper, String mimeTypeMagic) throws IOException;
 
 }

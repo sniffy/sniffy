@@ -20,8 +20,6 @@ public class SnifferServlet extends HttpServlet {
 
     protected final Map<String, List<StatementMetaData>> cache;
 
-    protected String contextPath;
-
     protected byte[] javascript;
     protected byte[] css;
 
@@ -31,7 +29,6 @@ public class SnifferServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        contextPath = config.getServletContext().getContextPath();
         try {
             javascript = loadResource("jdbcsniffer.min.js");
         } catch (IOException e) {
@@ -46,14 +43,14 @@ public class SnifferServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String path = request.getRequestURI().substring(contextPath.length());
+        String path = request.getRequestURI().substring(request.getContextPath().length());
 
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
             serveContent(response, "application/javascript", javascript);
         } else if (SnifferFilter.CSS_URI.equals(path)) {
             serveContent(response, "text/css", css);
-        } else if (path.startsWith("/request/")) {
-            byte[] statements = getStatementsJson(path.substring("/request/".length()));
+        } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
+            byte[] statements = getStatementsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
 
             if (null == statements) {
                 response.setStatus(HttpServletResponse.SC_NO_CONTENT);

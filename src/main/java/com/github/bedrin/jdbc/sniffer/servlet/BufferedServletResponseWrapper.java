@@ -36,11 +36,15 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     }
 
     protected void notifyBeforeFlush() throws IOException {
+        notifyBeforeFlush(null);
+    }
+
+    protected void notifyBeforeFlush(String mimeTypeMagic) throws IOException {
         Iterator<FlushResponseListener> listenersIt = flushListeners.iterator();
         while (listenersIt.hasNext()) {
             FlushResponseListener listener = listenersIt.next();
             listenersIt.remove();
-            listener.beforeFlush(delegate, this);
+            listener.beforeFlush(delegate, this, mimeTypeMagic);
         }
     }
 
@@ -61,9 +65,9 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     }
 
     protected void flush() throws IOException {
-        notifyBeforeFlush();
         if (null != writer) writer.flush();
-        if (null != outputStream) outputStream.flush();
+        else if (null != outputStream) outputStream.flush();
+        else notifyBeforeFlush();
         if (null != bufferedServletOutputStream) bufferedServletOutputStream.closeTarget();
     }
 
@@ -100,6 +104,17 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     public String getContentEncoding() {
         return contentEncoding;
+    }
+
+    private String contentType;
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    @Override
+    public void setContentType(String contentType) {
+        super.setContentType(this.contentType = contentType);
     }
 
     // headers relates methods

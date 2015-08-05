@@ -8,6 +8,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.servlet.*;
@@ -28,18 +29,33 @@ public class SnifferFilterTest extends BaseTest {
 
     private MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
     private MockServletContext servletContext = new MockServletContext("/petclinic/");
-    private MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
-            get("/petclinic/foo/bar?baz").
-            buildRequest(servletContext);
+    private MockHttpServletRequest httpServletRequest =
+            MockMvcRequestBuilders.get("/petclinic/foo/bar?baz").contextPath("/petclinic").buildRequest(servletContext);
+            //new MockHttpServletRequest(servletContext, "GET", "/petclinic/foo/bar?baz");
     private SnifferFilter filter = new SnifferFilter();
 
     protected FilterConfig getFilterConfig() {
         FilterConfig filterConfig = mock(FilterConfig.class);
         when(filterConfig.getInitParameter("inject-html")).thenReturn("true");
+        when(filterConfig.getInitParameter("exclude-pattern")).thenReturn("^/baz/.*$");
         ServletContext servletContext = mock(ServletContext.class);
-        when(servletContext.getContextPath()).thenReturn("/petclinic/");
         when(filterConfig.getServletContext()).thenReturn(servletContext);
         return filterConfig;
+    }
+
+    @Test
+    public void testExcludePattern() throws IOException, ServletException {
+
+        FilterConfig filterConfig = getFilterConfig();
+        when(filterConfig.getInitParameter("exclude-pattern")).thenReturn("^/foo/ba.*$");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertFalse(httpServletResponse.getHeaderNames().contains(SnifferFilter.HEADER_NAME));
+
     }
 
     @Test
@@ -213,6 +229,43 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"jdbc-sniffer\""));
+
+    }
+
+    @Test
+    public void testDoNotInjectToXml() throws IOException, ServletException {
+
+        String actualContent = "<?xml version=\"1.0\"?>\n" +
+                "\n" +
+                "<applications location=\"PRODEXTSG\" hasPendingActions=\"false\">\n" +
+                "    <application>" +
+                "</application>\n" +
+                "    <featuredItems>\n" +
+                "        \n" +
+                "    </featuredItems>\n" +
+                "</applications>\n";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
+        assertEquals(actualContent, httpServletResponse.getContentAsString());
+        assertFalse(httpServletResponse.getContentAsString().contains("id=\"jdbc-sniffer\""));
 
     }
 
