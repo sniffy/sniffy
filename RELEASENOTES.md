@@ -2,7 +2,16 @@
 
 ## Development
 
-[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.1...master)
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.2...master)
+
+## v2.3.2 - August 5th, 2015
+ * [Sniffer Filter requires Servlet 2.5+](https://github.com/bedrin/jdbc-sniffer/issues/66)
+ * [Add ability to filter out requests](https://github.com/bedrin/jdbc-sniffer/issues/65)
+ * [Do not inject sniffer to XML documents](https://github.com/bedrin/jdbc-sniffer/issues/64)
+ * [Sniffer shows 2 queries in the icon, but the list is empty when I click on them](https://github.com/bedrin/jdbc-sniffer/issues/60)
+ * [Use version in all resources to avoid cache problems](https://github.com/bedrin/jdbc-sniffer/issues/58)
+ 
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.1...2.3.2)
 
 ## v2.3.1 - August 3rd, 2015
  * [Servlet Filter - view executed queries](https://github.com/bedrin/jdbc-sniffer/issues/54)
