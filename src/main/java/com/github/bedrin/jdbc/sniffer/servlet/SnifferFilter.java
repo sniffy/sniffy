@@ -98,13 +98,9 @@ public class SnifferFilter implements Filter {
         final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         final String contextPath = httpServletRequest.getContextPath();
+        final String relativeUrl = httpServletRequest.getRequestURI().substring(contextPath.length());
 
-        if (!enabled ||
-                (null != excludePattern &&
-                        excludePattern.matcher(httpServletRequest.getRequestURI().substring(
-                                        httpServletRequest.getContextPath().length())
-                        ).matches())
-                ) {
+        if (!enabled) {
             chain.doFilter(request, response);
             return;
         }
@@ -112,6 +108,11 @@ public class SnifferFilter implements Filter {
         if (injectHtml) {
             snifferServlet.service(request, response);
             if (response.isCommitted()) return;
+        }
+
+        if (null != excludePattern && excludePattern.matcher(relativeUrl).matches()) {
+            chain.doFilter(request, response);
+            return;
         }
 
         BufferedServletResponseWrapper responseWrapper = null;
