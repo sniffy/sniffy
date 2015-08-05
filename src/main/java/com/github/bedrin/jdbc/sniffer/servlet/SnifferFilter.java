@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
@@ -28,6 +29,14 @@ import java.util.*;
  *        <init-param>
  *            <param-name>inject-html</param-name>
  *            <param-value>true</param-value>
+ *        </init-param>
+ *        <init-param>
+ *            <param-name>enabled</param-name>
+ *            <param-value>true</param-value>
+ *        </init-param>
+ *        <init-param>
+ *            <param-name>exclude-pattern</param-name>
+ *            <param-value>^/vets.html$</param-value>
  *        </init-param>
  *    </filter>
  *    <filter-mapping>
@@ -56,6 +65,10 @@ public class SnifferFilter implements Filter {
         if (null != enabled) {
             this.enabled = Boolean.parseBoolean(enabled);
         }
+        String excludePattern = filterConfig.getInitParameter("exclude-pattern");
+        if (null != excludePattern) {
+            this.excludePattern = Pattern.compile(excludePattern);
+        }
 
         snifferServlet = new SnifferServlet(cache);
         snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "jdbc-sniffer"));
@@ -64,16 +77,26 @@ public class SnifferFilter implements Filter {
 
     protected boolean injectHtml = false;
     protected boolean enabled = true;
+    protected Pattern excludePattern = null;
 
     // TODO: consider replacing with some concurrent collection instead
     protected Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
-                new LruCache<String, List<StatementMetaData>>(10000)
+            new LruCache<String, List<StatementMetaData>>(10000)
     );
 
     public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
 
-        if (!enabled) {
+        final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+        final String contextPath = httpServletRequest.getContextPath();
+
+        if (!enabled ||
+                (null != excludePattern &&
+                        excludePattern.matcher(httpServletRequest.getRequestURI().substring(
+                                        httpServletRequest.getContextPath().length())
+                        ).matches())
+                ) {
             chain.doFilter(request, response);
             return;
         }
@@ -89,8 +112,7 @@ public class SnifferFilter implements Filter {
         final String requestId = UUID.randomUUID().toString();
 
         try {
-            responseWrapper = new BufferedServletResponseWrapper((HttpServletResponse) response);
-            final String contextPath = ((HttpServletRequest) request).getContextPath();
+            responseWrapper = new BufferedServletResponseWrapper(httpServletResponse);
 
             responseWrapper.addFlushResponseListener(new FlushResponseListener() {
                 public void beforeFlush(HttpServletResponse response, BufferedServletResponseWrapper wrapper, String mimeTypeMagic) throws IOException {
@@ -111,7 +133,7 @@ public class SnifferFilter implements Filter {
                                     cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
                                     BufferedServletOutputStream bufferedServletOutputStream = wrapper.getBufferedServletOutputStream();
                                     bufferedServletOutputStream.write(generateAndPadHtml(
-                                        contextPath, spy.executedStatements(Threads.CURRENT), requestId).getBytes()
+                                                    contextPath, spy.executedStatements(Threads.CURRENT), requestId).getBytes()
                                     );
                                     bufferedServletOutputStream.flush();
                                 }
