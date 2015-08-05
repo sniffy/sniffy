@@ -31,7 +31,7 @@ public class SnifferFilterTest extends BaseTest {
     private MockServletContext servletContext = new MockServletContext("/petclinic/");
     private MockHttpServletRequest httpServletRequest =
             MockMvcRequestBuilders.get("/petclinic/foo/bar?baz").contextPath("/petclinic").buildRequest(servletContext);
-            //new MockHttpServletRequest(servletContext, "GET", "/petclinic/foo/bar?baz");
+    //new MockHttpServletRequest(servletContext, "GET", "/petclinic/foo/bar?baz");
     private SnifferFilter filter = new SnifferFilter();
 
     protected FilterConfig getFilterConfig() {
@@ -55,6 +55,26 @@ public class SnifferFilterTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertFalse(httpServletResponse.getHeaderNames().contains(SnifferFilter.HEADER_NAME));
+
+    }
+
+    @Test
+    public void testGetSnifferJs() throws IOException, ServletException {
+
+        FilterConfig filterConfig = getFilterConfig();
+        when(filterConfig.getInitParameter("exclude-pattern")).thenReturn("^.*(\\.js|\\.css)$");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
+
+        MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
+                get("/petclinic" + SnifferFilter.JAVASCRIPT_URI).
+                contextPath("/petclinic").buildRequest(servletContext);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertFalse(httpServletResponse.getHeaderNames().contains(SnifferFilter.HEADER_NAME));
+        assertTrue(httpServletResponse.getContentLength() > 100);
 
     }
 
