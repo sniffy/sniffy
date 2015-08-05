@@ -1,6 +1,7 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
 import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
+import com.github.bedrin.jdbc.sniffer.util.StringUtil;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -79,9 +80,11 @@ public class SnifferServlet extends HttpServlet {
                 }
                 sb.
                         append("{").
-                        append("\"query\":\"").append(statement.sql).append("\",").
-                        append("\"time\":").append(
-                        String.format(Locale.ENGLISH, "%.3f", (double) statement.elapsedTime / 1000 / 1000)).
+                        append("\"query\":").
+                        append(StringUtil.escapeJsonString(statement.sql)).
+                        append(",").
+                        append("\"time\":").
+                        append(String.format(Locale.ENGLISH, "%.3f", (double) statement.elapsedTime / 1000 / 1000)).
                         append("}");
             }
             sb.append("]");

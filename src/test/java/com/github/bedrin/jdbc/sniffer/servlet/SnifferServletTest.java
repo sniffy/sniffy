@@ -89,6 +89,29 @@ public class SnifferServletTest {
     }
 
     @Test
+    public void testGetComplexRequest() throws Exception {
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
+                buildRequest(servletContext);
+
+        cache.put("foo", Collections.singletonList(
+                StatementMetaData.parse("SELECT \r\n" +
+                        "\"1\" FROM 'DUAL'", 300100999)
+        ));
+
+        request.setContextPath("/petclinic");
+
+        snifferServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertTrue(response.getContentLength() > 0);
+        assertEquals("[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"time\":300.101}]", response.getContentAsString());
+
+    }
+
+    @Test
     public void testGetRequestNotFound() throws Exception {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
