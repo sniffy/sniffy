@@ -88,13 +88,13 @@ Just add it to your <code>web.xml</code> file:</p>
 <div class="highlight highlight-xml"><pre>&lt;<span class="pl-ent">dependency</span>&gt;
     &lt;<span class="pl-ent">groupId</span>&gt;com.github.bedrin&lt;/<span class="pl-ent">groupId</span>&gt;
     &lt;<span class="pl-ent">artifactId</span>&gt;jdbc-sniffer&lt;/<span class="pl-ent">artifactId</span>&gt;
-    &lt;<span class="pl-ent">version</span>&gt;2.3.1&lt;/<span class="pl-ent">version</span>&gt;
+    &lt;<span class="pl-ent">version</span>&gt;2.3.2&lt;/<span class="pl-ent">version</span>&gt;
 &lt;/<span class="pl-ent">dependency</span>&gt;</pre></div>
 
 <p>For Gradle users:</p>
 
 <div class="highlight highlight-javascript"><pre>dependencies {
-    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.3.1<span class="pl-pds">'</span></span>
+    compile <span class="pl-s"><span class="pl-pds">'</span>com.github.bedrin:jdbc-sniffer:2.3.2<span class="pl-pds">'</span></span>
 }</pre></div>
 
 <h1>
@@ -104,11 +104,11 @@ Just add it to your <code>web.xml</code> file:</p>
 
 <ul>
 <li>
-<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.1/jdbc-sniffer-2.3.1.jar">jdbc-sniffer-2.3.1.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.1.jar">bintray mirror</a>)</li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.2/jdbc-sniffer-2.3.2.jar">jdbc-sniffer-2.3.2.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.2.jar">bintray mirror</a>)</li>
 <li>
-<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.1/jdbc-sniffer-2.3.1-sources.jar">jdbc-sniffer-2.3.1-sources.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.1-sources.jar">bintray mirror</a>)</li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.2/jdbc-sniffer-2.3.2-sources.jar">jdbc-sniffer-2.3.2-sources.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.2-sources.jar">bintray mirror</a>)</li>
 <li>
-<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.1/jdbc-sniffer-2.3.1-javadoc.jar">jdbc-sniffer-2.3.1-javadoc.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.1-javadoc.jar">bintray mirror</a>)</li>
+<a href="https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.2/jdbc-sniffer-2.3.2-javadoc.jar">jdbc-sniffer-2.3.2-javadoc.jar</a> (<a href="https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.2-javadoc.jar">bintray mirror</a>)</li>
 </ul>
 
 <h1>
@@ -136,6 +136,11 @@ The sniffer JDBC driver class name is <code>com.github.bedrin.jdbc.sniffer.MockD
         <span class="pl-c">&lt;!-- Allows disabling the JDBC Sniffer filter in web.xml --&gt;</span>
         &lt;<span class="pl-ent">param-name</span>&gt;enabled&lt;/<span class="pl-ent">param-name</span>&gt;
         &lt;<span class="pl-ent">param-value</span>&gt;true&lt;/<span class="pl-ent">param-value</span>&gt; <span class="pl-c">&lt;!-- default: true --&gt;</span>
+    &lt;/<span class="pl-ent">init-param</span>&gt;
+    &lt;<span class="pl-ent">init-param</span>&gt;
+        <span class="pl-c">&lt;!-- Allows excluding some of the request URL's from Sniffer filter --&gt;</span>
+        &lt;<span class="pl-ent">param-name</span>&gt;exclude-pattern&lt;/<span class="pl-ent">param-name</span>&gt;
+        &lt;<span class="pl-ent">param-value</span>&gt;^/vets.html$&lt;/<span class="pl-ent">param-value</span>&gt; <span class="pl-c">&lt;!-- optional --&gt;</span>
     &lt;/<span class="pl-ent">init-param</span>&gt;
 &lt;/<span class="pl-ent">filter</span>&gt;
 &lt;<span class="pl-ent">filter-mapping</span>&gt;
