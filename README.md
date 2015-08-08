@@ -198,6 +198,8 @@ Building
 JDBC sniffer is built using JDK8+ and Maven 3.2+ - just checkout the project and type `mvn install`
 JDK8 is required only for building the project - once it's built, you can use JDBC Sniffer with any JRE 1.5+
 
+UI part of JDBC Sniffer is maintained in a separate repository [jdbc-sniffer-ui](https://github.com/bedrin/jdbc-sniffer-ui)
+
 Contribute
 ============
 You are most welcome to contribute to JDBC Sniffer!
