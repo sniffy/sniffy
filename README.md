@@ -39,11 +39,7 @@ Just add it to your `web.xml` file:
 
 Restart your server and you will see the number of queries in bottom right corner of your app:
 
-![SnifferFilterInjectHtml](https://bedrin.github.io/jdbc-sniffer/SnifferFilterInjectHtml.png)
-
-Click on the icon to see the actual queries and their elapsed time:
-
-![SnifferFilterViewQueries.png](https://bedrin.github.io/jdbc-sniffer/SnifferFilterViewQueries.png)
+![RecordedDemo](https://bedrin.github.io/jdbc-sniffer/jdbcsniffer.gif)
 
 Maven
 ============
