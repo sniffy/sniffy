@@ -41,6 +41,8 @@ Restart your server and you will see the number of queries in bottom right corne
 
 ![RecordedDemo](https://bedrin.github.io/jdbc-sniffer/jdbcsniffer.gif)
 
+Live Demo - [http://jdbcsniffer.herokuapp.com/](http://jdbcsniffer.herokuapp.com/owners.html?lastName=)
+
 Maven
 ============
 JDBC Sniffer is available from Maven Central repository
