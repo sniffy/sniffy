@@ -28,7 +28,7 @@ public interface Constants {
      * The major version of JDBC Sniffer
      * @see Driver#getMinorVersion() ()
      */
-    int PATCH_VERSION = 4;
+    int PATCH_VERSION = 5;
 
     /**
      * returns the root package for all JDBC Sniffer classes
