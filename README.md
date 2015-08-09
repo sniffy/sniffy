@@ -39,11 +39,9 @@ Just add it to your `web.xml` file:
 
 Restart your server and you will see the number of queries in bottom right corner of your app:
 
-![SnifferFilterInjectHtml](https://bedrin.github.io/jdbc-sniffer/SnifferFilterInjectHtml.png)
+![RecordedDemo](https://bedrin.github.io/jdbc-sniffer/jdbcsniffer.gif)
 
-Click on the icon to see the actual queries and their elapsed time:
-
-![SnifferFilterViewQueries.png](https://bedrin.github.io/jdbc-sniffer/SnifferFilterViewQueries.png)
+Live Demo - [http://jdbcsniffer.herokuapp.com/](http://jdbcsniffer.herokuapp.com/owners.html?lastName=)
 
 Maven
 ============
@@ -52,23 +50,23 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>2.3.3</version>
+    <version>2.3.4</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'com.github.bedrin:jdbc-sniffer:2.3.3'
+    compile 'com.github.bedrin:jdbc-sniffer:2.3.4'
 }
 ```
 
 Download
 ============
 [![Get automatic notifications about new "jdbc-sniffer" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/jdbc-sniffer/view?source=watch)
-- [jdbc-sniffer-2.3.3.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.3/jdbc-sniffer-2.3.3.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.3.jar))
-- [jdbc-sniffer-2.3.3-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.3/jdbc-sniffer-2.3.3-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.3-sources.jar))
-- [jdbc-sniffer-2.3.3-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.3/jdbc-sniffer-2.3.3-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.3-javadoc.jar))
+- [jdbc-sniffer-2.3.4.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.4/jdbc-sniffer-2.3.4.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.4.jar))
+- [jdbc-sniffer-2.3.4-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.4/jdbc-sniffer-2.3.4-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.4-sources.jar))
+- [jdbc-sniffer-2.3.4-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.4/jdbc-sniffer-2.3.4-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.4-javadoc.jar))
 
 Setup
 ============
@@ -197,6 +195,8 @@ Building
 ============
 JDBC sniffer is built using JDK8+ and Maven 3.2+ - just checkout the project and type `mvn install`
 JDK8 is required only for building the project - once it's built, you can use JDBC Sniffer with any JRE 1.5+
+
+UI part of JDBC Sniffer is maintained in a separate repository [jdbc-sniffer-ui](https://github.com/bedrin/jdbc-sniffer-ui)
 
 Contribute
 ============
