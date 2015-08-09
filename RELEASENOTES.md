@@ -2,7 +2,12 @@
 
 ## Development
 
-[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.3...master)
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.4...master)
+
+## v2.3.4 - August 6th, 2015
+ * [View queries from AJAX requests](https://github.com/bedrin/jdbc-sniffer/issues/57)
+ 
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.3...2.3.4)
 
 ## v2.3.3 - August 6th, 2015
  * [excludes-filter disabled the SnifferServlet as well](https://github.com/bedrin/jdbc-sniffer/issues/73)

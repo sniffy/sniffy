@@ -50,23 +50,23 @@ JDBC Sniffer is available from Maven Central repository
 <dependency>
     <groupId>com.github.bedrin</groupId>
     <artifactId>jdbc-sniffer</artifactId>
-    <version>2.3.3</version>
+    <version>2.3.4</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'com.github.bedrin:jdbc-sniffer:2.3.3'
+    compile 'com.github.bedrin:jdbc-sniffer:2.3.4'
 }
 ```
 
 Download
 ============
 [![Get automatic notifications about new "jdbc-sniffer" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/jdbc-sniffer/view?source=watch)
-- [jdbc-sniffer-2.3.3.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.3/jdbc-sniffer-2.3.3.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.3.jar))
-- [jdbc-sniffer-2.3.3-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.3/jdbc-sniffer-2.3.3-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.3-sources.jar))
-- [jdbc-sniffer-2.3.3-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.3/jdbc-sniffer-2.3.3-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.3-javadoc.jar))
+- [jdbc-sniffer-2.3.4.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.4/jdbc-sniffer-2.3.4.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.4.jar))
+- [jdbc-sniffer-2.3.4-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.4/jdbc-sniffer-2.3.4-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.4-sources.jar))
+- [jdbc-sniffer-2.3.4-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.4/jdbc-sniffer-2.3.4-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.4-javadoc.jar))
 
 Setup
 ============
