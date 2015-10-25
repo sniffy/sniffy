@@ -4,15 +4,10 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
-
-    private Collection<FlushResponseListener> flushListeners = new ArrayList<FlushResponseListener>();
-    private Collection<CloseResponseListener> closeListeners = new ArrayList<CloseResponseListener>();
 
     private BufferedServletOutputStream bufferedServletOutputStream;
     private ServletOutputStream outputStream;
@@ -20,41 +15,28 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     private boolean committed;
 
-    private final HttpServletResponse delegate;
+    private final BufferedServletResponseListener servletResponseListener;
 
-    protected BufferedServletResponseWrapper(HttpServletResponse response) {
+    protected BufferedServletResponseWrapper(HttpServletResponse response,
+                                             BufferedServletResponseListener servletResponseListener) {
         super(response);
-        delegate = response;
-    }
-
-    protected void addFlushResponseListener(FlushResponseListener listener) {
-        flushListeners.add(listener);
-    }
-
-    protected void addCloseResponseListener(CloseResponseListener listener) {
-        closeListeners.add(listener);
+        this.servletResponseListener = servletResponseListener;
     }
 
     protected void notifyBeforeFlush() throws IOException {
         notifyBeforeFlush(null);
     }
 
-    protected void notifyBeforeFlush(String mimeTypeMagic) throws IOException {
-        Iterator<FlushResponseListener> listenersIt = flushListeners.iterator();
-        while (listenersIt.hasNext()) {
-            FlushResponseListener listener = listenersIt.next();
-            listenersIt.remove();
-            listener.beforeFlush(delegate, this, mimeTypeMagic);
-        }
+    protected void notifyBeforeFlush(Buffer buffer) throws IOException {
+        servletResponseListener.onBeforeCommit(this, buffer);
     }
 
     protected void notifyBeforeClose() throws IOException {
-        Iterator<CloseResponseListener> listenersIt = closeListeners.iterator();
-        while (listenersIt.hasNext()) {
-            CloseResponseListener listener = listenersIt.next();
-            listenersIt.remove();
-            listener.beforeClose(delegate, this);
-        }
+        servletResponseListener.beforeClose(this, null);
+    }
+
+    protected void notifyBeforeClose(Buffer buffer) throws IOException {
+        servletResponseListener.beforeClose(this, buffer);
     }
 
     protected BufferedServletOutputStream getBufferedServletOutputStream() throws IOException {
@@ -64,11 +46,20 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         return bufferedServletOutputStream;
     }
 
-    protected void flush() throws IOException {
-        if (null != writer) writer.flush();
-        else if (null != outputStream) outputStream.flush();
-        else notifyBeforeFlush();
-        if (null != bufferedServletOutputStream) bufferedServletOutputStream.closeTarget();
+    /**
+     * Flush the sniffer buffer and append the information about the executed queries to the output stream
+     * Also close the underlying stream if it has been requested previously
+     * @throws IOException
+     */
+    protected void close() throws IOException {
+        if (null != writer) writer.close();
+        else if (null != outputStream) outputStream.close();
+        else {
+            if (!isCommitted()) {
+                notifyBeforeFlush();
+            }
+            notifyBeforeClose();
+        }
     }
 
     protected void setCommitted(boolean committed) {
@@ -203,7 +194,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != outputStream) {
             throw new IllegalStateException("getOutputStream() method has been called on this response");
         } else {
-            return writer = new PrintWriter(getBufferedServletOutputStream());
+            return writer = new PrintWriter(new OutputStreamWriter(getBufferedServletOutputStream()), false);
         }
     }
 

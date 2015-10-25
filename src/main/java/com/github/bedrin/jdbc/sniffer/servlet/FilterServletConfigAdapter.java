@@ -5,7 +5,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import java.util.Enumeration;
 
-public class FilterServletConfigAdapter implements ServletConfig {
+class FilterServletConfigAdapter implements ServletConfig {
 
     private final FilterConfig filterConfig;
     private final String servletName;

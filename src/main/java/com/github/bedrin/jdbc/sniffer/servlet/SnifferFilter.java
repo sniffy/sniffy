@@ -7,7 +7,9 @@ import com.github.bedrin.jdbc.sniffer.util.LruCache;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URLConnection;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -117,43 +119,56 @@ public class SnifferFilter implements Filter {
 
         BufferedServletResponseWrapper responseWrapper = null;
 
-        final Spy spy = Sniffer.spy();
+        final Spy<? extends Spy> spy = Sniffer.spy();
         final String requestId = UUID.randomUUID().toString();
 
         try {
-            responseWrapper = new BufferedServletResponseWrapper(httpServletResponse);
+            response = responseWrapper = new BufferedServletResponseWrapper(
+                    httpServletResponse,
+                    new BufferedServletResponseListener() {
 
-            responseWrapper.addFlushResponseListener(new FlushResponseListener() {
-                public void beforeFlush(HttpServletResponse response, BufferedServletResponseWrapper wrapper, String mimeTypeMagic) throws IOException {
-                    response.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
-                    response.addHeader("X-Request-Id", requestId);
-                    if (injectHtml) {
-                        String contentType = wrapper.getContentType();
-                        String contentEncoding = wrapper.getContentEncoding();
-                        if (null == contentEncoding && null != contentType && contentType.startsWith("text/html") && !"application/xml".equals(mimeTypeMagic)) {
-                            // adjust content length with the size of injected content
-                            int contentLength = wrapper.getContentLength();
-                            if (contentLength > 0) {
-                                wrapper.setContentLength(contentLength + maximumInjectSize(contextPath));
-                            }
-                            // inject html at the very end of output stream
-                            wrapper.addCloseResponseListener(new CloseResponseListener() {
-                                public void beforeClose(HttpServletResponse response, BufferedServletResponseWrapper wrapper) throws IOException {
-                                    cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
-                                    BufferedServletOutputStream bufferedServletOutputStream = wrapper.getBufferedServletOutputStream();
-                                    bufferedServletOutputStream.write(generateAndPadHtml(
-                                                    contextPath, spy.executedStatements(Threads.CURRENT), requestId).getBytes()
-                                    );
-                                    bufferedServletOutputStream.flush();
+                        private boolean isHtmlPage = false;
+
+                        @Override
+                        public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
+                            wrapper.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
+                            wrapper.addHeader("X-Request-Id", requestId);
+                            if (injectHtml) {
+                                String contentType = wrapper.getContentType();
+                                String contentEncoding = wrapper.getContentEncoding();
+
+                                String mimeTypeMagic =
+                                        URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.toByteArray(16)));
+
+                                if (null == contentEncoding && null != contentType && contentType.startsWith("text/html")
+                                        && !"application/xml".equals(mimeTypeMagic)) {
+                                    // adjust content length with the size of injected content
+                                    int contentLength = wrapper.getContentLength();
+                                    if (contentLength > 0) {
+                                        wrapper.setContentLength(contentLength + maximumInjectSize(contextPath));
+                                    }
+                                    isHtmlPage = true;
                                 }
-                            });
+                            }
+                        }
+
+                        @Override
+                        public void beforeClose(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
+
+                            cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
+
+                            if (injectHtml && isHtmlPage) {
+                                BufferedServletOutputStream bufferedServletOutputStream = wrapper.getBufferedServletOutputStream();
+                                bufferedServletOutputStream.write(generateAndPadHtml(
+                                        contextPath, spy.executedStatements(Threads.CURRENT), requestId).getBytes()
+                                );
+                                bufferedServletOutputStream.flush();
+                            }
 
                         }
-                    }
-                }
-            });
 
-            response = responseWrapper;
+                    }
+            );
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -161,11 +176,11 @@ public class SnifferFilter implements Filter {
 
         chain.doFilter(request, response);
 
-        if (null != responseWrapper) {
-            responseWrapper.flush();
-        }
-
         cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
+
+        if (null != responseWrapper) {
+            responseWrapper.close();
+        }
 
     }
 

@@ -89,8 +89,8 @@ public class Sniffer {
      * @return a new {@link Spy} instance
      * @since 2.0
      */
-    public static Spy spy() {
-        return new Spy();
+    public static <T extends Spy<T>> Spy<T> spy() {
+        return new Spy<T>();
     }
 
     // never methods
