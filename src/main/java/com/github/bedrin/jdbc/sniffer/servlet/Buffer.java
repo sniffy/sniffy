@@ -1,36 +1,29 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
+
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
+import static java.util.Arrays.copyOfRange;
 
 /**
  * TODO: flush buffer automatically after some threshold (say 100 kilobytes for start?) or analyze content-length headedr
  */
 class Buffer extends ByteArrayOutputStream {
 
-    public InputStream reverseInputStream() {
-        return new InputStream() {
 
-            private int pos = count;
-
-            @Override
-            public int read() throws IOException {
-                return 0 == pos ? -1 : buf[--pos];
-            }
-
-        };
+    public byte[] leadingBytes(int maxSize) {
+        return copyOf(buf, Math.max(count, maxSize));
     }
 
-    public synchronized byte[] toByteArray(int maxSize) {
-        return Arrays.copyOf(buf, Math.max(count, maxSize));
+    public byte[] trailingBytes(int maxSize) {
+        return maxSize >= count ? copyOf(buf, count) : copyOfRange(buf, count - maxSize, count);
     }
 
     public void insertAt(int pos, byte[] data) {
         ensureCapacity(count + data.length);
-        System.arraycopy(buf, pos, buf, pos + data.length, count - pos);
-        System.arraycopy(data, 0, buf, pos, data.length);
+        arraycopy(buf, pos, buf, pos + data.length, count - pos);
+        arraycopy(data, 0, buf, pos, data.length);
         count += data.length;
     }
 
@@ -71,7 +64,7 @@ class Buffer extends ByteArrayOutputStream {
                 throw new OutOfMemoryError();
             newCapacity = Integer.MAX_VALUE;
         }
-        buf = Arrays.copyOf(buf, newCapacity);
+        buf = copyOf(buf, newCapacity);
     }
 
 }
