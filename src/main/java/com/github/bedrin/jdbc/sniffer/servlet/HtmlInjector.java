@@ -1,6 +1,6 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
-import java.io.*;
+import java.io.IOException;
 import java.nio.charset.Charset;
 
 class HtmlInjector {
@@ -18,56 +18,31 @@ class HtmlInjector {
     }
 
     /**
-     * todo support multibyte characters
-     * @param content
+     * @param content to be inserted
      * @throws IOException
      */
     public void injectAtTheEnd(String content) throws IOException {
 
-        Reader reader = new InputStreamReader(buffer.reverseInputStream(), characterEncoding);
+        StringBuilder sb = new StringBuilder(new String(buffer.trailingBytes(16 * 1024), characterEncoding));
 
-        char[] htmlClosingTag = new StringBuilder("</html").reverse().toString().toCharArray();
-        char[] bodyClosingTag = new StringBuilder("</body").reverse().toString().toCharArray();
+        int htmlLIOf = sb.lastIndexOf("</html");
+        int bodyLIOf = sb.lastIndexOf("</body");
 
-        int htmlClosingTagOffset = -1;
-        int bodyClosingTagOffset = -1;
+        int i;
 
-        for (int i = reader.read(), htmlBoundaryPos = 0, bodyBoundaryPos = 0, offset = 1;
-                (i != -1) && (htmlBoundaryPos < htmlClosingTag.length || bodyBoundaryPos < bodyClosingTag.length);
-                i = reader.read(), offset++) {
-
-            if (htmlBoundaryPos < htmlClosingTag.length) {
-                if (Character.toLowerCase(i) == htmlClosingTag[htmlBoundaryPos]) {
-                    htmlBoundaryPos++;
-                } else {
-                    htmlBoundaryPos = 0;
-                }
-            }
-            if (bodyBoundaryPos < bodyClosingTag.length) {
-                if (Character.toLowerCase(i) == bodyClosingTag[bodyBoundaryPos]) {
-                    bodyBoundaryPos++;
-                } else {
-                    bodyBoundaryPos = 0;
-                }
-            }
-
-            if (htmlBoundaryPos == htmlClosingTag.length && -1 == htmlClosingTagOffset) {
-                htmlClosingTagOffset = offset;
-            }
-            if (bodyBoundaryPos == bodyClosingTag.length && -1 == bodyClosingTagOffset) {
-                bodyClosingTagOffset = offset;
-            }
-
-            if (htmlBoundaryPos == htmlClosingTag.length && bodyBoundaryPos == bodyClosingTag.length) break;
-
+        if (-1 != bodyLIOf && (-1 == htmlLIOf || bodyLIOf < htmlLIOf)) {
+            i = bodyLIOf;
+        } else if (-1 != htmlLIOf) {
+            i = htmlLIOf;
+        } else {
+            i = -1;
         }
 
-        if (-1 != bodyClosingTagOffset) {
-            buffer.insertAt(buffer.size() - bodyClosingTagOffset, content.getBytes(characterEncoding));
-        } else if (-1 != htmlClosingTagOffset) {
-            buffer.insertAt(buffer.size() - htmlClosingTagOffset, content.getBytes(characterEncoding));
-        } else {
+        if (i == -1) {
             buffer.write(content.getBytes(characterEncoding));
+        } else {
+            int offset = sb.delete(0, i).toString().getBytes(characterEncoding).length;
+            buffer.insertAt(buffer.size() - offset, content.getBytes(characterEncoding));
         }
 
     }

@@ -148,7 +148,7 @@ public class SnifferFilter implements Filter {
                                 String contentEncoding = wrapper.getContentEncoding();
 
                                 String mimeTypeMagic =
-                                        URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.toByteArray(16)));
+                                        URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.leadingBytes(16)));
 
                                 if (null == contentEncoding && null != contentType && contentType.startsWith("text/html")
                                         && !"application/xml".equals(mimeTypeMagic)) {
