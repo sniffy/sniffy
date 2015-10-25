@@ -6,15 +6,15 @@ import java.nio.charset.Charset;
 class HtmlInjector {
 
     private final Buffer buffer;
-    private final Charset charset;
+    private final String characterEncoding;
 
     public HtmlInjector(Buffer buffer) {
-        this(buffer, Charset.defaultCharset());
+        this(buffer, Charset.defaultCharset().name());
     }
 
-    public HtmlInjector(Buffer buffer, Charset charset) {
+    public HtmlInjector(Buffer buffer, String characterEncoding) {
         this.buffer = buffer;
-        this.charset = charset;
+        this.characterEncoding = characterEncoding;
     }
 
     /**
@@ -24,7 +24,7 @@ class HtmlInjector {
      */
     public void injectAtTheEnd(String content) throws IOException {
 
-        Reader reader = new InputStreamReader(buffer.reverseInputStream(), charset);
+        Reader reader = new InputStreamReader(buffer.reverseInputStream(), characterEncoding);
 
         char[] htmlClosingTag = new StringBuilder("</html").reverse().toString().toCharArray();
         char[] bodyClosingTag = new StringBuilder("</body").reverse().toString().toCharArray();
@@ -36,11 +36,19 @@ class HtmlInjector {
                 (i != -1) && (htmlBoundaryPos < htmlClosingTag.length || bodyBoundaryPos < bodyClosingTag.length);
                 i = reader.read(), offset++) {
 
-            if (htmlBoundaryPos < htmlClosingTag.length && Character.toLowerCase(i) == htmlClosingTag[htmlBoundaryPos]) {
-                htmlBoundaryPos++;
+            if (htmlBoundaryPos < htmlClosingTag.length) {
+                if (Character.toLowerCase(i) == htmlClosingTag[htmlBoundaryPos]) {
+                    htmlBoundaryPos++;
+                } else {
+                    htmlBoundaryPos = 0;
+                }
             }
-            if (bodyBoundaryPos < bodyClosingTag.length && Character.toLowerCase(i) == bodyClosingTag[bodyBoundaryPos]) {
-                bodyBoundaryPos++;
+            if (bodyBoundaryPos < bodyClosingTag.length) {
+                if (Character.toLowerCase(i) == bodyClosingTag[bodyBoundaryPos]) {
+                    bodyBoundaryPos++;
+                } else {
+                    bodyBoundaryPos = 0;
+                }
             }
 
             if (htmlBoundaryPos == htmlClosingTag.length && -1 == htmlClosingTagOffset) {
@@ -55,11 +63,11 @@ class HtmlInjector {
         }
 
         if (-1 != bodyClosingTagOffset) {
-            buffer.insertAt(buffer.size() - bodyClosingTagOffset, content.getBytes(charset));
+            buffer.insertAt(buffer.size() - bodyClosingTagOffset, content.getBytes(characterEncoding));
         } else if (-1 != htmlClosingTagOffset) {
-            buffer.insertAt(buffer.size() - htmlClosingTagOffset, content.getBytes(charset));
+            buffer.insertAt(buffer.size() - htmlClosingTagOffset, content.getBytes(characterEncoding));
         } else {
-            buffer.write(content.getBytes(charset));
+            buffer.write(content.getBytes(characterEncoding));
         }
 
     }
