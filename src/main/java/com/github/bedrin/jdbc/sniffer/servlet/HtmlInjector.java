@@ -17,19 +17,24 @@ class HtmlInjector {
         this.charset = charset;
     }
 
-    public void injectAtTheEnd() throws IOException {
+    /**
+     * todo support multibyte characters
+     * @param content
+     * @throws IOException
+     */
+    public void injectAtTheEnd(String content) throws IOException {
 
-        InputStream inputStream = buffer.reverseInputStream();
+        Reader reader = new InputStreamReader(buffer.reverseInputStream(), charset);
 
-        byte[] htmlClosingTag = new StringBuilder("</html").reverse().toString().getBytes(charset);
-        byte[] bodyClosingTag = new StringBuilder("</body").reverse().toString().getBytes(charset);
+        char[] htmlClosingTag = new StringBuilder("</html").reverse().toString().toCharArray();
+        char[] bodyClosingTag = new StringBuilder("</body").reverse().toString().toCharArray();
 
         int htmlClosingTagOffset = -1;
         int bodyClosingTagOffset = -1;
 
-        for (int i = inputStream.read(), htmlBoundaryPos = 0, bodyBoundaryPos = 0, offset = 1;
+        for (int i = reader.read(), htmlBoundaryPos = 0, bodyBoundaryPos = 0, offset = 1;
                 (i != -1) && (htmlBoundaryPos < htmlClosingTag.length || bodyBoundaryPos < bodyClosingTag.length);
-                i = inputStream.read(), offset++) {
+                i = reader.read(), offset++) {
 
             if (htmlBoundaryPos < htmlClosingTag.length && Character.toLowerCase(i) == htmlClosingTag[htmlBoundaryPos]) {
                 htmlBoundaryPos++;
@@ -49,9 +54,13 @@ class HtmlInjector {
 
         }
 
-        System.out.println(htmlClosingTagOffset);
-        System.out.println(bodyClosingTagOffset);
-
+        if (-1 != bodyClosingTagOffset) {
+            buffer.insertAt(buffer.size() - bodyClosingTagOffset, content.getBytes(charset));
+        } else if (-1 != htmlClosingTagOffset) {
+            buffer.insertAt(buffer.size() - htmlClosingTagOffset, content.getBytes(charset));
+        } else {
+            buffer.write(content.getBytes(charset));
+        }
 
     }
 

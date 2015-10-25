@@ -27,6 +27,13 @@ class Buffer extends ByteArrayOutputStream {
         return Arrays.copyOf(buf, Math.max(count, maxSize));
     }
 
+    public void insertAt(int pos, byte[] data) {
+        ensureCapacity(count + data.length);
+        System.arraycopy(buf, pos, buf, pos + data.length, count - pos);
+        System.arraycopy(data, 0, buf, pos, data.length);
+        count += data.length;
+    }
+
     public int getCapacity() {
         return null == buf ? 0 : buf.length;
     }
