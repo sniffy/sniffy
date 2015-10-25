@@ -127,6 +127,9 @@ public class SnifferFilter implements Filter {
                     httpServletResponse,
                     new BufferedServletResponseListener() {
 
+                        /**
+                         * Flag indicating that current response looks like HTML and capable of injecting sniffer widget
+                         */
                         private boolean isHtmlPage = false;
 
                         @Override
@@ -158,11 +161,10 @@ public class SnifferFilter implements Filter {
                             cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
 
                             if (injectHtml && isHtmlPage) {
-                                BufferedServletOutputStream bufferedServletOutputStream = wrapper.getBufferedServletOutputStream();
-                                bufferedServletOutputStream.write(generateAndPadHtml(
-                                        contextPath, spy.executedStatements(Threads.CURRENT), requestId).getBytes()
-                                );
-                                bufferedServletOutputStream.flush();
+                                String snifferWidget = generateAndPadHtml(contextPath, spy.executedStatements(Threads.CURRENT), requestId);
+                                byte[] snifferWidgetBytes = null == wrapper.getCharacterEncoding() ?
+                                        snifferWidget.getBytes() : snifferWidget.getBytes(wrapper.getCharacterEncoding());
+                                buffer.write(snifferWidgetBytes);
                             }
 
                         }

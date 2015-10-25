@@ -23,11 +23,11 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         this.servletResponseListener = servletResponseListener;
     }
 
-    protected void notifyBeforeFlush() throws IOException {
-        notifyBeforeFlush(null);
+    protected void notifyBeforeCommit() throws IOException {
+        notifyBeforeCommit(null);
     }
 
-    protected void notifyBeforeFlush(Buffer buffer) throws IOException {
+    protected void notifyBeforeCommit(Buffer buffer) throws IOException {
         servletResponseListener.onBeforeCommit(this, buffer);
     }
 
@@ -56,7 +56,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         else if (null != outputStream) outputStream.close();
         else {
             if (!isCommitted()) {
-                notifyBeforeFlush();
+                notifyBeforeCommit();
             }
             notifyBeforeClose();
         }
@@ -115,7 +115,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         if (isCommitted()) {
             throw new IllegalStateException("Cannot set error status - response is already committed");
         }
-        notifyBeforeFlush();
+        notifyBeforeCommit();
         super.sendError(sc, msg);
         setCommitted();
     }
@@ -125,7 +125,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         if (isCommitted()) {
             throw new IllegalStateException("Cannot set error status - response is already committed");
         }
-        notifyBeforeFlush();
+        notifyBeforeCommit();
         super.sendError(sc);
         setCommitted();
     }
@@ -135,7 +135,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         if (isCommitted()) {
             throw new IllegalStateException("Cannot set error status - response is already committed");
         }
-        notifyBeforeFlush();
+        notifyBeforeCommit();
         super.sendRedirect(location);
         setCommitted();
     }

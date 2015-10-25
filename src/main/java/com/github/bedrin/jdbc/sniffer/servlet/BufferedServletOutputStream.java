@@ -26,9 +26,9 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     @Override
     public void flush() throws IOException {
+
         if (!flushed) {
-            // analyze first chunk of data
-            responseWrapper.notifyBeforeFlush(buffer);
+            responseWrapper.notifyBeforeCommit(buffer);
         }
 
         buffer.writeTo(target);
@@ -44,8 +44,14 @@ class BufferedServletOutputStream extends ServletOutputStream {
     public void close() throws IOException {
         if (!closed) {
 
-            flush();
+            if (!flushed) {
+                flushed = true;
+                responseWrapper.notifyBeforeCommit(buffer);
+            }
+
             responseWrapper.notifyBeforeClose(buffer);
+
+            flush();
 
             if (!targetClosed) {
                 target.close();
