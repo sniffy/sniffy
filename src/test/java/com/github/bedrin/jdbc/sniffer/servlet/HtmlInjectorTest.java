@@ -1,6 +1,7 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
 import org.junit.Test;
+import org.testng.Assert;
 
 import static org.junit.Assert.*;
 
@@ -17,8 +18,9 @@ public class HtmlInjectorTest {
         buffer.write(actualContent.getBytes());
 
         HtmlInjector htmlInjector = new HtmlInjector(buffer);
-        htmlInjector.injectAtTheEnd();
+        htmlInjector.injectAtTheEnd("<injected/>");
 
+        Assert.assertEquals("<html><head><title>Title</title></head><body>Hello, World!<injected/></body></html>", buffer.toString());
     }
 
 }
