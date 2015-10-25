@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class SnifferServlet extends HttpServlet {
+class SnifferServlet extends HttpServlet {
 
     protected final Map<String, List<StatementMetaData>> cache;
 
