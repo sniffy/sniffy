@@ -132,6 +132,12 @@ public class SnifferFilter implements Filter {
                          */
                         private boolean isHtmlPage = false;
 
+                        /**
+                         * todo return flag indicating that sniffer wont modify the output stream
+                         * @param wrapper
+                         * @param buffer
+                         * @throws IOException
+                         */
                         @Override
                         public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
                             wrapper.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));

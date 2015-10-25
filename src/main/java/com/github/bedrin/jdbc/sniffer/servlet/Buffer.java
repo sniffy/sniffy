@@ -1,12 +1,27 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 
 /**
  * TODO: flush buffer automatically after some threshold (say 100 kilobytes for start?) or analyze content-length headedr
  */
 class Buffer extends ByteArrayOutputStream {
+
+    public InputStream reverseInputStream() {
+        return new InputStream() {
+
+            private int pos = count;
+
+            @Override
+            public int read() throws IOException {
+                return 0 == pos ? -1 : buf[--pos];
+            }
+
+        };
+    }
 
     public synchronized byte[] toByteArray(int maxSize) {
         return Arrays.copyOf(buf, Math.max(count, maxSize));
