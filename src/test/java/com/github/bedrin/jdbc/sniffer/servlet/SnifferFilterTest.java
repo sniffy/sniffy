@@ -301,7 +301,8 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NAME));
         String contentAsString = httpServletResponse.getContentAsString();
-        assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"jdbc-sniffer\""));
+        assertTrue(contentAsString.contains("id=\"jdbc-sniffer\""));
+        assertTrue(contentAsString.indexOf("id=\"jdbc-sniffer\"") < contentAsString.indexOf("</body>"));
         assertTrue(contentAsString.contains("data-sql-queries=\"2\""));
 
     }

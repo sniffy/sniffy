@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -167,10 +168,17 @@ public class SnifferFilter implements Filter {
                             cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
 
                             if (injectHtml && isHtmlPage) {
+
+                                String characterEncoding = wrapper.getCharacterEncoding();
+                                if (null == characterEncoding) {
+                                    characterEncoding = Charset.defaultCharset().name();
+                                }
+
                                 String snifferWidget = generateAndPadHtml(contextPath, spy.executedStatements(Threads.CURRENT), requestId);
-                                byte[] snifferWidgetBytes = null == wrapper.getCharacterEncoding() ?
-                                        snifferWidget.getBytes() : snifferWidget.getBytes(wrapper.getCharacterEncoding());
-                                buffer.write(snifferWidgetBytes);
+
+                                HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
+                                htmlInjector.injectAtTheEnd(snifferWidget);
+
                             }
 
                         }
