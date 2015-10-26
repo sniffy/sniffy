@@ -1,7 +1,8 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
 import org.junit.Test;
-import org.testng.Assert;
+
+import java.io.IOException;
 
 import static org.junit.Assert.*;
 
@@ -11,42 +12,47 @@ import static org.junit.Assert.*;
 public class HtmlInjectorTest {
 
     @Test
-    public void testInjectBeforeBody() throws Exception {
-
-        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
-        Buffer buffer = new Buffer();
-        buffer.write(actualContent.getBytes());
-
-        HtmlInjector htmlInjector = new HtmlInjector(buffer);
-        htmlInjector.injectAtTheEnd("<injected/>");
-
-        Assert.assertEquals("<html><head><title>Title</title></head><body>Hello, World!<injected/></body></html>", buffer.toString());
-    }
-
-    @Test
-    public void testInjectBeforeHtml() throws Exception {
-
-        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</html>";
-        Buffer buffer = new Buffer();
-        buffer.write(actualContent.getBytes());
-
-        HtmlInjector htmlInjector = new HtmlInjector(buffer);
-        htmlInjector.injectAtTheEnd("<injected/>");
-
-        Assert.assertEquals("<html><head><title>Title</title></head><body>Hello, World!<injected/></html>", buffer.toString());
-    }
-
-    @Test
     public void testInjectAtTheEnd() throws Exception {
+        assertEquals(
+                "<html><head><title>Title</title></head><body>Hello, World!<injected/></body></html>", injectAtTheEnd(
+                "<html><head><title>Title</title></head><body>Hello, World!</body></html>"
+                ));
+        assertEquals(
+                "<html><head><title>Title</title></head><body>Hello, World!<injected/></html>", injectAtTheEnd(
+                        "<html><head><title>Title</title></head><body>Hello, World!</html>"
+                ));
+        assertEquals(
+                "<html><head><title>Title</title></head><body>Hello, World!<injected/>", injectAtTheEnd(
+                        "<html><head><title>Title</title></head><body>Hello, World!"
+                ));
+    }
 
-        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!";
+    @Test
+    public void testInjectAtTheBeginning() throws Exception {
+        assertEquals(
+                "<!DOCTYPE html><html><head><injected/><title>Title</title></head><body>Hello, World!</body></html>", injectAtTheBeginning(
+                "<!DOCTYPE html><html><head><title>Title</title></head><body>Hello, World!</body></html>"
+                ));
+    }
+
+    private String injectAtTheEnd(String actualContent) throws IOException {
         Buffer buffer = new Buffer();
         buffer.write(actualContent.getBytes());
 
         HtmlInjector htmlInjector = new HtmlInjector(buffer);
         htmlInjector.injectAtTheEnd("<injected/>");
 
-        Assert.assertEquals("<html><head><title>Title</title></head><body>Hello, World!<injected/>", buffer.toString());
+        return buffer.toString();
+    }
+
+    private String injectAtTheBeginning(String actualContent) throws IOException {
+        Buffer buffer = new Buffer();
+        buffer.write(actualContent.getBytes());
+
+        HtmlInjector htmlInjector = new HtmlInjector(buffer);
+        htmlInjector.injectAtTheBeginning("<injected/>");
+
+        return buffer.toString();
     }
 
 }

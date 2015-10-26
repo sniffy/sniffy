@@ -147,10 +147,10 @@ public class SnifferFilter implements Filter {
                                 String contentType = wrapper.getContentType();
                                 String contentEncoding = wrapper.getContentEncoding();
 
-                                String mimeTypeMagic =
+                                String mimeTypeMagic = null == buffer ? null :
                                         URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.leadingBytes(16)));
 
-                                if (null == contentEncoding && null != contentType && contentType.startsWith("text/html")
+                                if (null != buffer && null == contentEncoding && null != contentType && contentType.startsWith("text/html")
                                         && !"application/xml".equals(mimeTypeMagic)) {
                                     // adjust content length with the size of injected content
                                     int contentLength = wrapper.getContentLength();
@@ -158,6 +158,15 @@ public class SnifferFilter implements Filter {
                                         wrapper.setContentLength(contentLength + maximumInjectSize(contextPath));
                                     }
                                     isHtmlPage = true;
+
+                                    String characterEncoding = wrapper.getCharacterEncoding();
+                                    if (null == characterEncoding) {
+                                        characterEncoding = Charset.defaultCharset().name();
+                                    }
+
+                                    HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
+                                    //htmlInjector.injectAtTheEnd("<injected/>");
+
                                 }
                             }
                         }
@@ -204,14 +213,15 @@ public class SnifferFilter implements Filter {
 
     protected static int maximumInjectSize(String contextPath) {
         if (MAXIMUM_INJECT_SIZE == 0) {
-            MAXIMUM_INJECT_SIZE = generateHtml(contextPath, Integer.MAX_VALUE, UUID.randomUUID().toString()).length();
+            MAXIMUM_INJECT_SIZE = generateHtml(contextPath, Integer.MAX_VALUE, UUID.randomUUID().toString()).length() +
+                    "<injected/>".length();
         }
         return MAXIMUM_INJECT_SIZE;
     }
 
     protected static String generateAndPadHtml(String contextPath, int executedQueries, String requestId) {
         StringBuilder sb = generateHtml(contextPath, executedQueries, requestId);
-        for (int i = sb.length(); i < maximumInjectSize(contextPath); i++) {
+        for (int i = sb.length() + "<injected/>".length(); i < maximumInjectSize(contextPath); i++) {
             sb.append(" ");
         }
         return sb.toString();

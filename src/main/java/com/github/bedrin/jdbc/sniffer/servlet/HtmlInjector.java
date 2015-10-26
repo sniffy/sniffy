@@ -23,7 +23,8 @@ class HtmlInjector {
      */
     public void injectAtTheEnd(String content) throws IOException {
 
-        StringBuilder sb = new StringBuilder(new String(buffer.trailingBytes(16 * 1024), characterEncoding));
+        String str = new String(buffer.trailingBytes(16 * 1024), characterEncoding).toLowerCase();
+        StringBuilder sb = new StringBuilder(str);
 
         int htmlLIOf = sb.lastIndexOf("</html");
         int bodyLIOf = sb.lastIndexOf("</body");
@@ -41,9 +42,42 @@ class HtmlInjector {
         if (i == -1) {
             buffer.write(content.getBytes(characterEncoding));
         } else {
-            int offset = sb.delete(0, i).toString().getBytes(characterEncoding).length;
+            int offset = str.substring(i).getBytes(characterEncoding).length;
             buffer.insertAt(buffer.size() - offset, content.getBytes(characterEncoding));
         }
+
+    }
+
+    /**
+     * @param content to be inserted
+     * @throws IOException
+     */
+    public void injectAtTheBeginning(String content) throws IOException {
+
+        String str = new String(buffer.leadingBytes(16 * 1024), characterEncoding).toLowerCase();
+        StringBuilder sb = new StringBuilder(str);
+
+        int htmlIOf = sb.indexOf(">", sb.indexOf("<html")) + 1;
+        int headIOf = sb.indexOf(">", sb.indexOf("<head")) + 1;
+        int doctypeIOf = sb.indexOf(">", sb.indexOf("<!doctype")) + 1;
+        int scriptIOf = sb.indexOf("<script");
+
+        int i;
+
+        if (-1 != headIOf && (-1 == scriptIOf || headIOf < scriptIOf)) {
+            i = headIOf;
+        } else if (-1 != htmlIOf && (-1 == scriptIOf || htmlIOf < scriptIOf)) {
+            i = htmlIOf;
+        } else if (-1 != doctypeIOf && (-1 == scriptIOf || doctypeIOf < scriptIOf)) {
+            i = scriptIOf;
+        } else if (-1 != scriptIOf) {
+            i = scriptIOf;
+        } else {
+            i = 0;
+        }
+
+        int offset = str.substring(0, i).getBytes(characterEncoding).length;
+        buffer.insertAt(offset, content.getBytes(characterEncoding));
 
     }
 
