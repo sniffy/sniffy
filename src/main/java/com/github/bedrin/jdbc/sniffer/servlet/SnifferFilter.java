@@ -164,8 +164,10 @@ public class SnifferFilter implements Filter {
                                         characterEncoding = Charset.defaultCharset().name();
                                     }
 
+                                    String snifferHeader = generateHeaderHtml(contextPath, requestId).toString();
+
                                     HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
-                                    //htmlInjector.injectAtTheEnd("<injected/>");
+                                    htmlInjector.injectAtTheBeginning(snifferHeader);
 
                                 }
                             }
@@ -183,7 +185,7 @@ public class SnifferFilter implements Filter {
                                     characterEncoding = Charset.defaultCharset().name();
                                 }
 
-                                String snifferWidget = generateAndPadHtml(contextPath, spy.executedStatements(Threads.CURRENT), requestId);
+                                String snifferWidget = generateAndPadFooterHtml(contextPath, spy.executedStatements(Threads.CURRENT), requestId);
 
                                 HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
                                 htmlInjector.injectAtTheEnd(snifferWidget);
@@ -209,19 +211,34 @@ public class SnifferFilter implements Filter {
 
     }
 
-    private static int MAXIMUM_INJECT_SIZE;
-
-    protected static int maximumInjectSize(String contextPath) {
-        if (MAXIMUM_INJECT_SIZE == 0) {
-            MAXIMUM_INJECT_SIZE = generateHtml(contextPath, Integer.MAX_VALUE, UUID.randomUUID().toString()).length() +
-                    "<injected/>".length();
-        }
-        return MAXIMUM_INJECT_SIZE;
+    protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
+        return new StringBuilder().
+                append("<script id=\"jdbc-sniffer-header\" type=\"application/javascript\" data-request-id=\"").
+                append(requestId).
+                append("\" src=\"").
+                append(contextPath).
+                append(JAVASCRIPT_URI).
+                append("\"></script>");
+        //return "<script type=\"application/javascript\" src=\"/mock/jdbcsniffer.min.js\"></script>";
     }
 
-    protected static String generateAndPadHtml(String contextPath, int executedQueries, String requestId) {
-        StringBuilder sb = generateHtml(contextPath, executedQueries, requestId);
-        for (int i = sb.length() + "<injected/>".length(); i < maximumInjectSize(contextPath); i++) {
+    private int maximumInjectSize;
+
+    protected int maximumInjectSize(String contextPath) {
+        if (maximumInjectSize == 0) {
+            maximumInjectSize = maximumFooterSize(contextPath) +
+                    generateHeaderHtml(contextPath, UUID.randomUUID().toString()).length();
+        }
+        return maximumInjectSize;
+    }
+
+    private int maximumFooterSize(String contextPath) {
+        return generateFooterHtml(contextPath, Integer.MAX_VALUE, UUID.randomUUID().toString()).length();
+    }
+
+    protected String generateAndPadFooterHtml(String contextPath, int executedQueries, String requestId) {
+        StringBuilder sb = generateFooterHtml(contextPath, executedQueries, requestId);
+        for (int i = sb.length(); i < maximumFooterSize(contextPath); i++) {
             sb.append(" ");
         }
         return sb.toString();
@@ -239,16 +256,9 @@ public class SnifferFilter implements Filter {
      * @param requestId
      * @return
      */
-    protected static StringBuilder generateHtml(String contextPath, int executedQueries, String requestId) {
+    protected static StringBuilder generateFooterHtml(String contextPath, int executedQueries, String requestId) {
         return new StringBuilder().
-                append("<script id=\"jdbc-sniffer\" type=\"application/javascript\" data-sql-queries=\"").
-                append(executedQueries).
-                append("\" data-request-id=\"").
-                append(requestId).
-                append("\" src=\"").
-                append(contextPath).
-                append(JAVASCRIPT_URI).
-                append("\"></script>");
+                append("<data id=\"jdbc-sniffer\" data-sql-queries=\"").append(executedQueries).append("\"/>");
     }
 
     public void destroy() {
