@@ -57,9 +57,21 @@ class HtmlInjector {
         String str = new String(buffer.leadingBytes(16 * 1024), characterEncoding).toLowerCase();
         StringBuilder sb = new StringBuilder(str);
 
-        int htmlIOf = sb.indexOf(">", sb.indexOf("<html")) + 1;
-        int headIOf = sb.indexOf(">", sb.indexOf("<head")) + 1;
-        int doctypeIOf = sb.indexOf(">", sb.indexOf("<!doctype")) + 1;
+        int htmlIOf = sb.indexOf("<html");
+        if (htmlIOf != -1) {
+            htmlIOf = sb.indexOf(">", sb.indexOf("<html")) + 1;
+        }
+
+        int headIOf = sb.indexOf("<head");
+        if (headIOf != -1) {
+            headIOf = sb.indexOf(">", sb.indexOf("<head")) + 1;
+        }
+
+        int doctypeIOf = sb.indexOf("<!doctype");
+        if (doctypeIOf != -1) {
+            doctypeIOf = sb.indexOf(">", sb.indexOf("<!doctype")) + 1;
+        }
+
         int scriptIOf = sb.indexOf("<script");
 
         int i;
@@ -69,7 +81,7 @@ class HtmlInjector {
         } else if (-1 != htmlIOf && (-1 == scriptIOf || htmlIOf < scriptIOf)) {
             i = htmlIOf;
         } else if (-1 != doctypeIOf && (-1 == scriptIOf || doctypeIOf < scriptIOf)) {
-            i = scriptIOf;
+            i = doctypeIOf;
         } else if (-1 != scriptIOf) {
             i = scriptIOf;
         } else {
