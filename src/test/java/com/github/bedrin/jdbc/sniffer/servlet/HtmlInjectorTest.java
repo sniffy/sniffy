@@ -33,6 +33,18 @@ public class HtmlInjectorTest {
                 "<!DOCTYPE html><html><head><injected/><title>Title</title></head><body>Hello, World!</body></html>", injectAtTheBeginning(
                 "<!DOCTYPE html><html><head><title>Title</title></head><body>Hello, World!</body></html>"
                 ));
+        assertEquals(
+                "<!DOCTYPE html><html><injected/><title>Title</title></head><body>Hello, World!</body></html>", injectAtTheBeginning(
+                "<!DOCTYPE html><html><title>Title</title></head><body>Hello, World!</body></html>"
+                ));
+        assertEquals(
+                "<!DOCTYPE html><injected/><title>Title</title></head><body>Hello, World!</body></html>", injectAtTheBeginning(
+                "<!DOCTYPE html><title>Title</title></head><body>Hello, World!</body></html>"
+                ));
+        assertEquals(
+                "<title>Title</title><injected/><script>alert();</script></head><body>Hello, World!</body></html>", injectAtTheBeginning(
+                "<title>Title</title><script>alert();</script></head><body>Hello, World!</body></html>"
+                ));
     }
 
     private String injectAtTheEnd(String actualContent) throws IOException {
