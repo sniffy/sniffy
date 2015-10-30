@@ -51,7 +51,8 @@ import java.util.regex.Pattern;
  */
 public class SnifferFilter implements Filter {
 
-    public final static String HEADER_NAME = "X-Sql-Queries";
+    public static final String HEADER_NUMBER_OF_QUERIES = "X-Sql-Queries";
+    public static final String HEADER_REQUEST_DETAILS = "X-Request-Details";
 
     public static final String SNIFFER_URI_PREFIX =
             "/jdbcsniffer/" +
@@ -141,8 +142,8 @@ public class SnifferFilter implements Filter {
                          */
                         @Override
                         public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
-                            wrapper.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
-                            wrapper.addHeader("X-Request-Id", requestId);
+                            wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
+                            wrapper.addHeader(HEADER_REQUEST_DETAILS, contextPath + REQUEST_URI_PREFIX + requestId);
                             if (injectHtml) {
                                 String contentType = wrapper.getContentType();
                                 String contentEncoding = wrapper.getContentEncoding();
@@ -176,7 +177,10 @@ public class SnifferFilter implements Filter {
                         @Override
                         public void beforeClose(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
 
-                            cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
+                            List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
+                            if (null != executedStatements && !executedStatements.isEmpty()) {
+                                cache.put(requestId, executedStatements);
+                            }
 
                             if (injectHtml && isHtmlPage) {
 
@@ -203,7 +207,10 @@ public class SnifferFilter implements Filter {
 
         chain.doFilter(request, response);
 
-        cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
+        List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
+        if (null != executedStatements && !executedStatements.isEmpty()) {
+            cache.put(requestId, executedStatements);
+        }
 
         if (null != responseWrapper) {
             responseWrapper.close();
