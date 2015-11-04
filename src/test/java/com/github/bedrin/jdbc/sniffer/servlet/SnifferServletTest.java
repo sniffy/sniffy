@@ -45,6 +45,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
 
     }
@@ -62,6 +63,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("text/css", response.getContentType());
         assertTrue(response.getContentLength() > 0);
 
     }
@@ -83,6 +85,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("[{\"query\":\"SELECT 1 FROM DUAL\",\"time\":300.101}]", response.getContentAsString());
 
@@ -106,6 +109,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"time\":300.101}]", response.getContentAsString());
 
