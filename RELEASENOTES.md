@@ -2,11 +2,25 @@
 
 ## Development
 
-[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.4...master)
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.5...master)
+
+## v2.3.5 - November 18th, 2015
+ * [Counter in sniffer UI is invisible](https://github.com/bedrin/jdbc-sniffer/issues/92)
+ * [If Ajax query is done to another context, Sniffer won't load the exact queries](https://github.com/bedrin/jdbc-sniffer/issues/88)
+ * [NPE in SnifferFilter](https://github.com/bedrin/jdbc-sniffer/issues/86)
+ * [Track AJAX queries generated during page load](https://github.com/bedrin/jdbc-sniffer/issues/85)
+ * [JdbcSniffer spoils the global js context](https://github.com/bedrin/jdbc-sniffer/issues/82)
+ * [crappy UX in IE10](https://github.com/bedrin/jdbc-sniffer/issues/80)
+ * [Open sniffer UI in an iframe in order to avoid JS/CSS conflicts with parent page](https://github.com/bedrin/jdbc-sniffer/issues/77)
+ * [copy sql-queries to clipboard](https://github.com/bedrin/jdbc-sniffer/issues/63)
+ * [[filter] transparent back in UI intercepts clicks](https://github.com/bedrin/jdbc-sniffer/issues/59)
+ * [jdbc-sniffer should NEVER break existing code](https://github.com/bedrin/jdbc-sniffer/issues/48)
+
+[Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.4...2.3.5)
 
 ## v2.3.4 - August 6th, 2015
  * [View queries from AJAX requests](https://github.com/bedrin/jdbc-sniffer/issues/57)
- 
+
 [Commits](https://github.com/bedrin/jdbc-sniffer/compare/2.3.3...2.3.4)
 
 ## v2.3.3 - August 6th, 2015
