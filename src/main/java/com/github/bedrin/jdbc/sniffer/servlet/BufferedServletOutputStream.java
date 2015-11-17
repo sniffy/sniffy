@@ -1,11 +1,7 @@
 package com.github.bedrin.jdbc.sniffer.servlet;
 
 import javax.servlet.ServletOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URLConnection;
-import java.util.Arrays;
 
 class BufferedServletOutputStream extends ServletOutputStream {
 
@@ -17,6 +13,12 @@ class BufferedServletOutputStream extends ServletOutputStream {
     private boolean closed;
     private boolean flushed;
 
+    /**
+     * A flag indicating that underlying stream has already been closed
+     * Used to avoid closing the same stream twice
+     */
+    private boolean targetClosed;
+
     protected BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, ServletOutputStream target) {
         this.responseWrapper = responseWrapper;
         this.target = target;
@@ -24,11 +26,9 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     @Override
     public void flush() throws IOException {
+
         if (!flushed) {
-            // analyze first chunk of data
-            String mimeTypeMagic =
-                    URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.toByteArray(16)));
-            responseWrapper.notifyBeforeFlush(mimeTypeMagic);
+            responseWrapper.notifyBeforeCommit(buffer);
         }
 
         buffer.writeTo(target);
@@ -40,9 +40,26 @@ class BufferedServletOutputStream extends ServletOutputStream {
         flushed = true;
     }
 
-    public void closeTarget() throws IOException {
-        responseWrapper.notifyBeforeClose();
-        if (closed) target.close();
+    @Override
+    public void close() throws IOException {
+        if (!closed) {
+
+            if (!flushed) {
+                flushed = true;
+                responseWrapper.notifyBeforeCommit(buffer);
+            }
+
+            responseWrapper.notifyBeforeClose(buffer);
+
+            flush();
+
+            if (!targetClosed) {
+                target.close();
+                targetClosed = true;
+            }
+
+            closed = true;
+        }
     }
 
     public void reset() {
@@ -57,13 +74,6 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     protected int getBufferSize() {
         return buffer.getCapacity();
-    }
-
-    @Override
-    public void close() throws IOException {
-        flush();
-        responseWrapper.notifyBeforeClose();
-        closed = true;
     }
 
     protected void checkOpen() throws IOException {
@@ -103,55 +113,6 @@ class BufferedServletOutputStream extends ServletOutputStream {
         checkOpen();
         flushIfOverflow(len);
         buffer.write(b, off, len);
-    }
-
-    // TODO: flush buffer automatically after some threshold (say 100 kilobytes for start?) or analyze content-length headedr
-    private static class Buffer extends ByteArrayOutputStream {
-
-        public synchronized byte[] toByteArray(int maxSize) {
-            return Arrays.copyOf(buf, Math.max(count, maxSize));
-        }
-
-        public int getCapacity() {
-            return null == buf ? 0 : buf.length;
-        }
-
-        /**
-         * Increases the capacity if necessary to ensure that it can hold
-         * at least the number of elements specified by the minimum
-         * capacity argument.
-         *
-         * @param minCapacity the desired minimum capacity
-         * @throws OutOfMemoryError if {@code minCapacity < 0}.  This is
-         * interpreted as a request for the unsatisfiably large capacity
-         * {@code (long) Integer.MAX_VALUE + (minCapacity - Integer.MAX_VALUE)}.
-         */
-        private void ensureCapacity(int minCapacity) {
-            // overflow-conscious code
-            if (minCapacity - buf.length > 0)
-                grow(minCapacity);
-        }
-
-        /**
-         * Increases the capacity to ensure that it can hold at least the
-         * number of elements specified by the minimum capacity argument.
-         *
-         * @param minCapacity the desired minimum capacity
-         */
-        private void grow(int minCapacity) {
-            // overflow-conscious code
-            int oldCapacity = buf.length;
-            int newCapacity = oldCapacity << 1;
-            if (newCapacity - minCapacity < 0)
-                newCapacity = minCapacity;
-            if (newCapacity < 0) {
-                if (minCapacity < 0) // overflow
-                    throw new OutOfMemoryError();
-                newCapacity = Integer.MAX_VALUE;
-            }
-            buf = Arrays.copyOf(buf, newCapacity);
-        }
-
     }
 
 }

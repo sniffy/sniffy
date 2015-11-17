@@ -12,17 +12,13 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
-public class SnifferServlet extends HttpServlet {
+class SnifferServlet extends HttpServlet {
 
     protected final Map<String, List<StatementMetaData>> cache;
 
     protected byte[] javascript;
-    protected byte[] css;
 
     public SnifferServlet(Map<String, List<StatementMetaData>> cache) {
         this.cache = cache;
@@ -35,21 +31,15 @@ public class SnifferServlet extends HttpServlet {
         } catch (IOException e) {
             throw new ServletException(e);
         }
-        try {
-            css = loadResource("jdbcsniffer.css");
-        } catch (IOException e) {
-            throw new ServletException(e);
-        }
     }
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
         String path = request.getRequestURI().substring(request.getContextPath().length());
 
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
             serveContent(response, "application/javascript", javascript);
-        } else if (SnifferFilter.CSS_URI.equals(path)) {
-            serveContent(response, "text/css", css);
         } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
             byte[] statements = getStatementsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
 
@@ -65,6 +55,7 @@ public class SnifferServlet extends HttpServlet {
                 outputStream.flush();
             }
         }
+
     }
 
     private byte[] getStatementsJson(String requestId) {
@@ -92,6 +83,13 @@ public class SnifferServlet extends HttpServlet {
         }
     }
 
+    /**
+     * @todo support gzip encoding
+     * @param response
+     * @param mimeType
+     * @param content
+     * @throws IOException
+     */
     private void serveContent(HttpServletResponse response, String mimeType, byte[] content) throws IOException {
         response.setContentType(mimeType);
         response.setContentLength(content.length);
@@ -102,7 +100,7 @@ public class SnifferServlet extends HttpServlet {
         outputStream.flush();
     }
 
-    private void cacheForever(HttpServletResponse response) {
+    private static void cacheForever(HttpServletResponse response) {
         response.setHeader("Cache-Control", "max-age=31536000, public");
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.YEAR, 1);

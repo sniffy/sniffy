@@ -7,7 +7,10 @@ import com.github.bedrin.jdbc.sniffer.util.LruCache;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -48,7 +51,8 @@ import java.util.regex.Pattern;
  */
 public class SnifferFilter implements Filter {
 
-    public final static String HEADER_NAME = "X-Sql-Queries";
+    public static final String HEADER_NUMBER_OF_QUERIES = "X-Sql-Queries";
+    public static final String HEADER_REQUEST_DETAILS = "X-Request-Details";
 
     public static final String SNIFFER_URI_PREFIX =
             "/jdbcsniffer/" +
@@ -59,10 +63,19 @@ public class SnifferFilter implements Filter {
                     Constants.PATCH_VERSION;
 
     public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.min.js";
-    public static final String CSS_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.css";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
 
-    private SnifferServlet snifferServlet;
+    protected boolean injectHtml = false;
+    protected boolean enabled = true;
+    protected Pattern excludePattern = null;
+
+    // TODO: consider replacing with some concurrent collection instead
+    protected Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
+            new LruCache<String, List<StatementMetaData>>(10000)
+    );
+
+    protected SnifferServlet snifferServlet;
+    protected ServletContext servletContext;
 
     public void init(FilterConfig filterConfig) throws ServletException {
         String injectHtml = filterConfig.getInitParameter("inject-html");
@@ -81,106 +94,164 @@ public class SnifferFilter implements Filter {
         snifferServlet = new SnifferServlet(cache);
         snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "jdbc-sniffer"));
 
+        servletContext = filterConfig.getServletContext();
+
     }
-
-    protected boolean injectHtml = false;
-    protected boolean enabled = true;
-    protected Pattern excludePattern = null;
-
-    // TODO: consider replacing with some concurrent collection instead
-    protected Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
-            new LruCache<String, List<StatementMetaData>>(10000)
-    );
 
     public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
-
-        final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-        final String contextPath = httpServletRequest.getContextPath();
-        final String relativeUrl = httpServletRequest.getRequestURI().substring(contextPath.length());
 
         if (!enabled) {
             chain.doFilter(request, response);
             return;
         }
 
-        if (injectHtml) {
-            snifferServlet.service(request, response);
-            if (response.isCommitted()) return;
-        }
-
-        if (null != excludePattern && excludePattern.matcher(relativeUrl).matches()) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        BufferedServletResponseWrapper responseWrapper = null;
-
-        final Spy spy = Sniffer.spy();
-        final String requestId = UUID.randomUUID().toString();
+        boolean chainCalled = false;
 
         try {
-            responseWrapper = new BufferedServletResponseWrapper(httpServletResponse);
 
-            responseWrapper.addFlushResponseListener(new FlushResponseListener() {
-                public void beforeFlush(HttpServletResponse response, BufferedServletResponseWrapper wrapper, String mimeTypeMagic) throws IOException {
-                    response.addIntHeader(HEADER_NAME, spy.executedStatements(Threads.CURRENT));
-                    response.addHeader("X-Request-Id", requestId);
-                    if (injectHtml) {
-                        String contentType = wrapper.getContentType();
-                        String contentEncoding = wrapper.getContentEncoding();
-                        if (null == contentEncoding && null != contentType && contentType.startsWith("text/html") && !"application/xml".equals(mimeTypeMagic)) {
-                            // adjust content length with the size of injected content
-                            int contentLength = wrapper.getContentLength();
-                            if (contentLength > 0) {
-                                wrapper.setContentLength(contentLength + maximumInjectSize(contextPath));
-                            }
-                            // inject html at the very end of output stream
-                            wrapper.addCloseResponseListener(new CloseResponseListener() {
-                                public void beforeClose(HttpServletResponse response, BufferedServletResponseWrapper wrapper) throws IOException {
-                                    cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
-                                    BufferedServletOutputStream bufferedServletOutputStream = wrapper.getBufferedServletOutputStream();
-                                    bufferedServletOutputStream.write(generateAndPadHtml(
-                                                    contextPath, spy.executedStatements(Threads.CURRENT), requestId).getBytes()
-                                    );
-                                    bufferedServletOutputStream.flush();
+            if (injectHtml) {
+                snifferServlet.service(request, response);
+                if (response.isCommitted()) return;
+            }
+
+            final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+            final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+            final String contextPath = httpServletRequest.getContextPath();
+            final String relativeUrl = httpServletRequest.getRequestURI().substring(contextPath.length());
+
+            if (null != excludePattern && excludePattern.matcher(relativeUrl).matches()) {
+                chainCalled = true;
+                chain.doFilter(request, response);
+                return;
+            }
+
+            final Spy<? extends Spy> spy = Sniffer.spy();
+            final String requestId = UUID.randomUUID().toString();
+
+            BufferedServletResponseWrapper responseWrapper = new BufferedServletResponseWrapper(
+                    httpServletResponse,
+                    new BufferedServletResponseListener() {
+
+                        /**
+                         * Flag indicating that current response looks like HTML and capable of injecting sniffer widget
+                         */
+                        private boolean isHtmlPage = false;
+
+                        /**
+                         * todo return flag indicating that sniffer wont modify the output stream
+                         * @param wrapper
+                         * @param buffer
+                         * @throws IOException
+                         */
+                        @Override
+                        public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
+                            wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
+                            wrapper.addHeader(HEADER_REQUEST_DETAILS, contextPath + REQUEST_URI_PREFIX + requestId);
+                            if (injectHtml) {
+                                String contentType = wrapper.getContentType();
+                                String contentEncoding = wrapper.getContentEncoding();
+
+                                String mimeTypeMagic = null == buffer ? null :
+                                        URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.leadingBytes(16)));
+
+                                if (null != buffer && null == contentEncoding && null != contentType && contentType.startsWith("text/html")
+                                        && !"application/xml".equals(mimeTypeMagic)) {
+                                    // adjust content length with the size of injected content
+                                    int contentLength = wrapper.getContentLength();
+                                    if (contentLength > 0) {
+                                        wrapper.setContentLength(contentLength + maximumInjectSize(contextPath));
+                                    }
+                                    isHtmlPage = true;
+
+                                    String characterEncoding = wrapper.getCharacterEncoding();
+                                    if (null == characterEncoding) {
+                                        characterEncoding = Charset.defaultCharset().name();
+                                    }
+
+                                    String snifferHeader = generateHeaderHtml(contextPath, requestId).toString();
+
+                                    HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
+                                    htmlInjector.injectAtTheBeginning(snifferHeader);
+
                                 }
-                            });
+                            }
+                        }
+
+                        @Override
+                        public void beforeClose(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
+
+                            List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
+                            if (null != executedStatements && !executedStatements.isEmpty()) {
+                                cache.put(requestId, executedStatements);
+                            }
+
+                            if (injectHtml && isHtmlPage) {
+
+                                String characterEncoding = wrapper.getCharacterEncoding();
+                                if (null == characterEncoding) {
+                                    characterEncoding = Charset.defaultCharset().name();
+                                }
+
+                                String snifferWidget = generateAndPadFooterHtml(spy.executedStatements(Threads.CURRENT));
+
+                                HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
+                                htmlInjector.injectAtTheEnd(snifferWidget);
+
+                            }
 
                         }
-                    }
-                }
-            });
 
-            response = responseWrapper;
+                    }
+            );
+
+            chainCalled = true;
+            chain.doFilter(request, responseWrapper);
+
+            List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
+            if (null != executedStatements && !executedStatements.isEmpty()) {
+                cache.put(requestId, executedStatements);
+            }
+
+            responseWrapper.close();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            servletContext.log("Exception in SnifferFilter", e);
+            if (!chainCalled) {
+                chain.doFilter(request, response);
+            }
         }
-
-        chain.doFilter(request, response);
-
-        if (null != responseWrapper) {
-            responseWrapper.flush();
-        }
-
-        cache.put(requestId, spy.getExecutedStatements(Threads.CURRENT));
 
     }
 
-    private static int MAXIMUM_INJECT_SIZE;
-
-    protected static int maximumInjectSize(String contextPath) {
-        if (MAXIMUM_INJECT_SIZE == 0) {
-            MAXIMUM_INJECT_SIZE = generateHtml(contextPath, Integer.MAX_VALUE, UUID.randomUUID().toString()).length();
-        }
-        return MAXIMUM_INJECT_SIZE;
+    protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
+        return new StringBuilder().
+                append("<script id=\"jdbc-sniffer-header\" type=\"application/javascript\" data-request-id=\"").
+                append(requestId).
+                append("\" src=\"").
+                append(contextPath).
+                append(JAVASCRIPT_URI).
+                append("\"></script>");
+        //return "<script type=\"application/javascript\" src=\"/mock/jdbcsniffer.min.js\"></script>";
     }
 
-    protected static String generateAndPadHtml(String contextPath, int executedQueries, String requestId) {
-        StringBuilder sb = generateHtml(contextPath, executedQueries, requestId);
-        for (int i = sb.length(); i < maximumInjectSize(contextPath); i++) {
+    private int maximumInjectSize;
+
+    protected int maximumInjectSize(String contextPath) {
+        if (maximumInjectSize == 0) {
+            maximumInjectSize = maximumFooterSize() +
+                    generateHeaderHtml(contextPath, UUID.randomUUID().toString()).length();
+        }
+        return maximumInjectSize;
+    }
+
+    private int maximumFooterSize() {
+        return generateFooterHtml(Integer.MAX_VALUE).length();
+    }
+
+    protected String generateAndPadFooterHtml(int executedQueries) {
+        StringBuilder sb = generateFooterHtml(executedQueries);
+        for (int i = sb.length(); i < maximumFooterSize(); i++) {
             sb.append(" ");
         }
         return sb.toString();
@@ -195,19 +266,11 @@ public class SnifferFilter implements Filter {
      * }
      * </pre>
      * @param executedQueries
-     * @param requestId
      * @return
      */
-    protected static StringBuilder generateHtml(String contextPath, int executedQueries, String requestId) {
+    protected static StringBuilder generateFooterHtml(int executedQueries) {
         return new StringBuilder().
-                append("<script id=\"jdbc-sniffer\" type=\"application/javascript\" data-sql-queries=\"").
-                append(executedQueries).
-                append("\" data-request-id=\"").
-                append(requestId).
-                append("\" src=\"").
-                append(contextPath).
-                append(JAVASCRIPT_URI).
-                append("\"></script>");
+                append("<data id=\"jdbc-sniffer\" data-sql-queries=\"").append(executedQueries).append("\"/>");
     }
 
     public void destroy() {

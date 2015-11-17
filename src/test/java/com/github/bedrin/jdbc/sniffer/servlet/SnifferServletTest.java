@@ -2,6 +2,7 @@ package com.github.bedrin.jdbc.sniffer.servlet;
 
 import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.mock.web.*;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -45,23 +46,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertTrue(response.getContentLength() > 0);
-
-    }
-
-    @Test
-    public void testGetCss() throws Exception {
-
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.CSS_URI).
-                buildRequest(servletContext);
-
-        request.setContextPath("/petclinic");
-
-        snifferServlet.service(request, response);
-
-        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
 
     }
@@ -83,6 +68,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("[{\"query\":\"SELECT 1 FROM DUAL\",\"time\":300.101}]", response.getContentAsString());
 
@@ -106,6 +92,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"time\":300.101}]", response.getContentAsString());
 
