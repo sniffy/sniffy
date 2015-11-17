@@ -63,7 +63,6 @@ public class SnifferFilter implements Filter {
                     Constants.PATCH_VERSION;
 
     public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.min.js";
-    public static final String CSS_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.css";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
 
     private SnifferServlet snifferServlet;
@@ -189,7 +188,7 @@ public class SnifferFilter implements Filter {
                                     characterEncoding = Charset.defaultCharset().name();
                                 }
 
-                                String snifferWidget = generateAndPadFooterHtml(contextPath, spy.executedStatements(Threads.CURRENT), requestId);
+                                String snifferWidget = generateAndPadFooterHtml(spy.executedStatements(Threads.CURRENT));
 
                                 HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
                                 htmlInjector.injectAtTheEnd(snifferWidget);
@@ -233,19 +232,19 @@ public class SnifferFilter implements Filter {
 
     protected int maximumInjectSize(String contextPath) {
         if (maximumInjectSize == 0) {
-            maximumInjectSize = maximumFooterSize(contextPath) +
+            maximumInjectSize = maximumFooterSize() +
                     generateHeaderHtml(contextPath, UUID.randomUUID().toString()).length();
         }
         return maximumInjectSize;
     }
 
-    private int maximumFooterSize(String contextPath) {
-        return generateFooterHtml(contextPath, Integer.MAX_VALUE, UUID.randomUUID().toString()).length();
+    private int maximumFooterSize() {
+        return generateFooterHtml(Integer.MAX_VALUE).length();
     }
 
-    protected String generateAndPadFooterHtml(String contextPath, int executedQueries, String requestId) {
-        StringBuilder sb = generateFooterHtml(contextPath, executedQueries, requestId);
-        for (int i = sb.length(); i < maximumFooterSize(contextPath); i++) {
+    protected String generateAndPadFooterHtml(int executedQueries) {
+        StringBuilder sb = generateFooterHtml(executedQueries);
+        for (int i = sb.length(); i < maximumFooterSize(); i++) {
             sb.append(" ");
         }
         return sb.toString();
@@ -260,10 +259,9 @@ public class SnifferFilter implements Filter {
      * }
      * </pre>
      * @param executedQueries
-     * @param requestId
      * @return
      */
-    protected static StringBuilder generateFooterHtml(String contextPath, int executedQueries, String requestId) {
+    protected static StringBuilder generateFooterHtml(int executedQueries) {
         return new StringBuilder().
                 append("<data id=\"jdbc-sniffer\" data-sql-queries=\"").append(executedQueries).append("\"/>");
     }
