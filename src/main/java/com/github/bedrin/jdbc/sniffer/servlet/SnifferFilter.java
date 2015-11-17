@@ -65,7 +65,17 @@ public class SnifferFilter implements Filter {
     public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.min.js";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
 
-    private SnifferServlet snifferServlet;
+    protected boolean injectHtml = false;
+    protected boolean enabled = true;
+    protected Pattern excludePattern = null;
+
+    // TODO: consider replacing with some concurrent collection instead
+    protected Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
+            new LruCache<String, List<StatementMetaData>>(10000)
+    );
+
+    protected SnifferServlet snifferServlet;
+    protected ServletContext servletContext;
 
     public void init(FilterConfig filterConfig) throws ServletException {
         String injectHtml = filterConfig.getInitParameter("inject-html");
@@ -84,47 +94,42 @@ public class SnifferFilter implements Filter {
         snifferServlet = new SnifferServlet(cache);
         snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "jdbc-sniffer"));
 
+        servletContext = filterConfig.getServletContext();
+
     }
-
-    protected boolean injectHtml = false;
-    protected boolean enabled = true;
-    protected Pattern excludePattern = null;
-
-    // TODO: consider replacing with some concurrent collection instead
-    protected Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
-            new LruCache<String, List<StatementMetaData>>(10000)
-    );
 
     public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
-
-        final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-        final String contextPath = httpServletRequest.getContextPath();
-        final String relativeUrl = httpServletRequest.getRequestURI().substring(contextPath.length());
 
         if (!enabled) {
             chain.doFilter(request, response);
             return;
         }
 
-        if (injectHtml) {
-            snifferServlet.service(request, response);
-            if (response.isCommitted()) return;
-        }
-
-        if (null != excludePattern && excludePattern.matcher(relativeUrl).matches()) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        BufferedServletResponseWrapper responseWrapper = null;
-
-        final Spy<? extends Spy> spy = Sniffer.spy();
-        final String requestId = UUID.randomUUID().toString();
+        boolean chainCalled = false;
 
         try {
-            response = responseWrapper = new BufferedServletResponseWrapper(
+
+            if (injectHtml) {
+                snifferServlet.service(request, response);
+                if (response.isCommitted()) return;
+            }
+
+            final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+            final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+            final String contextPath = httpServletRequest.getContextPath();
+            final String relativeUrl = httpServletRequest.getRequestURI().substring(contextPath.length());
+
+            if (null != excludePattern && excludePattern.matcher(relativeUrl).matches()) {
+                chainCalled = true;
+                chain.doFilter(request, response);
+                return;
+            }
+
+            final Spy<? extends Spy> spy = Sniffer.spy();
+            final String requestId = UUID.randomUUID().toString();
+
+            BufferedServletResponseWrapper responseWrapper = new BufferedServletResponseWrapper(
                     httpServletResponse,
                     new BufferedServletResponseListener() {
 
@@ -200,19 +205,21 @@ public class SnifferFilter implements Filter {
                     }
             );
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            chainCalled = true;
+            chain.doFilter(request, responseWrapper);
 
-        chain.doFilter(request, response);
+            List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
+            if (null != executedStatements && !executedStatements.isEmpty()) {
+                cache.put(requestId, executedStatements);
+            }
 
-        List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
-        if (null != executedStatements && !executedStatements.isEmpty()) {
-            cache.put(requestId, executedStatements);
-        }
-
-        if (null != responseWrapper) {
             responseWrapper.close();
+
+        } catch (Exception e) {
+            servletContext.log("Exception in SnifferFilter", e);
+            if (!chainCalled) {
+                chain.doFilter(request, response);
+            }
         }
 
     }
