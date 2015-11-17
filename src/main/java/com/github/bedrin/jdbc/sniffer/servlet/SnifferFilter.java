@@ -63,7 +63,6 @@ public class SnifferFilter implements Filter {
                     Constants.PATCH_VERSION;
 
     public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.min.js";
-    public static final String CSS_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.css";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
 
     private SnifferServlet snifferServlet;
