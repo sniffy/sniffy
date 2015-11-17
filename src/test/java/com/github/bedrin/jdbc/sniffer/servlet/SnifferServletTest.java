@@ -2,6 +2,7 @@ package com.github.bedrin.jdbc.sniffer.servlet;
 
 import com.github.bedrin.jdbc.sniffer.sql.StatementMetaData;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.mock.web.*;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -46,24 +47,6 @@ public class SnifferServletTest {
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/javascript", response.getContentType());
-        assertTrue(response.getContentLength() > 0);
-
-    }
-
-    @Test
-    public void testGetCss() throws Exception {
-
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.CSS_URI).
-                buildRequest(servletContext);
-
-        request.setContextPath("/petclinic");
-
-        snifferServlet.service(request, response);
-
-        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("text/css", response.getContentType());
         assertTrue(response.getContentLength() > 0);
 
     }
