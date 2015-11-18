@@ -5,7 +5,7 @@ Sniffy
 [![CI Status](https://travis-ci.org/sniffy/sniffy.svg?branch=master)](https://travis-ci.org/sniffy/sniffy)
 [![Coverage Status](https://coveralls.io/repos/sniffy/sniffy/badge.png?branch=master)](https://coveralls.io/r/sniffy/sniffy?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy)
-[![Download](https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg) ](https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion)
+[![Download](https://api.bintray.com/packages/sniffy/sniffy/sniffy/images/download.svg) ](https://bintray.com/sniffy/sniffy/sniffy/_latestVersion)
 
 Sniffy counts the number of executed SQL queries and provides an API for validating them
 It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
