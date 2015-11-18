@@ -1,13 +1,13 @@
-JDBC Sniffer
+Sniffy
 ============
 
-[![Join the chat at https://gitter.im/bedrin/jdbc-sniffer](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bedrin/jdbc-sniffer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![CI Status](https://travis-ci.org/bedrin/jdbc-sniffer.svg?branch=master)](https://travis-ci.org/bedrin/jdbc-sniffer)
-[![Coverage Status](https://coveralls.io/repos/bedrin/jdbc-sniffer/badge.png?branch=master)](https://coveralls.io/r/bedrin/jdbc-sniffer?branch=master)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.bedrin/jdbc-sniffer)
+[![Join the chat at https://gitter.im/sniffy/sniffy](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sniffy/sniffy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![CI Status](https://travis-ci.org/sniffy/sniffy.svg?branch=master)](https://travis-ci.org/sniffy/sniffy)
+[![Coverage Status](https://coveralls.io/repos/sniffy/sniffy/badge.png?branch=master)](https://coveralls.io/r/sniffy/sniffy?branch=master)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy)
 [![Download](https://api.bintray.com/packages/bedrin/github/jdbc-sniffer/images/download.svg) ](https://bintray.com/bedrin/github/jdbc-sniffer/_latestVersion)
 
-JDBC Sniffer counts the number of executed SQL queries and provides an API for validating them
+Sniffy counts the number of executed SQL queries and provides an API for validating them
 It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
 Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at early stages 
 
@@ -15,17 +15,17 @@ Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/q
 try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
      Statement statement = connection.createStatement()) {
     statement.execute("SELECT 1 FROM DUAL");
-    // JDBC Sniffer will throw an Exception if you execute query other than SELECT or uncomment line below
+    // Sniffy will throw an Exception if you execute query other than SELECT or uncomment line below
     //statement.execute("SELECT 1 FROM DUAL");
 }
 ```
 
-You can also use JDBC Sniffer in your test environments to see the number of SQL queries executed by each HTTP request.
+You can also use Sniffy in your test environments to see the number of SQL queries executed by each HTTP request.
 Just add it to your `web.xml` file:
 ```xml
 <filter>
     <filter-name>sniffer</filter-name>
-    <filter-class>com.github.bedrin.jdbc.sniffer.servlet.SnifferFilter</filter-class>
+    <filter-class>io.sniffy.servlet.SnifferFilter</filter-class>
     <init-param>
         <param-name>inject-html</param-name>
         <param-value>true</param-value>
@@ -45,43 +45,43 @@ Live Demo - [http://demo.sniffy.io/](http://demo.sniffy.io/owners.html?lastName=
 
 Maven
 ============
-JDBC Sniffer is available from Maven Central repository
+Sniffy is available from Maven Central repository
 ```xml
 <dependency>
-    <groupId>com.github.bedrin</groupId>
-    <artifactId>jdbc-sniffer</artifactId>
-    <version>2.3.5</version>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy</artifactId>
+    <version>3.0.0</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'com.github.bedrin:jdbc-sniffer:2.3.5'
+    compile 'io.sniffy:sniffy:3.0.0'
 }
 ```
 
 Download
 ============
 [![Get automatic notifications about new "jdbc-sniffer" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/jdbc-sniffer/view?source=watch)
-- [jdbc-sniffer-2.3.5.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.5/jdbc-sniffer-2.3.5.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.5.jar))
-- [jdbc-sniffer-2.3.5-sources.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.5/jdbc-sniffer-2.3.5-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.5-sources.jar))
-- [jdbc-sniffer-2.3.5-javadoc.jar](https://github.com/bedrin/jdbc-sniffer/releases/download/2.3.5/jdbc-sniffer-2.3.5-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/jdbc-sniffer-2.3.5-javadoc.jar))
+- [sniffy-3.0.0.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/sniffy-3.0.0.jar))
+- [sniffy-3.0.0-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/sniffy-3.0.0-sources.jar))
+- [sniffy-3.0.0-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/sniffy-3.0.0-javadoc.jar))
 
 Setup
 ============
 Simply add jdbc-sniffer.jar to your classpath and add `sniffer:` prefix to the JDBC connection url
 For example `jdbc:h2:~/test` should be changed to `sniffer:jdbc:h2:mem:`
-The sniffer JDBC driver class name is `com.github.bedrin.jdbc.sniffer.MockDriver`
+The sniffer JDBC driver class name is `io.sniffy.MockDriver`
 
 HTML injection is configured in `web.xml` file:
 ```xml
 <filter>
     <filter-name>sniffer</filter-name>
-    <filter-class>com.github.bedrin.jdbc.sniffer.servlet.SnifferFilter</filter-class>
+    <filter-class>io.sniffy.servlet.SnifferFilter</filter-class>
     <init-param>
         <!-- 
-        Enables injection of JDBC Sniffer toolbar to HTML
+        Enables injection of Sniffy toolbar to HTML
         If disabled the html remains untouched
         You still can get the number of executed queries from X-Sql-Queries HTTP header
          -->
@@ -89,7 +89,7 @@ HTML injection is configured in `web.xml` file:
         <param-value>true</param-value> <!-- default: false -->
     </init-param>
     <init-param>
-        <!-- Allows disabling the JDBC Sniffer filter in web.xml -->
+        <!-- Allows disabling the Sniffy filter in web.xml -->
         <param-name>enabled</param-name>
         <param-value>true</param-value> <!-- default: true -->
     </init-param>
@@ -107,14 +107,14 @@ HTML injection is configured in `web.xml` file:
 
 Usage
 ============
-Following test shows the main ways of integrating JDBC Sniffer into your project:
+Following test shows the main ways of integrating Sniffy into your project:
 
 ```java
-import com.github.bedrin.jdbc.sniffer.Sniffer;
-import com.github.bedrin.jdbc.sniffer.Spy;
-import com.github.bedrin.jdbc.sniffer.Threads;
-import com.github.bedrin.jdbc.sniffer.Expectation;
-import com.github.bedrin.jdbc.sniffer.junit.QueryCounter;
+import io.sniffy.Sniffer;
+import io.sniffy.Spy;
+import io.sniffy.Threads;
+import io.sniffy.Expectation;
+import io.sniffy.junit.QueryCounter;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -165,7 +165,7 @@ public class UsageTest {
         }
     }
 
-    // Integrate JDBC Sniffer to your test using @Rule annotation and a QueryCounter field
+    // Integrate Sniffy to your test using @Rule annotation and a QueryCounter field
     @Rule
     public final QueryCounter queryCounter = new QueryCounter();
 
@@ -184,22 +184,22 @@ public class UsageTest {
 
 Integrating with test frameworks
 ============
-JDBC Sniffer provides integration with popular testing frameworks - see our wiki for details
+Sniffy provides integration with popular testing frameworks - see our wiki for details
  
- * [JUnit](https://github.com/bedrin/jdbc-sniffer/wiki/JUnit)
- * [Spring Framework](https://github.com/bedrin/jdbc-sniffer/wiki/Spring-Framework)
- * [Spock Framework](https://github.com/bedrin/jdbc-sniffer/wiki/Spock-Framework)
- * [Test NG](https://github.com/bedrin/jdbc-sniffer/wiki/Test-NG)
+ * [JUnit](https://github.com/sniffy/sniffy/wiki/JUnit)
+ * [Spring Framework](https://github.com/sniffy/sniffy/wiki/Spring-Framework)
+ * [Spock Framework](https://github.com/sniffy/sniffy/wiki/Spock-Framework)
+ * [Test NG](https://github.com/sniffy/sniffy/wiki/Test-NG)
 
 Building
 ============
 JDBC sniffer is built using JDK8+ and Maven 3.2+ - just checkout the project and type `mvn install`
-JDK8 is required only for building the project - once it's built, you can use JDBC Sniffer with any JRE 1.5+
+JDK8 is required only for building the project - once it's built, you can use Sniffy with any JRE 1.5+
 
-UI part of JDBC Sniffer is maintained in a separate repository [jdbc-sniffer-ui](https://github.com/bedrin/jdbc-sniffer-ui)
+UI part of Sniffy is maintained in a separate repository [jdbc-sniffer-ui](https://github.com/sniffy/sniffy-ui)
 
 Contribute
 ============
-You are most welcome to contribute to JDBC Sniffer!
+You are most welcome to contribute to Sniffy!
 
-Read the [Contribution guidelines](https://github.com/bedrin/jdbc-sniffer/blob/master/CONTRIBUTING.md)
+Read the [Contribution guidelines](https://github.com/sniffy/sniffy/blob/master/CONTRIBUTING.md)
