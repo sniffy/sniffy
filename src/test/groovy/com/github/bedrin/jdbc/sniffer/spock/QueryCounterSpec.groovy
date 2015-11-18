@@ -1,7 +1,7 @@
-package com.github.bedrin.jdbc.sniffer.spock
+package io.sniffy.spock
 
-import com.github.bedrin.jdbc.sniffer.Sniffer
-import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError
+import io.sniffy.Sniffer
+import io.sniffy.WrongNumberOfQueriesError
 import groovy.sql.Sql
 import spock.lang.*
 
