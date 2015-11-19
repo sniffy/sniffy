@@ -3,7 +3,7 @@ Sniffy
 
 [![Join the chat at https://gitter.im/sniffy/sniffy](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sniffy/sniffy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![CI Status](https://travis-ci.org/sniffy/sniffy.svg?branch=master)](https://travis-ci.org/sniffy/sniffy)
-[![Coverage Status](https://coveralls.io/repos/sniffy/sniffy/badge.png?branch=master)](https://coveralls.io/r/sniffy/sniffy?branch=master)
+[![Coverage Status](https://coveralls.io/repos/sniffy/sniffy/badge.png?branch=develop)](https://coveralls.io/r/sniffy/sniffy?branch=develop)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy)
 [![Download](https://api.bintray.com/packages/sniffy/sniffy/sniffy/images/download.svg) ](https://bintray.com/sniffy/sniffy/sniffy/_latestVersion)
 
