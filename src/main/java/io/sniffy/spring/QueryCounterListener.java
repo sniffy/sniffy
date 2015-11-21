@@ -154,15 +154,15 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
 
             try {
                 spy.close();
-            } catch (WrongNumberOfQueriesError jdbcSnifferError) {
+            } catch (WrongNumberOfQueriesError sniffyError) {
 
                 Throwable throwable = getTestException(testContext);
                 if (null != throwable) {
-                    if (!ExceptionUtil.addSuppressed(throwable, jdbcSnifferError)) {
-                        jdbcSnifferError.printStackTrace();
+                    if (!ExceptionUtil.addSuppressed(throwable, sniffyError)) {
+                        sniffyError.printStackTrace();
                     }
                 } else {
-                    throw jdbcSnifferError;
+                    throw sniffyError;
                 }
 
             }

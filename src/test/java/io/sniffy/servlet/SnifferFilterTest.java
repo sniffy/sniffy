@@ -234,7 +234,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
-        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"jdbc-sniffer\""));
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
 
     }
 
@@ -271,7 +271,7 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
         assertEquals(actualContent, httpServletResponse.getContentAsString());
-        assertFalse(httpServletResponse.getContentAsString().contains("id=\"jdbc-sniffer\""));
+        assertFalse(httpServletResponse.getContentAsString().contains("id=\"sniffy\""));
 
     }
 
@@ -301,8 +301,8 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
-        assertTrue(contentAsString.contains("id=\"jdbc-sniffer\""));
-        assertTrue(contentAsString.indexOf("id=\"jdbc-sniffer\"") < contentAsString.indexOf("</body>"));
+        assertTrue(contentAsString.contains("id=\"sniffy\""));
+        assertTrue(contentAsString.indexOf("id=\"sniffy\"") < contentAsString.indexOf("</body>"));
         assertTrue(contentAsString.contains("data-sql-queries=\"2\""));
 
     }
@@ -333,7 +333,7 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
-        assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"jdbc-sniffer\""));
+        assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"sniffy\""));
         assertEquals(contentAsString.length(), httpServletResponse.getContentLength());
         assertTrue(httpServletResponse.getContentLength() > actualContent.length());
 
@@ -418,7 +418,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
-        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"jdbc-sniffer\""));
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
 
     }
 
@@ -448,7 +448,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
-        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"jdbc-sniffer\""));
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
 
     }
 

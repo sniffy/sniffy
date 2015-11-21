@@ -20,8 +20,8 @@ import static org.junit.Assert.*;
 public class SnifferServletTest {
 
     private MockServletContext servletContext = new MockServletContext();
-    private MockFilterConfig filterConfig = new MockFilterConfig(servletContext, "jdbc-sniffer");
-    private ServletConfig servletConfig = new FilterServletConfigAdapter(filterConfig, "jdbc-sniffer");
+    private MockFilterConfig filterConfig = new MockFilterConfig(servletContext, "sniffy");
+    private ServletConfig servletConfig = new FilterServletConfigAdapter(filterConfig, "sniffy");
 
     private Map<String, List<StatementMetaData>> cache;
     private SnifferServlet snifferServlet;

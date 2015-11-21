@@ -105,17 +105,17 @@ public class QueryCounter implements IInvokedMethodListener {
 
             try {
                 spy.close();
-            } catch (WrongNumberOfQueriesError jdbcSnifferError) {
+            } catch (WrongNumberOfQueriesError sniffyError) {
 
                 testResult.setStatus(FAILURE);
 
                 Throwable throwable = testResult.getThrowable();
                 if (null != throwable) {
-                    if (!ExceptionUtil.addSuppressed(throwable, jdbcSnifferError)) {
-                        jdbcSnifferError.printStackTrace();
+                    if (!ExceptionUtil.addSuppressed(throwable, sniffyError)) {
+                        sniffyError.printStackTrace();
                     }
                 } else {
-                    throwable = jdbcSnifferError;
+                    throwable = sniffyError;
                 }
 
                 testResult.setThrowable(throwable);
