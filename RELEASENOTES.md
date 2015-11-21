@@ -2,7 +2,14 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/2.3.5...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.0...master)
+
+## v3.0.0 - November 22nd, 2015
+ * License changed to [MIT](http://www.opensource.org/licenses/mit-license.php)
+ * Project rebranded as [sniffy.io](http://sniffy.io)
+ * Sniffy now uses [semantic versioning](http://semver.org/)
+
+[Commits](https://github.com/sniffy/sniffy/compare/2.3.5...3.0.0)
 
 ## v2.3.5 - November 18th, 2015
  * [Counter in sniffer UI is invisible](https://github.com/sniffy/sniffy/issues/92)
