@@ -61,14 +61,14 @@ public class SnifferFilter implements Filter {
     public static final String HEADER_REQUEST_DETAILS = "X-Request-Details";
 
     public static final String SNIFFER_URI_PREFIX =
-            "/jdbcsniffer/" +
+            "/sniffy/" +
                     Constants.MAJOR_VERSION +
                     "." +
                     Constants.MINOR_VERSION +
                     "." +
                     Constants.PATCH_VERSION;
 
-    public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/jdbcsniffer.min.js";
+    public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/sniffy.min.js";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
 
     protected boolean injectHtml = false;
@@ -98,7 +98,7 @@ public class SnifferFilter implements Filter {
         }
 
         snifferServlet = new SnifferServlet(cache);
-        snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "jdbc-sniffer"));
+        snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
 
         servletContext = filterConfig.getServletContext();
 
@@ -232,13 +232,13 @@ public class SnifferFilter implements Filter {
 
     protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
         return new StringBuilder().
-                append("<script id=\"jdbc-sniffer-header\" type=\"application/javascript\" data-request-id=\"").
+                append("<script id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
                 append(requestId).
                 append("\" src=\"").
                 append(contextPath).
                 append(JAVASCRIPT_URI).
                 append("\"></script>");
-        //return "<script type=\"application/javascript\" src=\"/mock/jdbcsniffer.min.js\"></script>";
+        //return "<script type=\"application/javascript\" src=\"/mock/sniffy.min.js\"></script>";
     }
 
     private int maximumInjectSize;
@@ -267,8 +267,8 @@ public class SnifferFilter implements Filter {
      * Generates following HTML snippet
      * <pre>
      * {@code
-     * <div style="display:none!important" id="jdbc-sniffer" data-sql-queries="5" data-request-id="abcd"></div>
-     * <script type="application-javascript" src="/petstore/jdbcsniffer.min.js"></script>
+     * <div style="display:none!important" id="sniffy" data-sql-queries="5" data-request-id="abcd"></div>
+     * <script type="application-javascript" src="/petstore/sniffy.min.js"></script>
      * }
      * </pre>
      * @param executedQueries
@@ -276,7 +276,7 @@ public class SnifferFilter implements Filter {
      */
     protected static StringBuilder generateFooterHtml(int executedQueries) {
         return new StringBuilder().
-                append("<data id=\"jdbc-sniffer\" data-sql-queries=\"").append(executedQueries).append("\"/>");
+                append("<data id=\"sniffy\" data-sql-queries=\"").append(executedQueries).append("\"/>");
     }
 
     public void destroy() {

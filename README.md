@@ -3,7 +3,7 @@ Sniffy
 
 [![Join the chat at https://gitter.im/sniffy/sniffy](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sniffy/sniffy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![CI Status](https://travis-ci.org/sniffy/sniffy.svg?branch=master)](https://travis-ci.org/sniffy/sniffy)
-[![Coverage Status](https://coveralls.io/repos/sniffy/sniffy/badge.png?branch=develop)](https://coveralls.io/r/sniffy/sniffy?branch=develop)
+[![Coverage Status](https://coveralls.io/repos/sniffy/sniffy/badge.png?branch=master)](https://coveralls.io/r/sniffy/sniffy?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy)
 [![Download](https://api.bintray.com/packages/sniffy/sniffy/sniffy/images/download.svg) ](https://bintray.com/sniffy/sniffy/sniffy/_latestVersion)
 
@@ -39,7 +39,7 @@ Just add it to your `web.xml` file:
 
 Restart your server and you will see the number of queries in bottom right corner of your app:
 
-![RecordedDemo](https://bedrin.github.io/jdbc-sniffer/jdbcsniffer.gif)
+![RecordedDemo](http://sniffy.io/demo.gif)
 
 Live Demo - [http://demo.sniffy.io/](http://demo.sniffy.io/owners.html?lastName=)
 
@@ -63,14 +63,14 @@ dependencies {
 
 Download
 ============
-[![Get automatic notifications about new "jdbc-sniffer" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/jdbc-sniffer/view?source=watch)
+[![Get automatic notifications about new "sniffy" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/sniffy/view?source=watch)
 - [sniffy-3.0.0.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/sniffy-3.0.0.jar))
 - [sniffy-3.0.0-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/sniffy-3.0.0-sources.jar))
 - [sniffy-3.0.0-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/sniffy-3.0.0-javadoc.jar))
 
 Setup
 ============
-Simply add jdbc-sniffer.jar to your classpath and add `sniffer:` prefix to the JDBC connection url
+Simply add sniffy.jar to your classpath and add `sniffer:` prefix to the JDBC connection url
 For example `jdbc:h2:~/test` should be changed to `sniffer:jdbc:h2:mem:`
 The sniffer JDBC driver class name is `io.sniffy.MockDriver`
 
@@ -196,7 +196,7 @@ Building
 JDBC sniffer is built using JDK8+ and Maven 3.2+ - just checkout the project and type `mvn install`
 JDK8 is required only for building the project - once it's built, you can use Sniffy with any JRE 1.5+
 
-UI part of Sniffy is maintained in a separate repository [jdbc-sniffer-ui](https://github.com/sniffy/sniffy-ui)
+UI part of Sniffy is maintained in a separate repository [sniffy-ui](https://github.com/sniffy/sniffy-ui)
 
 Contribute
 ============
