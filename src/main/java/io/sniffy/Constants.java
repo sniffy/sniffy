@@ -22,7 +22,7 @@ public interface Constants {
      * The major version of Sniffy
      * @see Driver#getMinorVersion() ()
      */
-    int MINOR_VERSION = 0;
+    int MINOR_VERSION = 1;
 
     /**
      * The major version of Sniffy
