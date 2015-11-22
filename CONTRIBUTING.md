@@ -1,6 +1,6 @@
-JDBC Sniffer Contribution
+Sniffy Contribution
 ============
-You are most welcome to contribute to JDBC Sniffer!
+You are most welcome to contribute to Sniffy!
 
 Basic
 ============

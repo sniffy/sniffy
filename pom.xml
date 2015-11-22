@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.bedrin</groupId>
-    <artifactId>jdbc-sniffer</artifactId>
-    <version>2.3.5-SNAPSHOT</version>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy</artifactId>
+    <version>3.1.0-SNAPSHOT</version>
 
-    <name>JDBC Sniffer</name>
-    <url>https://bedrin.github.io/jdbc-sniffer/</url>
-    <description>JDBC Sniffer counts the number of executed queries</description>
+    <name>Sniffy</name>
+    <url>http://sniffy.io/</url>
+    <description>Sniffy counts the number of executed queries</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,9 +18,9 @@
     </properties>
 
     <scm>
-        <connection>scm:git:https://github.com/bedrin/jdbc-sniffer.git</connection>
-        <developerConnection>scm:git:https://github.com/bedrin/jdbc-sniffer.git</developerConnection>
-        <url>https://github.com/bedrin/jdbc-sniffer</url>
+        <connection>scm:git:https://github.com/sniffy/sniffy.git</connection>
+        <developerConnection>scm:git:https://github.com/sniffy/sniffy.git</developerConnection>
+        <url>https://github.com/sniffy/sniffy</url>
     </scm>
 
     <repositories>
@@ -51,8 +51,43 @@
     </distributionManagement>
 
     <build>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>target/generated-resources</directory>
+            </resource>
+        </resources>
+
         <plugins>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.webjars.bower</groupId>
+                                    <artifactId>sniffy</artifactId>
+                                    <version>3.0.0</version>
+                                    <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
+                                    <includes>META-INF/resources/webjars/sniffy/3.0.0/dist/sniffy.min.js</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.4</version>
@@ -77,10 +112,10 @@
                             *;resolution:=optional
                         </Import-Package>
                         <Export-Package>
-                            com.github.bedrin.jdbc.sniffer,
-                            com.github.bedrin.jdbc.sniffer.junit,
-                            com.github.bedrin.jdbc.sniffer.spring,
-                            com.github.bedrin.jdbc.sniffer.testng
+                            io.sniffy,
+                            io.sniffy.junit,
+                            io.sniffy.spring,
+                            io.sniffy.testng
                         </Export-Package>
                     </instructions>
                 </configuration>
@@ -233,6 +268,27 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>sniffy</artifactId>
+            <version>3.0.0</version>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.webjars.bower</groupId>
+                    <artifactId>minified</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.webjars.bower</groupId>
+                    <artifactId>highlightjs</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.webjars.bower</groupId>
+                    <artifactId>clipboard</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
@@ -378,8 +434,8 @@
 
     <licenses>
         <license>
-            <name>New BSD License</name>
-            <url>http://www.opensource.org/licenses/bsd-license.php</url>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
