@@ -63,10 +63,10 @@ dependencies {
 
 Download
 ============
-[![Get automatic notifications about new "sniffy" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/bedrin/github/sniffy/view?source=watch)
-- [sniffy-3.0.0.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/sniffy-3.0.0.jar))
-- [sniffy-3.0.0-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/sniffy-3.0.0-sources.jar))
-- [sniffy-3.0.0-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/bedrin/github/sniffy-3.0.0-javadoc.jar))
+[![Get automatic notifications about new "sniffy" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/sniffy/sniffy/sniffy/view?source=watch)
+- [sniffy-3.0.0.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.0.jar))
+- [sniffy-3.0.0-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.0-sources.jar))
+- [sniffy-3.0.0-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.0-javadoc.jar))
 
 Setup
 ============
