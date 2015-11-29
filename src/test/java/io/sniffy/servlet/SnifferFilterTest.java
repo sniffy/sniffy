@@ -372,6 +372,38 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testInjectHtmlSetContentLengthIntHeader() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            response.setIntHeader("Content-Length", actualContent.length());
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        String contentAsString = httpServletResponse.getContentAsString();
+        assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"sniffy\""));
+        assertEquals(contentAsString.length(), httpServletResponse.getContentLength());
+        assertTrue(httpServletResponse.getContentLength() > actualContent.length());
+
+    }
+
+    @Test
     public void testFilterOneQuerySendError() throws IOException, ServletException {
 
         doAnswer(invocation -> {
