@@ -28,6 +28,6 @@ public interface Constants {
      * The major version of Sniffy
      * @see Driver#getMinorVersion() ()
      */
-    int PATCH_VERSION = 0;
+    int PATCH_VERSION = 1;
 
 }
