@@ -22,13 +22,13 @@ public interface Constants {
      * The major version of Sniffy
      * @see Driver#getMinorVersion() ()
      */
-    int MINOR_VERSION = 0;
+    int MINOR_VERSION = 1;
 
     /**
      * The major version of Sniffy
      * @see Driver#getMinorVersion() ()
      */
-    int PATCH_VERSION = 1;
+    int PATCH_VERSION = 0;
 
     /**
      * returns the root package for all JDBC Sniffer classes

@@ -51,23 +51,23 @@ Sniffy is available from Maven Central repository
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy</artifactId>
-    <version>3.0.1</version>
+    <version>3.1.0</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'io.sniffy:sniffy:3.0.1'
+    compile 'io.sniffy:sniffy:3.1.0'
 }
 ```
 
 Download
 ============
 [![Get automatic notifications about new "sniffy" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/sniffy/sniffy/sniffy/view?source=watch)
-- [sniffy-3.0.1.jar](https://github.com/sniffy/sniffy/releases/download/3.0.1/sniffy-3.0.1.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.1.jar))
-- [sniffy-3.0.1-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.1/sniffy-3.0.1-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.1-sources.jar))
-- [sniffy-3.0.1-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.1/sniffy-3.0.1-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.1-javadoc.jar))
+- [sniffy-3.1.0.jar](https://github.com/sniffy/sniffy/releases/download/3.1.0/sniffy-3.1.0.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.1.0.jar))
+- [sniffy-3.1.0-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.1.0/sniffy-3.1.0-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.1.0-sources.jar))
+- [sniffy-3.1.0-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.1.0/sniffy-3.1.0-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.1.0-javadoc.jar))
 
 Setup
 ============
