@@ -2,7 +2,12 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.0.0...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.1...master)
+
+## v3.0.1 - November 29nd, 2015
+ * [setHeader('Content-Length') is not supported](https://github.com/sniffy/sniffy/issues/99)
+
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.0...3.0.1)
 
 ## v3.0.0 - November 22nd, 2015
  * License changed to [MIT](http://www.opensource.org/licenses/mit-license.php)
