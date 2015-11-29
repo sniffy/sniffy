@@ -1,9 +1,11 @@
-package com.github.bedrin.jdbc.sniffer.socket;
+package io.sniffy.socket;
 
-import com.github.bedrin.jdbc.sniffer.util.ExceptionUtil;
+import io.sniffy.util.ExceptionUtil;
+import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketImpl;
 import java.net.SocketImplFactory;
@@ -14,7 +16,21 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
             getDefaultSocketImplClassConstructor();
 
     public static void install() throws IOException {
+        // todo: handle previous instance of socket impl factory
+        // todo: consider using Unsafe for store fences
         Socket.setSocketImplFactory(new SnifferSocketImplFactory());
+    }
+
+    public static void uninstall() {
+        try {
+            Field factoryField = Socket.class.getDeclaredField("factory");
+            factoryField.setAccessible(true);
+            factoryField.set(null, null);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
