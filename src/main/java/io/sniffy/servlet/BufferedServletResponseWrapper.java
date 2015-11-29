@@ -117,11 +117,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     public void setIntHeader(String name, int value) {
         super.setIntHeader(name, value);
         if ("Content-Length".equals(name)) {
-            try {
-                contentLength = value;
-            } catch (NumberFormatException e) {
-                // todo: can we log it somehow plz?
-            }
+            contentLength = value;
         }
     }
 
