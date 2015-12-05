@@ -1,4 +1,4 @@
-Integration with JUnit
+Integration with Spring Framework
 ====
 
 Sniffy comes with a [Spring Framework](http://projects.spring.io/spring-framework/) via QueryCounterListener spring [@TestExecutionListener](http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#testcontext-tel-config)
