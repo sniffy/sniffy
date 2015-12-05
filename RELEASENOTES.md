@@ -2,7 +2,10 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.0.1...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.2...master)
+
+## v3.0.2 - December 5th, 2015
+ * [Sniffy must be injected after meta tags](https://github.com/sniffy/sniffy/issues/101)
 
 ## v3.0.1 - November 29nd, 2015
  * [setHeader('Content-Length') is not supported](https://github.com/sniffy/sniffy/issues/99)
