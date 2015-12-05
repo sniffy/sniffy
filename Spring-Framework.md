@@ -1,19 +1,19 @@
 Integration with JUnit
 ====
 
-JDBC Sniffer comes with a [Spring Framework](http://projects.spring.io/spring-framework/) via QueryCounterListener spring [@TestExecutionListener](http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#testcontext-tel-config)
+Sniffy comes with a [Spring Framework](http://projects.spring.io/spring-framework/) via QueryCounterListener spring [@TestExecutionListener](http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#testcontext-tel-config)
 Just add `@TestExecutionListeners(QueryCounterListener.class)` to your Spring test class and place appropriate expectations on your test methods like shown below:
 
 ```java
-package com.github.bedrin.jdbc.sniffer.spring;
+package io.sniffy.spring;
 
-import com.github.bedrin.jdbc.sniffer.BaseTest;
-import com.github.bedrin.jdbc.sniffer.Query;
-import com.github.bedrin.jdbc.sniffer.Threads;
-import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError;
-import com.github.bedrin.jdbc.sniffer.Expectation;
-import com.github.bedrin.jdbc.sniffer.Expectations;
-import com.github.bedrin.jdbc.sniffer.NoQueriesAllowed;
+import io.sniffy.BaseTest;
+import io.sniffy.Query;
+import io.sniffy.Threads;
+import io.sniffy.WrongNumberOfQueriesError;
+import io.sniffy.Expectation;
+import io.sniffy.Expectations;
+import io.sniffy.NoQueriesAllowed;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
