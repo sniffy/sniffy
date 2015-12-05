@@ -3,19 +3,19 @@ Integration with Spock Framework
 
 [Spock Framework](https://github.com/spockframework/spock) is a developer testing and specification framework for Java and [Groovy](http://groovy.codehaus.org/) applications.
 
-JDBC Sniffer can be integrated with Spock Framework using `Spy` field and standard spock `then` block:
+Sniffy can be integrated with Spock Framework using `Spy` field and standard spock `then` block:
 ```groovy
-package com.github.bedrin.jdbc.sniffer.spock
+package io.sniffy.spock
 
-import com.github.bedrin.jdbc.sniffer.Sniffer
-import com.github.bedrin.jdbc.sniffer.WrongNumberOfQueriesError
+import io.sniffy.Sniffer
+import io.sniffy.WrongNumberOfQueriesError
 import groovy.sql.Sql
 import spock.lang.*
 
 class QueryCounterSpec extends Specification {
 
     @Shared
-    def sql = Sql.newInstance("sniffer:jdbc:h2:~/test", "sa", "sa")
+    def sql = Sql.newInstance("sniffer:jdbc:h2:mem:", "sa", "sa")
 
     def spy = Sniffer.spy()
 
