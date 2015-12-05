@@ -1,12 +1,10 @@
 package io.sniffy.usage;
 
+import io.sniffy.Expectation;
 import io.sniffy.Sniffer;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
-import io.sniffy.Expectation;
 import io.sniffy.junit.QueryCounter;
-import io.sniffy.Expectation;
-import io.sniffy.Threads;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -15,7 +13,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class UsageTest {
 
