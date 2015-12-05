@@ -1,16 +1,16 @@
 Integration with Test NG
 ====
 
-JDBC Sniffer comes with a [Test NG](http://testng.org/) listener for quick integration with test framework. Just add `@Listeners(QueryCounter.class)` to your TestNG test class and place appropriate expectations on your test methods like shown below:
+Sniffy comes with a [Test NG](http://testng.org/) listener for quick integration with test framework. Just add `@Listeners(QueryCounter.class)` to your TestNG test class and place appropriate expectations on your test methods like shown below:
 
 ```java
-package com.github.bedrin.jdbc.sniffer.testng;
+package io.sniffy.testng;
 
-import com.github.bedrin.jdbc.sniffer.BaseTest;
-import com.github.bedrin.jdbc.sniffer.Threads;
-import com.github.bedrin.jdbc.sniffer.Expectation;
-import com.github.bedrin.jdbc.sniffer.Expectations;
-import com.github.bedrin.jdbc.sniffer.NoQueriesAllowed;
+import io.sniffy.BaseTest;
+import io.sniffy.Threads;
+import io.sniffy.Expectation;
+import io.sniffy.Expectations;
+import io.sniffy.NoQueriesAllowed;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
