@@ -27,7 +27,7 @@ class SnifferServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.0.0/dist/sniffy.min.js");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.0.3/dist/sniffy.min.js");
         } catch (IOException e) {
             throw new ServletException(e);
         }
