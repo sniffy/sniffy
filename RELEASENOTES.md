@@ -7,8 +7,12 @@
 ## v3.0.3 - December 6th, 2015
  * [Implement dark theme for sniffy](https://github.com/sniffy/sniffy/issues/98)
 
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.2...3.0.3)
+
 ## v3.0.2 - December 5th, 2015
  * [Sniffy must be injected after meta tags](https://github.com/sniffy/sniffy/issues/101)
+
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.1...3.0.2)
 
 ## v3.0.1 - November 29nd, 2015
  * [setHeader('Content-Length') is not supported](https://github.com/sniffy/sniffy/issues/99)
