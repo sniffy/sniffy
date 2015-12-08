@@ -5,12 +5,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 // TODO: consider making counters hierarchical, i.e. DML, DDL as top level , INSERT, CREATE TABLE as 2 level, e.t.c
 class Counter {
 
-    final AtomicInteger select;
-    final AtomicInteger insert;
-    final AtomicInteger update;
-    final AtomicInteger delete;
-    final AtomicInteger merge;
-    final AtomicInteger other;
+    private final AtomicInteger select;
+    private final AtomicInteger insert;
+    private final AtomicInteger update;
+    private final AtomicInteger delete;
+    private final AtomicInteger merge;
+    private final AtomicInteger other;
 
     public Counter() {
         this(
@@ -47,7 +47,7 @@ class Counter {
         this.other = new AtomicInteger(that.other.intValue());
     }
 
-    int executeStatement(Query query) {
+    protected int executeStatement(Query query) {
         switch (query) {
             case SELECT:
                 return select.incrementAndGet();
@@ -65,7 +65,7 @@ class Counter {
         }
     }
 
-    int executedStatements(Query query) {
+    protected int executedStatements(Query query) {
         switch (query) {
             case ANY:
                 return select.get() + insert.get() + update.get() + delete.get() + merge.get() + other.get();

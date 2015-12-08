@@ -20,27 +20,31 @@ import java.util.concurrent.Callable;
  * </a> for more information.
  * @since 1.0
  */
-public class Sniffer {
+public final class Sniffer {
+
+    private Sniffer() {
+
+    }
 
     // Registered listeners (i.e. spies)
 
-    static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+    private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
 
-    static synchronized WeakReference<Spy> registerSpy(Spy spy) {
+    protected static synchronized WeakReference<Spy> registerSpy(Spy spy) {
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
         registeredSpies.add(spyReference);
         return spyReference;
     }
 
-    static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
+    protected static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
         registeredSpies.remove(spyReference);
     }
 
-    static List<WeakReference<Spy>> registeredSpies() {
+    protected static List<WeakReference<Spy>> registeredSpies() {
         return Collections.unmodifiableList(registeredSpies);
     }
 
-    static synchronized void notifyListeners(StatementMetaData statementMetaData) {
+    private static synchronized void notifyListeners(StatementMetaData statementMetaData) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -55,9 +59,9 @@ public class Sniffer {
 
     // query counters
 
-    static final Counter COUNTER = new Counter();
+    protected static final Counter COUNTER = new Counter();
 
-    static final ThreadLocal<Counter> THREAD_LOCAL_COUNTER = new ThreadLocal<Counter>() {
+    protected static final ThreadLocal<Counter> THREAD_LOCAL_COUNTER = new ThreadLocal<Counter>() {
 
         @Override
         protected Counter initialValue() {
@@ -66,7 +70,7 @@ public class Sniffer {
 
     };
 
-    static void executeStatement(String sql, long elapsedTime) {
+    protected static void executeStatement(String sql, long elapsedTime) {
         // log query
         QueryLogger.logQuery(sql, elapsedTime);
 

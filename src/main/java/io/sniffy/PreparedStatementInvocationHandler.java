@@ -16,17 +16,19 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
         switch (StatementMethodType.parse(method.getName())) {
             case ADD_BATCH:
                 addBatch(sql);
-                break;
+                return invokeTarget(method, args);
             case CLEAR_BATCH:
                 clearBatch();
-                break;
+                return invokeTarget(method, args);
             case EXECUTE_BATCH:
                 return invokeTargetAndRecord(method, args, getBatchedSql());
             case EXECUTE_SQL:
                 return invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : sql);
+            case OTHER:
+            default:
+                return invokeTarget(method, args);
         }
 
-        return invokeTarget(method, args);
     }
 
     @Override

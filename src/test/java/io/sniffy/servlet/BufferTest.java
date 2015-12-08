@@ -3,10 +3,6 @@ package io.sniffy.servlet;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
-
-import static org.junit.Assert.*;
-
 public class BufferTest {
 
     @Test
