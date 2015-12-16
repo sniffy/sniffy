@@ -2,8 +2,6 @@ package io.sniffy;
 
 import io.sniffy.log.QueryLogger;
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.log.QueryLogger;
-import io.sniffy.sql.StatementMetaData;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
