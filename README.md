@@ -2,10 +2,12 @@ Sniffy
 ============
 
 [![Join the chat at https://gitter.im/sniffy/sniffy](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sniffy/sniffy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/ec48f442755f4df5b62bf3bcba3a2246)](https://www.codacy.com/app/sniffy/sniffy)
 [![CI Status](https://travis-ci.org/sniffy/sniffy.svg?branch=master)](https://travis-ci.org/sniffy/sniffy)
 [![Coverage Status](https://coveralls.io/repos/sniffy/sniffy/badge.png?branch=master)](https://coveralls.io/r/sniffy/sniffy?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy)
 [![Download](https://api.bintray.com/packages/sniffy/sniffy/sniffy/images/download.svg) ](https://bintray.com/sniffy/sniffy/sniffy/_latestVersion)
+[![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://badges.mit-license.org)
 
 Sniffy counts the number of executed SQL queries and provides an API for validating them
 It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
@@ -50,23 +52,23 @@ Sniffy is available from Maven Central repository
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.2</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'io.sniffy:sniffy:3.0.0'
+    compile 'io.sniffy:sniffy:3.0.2'
 }
 ```
 
 Download
 ============
 [![Get automatic notifications about new "sniffy" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/sniffy/sniffy/sniffy/view?source=watch)
-- [sniffy-3.0.0.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.0.jar))
-- [sniffy-3.0.0-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.0-sources.jar))
-- [sniffy-3.0.0-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.0/sniffy-3.0.0-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.0-javadoc.jar))
+- [sniffy-3.0.2.jar](https://github.com/sniffy/sniffy/releases/download/3.0.2/sniffy-3.0.2.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.2.jar))
+- [sniffy-3.0.2-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.2/sniffy-3.0.2-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.2-sources.jar))
+- [sniffy-3.0.2-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.2/sniffy-3.0.2-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.2-javadoc.jar))
 
 Setup
 ============

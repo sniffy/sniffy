@@ -68,6 +68,7 @@ public abstract class BaseTest {
                         case ANY:
                         default:
                             statement.execute("SELECT 1 FROM DUAL");
+                            break;
                     }
                 }
             }

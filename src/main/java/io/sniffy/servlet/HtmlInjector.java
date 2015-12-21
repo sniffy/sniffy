@@ -57,33 +57,51 @@ class HtmlInjector {
         String str = new String(buffer.leadingBytes(16 * 1024), characterEncoding).toLowerCase();
         StringBuilder sb = new StringBuilder(str);
 
-        int htmlIOf = sb.indexOf("<html");
-        if (htmlIOf != -1) {
-            htmlIOf = sb.indexOf(">", sb.indexOf("<html")) + 1;
+        int afterHtml = sb.indexOf("<html");
+        if (afterHtml != -1) {
+            afterHtml = sb.indexOf(">", afterHtml) + 1;
+            if (0 == afterHtml) afterHtml = -1;
         }
 
-        int headIOf = sb.indexOf("<head");
-        if (headIOf != -1) {
-            headIOf = sb.indexOf(">", sb.indexOf("<head")) + 1;
+        int afterHead = sb.indexOf("<head");
+        if (afterHead != -1) {
+            afterHead = sb.indexOf(">", afterHead) + 1;
+            if (0 == afterHead) afterHead = -1;
         }
 
-        int doctypeIOf = sb.indexOf("<!doctype");
-        if (doctypeIOf != -1) {
-            doctypeIOf = sb.indexOf(">", sb.indexOf("<!doctype")) + 1;
+        int afterDocType = sb.indexOf("<!doctype");
+        if (afterDocType != -1) {
+            afterDocType = sb.indexOf(">", afterDocType) + 1;
+            if (0 == afterDocType) afterDocType = -1;
         }
 
-        int scriptIOf = sb.indexOf("<script");
+        int beforeScript = sb.indexOf("<script");
+
+        // Find last meta tag bebfore first script tag
+
+        String contentBeforeScript = -1 == beforeScript ? sb.toString() : sb.substring(0, beforeScript);
+
+        int lastMetaOpeningTag = contentBeforeScript.lastIndexOf("<meta");
+        int lastMetaClosingTag = contentBeforeScript.lastIndexOf("</meta");
+
+        int afterLastMeta = -1;
+        if (lastMetaOpeningTag != -1 || lastMetaClosingTag != -1) {
+            afterLastMeta = contentBeforeScript.indexOf(">", Math.max(lastMetaOpeningTag, lastMetaClosingTag)) + 1;
+            if (0 == afterLastMeta) afterLastMeta = -1;
+        }
 
         int i;
 
-        if (-1 != headIOf && (-1 == scriptIOf || headIOf < scriptIOf)) {
-            i = headIOf;
-        } else if (-1 != htmlIOf && (-1 == scriptIOf || htmlIOf < scriptIOf)) {
-            i = htmlIOf;
-        } else if (-1 != doctypeIOf && (-1 == scriptIOf || doctypeIOf < scriptIOf)) {
-            i = doctypeIOf;
-        } else if (-1 != scriptIOf) {
-            i = scriptIOf;
+        if (-1 != afterLastMeta) {
+            i = afterLastMeta;
+        } else if (-1 != afterHead && (-1 == beforeScript || afterHead <= beforeScript)) {
+            i = afterHead;
+        } else if (-1 != afterHtml && (-1 == beforeScript || afterHtml <= beforeScript)) {
+            i = afterHtml;
+        } else if (-1 != afterDocType && (-1 == beforeScript || afterDocType < beforeScript)) {
+            i = afterDocType;
+        } else if (-1 != beforeScript) {
+            i = beforeScript;
         } else {
             i = 0;
         }

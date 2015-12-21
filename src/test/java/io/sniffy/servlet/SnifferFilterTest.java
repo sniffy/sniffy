@@ -2,6 +2,7 @@ package io.sniffy.servlet;
 
 import io.sniffy.BaseTest;
 import io.sniffy.BaseTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -96,6 +97,26 @@ public class SnifferFilterTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+
+    }
+
+    @Test
+    public void testFilterThrowsException() throws IOException, ServletException {
+
+        FilterConfig filterConfig = getFilterConfig();
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
+
+        doAnswer(invocation -> {throw new RuntimeException("test");}).
+                when(filterChain).doFilter(any(), any());
+
+        try {
+            filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+            fail();
+        } catch (Exception e) {
+            assertNotNull(e);
+            assertEquals("test", e.getMessage());
+        }
 
     }
 
@@ -320,6 +341,71 @@ public class SnifferFilterTest extends BaseTest {
             PrintWriter printWriter = response.getWriter();
             executeStatement();
             response.setContentLength(actualContent.length());
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        String contentAsString = httpServletResponse.getContentAsString();
+        assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"sniffy\""));
+        assertEquals(contentAsString.length(), httpServletResponse.getContentLength());
+        assertTrue(httpServletResponse.getContentLength() > actualContent.length());
+
+    }
+
+    @Test
+    public void testInjectHtmlSetContentLengthHeader() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            response.setHeader("Content-Length", Integer.toString(actualContent.length()));
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        String contentAsString = httpServletResponse.getContentAsString();
+        assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"sniffy\""));
+        assertEquals(contentAsString.length(), httpServletResponse.getContentLength());
+        assertTrue(httpServletResponse.getContentLength() > actualContent.length());
+
+    }
+
+    @Test
+    @Ignore("spring test framework bug")
+    public void testInjectHtmlSetContentLengthIntHeader() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            response.setIntHeader("Content-Length", actualContent.length());
             printWriter.append(actualContent);
             executeStatement();
             printWriter.flush();

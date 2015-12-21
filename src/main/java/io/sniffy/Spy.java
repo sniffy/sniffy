@@ -1,18 +1,18 @@
 package io.sniffy;
 
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static io.sniffy.Sniffer.DEFAULT_THREAD_MATCHER;
-import static io.sniffy.Query.ANY;
-import static io.sniffy.util.ExceptionUtil.addSuppressed;
 import static io.sniffy.util.ExceptionUtil.throwException;
 
 /**
@@ -33,11 +33,11 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
 
-    void addExecutedStatement(StatementMetaData statementMetaData) {
+    protected void addExecutedStatement(StatementMetaData statementMetaData) {
         executedStatements.add(statementMetaData);
     }
 
-    void resetExecutedStatements() {
+    protected void resetExecutedStatements() {
         executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
     }
 
@@ -63,6 +63,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
             case ANY:
             default:
                 statements = new ArrayList<StatementMetaData>(executedStatements);
+                break;
         }
         return Collections.unmodifiableList(statements);
     }
@@ -888,7 +889,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
                 ae.printStackTrace();
             }
         }
-        ExceptionUtil.throwException(e);
+        throwException(e);
         return new RuntimeException(e);
     }
 
