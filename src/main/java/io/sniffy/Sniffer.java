@@ -55,6 +55,19 @@ public final class Sniffer {
         }
     }
 
+    private static synchronized void notifyListeners(String address, long elapsedTime) {
+        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+        while (iterator.hasNext()) {
+            WeakReference<Spy> spyReference = iterator.next();
+            Spy spy = spyReference.get();
+            if (null == spy) {
+                iterator.remove();
+            } else {
+                spy.addExecutedStatement(address, elapsedTime);
+            }
+        }
+    }
+
     // query counters
 
     protected static final Counter COUNTER = new Counter();
@@ -67,6 +80,11 @@ public final class Sniffer {
         }
 
     };
+
+    public static void logSocket(String address, long elapsedTime) {
+        System.out.println(String.format("Spent %d millis in %s", elapsedTime, address));
+        notifyListeners(address, elapsedTime);
+    }
 
     protected static void executeStatement(String sql, long elapsedTime) {
         // log query

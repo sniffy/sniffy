@@ -5,12 +5,11 @@ import io.sniffy.util.ExceptionUtil;
 
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.sniffy.Sniffer.DEFAULT_THREAD_MATCHER;
 import static io.sniffy.util.ExceptionUtil.throwException;
@@ -35,6 +34,28 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     protected void addExecutedStatement(StatementMetaData statementMetaData) {
         executedStatements.add(statementMetaData);
+    }
+
+    private volatile ConcurrentHashMap<String, AtomicLong> socketOperations = new ConcurrentHashMap<String, AtomicLong>();
+    private final String UNKNOWN = "unknown";
+
+    protected void addExecutedStatement(String address, long elapsedTime) {
+
+        if (null == address) address = UNKNOWN;
+
+        AtomicLong socketElapsedTime = socketOperations.get(address);
+
+        if (null == socketElapsedTime) {
+            socketOperations.putIfAbsent(address, new AtomicLong());
+            socketElapsedTime = socketOperations.get(address);
+        }
+
+        socketElapsedTime.addAndGet(elapsedTime);
+
+    }
+
+    public Map<String, AtomicLong> getSocketOperations() {
+        return Collections.unmodifiableMap(socketOperations);
     }
 
     protected void resetExecutedStatements() {

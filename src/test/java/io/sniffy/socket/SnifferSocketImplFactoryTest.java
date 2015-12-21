@@ -1,23 +1,21 @@
 package io.sniffy.socket;
 
+import io.sniffy.Sniffer;
+import io.sniffy.Spy;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.core.IsCollectionContaining;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class SnifferSocketImplFactoryTest {
 
@@ -29,15 +27,34 @@ public class SnifferSocketImplFactoryTest {
 
         SnifferSocketImplFactory.install();
 
-        Socket socket = new Socket(InetAddress.getByName(null), echoServerRule.getBoundPort());
-        assertTrue(socket.isConnected());
+        try (Spy<?> s = Sniffer.spy()) {
 
-        OutputStream outputStream = socket.getOutputStream();
-        outputStream.write(new byte[]{1, 2, 3, 4});
-        outputStream.flush();
-        outputStream.close();
+            Socket socket = new Socket(InetAddress.getByName(null), echoServerRule.getBoundPort());
 
-        echoServerRule.joinThreads();
+            assertTrue(socket.isConnected());
+            echoServerRule.getCyclicBarrier().await();
+
+            OutputStream outputStream = socket.getOutputStream();
+            outputStream.write(new byte[]{1, 2, 3, 4});
+            outputStream.flush();
+            outputStream.close();
+
+            echoServerRule.joinThreads();
+
+            assertThat(s.getSocketOperations().entrySet(), new IsCollectionContaining<>(new BaseMatcher<Entry<String, AtomicLong>>() {
+                @Override
+                public boolean matches(Object item) {
+                    Entry<String, AtomicLong> entry = (Entry<String, AtomicLong>) item;
+                    return entry.getKey().contains("localhost");
+                }
+
+                @Override
+                public void describeTo(Description description) {
+                    description.appendText("a map with string key containing 'localhost'");
+                }
+            }));
+
+        }
 
     }
 

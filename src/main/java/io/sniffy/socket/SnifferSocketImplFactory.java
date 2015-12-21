@@ -35,6 +35,15 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
     @Override
     public SocketImpl createSocketImpl() {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        if (null != stackTrace) {
+            for (StackTraceElement ste : stackTrace) {
+                if (ste.getClassName().startsWith("java.net.ServerSocket")) {
+                    return newSocketImpl();
+                }
+            }
+        }
+
         return new SnifferSocketImpl(newSocketImpl());
     }
 
