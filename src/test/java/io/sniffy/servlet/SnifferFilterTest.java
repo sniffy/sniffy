@@ -100,6 +100,26 @@ public class SnifferFilterTest extends BaseTest {
 
     }
 
+    @Test
+    public void testFilterThrowsException() throws IOException, ServletException {
+
+        FilterConfig filterConfig = getFilterConfig();
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
+
+        doAnswer(invocation -> {throw new RuntimeException("test");}).
+                when(filterChain).doFilter(any(), any());
+
+        try {
+            filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+            fail();
+        } catch (Exception e) {
+            assertNotNull(e);
+            assertEquals("test", e.getMessage());
+        }
+
+    }
+
 
     @Test
     public void testDisabledFilterOneQuery() throws IOException, ServletException {
