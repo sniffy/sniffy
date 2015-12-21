@@ -1,20 +1,14 @@
 package io.sniffy.servlet;
 
 import io.sniffy.Constants;
-import io.sniffy.Sniffer;
-import io.sniffy.Spy;
-import io.sniffy.Threads;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.LruCache;
 
 import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -80,6 +74,8 @@ public class SnifferFilter implements Filter {
     protected SnifferServlet snifferServlet;
     protected ServletContext servletContext;
 
+    protected String contextPath;
+
     public void init(FilterConfig filterConfig) throws ServletException {
         String injectHtml = filterConfig.getInitParameter("inject-html");
         if (null != injectHtml) {
@@ -98,6 +94,7 @@ public class SnifferFilter implements Filter {
         snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
 
         servletContext = filterConfig.getServletContext();
+        contextPath = servletContext.getContextPath();
 
     }
 
@@ -111,85 +108,31 @@ public class SnifferFilter implements Filter {
             return;
         }
 
-        // extract some basic data from request and response
+        // process Sniffy REST calls
 
-        HttpServletRequest httpServletRequest;
-        HttpServletResponse httpServletResponse;
-        String contextPath;
-        String relativeUrl;
-
-        try {
-
-            if (injectHtml) {
-                // process sniffy calls
+        if (injectHtml) {
+            try {
                 snifferServlet.service(request, response);
                 if (response.isCommitted()) return;
-            }
-
-            httpServletRequest = (HttpServletRequest) request;
-            httpServletResponse = (HttpServletResponse) response;
-            contextPath = httpServletRequest.getContextPath();
-            relativeUrl = httpServletRequest.getRequestURI().substring(contextPath.length());
-
-        } catch (Exception e) {
-            servletContext.log("Exception in SnifferFilter; calling original chain", e);
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // if excluded by pattern return immediately
-
-        if (null != excludePattern && null != relativeUrl && excludePattern.matcher(relativeUrl).matches()) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // create spy, requestId and response listener
-
-        // todo extract object to store all locals
-        Spy<? extends Spy> spy;
-        String requestId;
-        BufferedServletResponseWrapper responseWrapper;
-
-        try {
-
-            spy = Sniffer.spy();
-            requestId = UUID.randomUUID().toString();
-
-            responseWrapper = new BufferedServletResponseWrapper(httpServletResponse,
-                    new SniffyServletResponseListener(this, contextPath, spy, requestId)
-            );
-
-        } catch (Exception e) {
-            servletContext.log("Exception in SnifferFilter; calling original chain", e);
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // call chain
-
-        try {
-            chain.doFilter(request, responseWrapper);
-        } finally {
-
-            try {
-
-                // put details to the cache
-
-                List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
-                if (null != executedStatements && !executedStatements.isEmpty()) {
-                    cache.put(requestId, executedStatements);
-                }
-
-                // flush underlying stream if required
-
-                responseWrapper.close();
-
             } catch (Exception e) {
-                servletContext.log("Exception in SnifferFilter; original chain was called", e);
+                servletContext.log("Exception in SniffyServlet; calling original chain", e);
+                chain.doFilter(request, response);
+                return;
             }
-
         }
+
+        // create request decorator
+
+        SniffyRequestProcessor sniffyRequestProcessor;
+        try {
+            sniffyRequestProcessor = new SniffyRequestProcessor(this, request, response);
+        } catch (Exception e) {
+            servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
+            chain.doFilter(request, response);
+            return;
+        }
+
+        sniffyRequestProcessor.process(chain);
 
     }
 

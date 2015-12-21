@@ -1,9 +1,16 @@
 package io.sniffy.servlet;
 
+import io.sniffy.Sniffer;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
 import io.sniffy.sql.StatementMetaData;
 
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLConnection;
@@ -11,20 +18,91 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.UUID;
 
-class SniffyServletResponseListener implements BufferedServletResponseListener {
+class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     private final SnifferFilter snifferFilter;
+    private final ServletRequest request;
+    private final ServletResponse response;
 
-    private final String contextPath; // todo: should be the same for the whole filter
-
-    private final Spy<? extends Spy> spy;
+    private final Spy<?> spy;
     private final String requestId;
 
-    public SniffyServletResponseListener(SnifferFilter snifferFilter, String contextPath, Spy<? extends Spy> spy, String requestId) {
+    public SniffyRequestProcessor(SnifferFilter snifferFilter, ServletRequest request, ServletResponse response) {
         this.snifferFilter = snifferFilter;
-        this.contextPath = contextPath;
-        this.spy = spy;
-        this.requestId = requestId;
+        this.request = request;
+        this.response = response;
+
+        spy = Sniffer.spy();
+        requestId = UUID.randomUUID().toString();
+    }
+
+    public void process(FilterChain chain) throws IOException, ServletException {
+
+        // extract some basic data from request and response
+
+        HttpServletRequest httpServletRequest;
+        HttpServletResponse httpServletResponse;
+        String contextPath;
+        String relativeUrl;
+
+        try {
+
+            httpServletRequest = (HttpServletRequest) request;
+            httpServletResponse = (HttpServletResponse) response;
+            contextPath = httpServletRequest.getContextPath();
+            relativeUrl = null == httpServletRequest.getRequestURI() ? null :
+                    httpServletRequest.getRequestURI().substring(contextPath.length());
+
+        } catch (Exception e) {
+            snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // if excluded by pattern return immediately
+
+        if (null != snifferFilter.excludePattern && null != relativeUrl && snifferFilter.excludePattern.matcher(relativeUrl).matches()) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // create response wrapper
+
+        BufferedServletResponseWrapper responseWrapper;
+
+        try {
+            responseWrapper = new BufferedServletResponseWrapper(httpServletResponse, this);
+        } catch (Exception e) {
+            snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // call chain
+
+        try {
+            chain.doFilter(request, responseWrapper);
+        } finally {
+
+            try {
+
+                // put details to the cache
+
+                List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
+                if (null != executedStatements && !executedStatements.isEmpty()) {
+                    snifferFilter.cache.put(requestId, executedStatements);
+                }
+
+                // flush underlying stream if required
+
+                responseWrapper.close();
+
+            } catch (Exception e) {
+                snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
+            }
+
+        }
+
     }
 
     /**
@@ -35,7 +113,7 @@ class SniffyServletResponseListener implements BufferedServletResponseListener {
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
         wrapper.addIntHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
-        wrapper.addHeader(SnifferFilter.HEADER_REQUEST_DETAILS, contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
+        wrapper.addHeader(SnifferFilter.HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
         if (snifferFilter.injectHtml) {
             String contentType = wrapper.getContentType();
             String contentEncoding = wrapper.getContentEncoding();
@@ -48,7 +126,7 @@ class SniffyServletResponseListener implements BufferedServletResponseListener {
                 // adjust content length with the size of injected content
                 int contentLength = wrapper.getContentLength();
                 if (contentLength > 0) {
-                    wrapper.setContentLength(contentLength + maximumInjectSize(contextPath));
+                    wrapper.setContentLength(contentLength + maximumInjectSize(snifferFilter.contextPath));
                 }
                 isHtmlPage = true;
 
@@ -57,7 +135,7 @@ class SniffyServletResponseListener implements BufferedServletResponseListener {
                     characterEncoding = Charset.defaultCharset().name();
                 }
 
-                String snifferHeader = generateHeaderHtml(contextPath, requestId).toString();
+                String snifferHeader = generateHeaderHtml(snifferFilter.contextPath, requestId).toString();
 
                 HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
                 htmlInjector.injectAtTheBeginning(snifferHeader);
