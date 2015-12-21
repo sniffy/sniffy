@@ -58,4 +58,30 @@ public class SnifferSocketImplFactoryTest {
 
     }
 
+    @Test
+    public void testUninstall() throws Exception {
+
+        SnifferSocketImplFactory.install();
+        SnifferSocketImplFactory.uninstall();
+
+        try (Spy<?> s = Sniffer.spy()) {
+
+            Socket socket = new Socket(InetAddress.getByName(null), echoServerRule.getBoundPort());
+
+            assertTrue(socket.isConnected());
+            echoServerRule.getCountDownLatch().await();
+
+            OutputStream outputStream = socket.getOutputStream();
+            outputStream.write(new byte[]{1, 2, 3, 4});
+            outputStream.flush();
+            outputStream.close();
+
+            echoServerRule.joinThreads();
+
+            assertTrue(s.getSocketOperations().isEmpty());
+
+        }
+
+    }
+
 }

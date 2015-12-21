@@ -15,15 +15,9 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
     private final static Constructor<? extends SocketImpl> defaultSocketImplClassConstructor =
             getDefaultSocketImplClassConstructor();
 
-    private final SocketImplFactory previousSocketImplFactory;
-
-    public SnifferSocketImplFactory(SocketImplFactory previousSocketImplFactory) {
-        this.previousSocketImplFactory = previousSocketImplFactory;
-    }
+    private volatile static SocketImplFactory previousSocketImplFactory;
 
     public static void install() throws IOException {
-
-        SocketImplFactory previousSocketImplFactory = null;
 
         try {
             Field factoryField = Socket.class.getDeclaredField("factory");
@@ -35,14 +29,14 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
             e.printStackTrace();
         }
 
-        Socket.setSocketImplFactory(new SnifferSocketImplFactory(previousSocketImplFactory));
+        Socket.setSocketImplFactory(new SnifferSocketImplFactory());
     }
 
     public static void uninstall() {
         try {
             Field factoryField = Socket.class.getDeclaredField("factory");
             factoryField.setAccessible(true);
-            factoryField.set(null, null);
+            factoryField.set(null, previousSocketImplFactory);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (NoSuchFieldException e) {
@@ -64,7 +58,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         return new SnifferSocketImpl(newSocketImpl());
     }
 
-    private SocketImpl newSocketImpl() {
+    private static SocketImpl newSocketImpl() {
 
         if (null != previousSocketImplFactory) {
             return previousSocketImplFactory.createSocketImpl();
