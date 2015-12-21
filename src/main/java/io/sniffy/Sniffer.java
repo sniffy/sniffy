@@ -93,7 +93,7 @@ public final class Sniffer {
      * @return a new {@link Spy} instance
      * @since 2.0
      */
-    public static <T extends Spy<T>> Spy<T> spy() {
+    public static <T extends Spy<T>> Spy<? extends Spy<T>> spy() {
         return new Spy<T>();
     }
 
