@@ -24,7 +24,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     private final ServletRequest request;
     private final ServletResponse response;
 
-    private final Spy<?> spy;
+    private final Spy<? extends Spy> spy;
     private final String requestId;
 
     public SniffyRequestProcessor(SnifferFilter snifferFilter, ServletRequest request, ServletResponse response) {
