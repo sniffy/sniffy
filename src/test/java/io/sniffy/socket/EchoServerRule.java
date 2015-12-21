@@ -10,7 +10,6 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 
 public class EchoServerRule extends ExternalResource implements Runnable {
 
@@ -50,10 +49,10 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     }
 
-    private CyclicBarrier cyclicBarrier = new CyclicBarrier(3);
+    private CountDownLatch countDownLatch = new CountDownLatch(2);
 
-    public CyclicBarrier getCyclicBarrier() {
-        return cyclicBarrier;
+    public CountDownLatch getCountDownLatch() {
+        return countDownLatch;
     }
 
     @Override
@@ -143,7 +142,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
         public void run() {
             try {
 
-                cyclicBarrier.await();
+                countDownLatch.countDown();
 
                 int totalRead = 0, read = 0;
 
@@ -173,7 +172,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
             try {
 
-                cyclicBarrier.await();
+                countDownLatch.countDown();
 
                 //outputStream.write(buff, 0, read); // todo write something
                 outputStream.flush();

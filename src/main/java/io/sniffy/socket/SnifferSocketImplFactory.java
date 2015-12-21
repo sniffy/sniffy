@@ -15,10 +15,27 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
     private final static Constructor<? extends SocketImpl> defaultSocketImplClassConstructor =
             getDefaultSocketImplClassConstructor();
 
+    private final SocketImplFactory previousSocketImplFactory;
+
+    public SnifferSocketImplFactory(SocketImplFactory previousSocketImplFactory) {
+        this.previousSocketImplFactory = previousSocketImplFactory;
+    }
+
     public static void install() throws IOException {
-        // todo: handle previous instance of socket impl factory
-        // todo: consider using Unsafe for store fences
-        Socket.setSocketImplFactory(new SnifferSocketImplFactory());
+
+        SocketImplFactory previousSocketImplFactory = null;
+
+        try {
+            Field factoryField = Socket.class.getDeclaredField("factory");
+            factoryField.setAccessible(true);
+            previousSocketImplFactory = (SocketImplFactory) factoryField.get(null);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+
+        Socket.setSocketImplFactory(new SnifferSocketImplFactory(previousSocketImplFactory));
     }
 
     public static void uninstall() {
@@ -47,13 +64,18 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         return new SnifferSocketImpl(newSocketImpl());
     }
 
-    private static SocketImpl newSocketImpl() {
-        try {
-            return null == defaultSocketImplClassConstructor ? null :
-                    defaultSocketImplClassConstructor.newInstance();
-        } catch (Exception e) {
-            ExceptionUtil.throwException(e);
-            return null;
+    private SocketImpl newSocketImpl() {
+
+        if (null != previousSocketImplFactory) {
+            return previousSocketImplFactory.createSocketImpl();
+        } else {
+            try {
+                return null == defaultSocketImplClassConstructor ? null :
+                        defaultSocketImplClassConstructor.newInstance();
+            } catch (Exception e) {
+                ExceptionUtil.throwException(e);
+                return null;
+            }
         }
 
     }

@@ -82,7 +82,6 @@ public final class Sniffer {
     };
 
     public static void logSocket(String address, long elapsedTime) {
-        System.out.println(String.format("Spent %d millis in %s", elapsedTime, address));
         notifyListeners(address, elapsedTime);
     }
 
