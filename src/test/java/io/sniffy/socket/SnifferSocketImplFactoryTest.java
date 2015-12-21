@@ -27,73 +27,17 @@ public class SnifferSocketImplFactoryTest {
     @Test
     public void testInstall() throws Exception {
 
-        //SnifferSocketImplFactory.install();
+        SnifferSocketImplFactory.install();
 
         Socket socket = new Socket(InetAddress.getByName(null), echoServerRule.getBoundPort());
-        OutputStream outputStream = socket.getOutputStream();
-
         assertTrue(socket.isConnected());
 
-        Lock isObtainedLock = new ReentrantLock();
-        Condition isObtainedCondition = isObtainedLock.newCondition();
-        AtomicBoolean isObtained = new AtomicBoolean();
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        Thread readThread = new Thread(() -> {
-            try {
-
-                InputStream inputStream;
-
-                try {
-                    isObtainedLock.lock();
-                    inputStream = socket.getInputStream();
-                    isObtained.set(true);
-                    isObtainedCondition.signalAll();
-                } finally {
-                    isObtainedLock.unlock();
-                }
-
-                byte[] buff = new byte[1024];
-                int read;
-                while ((read = inputStream.read(buff)) != -1) {
-                    baos.write(buff, 0, read);
-                }
-                System.out.println("EchoInputStream read");
-
-            } catch (SocketException e) {
-                if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
-                    e.printStackTrace();
-                    fail();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                fail();
-            }
-        });
-
-        readThread.start();
-
-        byte[] message = {1, 2, 3, 4};
-
-        outputStream.write(message);
+        OutputStream outputStream = socket.getOutputStream();
+        outputStream.write(new byte[]{1, 2, 3, 4});
         outputStream.flush();
-
-        System.out.println("ClientOutputStream flushed");
-
-        try {
-            isObtainedLock.lock();
-            if (!isObtained.get())
-                isObtainedCondition.await();
-        } finally {
-            isObtainedLock.unlock();
-        }
-
         outputStream.close();
 
-        readThread.join();
-
-        assertArrayEquals(message, baos.toByteArray());
+        echoServerRule.joinThreads();
 
     }
 

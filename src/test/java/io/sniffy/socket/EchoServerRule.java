@@ -10,18 +10,15 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by bedrin on 22.11.2015.
- */
 public class EchoServerRule extends ExternalResource implements Runnable {
+
+    private final Thread thread = new Thread(this);
+
+    private final List<Thread> socketThreads = new ArrayList<>();
+    private final List<Socket> sockets = new ArrayList<>();
 
     private int boundPort = 10000;
     private ServerSocket serverSocket;
-
-    private Thread thread;
-
-    private List<Thread> socketThreads = new ArrayList<>();
-    private List<Socket> sockets = new ArrayList<>();
 
     public int getBoundPort() {
         return boundPort;
@@ -47,7 +44,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
             throw new IOException("Failed to find an available port");
         }
 
-        (thread = new Thread(this)).start();
+        thread.start();
 
     }
 
@@ -57,16 +54,14 @@ public class EchoServerRule extends ExternalResource implements Runnable {
         try {
             while (!Thread.interrupted()) {
                 Socket socket = serverSocket.accept();
-                PipedOutputStream pipedOutputStream = new PipedOutputStream();
 
                 sockets.add(socket);
 
-                Thread socketInputStreamReaderThread = new Thread(
-                        new SocketInputStreamReader(socket, pipedOutputStream)
-                );
-                Thread socketOutputStreamWriterThread = new Thread (
-                        new SocketOutputStreamWriter(socket, pipedOutputStream)
-                );
+                InputStream inputStream = socket.getInputStream();
+                OutputStream outputStream = socket.getOutputStream();
+
+                Thread socketInputStreamReaderThread = new Thread(new SocketInputStreamReader(inputStream));
+                Thread socketOutputStreamWriterThread = new Thread(new SocketOutputStreamWriter(outputStream));
 
                 socketThreads.add(socketInputStreamReaderThread);
                 socketThreads.add(socketOutputStreamWriterThread);
@@ -78,7 +73,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
             if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
                 e.printStackTrace();
             }
-        }catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -89,18 +84,24 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
         socketThreads.forEach(Thread::interrupt);
 
-        sockets.forEach((socket) -> {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+        joinThreads();
+
+    }
+
+    public void joinThreads() {
 
         socketThreads.forEach((thread) -> {
             try {
                 thread.join();
             } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        sockets.forEach((socket) -> {
+            try {
+                socket.close();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         });
@@ -121,29 +122,25 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     }
 
-    private static class SocketInputStreamReader implements Runnable {
+    private class SocketInputStreamReader implements Runnable {
 
-        private final Socket socket;
-        private final PipedOutputStream pipedOutputStream;
+        private final InputStream inputStream;
 
-        public SocketInputStreamReader(Socket socket, PipedOutputStream pipedOutputStream) {
-            this.socket = socket;
-            this.pipedOutputStream = pipedOutputStream;
+        public SocketInputStreamReader(InputStream inputStream) {
+            this.inputStream = inputStream;
         }
 
         @Override
         public void run() {
             try {
-                InputStream inputStream = socket.getInputStream();
-                byte[] buff = new byte[1024];
-                int read;
-                while ((read = inputStream.read(buff)) != -1) {
-                    pipedOutputStream.write(buff, 0, read);
-                }
-                pipedOutputStream.flush();
-                pipedOutputStream.close();
 
-                System.out.println("PipedOutputStream flushed");
+                int totalRead = 0, read = 0;
+
+                while ((read = inputStream.read()) != -1) {
+                    totalRead++;
+                }
+
+                inputStream.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -154,31 +151,19 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     private static class SocketOutputStreamWriter implements Runnable {
 
-        private final Socket socket;
-        private final PipedOutputStream pipedOutputStream;
+        private final OutputStream outputStream;
 
-        public SocketOutputStreamWriter(Socket socket, PipedOutputStream pipedOutputStream) {
-            this.socket = socket;
-            this.pipedOutputStream = pipedOutputStream;
+        public SocketOutputStreamWriter(OutputStream outputStream) {
+            this.outputStream = outputStream;
         }
 
         @Override
         public void run() {
 
             try {
-                PipedInputStream pipedInputStream = new PipedInputStream(pipedOutputStream);
-                OutputStream outputStream = socket.getOutputStream();
-                byte[] buff = new byte[1024];
-                int read;
-                while ((read = pipedInputStream.read(buff)) != -1) {
-                    if (read > 0) {
-                        outputStream.write(buff, 0, read);
-                    }
-                }
+                //outputStream.write(buff, 0, read); // todo write something
                 outputStream.flush();
-                outputStream.close();
-
-                System.out.println("EchoOutputStream flushed");
+                //outputStream.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
