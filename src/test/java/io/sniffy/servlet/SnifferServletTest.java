@@ -23,7 +23,7 @@ public class SnifferServletTest {
     private MockFilterConfig filterConfig = new MockFilterConfig(servletContext, "sniffy");
     private ServletConfig servletConfig = new FilterServletConfigAdapter(filterConfig, "sniffy");
 
-    private Map<String, List<StatementMetaData>> cache;
+    private Map<String, RequestStats> cache;
     private SnifferServlet snifferServlet;
 
     @Before
@@ -60,9 +60,9 @@ public class SnifferServletTest {
                 get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
-        cache.put("foo", Collections.singletonList(
+        cache.put("foo", new RequestStats(Collections.singletonList(
                 StatementMetaData.parse("SELECT 1 FROM DUAL", 300100999)
-        ));
+        )));
 
         request.setContextPath("/petclinic");
 
@@ -83,10 +83,10 @@ public class SnifferServletTest {
                 get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
-        cache.put("foo", Collections.singletonList(
+        cache.put("foo", new RequestStats(Collections.singletonList(
                 StatementMetaData.parse("SELECT \r\n" +
                         "\"1\" FROM 'DUAL'", 300100999)
-        ));
+        )));
 
         request.setContextPath("/petclinic");
 

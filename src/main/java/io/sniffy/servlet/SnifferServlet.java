@@ -16,11 +16,11 @@ import java.util.*;
 
 class SnifferServlet extends HttpServlet {
 
-    protected final Map<String, List<StatementMetaData>> cache;
+    protected final Map<String, RequestStats> cache;
 
     protected byte[] javascript;
 
-    public SnifferServlet(Map<String, List<StatementMetaData>> cache) {
+    public SnifferServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
     }
 
@@ -59,13 +59,13 @@ class SnifferServlet extends HttpServlet {
     }
 
     private byte[] getStatementsJson(String requestId) {
-        List<StatementMetaData> statements = cache.get(requestId);
-        if (null == statements) {
+        RequestStats requestStats = cache.get(requestId);
+        if (null == requestStats || null == requestStats.getExecutedStatements()) {
             return null;
         } else {
             StringBuilder sb = new StringBuilder();
             sb.append("[");
-            for (StatementMetaData statement : statements) {
+            for (StatementMetaData statement : requestStats.getExecutedStatements()) {
                 if (sb.length() > 1) {
                     sb.append(",");
                 }

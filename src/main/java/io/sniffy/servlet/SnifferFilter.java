@@ -67,9 +67,7 @@ public class SnifferFilter implements Filter {
     protected Pattern excludePattern = null;
 
     // TODO: consider replacing with some concurrent collection instead
-    protected final Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
-            new LruCache<String, List<StatementMetaData>>(10000)
-    );
+    protected final Map<String, RequestStats> cache = Collections.synchronizedMap(new LruCache<String, RequestStats>(10000));
 
     protected SnifferServlet snifferServlet;
     protected ServletContext servletContext;
