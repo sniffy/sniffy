@@ -1,13 +1,11 @@
 package io.sniffy.servlet;
 
 import io.sniffy.Constants;
-import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.LruCache;
 
 import javax.servlet.*;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
