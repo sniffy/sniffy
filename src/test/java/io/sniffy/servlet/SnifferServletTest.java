@@ -1,18 +1,18 @@
 package io.sniffy.servlet;
 
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.springframework.mock.web.*;
+import org.springframework.mock.web.MockFilterConfig;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
