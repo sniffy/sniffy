@@ -45,9 +45,8 @@ public class StackTraceExtractorTest {
         testProxy.testBaseMethod();
         String stackTraceString = StackTraceExtractor.printStackTrace(traceExtractor.traceElements);
         Assert.assertNotNull(stackTraceString);
-        Assert.assertTrue(stackTraceString.startsWith("io.sniffy.trace.StackTraceExtractorTest.TestBase.testBaseMethod(Unknown Source)"
-                + System.lineSeparator()
-                + "io.sniffy.trace.StackTraceExtractorTest.testPrintStackTrace(StackTraceExtractorTest.java:44)"));
+        Assert.assertTrue(stackTraceString.startsWith("io.sniffy.trace.StackTraceExtractorTest.TestBase.testBaseMethod(Unknown Source)"));
+        Assert.assertTrue(stackTraceString.contains("io.sniffy.trace.StackTraceExtractorTest.testPrintStackTrace(StackTraceExtractorTest.java"));
     }
 
     @Test
