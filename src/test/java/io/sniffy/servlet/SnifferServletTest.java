@@ -61,7 +61,7 @@ public class SnifferServletTest {
                 buildRequest(servletContext);
 
         cache.put("foo", Collections.singletonList(
-                StatementMetaData.parse("SELECT 1 FROM DUAL", 300100999)
+                StatementMetaData.parse("SELECT 1 FROM DUAL", 300100999, "sniffy.Test.method(Test.java:16)")
         ));
 
         request.setContextPath("/petclinic");
@@ -71,7 +71,7 @@ public class SnifferServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
-        assertEquals("[{\"query\":\"SELECT 1 FROM DUAL\",\"time\":300.101}]", response.getContentAsString());
+        assertEquals("[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"sniffy.Test.method(Test.java:16)\",\"time\":300.101}]", response.getContentAsString());
 
     }
 
@@ -95,7 +95,7 @@ public class SnifferServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
-        assertEquals("[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"time\":300.101}]", response.getContentAsString());
+        assertEquals("[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"stackTrace\":\"\",\"time\":300.101}]", response.getContentAsString());
 
     }
 

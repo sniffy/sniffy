@@ -27,7 +27,7 @@ public class StackTraceExtractor {
             // no proxy, return entire collection
             return Arrays.asList(stackTraceElements);
         } else {
-            List<StackTraceElement> result = new ArrayList<>();
+            List<StackTraceElement> result = new ArrayList<StackTraceElement>();
             result.add(baseMethodTrace);
             result.addAll(Arrays.asList(Arrays.copyOfRange(stackTraceElements, startIndex, stackTraceElements.length - 1)));
             return result;

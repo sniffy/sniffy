@@ -74,6 +74,9 @@ class SnifferServlet extends HttpServlet {
                         append("\"query\":").
                         append(StringUtil.escapeJsonString(statement.sql)).
                         append(",").
+                        append("\"stackTrace\":").
+                        append(StringUtil.escapeJsonString(statement.stackTrace)).
+                        append(",").
                         append("\"time\":").
                         append(String.format(Locale.ENGLISH, "%.3f", (double) statement.elapsedTime / 1000 / 1000)).
                         append("}");
