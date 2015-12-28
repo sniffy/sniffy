@@ -34,6 +34,22 @@ public class StackTraceExtractor {
         }
     }
 
+    public static String printStackTrace(List<StackTraceElement> stackTraceElements) {
+        if (stackTraceElements == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        String lineSeparator = System.lineSeparator();
+        for (StackTraceElement stackTraceElement : stackTraceElements) {
+            sb.append(stackTraceElement.toString()).append(lineSeparator);
+        }
+        if (sb.length() > 0) {
+            return sb.substring(0, sb.length() - 1);
+        } else {
+            return "";
+        }
+    }
+
     private static StackTraceElement createTraceElement(Method method, StackTraceElement baseTraceElement) {
         return new StackTraceElement(
                 method.getDeclaringClass().getCanonicalName(),
