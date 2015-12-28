@@ -1,6 +1,9 @@
 package io.sniffy;
 
+import io.sniffy.sql.StatementMetaData;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -19,6 +22,15 @@ public class SnifferTest extends BaseTest {
         Spy spy = Sniffer.spy();
         executeStatement();
         assertEquals(1, spy.executedStatements(Threads.ANY));
+    }
+
+    @Test
+    public void testSpyExecutedStatements_StackTraceTracked() throws Exception {
+        Spy spy = Sniffer.spy();
+        executeStatement();
+        List<StatementMetaData> statements = spy.getExecutedStatements(Threads.ANY);
+        assertNotNull(statements.get(0).stackTrace);
+        assertTrue(statements.get(0).stackTrace.contains("testSpyExecutedStatements_StackTraceTracked"));
     }
 
     @Test
