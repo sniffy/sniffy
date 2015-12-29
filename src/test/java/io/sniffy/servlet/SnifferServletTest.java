@@ -1,18 +1,18 @@
 package io.sniffy.servlet;
 
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.springframework.mock.web.*;
+import org.springframework.mock.web.MockFilterConfig;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -23,7 +23,7 @@ public class SnifferServletTest {
     private MockFilterConfig filterConfig = new MockFilterConfig(servletContext, "sniffy");
     private ServletConfig servletConfig = new FilterServletConfigAdapter(filterConfig, "sniffy");
 
-    private Map<String, List<StatementMetaData>> cache;
+    private Map<String, RequestStats> cache;
     private SnifferServlet snifferServlet;
 
     @Before
@@ -60,9 +60,9 @@ public class SnifferServletTest {
                 get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
-        cache.put("foo", Collections.singletonList(
+        cache.put("foo", new RequestStats(42,Collections.singletonList(
                 StatementMetaData.parse("SELECT 1 FROM DUAL", 300100999)
-        ));
+        )));
 
         request.setContextPath("/petclinic");
 
@@ -71,7 +71,7 @@ public class SnifferServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
-        assertEquals("[{\"query\":\"SELECT 1 FROM DUAL\",\"time\":300.101}]", response.getContentAsString());
+        assertEquals("{\"time\":42,\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"time\":300.101}]}", response.getContentAsString());
 
     }
 
@@ -83,10 +83,10 @@ public class SnifferServletTest {
                 get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
-        cache.put("foo", Collections.singletonList(
+        cache.put("foo", new RequestStats(42, Collections.singletonList(
                 StatementMetaData.parse("SELECT \r\n" +
                         "\"1\" FROM 'DUAL'", 300100999)
-        ));
+        )));
 
         request.setContextPath("/petclinic");
 
@@ -95,7 +95,7 @@ public class SnifferServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
-        assertEquals("[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"time\":300.101}]", response.getContentAsString());
+        assertEquals("{\"time\":42,\"executedQueries\":[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"time\":300.101}]}", response.getContentAsString());
 
     }
 

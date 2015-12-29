@@ -16,18 +16,18 @@ import java.util.*;
 
 class SnifferServlet extends HttpServlet {
 
-    protected final Map<String, List<StatementMetaData>> cache;
+    protected final Map<String, RequestStats> cache;
 
     protected byte[] javascript;
 
-    public SnifferServlet(Map<String, List<StatementMetaData>> cache) {
+    public SnifferServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
     }
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.0.3/dist/sniffy.min.js");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.0.4/dist/sniffy.min.js");
         } catch (IOException e) {
             throw new ServletException(e);
         }
@@ -41,7 +41,7 @@ class SnifferServlet extends HttpServlet {
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
             serveContent(response, "application/javascript", javascript);
         } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
-            byte[] statements = getStatementsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
+            byte[] statements = getRequestStatsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
 
             if (null == statements) {
                 response.setStatus(HttpServletResponse.SC_NO_CONTENT);
@@ -58,28 +58,34 @@ class SnifferServlet extends HttpServlet {
 
     }
 
-    private byte[] getStatementsJson(String requestId) {
-        List<StatementMetaData> statements = cache.get(requestId);
-        if (null == statements) {
-            return null;
-        } else {
+    private byte[] getRequestStatsJson(String requestId) {
+        RequestStats requestStats = cache.get(requestId);
+        if (null != requestStats) {
             StringBuilder sb = new StringBuilder();
-            sb.append("[");
-            for (StatementMetaData statement : statements) {
-                if (sb.length() > 1) {
-                    sb.append(",");
+            sb.append("{").append("\"time\":").append(requestStats.getElapsedTime());
+            if (null != requestStats.getExecutedStatements()) {
+                sb.append(",\"executedQueries\":[");
+                Iterator<StatementMetaData> statementsIt = requestStats.getExecutedStatements().iterator();
+                while (statementsIt.hasNext()) {
+                    StatementMetaData statement = statementsIt.next();
+                    sb.
+                            append("{").
+                            append("\"query\":").
+                            append(StringUtil.escapeJsonString(statement.sql)).
+                            append(",").
+                            append("\"time\":").
+                            append(String.format(Locale.ENGLISH, "%.3f", (double) statement.elapsedTime / 1000 / 1000)).
+                            append("}");
+                    if (statementsIt.hasNext()) {
+                        sb.append(",");
+                    }
                 }
-                sb.
-                        append("{").
-                        append("\"query\":").
-                        append(StringUtil.escapeJsonString(statement.sql)).
-                        append(",").
-                        append("\"time\":").
-                        append(String.format(Locale.ENGLISH, "%.3f", (double) statement.elapsedTime / 1000 / 1000)).
-                        append("}");
+                sb.append("]");
             }
-            sb.append("]");
+            sb.append("}");
             return sb.toString().getBytes();
+        } else {
+            return null;
         }
     }
 

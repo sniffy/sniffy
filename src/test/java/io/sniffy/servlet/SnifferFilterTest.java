@@ -1,7 +1,6 @@
 package io.sniffy.servlet;
 
 import io.sniffy.BaseTest;
-import io.sniffy.BaseTest;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,7 +13,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -32,7 +30,6 @@ public class SnifferFilterTest extends BaseTest {
     private MockServletContext servletContext = new MockServletContext("/petclinic/");
     private MockHttpServletRequest httpServletRequest =
             MockMvcRequestBuilders.get("/petclinic/foo/bar?baz").contextPath("/petclinic").buildRequest(servletContext);
-    //new MockHttpServletRequest(servletContext, "GET", "/petclinic/foo/bar?baz");
     private SnifferFilter filter = new SnifferFilter();
 
     protected FilterConfig getFilterConfig() {
