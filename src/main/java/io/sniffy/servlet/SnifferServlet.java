@@ -41,17 +41,17 @@ class SnifferServlet extends HttpServlet {
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
             serveContent(response, "application/javascript", javascript);
         } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
-            byte[] statements = getRequestStatsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
+            byte[] requestStatsJson = getRequestStatsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
 
-            if (null == statements) {
+            if (null == requestStatsJson) {
                 response.setStatus(HttpServletResponse.SC_NO_CONTENT);
                 response.flushBuffer();
             } else {
                 response.setContentType("application/json");
-                response.setContentLength(statements.length);
+                response.setContentLength(requestStatsJson.length);
 
                 ServletOutputStream outputStream = response.getOutputStream();
-                outputStream.write(statements);
+                outputStream.write(requestStatsJson);
                 outputStream.flush();
             }
         }
