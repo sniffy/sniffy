@@ -30,9 +30,5 @@ public interface Constants {
      */
     int PATCH_VERSION = 4;
 
-    /**
-     * returns the root package for all JDBC Sniffer classes
-     */
-    String PACKAGE_NAME = Constants.class.getPackage().getName();
 
 }
