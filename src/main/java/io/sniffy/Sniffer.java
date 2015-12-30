@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
- * Sniffer is an entry point for using JDBC Sniffer library
+ * Sniffer is an entry point for using Sniffy library
  * See the
- * <a href="{@docRoot}/com/github/bedrin/jdbc/sniffer/package-summary.html#package_description">
+ * <a href="{@docRoot}/io/sniffy/package-summary.html#package_description">
  *    package overview
  * </a> for more information.
  * @since 1.0
