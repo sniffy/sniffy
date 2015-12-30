@@ -134,6 +134,28 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testFilterEnabledByRequestParameter() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(false);
+        httpServletRequest.setParameter("sniffy", "true");
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+    }
+
+    @Test
+    public void testFilterDisabledByRequestParameter() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(true);
+        httpServletRequest.setParameter("sniffy", "false");
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertFalse(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+    }
+
+    @Test
     public void testFilterOneQueryWithOutput() throws IOException, ServletException {
 
         doAnswer(invocation -> {

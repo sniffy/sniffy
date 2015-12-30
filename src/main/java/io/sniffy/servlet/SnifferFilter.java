@@ -102,7 +102,7 @@ public class SnifferFilter implements Filter {
         // override by request parameter if provided
 
         String sniffyEnabledParam = request.getParameter("sniffy");
-        if (null != sniffyEnabled) {
+        if (null != sniffyEnabledParam) {
             sniffyEnabled = Boolean.parseBoolean(sniffyEnabledParam);
         }
 
