@@ -97,9 +97,18 @@ public class SnifferFilter implements Filter {
     public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
 
+        Boolean sniffyEnabled = enabled;
+
+        // override by request parameter if provided
+
+        String sniffyEnabledParam = request.getParameter("sniffy");
+        if (null != sniffyEnabled) {
+            sniffyEnabled = Boolean.parseBoolean(sniffyEnabledParam);
+        }
+
         // if disabled, run chain and return
 
-        if (!enabled) {
+        if (!sniffyEnabled) {
             chain.doFilter(request, response);
             return;
         }
