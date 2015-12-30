@@ -1,13 +1,11 @@
 package io.sniffy.servlet;
 
 import io.sniffy.Constants;
-import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.LruCache;
 
 import javax.servlet.*;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -67,9 +65,7 @@ public class SnifferFilter implements Filter {
     protected Pattern excludePattern = null;
 
     // TODO: consider replacing with some concurrent collection instead
-    protected final Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
-            new LruCache<String, List<StatementMetaData>>(10000)
-    );
+    protected final Map<String, RequestStats> cache = Collections.synchronizedMap(new LruCache<String, RequestStats>(10000));
 
     protected SnifferServlet snifferServlet;
     protected ServletContext servletContext;

@@ -26,6 +26,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     private final Spy<? extends Spy> spy;
     private final String requestId;
+    private final RequestStats requestStats = new RequestStats();
 
     public SniffyRequestProcessor(SnifferFilter snifferFilter, ServletRequest request, ServletResponse response) {
         this.snifferFilter = snifferFilter;
@@ -81,22 +82,15 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         // call chain
 
         try {
+            long start = System.currentTimeMillis();
             chain.doFilter(request, responseWrapper);
+            requestStats.setElapsedTime(System.currentTimeMillis() - start);
+            snifferFilter.cache.put(requestId, requestStats);
         } finally {
 
             try {
-
-                // put details to the cache
-
-                List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
-                if (null != executedStatements && !executedStatements.isEmpty()) {
-                    snifferFilter.cache.put(requestId, executedStatements);
-                }
-
-                // flush underlying stream if required
-
+                // call onBeforeClose listeners and flush underlying stream if required
                 responseWrapper.close();
-
             } catch (Exception e) {
                 snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
             }
@@ -149,7 +143,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
         if (null != executedStatements && !executedStatements.isEmpty()) {
-            snifferFilter.cache.put(requestId, executedStatements);
+            requestStats.setExecutedStatements(executedStatements);
+            snifferFilter.cache.put(requestId, requestStats);
         }
 
         if (snifferFilter.injectHtml && isHtmlPage) {
