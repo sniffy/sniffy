@@ -12,6 +12,7 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.servlet.*;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -142,6 +143,31 @@ public class SnifferFilterTest extends BaseTest {
         httpServletRequest.setParameter("sniffy", "true");
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         assertTrue(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals("Check cookie parameter specified", "true", httpServletResponse.getCookie("sniffy").getValue());
+    }
+
+    @Test
+    public void testFilterEnabledByCookie() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(false);
+        httpServletRequest.setCookies(new Cookie("sniffy", "true"));
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+    }
+
+    @Test
+    public void testFilterEnabledRequestParamOverridesCookie() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(false);
+        httpServletRequest.setParameter("sniffy", "false");
+        httpServletRequest.setCookies(new Cookie("sniffy", "true"));
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertFalse("Filter must be disabled", httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals("Cookie parameter must be replaced", "false", httpServletResponse.getCookie("sniffy").getValue());
     }
 
     @Test
