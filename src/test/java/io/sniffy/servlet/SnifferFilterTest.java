@@ -147,6 +147,17 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testFilterNoCookies() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(false);
+        httpServletRequest.setCookies(null);
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertFalse(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+    }
+
+    @Test
     public void testFilterEnabledByCookie() throws IOException, ServletException {
         doAnswer(invocation -> {executeStatement(); return null;}).
                 when(filterChain).doFilter(any(), any());

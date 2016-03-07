@@ -164,7 +164,8 @@ public class SnifferFilter implements Filter {
     }
 
     private String readCookie(HttpServletRequest httpServletRequest, String name) {
-        for (Cookie cookie : httpServletRequest.getCookies()) {
+        Cookie[] cookies = httpServletRequest.getCookies();
+        if (null != cookies) for (Cookie cookie : cookies) {
             if (name.equals(cookie.getName())) {
                 return cookie.getValue();
             }
