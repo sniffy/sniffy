@@ -4,7 +4,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
@@ -48,12 +47,13 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     /**
      * Flush the sniffer buffer and append the information about the executed queries to the output stream
-     * Also close the underlying stream if it has been requested previously
      * @throws IOException
      */
-    protected void close() throws IOException {
-        if (null != writer) writer.close();
-        else if (null != outputStream) outputStream.close();
+    protected void flushIfPossible() throws IOException {
+        if (null != writer) writer.flush(); // TODO: might be closed already
+        else if (null != outputStream) outputStream.flush(); // TODO: might be closed already
+
+        if (null != bufferedServletOutputStream) bufferedServletOutputStream.notifyBeforeClose();
         else {
             if (!isCommitted()) {
                 notifyBeforeCommit();
@@ -77,6 +77,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     @Override
     public void setContentLength(int len) {
         super.setContentLength(contentLength = len);
+        // TODO we shouldn't set the original content length as a header, should we?
     }
 
     public int getContentLength() {
@@ -182,6 +183,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void flushBuffer() throws IOException {
+        // TODO check what should we do if response stream/writer is closed ?
         if (null != writer) writer.flush();
         else if (null != outputStream) outputStream.flush();
         else {
@@ -228,7 +230,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != outputStream) {
             throw new IllegalStateException("getOutputStream() method has been called on this response");
         } else {
-            return writer = new PrintWriter(new OutputStreamWriter(getBufferedServletOutputStream()), false);
+            return writer = new BufferedPrintWriter(getBufferedServletOutputStream());
         }
     }
 

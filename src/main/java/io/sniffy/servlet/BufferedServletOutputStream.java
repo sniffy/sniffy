@@ -13,12 +13,6 @@ class BufferedServletOutputStream extends ServletOutputStream {
     private boolean closed;
     private boolean flushed;
 
-    /**
-     * A flag indicating that underlying stream has already been closed
-     * Used to avoid closing the same stream twice
-     */
-    private boolean targetClosed;
-
     protected BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, ServletOutputStream target) {
         this.responseWrapper = responseWrapper;
         this.target = target;
@@ -30,6 +24,8 @@ class BufferedServletOutputStream extends ServletOutputStream {
         if (!flushed) {
             responseWrapper.notifyBeforeCommit(buffer);
         }
+
+        // TODO call notifyBeforeClose() method here based on some flag 'isFinish'
 
         buffer.writeTo(target);
         target.flush();
@@ -49,16 +45,18 @@ class BufferedServletOutputStream extends ServletOutputStream {
                 responseWrapper.notifyBeforeCommit(buffer);
             }
 
-            responseWrapper.notifyBeforeClose(buffer);
+            notifyBeforeClose();
 
-            flush();
-
-            if (!targetClosed) {
-                target.close();
-                targetClosed = true;
-            }
+            target.close();
 
             closed = true;
+        }
+    }
+
+    public void notifyBeforeClose() throws IOException {
+        if (!closed) {
+            responseWrapper.notifyBeforeClose(buffer);
+            flush();
         }
     }
 
@@ -97,7 +95,7 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     private void flushIfOverflow(int newBytes) throws IOException {
         if (buffer.size() + newBytes > maximumBufferSize) {
-            flush();
+            flush(); // TODO: do not flush the whole buffer but only say the first half
         }
     }
 

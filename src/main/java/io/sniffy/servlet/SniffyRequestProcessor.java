@@ -81,22 +81,31 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         // call chain
 
+        long start = System.currentTimeMillis();
+
         try {
-            long start = System.currentTimeMillis();
             chain.doFilter(request, responseWrapper);
-            requestStats.setElapsedTime(System.currentTimeMillis() - start);
-            snifferFilter.cache.put(requestId, requestStats);
+
         } finally {
 
             try {
-                // call onBeforeClose listeners and flush underlying stream if required
-                responseWrapper.close();
+                requestStats.setElapsedTime(System.currentTimeMillis() - start);
+                updateRequestCache();
+                responseWrapper.flushIfPossible();
             } catch (Exception e) {
                 snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
             }
 
         }
 
+    }
+
+    private void updateRequestCache() {
+        List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
+        if (null != executedStatements && !executedStatements.isEmpty()) {
+            requestStats.setExecutedStatements(executedStatements);
+            snifferFilter.cache.put(requestId, requestStats);
+        }
     }
 
     /**
@@ -106,6 +115,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
+        // TODO: can this method be called multiple times?
         wrapper.addIntHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
         wrapper.addHeader(SnifferFilter.HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
         if (snifferFilter.injectHtml) {
@@ -139,13 +149,10 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     @Override
+    // TODO: can this method be called multiple times?
     public void beforeClose(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
 
-        List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
-        if (null != executedStatements && !executedStatements.isEmpty()) {
-            requestStats.setExecutedStatements(executedStatements);
-            snifferFilter.cache.put(requestId, requestStats);
-        }
+        updateRequestCache();
 
         if (snifferFilter.injectHtml && isHtmlPage) {
 
