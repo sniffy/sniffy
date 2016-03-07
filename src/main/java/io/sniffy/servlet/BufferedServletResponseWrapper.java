@@ -24,7 +24,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     }
 
     protected void notifyBeforeCommit() throws IOException {
-        notifyBeforeCommit(null);
+        notifyBeforeCommit(null); // TODO: check for possible NPE
     }
 
     protected void notifyBeforeCommit(Buffer buffer) throws IOException {
@@ -32,7 +32,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     }
 
     protected void notifyBeforeClose() throws IOException {
-        servletResponseListener.beforeClose(this, null);
+        servletResponseListener.beforeClose(this, null); // TODO: check for possible NPE
     }
 
     protected void notifyBeforeClose(Buffer buffer) throws IOException {
