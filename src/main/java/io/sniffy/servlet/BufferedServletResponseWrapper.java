@@ -182,7 +182,12 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void flushBuffer() throws IOException {
-        getBufferedServletOutputStream().flush();
+        if (null != writer) writer.flush();
+        else if (null != outputStream) outputStream.flush();
+        else {
+            notifyBeforeCommit();
+            setCommitted();
+        }
     }
 
     @Override
@@ -190,6 +195,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         if (isCommitted()) {
             throw new IllegalStateException("Cannot reset buffer - response is already committed");
         }
+        // TODO reset buffer of writer as well
         if (null != bufferedServletOutputStream) bufferedServletOutputStream.reset();
     }
 
