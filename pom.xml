@@ -272,7 +272,7 @@
             <groupId>org.webjars.bower</groupId>
             <artifactId>sniffy</artifactId>
             <version>${sniffy.ui.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.webjars.bower</groupId>
