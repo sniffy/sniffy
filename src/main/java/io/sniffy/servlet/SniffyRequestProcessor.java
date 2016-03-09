@@ -11,9 +11,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.UUID;
@@ -112,11 +110,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             String contentType = wrapper.getContentType();
             String contentEncoding = wrapper.getContentEncoding();
 
-            String mimeTypeMagic = null == buffer ? null :
-                    URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.leadingBytes(16)));
-
-            if (null != buffer && null == contentEncoding && null != contentType && contentType.startsWith("text/html")
-                    && !"application/xml".equals(mimeTypeMagic)) {
+            if (null != buffer && null == contentEncoding && null != contentType && contentType.startsWith("text/html")) {
                 // adjust content length with the size of injected content
                 int contentLength = wrapper.getContentLength();
                 if (contentLength > 0) {
