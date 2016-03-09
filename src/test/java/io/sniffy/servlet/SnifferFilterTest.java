@@ -1,7 +1,6 @@
 package io.sniffy.servlet;
 
 import io.sniffy.BaseTest;
-import io.sniffy.BaseTest;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,8 +12,8 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.servlet.*;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -32,7 +31,6 @@ public class SnifferFilterTest extends BaseTest {
     private MockServletContext servletContext = new MockServletContext("/petclinic/");
     private MockHttpServletRequest httpServletRequest =
             MockMvcRequestBuilders.get("/petclinic/foo/bar?baz").contextPath("/petclinic").buildRequest(servletContext);
-    //new MockHttpServletRequest(servletContext, "GET", "/petclinic/foo/bar?baz");
     private SnifferFilter filter = new SnifferFilter();
 
     protected FilterConfig getFilterConfig() {
@@ -134,6 +132,64 @@ public class SnifferFilterTest extends BaseTest {
 
         assertFalse(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
 
+    }
+
+    @Test
+    public void testFilterEnabledByRequestParameter() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(false);
+        httpServletRequest.setParameter("sniffy", "true");
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals("Check cookie parameter specified", "true", httpServletResponse.getCookie("sniffy").getValue());
+    }
+
+    @Test
+    public void testFilterNoCookies() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(false);
+        httpServletRequest.setCookies(null);
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertFalse(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+    }
+
+    @Test
+    public void testFilterEnabledByCookie() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(false);
+        httpServletRequest.setCookies(new Cookie("sniffy", "true"));
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+    }
+
+    @Test
+    public void testFilterEnabledRequestParamOverridesCookie() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(false);
+        httpServletRequest.setParameter("sniffy", "false");
+        httpServletRequest.setCookies(new Cookie("sniffy", "true"));
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertFalse("Filter must be disabled", httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals("Cookie parameter must be replaced", "false", httpServletResponse.getCookie("sniffy").getValue());
+    }
+
+    @Test
+    public void testFilterDisabledByRequestParameter() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SnifferFilter filter = new SnifferFilter();
+        filter.setEnabled(true);
+        httpServletRequest.setParameter("sniffy", "false");
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertFalse(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
     }
 
     @Test

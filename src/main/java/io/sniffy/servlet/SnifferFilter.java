@@ -1,13 +1,15 @@
 package io.sniffy.servlet;
 
 import io.sniffy.Constants;
-import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.LruCache;
 
 import javax.servlet.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -61,15 +63,14 @@ public class SnifferFilter implements Filter {
 
     public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/sniffy.min.js";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
+    public static final String SNIFFY = "sniffy";
 
     protected boolean injectHtml = false;
     protected boolean enabled = true;
     protected Pattern excludePattern = null;
 
     // TODO: consider replacing with some concurrent collection instead
-    protected final Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
-            new LruCache<String, List<StatementMetaData>>(10000)
-    );
+    protected final Map<String, RequestStats> cache = Collections.synchronizedMap(new LruCache<String, RequestStats>(10000));
 
     protected SnifferServlet snifferServlet;
     protected ServletContext servletContext;
@@ -101,9 +102,28 @@ public class SnifferFilter implements Filter {
     public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
 
+        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+
+        Boolean sniffyEnabled = enabled;
+
+        // override by request parameter/cookie value if provided
+
+        String sniffyEnabledParam = request.getParameter(SNIFFY);
+
+        if (null != sniffyEnabledParam) {
+            sniffyEnabled = Boolean.parseBoolean(sniffyEnabledParam);
+            setSessionCookie(httpServletResponse, SNIFFY, String.valueOf(sniffyEnabled));
+        } else {
+            sniffyEnabledParam = readCookie(httpServletRequest, SNIFFY);
+            if (null != sniffyEnabledParam) {
+                sniffyEnabled = Boolean.parseBoolean(sniffyEnabledParam);
+            }
+        }
+
         // if disabled, run chain and return
 
-        if (!enabled) {
+        if (!sniffyEnabled) {
             chain.doFilter(request, response);
             return;
         }
@@ -134,6 +154,23 @@ public class SnifferFilter implements Filter {
 
         sniffyRequestProcessor.process(chain);
 
+    }
+
+    private void setSessionCookie(HttpServletResponse httpServletResponse,
+                                  String name, String value) throws MalformedURLException {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/");
+        httpServletResponse.addCookie(cookie);
+    }
+
+    private String readCookie(HttpServletRequest httpServletRequest, String name) {
+        Cookie[] cookies = httpServletRequest.getCookies();
+        if (null != cookies) for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     public void destroy() {

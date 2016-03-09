@@ -85,12 +85,12 @@ public final class Sniffer {
         notifyListeners(address, elapsedTime);
     }
 
-    protected static void executeStatement(String sql, long elapsedTime) {
+    protected static void executeStatement(String sql, long elapsedTime, String stackTrace) {
         // log query
         QueryLogger.logQuery(sql, elapsedTime);
 
         // increment counters
-        StatementMetaData statementMetaData = StatementMetaData.parse(sql, elapsedTime);
+        StatementMetaData statementMetaData = StatementMetaData.parse(sql, elapsedTime, stackTrace);
         COUNTER.executeStatement(statementMetaData.query);
         THREAD_LOCAL_COUNTER.get().executeStatement(statementMetaData.query);
 
