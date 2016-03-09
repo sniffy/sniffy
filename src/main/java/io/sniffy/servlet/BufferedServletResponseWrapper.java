@@ -9,8 +9,9 @@ import java.io.PrintWriter;
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     private BufferedServletOutputStream bufferedServletOutputStream;
-    private ServletOutputStream outputStream;
-    private PrintWriter writer;
+
+    private BufferedServletOutputStream outputStream;
+    private BufferedPrintWriter writer;
 
     private boolean committed;
 
@@ -50,10 +51,11 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
      * @throws IOException
      */
     protected void flushIfPossible() throws IOException {
-        if (null != writer) writer.flush(); // TODO: might be closed already
-        else if (null != outputStream) outputStream.flush(); // TODO: might be closed already
 
-        if (null != bufferedServletOutputStream) bufferedServletOutputStream.notifyBeforeClose();
+        if (null != bufferedServletOutputStream) bufferedServletOutputStream.setLastChunk(true);
+
+        if (null != writer) writer.flushIfOpen();
+        else if (null != outputStream) outputStream.flushIfOpen();
         else {
             if (!isCommitted()) {
                 notifyBeforeCommit();
@@ -184,8 +186,8 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     @Override
     public void flushBuffer() throws IOException {
         // TODO check what should we do if response stream/writer is closed ?
-        if (null != writer) writer.flush();
-        else if (null != outputStream) outputStream.flush();
+        if (null != writer) writer.flushIfOpen();
+        else if (null != outputStream) outputStream.flushIfOpen();
         else {
             notifyBeforeCommit();
             setCommitted();

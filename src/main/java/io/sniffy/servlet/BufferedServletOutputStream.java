@@ -13,9 +13,21 @@ class BufferedServletOutputStream extends ServletOutputStream {
     private boolean closed;
     private boolean flushed;
 
+    private boolean lastChunk;
+
+    public void setLastChunk(boolean lastChunk) {
+        this.lastChunk = lastChunk;
+    }
+
     protected BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, ServletOutputStream target) {
         this.responseWrapper = responseWrapper;
         this.target = target;
+    }
+
+    public void flushIfOpen() throws IOException {
+        if (!closed) {
+            flush();
+        }
     }
 
     @Override
@@ -25,7 +37,10 @@ class BufferedServletOutputStream extends ServletOutputStream {
             responseWrapper.notifyBeforeCommit(buffer);
         }
 
-        // TODO call notifyBeforeClose() method here based on some flag 'isFinish'
+        if (lastChunk) {
+            responseWrapper.notifyBeforeClose(buffer);
+            lastChunk = false;
+        }
 
         buffer.writeTo(target);
         target.flush();
@@ -39,24 +54,9 @@ class BufferedServletOutputStream extends ServletOutputStream {
     @Override
     public void close() throws IOException {
         if (!closed) {
-
-            if (!flushed) {
-                flushed = true;
-                responseWrapper.notifyBeforeCommit(buffer);
-            }
-
-            notifyBeforeClose();
-
-            target.close();
-
-            closed = true;
-        }
-    }
-
-    public void notifyBeforeClose() throws IOException {
-        if (!closed) {
-            responseWrapper.notifyBeforeClose(buffer);
             flush();
+            target.close();
+            closed = true;
         }
     }
 
