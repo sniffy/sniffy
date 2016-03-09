@@ -24,7 +24,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     }
 
     protected void notifyBeforeCommit() throws IOException {
-        notifyBeforeCommit(null); // TODO: check for possible NPE
+        notifyBeforeCommit(null);
     }
 
     protected void notifyBeforeCommit(Buffer buffer) throws IOException {
@@ -32,7 +32,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     }
 
     protected void notifyBeforeClose() throws IOException {
-        servletResponseListener.beforeClose(this, null); // TODO: check for possible NPE
+        servletResponseListener.beforeClose(this, null);
     }
 
     protected void notifyBeforeClose(Buffer buffer) throws IOException {
@@ -52,7 +52,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
      */
     protected void flushIfPossible() throws IOException {
 
-        if (null != bufferedServletOutputStream) bufferedServletOutputStream.setLastChunk(true);
+        if (null != bufferedServletOutputStream) bufferedServletOutputStream.setLastChunk();
 
         if (null != writer) writer.flushIfOpen();
         else if (null != outputStream) outputStream.flushIfOpen();
@@ -79,7 +79,6 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     @Override
     public void setContentLength(int len) {
         super.setContentLength(contentLength = len);
-        // TODO we shouldn't set the original content length as a header, should we?
     }
 
     public int getContentLength() {
@@ -97,7 +96,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             try {
                 contentLength = Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                // todo: can we log it somehow plz?
+                // sniffy is not interested in this exception
             }
         }
     }
@@ -111,7 +110,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             try {
                 contentLength = Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                // todo: can we log it somehow plz?
+                // sniffy is not interested in this exception
             }
         }
     }
@@ -185,7 +184,6 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void flushBuffer() throws IOException {
-        // TODO check what should we do if response stream/writer is closed ?
         if (null != writer) writer.flushIfOpen();
         else if (null != outputStream) outputStream.flushIfOpen();
         else {
@@ -199,7 +197,6 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         if (isCommitted()) {
             throw new IllegalStateException("Cannot reset buffer - response is already committed");
         }
-        // TODO reset buffer of writer as well
         if (null != bufferedServletOutputStream) bufferedServletOutputStream.reset();
     }
 
@@ -232,7 +229,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != outputStream) {
             throw new IllegalStateException("getOutputStream() method has been called on this response");
         } else {
-            return writer = new BufferedPrintWriter(getBufferedServletOutputStream());
+            return writer = new BufferedPrintWriter(getBufferedServletOutputStream()); // TODO: pass charset here
         }
     }
 

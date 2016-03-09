@@ -385,6 +385,38 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testInjectHtmlCloseResponse() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            printWriter.close();
+            executeStatement();
+
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        String contentAsString = httpServletResponse.getContentAsString();
+        assertTrue(contentAsString.contains("id=\"sniffy\""));
+        assertTrue(contentAsString.indexOf("id=\"sniffy\"") < contentAsString.indexOf("</body>"));
+        assertTrue(contentAsString.contains("data-sql-queries=\"1\""));
+
+    }
+
+    @Test
     public void testInjectHtmlSetContentLength() throws IOException, ServletException {
 
         String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";

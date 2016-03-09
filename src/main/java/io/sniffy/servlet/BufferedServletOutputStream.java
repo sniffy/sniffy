@@ -15,8 +15,8 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     private boolean lastChunk;
 
-    public void setLastChunk(boolean lastChunk) {
-        this.lastChunk = lastChunk;
+    public void setLastChunk() {
+        this.lastChunk = true;
     }
 
     protected BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, ServletOutputStream target) {
@@ -54,6 +54,7 @@ class BufferedServletOutputStream extends ServletOutputStream {
     @Override
     public void close() throws IOException {
         if (!closed) {
+            setLastChunk();
             flush();
             target.close();
             closed = true;

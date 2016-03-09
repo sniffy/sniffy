@@ -85,7 +85,6 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         try {
             chain.doFilter(request, responseWrapper);
-
         } finally {
 
             try {
@@ -209,12 +208,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
      * Generates following HTML snippet
      * <pre>
      * {@code
-     * <div style="display:none!important" id="sniffy" data-sql-queries="5" data-request-id="abcd"></div>
-     * <script type="application-javascript" src="/petstore/sniffy.min.js"></script>
+     * <data id="sniffy" data-sql-queries="5"/>
      * }
      * </pre>
-     * @param executedQueries
-     * @return
+     * @param executedQueries number of executed queries
+     * @return StringBuilder with generated HTML
      */
     protected static StringBuilder generateFooterHtml(int executedQueries) {
         return new StringBuilder().
