@@ -316,43 +316,6 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
-    public void testDoNotInjectToXml() throws IOException, ServletException {
-
-        String actualContent = "<?xml version=\"1.0\"?>\n" +
-                "\n" +
-                "<applications location=\"PRODEXTSG\" hasPendingActions=\"false\">\n" +
-                "    <application>" +
-                "</application>\n" +
-                "    <featuredItems>\n" +
-                "        \n" +
-                "    </featuredItems>\n" +
-                "</applications>\n";
-
-        doAnswer(invocation -> {
-            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
-
-            response.setContentType("text/html");
-
-            PrintWriter printWriter = response.getWriter();
-            executeStatement();
-            printWriter.append(actualContent);
-            executeStatement();
-            printWriter.flush();
-            return null;
-        }).when(filterChain).doFilter(any(), any());
-
-        SnifferFilter filter = new SnifferFilter();
-        filter.init(getFilterConfig());
-
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
-
-        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
-        assertEquals(actualContent, httpServletResponse.getContentAsString());
-        assertFalse(httpServletResponse.getContentAsString().contains("id=\"sniffy\""));
-
-    }
-
-    @Test
     public void testInjectHtmlFlushResponse() throws IOException, ServletException {
 
         String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
@@ -379,8 +342,40 @@ public class SnifferFilterTest extends BaseTest {
         assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
         assertTrue(contentAsString.contains("id=\"sniffy\""));
-        assertTrue(contentAsString.indexOf("id=\"sniffy\"") < contentAsString.indexOf("</body>"));
+        assertTrue(contentAsString.indexOf("id=\"sniffy\"") > contentAsString.indexOf("</body>"));
         assertTrue(contentAsString.contains("data-sql-queries=\"2\""));
+
+    }
+
+    @Test
+    public void testInjectHtmlCloseResponse() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            printWriter.close();
+            executeStatement();
+
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        String contentAsString = httpServletResponse.getContentAsString();
+        assertTrue(contentAsString.contains("id=\"sniffy\""));
+        assertTrue(contentAsString.indexOf("id=\"sniffy\"") < contentAsString.indexOf("</body>"));
+        assertTrue(contentAsString.contains("data-sql-queries=\"1\""));
 
     }
 

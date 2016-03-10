@@ -4,14 +4,14 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     private BufferedServletOutputStream bufferedServletOutputStream;
-    private ServletOutputStream outputStream;
-    private PrintWriter writer;
+
+    private BufferedServletOutputStream outputStream;
+    private BufferedPrintWriter writer;
 
     private boolean committed;
 
@@ -48,12 +48,14 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     /**
      * Flush the sniffer buffer and append the information about the executed queries to the output stream
-     * Also close the underlying stream if it has been requested previously
      * @throws IOException
      */
-    protected void close() throws IOException {
-        if (null != writer) writer.close();
-        else if (null != outputStream) outputStream.close();
+    protected void flushIfPossible() throws IOException {
+
+        if (null != bufferedServletOutputStream) bufferedServletOutputStream.setLastChunk();
+
+        if (null != writer) writer.flushIfOpen();
+        else if (null != outputStream) outputStream.flushIfOpen();
         else {
             if (!isCommitted()) {
                 notifyBeforeCommit();
@@ -94,7 +96,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             try {
                 contentLength = Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                // todo: can we log it somehow plz?
+                // sniffy is not interested in this exception
             }
         }
     }
@@ -108,7 +110,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             try {
                 contentLength = Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                // todo: can we log it somehow plz?
+                // sniffy is not interested in this exception
             }
         }
     }
@@ -182,7 +184,12 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void flushBuffer() throws IOException {
-        getBufferedServletOutputStream().flush();
+        if (null != writer) writer.flushIfOpen();
+        else if (null != outputStream) outputStream.flushIfOpen();
+        else {
+            notifyBeforeCommit();
+            setCommitted();
+        }
     }
 
     @Override
@@ -222,7 +229,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != outputStream) {
             throw new IllegalStateException("getOutputStream() method has been called on this response");
         } else {
-            return writer = new PrintWriter(new OutputStreamWriter(getBufferedServletOutputStream()), false);
+            return writer = new BufferedPrintWriter(getBufferedServletOutputStream()); // TODO: pass charset here
         }
     }
 

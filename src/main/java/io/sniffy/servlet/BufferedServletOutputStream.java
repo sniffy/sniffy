@@ -13,15 +13,21 @@ class BufferedServletOutputStream extends ServletOutputStream {
     private boolean closed;
     private boolean flushed;
 
-    /**
-     * A flag indicating that underlying stream has already been closed
-     * Used to avoid closing the same stream twice
-     */
-    private boolean targetClosed;
+    private boolean lastChunk;
+
+    public void setLastChunk() {
+        this.lastChunk = true;
+    }
 
     protected BufferedServletOutputStream(BufferedServletResponseWrapper responseWrapper, ServletOutputStream target) {
         this.responseWrapper = responseWrapper;
         this.target = target;
+    }
+
+    public void flushIfOpen() throws IOException {
+        if (!closed) {
+            flush();
+        }
     }
 
     @Override
@@ -29,6 +35,11 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
         if (!flushed) {
             responseWrapper.notifyBeforeCommit(buffer);
+        }
+
+        if (lastChunk) {
+            responseWrapper.notifyBeforeClose(buffer);
+            lastChunk = false;
         }
 
         buffer.writeTo(target);
@@ -43,21 +54,9 @@ class BufferedServletOutputStream extends ServletOutputStream {
     @Override
     public void close() throws IOException {
         if (!closed) {
-
-            if (!flushed) {
-                flushed = true;
-                responseWrapper.notifyBeforeCommit(buffer);
-            }
-
-            responseWrapper.notifyBeforeClose(buffer);
-
+            setLastChunk();
             flush();
-
-            if (!targetClosed) {
-                target.close();
-                targetClosed = true;
-            }
-
+            target.close();
             closed = true;
         }
     }
@@ -97,7 +96,7 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     private void flushIfOverflow(int newBytes) throws IOException {
         if (buffer.size() + newBytes > maximumBufferSize) {
-            flush();
+            flush(); // TODO: do not flush the whole buffer but only say the first half
         }
     }
 

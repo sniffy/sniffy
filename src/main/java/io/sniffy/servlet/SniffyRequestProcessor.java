@@ -11,9 +11,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.UUID;
@@ -81,22 +79,30 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         // call chain
 
+        long start = System.currentTimeMillis();
+
         try {
-            long start = System.currentTimeMillis();
             chain.doFilter(request, responseWrapper);
-            requestStats.setElapsedTime(System.currentTimeMillis() - start);
-            snifferFilter.cache.put(requestId, requestStats);
         } finally {
 
             try {
-                // call onBeforeClose listeners and flush underlying stream if required
-                responseWrapper.close();
+                requestStats.setElapsedTime(System.currentTimeMillis() - start);
+                updateRequestCache();
+                responseWrapper.flushIfPossible();
             } catch (Exception e) {
                 snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
             }
 
         }
 
+    }
+
+    private void updateRequestCache() {
+        List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
+        if (null != executedStatements && !executedStatements.isEmpty()) {
+            requestStats.setExecutedStatements(executedStatements);
+            snifferFilter.cache.put(requestId, requestStats);
+        }
     }
 
     /**
@@ -106,17 +112,14 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
+        // TODO: can this method be called multiple times?
         wrapper.addIntHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
         wrapper.addHeader(SnifferFilter.HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
         if (snifferFilter.injectHtml) {
             String contentType = wrapper.getContentType();
             String contentEncoding = wrapper.getContentEncoding();
 
-            String mimeTypeMagic = null == buffer ? null :
-                    URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.leadingBytes(16)));
-
-            if (null != buffer && null == contentEncoding && null != contentType && contentType.startsWith("text/html")
-                    && !"application/xml".equals(mimeTypeMagic)) {
+            if (null != buffer && null == contentEncoding && null != contentType && contentType.startsWith("text/html")) {
                 // adjust content length with the size of injected content
                 int contentLength = wrapper.getContentLength();
                 if (contentLength > 0) {
@@ -139,13 +142,10 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     @Override
+    // TODO: can this method be called multiple times?
     public void beforeClose(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
 
-        List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
-        if (null != executedStatements && !executedStatements.isEmpty()) {
-            requestStats.setExecutedStatements(executedStatements);
-            snifferFilter.cache.put(requestId, requestStats);
-        }
+        updateRequestCache();
 
         if (snifferFilter.injectHtml && isHtmlPage) {
 
@@ -202,12 +202,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
      * Generates following HTML snippet
      * <pre>
      * {@code
-     * <div style="display:none!important" id="sniffy" data-sql-queries="5" data-request-id="abcd"></div>
-     * <script type="application-javascript" src="/petstore/sniffy.min.js"></script>
+     * <data id="sniffy" data-sql-queries="5"/>
      * }
      * </pre>
-     * @param executedQueries
-     * @return
+     * @param executedQueries number of executed queries
+     * @return StringBuilder with generated HTML
      */
     protected static StringBuilder generateFooterHtml(int executedQueries) {
         return new StringBuilder().
