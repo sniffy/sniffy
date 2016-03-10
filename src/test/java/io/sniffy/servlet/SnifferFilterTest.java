@@ -316,43 +316,6 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
-    public void testDoNotInjectToXml() throws IOException, ServletException {
-
-        String actualContent = "<?xml version=\"1.0\"?>\n" +
-                "\n" +
-                "<applications location=\"PRODEXTSG\" hasPendingActions=\"false\">\n" +
-                "    <application>" +
-                "</application>\n" +
-                "    <featuredItems>\n" +
-                "        \n" +
-                "    </featuredItems>\n" +
-                "</applications>\n";
-
-        doAnswer(invocation -> {
-            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
-
-            response.setContentType("text/html");
-
-            PrintWriter printWriter = response.getWriter();
-            executeStatement();
-            printWriter.append(actualContent);
-            executeStatement();
-            printWriter.flush();
-            return null;
-        }).when(filterChain).doFilter(any(), any());
-
-        SnifferFilter filter = new SnifferFilter();
-        filter.init(getFilterConfig());
-
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
-
-        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
-        assertEquals(actualContent, httpServletResponse.getContentAsString());
-        assertFalse(httpServletResponse.getContentAsString().contains("id=\"sniffy\""));
-
-    }
-
-    @Test
     public void testInjectHtmlFlushResponse() throws IOException, ServletException {
 
         String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
