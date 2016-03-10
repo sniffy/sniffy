@@ -6,9 +6,6 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.copyOfRange;
 
-/**
- * TODO: flush buffer automatically after some threshold (say 100 kilobytes for start?) or analyze content-length headedr
- */
 class Buffer extends ByteArrayOutputStream {
 
 
