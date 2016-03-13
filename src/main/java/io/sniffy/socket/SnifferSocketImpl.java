@@ -20,12 +20,14 @@ public class SnifferSocketImpl extends SocketImpl {
 
     private String address;
 
+    private final static String UNKNOWN = "unknown";
+
     public SnifferSocketImpl(SocketImpl delegate) {
         this.delegate = delegate;
     }
 
     private void logSocket(long millis) {
-        Sniffer.logSocket(address, millis);
+        Sniffer.logSocket(null == address ? UNKNOWN : address, millis);
     }
 
     // TODO in order to support server sockets we should also copy fields to delegate

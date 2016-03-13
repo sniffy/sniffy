@@ -32,16 +32,13 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
 
+    private volatile ConcurrentHashMap<String, AtomicLong> socketOperations = new ConcurrentHashMap<String, AtomicLong>();
+
     protected void addExecutedStatement(StatementMetaData statementMetaData) {
         executedStatements.add(statementMetaData);
     }
 
-    private volatile ConcurrentHashMap<String, AtomicLong> socketOperations = new ConcurrentHashMap<String, AtomicLong>();
-    private final String UNKNOWN = "unknown";
-
     protected void addExecutedStatement(String address, long elapsedTime) {
-
-        if (null == address) address = UNKNOWN;
 
         AtomicLong socketElapsedTime = socketOperations.get(address);
 
