@@ -130,7 +130,7 @@ public class SnifferSocketImplTest {
     }
 
     @Test
-    public void getPort() throws Exception {
+    public void testGetPort() throws Exception {
 
         int expected = 1;
 
@@ -139,6 +139,22 @@ public class SnifferSocketImplTest {
         int actual = sniffySocket.getPort();
 
         verifyPrivate(delegate).invoke("getPort");
+        verifyNoMoreInteractions(delegate);
+
+        assertEquals(expected, actual);
+
+    }
+
+    @Test
+    public void testSupportsUrgentData() throws Exception {
+
+        boolean expected = true;
+
+        when(delegate, "supportsUrgentData").thenReturn(expected);
+
+        boolean actual = sniffySocket.supportsUrgentData();
+
+        verifyPrivate(delegate).invoke("supportsUrgentData");
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);
