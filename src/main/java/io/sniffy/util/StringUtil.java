@@ -52,6 +52,7 @@ public class StringUtil {
                     } else {
                         sb.append(c);
                     }
+                    break;
             }
         }
         sb.append('"');

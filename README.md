@@ -2,6 +2,7 @@ Sniffy
 ============
 
 [![Join the chat at https://gitter.im/sniffy/sniffy](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sniffy/sniffy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/ec48f442755f4df5b62bf3bcba3a2246)](https://www.codacy.com/app/sniffy/sniffy)
 [![CI Status](https://travis-ci.org/sniffy/sniffy.svg?branch=master)](https://travis-ci.org/sniffy/sniffy)
 [![Coverage Status](https://coveralls.io/repos/sniffy/sniffy/badge.png?branch=master)](https://coveralls.io/r/sniffy/sniffy?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy)
@@ -51,23 +52,23 @@ Sniffy is available from Maven Central repository
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy</artifactId>
-    <version>3.0.3</version>
+    <version>3.0.5</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'io.sniffy:sniffy:3.0.3'
+    compile 'io.sniffy:sniffy:3.0.5'
 }
 ```
 
 Download
 ============
 [![Get automatic notifications about new "sniffy" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/sniffy/sniffy/sniffy/view?source=watch)
-- [sniffy-3.0.3.jar](https://github.com/sniffy/sniffy/releases/download/3.0.3/sniffy-3.0.3.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.3.jar))
-- [sniffy-3.0.3-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.3/sniffy-3.0.3-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.3-sources.jar))
-- [sniffy-3.0.3-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.3/sniffy-3.0.3-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.3-javadoc.jar))
+- [sniffy-3.0.5.jar](https://github.com/sniffy/sniffy/releases/download/3.0.5/sniffy-3.0.5.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.5.jar))
+- [sniffy-3.0.5-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.5/sniffy-3.0.5-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.5-sources.jar))
+- [sniffy-3.0.5-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.5/sniffy-3.0.5-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.5-javadoc.jar))
 
 Setup
 ============

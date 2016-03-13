@@ -2,8 +2,6 @@ package io.sniffy;
 
 import io.sniffy.log.QueryLogger;
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.log.QueryLogger;
-import io.sniffy.sql.StatementMetaData;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -20,27 +18,31 @@ import java.util.concurrent.Callable;
  * </a> for more information.
  * @since 1.0
  */
-public class Sniffer {
+public final class Sniffer {
+
+    private Sniffer() {
+
+    }
 
     // Registered listeners (i.e. spies)
 
-    static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+    private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
 
-    static synchronized WeakReference<Spy> registerSpy(Spy spy) {
+    protected static synchronized WeakReference<Spy> registerSpy(Spy spy) {
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
         registeredSpies.add(spyReference);
         return spyReference;
     }
 
-    static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
+    protected static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
         registeredSpies.remove(spyReference);
     }
 
-    static List<WeakReference<Spy>> registeredSpies() {
+    protected static List<WeakReference<Spy>> registeredSpies() {
         return Collections.unmodifiableList(registeredSpies);
     }
 
-    static synchronized void notifyListeners(StatementMetaData statementMetaData) {
+    private static synchronized void notifyListeners(StatementMetaData statementMetaData) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -55,9 +57,9 @@ public class Sniffer {
 
     // query counters
 
-    static final Counter COUNTER = new Counter();
+    protected static final Counter COUNTER = new Counter();
 
-    static final ThreadLocal<Counter> THREAD_LOCAL_COUNTER = new ThreadLocal<Counter>() {
+    protected static final ThreadLocal<Counter> THREAD_LOCAL_COUNTER = new ThreadLocal<Counter>() {
 
         @Override
         protected Counter initialValue() {
@@ -66,12 +68,12 @@ public class Sniffer {
 
     };
 
-    static void executeStatement(String sql, long elapsedTime) {
+    protected static void executeStatement(String sql, long elapsedTime, String stackTrace) {
         // log query
         QueryLogger.logQuery(sql, elapsedTime);
 
         // increment counters
-        StatementMetaData statementMetaData = StatementMetaData.parse(sql, elapsedTime);
+        StatementMetaData statementMetaData = StatementMetaData.parse(sql, elapsedTime, stackTrace);
         COUNTER.executeStatement(statementMetaData.query);
         THREAD_LOCAL_COUNTER.get().executeStatement(statementMetaData.query);
 
@@ -91,7 +93,7 @@ public class Sniffer {
      * @return a new {@link Spy} instance
      * @since 2.0
      */
-    public static <T extends Spy<T>> Spy<T> spy() {
+    public static <T extends Spy<T>> Spy<? extends Spy<T>> spy() {
         return new Spy<T>();
     }
 

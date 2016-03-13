@@ -2,7 +2,17 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.0.3...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.5...master)
+
+## v3.0.5 - March 13th, 2016
+ * [UI must be enableble using request parameter](https://github.com/sniffy/sniffy/issues/83)
+ * [Return server response time](https://github.com/sniffy/sniffy/issues/95)
+ * [Sniffy hides application exception and returns 200](https://github.com/sniffy/sniffy/issues/104)
+ * [sniffy maven pulls bower dependencies](https://github.com/sniffy/sniffy/issues/111)
+ * [Sniffy doesn't support async requests](https://github.com/sniffy/sniffy/issues/113)
+ * [Sniffy doesn't inject JS to XHTML documents](https://github.com/sniffy/sniffy/issues/116)
+
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.3...3.0.5)
 
 ## v3.0.3 - December 6th, 2015
  * [Implement dark theme for sniffy](https://github.com/sniffy/sniffy/issues/98)

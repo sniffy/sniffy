@@ -1,5 +1,7 @@
 package io.sniffy;
 
+import static io.sniffy.trace.StackTraceExtractor.*;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -42,17 +44,19 @@ class StatementInvocationHandler implements InvocationHandler {
         switch (StatementMethodType.parse(method.getName())) {
             case ADD_BATCH:
                 addBatch(String.class.cast(args[0]));
-                break;
+                return invokeTarget(method, args);
             case CLEAR_BATCH:
                 clearBatch();
-                break;
+                return invokeTarget(method, args);
             case EXECUTE_BATCH:
                 return invokeTargetAndRecord(method, args, getBatchedSql());
             case EXECUTE_SQL:
                 return invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null);
+            case OTHER:
+            default:
+                return invokeTarget(method, args);
         }
 
-        return invokeTarget(method, args);
     }
 
     protected Object invokeTarget(Method method, Object[] args) throws Throwable {
@@ -70,7 +74,8 @@ class StatementInvocationHandler implements InvocationHandler {
         } catch (InvocationTargetException e) {
             throw e.getTargetException();
         } finally {
-            Sniffer.executeStatement(sql, System.nanoTime() - start);
+            String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
+            Sniffer.executeStatement(sql, System.nanoTime() - start, stackTrace);
         }
     }
 

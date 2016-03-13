@@ -1,23 +1,16 @@
 package io.sniffy.servlet;
 
 import io.sniffy.Constants;
-import io.sniffy.Sniffer;
-import io.sniffy.Spy;
-import io.sniffy.Threads;
-import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.LruCache;
 
 import javax.servlet.*;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URLConnection;
-import java.nio.charset.Charset;
+import java.net.MalformedURLException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -70,18 +63,19 @@ public class SnifferFilter implements Filter {
 
     public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/sniffy.min.js";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
+    public static final String SNIFFY = "sniffy";
 
     protected boolean injectHtml = false;
     protected boolean enabled = true;
     protected Pattern excludePattern = null;
 
     // TODO: consider replacing with some concurrent collection instead
-    protected Map<String, List<StatementMetaData>> cache = Collections.synchronizedMap(
-            new LruCache<String, List<StatementMetaData>>(10000)
-    );
+    protected final Map<String, RequestStats> cache = Collections.synchronizedMap(new LruCache<String, RequestStats>(10000));
 
     protected SnifferServlet snifferServlet;
     protected ServletContext servletContext;
+
+    protected String contextPath;
 
     public void init(FilterConfig filterConfig) throws ServletException {
         String injectHtml = filterConfig.getInitParameter("inject-html");
@@ -101,182 +95,82 @@ public class SnifferFilter implements Filter {
         snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
 
         servletContext = filterConfig.getServletContext();
+        contextPath = servletContext.getContextPath();
 
     }
 
     public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
 
-        if (!enabled) {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+
+        Boolean sniffyEnabled = enabled;
+
+        // override by request parameter/cookie value if provided
+
+        String sniffyEnabledParam = request.getParameter(SNIFFY);
+
+        if (null != sniffyEnabledParam) {
+            sniffyEnabled = Boolean.parseBoolean(sniffyEnabledParam);
+            setSessionCookie(httpServletResponse, SNIFFY, String.valueOf(sniffyEnabled));
+        } else {
+            sniffyEnabledParam = readCookie(httpServletRequest, SNIFFY);
+            if (null != sniffyEnabledParam) {
+                sniffyEnabled = Boolean.parseBoolean(sniffyEnabledParam);
+            }
+        }
+
+        // if disabled, run chain and return
+
+        if (!sniffyEnabled) {
             chain.doFilter(request, response);
             return;
         }
 
-        boolean chainCalled = false;
+        // process Sniffy REST calls
 
-        try {
-
-            if (injectHtml) {
+        if (injectHtml) {
+            try {
                 snifferServlet.service(request, response);
                 if (response.isCommitted()) return;
-            }
-
-            final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-            final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-            final String contextPath = httpServletRequest.getContextPath();
-            final String relativeUrl = httpServletRequest.getRequestURI().substring(contextPath.length());
-
-            if (null != excludePattern && excludePattern.matcher(relativeUrl).matches()) {
-                chainCalled = true;
+            } catch (Exception e) {
+                servletContext.log("Exception in SniffyServlet; calling original chain", e);
                 chain.doFilter(request, response);
                 return;
             }
+        }
 
-            final Spy<? extends Spy> spy = Sniffer.spy();
-            final String requestId = UUID.randomUUID().toString();
+        // create request decorator
 
-            BufferedServletResponseWrapper responseWrapper = new BufferedServletResponseWrapper(
-                    httpServletResponse,
-                    new BufferedServletResponseListener() {
-
-                        /**
-                         * Flag indicating that current response looks like HTML and capable of injecting sniffer widget
-                         */
-                        private boolean isHtmlPage = false;
-
-                        /**
-                         * todo return flag indicating that sniffer wont modify the output stream
-                         * @param wrapper
-                         * @param buffer
-                         * @throws IOException
-                         */
-                        @Override
-                        public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
-                            wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
-                            wrapper.addHeader(HEADER_REQUEST_DETAILS, contextPath + REQUEST_URI_PREFIX + requestId);
-                            if (injectHtml) {
-                                String contentType = wrapper.getContentType();
-                                String contentEncoding = wrapper.getContentEncoding();
-
-                                String mimeTypeMagic = null == buffer ? null :
-                                        URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(buffer.leadingBytes(16)));
-
-                                if (null != buffer && null == contentEncoding && null != contentType && contentType.startsWith("text/html")
-                                        && !"application/xml".equals(mimeTypeMagic)) {
-                                    // adjust content length with the size of injected content
-                                    int contentLength = wrapper.getContentLength();
-                                    if (contentLength > 0) {
-                                        wrapper.setContentLength(contentLength + maximumInjectSize(contextPath));
-                                    }
-                                    isHtmlPage = true;
-
-                                    String characterEncoding = wrapper.getCharacterEncoding();
-                                    if (null == characterEncoding) {
-                                        characterEncoding = Charset.defaultCharset().name();
-                                    }
-
-                                    String snifferHeader = generateHeaderHtml(contextPath, requestId).toString();
-
-                                    HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
-                                    htmlInjector.injectAtTheBeginning(snifferHeader);
-
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void beforeClose(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
-
-                            List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
-                            if (null != executedStatements && !executedStatements.isEmpty()) {
-                                cache.put(requestId, executedStatements);
-                            }
-
-                            if (injectHtml && isHtmlPage) {
-
-                                String characterEncoding = wrapper.getCharacterEncoding();
-                                if (null == characterEncoding) {
-                                    characterEncoding = Charset.defaultCharset().name();
-                                }
-
-                                String snifferWidget = generateAndPadFooterHtml(spy.executedStatements(Threads.CURRENT));
-
-                                HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
-                                htmlInjector.injectAtTheEnd(snifferWidget);
-
-                            }
-
-                        }
-
-                    }
-            );
-
-            chainCalled = true;
-            chain.doFilter(request, responseWrapper);
-
-            List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
-            if (null != executedStatements && !executedStatements.isEmpty()) {
-                cache.put(requestId, executedStatements);
-            }
-
-            responseWrapper.close();
-
+        SniffyRequestProcessor sniffyRequestProcessor;
+        try {
+            sniffyRequestProcessor = new SniffyRequestProcessor(this, request, response);
         } catch (Exception e) {
-            servletContext.log("Exception in SnifferFilter", e);
-            if (!chainCalled) {
-                chain.doFilter(request, response);
+            servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
+            chain.doFilter(request, response);
+            return;
+        }
+
+        sniffyRequestProcessor.process(chain);
+
+    }
+
+    private void setSessionCookie(HttpServletResponse httpServletResponse,
+                                  String name, String value) throws MalformedURLException {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/");
+        httpServletResponse.addCookie(cookie);
+    }
+
+    private String readCookie(HttpServletRequest httpServletRequest, String name) {
+        Cookie[] cookies = httpServletRequest.getCookies();
+        if (null != cookies) for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
             }
         }
-
-    }
-
-    protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
-        return new StringBuilder().
-                append("<script id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
-                append(requestId).
-                append("\" src=\"").
-                append(contextPath).
-                append(JAVASCRIPT_URI).
-                append("\"></script>");
-        //return "<script type=\"application/javascript\" src=\"/mock/sniffy.min.js\"></script>";
-    }
-
-    private int maximumInjectSize;
-
-    protected int maximumInjectSize(String contextPath) {
-        if (maximumInjectSize == 0) {
-            maximumInjectSize = maximumFooterSize() +
-                    generateHeaderHtml(contextPath, UUID.randomUUID().toString()).length();
-        }
-        return maximumInjectSize;
-    }
-
-    private int maximumFooterSize() {
-        return generateFooterHtml(Integer.MAX_VALUE).length();
-    }
-
-    protected String generateAndPadFooterHtml(int executedQueries) {
-        StringBuilder sb = generateFooterHtml(executedQueries);
-        for (int i = sb.length(); i < maximumFooterSize(); i++) {
-            sb.append(" ");
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Generates following HTML snippet
-     * <pre>
-     * {@code
-     * <div style="display:none!important" id="sniffy" data-sql-queries="5" data-request-id="abcd"></div>
-     * <script type="application-javascript" src="/petstore/sniffy.min.js"></script>
-     * }
-     * </pre>
-     * @param executedQueries
-     * @return
-     */
-    protected static StringBuilder generateFooterHtml(int executedQueries) {
-        return new StringBuilder().
-                append("<data id=\"sniffy\" data-sql-queries=\"").append(executedQueries).append("\"/>");
+        return null;
     }
 
     public void destroy() {

@@ -6,7 +6,7 @@
 
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy</artifactId>
-    <version>3.0.3</version>
+    <version>3.0.5</version>
 
     <name>Sniffy</name>
     <url>http://sniffy.io/</url>
@@ -15,7 +15,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
-        <sniffy.ui.version>3.0.3</sniffy.ui.version>
+        <sniffy.ui.version>3.0.5</sniffy.ui.version>
     </properties>
 
     <scm>
@@ -272,7 +272,7 @@
             <groupId>org.webjars.bower</groupId>
             <artifactId>sniffy</artifactId>
             <version>${sniffy.ui.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.webjars.bower</groupId>

@@ -10,12 +10,14 @@ public class StatementMetaData {
     public final String sql;
     public final Query query;
     public final long elapsedTime;
+    public final String stackTrace;
     public final Thread owner;
 
 
-    protected StatementMetaData(String sql, Query query, long elapsedTime) {
+    protected StatementMetaData(String sql, Query query, long elapsedTime, String stackTrace) {
         this.sql = sql;
         this.query = query;
+        this.stackTrace = stackTrace;
         this.elapsedTime = elapsedTime;
         this.owner = Thread.currentThread();
     }
@@ -24,7 +26,7 @@ public class StatementMetaData {
         return parse(sql, -1);
     }
 
-    public static StatementMetaData parse(String sql, long elapsedTime) {
+    public static StatementMetaData parse(String sql, long elapsedTime, String stackTrace) {
 
         if (null == sql) return null;
 
@@ -48,7 +50,11 @@ public class StatementMetaData {
             query = Query.OTHER;
         }
 
-        return new StatementMetaData(sql, query, elapsedTime);
+        return new StatementMetaData(sql, query, elapsedTime, stackTrace);
+    }
+
+    public static StatementMetaData parse(String sql, long elapsedTime) {
+        return parse(sql, elapsedTime, null);
     }
 
 }
