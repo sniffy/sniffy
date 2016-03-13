@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffer;
+import io.sniffy.util.ExceptionUtil;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -40,13 +41,7 @@ public class SnifferSocketImpl extends SocketImpl {
         try {
             method("sendUrgentData", int.class).invoke(delegate, data);
         } catch (InvocationTargetException e) {
-            // todo use something from ExceptionUtil
-            Throwable targetException = e.getTargetException();
-            if (targetException instanceof IOException) {
-                throw (IOException) targetException;
-            } else {
-                throw new IOException(targetException);
-            }
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -59,6 +54,8 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("shutdownInput").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -71,6 +68,8 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("shutdownOutput").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -83,6 +82,9 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             return (FileDescriptor) method("getFileDescriptor").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -95,6 +97,9 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             return (InetAddress) method("getInetAddress").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -107,6 +112,9 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             return (Integer) method("getPort").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -119,6 +127,9 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             return (Boolean) method("supportsUrgentData").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -131,6 +142,9 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             return (Integer) method("getLocalPort").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -153,6 +167,8 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("setPerformancePreferences", int.class, int.class, int.class).invoke(delegate, connectionTime, latency, bandwidth);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -165,6 +181,8 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("create", boolean.class).invoke(delegate, stream);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -178,6 +196,8 @@ public class SnifferSocketImpl extends SocketImpl {
         try {
             method("connect", String.class, int.class).invoke(delegate, host, port);
             this.address = host + ":" + port;
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -191,6 +211,8 @@ public class SnifferSocketImpl extends SocketImpl {
         try {
             method("connect", InetAddress.class, int.class).invoke(delegate, address, port);
             this.address = address.toString() + ":" + port;
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -204,6 +226,8 @@ public class SnifferSocketImpl extends SocketImpl {
         try {
             method("connect", SocketAddress.class, int.class).invoke(delegate, address, timeout);
             this.address = address.toString();
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -216,6 +240,8 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("bind", InetAddress.class, int.class).invoke(delegate, host, port);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -228,6 +254,8 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("listen", int.class).invoke(delegate, backlog);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -240,6 +268,8 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("accept", SocketImpl.class).invoke(delegate, s);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -252,6 +282,9 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             return (InputStream) method("getInputStream").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -264,6 +297,9 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             return (OutputStream) method("getOutputStream").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -276,6 +312,9 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             return (Integer) method("available").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
@@ -288,6 +327,8 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("close").invoke(delegate);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwTargetException(e);
         } catch (Exception e) {
             throw new IOException(e);
         } finally {
