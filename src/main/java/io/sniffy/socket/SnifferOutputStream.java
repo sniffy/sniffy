@@ -3,40 +3,64 @@ package io.sniffy.socket;
 import java.io.IOException;
 import java.io.OutputStream;
 
-/**
- * Created by bedrin on 13.03.2016.
- */
 public class SnifferOutputStream extends OutputStream {
 
+    private final SnifferSocketImpl snifferSocket;
     private final OutputStream delegate;
 
-    public SnifferOutputStream(OutputStream delegate) {
+    public SnifferOutputStream(SnifferSocketImpl snifferSocket, OutputStream delegate) {
+        this.snifferSocket = snifferSocket;
         this.delegate = delegate;
     }
 
     @Override
     public void write(int b) throws IOException {
-        delegate.write(b);
+        long start = System.currentTimeMillis();
+        try {
+            delegate.write(b);
+        } finally {
+            snifferSocket.logSocket(System.currentTimeMillis() - start);
+        }
     }
 
     @Override
     public void write(byte[] b) throws IOException {
-        delegate.write(b);
+        long start = System.currentTimeMillis();
+        try {
+            delegate.write(b);
+        } finally {
+            snifferSocket.logSocket(System.currentTimeMillis() - start);
+        }
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        delegate.write(b, off, len);
+        long start = System.currentTimeMillis();
+        try {
+            delegate.write(b, off, len);
+        } finally {
+            snifferSocket.logSocket(System.currentTimeMillis() - start);
+        }
     }
 
     @Override
     public void flush() throws IOException {
-        delegate.flush();
+        long start = System.currentTimeMillis();
+        try {
+            delegate.flush();
+        } finally {
+            snifferSocket.logSocket(System.currentTimeMillis() - start);
+        }
     }
 
     @Override
     public void close() throws IOException {
-        delegate.close();
+        long start = System.currentTimeMillis();
+        try {
+            delegate.close();
+        } finally {
+            snifferSocket.logSocket(System.currentTimeMillis() - start);
+        }
     }
 
 }

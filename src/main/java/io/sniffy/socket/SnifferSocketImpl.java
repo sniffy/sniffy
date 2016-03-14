@@ -26,7 +26,7 @@ public class SnifferSocketImpl extends SocketImpl {
         this.delegate = delegate;
     }
 
-    private void logSocket(long millis) {
+    protected void logSocket(long millis) {
         Sniffer.logSocket(null == address ? UNKNOWN : address, millis);
     }
 
@@ -287,7 +287,7 @@ public class SnifferSocketImpl extends SocketImpl {
     protected InputStream getInputStream() throws IOException {
         long start = System.currentTimeMillis();
         try {
-            return new SnifferInputStream((InputStream) method("getInputStream").invoke(delegate));
+            return new SnifferInputStream(this, (InputStream) method("getInputStream").invoke(delegate));
         } catch (InvocationTargetException e) {
             processInvocationTargetException(e);
             throw new RuntimeException(e);
@@ -302,7 +302,7 @@ public class SnifferSocketImpl extends SocketImpl {
     protected OutputStream getOutputStream() throws IOException {
         long start = System.currentTimeMillis();
         try {
-            return new SnifferOutputStream((OutputStream) method("getOutputStream").invoke(delegate));
+            return new SnifferOutputStream(this, (OutputStream) method("getOutputStream").invoke(delegate));
         } catch (InvocationTargetException e) {
             processInvocationTargetException(e);
             throw new RuntimeException(e);
