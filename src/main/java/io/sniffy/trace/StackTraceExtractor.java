@@ -6,6 +6,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class StackTraceExtractor {
+    
+    private StackTraceExtractor() {
+    }
 
     public static List<StackTraceElement> getTraceForProxiedMethod(Method method) throws ClassNotFoundException {
         StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
