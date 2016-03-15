@@ -64,7 +64,7 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addExecutedStatement(address, socketStats);
+                spy.addExecutedStatement(address, new SocketStats(socketStats));
             }
         }
     }

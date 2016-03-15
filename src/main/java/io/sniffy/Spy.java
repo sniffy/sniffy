@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static io.sniffy.Sniffer.DEFAULT_THREAD_MATCHER;
@@ -33,7 +34,8 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
 
-    private volatile ConcurrentHashMap<String, SocketStats> socketOperations = new ConcurrentHashMap<String, SocketStats>();
+    private volatile ConcurrentMap<Thread, ConcurrentMap<String, SocketStats>> socketOperations =
+            new ConcurrentHashMap<Thread, ConcurrentMap<String, SocketStats>>();
 
     protected void addExecutedStatement(StatementMetaData statementMetaData) {
         executedStatements.add(statementMetaData);
@@ -41,15 +43,30 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     protected void addExecutedStatement(String address, SocketStats socketStats) {
 
-        SocketStats existingSocketStats = socketOperations.putIfAbsent(address, socketStats);
+        Thread currentThread = Thread.currentThread();
+
+        ConcurrentMap<String, SocketStats> threadSocketOperations = new ConcurrentHashMap<String, SocketStats>();
+        ConcurrentMap<String, SocketStats> existingThreadSocketOperations = socketOperations.putIfAbsent(
+                currentThread, threadSocketOperations
+        );
+        if (null != existingThreadSocketOperations) {
+            threadSocketOperations = existingThreadSocketOperations;
+        }
+
+        SocketStats existingSocketStats = threadSocketOperations.putIfAbsent(address, socketStats);
         if (null != existingSocketStats) {
             existingSocketStats.inc(socketStats);
+        }
+
+        if (socketStats.bytesUp.get() > 0) {
+            System.out.println(socketStats.bytesUp.get());
         }
 
     }
 
     public Map<String, SocketStats> getSocketOperations() {
-        return Collections.unmodifiableMap(socketOperations);
+        ConcurrentMap<String, SocketStats> threadSocketOperations = socketOperations.get(Thread.currentThread());
+        return Collections.unmodifiableMap(null == threadSocketOperations ? Collections.<String, SocketStats>emptyMap() : threadSocketOperations);
     }
 
     protected void resetExecutedStatements() {
