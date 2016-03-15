@@ -30,6 +30,10 @@ public class SnifferSocketImpl extends SocketImpl {
         Sniffer.logSocket(null == address ? UNKNOWN : address, millis);
     }
 
+    protected void logSocket(long millis, int bytesDown, int bytesUp) {
+        Sniffer.logSocket(null == address ? UNKNOWN : address, millis, bytesDown, bytesUp);
+    }
+
     // TODO in order to support server sockets we should also copy fields to delegate
     private static Method method(String methodName, Class<?>... argumentTypes) throws NoSuchMethodException {
         Method method = SocketImpl.class.getDeclaredMethod(methodName, argumentTypes);

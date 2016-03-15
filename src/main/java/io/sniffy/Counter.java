@@ -1,6 +1,11 @@
 package io.sniffy;
 
+import io.sniffy.socket.SocketStats;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 // TODO: consider making counters hierarchical, i.e. DML, DDL as top level , INSERT, CREATE TABLE as 2 level, e.t.c
 class Counter {
@@ -11,6 +16,9 @@ class Counter {
     private final AtomicInteger delete;
     private final AtomicInteger merge;
     private final AtomicInteger other;
+
+    private ConcurrentMap<String, SocketStats> allSocketStats = new ConcurrentHashMap<String, SocketStats>();
+
 
     public Counter() {
         this(
@@ -45,6 +53,18 @@ class Counter {
         this.delete = new AtomicInteger(that.delete.intValue());
         this.merge = new AtomicInteger(that.merge.intValue());
         this.other = new AtomicInteger(that.other.intValue());
+    }
+
+    protected void socketOperation(String address, long elapsedTime, int bytesDown, int bytesUp) {
+
+        SocketStats socketStats = new SocketStats();
+        SocketStats existingSocketStats = allSocketStats.putIfAbsent(address, socketStats);
+        if (null != existingSocketStats) socketStats = existingSocketStats;
+
+        socketStats.elapsedTime.addAndGet(elapsedTime);
+        socketStats.bytesDown.addAndGet(bytesDown);
+        socketStats.bytesUp.addAndGet(bytesUp);
+
     }
 
     protected int executeStatement(Query query) {

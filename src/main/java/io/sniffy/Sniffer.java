@@ -82,6 +82,17 @@ public final class Sniffer {
     };
 
     public static void logSocket(String address, long elapsedTime) {
+        logSocket(address, elapsedTime, 0, 0);
+    }
+
+    public static void logSocket(String address, long elapsedTime, int bytesDown, int bytesUp) {
+        // TODO log socket operation
+
+        // increment counters
+        COUNTER.socketOperation(address, elapsedTime, bytesDown, bytesUp);
+        THREAD_LOCAL_COUNTER.get().socketOperation(address, elapsedTime, bytesDown, bytesUp);
+
+        // notify listeners
         notifyListeners(address, elapsedTime);
     }
 

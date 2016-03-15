@@ -19,27 +19,29 @@ public class SnifferInputStream extends InputStream {
         try {
             return delegate.read();
         } finally {
-            snifferSocket.logSocket(System.currentTimeMillis() - start);
+            snifferSocket.logSocket(System.currentTimeMillis() - start, 1, 0);
         }
     }
 
     @Override
     public int read(byte[] b) throws IOException {
         long start = System.currentTimeMillis();
+        int bytesDown = 0;
         try {
-            return delegate.read(b);
+            return bytesDown = delegate.read(b);
         } finally {
-            snifferSocket.logSocket(System.currentTimeMillis() - start);
+            snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         long start = System.currentTimeMillis();
+        int bytesDown = 0;
         try {
-            return delegate.read(b, off, len);
+            return bytesDown = delegate.read(b, off, len);
         } finally {
-            snifferSocket.logSocket(System.currentTimeMillis() - start);
+            snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
 

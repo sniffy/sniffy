@@ -19,7 +19,7 @@ public class SnifferOutputStream extends OutputStream {
         try {
             delegate.write(b);
         } finally {
-            snifferSocket.logSocket(System.currentTimeMillis() - start);
+            snifferSocket.logSocket(System.currentTimeMillis() - start, 0, 1);
         }
     }
 
@@ -29,7 +29,7 @@ public class SnifferOutputStream extends OutputStream {
         try {
             delegate.write(b);
         } finally {
-            snifferSocket.logSocket(System.currentTimeMillis() - start);
+            snifferSocket.logSocket(System.currentTimeMillis() - start, 0, b.length);
         }
     }
 
@@ -39,7 +39,7 @@ public class SnifferOutputStream extends OutputStream {
         try {
             delegate.write(b, off, len);
         } finally {
-            snifferSocket.logSocket(System.currentTimeMillis() - start);
+            snifferSocket.logSocket(System.currentTimeMillis() - start, 0, len);
         }
     }
 
