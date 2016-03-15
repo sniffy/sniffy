@@ -58,10 +58,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
             existingSocketStats.inc(socketStats);
         }
 
-        if (socketStats.bytesUp.get() > 0) {
-            System.out.println(socketStats.bytesUp.get());
-        }
-
     }
 
     public Map<String, SocketStats> getSocketOperations() {
