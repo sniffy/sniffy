@@ -1,7 +1,6 @@
 package io.sniffy.socket;
 
 import io.sniffy.util.ExceptionUtil;
-import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;

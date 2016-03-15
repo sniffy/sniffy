@@ -13,9 +13,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SnifferSocketImplFactoryTest {
 
@@ -29,7 +29,8 @@ public class SnifferSocketImplFactoryTest {
 
         try (Spy<?> s = Sniffer.spy()) {
 
-            Socket socket = new Socket(InetAddress.getByName(null), echoServerRule.getBoundPort());
+            InetAddress localhost = InetAddress.getByName(null);
+            Socket socket = new Socket(localhost, echoServerRule.getBoundPort());
 
             assertTrue(socket.isConnected());
             echoServerRule.getCountDownLatch().await();
@@ -41,18 +42,18 @@ public class SnifferSocketImplFactoryTest {
 
             echoServerRule.joinThreads();
 
-            assertThat(s.getSocketOperations().entrySet(), new IsCollectionContaining<>(new BaseMatcher<Entry<String, AtomicLong>>() {
-                @Override
-                public boolean matches(Object item) {
-                    Entry<String, AtomicLong> entry = (Entry<String, AtomicLong>) item;
-                    return entry.getKey().contains("localhost");
-                }
+            assertFalse(
+                    s.getSocketOperations().entrySet().stream().
+                            filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                            collect(Collectors.toList()).isEmpty()
+            );
 
-                @Override
-                public void describeTo(Description description) {
-                    description.appendText("a map with string key containing 'localhost'");
-                }
-            }));
+            s.getSocketOperations().entrySet().stream().
+                    filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                    findAny().
+                    ifPresent(
+                            (entry) -> assertEquals(4, entry.getValue().bytesUp.intValue())
+                    );
 
         }
 

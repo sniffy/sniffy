@@ -1,6 +1,7 @@
 package io.sniffy;
 
 import io.sniffy.log.QueryLogger;
+import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.StatementMetaData;
 
 import java.lang.ref.WeakReference;
@@ -55,7 +56,7 @@ public final class Sniffer {
         }
     }
 
-    private static synchronized void notifyListeners(String address, long elapsedTime) {
+    private static synchronized void notifyListeners(String address, SocketStats socketStats) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -63,7 +64,7 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addExecutedStatement(address, elapsedTime);
+                spy.addExecutedStatement(address, socketStats);
             }
         }
     }
@@ -89,11 +90,12 @@ public final class Sniffer {
         // TODO log socket operation
 
         // increment counters
-        COUNTER.socketOperation(address, elapsedTime, bytesDown, bytesUp);
-        THREAD_LOCAL_COUNTER.get().socketOperation(address, elapsedTime, bytesDown, bytesUp);
+        SocketStats socketStats = new SocketStats(elapsedTime, bytesDown, bytesUp);
+        COUNTER.socketOperation(address, new SocketStats(socketStats));
+        THREAD_LOCAL_COUNTER.get().socketOperation(address, new SocketStats(socketStats));
 
         // notify listeners
-        notifyListeners(address, elapsedTime);
+        notifyListeners(address, socketStats);
     }
 
     protected static void executeStatement(String sql, long elapsedTime, String stackTrace) {

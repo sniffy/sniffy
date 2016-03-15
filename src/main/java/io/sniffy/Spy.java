@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
 
@@ -32,26 +33,22 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
 
-    private volatile ConcurrentHashMap<String, AtomicLong> socketOperations = new ConcurrentHashMap<String, AtomicLong>();
+    private volatile ConcurrentHashMap<String, SocketStats> socketOperations = new ConcurrentHashMap<String, SocketStats>();
 
     protected void addExecutedStatement(StatementMetaData statementMetaData) {
         executedStatements.add(statementMetaData);
     }
 
-    protected void addExecutedStatement(String address, long elapsedTime) {
+    protected void addExecutedStatement(String address, SocketStats socketStats) {
 
-        AtomicLong socketElapsedTime = socketOperations.get(address);
-
-        if (null == socketElapsedTime) {
-            socketOperations.putIfAbsent(address, new AtomicLong());
-            socketElapsedTime = socketOperations.get(address);
+        SocketStats existingSocketStats = socketOperations.putIfAbsent(address, socketStats);
+        if (null != existingSocketStats) {
+            existingSocketStats.inc(socketStats);
         }
-
-        socketElapsedTime.addAndGet(elapsedTime);
 
     }
 
-    public Map<String, AtomicLong> getSocketOperations() {
+    public Map<String, SocketStats> getSocketOperations() {
         return Collections.unmodifiableMap(socketOperations);
     }
 

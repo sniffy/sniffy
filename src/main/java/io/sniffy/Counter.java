@@ -55,15 +55,12 @@ class Counter {
         this.other = new AtomicInteger(that.other.intValue());
     }
 
-    protected void socketOperation(String address, long elapsedTime, int bytesDown, int bytesUp) {
+    protected void socketOperation(String address, SocketStats socketStats) {
 
-        SocketStats socketStats = new SocketStats();
         SocketStats existingSocketStats = allSocketStats.putIfAbsent(address, socketStats);
-        if (null != existingSocketStats) socketStats = existingSocketStats;
-
-        socketStats.elapsedTime.addAndGet(elapsedTime);
-        socketStats.bytesDown.addAndGet(bytesDown);
-        socketStats.bytesUp.addAndGet(bytesUp);
+        if (null != existingSocketStats) {
+            existingSocketStats.inc(socketStats);
+        }
 
     }
 
