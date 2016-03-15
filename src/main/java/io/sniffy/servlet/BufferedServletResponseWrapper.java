@@ -78,7 +78,8 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void setContentLength(int len) {
-        super.setContentLength(contentLength = len);
+        super.setContentLength(len);
+        this.contentLength = len;
     }
 
     public int getContentLength() {
@@ -135,7 +136,8 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void setContentType(String contentType) {
-        super.setContentType(this.contentType = contentType);
+        super.setContentType(contentType);
+        this.contentType = contentType;
     }
 
     // headers relates methods
@@ -218,7 +220,8 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != writer) {
             throw new IllegalStateException("getWriter() method has been called on this response");
         } else {
-            return outputStream = getBufferedServletOutputStream() ;
+            outputStream = getBufferedServletOutputStream();
+            return outputStream;
         }
     }
 
@@ -229,7 +232,8 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != outputStream) {
             throw new IllegalStateException("getOutputStream() method has been called on this response");
         } else {
-            return writer = new BufferedPrintWriter(getBufferedServletOutputStream()); // TODO: pass charset here
+            writer = new BufferedPrintWriter(getBufferedServletOutputStream()); // TODO: pass charset here
+            return writer;
         }
     }
 
