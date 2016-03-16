@@ -11,7 +11,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static io.sniffy.Sniffer.DEFAULT_THREAD_MATCHER;
 import static io.sniffy.util.ExceptionUtil.throwException;
@@ -69,6 +68,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
         executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
     }
 
+    protected void resetSocketOpertions() {
+        socketOperations.clear();
+    }
+
     public List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
         List<StatementMetaData> statements;
         switch (threadMatcher) {
@@ -118,8 +121,63 @@ public class Spy<C extends Spy<C>> implements Closeable {
         checkOpened();
         initNumberOfQueries();
         resetExecutedStatements();
+        resetSocketOpertions();
         expectations.clear();
         return self();
+    }
+
+    public Map<String, SocketStats> socketOperations(Threads threadMatcher) {
+
+        checkOpened();
+
+        switch (threadMatcher) {
+            case ANY:
+                return diffSocketOperations(
+                        Sniffer.COUNTER.getSocketOperations(),
+                        initialCount.getSocketOperations()
+                );
+            case CURRENT:
+                return diffSocketOperations(
+                        Sniffer.THREAD_LOCAL_COUNTER.get().getSocketOperations(),
+                        initialThreadLocalCount.getSocketOperations()
+                );
+            case OTHERS:
+                return diffSocketOperations(
+                        diffSocketOperations(
+                                Sniffer.COUNTER.getSocketOperations(),
+                                initialCount.getSocketOperations()
+                        ),
+                        diffSocketOperations(
+                                Sniffer.THREAD_LOCAL_COUNTER.get().getSocketOperations(),
+                                initialThreadLocalCount.getSocketOperations()
+                        )
+                );
+            default:
+                throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
+        }
+
+    }
+
+    // TODO: move to some utility class
+    protected static Map<String, SocketStats> diffSocketOperations(Map<String, SocketStats> currentSocketOperations,
+                                                                             Map<String, SocketStats> initialSocketOperations) {
+        Map<String, SocketStats> diff = new HashMap<String, SocketStats>();
+
+        for (Map.Entry<String, SocketStats> entry : currentSocketOperations.entrySet()) {
+
+            String key = entry.getKey();
+
+            if (initialSocketOperations.containsKey(key)) {
+                diff.put(key, entry.getValue().dec(initialSocketOperations.get(key)));
+                // TODO: check if null
+            } else {
+                diff.put(key, entry.getValue());
+            }
+
+        }
+
+        return diff;
+
     }
 
     /**

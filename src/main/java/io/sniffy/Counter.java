@@ -17,7 +17,7 @@ class Counter {
     private final AtomicInteger merge;
     private final AtomicInteger other;
 
-    private ConcurrentMap<String, SocketStats> allSocketStats = new ConcurrentHashMap<String, SocketStats>();
+    private final ConcurrentMap<String, SocketStats> allSocketStats;
 
 
     public Counter() {
@@ -27,7 +27,8 @@ class Counter {
                 new AtomicInteger(),
                 new AtomicInteger(),
                 new AtomicInteger(),
-                new AtomicInteger()
+                new AtomicInteger(),
+                new ConcurrentHashMap<String, SocketStats>()
         );
     }
 
@@ -37,13 +38,15 @@ class Counter {
             AtomicInteger update,
             AtomicInteger delete,
             AtomicInteger merge,
-            AtomicInteger other) {
+            AtomicInteger other,
+            ConcurrentMap<String, SocketStats> allSocketStats) {
         this.select = select;
         this.insert = insert;
         this.update = update;
         this.delete = delete;
         this.merge = merge;
         this.other = other;
+        this.allSocketStats = allSocketStats;
     }
 
     public Counter(Counter that) {
@@ -53,6 +56,7 @@ class Counter {
         this.delete = new AtomicInteger(that.delete.intValue());
         this.merge = new AtomicInteger(that.merge.intValue());
         this.other = new AtomicInteger(that.other.intValue());
+        this.allSocketStats = new ConcurrentHashMap<String, SocketStats>(that.allSocketStats);
     }
 
     protected void socketOperation(String address, SocketStats socketStats) {
@@ -62,6 +66,10 @@ class Counter {
             existingSocketStats.inc(socketStats);
         }
 
+    }
+
+    protected ConcurrentMap<String, SocketStats> getSocketOperations() {
+        return allSocketStats;
     }
 
     protected int executeStatement(Query query) {
