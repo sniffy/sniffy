@@ -32,6 +32,7 @@ public class SnifferSocketImplFactoryTest {
 
             InetAddress localhost = InetAddress.getByName(null);
             Socket socket = new Socket(localhost, echoServerRule.getBoundPort());
+            socket.setReuseAddress(true);
 
             assertTrue(socket.isConnected());
             echoServerRule.getCountDownLatch().countDown();
@@ -44,6 +45,7 @@ public class SnifferSocketImplFactoryTest {
 
             InputStream inputStream = socket.getInputStream();
             while (inputStream.read() != -1);
+            socket.shutdownInput();
 
             echoServerRule.joinThreads();
 
@@ -74,6 +76,7 @@ public class SnifferSocketImplFactoryTest {
         try (Spy<?> s = Sniffer.spy()) {
 
             Socket socket = new Socket(InetAddress.getByName(null), echoServerRule.getBoundPort());
+            socket.setReuseAddress(true);
 
             assertTrue(socket.isConnected());
             echoServerRule.getCountDownLatch().countDown();
@@ -82,7 +85,11 @@ public class SnifferSocketImplFactoryTest {
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(new byte[]{1, 2, 3, 4});
             outputStream.flush();
-            outputStream.close();
+            socket.shutdownOutput();
+
+            InputStream inputStream = socket.getInputStream();
+            while (inputStream.read() != -1);
+            socket.shutdownInput();
 
             echoServerRule.joinThreads();
 

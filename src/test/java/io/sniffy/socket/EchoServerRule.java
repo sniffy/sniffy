@@ -33,6 +33,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
         for (int i = 0; i < 10; i++, boundPort++) {
             try {
                 serverSocket = new ServerSocket(boundPort, 50, InetAddress.getByName(null));
+                serverSocket.setReuseAddress(true);
                 break;
             } catch (IOException e) {
                 try {
@@ -64,14 +65,15 @@ public class EchoServerRule extends ExternalResource implements Runnable {
             while (!Thread.interrupted()) { // TODO in fact it doesn't support multiple connections
 
                 Socket socket = serverSocket.accept();
+                socket.setReuseAddress(true);
 
                 sockets.add(socket);
 
                 InputStream inputStream = socket.getInputStream();
                 OutputStream outputStream = socket.getOutputStream();
 
-                Thread socketInputStreamReaderThread = new Thread(new SocketInputStreamReader(inputStream));
-                Thread socketOutputStreamWriterThread = new Thread(new SocketOutputStreamWriter(outputStream));
+                Thread socketInputStreamReaderThread = new Thread(new SocketInputStreamReader(socket, inputStream));
+                Thread socketOutputStreamWriterThread = new Thread(new SocketOutputStreamWriter(socket, outputStream));
 
                 socketThreads.add(socketInputStreamReaderThread);
                 socketThreads.add(socketOutputStreamWriterThread);
@@ -134,9 +136,11 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     private class SocketInputStreamReader implements Runnable {
 
+        private final Socket socket;
         private final InputStream inputStream;
 
-        public SocketInputStreamReader(InputStream inputStream) {
+        public SocketInputStreamReader(Socket socket, InputStream inputStream) {
+            this.socket = socket;
             this.inputStream = inputStream;
         }
 
@@ -153,7 +157,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                     totalRead++;
                 }
 
-                inputStream.close();
+                socket.shutdownInput();
             } catch (SocketException e) {
                 if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
                     e.printStackTrace();
@@ -168,9 +172,11 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     private class SocketOutputStreamWriter implements Runnable {
 
+        private final Socket socket;
         private final OutputStream outputStream;
 
-        public SocketOutputStreamWriter(OutputStream outputStream) {
+        public SocketOutputStreamWriter(Socket socket, OutputStream outputStream) {
+            this.socket = socket;
             this.outputStream = outputStream;
         }
 
@@ -184,7 +190,8 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
                 outputStream.write(new byte[]{9,8,7,6,5,4,3,2});
                 outputStream.flush();
-                outputStream.close();
+
+                socket.shutdownOutput();
             } catch (Exception e) {
                 e.printStackTrace();
             }
