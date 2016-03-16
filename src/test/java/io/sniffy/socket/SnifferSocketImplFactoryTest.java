@@ -8,6 +8,7 @@ import org.hamcrest.core.IsCollectionContaining;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -33,12 +34,16 @@ public class SnifferSocketImplFactoryTest {
             Socket socket = new Socket(localhost, echoServerRule.getBoundPort());
 
             assertTrue(socket.isConnected());
+            echoServerRule.getCountDownLatch().countDown();
             echoServerRule.getCountDownLatch().await();
 
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(new byte[]{1, 2, 3, 4});
             outputStream.flush();
-            outputStream.close();
+            socket.shutdownOutput();
+
+            InputStream inputStream = socket.getInputStream();
+            while (inputStream.read() != -1);
 
             echoServerRule.joinThreads();
 
@@ -51,9 +56,10 @@ public class SnifferSocketImplFactoryTest {
             s.getSocketOperations().entrySet().stream().
                     filter((entry) -> entry.getKey().contains(localhost.getHostName())).
                     findAny().
-                    ifPresent(
-                            (entry) -> assertEquals(4, entry.getValue().bytesUp.intValue())
-                    );
+                    ifPresent((entry) -> {
+                            assertEquals(4, entry.getValue().bytesUp.intValue());
+                            assertEquals(8, entry.getValue().bytesDown.intValue());
+                    });
 
         }
 
@@ -70,6 +76,7 @@ public class SnifferSocketImplFactoryTest {
             Socket socket = new Socket(InetAddress.getByName(null), echoServerRule.getBoundPort());
 
             assertTrue(socket.isConnected());
+            echoServerRule.getCountDownLatch().countDown();
             echoServerRule.getCountDownLatch().await();
 
             OutputStream outputStream = socket.getOutputStream();

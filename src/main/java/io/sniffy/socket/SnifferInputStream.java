@@ -16,10 +16,13 @@ public class SnifferInputStream extends InputStream {
     @Override
     public int read() throws IOException {
         long start = System.currentTimeMillis();
+        int bytesDown = 0;
         try {
-            return delegate.read();
+            int read = delegate.read();
+            if (read != -1) bytesDown = 1;
+            return read;
         } finally {
-            snifferSocket.logSocket(System.currentTimeMillis() - start, 1, 0);
+            snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
 

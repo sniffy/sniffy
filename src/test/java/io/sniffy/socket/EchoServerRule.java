@@ -2,7 +2,9 @@ package io.sniffy.socket;
 
 import org.junit.rules.ExternalResource;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -49,7 +51,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     }
 
-    private CountDownLatch countDownLatch = new CountDownLatch(2);
+    private CountDownLatch countDownLatch = new CountDownLatch(3);
 
     public CountDownLatch getCountDownLatch() {
         return countDownLatch;
@@ -59,7 +61,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
     public void run() {
 
         try {
-            while (!Thread.interrupted()) {
+            while (!Thread.interrupted()) { // TODO in fact it doesn't support multiple connections
 
                 Socket socket = serverSocket.accept();
 
@@ -143,6 +145,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
             try {
 
                 countDownLatch.countDown();
+                countDownLatch.await();
 
                 int totalRead = 0, read = 0;
 
@@ -151,6 +154,10 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 }
 
                 inputStream.close();
+            } catch (SocketException e) {
+                if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
+                    e.printStackTrace();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -173,10 +180,11 @@ public class EchoServerRule extends ExternalResource implements Runnable {
             try {
 
                 countDownLatch.countDown();
+                countDownLatch.await();
 
-                //outputStream.write(buff, 0, read); // todo write something
+                outputStream.write(new byte[]{9,8,7,6,5,4,3,2});
                 outputStream.flush();
-                //outputStream.close();
+                outputStream.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
