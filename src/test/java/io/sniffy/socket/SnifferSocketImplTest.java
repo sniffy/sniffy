@@ -161,5 +161,21 @@ public class SnifferSocketImplTest {
 
     }
 
+    @Test
+    public void testGetLocalPort() throws Exception {
+
+        int expected = 42;
+
+        when(delegate, "getLocalPort").thenReturn(expected);
+
+        int actual = sniffySocket.getLocalPort();
+
+        verifyPrivate(delegate).invoke("getLocalPort");
+        verifyNoMoreInteractions(delegate);
+
+        assertEquals(expected, actual);
+
+    }
+
 
 }
