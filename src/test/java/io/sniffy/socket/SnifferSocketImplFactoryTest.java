@@ -2,6 +2,7 @@ package io.sniffy.socket;
 
 import io.sniffy.Sniffer;
 import io.sniffy.Spy;
+import io.sniffy.Threads;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,10 +42,20 @@ public class SnifferSocketImplFactoryTest {
 
             performSocketOperation();
 
+            Thread thread = new Thread(this::performSocketOperation);
+            thread.start();
+            thread.join();
+
             assertFalse(
                     s.getSocketOperations().entrySet().stream().
                             filter((entry) -> entry.getKey().contains(localhost.getHostName())).
                             collect(Collectors.toList()).isEmpty()
+            );
+            assertEquals(
+                    1,
+                    s.getSocketOperations().entrySet().stream().
+                            filter((entry) -> !entry.getKey().contains(localhost.getHostName())).
+                            collect(Collectors.toList()).size()
             );
 
             s.getSocketOperations().entrySet().stream().
@@ -55,6 +66,48 @@ public class SnifferSocketImplFactoryTest {
                             assertEquals(RESPONSE.length, entry.getValue().bytesDown.intValue());
                     });
 
+            assertFalse(
+                    s.getSocketOperations(Threads.OTHERS).entrySet().stream().
+                            filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                            collect(Collectors.toList()).isEmpty()
+            );
+            assertEquals(
+                    1,
+                    s.getSocketOperations(Threads.OTHERS).entrySet().stream().
+                            filter((entry) -> !entry.getKey().contains(localhost.getHostName())).
+                            collect(Collectors.toList()).size()
+            );
+
+            s.getSocketOperations(Threads.OTHERS).entrySet().stream().
+                    filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                    findAny().
+                    ifPresent((entry) -> {
+                            assertEquals(REQUEST.length, entry.getValue().bytesUp.intValue());
+                            assertEquals(RESPONSE.length, entry.getValue().bytesDown.intValue());
+                    });
+
+            assertFalse(
+                    s.getSocketOperations(Threads.ANY).entrySet().stream().
+                            filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                            collect(Collectors.toList()).isEmpty()
+            );
+            assertEquals(
+                    1,
+                    s.getSocketOperations(Threads.ANY).entrySet().stream().
+                            filter((entry) -> !entry.getKey().contains(localhost.getHostName())).
+                            collect(Collectors.toList()).size()
+            );
+
+            s.getSocketOperations(Threads.ANY).entrySet().stream().
+                    filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                    findAny().
+                    ifPresent((entry) -> {
+                            assertEquals(REQUEST.length * 2, entry.getValue().bytesUp.intValue());
+                            assertEquals(RESPONSE.length * 2, entry.getValue().bytesDown.intValue());
+                    });
+
+        } finally {
+            SnifferSocketImplFactory.uninstall();
         }
 
     }
@@ -75,29 +128,34 @@ public class SnifferSocketImplFactoryTest {
 
     }
 
-    private void performSocketOperation() throws IOException {
-        Socket socket = new Socket(localhost, echoServerRule.getBoundPort());
-        socket.setReuseAddress(true);
+    private void performSocketOperation() {
 
-        assertTrue(socket.isConnected());
+        try {
+            Socket socket = new Socket(localhost, echoServerRule.getBoundPort());
+            socket.setReuseAddress(true);
 
-        OutputStream outputStream = socket.getOutputStream();
-        outputStream.write(REQUEST);
-        outputStream.flush();
-        socket.shutdownOutput();
+            assertTrue(socket.isConnected());
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InputStream inputStream = socket.getInputStream();
-        int read;
-        while ((read = inputStream.read()) != -1) {
-            baos.write(read);
+            OutputStream outputStream = socket.getOutputStream();
+            outputStream.write(REQUEST);
+            outputStream.flush();
+            socket.shutdownOutput();
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            InputStream inputStream = socket.getInputStream();
+            int read;
+            while ((read = inputStream.read()) != -1) {
+                baos.write(read);
+            }
+            socket.shutdownInput();
+
+            echoServerRule.joinThreads();
+
+            assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
+            assertArrayEquals(RESPONSE, baos.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        socket.shutdownInput();
-
-        echoServerRule.joinThreads();
-
-        assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
-        assertArrayEquals(RESPONSE, baos.toByteArray());
     }
 
 }

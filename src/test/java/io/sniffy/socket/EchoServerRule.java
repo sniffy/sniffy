@@ -61,6 +61,28 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     }
 
+    public void after() {
+
+        socketThreads.forEach(Thread::interrupt);
+
+        joinThreads();
+
+        thread.interrupt();
+
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     public byte[] pollReceivedData() {
         return receivedData.poll().toByteArray();
     }
@@ -101,15 +123,6 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     }
 
-    @Override
-    protected void after() {
-
-        socketThreads.forEach(Thread::interrupt);
-
-        joinThreads();
-
-    }
-
     public void joinThreads() {
 
         socketThreads.forEach((thread) -> {
@@ -127,20 +140,6 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 e.printStackTrace();
             }
         });
-
-        thread.interrupt();
-
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
     }
 

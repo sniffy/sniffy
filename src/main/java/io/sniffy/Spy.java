@@ -60,8 +60,9 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     public Map<String, SocketStats> getSocketOperations() {
-        ConcurrentMap<String, SocketStats> threadSocketOperations = socketOperations.get(Thread.currentThread());
-        return Collections.unmodifiableMap(null == threadSocketOperations ? Collections.<String, SocketStats>emptyMap() : threadSocketOperations);
+        return getSocketOperations(Threads.CURRENT);
+        /*ConcurrentMap<String, SocketStats> threadSocketOperations = socketOperations.get(Thread.currentThread());
+        return Collections.unmodifiableMap(null == threadSocketOperations ? Collections.<String, SocketStats>emptyMap() : threadSocketOperations);*/
     }
 
     protected void resetExecutedStatements() {
@@ -126,7 +127,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         return self();
     }
 
-    public Map<String, SocketStats> socketOperations(Threads threadMatcher) {
+    public Map<String, SocketStats> getSocketOperations(Threads threadMatcher) {
 
         checkOpened();
 
