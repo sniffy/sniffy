@@ -2,6 +2,7 @@ package io.sniffy.socket;
 
 import org.junit.rules.ExternalResource;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,7 +12,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class EchoServerRule extends ExternalResource implements Runnable {
 
@@ -22,6 +24,13 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     private int boundPort = 10000;
     private ServerSocket serverSocket;
+
+    private final byte[] dataToBeSent;
+    private final Queue<ByteArrayOutputStream> receivedData = new ConcurrentLinkedQueue<>();
+
+    public EchoServerRule(byte[] dataToBeSent) {
+        this.dataToBeSent = dataToBeSent;
+    }
 
     public int getBoundPort() {
         return boundPort;
@@ -52,17 +61,18 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     }
 
-    private CountDownLatch countDownLatch = new CountDownLatch(3);
-
-    public CountDownLatch getCountDownLatch() {
-        return countDownLatch;
+    public byte[] pollReceivedData() {
+        return receivedData.poll().toByteArray();
     }
 
     @Override
     public void run() {
 
         try {
-            while (!Thread.interrupted()) { // TODO in fact it doesn't support multiple connections
+            while (!Thread.interrupted()) {
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                receivedData.add(baos);
 
                 Socket socket = serverSocket.accept();
                 socket.setReuseAddress(true);
@@ -72,7 +82,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 InputStream inputStream = socket.getInputStream();
                 OutputStream outputStream = socket.getOutputStream();
 
-                Thread socketInputStreamReaderThread = new Thread(new SocketInputStreamReader(socket, inputStream));
+                Thread socketInputStreamReaderThread = new Thread(new SocketInputStreamReader(socket, inputStream, baos));
                 Thread socketOutputStreamWriterThread = new Thread(new SocketOutputStreamWriter(socket, outputStream));
 
                 socketThreads.add(socketInputStreamReaderThread);
@@ -138,23 +148,22 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
         private final Socket socket;
         private final InputStream inputStream;
+        private final ByteArrayOutputStream baos;
 
-        public SocketInputStreamReader(Socket socket, InputStream inputStream) {
+        public SocketInputStreamReader(Socket socket, InputStream inputStream, ByteArrayOutputStream baos) {
             this.socket = socket;
             this.inputStream = inputStream;
+            this.baos = baos;
         }
 
         @Override
         public void run() {
             try {
 
-                countDownLatch.countDown();
-                countDownLatch.await();
-
-                int totalRead = 0, read = 0;
+                int read;
 
                 while ((read = inputStream.read()) != -1) {
-                    totalRead++;
+                    baos.write(read);
                 }
 
                 socket.shutdownInput();
@@ -175,7 +184,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
         private final Socket socket;
         private final OutputStream outputStream;
 
-        public SocketOutputStreamWriter(Socket socket, OutputStream outputStream) {
+        private SocketOutputStreamWriter(Socket socket, OutputStream outputStream) {
             this.socket = socket;
             this.outputStream = outputStream;
         }
@@ -185,10 +194,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
             try {
 
-                countDownLatch.countDown();
-                countDownLatch.await();
-
-                outputStream.write(new byte[]{9,8,7,6,5,4,3,2});
+                outputStream.write(dataToBeSent);
                 outputStream.flush();
 
                 socket.shutdownOutput();
