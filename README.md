@@ -52,23 +52,23 @@ Sniffy is available from Maven Central repository
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy</artifactId>
-    <version>3.0.5</version>
+    <version>3.0.6</version>
 </dependency>
 ```
 
 For Gradle users:
 ```javascript
 dependencies {
-    compile 'io.sniffy:sniffy:3.0.5'
+    compile 'io.sniffy:sniffy:3.0.6'
 }
 ```
 
 Download
 ============
 [![Get automatic notifications about new "sniffy" versions](https://www.bintray.com/docs/images/bintray_badge_color.png) ](https://bintray.com/sniffy/sniffy/sniffy/view?source=watch)
-- [sniffy-3.0.5.jar](https://github.com/sniffy/sniffy/releases/download/3.0.5/sniffy-3.0.5.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.5.jar))
-- [sniffy-3.0.5-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.5/sniffy-3.0.5-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.5-sources.jar))
-- [sniffy-3.0.5-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.5/sniffy-3.0.5-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.5-javadoc.jar))
+- [sniffy-3.0.6.jar](https://github.com/sniffy/sniffy/releases/download/3.0.6/sniffy-3.0.6.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.6.jar))
+- [sniffy-3.0.6-sources.jar](https://github.com/sniffy/sniffy/releases/download/3.0.6/sniffy-3.0.6-sources.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.6-sources.jar))
+- [sniffy-3.0.6-javadoc.jar](https://github.com/sniffy/sniffy/releases/download/3.0.6/sniffy-3.0.6-javadoc.jar) ([bintray mirror](https://bintray.com/artifact/download/sniffy/sniffy/sniffy-3.0.6-javadoc.jar))
 
 Setup
 ============
@@ -106,6 +106,8 @@ HTML injection is configured in `web.xml` file:
     <url-pattern>/*</url-pattern>
 </filter-mapping>
 ```
+
+Or if you are using Spring Boot, simply add `@EnableSniffy` to your application class
 
 Usage
 ============
