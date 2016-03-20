@@ -2,7 +2,14 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.0.5...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.6...master)
+
+## v3.0.6 - March 20th, 2016
+ * [Sniffy - stack trace is missing line breaks](https://github.com/sniffy/sniffy/issues/120)
+ * [Sniffy UI: last row is sometimes hidden underneath the footer](https://github.com/sniffy/sniffy/issues/124)
+ * [https://github.com/sniffy/sniffy/issues/125](https://github.com/sniffy/sniffy/issues/125)
+
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.5...3.0.6)
 
 ## v3.0.5 - March 13th, 2016
  * [UI must be enableble using request parameter](https://github.com/sniffy/sniffy/issues/83)

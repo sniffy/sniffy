@@ -125,10 +125,8 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
             }
 
             for (Expectation expectation1 : expectationList) {
-                if (expectation1.value() != -1) {
-                    if (expectation1.atMost() != -1 || expectation1.atLeast() != -1) {
-                        throw new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters");
-                    }
+                if (expectation1.value() != -1 && (expectation1.atMost() != -1 || expectation1.atLeast() != -1)) {
+                    throw new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters");
                 }
             }
 
