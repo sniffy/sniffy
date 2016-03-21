@@ -17,6 +17,9 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     private BufferedPrintWriter writer;
 
     private boolean committed;
+    private int contentLength;
+    private String contentEncoding;
+    private boolean corsHeadersHeaderAdded = false;
 
     private final BufferedServletResponseListener servletResponseListener;
 
@@ -75,10 +78,6 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         setCommitted(true);
     }
 
-    // capture content length
-
-    private int contentLength;
-
     @Override
     public void setContentLength(int len) {
         super.setContentLength(len);
@@ -88,10 +87,6 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     public int getContentLength() {
         return contentLength;
     }
-
-    private String contentEncoding;
-
-    private boolean corsHeadersHeaderAdded = false;
 
     protected void addCorsHeadersHeaderIfRequired() {
         if (!corsHeadersHeaderAdded) {
