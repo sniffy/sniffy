@@ -13,11 +13,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-import static io.sniffy.servlet.SnifferFilter.HEADER_CORS_HEADERS;
 import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
 import static io.sniffy.servlet.SnifferFilter.HEADER_REQUEST_DETAILS;
 
