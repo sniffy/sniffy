@@ -16,6 +16,10 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.UUID;
 
+import static io.sniffy.servlet.SnifferFilter.HEADER_CORS_HEADERS;
+import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
+import static io.sniffy.servlet.SnifferFilter.HEADER_REQUEST_DETAILS;
+
 class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     private final SnifferFilter snifferFilter;
@@ -113,8 +117,9 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
         // TODO: can this method be called multiple times?
-        wrapper.addIntHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
-        wrapper.addHeader(SnifferFilter.HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
+        wrapper.addHeader(HEADER_CORS_HEADERS, String.format("%s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS));
+        wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
+        wrapper.addHeader(HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
         if (snifferFilter.injectHtml) {
             String contentType = wrapper.getContentType();
             String contentEncoding = wrapper.getContentEncoding();
