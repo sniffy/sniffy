@@ -108,7 +108,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         super.addHeader(name, value);
         if ("Content-Encoding".equals(name)) {
             contentEncoding = value;
-        } else if ("Content-Length".equals(name)) {
+        } else if ("Content-Length".equals(name) && null != value) {
             try {
                 contentLength = Integer.parseInt(value);
             } catch (NumberFormatException e) {
