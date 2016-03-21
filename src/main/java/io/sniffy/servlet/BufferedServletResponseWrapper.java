@@ -96,16 +96,19 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void addHeader(String name, String value) {
-        if (null != value && HEADER_CORS_HEADERS.equals(name)) {
-            value = format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, value);
+
+        String processedValue = value;
+        if (HEADER_CORS_HEADERS.equals(name)) {
+            processedValue = format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, processedValue);
             corsHeadersHeaderAdded = true;
         }
-        super.addHeader(name, value);
+
+        super.addHeader(name, processedValue);
         if ("Content-Encoding".equals(name)) {
-            contentEncoding = value;
-        } else if ("Content-Length".equals(name) && null != value) {
+            contentEncoding = processedValue;
+        } else if ("Content-Length".equals(name) && null != processedValue) {
             try {
-                contentLength = Integer.parseInt(value);
+                contentLength = Integer.parseInt(processedValue);
             } catch (NumberFormatException e) {
                 // sniffy is not interested in this exception
             }
@@ -114,20 +117,25 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void setHeader(String name, String value) {
+
+        String processedValue = value;
         if (HEADER_CORS_HEADERS.equals(name)) {
-            value = format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, value);
+            processedValue = format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, processedValue);
             corsHeadersHeaderAdded = true;
         }
-        super.setHeader(name, value);
+
+        super.setHeader(name, processedValue);
+
         if ("Content-Encoding".equals(name)) {
-            contentEncoding = value;
+            contentEncoding = processedValue;
         } else if ("Content-Length".equals(name)) {
             try {
-                contentLength = Integer.parseInt(value);
+                contentLength = Integer.parseInt(processedValue);
             } catch (NumberFormatException e) {
                 // sniffy is not interested in this exception
             }
         }
+
     }
 
     @Override
