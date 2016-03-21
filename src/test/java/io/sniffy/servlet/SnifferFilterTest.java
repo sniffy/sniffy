@@ -17,6 +17,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import static io.sniffy.servlet.SnifferFilter.HEADER_CORS_HEADERS;
+import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
+import static io.sniffy.servlet.SnifferFilter.HEADER_REQUEST_DETAILS;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -53,7 +56,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertFalse(httpServletResponse.getHeaderNames().contains(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertFalse(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
 
     }
 
@@ -72,7 +75,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertFalse(httpServletResponse.getHeaderNames().contains(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertFalse(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentLength() > 100);
 
     }
@@ -82,7 +85,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(0, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
 
     }
 
@@ -94,7 +97,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
 
     }
 
@@ -130,7 +133,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertFalse(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
 
     }
 
@@ -142,7 +145,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.setEnabled(false);
         httpServletRequest.setParameter("sniffy", "true");
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
-        assertTrue(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
         assertEquals("Check cookie parameter specified", "true", httpServletResponse.getCookie("sniffy").getValue());
     }
 
@@ -154,7 +157,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.setEnabled(false);
         httpServletRequest.setCookies(null);
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
-        assertFalse(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }
 
     @Test
@@ -165,7 +168,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.setEnabled(false);
         httpServletRequest.setCookies(new Cookie("sniffy", "true"));
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
-        assertTrue(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }
 
     @Test
@@ -177,7 +180,7 @@ public class SnifferFilterTest extends BaseTest {
         httpServletRequest.setParameter("sniffy", "false");
         httpServletRequest.setCookies(new Cookie("sniffy", "true"));
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
-        assertFalse("Filter must be disabled", httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertFalse("Filter must be disabled", httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
         assertEquals("Cookie parameter must be replaced", "false", httpServletResponse.getCookie("sniffy").getValue());
     }
 
@@ -189,7 +192,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.setEnabled(true);
         httpServletRequest.setParameter("sniffy", "false");
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
-        assertFalse(httpServletResponse.containsHeader(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }
 
     @Test
@@ -204,7 +207,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertArrayEquals("Hello, World".getBytes(), httpServletResponse.getContentAsByteArray());
 
     }
@@ -216,7 +219,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertArrayEquals("Hello, World".getBytes(), httpServletResponse.getContentAsByteArray());
 
     }
@@ -251,7 +254,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(100 * 1024, httpServletResponse.getContentAsByteArray().length);
 
     }
@@ -282,7 +285,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(100 * 1024, httpServletResponse.getContentAsByteArray().length);
 
     }
@@ -310,7 +313,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
 
     }
@@ -339,7 +342,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
         assertTrue(contentAsString.contains("id=\"sniffy\""));
         assertTrue(contentAsString.indexOf("id=\"sniffy\"") > contentAsString.indexOf("</body>"));
@@ -371,7 +374,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
         assertTrue(contentAsString.contains("id=\"sniffy\""));
         assertTrue(contentAsString.indexOf("id=\"sniffy\"") < contentAsString.indexOf("</body>"));
@@ -403,7 +406,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
         assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"sniffy\""));
         assertEquals(contentAsString.length(), httpServletResponse.getContentLength());
@@ -435,7 +438,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
         assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"sniffy\""));
         assertEquals(contentAsString.length(), httpServletResponse.getContentLength());
@@ -468,7 +471,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
         assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"sniffy\""));
         assertEquals(contentAsString.length(), httpServletResponse.getContentLength());
@@ -488,7 +491,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(HttpServletResponse.SC_CONFLICT, httpServletResponse.getStatus());
 
     }
@@ -506,7 +509,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(HttpServletResponse.SC_CONFLICT, httpServletResponse.getStatus());
 
     }
@@ -523,7 +526,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(1, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(HttpServletResponse.SC_MOVED_TEMPORARILY, httpServletResponse.getStatus());
         assertEquals("http://www.google.com/", httpServletResponse.getHeader("Location"));
 
@@ -554,7 +557,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
 
     }
@@ -584,7 +587,7 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(2, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
 
     }
@@ -615,8 +618,59 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertEquals(4, httpServletResponse.getHeaderValue(SnifferFilter.HEADER_NUMBER_OF_QUERIES));
+        assertEquals(4, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(250 * 1024, httpServletResponse.getContentAsByteArray().length);
+
+    }
+
+    @Test
+    public void testFilterNoCorsHeaders() throws IOException, ServletException {
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
+
+    }
+
+    @Test
+    public void testFilterAddCorsHeaders() throws IOException, ServletException {
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.addHeader(HEADER_CORS_HEADERS, "X-Custom-Header");
+            response.flushBuffer();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header"));
+
+    }
+
+    @Test
+    public void testFilterSetCorsHeaders() throws IOException, ServletException {
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.setHeader(HEADER_CORS_HEADERS, "X-Custom-Header-1");
+            response.setHeader(HEADER_CORS_HEADERS, "X-Custom-Header-2");
+            response.flushBuffer();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
+        assertFalse(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header-1"));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header-2"));
 
     }
 
