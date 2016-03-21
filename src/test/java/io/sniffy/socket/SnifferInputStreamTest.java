@@ -9,6 +9,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
@@ -35,6 +38,23 @@ public class SnifferInputStreamTest {
 
         verify(snifferSocket, times(5)).logSocket(anyInt(), anyInt(), anyInt());
 
+    }
+
+    @Test
+    public void testReadByteArray() throws IOException {
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(DATA);
+        SnifferInputStream sis = new SnifferInputStream(snifferSocket, bais);
+
+        byte[] buff = new byte[4];
+        assertEquals(4, sis.read(buff, 0, 4));
+        assertArrayEquals(DATA, buff);
+
+        verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
+
+        assertEquals(0, sis.available());
+
+        verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
     }
 
 }
