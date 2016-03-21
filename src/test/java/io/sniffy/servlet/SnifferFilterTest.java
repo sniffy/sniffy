@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import static io.sniffy.servlet.SnifferFilter.HEADER_CORS_HEADERS;
 import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
 import static io.sniffy.servlet.SnifferFilter.HEADER_REQUEST_DETAILS;
 import static org.junit.Assert.*;
@@ -623,13 +624,53 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
-    public void testFilterCorsHeaders() throws IOException, ServletException {
+    public void testFilterNoCorsHeaders() throws IOException, ServletException {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
-        assertTrue(httpServletResponse.getHeader(SnifferFilter.HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
-        assertTrue(httpServletResponse.getHeader(SnifferFilter.HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
+
+    }
+
+    @Test
+    public void testFilterAddCorsHeaders() throws IOException, ServletException {
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.addHeader(HEADER_CORS_HEADERS, "X-Custom-Header");
+            response.flushBuffer();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header"));
+
+    }
+
+    @Test
+    public void testFilterSetCorsHeaders() throws IOException, ServletException {
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.setHeader(HEADER_CORS_HEADERS, "X-Custom-Header-1");
+            response.setHeader(HEADER_CORS_HEADERS, "X-Custom-Header-2");
+            response.flushBuffer();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
+        assertFalse(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header-1"));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header-2"));
 
     }
 

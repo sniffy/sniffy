@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -117,7 +118,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
         // TODO: can this method be called multiple times?
-        wrapper.addHeader(HEADER_CORS_HEADERS, String.format("%s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS));
+        wrapper.addCorsHeadersHeaderIfRequired();
         wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
         wrapper.addHeader(HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
         if (snifferFilter.injectHtml) {

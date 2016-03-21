@@ -5,6 +5,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+
+import static io.sniffy.servlet.SnifferFilter.HEADER_CORS_HEADERS;
+import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
+import static io.sniffy.servlet.SnifferFilter.HEADER_REQUEST_DETAILS;
+import static java.lang.String.format;
 
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
@@ -88,8 +95,20 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     private String contentEncoding;
 
+    private boolean corsHeadersHeaderAdded = false;
+
+    protected void addCorsHeadersHeaderIfRequired() {
+        if (!corsHeadersHeaderAdded) {
+            super.setHeader(HEADER_CORS_HEADERS, format("%s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS));
+        }
+    }
+
     @Override
     public void addHeader(String name, String value) {
+        if (null != value && HEADER_CORS_HEADERS.equals(name)) {
+            value = format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, value);
+            corsHeadersHeaderAdded = true;
+        }
         super.addHeader(name, value);
         if ("Content-Encoding".equals(name)) {
             contentEncoding = value;
@@ -104,6 +123,10 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void setHeader(String name, String value) {
+        if (HEADER_CORS_HEADERS.equals(name)) {
+            value = format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, value);
+            corsHeadersHeaderAdded = true;
+        }
         super.setHeader(name, value);
         if ("Content-Encoding".equals(name)) {
             contentEncoding = value;
@@ -123,6 +146,8 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             contentLength = value;
         }
     }
+
+
 
     public String getContentEncoding() {
         return contentEncoding;
