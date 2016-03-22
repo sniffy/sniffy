@@ -85,7 +85,7 @@ public class SnifferInputStreamTest {
 
         byte[] buff = new byte[4];
         assertEquals(3, sis.read(buff));
-        assertArrayEquals(new byte[]{2,3,4}, buff);
+        assertArrayEquals(new byte[]{2,3,4,0}, buff);
 
         verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
 
