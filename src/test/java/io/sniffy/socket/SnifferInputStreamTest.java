@@ -54,7 +54,7 @@ public class SnifferInputStreamTest {
 
         assertEquals(0, sis.available());
 
-        verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
+        verify(snifferSocket).logSocket(anyInt());
     }
 
     @Test
@@ -71,7 +71,27 @@ public class SnifferInputStreamTest {
 
         assertEquals(0, sis.available());
 
+        verify(snifferSocket).logSocket(anyInt());
+    }
+
+    @Test
+    public void testSkip() throws IOException {
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(DATA);
+        SnifferInputStream sis = new SnifferInputStream(snifferSocket, bais);
+
+        assertEquals(1, sis.skip(1));
+        verify(snifferSocket).logSocket(anyInt());
+
+        byte[] buff = new byte[4];
+        assertEquals(3, sis.read(buff));
+        assertArrayEquals(new byte[]{2,3,4}, buff);
+
         verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
+
+        assertEquals(0, sis.available());
+
+        verify(snifferSocket).logSocket(anyInt());
     }
 
 }
