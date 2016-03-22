@@ -47,6 +47,23 @@ public class SnifferInputStreamTest {
         SnifferInputStream sis = new SnifferInputStream(snifferSocket, bais);
 
         byte[] buff = new byte[4];
+        assertEquals(4, sis.read(buff));
+        assertArrayEquals(DATA, buff);
+
+        verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
+
+        assertEquals(0, sis.available());
+
+        verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
+    }
+
+    @Test
+    public void testReadByteArrayRange() throws IOException {
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(DATA);
+        SnifferInputStream sis = new SnifferInputStream(snifferSocket, bais);
+
+        byte[] buff = new byte[4];
         assertEquals(4, sis.read(buff, 0, 4));
         assertArrayEquals(DATA, buff);
 
