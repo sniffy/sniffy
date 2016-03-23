@@ -13,6 +13,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
@@ -51,6 +52,7 @@ public class SnifferInputStreamTest {
         assertArrayEquals(DATA, buff);
 
         verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
+        reset(snifferSocket);
 
         assertEquals(0, sis.available());
 
@@ -68,6 +70,7 @@ public class SnifferInputStreamTest {
         assertArrayEquals(DATA, buff);
 
         verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
+        reset(snifferSocket);
 
         assertEquals(0, sis.available());
 
@@ -82,12 +85,14 @@ public class SnifferInputStreamTest {
 
         assertEquals(1, sis.skip(1));
         verify(snifferSocket).logSocket(anyInt());
+        reset(snifferSocket);
 
         byte[] buff = new byte[4];
         assertEquals(3, sis.read(buff));
         assertArrayEquals(new byte[]{2,3,4,0}, buff);
 
         verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
+        reset(snifferSocket);
 
         assertEquals(0, sis.available());
 
