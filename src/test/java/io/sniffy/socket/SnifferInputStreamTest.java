@@ -99,4 +99,15 @@ public class SnifferInputStreamTest {
         verify(snifferSocket).logSocket(anyInt());
     }
 
+    @Test
+    public void testClose() throws IOException {
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(DATA);
+        SnifferInputStream sis = new SnifferInputStream(snifferSocket, bais);
+
+        sis.close();
+        verify(snifferSocket).logSocket(anyInt());
+
+    }
+
 }
