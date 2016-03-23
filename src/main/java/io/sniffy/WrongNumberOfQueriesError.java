@@ -15,17 +15,19 @@ import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 public class WrongNumberOfQueriesError extends AssertionError {
 
     private final Threads threadMatcher;
+    private final Query query;
     private final int minimumQueries;
     private final int maximumQueries;
     private final int numQueries;
     private final List<StatementMetaData> executedStatements;
 
     public WrongNumberOfQueriesError(
-            Threads threadMatcher,
+            Threads threadMatcher, Query query,
             int minimumQueries, int maximumQueries, int numQueries,
             List<StatementMetaData> executedStatements) {
-        super(buildDetailMessage(threadMatcher, minimumQueries, maximumQueries, numQueries, executedStatements));
+        super(buildDetailMessage(threadMatcher, query, minimumQueries, maximumQueries, numQueries, executedStatements));
         this.threadMatcher = threadMatcher;
+        this.query = query;
         this.minimumQueries = minimumQueries;
         this.maximumQueries = maximumQueries;
         this.numQueries = numQueries;
@@ -34,6 +36,10 @@ public class WrongNumberOfQueriesError extends AssertionError {
 
     public Threads getThreadMatcher() {
         return threadMatcher;
+    }
+
+    public Query getQuery() {
+        return query;
     }
 
     public int getMinimumQueries() {
@@ -65,20 +71,25 @@ public class WrongNumberOfQueriesError extends AssertionError {
     }
 
     private static String buildDetailMessage(
-            Threads threadMatcher,
+            Threads threadMatcher, Query query,
             int minimumQueries, int maximumQueries, int numQueries,
             List<StatementMetaData> executedStatements) {
         StringBuilder sb = new StringBuilder();
         sb.append("Expected between ").append(minimumQueries).append(" and ").append(maximumQueries);
         if (Threads.CURRENT == threadMatcher) {
-            sb.append(" current thread ");
+            sb.append(" current thread");
         } else if (Threads.OTHERS == threadMatcher) {
-            sb.append(" other threads ");
+            sb.append(" other threads");
+        }
+        if (Query.ANY != query && null != query) {
+            sb.append(" ").append(query);
         }
         sb.append(" queries").append(LINE_SEPARATOR);
         sb.append("Observed ").append(numQueries).append(" queries instead:").append(LINE_SEPARATOR);
         if (null != executedStatements) for (StatementMetaData statement : executedStatements) {
-            sb.append(statement.sql).append(';').append(LINE_SEPARATOR);
+            if (Query.ANY == query || null == query || statement.query == query) {
+                sb.append(statement.sql).append(';').append(LINE_SEPARATOR);
+            }
         }
         return sb.toString();
     }
