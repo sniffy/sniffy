@@ -47,6 +47,31 @@ public class SnifferListenersTest extends BaseTest {
     }
 
     @Test
+    public void testQueryType() throws Exception {
+        try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa")) {
+            connection.createStatement().execute("CREATE TEMPORARY TABLE TEMPORARY_TABLE (BAZ VARCHAR(255))");
+            try (@SuppressWarnings("unused") Spy spy = Sniffer.expectAtMostOnce(Query.INSERT)) {
+                connection.createStatement().execute("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES ('foo')");
+                connection.createStatement().execute("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (LOWER('bar'))");
+                connection.createStatement().execute("UPDATE TEMPORARY_TABLE SET BAZ = UPPER(BAZ)");
+            }
+        } catch (WrongNumberOfQueriesError e) {
+            assertNotNull(e);
+            assertEquals(0, e.getMinimumQueries());
+            assertEquals(1, e.getMaximumQueries());
+            assertEquals(2, e.getNumQueries());
+            assertEquals(3, e.getExecutedStatements().size());
+            assertEquals(3, e.getExecutedSqls().size());
+            assertEquals(Threads.CURRENT, e.getThreadMatcher());
+            assertEquals(Query.INSERT, e.getQuery());
+            assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES ('foo')"));
+            assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (LOWER('bar'))"));
+            assertFalse(e.getMessage().contains("UPDATE TEMPORARY_TABLE SET BAZ = UPPER(BAZ)"));
+        }
+
+    }
+
+    @Test
     public void testPreparedStatementBatchIsLogged() throws Exception {
         try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa")) {
             connection.createStatement().execute("CREATE TEMPORARY TABLE TEMPORARY_TABLE (BAZ VARCHAR(255))");
@@ -73,6 +98,7 @@ public class SnifferListenersTest extends BaseTest {
             assertEquals(1, e.getExecutedSqls().size());
             assertEquals("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/", e.getExecutedStatements().get(0).sql);
             assertEquals(Threads.CURRENT, e.getThreadMatcher());
+            assertEquals(Query.ANY, e.getQuery());
             assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/"));
         }
 
