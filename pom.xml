@@ -15,7 +15,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
-        <sniffy.ui.version>3.0.6</sniffy.ui.version>
+        <sniffy.ui.version>3.0.7</sniffy.ui.version>
         <spring.version>4.2.5.RELEASE</spring.version>
     </properties>
 
@@ -83,7 +83,10 @@
                                     <artifactId>sniffy</artifactId>
                                     <version>${sniffy.ui.version}</version>
                                     <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
-                                    <includes>META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.min.js</includes>
+                                    <includes>
+                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.min.js,
+                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.map
+                                    </includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
