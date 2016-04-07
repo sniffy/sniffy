@@ -447,7 +447,6 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
-    @Ignore("spring test framework bug")
     public void testInjectHtmlSetContentLengthIntHeader() throws IOException, ServletException {
 
         String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";

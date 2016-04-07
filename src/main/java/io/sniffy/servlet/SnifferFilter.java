@@ -52,6 +52,7 @@ public class SnifferFilter implements Filter {
 
     public static final String HEADER_CORS_HEADERS = "Access-Control-Expose-Headers";
     public static final String HEADER_NUMBER_OF_QUERIES = "X-Sql-Queries";
+    public static final String HEADER_TIME_TO_FIRST_BYTE = "X-Time-To-First-Byte";
     public static final String HEADER_REQUEST_DETAILS = "X-Request-Details";
 
     public static final String SNIFFER_URI_PREFIX =

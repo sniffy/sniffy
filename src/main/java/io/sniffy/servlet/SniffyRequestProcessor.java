@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
 import static io.sniffy.servlet.SnifferFilter.HEADER_REQUEST_DETAILS;
+import static io.sniffy.servlet.SnifferFilter.HEADER_TIME_TO_FIRST_BYTE;
 
 class SniffyRequestProcessor implements BufferedServletResponseListener {
 
@@ -28,6 +29,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     private final Spy<? extends Spy> spy;
     private final String requestId;
     private final RequestStats requestStats = new RequestStats();
+
+    private final long startMillis = System.currentTimeMillis();
 
     public SniffyRequestProcessor(SnifferFilter snifferFilter, ServletRequest request, ServletResponse response) {
         this.snifferFilter = snifferFilter;
@@ -118,6 +121,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         // TODO: can this method be called multiple times?
         wrapper.addCorsHeadersHeaderIfRequired();
         wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
+        wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(System.currentTimeMillis() - startMillis));
         wrapper.addHeader(HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
         if (snifferFilter.injectHtml) {
             String contentType = wrapper.getContentType();
@@ -166,8 +170,6 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         }
 
     }
-
-
 
     protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
         return new StringBuilder().
