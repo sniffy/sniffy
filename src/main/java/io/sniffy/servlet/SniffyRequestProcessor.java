@@ -162,7 +162,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 characterEncoding = Charset.defaultCharset().name();
             }
 
-            String snifferWidget = generateAndPadFooterHtml(spy.executedStatements(Threads.CURRENT));
+            String snifferWidget = generateAndPadFooterHtml(spy.executedStatements(Threads.CURRENT), System.currentTimeMillis() - startMillis);
 
             HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
             htmlInjector.injectAtTheEnd(snifferWidget);
@@ -193,11 +193,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     private int maximumFooterSize() {
-        return generateFooterHtml(Integer.MAX_VALUE).length();
+        return generateFooterHtml(Integer.MAX_VALUE, Long.MAX_VALUE).length();
     }
 
-    protected String generateAndPadFooterHtml(int executedQueries) {
-        StringBuilder sb = generateFooterHtml(executedQueries);
+    protected String generateAndPadFooterHtml(int executedQueries, long serverTime) {
+        StringBuilder sb = generateFooterHtml(executedQueries, serverTime);
         for (int i = sb.length(); i < maximumFooterSize(); i++) {
             sb.append(" ");
         }
@@ -214,9 +214,13 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
      * @param executedQueries number of executed queries
      * @return StringBuilder with generated HTML
      */
-    protected static StringBuilder generateFooterHtml(int executedQueries) {
+    protected StringBuilder generateFooterHtml(int executedQueries, long serverTime) {
         return new StringBuilder().
-                append("<data id=\"sniffy\" data-sql-queries=\"").append(executedQueries).append("\"/>");
+                append("<data id=\"sniffy\" data-sql-queries=\"").
+                append(executedQueries).
+                append("\" data-server-time=\"").
+                append(serverTime)
+                .append("\"/>");
     }
 
 }
