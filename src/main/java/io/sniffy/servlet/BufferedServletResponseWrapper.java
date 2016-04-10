@@ -90,7 +90,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     protected void addCorsHeadersHeaderIfRequired() {
         if (!corsHeadersHeaderAdded) {
-            super.setHeader(HEADER_CORS_HEADERS, format("%s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE));
+            super.setHeader(HEADER_CORS_HEADERS, format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE));
         }
     }
 

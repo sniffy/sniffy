@@ -629,6 +629,7 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_TIME_TO_FIRST_BYTE));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
 
     }
@@ -646,6 +647,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_TIME_TO_FIRST_BYTE));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header"));
@@ -667,6 +669,7 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_TIME_TO_FIRST_BYTE));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
         assertFalse(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header-1"));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header-2"));
@@ -686,7 +689,8 @@ public class SnifferFilterTest extends BaseTest {
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
-        assertTrue(Integer.parseInt(httpServletResponse.getHeader(HEADER_TIME_TO_FIRST_BYTE)) > 1);
+        assertTrue(httpServletResponse.containsHeader(HEADER_TIME_TO_FIRST_BYTE));
+        assertTrue(Integer.parseInt(httpServletResponse.getHeader(HEADER_TIME_TO_FIRST_BYTE)) >= 1);
 
     }
 
@@ -716,7 +720,7 @@ public class SnifferFilterTest extends BaseTest {
         assertTrue(matcher.find());
         int serverTime = Integer.parseInt(matcher.group(1));
 
-        assertTrue(serverTime > 2);
+        assertTrue(serverTime >= 2);
 
     }
 
