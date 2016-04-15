@@ -3,4 +3,4 @@ sudo: false
 jdk:
   - oraclejdk8
 after_success:
-  - mvn clean test javadoc:javadoc jacoco:report coveralls:report
+  - mvn -U clean test javadoc:javadoc jacoco:report coveralls:report
