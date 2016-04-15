@@ -28,8 +28,8 @@ class SnifferServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.0.7/dist/sniffy.min.js");
-            map = loadResource("/META-INF/resources/webjars/sniffy/3.0.7/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.0.7-SNAPSHOT/dist/sniffy.min.js");
+            map = loadResource("/META-INF/resources/webjars/sniffy/3.0.7-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
             throw new ServletException(e);
         }
@@ -43,7 +43,7 @@ class SnifferServlet extends HttpServlet {
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
             serveContent(response, "application/javascript", javascript);
         } else if (SnifferFilter.JAVASCRIPT_MAP_URI.equals(path)) {
-            serveContent(response, "application/javascript", javascript);
+            serveContent(response, "application/javascript", map);
         } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
             byte[] requestStatsJson = getRequestStatsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
 

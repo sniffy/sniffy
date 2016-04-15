@@ -15,7 +15,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
-        <sniffy.ui.version>3.0.7</sniffy.ui.version>
+        <sniffy.ui.version>3.0.7-SNAPSHOT</sniffy.ui.version>
         <spring.version>4.2.5.RELEASE</spring.version>
     </properties>
 
@@ -79,8 +79,10 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>org.webjars.bower</groupId>
-                                    <artifactId>sniffy</artifactId>
+                                    <!--<groupId>org.webjars.bower</groupId>
+                                    <artifactId>sniffy</artifactId>-->
+                                    <groupId>io.sniffy</groupId>
+                                    <artifactId>sniffy-ui</artifactId>
                                     <version>${sniffy.ui.version}</version>
                                     <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
                                     <includes>
@@ -273,8 +275,10 @@
     <dependencies>
 
         <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>sniffy</artifactId>
+            <!--<groupId>org.webjars.bower</groupId>
+            <artifactId>sniffy</artifactId>-->
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-ui</artifactId>
             <version>${sniffy.ui.version}</version>
             <scope>provided</scope>
             <exclusions>
