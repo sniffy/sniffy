@@ -1,7 +1,6 @@
 package io.sniffy.servlet;
 
 import io.sniffy.BaseTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -36,7 +35,7 @@ public class SnifferFilterTest extends BaseTest {
             MockMvcRequestBuilders.get("/petclinic/foo/bar?baz").contextPath("/petclinic").buildRequest(servletContext);
     private SnifferFilter filter = new SnifferFilter();
 
-    protected FilterConfig getFilterConfig() {
+    private FilterConfig getFilterConfig() {
         FilterConfig filterConfig = mock(FilterConfig.class);
         when(filterConfig.getInitParameter("inject-html")).thenReturn("true");
         when(filterConfig.getInitParameter("exclude-pattern")).thenReturn("^/baz/.*$");
@@ -61,6 +60,19 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testDestroy() throws IOException, ServletException {
+
+        FilterConfig filterConfig = getFilterConfig();
+        when(filterConfig.getInitParameter("exclude-pattern")).thenReturn("^/foo/ba.*$");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
+
+        filter.destroy();
+
+    }
+
+    @Test
     public void testGetSnifferJs() throws IOException, ServletException {
 
         FilterConfig filterConfig = getFilterConfig();
@@ -71,6 +83,26 @@ public class SnifferFilterTest extends BaseTest {
 
         MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
                 get("/petclinic" + SnifferFilter.JAVASCRIPT_URI).
+                contextPath("/petclinic").buildRequest(servletContext);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertFalse(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getContentLength() > 100);
+
+    }
+
+    @Test
+    public void testGetSnifferJsMap() throws IOException, ServletException {
+
+        FilterConfig filterConfig = getFilterConfig();
+        when(filterConfig.getInitParameter("exclude-pattern")).thenReturn("^.*(\\.js|\\.css)$");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
+
+        MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
+                get("/petclinic" + SnifferFilter.JAVASCRIPT_MAP_URI).
                 contextPath("/petclinic").buildRequest(servletContext);
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
@@ -121,7 +153,6 @@ public class SnifferFilterTest extends BaseTest {
 
     }
 
-
     @Test
     public void testDisabledFilterOneQuery() throws IOException, ServletException {
 
@@ -130,6 +161,24 @@ public class SnifferFilterTest extends BaseTest {
 
         SnifferFilter filter = new SnifferFilter();
         filter.setEnabled(false);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
+
+    }
+
+    @Test
+    public void testDisabledInConfigFilterOneQuery() throws IOException, ServletException {
+
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+
+        FilterConfig filterConfig = getFilterConfig();
+        when(filterConfig.getInitParameter("enabled")).thenReturn("false");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(filterConfig);
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
@@ -155,7 +204,7 @@ public class SnifferFilterTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
         SnifferFilter filter = new SnifferFilter();
         filter.setEnabled(false);
-        httpServletRequest.setCookies(null);
+        httpServletRequest.setCookies((Cookie[]) null);
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }

@@ -64,6 +64,7 @@ public class SnifferFilter implements Filter {
                     Constants.PATCH_VERSION;
 
     public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/sniffy.min.js";
+    public static final String JAVASCRIPT_MAP_URI = SNIFFER_URI_PREFIX + "/sniffy.map";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
     public static final String SNIFFY = "sniffy";
 
