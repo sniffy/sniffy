@@ -15,10 +15,10 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static io.sniffy.servlet.SnifferFilter.HEADER_CORS_HEADERS;
-import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
-import static io.sniffy.servlet.SnifferFilter.HEADER_REQUEST_DETAILS;
+import static io.sniffy.servlet.SnifferFilter.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -678,6 +678,7 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_TIME_TO_FIRST_BYTE));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
 
     }
@@ -695,6 +696,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_TIME_TO_FIRST_BYTE));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header"));
@@ -716,9 +718,58 @@ public class SnifferFilterTest extends BaseTest {
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_TIME_TO_FIRST_BYTE));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_REQUEST_DETAILS));
         assertFalse(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header-1"));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains("X-Custom-Header-2"));
+
+    }
+
+    @Test
+    public void testFilterTimeToFirstByte() throws IOException, ServletException {
+
+        doAnswer(invocation -> {
+            Thread.sleep(1);
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.getOutputStream().write(1);
+            response.flushBuffer();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertTrue(httpServletResponse.containsHeader(HEADER_TIME_TO_FIRST_BYTE));
+        assertTrue(Integer.parseInt(httpServletResponse.getHeader(HEADER_TIME_TO_FIRST_BYTE)) >= 1);
+
+    }
+
+    @Test
+    public void testFilterServerElapsedTime() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            Thread.sleep(1);
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.setContentType("text/html");
+            PrintWriter printWriter = response.getWriter();
+            printWriter.append(actualContent);
+            Thread.sleep(1);
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        Matcher matcher = Pattern.
+                compile(".*data-server-time=\"(\\d+)\".*").
+                matcher(httpServletResponse.getContentAsString());
+        assertTrue(matcher.find());
+        int serverTime = Integer.parseInt(matcher.group(1));
+
+        assertTrue(serverTime >= 2);
 
     }
 

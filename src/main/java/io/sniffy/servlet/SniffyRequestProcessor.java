@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
 import static io.sniffy.servlet.SnifferFilter.HEADER_REQUEST_DETAILS;
+import static io.sniffy.servlet.SnifferFilter.HEADER_TIME_TO_FIRST_BYTE;
 
 class SniffyRequestProcessor implements BufferedServletResponseListener {
 
@@ -28,6 +29,24 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     private final Spy<? extends Spy> spy;
     private final String requestId;
     private final RequestStats requestStats = new RequestStats();
+
+    private long startMillis;
+    private long timeToFirstByte;
+    private long elapsedTime;
+
+    public void initStartMillis() {
+        startMillis = System.currentTimeMillis();
+    }
+
+    public long getTimeToFirstByte() {
+        if (0 == timeToFirstByte) timeToFirstByte = System.currentTimeMillis() - startMillis;
+        return timeToFirstByte;
+    }
+
+    public long getElapsedTime() {
+        if (0 == elapsedTime) elapsedTime = System.currentTimeMillis() - startMillis;
+        return elapsedTime;
+    }
 
     public SniffyRequestProcessor(SnifferFilter snifferFilter, ServletRequest request, ServletResponse response) {
         this.snifferFilter = snifferFilter;
@@ -81,21 +100,18 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         }
 
         // call chain
-
-        long start = System.currentTimeMillis();
-
         try {
+            initStartMillis();
             chain.doFilter(request, responseWrapper);
         } finally {
-
             try {
-                requestStats.setElapsedTime(System.currentTimeMillis() - start);
+                requestStats.setTimeToFirstByte(getTimeToFirstByte());
+                requestStats.setElapsedTime(getElapsedTime());
                 updateRequestCache();
                 responseWrapper.flushIfPossible();
             } catch (Exception e) {
                 snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
             }
-
         }
 
     }
@@ -118,6 +134,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         // TODO: can this method be called multiple times?
         wrapper.addCorsHeadersHeaderIfRequired();
         wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
+        wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
         wrapper.addHeader(HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
         if (snifferFilter.injectHtml) {
             String contentType = wrapper.getContentType();
@@ -158,7 +175,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 characterEncoding = Charset.defaultCharset().name();
             }
 
-            String snifferWidget = generateAndPadFooterHtml(spy.executedStatements(Threads.CURRENT));
+            String snifferWidget = generateAndPadFooterHtml(spy.executedStatements(Threads.CURRENT), getElapsedTime());
 
             HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
             htmlInjector.injectAtTheEnd(snifferWidget);
@@ -166,8 +183,6 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         }
 
     }
-
-
 
     protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
         return new StringBuilder().
@@ -177,7 +192,6 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 append(contextPath).
                 append(SnifferFilter.JAVASCRIPT_URI).
                 append("\"></script>");
-        //return "<script type=\"application/javascript\" src=\"/mock/sniffy.min.js\"></script>";
     }
 
     private int maximumInjectSize;
@@ -191,11 +205,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     private int maximumFooterSize() {
-        return generateFooterHtml(Integer.MAX_VALUE).length();
+        return generateFooterHtml(Integer.MAX_VALUE, Long.MAX_VALUE).length();
     }
 
-    protected String generateAndPadFooterHtml(int executedQueries) {
-        StringBuilder sb = generateFooterHtml(executedQueries);
+    protected String generateAndPadFooterHtml(int executedQueries, long serverTime) {
+        StringBuilder sb = generateFooterHtml(executedQueries, serverTime);
         for (int i = sb.length(); i < maximumFooterSize(); i++) {
             sb.append(" ");
         }
@@ -212,9 +226,13 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
      * @param executedQueries number of executed queries
      * @return StringBuilder with generated HTML
      */
-    protected static StringBuilder generateFooterHtml(int executedQueries) {
+    protected StringBuilder generateFooterHtml(int executedQueries, long serverTime) {
         return new StringBuilder().
-                append("<data id=\"sniffy\" data-sql-queries=\"").append(executedQueries).append("\"/>");
+                append("<data id=\"sniffy\" data-sql-queries=\"").
+                append(executedQueries).
+                append("\" data-server-time=\"").
+                append(serverTime)
+                .append("\"/>");
     }
 
 }

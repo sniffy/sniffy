@@ -90,7 +90,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     protected void addCorsHeadersHeaderIfRequired() {
         if (!corsHeadersHeaderAdded) {
-            super.setHeader(HEADER_CORS_HEADERS, format("%s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS));
+            super.setHeader(HEADER_CORS_HEADERS, format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE));
         }
     }
 
@@ -99,7 +99,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
         String processedValue = value;
         if (HEADER_CORS_HEADERS.equals(name)) {
-            processedValue = format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, processedValue);
+            processedValue = format("%s, %s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE, processedValue);
             corsHeadersHeaderAdded = true;
         }
 
@@ -120,7 +120,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
         String processedValue = value;
         if (HEADER_CORS_HEADERS.equals(name)) {
-            processedValue = format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, processedValue);
+            processedValue = format("%s, %s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE, processedValue);
             corsHeadersHeaderAdded = true;
         }
 
