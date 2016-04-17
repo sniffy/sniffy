@@ -66,7 +66,13 @@ class SnifferServlet extends HttpServlet {
         RequestStats requestStats = cache.get(requestId);
         if (null != requestStats) {
             StringBuilder sb = new StringBuilder();
-            sb.append("{").append("\"time\":").append(requestStats.getElapsedTime());
+            sb.
+                    append("{").
+                    append("\"timeToFirstByte\":").
+                    append(requestStats.getTimeToFirstByte()).
+                    append(",").
+                    append("\"time\":").
+                    append(requestStats.getElapsedTime());
             if (null != requestStats.getExecutedStatements()) {
                 sb.append(",\"executedQueries\":[");
                 Iterator<StatementMetaData> statementsIt = requestStats.getExecutedStatements().iterator();

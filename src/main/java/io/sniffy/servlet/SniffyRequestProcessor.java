@@ -105,6 +105,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             chain.doFilter(request, responseWrapper);
         } finally {
             try {
+                requestStats.setTimeToFirstByte(getTimeToFirstByte());
                 requestStats.setElapsedTime(getElapsedTime());
                 updateRequestCache();
                 responseWrapper.flushIfPossible();
