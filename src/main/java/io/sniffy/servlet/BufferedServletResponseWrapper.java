@@ -6,6 +6,9 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import static io.sniffy.servlet.SnifferFilter.*;
+import static java.lang.String.format;
+
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     private BufferedServletOutputStream bufferedServletOutputStream;
@@ -14,6 +17,9 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     private BufferedPrintWriter writer;
 
     private boolean committed;
+    private int contentLength;
+    private String contentEncoding;
+    private boolean corsHeadersHeaderAdded = false;
 
     private final BufferedServletResponseListener servletResponseListener;
 
@@ -72,10 +78,6 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         setCommitted(true);
     }
 
-    // capture content length
-
-    private int contentLength;
-
     @Override
     public void setContentLength(int len) {
         super.setContentLength(len);
@@ -86,16 +88,27 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         return contentLength;
     }
 
-    private String contentEncoding;
+    protected void addCorsHeadersHeaderIfRequired() {
+        if (!corsHeadersHeaderAdded) {
+            super.setHeader(HEADER_CORS_HEADERS, format("%s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE));
+        }
+    }
 
     @Override
     public void addHeader(String name, String value) {
-        super.addHeader(name, value);
+
+        String processedValue = value;
+        if (HEADER_CORS_HEADERS.equals(name)) {
+            processedValue = format("%s, %s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE, processedValue);
+            corsHeadersHeaderAdded = true;
+        }
+
+        super.addHeader(name, processedValue);
         if ("Content-Encoding".equals(name)) {
-            contentEncoding = value;
-        } else if ("Content-Length".equals(name)) {
+            contentEncoding = processedValue;
+        } else if ("Content-Length".equals(name) && null != processedValue) {
             try {
-                contentLength = Integer.parseInt(value);
+                contentLength = Integer.parseInt(processedValue);
             } catch (NumberFormatException e) {
                 // sniffy is not interested in this exception
             }
@@ -104,16 +117,25 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void setHeader(String name, String value) {
-        super.setHeader(name, value);
+
+        String processedValue = value;
+        if (HEADER_CORS_HEADERS.equals(name)) {
+            processedValue = format("%s, %s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE, processedValue);
+            corsHeadersHeaderAdded = true;
+        }
+
+        super.setHeader(name, processedValue);
+
         if ("Content-Encoding".equals(name)) {
-            contentEncoding = value;
+            contentEncoding = processedValue;
         } else if ("Content-Length".equals(name)) {
             try {
-                contentLength = Integer.parseInt(value);
+                contentLength = Integer.parseInt(processedValue);
             } catch (NumberFormatException e) {
                 // sniffy is not interested in this exception
             }
         }
+
     }
 
     @Override
@@ -123,6 +145,8 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             contentLength = value;
         }
     }
+
+
 
     public String getContentEncoding() {
         return contentEncoding;

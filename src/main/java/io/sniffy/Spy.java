@@ -919,7 +919,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
             if (numQueries > maximumQueries || numQueries < minimumQueries) {
                 throw new WrongNumberOfQueriesError(
-                        threadMatcher,
+                        threadMatcher, query,
                         minimumQueries, maximumQueries, numQueries,
                         getExecutedStatements(threadMatcher)
                 );

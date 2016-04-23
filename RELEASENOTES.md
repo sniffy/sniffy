@@ -2,7 +2,21 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.0.6...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.7...master)
+
+## v3.0.7 - April 23rd, 2016
+ * [Sniffy UI - Add UI effect on increasing the counter](https://github.com/sniffy/sniffy/issues/119)
+ * [Sniffy widget not rendered in IE10 Win7](https://github.com/sniffy/sniffy/issues/123)
+ * [Refused to get unsafe header "X-Sql-Queries"](https://github.com/sniffy/sniffy/issues/127)
+ * [WrongNumberOfQueriesError doesn't contain information about query type ](https://github.com/sniffy/sniffy/issues/130)
+ * [Print sniffy version in UI widget footer](https://github.com/sniffy/sniffy/issues/131)
+ * [Scroller isn't triggered if Ajax requests are made when widget is open](https://github.com/sniffy/sniffy/issues/133)
+ * [Query counter is larger than number of queries shown in sniffy](https://github.com/sniffy/sniffy/issues/134)
+ * [Sniffy should provide JS map for debugging ](https://github.com/sniffy/sniffy/issues/135)
+ * [Error in browser console](https://github.com/sniffy/sniffy/issues/137)
+ * [Expose request elapsed server time in header](https://github.com/sniffy/sniffy/issues/138)
+
+[Commits](https://github.com/sniffy/sniffy/compare/3.0.6...3.0.7)
 
 ## v3.0.6 - March 20th, 2016
  * [Sniffy - stack trace is missing line breaks](https://github.com/sniffy/sniffy/issues/120)
