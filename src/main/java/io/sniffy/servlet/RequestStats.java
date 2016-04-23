@@ -6,6 +6,7 @@ import java.util.List;
 
 class RequestStats {
 
+    private long timeToFirstByte;
     private long elapsedTime;
     private List<StatementMetaData> executedStatements;
 
@@ -16,9 +17,18 @@ class RequestStats {
         this.executedStatements = executedStatements;
     }
 
-    public RequestStats(long elapsedTime, List<StatementMetaData> executedStatements) {
+    public RequestStats(long timeToFirstByte, long elapsedTime, List<StatementMetaData> executedStatements) {
+        this.timeToFirstByte = timeToFirstByte;
         this.elapsedTime = elapsedTime;
         this.executedStatements = executedStatements;
+    }
+
+    public long getTimeToFirstByte() {
+        return timeToFirstByte;
+    }
+
+    public void setTimeToFirstByte(long timeToFirstByte) {
+        this.timeToFirstByte = timeToFirstByte;
     }
 
     public long getElapsedTime() {
