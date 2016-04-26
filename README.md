@@ -74,7 +74,7 @@ Setup
 ============
 Simply add sniffy.jar to your classpath and add `sniffer:` prefix to the JDBC connection url
 For example `jdbc:h2:~/test` should be changed to `sniffer:jdbc:h2:mem:`
-The sniffer JDBC driver class name is `io.sniffy.MockDriver`
+The Sniffy JDBC driver class name is `io.sniffy.MockDriver`
 
 HTML injection is configured in `web.xml` file:
 ```xml
@@ -107,7 +107,14 @@ HTML injection is configured in `web.xml` file:
 </filter-mapping>
 ```
 
-Or if you are using Spring Boot, simply add `@EnableSniffy` to your application class
+Or if you are using Spring Boot, simply add `@EnableSniffy` to your application class.
+You still need to modify the JDBC settings in order to intercept SQL queries:
+```yml
+spring:
+  datasource:
+    url: sniffer:jdbc:mysql://188.166.164.153:3306/dolbot
+    driver-class-name: io.sniffy.MockDriver
+```
 
 Using Sniffy in unit tests
 ============
