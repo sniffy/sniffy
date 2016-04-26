@@ -9,21 +9,12 @@ Sniffy
 [![Download](https://api.bintray.com/packages/sniffy/sniffy/sniffy/images/download.svg) ](https://bintray.com/sniffy/sniffy/sniffy/_latestVersion)
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://badges.mit-license.org)
 
-Sniffy counts the number of executed SQL queries and provides an API for validating them
-It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
-Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at early stages 
+Sniffy is a lightweight low-overhead Java profiler which shows the results directly in your browser
+![RecordedDemo](http://sniffy.io/demo.gif)
 
-```java
-try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
-     Statement statement = connection.createStatement()) {
-    statement.execute("SELECT 1 FROM DUAL");
-    // Sniffy will throw an Exception if you execute query other than SELECT or uncomment line below
-    //statement.execute("SELECT 1 FROM DUAL");
-}
-```
+Live Demo - [http://demo.sniffy.io/](http://demo.sniffy.io/owners.html?lastName=)
 
-You can also use Sniffy in your test environments to see the number of SQL queries executed by each HTTP request.
-Just add it to your `web.xml` file:
+In order to enable Sniffy simply add it to your `web.xml` file:
 ```xml
 <filter>
     <filter-name>sniffer</filter-name>
@@ -41,9 +32,17 @@ Just add it to your `web.xml` file:
 
 Restart your server and you will see the number of queries in bottom right corner of your app:
 
-![RecordedDemo](http://sniffy.io/demo.gif)
+Sniffy also allows you to check if particular method doesn't make more than N SQL queries in your unit tests
+Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at early stages 
 
-Live Demo - [http://demo.sniffy.io/](http://demo.sniffy.io/owners.html?lastName=)
+```java
+try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
+     Statement statement = connection.createStatement()) {
+    statement.execute("SELECT 1 FROM DUAL");
+    // Sniffy will throw an Exception if you execute query other than SELECT or uncomment line below
+    //statement.execute("SELECT 1 FROM DUAL");
+}
+```
 
 Maven
 ============
@@ -107,7 +106,7 @@ HTML injection is configured in `web.xml` file:
 </filter-mapping>
 ```
 
-Or if you are using Spring Boot, simply add `@EnableSniffy` to your application class.
+Or if you are using [Spring Boot](http://projects.spring.io/spring-boot/), simply add `@EnableSniffy` to your application class.
 You still need to modify the JDBC settings in order to intercept SQL queries:
 ```yml
 spring:
