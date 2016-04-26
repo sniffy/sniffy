@@ -10,6 +10,7 @@ Sniffy
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://badges.mit-license.org)
 
 Sniffy is a lightweight low-overhead Java profiler which shows the results directly in your browser
+
 ![RecordedDemo](http://sniffy.io/demo.gif)
 
 Live Demo - [http://demo.sniffy.io/](http://demo.sniffy.io/owners.html?lastName=)
@@ -200,6 +201,10 @@ Sniffy provides integration with popular testing frameworks - see our wiki for d
  * [Spring Framework](https://github.com/sniffy/sniffy/wiki/Spring-Framework)
  * [Spock Framework](https://github.com/sniffy/sniffy/wiki/Spock-Framework)
  * [Test NG](https://github.com/sniffy/sniffy/wiki/Test-NG)
+
+Support
+============
+Ask questions on stackoverflow with tag [sniffy](http://stackoverflow.com/questions/tagged/sniffy)
 
 Building
 ============
