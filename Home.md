@@ -111,7 +111,7 @@ You still need to modify the JDBC settings in order to intercept SQL queries:
 ```yml
 spring:
   datasource:
-    url: sniffer:jdbc:mysql://188.166.164.153:3306/dolbot
+    url: sniffer:jdbc:mysql://127.0.0.1:3306/petstore
     driver-class-name: io.sniffy.MockDriver
 ```
 
