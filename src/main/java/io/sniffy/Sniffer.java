@@ -5,6 +5,7 @@ import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.StatementMetaData;
 
 import java.lang.ref.WeakReference;
+import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -29,17 +30,17 @@ public final class Sniffer {
 
     private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
 
-    protected static synchronized WeakReference<Spy> registerSpy(Spy spy) {
+    static synchronized WeakReference<Spy> registerSpy(Spy spy) {
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
         registeredSpies.add(spyReference);
         return spyReference;
     }
 
-    protected static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
+    static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
         registeredSpies.remove(spyReference);
     }
 
-    protected static List<WeakReference<Spy>> registeredSpies() {
+    static List<WeakReference<Spy>> registeredSpies() {
         return Collections.unmodifiableList(registeredSpies);
     }
 
@@ -56,7 +57,7 @@ public final class Sniffer {
         }
     }
 
-    private static synchronized void notifyListeners(String address, SocketStats socketStats) {
+    private static synchronized void notifyListeners(InetSocketAddress address, int connectionId, SocketStats socketStats) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -64,16 +65,16 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addExecutedStatement(address, new SocketStats(socketStats));
+                spy.addSocketOperation(address, new SocketStats(socketStats));
             }
         }
     }
 
     // query counters
 
-    protected static final Counter COUNTER = new Counter();
+    static final Counter COUNTER = new Counter();
 
-    protected static final ThreadLocal<Counter> THREAD_LOCAL_COUNTER = new ThreadLocal<Counter>() {
+    static final ThreadLocal<Counter> THREAD_LOCAL_COUNTER = new ThreadLocal<Counter>() {
 
         @Override
         protected Counter initialValue() {
@@ -82,20 +83,16 @@ public final class Sniffer {
 
     };
 
-    public static void logSocket(String address, long elapsedTime) {
-        logSocket(address, elapsedTime, 0, 0);
-    }
-
-    public static void logSocket(String address, long elapsedTime, int bytesDown, int bytesUp) {
+    public static void logSocket(int id, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
         // TODO log socket operation
 
         // increment counters
         SocketStats socketStats = new SocketStats(elapsedTime, bytesDown, bytesUp);
-        COUNTER.socketOperation(address, new SocketStats(socketStats));
-        THREAD_LOCAL_COUNTER.get().socketOperation(address, new SocketStats(socketStats));
+        COUNTER.socketOperation(address, id, new SocketStats(socketStats));
+        THREAD_LOCAL_COUNTER.get().socketOperation(address, id, new SocketStats(socketStats));
 
         // notify listeners
-        notifyListeners(address, socketStats);
+        notifyListeners(address, id, socketStats);
     }
 
     protected static void executeStatement(String sql, long elapsedTime, String stackTrace) {

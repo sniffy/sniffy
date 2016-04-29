@@ -6,6 +6,7 @@ import io.sniffy.util.ExceptionUtil;
 
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,19 +34,19 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
 
-    private volatile ConcurrentMap<Thread, ConcurrentMap<String, SocketStats>> socketOperations =
-            new ConcurrentHashMap<Thread, ConcurrentMap<String, SocketStats>>();
+    private volatile ConcurrentMap<Thread, ConcurrentMap<InetSocketAddress, SocketStats>> socketOperations =
+            new ConcurrentHashMap<Thread, ConcurrentMap<InetSocketAddress, SocketStats>>();
 
     protected void addExecutedStatement(StatementMetaData statementMetaData) {
         executedStatements.add(statementMetaData);
     }
 
-    protected void addExecutedStatement(String address, SocketStats socketStats) {
+    protected void addSocketOperation(InetSocketAddress address, SocketStats socketStats) {
 
         Thread currentThread = Thread.currentThread();
 
-        ConcurrentMap<String, SocketStats> threadSocketOperations = new ConcurrentHashMap<String, SocketStats>();
-        ConcurrentMap<String, SocketStats> existingThreadSocketOperations = socketOperations.putIfAbsent(
+        ConcurrentMap<InetSocketAddress, SocketStats> threadSocketOperations = new ConcurrentHashMap<InetSocketAddress, SocketStats>();
+        ConcurrentMap<InetSocketAddress, SocketStats> existingThreadSocketOperations = socketOperations.putIfAbsent(
                 currentThread, threadSocketOperations
         );
         if (null != existingThreadSocketOperations) {
@@ -59,7 +60,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     }
 
-    public Map<String, SocketStats> getSocketOperations() {
+    public Map<InetSocketAddress, SocketStats> getSocketOperations() {
         return getSocketOperations(Threads.CURRENT);
         /*ConcurrentMap<String, SocketStats> threadSocketOperations = socketOperations.get(Thread.currentThread());
         return Collections.unmodifiableMap(null == threadSocketOperations ? Collections.<String, SocketStats>emptyMap() : threadSocketOperations);*/
@@ -127,7 +128,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         return self();
     }
 
-    public Map<String, SocketStats> getSocketOperations(Threads threadMatcher) {
+    public Map<InetSocketAddress, SocketStats> getSocketOperations(Threads threadMatcher) {
 
         checkOpened();
 
@@ -160,13 +161,13 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     // TODO: move to some utility class
-    protected static Map<String, SocketStats> diffSocketOperations(Map<String, SocketStats> currentSocketOperations,
-                                                                             Map<String, SocketStats> initialSocketOperations) {
-        Map<String, SocketStats> diff = new HashMap<String, SocketStats>();
+    protected static Map<InetSocketAddress, SocketStats> diffSocketOperations(Map<InetSocketAddress, SocketStats> currentSocketOperations,
+                                                                             Map<InetSocketAddress, SocketStats> initialSocketOperations) {
+        Map<InetSocketAddress, SocketStats> diff = new HashMap<InetSocketAddress, SocketStats>();
 
-        for (Map.Entry<String, SocketStats> entry : currentSocketOperations.entrySet()) {
+        for (Map.Entry<InetSocketAddress, SocketStats> entry : currentSocketOperations.entrySet()) {
 
-            String key = entry.getKey();
+            InetSocketAddress key = entry.getKey();
 
             if (initialSocketOperations.containsKey(key)) {
                 diff.put(key, entry.getValue().dec(initialSocketOperations.get(key)));

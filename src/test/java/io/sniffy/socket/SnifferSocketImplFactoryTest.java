@@ -48,18 +48,18 @@ public class SnifferSocketImplFactoryTest {
 
             assertFalse(
                     s.getSocketOperations().entrySet().stream().
-                            filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                            filter((entry) -> entry.getKey().getAddress().equals(localhost)).
                             collect(Collectors.toList()).isEmpty()
             );
             assertEquals(
                     1,
                     s.getSocketOperations().entrySet().stream().
-                            filter((entry) -> !entry.getKey().contains(localhost.getHostName())).
+                            filter((entry) -> entry.getKey().getAddress().equals(localhost)).
                             collect(Collectors.toList()).size()
             );
 
             s.getSocketOperations().entrySet().stream().
-                    filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                    filter((entry) -> entry.getKey().getAddress().equals(localhost)).
                     findAny().
                     ifPresent((entry) -> {
                             assertEquals(REQUEST.length, entry.getValue().bytesUp.intValue());
@@ -68,18 +68,18 @@ public class SnifferSocketImplFactoryTest {
 
             assertFalse(
                     s.getSocketOperations(Threads.OTHERS).entrySet().stream().
-                            filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                            filter((entry) -> entry.getKey().getAddress().equals(localhost)).
                             collect(Collectors.toList()).isEmpty()
             );
             assertEquals(
                     1,
                     s.getSocketOperations(Threads.OTHERS).entrySet().stream().
-                            filter((entry) -> !entry.getKey().contains(localhost.getHostName())).
+                            filter((entry) -> entry.getKey().getAddress().equals(localhost)).
                             collect(Collectors.toList()).size()
             );
 
             s.getSocketOperations(Threads.OTHERS).entrySet().stream().
-                    filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                    filter((entry) -> entry.getKey().getAddress().equals(localhost)).
                     findAny().
                     ifPresent((entry) -> {
                             assertEquals(REQUEST.length, entry.getValue().bytesUp.intValue());
@@ -88,18 +88,18 @@ public class SnifferSocketImplFactoryTest {
 
             assertFalse(
                     s.getSocketOperations(Threads.ANY).entrySet().stream().
-                            filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                            filter((entry) -> entry.getKey().getAddress().equals(localhost)).
                             collect(Collectors.toList()).isEmpty()
             );
             assertEquals(
                     1,
                     s.getSocketOperations(Threads.ANY).entrySet().stream().
-                            filter((entry) -> !entry.getKey().contains(localhost.getHostName())).
+                            filter((entry) -> entry.getKey().getAddress().equals(localhost)).
                             collect(Collectors.toList()).size()
             );
 
             s.getSocketOperations(Threads.ANY).entrySet().stream().
-                    filter((entry) -> entry.getKey().contains(localhost.getHostName())).
+                    filter((entry) -> entry.getKey().getAddress().equals(localhost)).
                     findAny().
                     ifPresent((entry) -> {
                             assertEquals(REQUEST.length * 2, entry.getValue().bytesUp.intValue());

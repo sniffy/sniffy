@@ -2,12 +2,14 @@ package io.sniffy;
 
 import io.sniffy.socket.SocketStats;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 // TODO: consider making counters hierarchical, i.e. DML, DDL as top level , INSERT, CREATE TABLE as 2 level, e.t.c
+@Deprecated
 class Counter {
 
     private final AtomicInteger select;
@@ -17,7 +19,7 @@ class Counter {
     private final AtomicInteger merge;
     private final AtomicInteger other;
 
-    private final ConcurrentMap<String, SocketStats> allSocketStats;
+    private final ConcurrentMap<InetSocketAddress, SocketStats> allSocketStats;
 
 
     public Counter() {
@@ -28,7 +30,7 @@ class Counter {
                 new AtomicInteger(),
                 new AtomicInteger(),
                 new AtomicInteger(),
-                new ConcurrentHashMap<String, SocketStats>()
+                new ConcurrentHashMap<InetSocketAddress, SocketStats>()
         );
     }
 
@@ -39,7 +41,7 @@ class Counter {
             AtomicInteger delete,
             AtomicInteger merge,
             AtomicInteger other,
-            ConcurrentMap<String, SocketStats> allSocketStats) {
+            ConcurrentMap<InetSocketAddress, SocketStats> allSocketStats) {
         this.select = select;
         this.insert = insert;
         this.update = update;
@@ -56,10 +58,10 @@ class Counter {
         this.delete = new AtomicInteger(that.delete.intValue());
         this.merge = new AtomicInteger(that.merge.intValue());
         this.other = new AtomicInteger(that.other.intValue());
-        this.allSocketStats = new ConcurrentHashMap<String, SocketStats>(that.allSocketStats);
+        this.allSocketStats = new ConcurrentHashMap<InetSocketAddress, SocketStats>(that.allSocketStats);
     }
 
-    protected void socketOperation(String address, SocketStats socketStats) {
+    protected void socketOperation(InetSocketAddress address, int connectionId, SocketStats socketStats) {
 
         SocketStats existingSocketStats = allSocketStats.putIfAbsent(address, socketStats);
         if (null != existingSocketStats) {
@@ -68,7 +70,7 @@ class Counter {
 
     }
 
-    protected ConcurrentMap<String, SocketStats> getSocketOperations() {
+    protected ConcurrentMap<InetSocketAddress, SocketStats> getSocketOperations() {
         return allSocketStats;
     }
 

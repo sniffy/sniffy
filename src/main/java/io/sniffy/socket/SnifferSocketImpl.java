@@ -9,29 +9,29 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.SocketImpl;
+import java.net.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class SnifferSocketImpl extends SocketImpl {
+class SnifferSocketImpl extends SocketImpl {
 
     private final SocketImpl delegate;
 
-    private String address;
+    private InetSocketAddress address;
 
-    private final static String UNKNOWN = "unknown";
+    private final static AtomicInteger counter = new AtomicInteger();
 
-    public SnifferSocketImpl(SocketImpl delegate) {
+    private final int id = counter.getAndIncrement();
+
+    SnifferSocketImpl(SocketImpl delegate) {
         this.delegate = delegate;
     }
 
-    protected void logSocket(long millis) {
-        Sniffer.logSocket(null == address ? UNKNOWN : address, millis);
+    void logSocket(long millis) {
+        logSocket(millis, 0, 0);
     }
 
-    protected void logSocket(long millis, int bytesDown, int bytesUp) {
-        Sniffer.logSocket(null == address ? UNKNOWN : address, millis, bytesDown, bytesUp);
+    void logSocket(long millis, int bytesDown, int bytesUp) {
+        if (null != address) Sniffer.logSocket(id, address, millis, bytesDown, bytesUp);
     }
 
     // TODO in order to support server sockets we should also copy fields to delegate
@@ -205,7 +205,7 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("connect", String.class, int.class).invoke(delegate, host, port);
-            this.address = host + ":" + port;
+            this.address = new InetSocketAddress(host, port);
         } catch (InvocationTargetException e) {
             processInvocationTargetException(e);
         } catch (Exception e) {
@@ -220,7 +220,7 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("connect", InetAddress.class, int.class).invoke(delegate, address, port);
-            this.address = address.toString() + ":" + port;
+            this.address = new InetSocketAddress(address, port);
         } catch (InvocationTargetException e) {
             processInvocationTargetException(e);
         } catch (Exception e) {
@@ -235,7 +235,9 @@ public class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             method("connect", SocketAddress.class, int.class).invoke(delegate, address, timeout);
-            this.address = address.toString();
+            if (address instanceof InetSocketAddress) {
+                this.address = (InetSocketAddress) address;
+            }
         } catch (InvocationTargetException e) {
             processInvocationTargetException(e);
         } catch (Exception e) {
