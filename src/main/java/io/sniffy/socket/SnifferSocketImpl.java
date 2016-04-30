@@ -23,15 +23,15 @@ class SnifferSocketImpl extends SocketImpl {
 
     private final int id = counter.getAndIncrement();
 
-    SnifferSocketImpl(SocketImpl delegate) {
+    protected SnifferSocketImpl(SocketImpl delegate) {
         this.delegate = delegate;
     }
 
-    void logSocket(long millis) {
+    protected void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
-    void logSocket(long millis, int bytesDown, int bytesUp) {
+    protected void logSocket(long millis, int bytesDown, int bytesUp) {
         String stackTrace = StackTraceExtractor.printStackTrace(StackTraceExtractor.getTraceTillPackage("java.net"));
         // TODO: remove empty calls (all equal to zero)
         if (null != address) Sniffer.logSocket(stackTrace, id, address, millis, bytesDown, bytesUp);

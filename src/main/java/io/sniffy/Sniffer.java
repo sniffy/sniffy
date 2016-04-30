@@ -26,15 +26,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class Sniffer {
 
-    private Sniffer() {
-
-    }
-
-    // Registered listeners (i.e. spies)
-
     private final static AtomicInteger executedStatementsGlobalCounter = new AtomicInteger();
 
     private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+
+    private Sniffer() {
+
+    }
 
     static synchronized WeakReference<Spy> registerSpy(Spy spy) {
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);

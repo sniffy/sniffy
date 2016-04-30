@@ -13,14 +13,15 @@ import java.net.UnknownHostException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-/**
- * Created by bedrin on 01.05.2016.
- */
 public class BaseSocketTest {
+
     protected final static byte[] RESPONSE = new byte[]{9,8,7,6,5,4,3,2};
     protected final static byte[] REQUEST = new byte[]{1, 2, 3, 4};
+
     private static InetAddress localhost;
+
     @Rule
     public EchoServerRule echoServerRule = new EchoServerRule(RESPONSE);
 
@@ -55,7 +56,8 @@ public class BaseSocketTest {
             assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
             assertArrayEquals(RESPONSE, baos.toByteArray());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            fail(e.getMessage());
         }
     }
+
 }

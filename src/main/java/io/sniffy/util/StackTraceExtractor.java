@@ -48,10 +48,10 @@ public class StackTraceExtractor {
             if (!traceElementClassName.startsWith(packageName) &&
                     !traceElementClassName.startsWith("java.security") &&
                     !traceElementClassName.startsWith("com.sun") &&
-                    !traceElementClassName.equals("io.sniffy.socket.SnifferSocketImpl") &&
-                    !traceElementClassName.equals("io.sniffy.socket.SnifferInputStream") &&
-                    !traceElementClassName.equals("io.sniffy.socket.SnifferOutputStream") &&
-                    !traceElementClassName.equals("io.sniffy.util.StackTraceExtractor")
+                    !"io.sniffy.socket.SnifferSocketImpl".equals(traceElementClassName) &&
+                    !"io.sniffy.socket.SnifferInputStream".equals(traceElementClassName) &&
+                    !"io.sniffy.socket.SnifferOutputStream".equals(traceElementClassName) &&
+                    !"io.sniffy.util.StackTraceExtractor".equals(traceElementClassName)
                     ) {
                 startIndex = i;
                 break;
