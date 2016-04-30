@@ -7,7 +7,6 @@ import io.sniffy.util.ExceptionUtil;
 
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
-import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +44,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     protected void addSocketOperation(SocketMetaData socketMetaData, SocketStats socketStats) {
         SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
         if (null != existingSocketStats) {
-            existingSocketStats.inc(socketStats);
+            existingSocketStats.accumulate(socketStats);
         }
     }
 
@@ -106,6 +105,8 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher) {
 
+        // TODO: deal with stack traces
+
         Map<SocketMetaData, SocketStats> socketOperations;
         switch (threadMatcher) {
             case CURRENT:
@@ -114,7 +115,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
                     if (entry.getKey().owner == this.owner) {
                         SocketStats existingSocketStats = socketOperations.putIfAbsent(entry.getKey(), entry.getValue());
                         if (null != existingSocketStats) {
-                            existingSocketStats.inc(entry.getValue());
+                            existingSocketStats.accumulate(entry.getValue());
                         }
                     }
                 }
@@ -125,7 +126,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
                     if (entry.getKey().owner != this.owner) {
                         SocketStats existingSocketStats = socketOperations.putIfAbsent(entry.getKey(), entry.getValue());
                         if (null != existingSocketStats) {
-                            existingSocketStats.inc(entry.getValue());
+                            existingSocketStats.accumulate(entry.getValue());
                         }
                     }
                 }

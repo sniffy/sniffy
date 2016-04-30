@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffer;
+import io.sniffy.trace.StackTraceExtractor;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.FileDescriptor;
@@ -11,9 +12,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static io.sniffy.trace.StackTraceExtractor.getTraceForProxiedMethod;
-import static io.sniffy.trace.StackTraceExtractor.printStackTrace;
 
 class SnifferSocketImpl extends SocketImpl {
 
@@ -34,7 +32,8 @@ class SnifferSocketImpl extends SocketImpl {
     }
 
     void logSocket(long millis, int bytesDown, int bytesUp) {
-        String stackTrace = null; // TODO: use StackTraceExtractor here
+        String stackTrace = StackTraceExtractor.printStackTrace(StackTraceExtractor.getTraceTillPackage("java.net"));
+        // TODO: remove empty calls (all equal to zero)
         if (null != address) Sniffer.logSocket(stackTrace, id, address, millis, bytesDown, bytesUp);
     }
 

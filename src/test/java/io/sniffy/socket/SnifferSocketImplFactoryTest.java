@@ -14,6 +14,8 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static io.sniffy.Threads.CURRENT;
@@ -47,25 +49,32 @@ public class SnifferSocketImplFactoryTest {
             thread.start();
             thread.join();
 
+            // Current thread socket operations
+
             assertFalse(
                     s.getSocketOperations(CURRENT).entrySet().stream().
                             filter((entry) -> entry.getKey().address.getAddress().equals(localhost)).
                             collect(Collectors.toList()).isEmpty()
             );
+
             assertEquals(
                     1,
                     s.getSocketOperations(CURRENT).entrySet().stream().
                             filter((entry) -> entry.getKey().address.getAddress().equals(localhost)).
-                            collect(Collectors.toList()).size()
+                            map((entry) -> new SocketMetaData(entry.getKey().address, entry.getKey().connectionId, null, entry.getKey().owner)).
+                            collect(Collectors.toSet()).size()
             );
 
             s.getSocketOperations(CURRENT).entrySet().stream().
                     filter((entry) -> entry.getKey().address.getAddress().equals(localhost)).
-                    findAny().
-                    ifPresent((entry) -> {
-                            assertEquals(REQUEST.length, entry.getValue().bytesUp.intValue());
-                            assertEquals(RESPONSE.length, entry.getValue().bytesDown.intValue());
+                    map(Map.Entry::getValue).
+                    reduce(SocketStats::combine).
+                    ifPresent((socketStats) -> {
+                            assertEquals(REQUEST.length, socketStats.bytesUp.intValue());
+                            assertEquals(RESPONSE.length, socketStats.bytesDown.intValue());
                     });
+
+            // Other threads socket operations
 
             assertFalse(
                     s.getSocketOperations(Threads.OTHERS).entrySet().stream().
@@ -76,16 +85,20 @@ public class SnifferSocketImplFactoryTest {
                     1,
                     s.getSocketOperations(Threads.OTHERS).entrySet().stream().
                             filter((entry) -> entry.getKey().address.getAddress().equals(localhost)).
-                            collect(Collectors.toList()).size()
+                            map((entry) -> new SocketMetaData(entry.getKey().address, entry.getKey().connectionId, null, entry.getKey().owner)).
+                            collect(Collectors.toSet()).size()
             );
 
             s.getSocketOperations(Threads.OTHERS).entrySet().stream().
                     filter((entry) -> entry.getKey().address.getAddress().equals(localhost)).
-                    findAny().
-                    ifPresent((entry) -> {
-                            assertEquals(REQUEST.length, entry.getValue().bytesUp.intValue());
-                            assertEquals(RESPONSE.length, entry.getValue().bytesDown.intValue());
+                    map(Map.Entry::getValue).
+                    reduce(SocketStats::combine).
+                    ifPresent((socketStats) -> {
+                        assertEquals(REQUEST.length, socketStats.bytesUp.intValue());
+                        assertEquals(RESPONSE.length, socketStats.bytesDown.intValue());
                     });
+
+            // Any threads socket operations
 
             assertFalse(
                     s.getSocketOperations(Threads.ANY).entrySet().stream().
@@ -96,12 +109,19 @@ public class SnifferSocketImplFactoryTest {
                     2,
                     s.getSocketOperations(Threads.ANY).entrySet().stream().
                             filter((entry) -> entry.getKey().address.getAddress().equals(localhost)).
-                            collect(Collectors.toList()).size()
+                            map((entry) -> new SocketMetaData(entry.getKey().address, entry.getKey().connectionId, null, entry.getKey().owner)).
+                            collect(Collectors.toSet()).size()
             );
 
-            s.getSocketOperations(Threads.ANY).entrySet().stream().
-                    filter((entry) -> entry.getKey().address.getAddress().equals(localhost)).
-                    forEach((entry) -> {
+            Map<SocketMetaData, SocketStats> collect = s.getSocketOperations(Threads.ANY).entrySet().stream().collect(
+                    Collectors.groupingBy(
+                            (entry) -> new SocketMetaData(entry.getKey().address, entry.getKey().connectionId, null, entry.getKey().owner),
+                            Collectors.mapping(Map.Entry::getValue, Collector.of(
+                                    SocketStats::new, SocketStats::accumulate, SocketStats::combine
+                            ))
+                    )
+            );
+            collect.entrySet().stream().forEach((entry) -> {
                             assertEquals(REQUEST.length, entry.getValue().bytesUp.intValue());
                             assertEquals(RESPONSE.length, entry.getValue().bytesDown.intValue());
                     });

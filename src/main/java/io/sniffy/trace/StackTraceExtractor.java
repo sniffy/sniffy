@@ -37,6 +37,34 @@ public class StackTraceExtractor {
         }
     }
 
+    // TODO: refactor this method
+    public static List<StackTraceElement> getTraceTillPackage(String packageName) {
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        // skip all elements until proxied call
+        int startIndex = 0;
+        for (int i = 1; i < stackTraceElements.length; i++) {
+            StackTraceElement traceElement = stackTraceElements[i];
+            String traceElementClassName = traceElement.getClassName();
+            if (!traceElementClassName.startsWith(packageName) &&
+                    !traceElementClassName.startsWith("java.security") &&
+                    !traceElementClassName.startsWith("com.sun") &&
+                    !traceElementClassName.equals("io.sniffy.socket.SnifferSocketImpl") &&
+                    !traceElementClassName.equals("io.sniffy.socket.SnifferInputStream") &&
+                    !traceElementClassName.equals("io.sniffy.socket.SnifferOutputStream") &&
+                    !traceElementClassName.equals("io.sniffy.trace.StackTraceExtractor")
+                    ) {
+                startIndex = i;
+                break;
+            }
+        }
+        if (startIndex <= 0) {
+            // no proxy, return entire collection
+            return Arrays.asList(stackTraceElements);
+        } else {
+            return Arrays.asList(Arrays.copyOfRange(stackTraceElements, startIndex, stackTraceElements.length - 1));
+        }
+    }
+
     public static String printStackTrace(List<StackTraceElement> stackTraceElements) {
         if (stackTraceElements == null) {
             return "";

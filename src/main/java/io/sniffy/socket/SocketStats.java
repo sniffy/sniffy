@@ -8,8 +8,11 @@ public class SocketStats {
     public final AtomicLong bytesDown = new AtomicLong();
     public final AtomicLong bytesUp = new AtomicLong();
 
+    public SocketStats() {
+    }
+
     public SocketStats(SocketStats that) {
-        inc(that);
+        accumulate(that);
     }
 
     public SocketStats(long elapsedTime, long bytesDown, long bytesUp) {
@@ -18,17 +21,15 @@ public class SocketStats {
         this.bytesUp.set(bytesUp);
     }
 
-    public void inc(SocketStats that) {
+    public void accumulate(SocketStats that) {
         elapsedTime.addAndGet(that.elapsedTime.get());
         bytesDown.addAndGet(that.bytesDown.get());
         bytesUp.addAndGet(that.bytesUp.get());
     }
 
-    public SocketStats dec(SocketStats that) {
+    public SocketStats combine(SocketStats that) {
         SocketStats result = new SocketStats(this);
-        result.elapsedTime.addAndGet(-1 * that.elapsedTime.get());
-        result.bytesDown.addAndGet(-1 * that.bytesDown.get());
-        result.bytesUp.addAndGet(-1 * that.bytesUp.get());
+        result.accumulate(that);
         return result;
     }
 
