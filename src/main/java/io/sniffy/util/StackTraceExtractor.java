@@ -1,4 +1,4 @@
-package io.sniffy.trace;
+package io.sniffy.util;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class StackTraceExtractor {
                     !traceElementClassName.equals("io.sniffy.socket.SnifferSocketImpl") &&
                     !traceElementClassName.equals("io.sniffy.socket.SnifferInputStream") &&
                     !traceElementClassName.equals("io.sniffy.socket.SnifferOutputStream") &&
-                    !traceElementClassName.equals("io.sniffy.trace.StackTraceExtractor")
+                    !traceElementClassName.equals("io.sniffy.util.StackTraceExtractor")
                     ) {
                 startIndex = i;
                 break;

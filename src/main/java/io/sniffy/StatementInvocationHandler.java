@@ -1,6 +1,6 @@
 package io.sniffy;
 
-import static io.sniffy.trace.StackTraceExtractor.*;
+import static io.sniffy.util.StackTraceExtractor.*;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;

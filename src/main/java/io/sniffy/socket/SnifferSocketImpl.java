@@ -1,7 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffer;
-import io.sniffy.trace.StackTraceExtractor;
+import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.FileDescriptor;
