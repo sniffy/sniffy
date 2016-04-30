@@ -16,7 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
-import static io.sniffy.Sniffer.DEFAULT_THREAD_MATCHER;
 import static io.sniffy.Threads.CURRENT;
 import static io.sniffy.util.ExceptionUtil.throwException;
 
@@ -213,7 +212,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @since 2.0
      */
     public int executedStatements() {
-        return executedStatements(DEFAULT_THREAD_MATCHER);
+        return executedStatements(CURRENT);
     }
 
     /**

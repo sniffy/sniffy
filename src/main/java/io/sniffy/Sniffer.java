@@ -202,20 +202,9 @@ public final class Sniffer {
         return spy().call(callable);
     }
 
-    protected final static Threads DEFAULT_THREAD_MATCHER = Threads.CURRENT;
 
 
-
-
-
-
-
-
-
-
-    // DPRECATED API
-
-
+    // DEPRECATED API
 
 
 
