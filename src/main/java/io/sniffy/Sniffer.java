@@ -34,17 +34,17 @@ public final class Sniffer {
 
     }
 
-    static synchronized WeakReference<Spy> registerSpy(Spy spy) {
+    protected static synchronized WeakReference<Spy> registerSpy(Spy spy) {
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
         registeredSpies.add(spyReference);
         return spyReference;
     }
 
-    static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
+    protected static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
         registeredSpies.remove(spyReference);
     }
 
-    static List<WeakReference<Spy>> registeredSpies() {
+    protected static List<WeakReference<Spy>> registeredSpies() {
         return Collections.unmodifiableList(registeredSpies);
     }
 
