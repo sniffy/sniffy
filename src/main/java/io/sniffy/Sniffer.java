@@ -123,6 +123,10 @@ public final class Sniffer {
         return new Spy<T>(); // TODO: implement spy listenning only for changes from threads
     }
 
+    public static Spy expect(Spy.Expectation expectation) {
+        return spy().expect(expectation);
+    }
+
     /**
      * @param expectationList a list of {@link Expectation} annotations
      * @return a new {@link Spy} instance with given expectations
