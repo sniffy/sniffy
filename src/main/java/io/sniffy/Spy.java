@@ -2,6 +2,7 @@ package io.sniffy;
 
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlQueries;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
 
@@ -191,627 +192,31 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     }
 
-    // never methods
+
+    // Expect and verify methods
+
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
+     * @param expectation
+     * @return
+     * @since 3.1
      */
-    public C expectNever() {
+    public C expect(Expectation expectation) {
         checkOpened();
-        return expectNever(DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expectNever(Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 0, threadMatcher, Query.ANY));
+        expectations.add(expectation);
         return self();
     }
 
     /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
+     * @param expectation
+     * @return
+     * @since 3.1
      */
-    public C expectNever(Query query) {
+    public C verify(Expectation expectation) {
         checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 0, DEFAULT_THREAD_MATCHER, query));
+        expectation.verify(this);
         return self();
     }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectNever(Threads threadMatcher, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 0, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectNever(Query query, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 0, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verifyNever() throws WrongNumberOfQueriesError {
-        checkOpened();
-        return verifyNever(DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verifyNever(Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, 0, threadMatcher, Query.ANY).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyNever(Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, 0, DEFAULT_THREAD_MATCHER, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyNever(Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, 0, threadMatcher, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyNever(Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, 0, threadMatcher, query).validate();
-        return self();
-    }
-
-    // atMostOnce methods
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expectAtMostOnce() {
-        checkOpened();
-        return expectAtMostOnce(DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expectAtMostOnce(Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 1, threadMatcher, Query.ANY));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectAtMostOnce(Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 1, DEFAULT_THREAD_MATCHER, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectAtMostOnce(Threads threadMatcher, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 1, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectAtMostOnce(Query query, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, 1, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verifyAtMostOnce() throws WrongNumberOfQueriesError {
-        checkOpened();
-        return verifyAtMostOnce(DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verifyAtMostOnce(Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, 1, threadMatcher, Query.ANY).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyAtMostOnce(Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, 1, DEFAULT_THREAD_MATCHER, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyAtMostOnce(Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, 1, threadMatcher, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyAtMostOnce(Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, 1, threadMatcher, query).validate();
-        return self();
-    }
-
-    // atMost methods
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expectAtMost(int allowedStatements) {
-        checkOpened();
-        return expectAtMost(allowedStatements, DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expectAtMost(int allowedStatements, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, Query.ANY));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectAtMost(int allowedStatements, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, allowedStatements, DEFAULT_THREAD_MATCHER, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectAtMost(int allowedStatements, Threads threadMatcher, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectAtMost(int allowedStatements, Query query, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verifyAtMost(int allowedStatements) throws WrongNumberOfQueriesError {
-        checkOpened();
-        return verifyAtMost(allowedStatements, DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verifyAtMost(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, Query.ANY).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyAtMost(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, allowedStatements, DEFAULT_THREAD_MATCHER, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyAtMost(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyAtMost(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(0, allowedStatements, threadMatcher, query).validate();
-        return self();
-    }
-
-    // exact methods
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expect(int allowedStatements) {
-        checkOpened();
-        return expect(allowedStatements, DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expect(int allowedStatements, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, Query.ANY));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
-     */
-    public C expect(int allowedStatements, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, allowedStatements, DEFAULT_THREAD_MATCHER, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expect(int allowedStatements, Threads threadMatcher, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expect(int allowedStatements, Query query, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verify(int allowedStatements) throws WrongNumberOfQueriesError {
-        checkOpened();
-        return verify(allowedStatements, DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verify(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, Query.ANY).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
-     */
-    public C verify(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, allowedStatements, DEFAULT_THREAD_MATCHER, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verify(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verify(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, allowedStatements, threadMatcher, query).validate();
-        return self();
-    }
-
-    // atLeast methods
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expectAtLeast(int allowedStatements) {
-        checkOpened();
-        return expectAtLeast(allowedStatements, DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expectAtLeast(int allowedStatements, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, Query.ANY));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectAtLeast(int allowedStatements, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, DEFAULT_THREAD_MATCHER, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectAtLeast(int allowedStatements, Threads threadMatcher, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C expectAtLeast(int allowedStatements, Query query, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verifyAtLeast(int allowedStatements) throws WrongNumberOfQueriesError {
-        checkOpened();
-        return verifyAtLeast(allowedStatements, DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verifyAtLeast(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, Query.ANY).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyAtLeast(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, DEFAULT_THREAD_MATCHER, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyAtLeast(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, query).validate();
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@code queryType}
-     * @since 2.2
-     */
-    public C verifyAtLeast(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(allowedStatements, Integer.MAX_VALUE, threadMatcher, query).validate();
-        return self();
-    }
-
-    // between methods
-
-    /**
-     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C expectBetween(int minAllowedStatements, int maxAllowedStatements) {
-        checkOpened();
-        return expectBetween(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Adds an expectation to the current instance that at least {@code minAllowedStatements} and at most
-     * {@code maxAllowedStatements} were called between the creation of the current instance
-     * and a call to {@link #verify()} method
-     * @since 2.0
-     */
-    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, Query.ANY));
-        return self();
-    }
-
-    /**
-     * Adds an expectation to the current instance that at least {@code minAllowedStatements} and at most
-     * {@code maxAllowedStatements} were called between the creation of the current instance
-     * and a call to {@link #verify()} method
-     * @since 2.2
-     */
-    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER, query));
-        return self();
-    }
-
-    /**
-     * Adds an expectation to the current instance that at least {@code minAllowedStatements} and at most
-     * {@code maxAllowedStatements} were called between the creation of the current instance
-     * and a call to {@link #verify()} method
-     * @since 2.2
-     */
-    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Adds an expectation to the current instance that at least {@code minAllowedStatements} and at most
-     * {@code maxAllowedStatements} were called between the creation of the current instance
-     * and a call to {@link #verify()} method
-     * @since 2.2
-     */
-    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) {
-        checkOpened();
-        expectations.add(new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, query));
-        return self();
-    }
-
-    /**
-     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments {@code minAllowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
-     * @since 2.0
-     */
-    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements) throws WrongNumberOfQueriesError {
-        checkOpened();
-        return verifyBetween(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER);
-    }
-
-    /**
-     * Verifies that at least {@code minAllowedStatements} and at most
-     * {@code maxAllowedStatements} were called between the creation of the current instance
-     * and a call to {@link #verify()} method
-     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
-     * @since 2.0
-     */
-    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, Query.ANY).validate();
-        return self();
-    }
-
-    /**
-     * Verifies that at least {@code minAllowedStatements} and at most
-     * {@code maxAllowedStatements} were called between the creation of the current instance
-     * and a call to {@link #verify()} method
-     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
-     * @since 2.2
-     */
-    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, DEFAULT_THREAD_MATCHER, query).validate();
-        return self();
-    }
-
-    /**
-     * Verifies that at least {@code minAllowedStatements} and at most
-     * {@code maxAllowedStatements} were called between the creation of the current instance
-     * and a call to {@link #verify()} method
-     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
-     * @since 2.2
-     */
-    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, query).validate();
-        return self();
-    }
-
-    /**
-     * Verifies that at least {@code minAllowedStatements} and at most
-     * {@code maxAllowedStatements} were called between the creation of the current instance
-     * and a call to {@link #verify()} method
-     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
-     * @since 2.2
-     */
-    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        checkOpened();
-        new ThreadMatcherExpectation(minAllowedStatements, maxAllowedStatements, threadMatcher, query).validate();
-        return self();
-    }
-
-    // end
 
     /**
      * Verifies all expectations added previously using {@code expect} methods family
@@ -837,7 +242,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         Throwable currentException = null;
         for (Expectation expectation : expectations) {
             try {
-                expectation.validate();
+                expectation.verify(this);
             } catch (WrongNumberOfQueriesError e) {
                 if (null == assertionError) {
                     currentException = assertionError = e;
@@ -950,45 +355,602 @@ public class Spy<C extends Spy<C>> implements Closeable {
         return new RuntimeException(e);
     }
 
-    private interface Expectation {
+    public interface Expectation {
 
-        void validate() throws WrongNumberOfQueriesError;
-
-    }
-
-    private class ThreadMatcherExpectation implements Expectation {
-
-        private final int minimumQueries;
-        private final int maximumQueries;
-        private final Threads threadMatcher;
-        private final Query query;
-
-        public ThreadMatcherExpectation(int minimumQueries, int maximumQueries, Threads threadMatcher, Query query) {
-            this.minimumQueries = minimumQueries;
-            this.maximumQueries = maximumQueries;
-            this.threadMatcher = threadMatcher;
-            this.query = query;
-        }
-
-        public void validate() throws WrongNumberOfQueriesError {
-
-            int numQueries = executedStatements(threadMatcher, query);
-
-            if (numQueries > maximumQueries || numQueries < minimumQueries) {
-                throw new WrongNumberOfQueriesError(
-                        threadMatcher, query,
-                        minimumQueries, maximumQueries, numQueries,
-                        getExecutedStatements(threadMatcher)
-                );
-            }
-
-        }
+        <T extends Spy<T>> Spy<T> verify(Spy<T> spy) throws WrongNumberOfQueriesError;
 
     }
 
     @SuppressWarnings("unchecked")
     private C self() {
         return (C) this;
+    }
+
+
+
+
+
+
+
+
+
+    // DEPRECATED API
+
+
+
+
+
+    // never methods
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectNever() {
+        return expect(SqlQueries.none());
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectNever(Threads threadMatcher) {
+        return expect(SqlQueries.none().threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectNever(Query query) {
+        return expect(SqlQueries.none().type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectNever(Threads threadMatcher, Query query) {
+        return expect(SqlQueries.none().threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectNever(Query query, Threads threadMatcher) {
+        return expect(SqlQueries.none().type(query).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyNever() throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.none());
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyNever(Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.none().threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyNever(Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.none().type(query));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyNever(Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.none().threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 0, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyNever(Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.none().type(query).threads(threadMatcher));
+    }
+
+    // atMostOnce methods
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectAtMostOnce() {
+        return expect(SqlQueries.atMostOnce());
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectAtMostOnce(Threads threadMatcher) {
+        return expect(SqlQueries.atMostOnce().threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectAtMostOnce(Query query) {
+        return expect(SqlQueries.atMostOnce().type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectAtMostOnce(Threads threadMatcher, Query query) {
+        return expect(SqlQueries.atMostOnce().threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectAtMostOnce(Query query, Threads threadMatcher) {
+        return expect(SqlQueries.atMostOnce().type(query).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyAtMostOnce() throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.atMostOnce());
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyAtMostOnce(Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.atMostOnce().threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyAtMostOnce(Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.atMostOnce().type(query));
+
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyAtMostOnce(Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.atMostOnce().threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, 1, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyAtMostOnce(Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.atMostOnce().type(query).threads(threadMatcher));
+    }
+
+    // atMost methods
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectAtMost(int allowedStatements) {
+        return expect(SqlQueries.max(allowedStatements));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectAtMost(int allowedStatements, Threads threadMatcher) {
+        return expect(SqlQueries.max(allowedStatements).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectAtMost(int allowedStatements, Query query) {
+        return expect(SqlQueries.max(allowedStatements).type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectAtMost(int allowedStatements, Threads threadMatcher, Query query) {
+        return expect(SqlQueries.max(allowedStatements).threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectAtMost(int allowedStatements, Query query, Threads threadMatcher) {
+        return expect(SqlQueries.max(allowedStatements).type(query).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyAtMost(int allowedStatements) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.max(allowedStatements));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyAtMost(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.max(allowedStatements).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyAtMost(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.max(allowedStatements).type(query));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyAtMost(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.max(allowedStatements).threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments 0, {@code allowedStatements}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyAtMost(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.max(allowedStatements).type(query).threads(threadMatcher));
+    }
+
+    // exact methods
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expect(int allowedStatements) {
+        return expect(SqlQueries.exact(allowedStatements));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expect(int allowedStatements, Threads threadMatcher) {
+        return expect(SqlQueries.exact(allowedStatements).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expect(int allowedStatements, Query query) {
+        return expect(SqlQueries.exact(allowedStatements).type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expect(int allowedStatements, Threads threadMatcher, Query query) {
+        return expect(SqlQueries.exact(allowedStatements).threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expect(int allowedStatements, Query query, Threads threadMatcher) {
+        return expect(SqlQueries.exact(allowedStatements).type(query).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verify(int allowedStatements) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.exact(allowedStatements));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verify(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.exact(allowedStatements).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verify(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.exact(allowedStatements).type(query));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verify(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.exact(allowedStatements).threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@code allowedStatements}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verify(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.exact(allowedStatements).type(query).threads(threadMatcher));
+    }
+
+    // atLeast methods
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectAtLeast(int allowedStatements) {
+        return expect(SqlQueries.min(allowedStatements));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectAtLeast(int allowedStatements, Threads threadMatcher) {
+        return expect(SqlQueries.min(allowedStatements).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectAtLeast(int allowedStatements, Query query) {
+        return expect(SqlQueries.min(allowedStatements).type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectAtLeast(int allowedStatements, Threads threadMatcher, Query query) {
+        return expect(SqlQueries.min(allowedStatements).threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectAtLeast(int allowedStatements, Query query, Threads threadMatcher) {
+        return expect(SqlQueries.min(allowedStatements).type(query).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyAtLeast(int allowedStatements) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.min(allowedStatements));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyAtLeast(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.min(allowedStatements).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@link Threads#CURRENT}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyAtLeast(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.min(allowedStatements).type(query));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyAtLeast(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.min(allowedStatements).threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads, Query)} with arguments {@code allowedStatements}, {@link Integer#MAX_VALUE}, {@code threads}, {@code queryType}
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyAtLeast(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.min(allowedStatements).type(query).threads(threadMatcher));
+    }
+
+    // between methods
+
+    /**
+     * Alias for {@link #expectBetween(int, int, Threads, Query)} with arguments {@code minAllowedStatements}, {@code maxAllowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectBetween(int minAllowedStatements, int maxAllowedStatements) {
+        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements));
+    }
+
+    /**
+     * Adds an expectation to the current instance that at least {@code minAllowedStatements} and at most
+     * {@code maxAllowedStatements} were called between the creation of the current instance
+     * and a call to {@link #verify()} method
+     * @since 2.0
+     */
+    @Deprecated
+    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
+        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).threads(threadMatcher));
+    }
+
+    /**
+     * Adds an expectation to the current instance that at least {@code minAllowedStatements} and at most
+     * {@code maxAllowedStatements} were called between the creation of the current instance
+     * and a call to {@link #verify()} method
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query) {
+        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query));
+    }
+
+    /**
+     * Adds an expectation to the current instance that at least {@code minAllowedStatements} and at most
+     * {@code maxAllowedStatements} were called between the creation of the current instance
+     * and a call to {@link #verify()} method
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) {
+        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Adds an expectation to the current instance that at least {@code minAllowedStatements} and at most
+     * {@code maxAllowedStatements} were called between the creation of the current instance
+     * and a call to {@link #verify()} method
+     * @since 2.2
+     */
+    @Deprecated
+    public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) {
+        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query).threads(threadMatcher));
+    }
+
+    /**
+     * Alias for {@link #verifyBetween(int, int, Threads)} with arguments {@code minAllowedStatements}, {@link Threads#CURRENT}, {@link Query#ANY}
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements));
+    }
+
+    /**
+     * Verifies that at least {@code minAllowedStatements} and at most
+     * {@code maxAllowedStatements} were called between the creation of the current instance
+     * and a call to {@link #verify()} method
+     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
+     * @since 2.0
+     */
+    @Deprecated
+    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements).threads(threadMatcher));
+    }
+
+    /**
+     * Verifies that at least {@code minAllowedStatements} and at most
+     * {@code maxAllowedStatements} were called between the creation of the current instance
+     * and a call to {@link #verify()} method
+     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query));
+    }
+
+    /**
+     * Verifies that at least {@code minAllowedStatements} and at most
+     * {@code maxAllowedStatements} were called between the creation of the current instance
+     * and a call to {@link #verify()} method
+     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(query));
+    }
+
+    /**
+     * Verifies that at least {@code minAllowedStatements} and at most
+     * {@code maxAllowedStatements} were called between the creation of the current instance
+     * and a call to {@link #verify()} method
+     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
+     * @since 2.2
+     */
+    @Deprecated
+    public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
+        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query).threads(threadMatcher));
     }
 
 }
