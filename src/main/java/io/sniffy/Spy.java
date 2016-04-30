@@ -8,6 +8,8 @@ import io.sniffy.util.ExceptionUtil;
 
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -105,18 +107,47 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher) {
+        return getSocketOperations(threadMatcher, null, true);
+    }
 
-        // TODO: deal with stack traces
+    public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher, String address, boolean removeStackTraces) {
+
+        String hostName = null;
+        Integer port = null;
+
+        if (null != address) {
+            if (-1 != address.indexOf(':')) {
+                String[] split = address.split(":");
+                hostName = split[0];
+                port = Integer.valueOf(split[1]);
+            } else {
+                hostName = address;
+            }
+        }
 
         Map<SocketMetaData, SocketStats> socketOperations;
         switch (threadMatcher) {
             case CURRENT:
                 socketOperations = new HashMap<SocketMetaData, SocketStats>();
                 for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.entrySet()) {
-                    if (entry.getKey().owner == this.owner) {
-                        SocketStats existingSocketStats = socketOperations.putIfAbsent(entry.getKey(), entry.getValue());
+
+                    SocketMetaData socketMetaData = entry.getKey();
+
+                    if (removeStackTraces) socketMetaData = new SocketMetaData(
+                            socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.owner
+                    );
+
+                    InetSocketAddress socketAddress = socketMetaData.address;
+                    InetAddress inetAddress = socketAddress.getAddress();
+
+                    if (socketMetaData.owner == this.owner &&
+                            (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
+                            (null == port || port == socketAddress.getPort())
+                            ) {
+                        SocketStats socketStats = new SocketStats(entry.getValue());
+                        SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
                         if (null != existingSocketStats) {
-                            existingSocketStats.accumulate(entry.getValue());
+                            existingSocketStats.accumulate(socketStats);
                         }
                     }
                 }
@@ -124,16 +155,50 @@ public class Spy<C extends Spy<C>> implements Closeable {
             case OTHERS:
                 socketOperations = new HashMap<SocketMetaData, SocketStats>();
                 for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.entrySet()) {
-                    if (entry.getKey().owner != this.owner) {
-                        SocketStats existingSocketStats = socketOperations.putIfAbsent(entry.getKey(), entry.getValue());
+
+                    SocketMetaData socketMetaData = entry.getKey();
+
+                    if (removeStackTraces) socketMetaData = new SocketMetaData(
+                            socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.owner
+                    );
+
+                    InetSocketAddress socketAddress = socketMetaData.address;
+                    InetAddress inetAddress = socketAddress.getAddress();
+
+                    if (socketMetaData.owner != this.owner &&
+                            (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
+                            (null == port || port == socketAddress.getPort())
+                            ) {
+                        SocketStats socketStats = new SocketStats(entry.getValue());
+                        SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
                         if (null != existingSocketStats) {
-                            existingSocketStats.accumulate(entry.getValue());
+                            existingSocketStats.accumulate(socketStats);
                         }
                     }
                 }
                 break;
             case ANY:
-                socketOperations = new HashMap<SocketMetaData, SocketStats>(this.socketOperations);
+                socketOperations = new HashMap<SocketMetaData, SocketStats>();
+                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.entrySet()) {
+
+                    SocketMetaData socketMetaData = entry.getKey();
+
+                    if (removeStackTraces) socketMetaData = new SocketMetaData(
+                            socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.owner
+                    );
+
+                    InetSocketAddress socketAddress = socketMetaData.address;
+                    InetAddress inetAddress = socketAddress.getAddress();
+
+                    if ((null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
+                            (null == port || port == socketAddress.getPort()) ) {
+                        SocketStats socketStats = new SocketStats(entry.getValue());
+                        SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
+                        if (null != existingSocketStats) {
+                            existingSocketStats.accumulate(socketStats);
+                        }
+                    }
+                }
                 break;
             default:
                 throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
@@ -357,7 +422,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     public interface Expectation {
 
-        <T extends Spy<T>> Spy<T> verify(Spy<T> spy) throws WrongNumberOfQueriesError;
+        <T extends Spy<T>> Spy<T> verify(Spy<T> spy) throws SniffyAssertionError;
 
     }
 
@@ -871,6 +936,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query) {
+        // TODO: try to call here verify instead of expect and see if test fails
         return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query));
     }
 

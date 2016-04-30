@@ -5,6 +5,7 @@ import io.sniffy.Spy;
 import io.sniffy.Threads;
 import io.sniffy.WrongNumberOfQueriesError;
 
+// TODO add validation to methods
 public class SqlQueries {
 
     private SqlQueries() {
@@ -35,7 +36,7 @@ public class SqlQueries {
         return new SqlExpectation_Max(max);
     }
 
-    private static class SqlExpectation implements Spy.Expectation{
+    private static class SqlExpectation implements Spy.Expectation {
 
         protected final int min;
         protected final int max;
