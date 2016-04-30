@@ -1,6 +1,7 @@
 package io.sniffy;
 
 import io.sniffy.log.QueryLogger;
+import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.StatementMetaData;
 
@@ -11,6 +12,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.sniffy.trace.StackTraceExtractor.getTraceForProxiedMethod;
+import static io.sniffy.trace.StackTraceExtractor.printStackTrace;
 
 /**
  * Sniffer is an entry point for using Sniffy library
@@ -27,6 +32,8 @@ public final class Sniffer {
     }
 
     // Registered listeners (i.e. spies)
+
+    private final static AtomicInteger executedStatementsGlobalCounter = new AtomicInteger();
 
     private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
 
@@ -57,7 +64,7 @@ public final class Sniffer {
         }
     }
 
-    private static synchronized void notifyListeners(InetSocketAddress address, int connectionId, SocketStats socketStats) {
+    private static synchronized void notifyListeners(SocketMetaData socketMetaData, SocketStats socketStats) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -65,55 +72,40 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addSocketOperation(address, new SocketStats(socketStats));
+                spy.addSocketOperation(socketMetaData, new SocketStats(socketStats));
             }
         }
     }
 
-    // query counters
-
-    static final Counter COUNTER = new Counter();
-
-    static final ThreadLocal<Counter> THREAD_LOCAL_COUNTER = new ThreadLocal<Counter>() {
-
-        @Override
-        protected Counter initialValue() {
-            return new Counter();
-        }
-
-    };
-
-    public static void logSocket(int id, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
+    public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
         // TODO log socket operation
 
         // increment counters
         SocketStats socketStats = new SocketStats(elapsedTime, bytesDown, bytesUp);
-        COUNTER.socketOperation(address, id, new SocketStats(socketStats));
-        THREAD_LOCAL_COUNTER.get().socketOperation(address, id, new SocketStats(socketStats));
+        SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread());
 
         // notify listeners
-        notifyListeners(address, id, socketStats);
+        notifyListeners(socketMetaData, socketStats);
     }
 
     protected static void executeStatement(String sql, long elapsedTime, String stackTrace) {
         // log query
         QueryLogger.logQuery(sql, elapsedTime);
 
-        // increment counters
-        StatementMetaData statementMetaData = StatementMetaData.parse(sql, elapsedTime, stackTrace);
-        COUNTER.executeStatement(statementMetaData.query);
-        THREAD_LOCAL_COUNTER.get().executeStatement(statementMetaData.query);
+        // increment global counter
+        executedStatementsGlobalCounter.incrementAndGet();
 
         // notify listeners
-        notifyListeners(statementMetaData);
+        notifyListeners(StatementMetaData.parse(sql, elapsedTime, stackTrace));
     }
 
     /**
      * @return number of SQL statements executed by current thread since some fixed moment of time
      * @since 1.0
      */
+    @Deprecated
     public static int executedStatements() {
-        return COUNTER.executedStatements(Query.ANY);
+        return executedStatementsGlobalCounter.intValue();
     }
 
     /**
@@ -122,6 +114,14 @@ public final class Sniffer {
      */
     public static <T extends Spy<T>> Spy<? extends Spy<T>> spy() {
         return new Spy<T>();
+    }
+
+    /**
+     * @return a new {@link Spy} instance
+     * @since 2.0
+     */
+    public static <T extends Spy<T>> Spy<? extends Spy<T>> spy(Threads threads) {
+        return new Spy<T>(); // TODO: implement spy listenning only for changes from threads
     }
 
     // never methods

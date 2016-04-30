@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
@@ -14,6 +15,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 import static io.sniffy.Sniffer.DEFAULT_THREAD_MATCHER;
+import static io.sniffy.Threads.CURRENT;
 import static io.sniffy.util.ExceptionUtil.throwException;
 
 /**
@@ -24,46 +26,27 @@ import static io.sniffy.util.ExceptionUtil.throwException;
  */
 public class Spy<C extends Spy<C>> implements Closeable {
 
-    private Counter initialCount;
-    private Counter initialThreadLocalCount;
-
+    // TODO: add invocationcount to StatementMetaData; collapse similar queries
     private volatile Collection<StatementMetaData> executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
+    private volatile ConcurrentMap<SocketMetaData, SocketStats> socketOperations = new ConcurrentHashMap<SocketMetaData, SocketStats>();
+
     private final WeakReference<Spy> selfReference;
     private final Thread owner;
 
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
 
-    private volatile ConcurrentMap<Thread, ConcurrentMap<InetSocketAddress, SocketStats>> socketOperations =
-            new ConcurrentHashMap<Thread, ConcurrentMap<InetSocketAddress, SocketStats>>();
+    private List<Expectation> expectations = new ArrayList<Expectation>();
 
     protected void addExecutedStatement(StatementMetaData statementMetaData) {
         executedStatements.add(statementMetaData);
     }
 
-    protected void addSocketOperation(InetSocketAddress address, SocketStats socketStats) {
-
-        Thread currentThread = Thread.currentThread();
-
-        ConcurrentMap<InetSocketAddress, SocketStats> threadSocketOperations = new ConcurrentHashMap<InetSocketAddress, SocketStats>();
-        ConcurrentMap<InetSocketAddress, SocketStats> existingThreadSocketOperations = socketOperations.putIfAbsent(
-                currentThread, threadSocketOperations
-        );
-        if (null != existingThreadSocketOperations) {
-            threadSocketOperations = existingThreadSocketOperations;
-        }
-
-        SocketStats existingSocketStats = threadSocketOperations.putIfAbsent(address, socketStats);
+    protected void addSocketOperation(SocketMetaData socketMetaData, SocketStats socketStats) {
+        SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
         if (null != existingSocketStats) {
             existingSocketStats.inc(socketStats);
         }
-
-    }
-
-    public Map<InetSocketAddress, SocketStats> getSocketOperations() {
-        return getSocketOperations(Threads.CURRENT);
-        /*ConcurrentMap<String, SocketStats> threadSocketOperations = socketOperations.get(Thread.currentThread());
-        return Collections.unmodifiableMap(null == threadSocketOperations ? Collections.<String, SocketStats>emptyMap() : threadSocketOperations);*/
     }
 
     protected void resetExecutedStatements() {
@@ -71,7 +54,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     protected void resetSocketOpertions() {
-        socketOperations.clear();
+        socketOperations = new ConcurrentHashMap<SocketMetaData, SocketStats>();
     }
 
     public List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
@@ -88,15 +71,16 @@ public class Spy<C extends Spy<C>> implements Closeable {
             case OTHERS:
                 statements = new ArrayList<StatementMetaData>();
                 for (StatementMetaData statement : executedStatements) {
-                    if (statement.owner == this.owner) {
+                    if (statement.owner != this.owner) {
                         statements.add(statement);
                     }
                 }
                 break;
             case ANY:
-            default:
                 statements = new ArrayList<StatementMetaData>(executedStatements);
                 break;
+            default:
+                throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
         }
         return Collections.unmodifiableList(statements);
     }
@@ -107,13 +91,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
         reset();
     }
 
-    private void initNumberOfQueries() {
-        this.initialCount = new Counter(Sniffer.COUNTER);
-        this.initialThreadLocalCount = new Counter(Sniffer.THREAD_LOCAL_COUNTER.get());
-    }
-
-    private List<Expectation> expectations = new ArrayList<Expectation>();
-
     /**
      * Wrapper for {@link Sniffer#spy()} method; useful for chaining
      * @return a new {@link Spy} instance
@@ -121,64 +98,46 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     public Spy reset() {
         checkOpened();
-        initNumberOfQueries();
         resetExecutedStatements();
         resetSocketOpertions();
         expectations.clear();
         return self();
     }
 
-    public Map<InetSocketAddress, SocketStats> getSocketOperations(Threads threadMatcher) {
+    public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher) {
 
-        checkOpened();
-
+        Map<SocketMetaData, SocketStats> socketOperations;
         switch (threadMatcher) {
-            case ANY:
-                return diffSocketOperations(
-                        Sniffer.COUNTER.getSocketOperations(),
-                        initialCount.getSocketOperations()
-                );
             case CURRENT:
-                return diffSocketOperations(
-                        Sniffer.THREAD_LOCAL_COUNTER.get().getSocketOperations(),
-                        initialThreadLocalCount.getSocketOperations()
-                );
+                socketOperations = new HashMap<SocketMetaData, SocketStats>();
+                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.entrySet()) {
+                    if (entry.getKey().owner == this.owner) {
+                        SocketStats existingSocketStats = socketOperations.putIfAbsent(entry.getKey(), entry.getValue());
+                        if (null != existingSocketStats) {
+                            existingSocketStats.inc(entry.getValue());
+                        }
+                    }
+                }
+                break;
             case OTHERS:
-                return diffSocketOperations(
-                        diffSocketOperations(
-                                Sniffer.COUNTER.getSocketOperations(),
-                                initialCount.getSocketOperations()
-                        ),
-                        diffSocketOperations(
-                                Sniffer.THREAD_LOCAL_COUNTER.get().getSocketOperations(),
-                                initialThreadLocalCount.getSocketOperations()
-                        )
-                );
+                socketOperations = new HashMap<SocketMetaData, SocketStats>();
+                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.entrySet()) {
+                    if (entry.getKey().owner != this.owner) {
+                        SocketStats existingSocketStats = socketOperations.putIfAbsent(entry.getKey(), entry.getValue());
+                        if (null != existingSocketStats) {
+                            existingSocketStats.inc(entry.getValue());
+                        }
+                    }
+                }
+                break;
+            case ANY:
+                socketOperations = new HashMap<SocketMetaData, SocketStats>(this.socketOperations);
+                break;
             default:
                 throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
         }
 
-    }
-
-    // TODO: move to some utility class
-    protected static Map<InetSocketAddress, SocketStats> diffSocketOperations(Map<InetSocketAddress, SocketStats> currentSocketOperations,
-                                                                             Map<InetSocketAddress, SocketStats> initialSocketOperations) {
-        Map<InetSocketAddress, SocketStats> diff = new HashMap<InetSocketAddress, SocketStats>();
-
-        for (Map.Entry<InetSocketAddress, SocketStats> entry : currentSocketOperations.entrySet()) {
-
-            InetSocketAddress key = entry.getKey();
-
-            if (initialSocketOperations.containsKey(key)) {
-                diff.put(key, entry.getValue().dec(initialSocketOperations.get(key)));
-                // TODO: check if null
-            } else {
-                diff.put(key, entry.getValue());
-            }
-
-        }
-
-        return diff;
+        return Collections.unmodifiableMap(socketOperations);
 
     }
 
@@ -205,20 +164,29 @@ public class Spy<C extends Spy<C>> implements Closeable {
      * @since 2.2
      */
     public int executedStatements(Threads threadMatcher, Query query) {
-
         checkOpened();
+
+        int count = 0;
 
         switch (threadMatcher) {
             case ANY:
-                return Sniffer.COUNTER.executedStatements(query) - initialCount.executedStatements(query);
+                if (query == Query.ANY) count = executedStatements.size();
+                else for (StatementMetaData statementMetaData : executedStatements) {
+                    if (query == statementMetaData.query) count++;
+                }
+                break;
             case CURRENT:
-                return Sniffer.THREAD_LOCAL_COUNTER.get().executedStatements(query) - initialThreadLocalCount.executedStatements(query);
             case OTHERS:
-                return Sniffer.COUNTER.executedStatements(query) - Sniffer.THREAD_LOCAL_COUNTER.get().executedStatements(query)
-                        - initialCount.executedStatements(query) + initialThreadLocalCount.executedStatements(query);
+                for (StatementMetaData statementMetaData : executedStatements) {
+                    if (Thread.currentThread().equals(statementMetaData.owner) == (CURRENT == threadMatcher) &&
+                            (query == Query.ANY || query == statementMetaData.query)) count++;
+                }
+                break;
             default:
                 throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
         }
+
+        return count;
 
     }
 

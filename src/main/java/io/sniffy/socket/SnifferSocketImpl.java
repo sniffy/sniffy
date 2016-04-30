@@ -12,6 +12,9 @@ import java.lang.reflect.Method;
 import java.net.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.sniffy.trace.StackTraceExtractor.getTraceForProxiedMethod;
+import static io.sniffy.trace.StackTraceExtractor.printStackTrace;
+
 class SnifferSocketImpl extends SocketImpl {
 
     private final SocketImpl delegate;
@@ -31,7 +34,8 @@ class SnifferSocketImpl extends SocketImpl {
     }
 
     void logSocket(long millis, int bytesDown, int bytesUp) {
-        if (null != address) Sniffer.logSocket(id, address, millis, bytesDown, bytesUp);
+        String stackTrace = null; // TODO: use StackTraceExtractor here
+        if (null != address) Sniffer.logSocket(stackTrace, id, address, millis, bytesDown, bytesUp);
     }
 
     // TODO in order to support server sockets we should also copy fields to delegate
