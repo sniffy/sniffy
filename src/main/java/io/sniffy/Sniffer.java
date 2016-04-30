@@ -4,6 +4,7 @@ import io.sniffy.log.QueryLogger;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.Range;
 
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
@@ -13,9 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static io.sniffy.trace.StackTraceExtractor.getTraceForProxiedMethod;
-import static io.sniffy.trace.StackTraceExtractor.printStackTrace;
 
 /**
  * Sniffer is an entry point for using Sniffy library
@@ -446,17 +444,19 @@ public final class Sniffer {
         Spy spy = Sniffer.spy();
 
         for (Expectation expectation : expectationList) {
-            if (-1 != expectation.value()) {
-                spy.expect(expectation.value(), expectation.threads(), expectation.query());
-            }
-            if (-1 != expectation.atLeast() && -1 != expectation.atMost()) {
-                spy.expectBetween(expectation.atLeast(), expectation.atMost(),
+
+            Range range = Range.parse(expectation);
+
+            if (-1 != range.value) {
+                spy.expect(range.value, expectation.threads(), expectation.query());
+            } else if (-1 != range.min && -1 != range.max) {
+                spy.expectBetween(range.min, range.max,
                         expectation.threads(), expectation.query());
-            } else if (-1 != expectation.atLeast()) {
-                spy.expectAtLeast(expectation.atLeast(),
+            } else if (-1 != range.min) {
+                spy.expectAtLeast(range.min,
                         expectation.threads(), expectation.query());
-            } else if (-1 != expectation.atMost()) {
-                spy.expectAtMost(expectation.atMost(),
+            } else if (-1 != range.max) {
+                spy.expectAtMost(range.max,
                         expectation.threads(), expectation.query());
             }
         }

@@ -1,7 +1,7 @@
 package io.sniffy.junit;
 
 import io.sniffy.*;
-import io.sniffy.*;
+import io.sniffy.util.Range;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -63,10 +63,10 @@ public class QueryCounter implements TestRule {
             }
 
             for (Expectation expectation1 : expectationList) {
-                if (expectation1.value() != -1 && (expectation1.atMost() != -1 || expectation1.atLeast() != -1)) {
-                    return new InvalidAnnotationsStatement(statement,
-                            new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters")
-                    );
+                try {
+                    Range.parse(expectation1);
+                } catch (IllegalArgumentException e) {
+                    return new InvalidAnnotationsStatement(statement, e);
                 }
             }
 

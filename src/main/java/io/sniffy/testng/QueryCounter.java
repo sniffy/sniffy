@@ -6,8 +6,7 @@ import io.sniffy.Expectation;
 import io.sniffy.Expectations;
 import io.sniffy.NoQueriesAllowed;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.*;
-import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.Range;
 import org.testng.*;
 
 import java.lang.reflect.Method;
@@ -79,8 +78,10 @@ public class QueryCounter implements IInvokedMethodListener {
             }
 
             for (Expectation expectation1 : expectationList) {
-                if (expectation1.value() != -1 && (expectation1.atMost() != -1 || expectation1.atLeast() != -1)) {
-                    fail(testResult, "Cannot specify value parameter together with atLeast or atMost parameters");
+                try {
+                    Range.parse(expectation1);
+                } catch (IllegalArgumentException e) {
+                    fail(testResult, e.getMessage());
                 }
             }
 

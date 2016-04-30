@@ -7,8 +7,7 @@ import io.sniffy.Expectation;
 import io.sniffy.Expectations;
 import io.sniffy.NoQueriesAllowed;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.*;
-import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.Range;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
 
@@ -125,9 +124,7 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
             }
 
             for (Expectation expectation1 : expectationList) {
-                if (expectation1.value() != -1 && (expectation1.atMost() != -1 || expectation1.atLeast() != -1)) {
-                    throw new IllegalArgumentException("Cannot specify value parameter together with atLeast or atMost parameters");
-                }
+                Range.parse(expectation1);
             }
 
             setAttribute(testContext, SPY_ATTRIBUTE_NAME, Sniffer.expect(expectationList));

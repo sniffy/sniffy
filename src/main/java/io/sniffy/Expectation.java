@@ -1,7 +1,5 @@
 package io.sniffy;
 
-import io.sniffy.Query;
-import io.sniffy.Threads;
 import io.sniffy.junit.QueryCounter;
 
 import java.lang.annotation.ElementType;
@@ -21,17 +19,25 @@ public @interface Expectation {
     /**
      * @since 2.0
      */
+    @Deprecated
     int value() default -1;
 
     /**
      * @since 2.0
      */
+    @Deprecated
     int atMost() default -1;
 
     /**
      * @since 2.0
      */
+    @Deprecated
     int atLeast() default -1;
+
+    /**
+     * since 3.1
+     */
+    Count count() default @Count;
 
     /**
      * @since 2.0
