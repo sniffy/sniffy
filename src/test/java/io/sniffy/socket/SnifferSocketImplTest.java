@@ -7,16 +7,15 @@ import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketImpl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyObject;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
@@ -255,5 +254,108 @@ public class SnifferSocketImplTest {
 
     }
 
+    @Test
+    public void testAccept() throws Exception {
+
+        SocketImpl socketImpl = new SnifferSocketImpl(null);
+
+        sniffySocket.accept(socketImpl);
+
+        verifyPrivate(delegate).invoke("accept", socketImpl);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testGetInputStream() throws Exception {
+
+        InputStream expected = new ByteArrayInputStream(new byte[]{1,2,3});
+
+        when(delegate, "getInputStream").thenReturn(expected);
+
+        InputStream actual = sniffySocket.getInputStream();
+
+        verifyPrivate(delegate).invoke("getInputStream");
+        verifyNoMoreInteractions(delegate);
+
+        assertEquals(SnifferInputStream.class, actual.getClass());
+        assertEquals(1, actual.read());
+
+    }
+
+    @Test
+    public void testGetOutputStream() throws Exception {
+
+        ByteArrayOutputStream expected = new ByteArrayOutputStream();
+
+        when(delegate, "getOutputStream").thenReturn(expected);
+
+        OutputStream actual = sniffySocket.getOutputStream();
+
+        verifyPrivate(delegate).invoke("getOutputStream");
+        verifyNoMoreInteractions(delegate);
+
+        assertEquals(SnifferOutputStream.class, actual.getClass());
+        actual.write(1);
+
+        assertArrayEquals(new byte[]{1}, expected.toByteArray());
+
+    }
+
+    @Test
+    public void testAvailable() throws Exception {
+
+        int expected = 1;
+
+        when(delegate, "available").thenReturn(expected);
+
+        int actual = sniffySocket.available();
+
+        verifyPrivate(delegate).invoke("available");
+        verifyNoMoreInteractions(delegate);
+
+        assertEquals(expected, actual);
+
+    }
+
+    @Test
+    public void testClose() throws Exception {
+
+        sniffySocket.close();
+
+        verifyPrivate(delegate).invoke("close");
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testSetOption() throws Exception {
+
+        int optId = 1;
+        Object option = new Object();
+
+        sniffySocket.setOption(optId, option);
+
+        verifyPrivate(delegate).invoke("setOption", optId, option);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+
+    @Test
+    public void testGetOption() throws Exception {
+
+        Object expected = new Object();
+
+        when(delegate, "getOption", 1).thenReturn(expected);
+
+        Object actual = sniffySocket.getOption(1);
+
+        verifyPrivate(delegate).invoke("getOption", 1);
+        verifyNoMoreInteractions(delegate);
+
+        assertEquals(expected, actual);
+
+    }
 
 }
