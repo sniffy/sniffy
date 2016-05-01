@@ -37,7 +37,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
     }
 
     @Override
-    protected void before() throws Throwable {
+    public void before() throws Throwable {
 
         for (int i = 0; i < 10; i++, boundPort++) {
             try {

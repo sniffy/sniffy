@@ -1,11 +1,6 @@
 package io.sniffy.testng;
 
-import io.sniffy.BaseTest;
-import io.sniffy.Query;
-import io.sniffy.Threads;
-import io.sniffy.Expectation;
-import io.sniffy.Expectations;
-import io.sniffy.NoQueriesAllowed;
+import io.sniffy.*;
 import io.sniffy.Threads;
 import org.testng.annotations.*;
 
@@ -22,7 +17,7 @@ public class QueryCounterTestNg extends BaseTest {
     }
 
     @Test
-    @MustFail
+    @MustFail(WrongNumberOfQueriesError.class)
     public void testNotAllowedQueriesByDefault() {
         executeStatement();
     }
@@ -55,14 +50,14 @@ public class QueryCounterTestNg extends BaseTest {
 
     @Test
     @NoQueriesAllowed
-    @MustFail
+    @MustFail(WrongNumberOfQueriesError.class)
     public void testNotAllowedQueries() {
         executeStatement();
     }
 
     @Test
     @Expectation(1)
-    @MustFail
+    @MustFail(WrongNumberOfQueriesError.class)
     public void testAllowedOneQueryExecutedTwo() {
         executeStatements(2);
     }
@@ -85,7 +80,7 @@ public class QueryCounterTestNg extends BaseTest {
 
     @Test
     @Expectation(atLeast = 2)
-    @MustFail
+    @MustFail(WrongNumberOfQueriesError.class)
     public void testAllowedMinTwoQueriesExecutedOne() {
         executeStatement();
     }
@@ -98,7 +93,7 @@ public class QueryCounterTestNg extends BaseTest {
 
     @Test
     @Expectation(value = 2)
-    @MustFail
+    @MustFail(WrongNumberOfQueriesError.class)
     public void testAllowedExactTwoQueriesExecutedThree() {
         executeStatements(3);
     }
