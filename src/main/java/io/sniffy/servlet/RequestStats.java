@@ -18,9 +18,18 @@ class RequestStats {
     }
 
     public RequestStats(long timeToFirstByte, long elapsedTime, List<StatementMetaData> executedStatements) {
+        this(timeToFirstByte, elapsedTime, executedStatements, null);
+    }
+
+    public RequestStats(
+            long timeToFirstByte,
+            long elapsedTime,
+            List<StatementMetaData> executedStatements,
+            Map<SocketMetaData, SocketStats> socketOperations) {
         this.timeToFirstByte = timeToFirstByte;
         this.elapsedTime = elapsedTime;
         this.executedStatements = executedStatements;
+        this.socketOperations = socketOperations;
     }
 
     public long getTimeToFirstByte() {
