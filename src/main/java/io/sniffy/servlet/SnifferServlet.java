@@ -1,5 +1,7 @@
 package io.sniffy.servlet;
 
+import io.sniffy.socket.SocketMetaData;
+import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
 
@@ -87,7 +89,38 @@ class SnifferServlet extends HttpServlet {
                             append(StringUtil.escapeJsonString(statement.stackTrace)).
                             append(",").
                             append("\"time\":").
-                            append(String.format(Locale.ENGLISH, "%.3f", (double) statement.elapsedTime / 1000 / 1000)).
+                            append(String.format(Locale.ENGLISH, "%.3f", (double) statement.elapsedTime / 1000)).
+                            append("}");
+                    if (statementsIt.hasNext()) {
+                        sb.append(",");
+                    }
+                }
+                sb.append("]");
+            }
+            if (null != requestStats.getSocketOperations()) {
+                sb.append(",\"networkConnections\":[");
+                Iterator<Map.Entry<SocketMetaData, SocketStats>> statementsIt = requestStats.getSocketOperations().entrySet().iterator();
+                while (statementsIt.hasNext()) {
+                    Map.Entry<SocketMetaData, SocketStats> entry = statementsIt.next();
+                    SocketMetaData socketMetaData = entry.getKey();
+                    SocketStats socketStats = entry.getValue();
+
+                    sb.
+                            append("{").
+                            append("\"host\":").
+                            append(StringUtil.escapeJsonString(socketMetaData.address.toString())).
+                            append(",").
+                            append("\"stackTrace\":").
+                            append(StringUtil.escapeJsonString(socketMetaData.stackTrace)).
+                            append(",").
+                            append("\"time\":").
+                            append(String.format(Locale.ENGLISH, "%.3f", (double) socketStats.elapsedTime.longValue())).
+                            append(",").
+                            append("\"bytesDown\":").
+                            append(socketStats.bytesDown.longValue()).
+                            append(",").
+                            append("\"bytesUp\":").
+                            append(socketStats.bytesUp.longValue()).
                             append("}");
                     if (statementsIt.hasNext()) {
                         sb.append(",");

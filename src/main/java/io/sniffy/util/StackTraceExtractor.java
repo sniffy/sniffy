@@ -46,8 +46,9 @@ public class StackTraceExtractor {
             StackTraceElement traceElement = stackTraceElements[i];
             String traceElementClassName = traceElement.getClassName();
             if (!traceElementClassName.startsWith(packageName) &&
-                    !traceElementClassName.startsWith("java.security") &&
+                    !traceElementClassName.startsWith("java") &&
                     !traceElementClassName.startsWith("com.sun") &&
+                    !traceElementClassName.startsWith("sun") &&
                     !"io.sniffy.socket.SnifferSocketImpl".equals(traceElementClassName) &&
                     !"io.sniffy.socket.SnifferInputStream".equals(traceElementClassName) &&
                     !"io.sniffy.socket.SnifferOutputStream".equals(traceElementClassName) &&
