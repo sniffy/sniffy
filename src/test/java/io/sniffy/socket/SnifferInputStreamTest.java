@@ -8,12 +8,15 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -103,6 +106,44 @@ public class SnifferInputStreamTest {
         sis.close();
         verify(snifferSocket).logSocket(anyInt());
 
+    }
+
+    @Test
+    public void testMark() throws IOException {
+
+        InputStream inputStream = mock(InputStream.class);
+        SnifferInputStream sis = new SnifferInputStream(snifferSocket, inputStream);
+
+        sis.mark(1);
+
+        verify(inputStream).mark(eq(1));
+        verify(snifferSocket).logSocket(anyInt());
+    }
+
+    @Test
+    public void testReset() throws IOException {
+
+        InputStream inputStream = mock(InputStream.class);
+        SnifferInputStream sis = new SnifferInputStream(snifferSocket, inputStream);
+
+        sis.reset();
+
+        verify(snifferSocket).logSocket(anyInt());
+    }
+
+
+
+    @Test
+    public void testMarkSupported() throws IOException {
+
+        InputStream inputStream = mock(InputStream.class);
+        when(inputStream.markSupported()).thenReturn(true);
+
+        SnifferInputStream sis = new SnifferInputStream(snifferSocket, inputStream);
+
+        assertEquals(true, sis.markSupported());
+
+        verify(snifferSocket).logSocket(anyInt());
     }
 
 }
