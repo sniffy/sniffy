@@ -12,6 +12,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
@@ -36,7 +37,8 @@ public class SnifferInputStreamTest {
             baos.write(read);
         }
 
-        verify(snifferSocket, times(5)).logSocket(anyInt(), anyInt(), anyInt());
+        verify(snifferSocket, times(4)).logSocket(anyInt(), eq(1), eq(0));
+        verify(snifferSocket).logSocket(anyInt(), eq(0), eq(0));
 
     }
 
