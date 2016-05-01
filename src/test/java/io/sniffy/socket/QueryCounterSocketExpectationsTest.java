@@ -21,17 +21,6 @@ public class QueryCounterSocketExpectationsTest extends BaseSocketTest {
     @Rule
     public final QueryCounter queryCounter = new QueryCounter();
 
-    // TODO: make autodiscoverable
-    @Before
-    public void installSocketFactory() throws IOException {
-        SnifferSocketImplFactory.install();
-    }
-
-    @After
-    public void uninstallSocketFactory() {
-        SnifferSocketImplFactory.uninstall();
-    }
-
     @Test
     @SocketExpectation(connections = @Count(2))
     public void testExactConnections() {

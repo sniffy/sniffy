@@ -8,11 +8,13 @@ import static io.sniffy.Threads.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+// TODO: test with another socket factory which is already set
 public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
     @Test
     public void testInstall() throws Exception {
 
+        SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
         try (Spy<?> s = Sniffer.spy()) {
@@ -50,8 +52,6 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
                 assertEquals(RESPONSE.length, socketStats.bytesDown.intValue());
             });
 
-        } finally {
-            SnifferSocketImplFactory.uninstall();
         }
 
     }
@@ -59,7 +59,8 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
     @Test
     public void testUninstall() throws Exception {
 
-        SnifferSocketImplFactory.install();
+        Sniffer.initialize();
+
         SnifferSocketImplFactory.uninstall();
 
         try (Spy<?> s = Sniffer.spy()) {
@@ -69,6 +70,8 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
             assertTrue(s.getSocketOperations(CURRENT).isEmpty());
 
         }
+
+        SnifferSocketImplFactory.install();
 
     }
 

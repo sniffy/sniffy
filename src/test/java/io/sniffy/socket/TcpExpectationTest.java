@@ -10,16 +10,6 @@ import java.io.IOException;
 
 public class TcpExpectationTest extends BaseSocketTest {
 
-    @Before
-    public void installSocketFactory() throws IOException {
-        SnifferSocketImplFactory.install();
-    }
-
-    @After
-    public void uninstallSocketFactory() {
-        SnifferSocketImplFactory.uninstall();
-    }
-
     @Test
     public void testExactConnections() {
 

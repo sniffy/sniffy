@@ -18,17 +18,23 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
     public static void install() throws IOException {
 
+        SocketImplFactory currentSocketImplFactory = null;
+
         try {
             Field factoryField = Socket.class.getDeclaredField("factory");
             factoryField.setAccessible(true);
-            previousSocketImplFactory = (SocketImplFactory) factoryField.get(null);
+            currentSocketImplFactory = (SocketImplFactory) factoryField.get(null);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         }
 
-        Socket.setSocketImplFactory(new SnifferSocketImplFactory());
+        if (null == currentSocketImplFactory || !SnifferSocketImplFactory.class.equals(currentSocketImplFactory.getClass())) {
+            Socket.setSocketImplFactory(new SnifferSocketImplFactory());
+            previousSocketImplFactory = currentSocketImplFactory;
+        }
+
     }
 
     public static void uninstall() {

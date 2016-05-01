@@ -1,12 +1,14 @@
 package io.sniffy;
 
 import io.sniffy.log.QueryLogger;
+import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlQueries;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.Range;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.util.Collections;
@@ -32,6 +34,18 @@ public final class Sniffer {
 
     private Sniffer() {
 
+    }
+
+    static {
+        initialize();
+    }
+
+    public static void initialize() {
+        try {
+            SnifferSocketImplFactory.install();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     protected static synchronized WeakReference<Spy> registerSpy(Spy spy) {
