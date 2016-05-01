@@ -17,10 +17,6 @@ class RequestStats {
     public RequestStats() {
     }
 
-    public RequestStats(List<StatementMetaData> executedStatements) {
-        this.executedStatements = executedStatements;
-    }
-
     public RequestStats(long timeToFirstByte, long elapsedTime, List<StatementMetaData> executedStatements) {
         this.timeToFirstByte = timeToFirstByte;
         this.elapsedTime = elapsedTime;

@@ -8,9 +8,6 @@ public class SocketStats {
     public final AtomicLong bytesDown = new AtomicLong();
     public final AtomicLong bytesUp = new AtomicLong();
 
-    public SocketStats() {
-    }
-
     public SocketStats(SocketStats that) {
         accumulate(that);
     }
@@ -25,12 +22,6 @@ public class SocketStats {
         elapsedTime.addAndGet(that.elapsedTime.get());
         bytesDown.addAndGet(that.bytesDown.get());
         bytesUp.addAndGet(that.bytesUp.get());
-    }
-
-    public SocketStats combine(SocketStats that) {
-        SocketStats result = new SocketStats(this);
-        result.accumulate(that);
-        return result;
     }
 
 }
