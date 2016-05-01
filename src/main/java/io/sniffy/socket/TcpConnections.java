@@ -148,7 +148,7 @@ public class TcpConnections {
         }
 
         public TcpExpectation_Count_Threads anyThreads() {
-            return threads(Threads.CURRENT);
+            return threads(Threads.ANY);
         }
 
     }
@@ -172,7 +172,7 @@ public class TcpConnections {
         }
 
         public TcpExpectation anyThreads() {
-            return threads(Threads.CURRENT);
+            return threads(Threads.ANY);
         }
 
     }

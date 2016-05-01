@@ -2,6 +2,7 @@ package io.sniffy.socket;
 
 import io.sniffy.Sniffer;
 import io.sniffy.Spy;
+import io.sniffy.Threads;
 import io.sniffy.test.SniffyAssertionError;
 import org.junit.After;
 import org.junit.Before;
@@ -15,6 +16,13 @@ public class TcpExpectationTest extends BaseSocketTest {
     public void testExactConnections() {
         try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2))) {
             performSocketOperation();
+            performSocketOperation();
+        }
+    }
+
+    @Test(expected = SniffyAssertionError.class)
+    public void testNone_Exception() {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.none())) {
             performSocketOperation();
         }
     }
@@ -94,6 +102,67 @@ public class TcpExpectationTest extends BaseSocketTest {
     public void testExactConnectionsCurrentThreadHostName_Exception() throws InterruptedException {
         try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2).otherThreads().host("google.com"))) {
             performSocketOperationOtherThread();
+            performSocketOperationOtherThread();
+        }
+    }
+
+    @Test(expected = SniffyAssertionError.class)
+    public void testMinConnectionsHost_Exception() {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.min(2).host("google.com"))) {
+            performSocketOperation();
+            performSocketOperation();
+        }
+    }
+
+    @Test
+    public void testMinConnectionsCurrentThread() {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.min(2).currentThread())) {
+            performSocketOperation();
+            performSocketOperation();
+        }
+    }
+
+    @Test
+    public void testMinConnectionsAnyThreads() throws InterruptedException {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.min(3).anyThreads())) {
+            performSocketOperation();
+            performSocketOperation();
+            performSocketOperationOtherThread();
+        }
+    }
+
+    @Test
+    public void testMinConnectionsHostThreads() throws InterruptedException {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.min(3).host("localhost:" + echoServerRule.getBoundPort()).threads(Threads.ANY))) {
+            performSocketOperation();
+            performSocketOperation();
+            performSocketOperationOtherThread();
+        }
+    }
+
+    @Test
+    public void testMinConnectionsHostAnyThreads() throws InterruptedException {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.min(3).host("localhost:" + echoServerRule.getBoundPort()).anyThreads())) {
+            performSocketOperation();
+            performSocketOperation();
+            performSocketOperationOtherThread();
+        }
+    }
+
+    @Test
+    public void testExactConnectionsHostCurrentThread() throws InterruptedException {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2).host("localhost:" + echoServerRule.getBoundPort()).currentThread())) {
+            performSocketOperation();
+            performSocketOperation();
+            performSocketOperationOtherThread();
+        }
+    }
+
+    @Test
+    public void testExactConnectionsHostOtherThreads() throws InterruptedException {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(1).host("localhost:" + echoServerRule.getBoundPort()).otherThreads())) {
+            performSocketOperation();
+            performSocketOperation();
             performSocketOperationOtherThread();
         }
     }
