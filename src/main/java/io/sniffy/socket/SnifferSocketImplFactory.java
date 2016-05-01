@@ -24,6 +24,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
             Field factoryField = Socket.class.getDeclaredField("factory");
             factoryField.setAccessible(true);
             currentSocketImplFactory = (SocketImplFactory) factoryField.get(null);
+            factoryField.set(null, null);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (NoSuchFieldException e) {
