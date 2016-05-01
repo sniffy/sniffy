@@ -1,13 +1,14 @@
 package io.sniffy.junit;
 
 import io.sniffy.*;
+import io.sniffy.socket.SocketExpectation;
+import io.sniffy.socket.SocketExpectations;
 import io.sniffy.socket.TcpConnections;
 import io.sniffy.util.Range;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,6 +49,28 @@ public class QueryCounter implements TestRule {
             notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
         }
 
+        for (Class<?> testClass = description.getTestClass();
+             null == socketExpectations && null == socketExpectation && !Object.class.equals(testClass);
+                testClass = testClass.getSuperclass()) {
+            socketExpectations = testClass.getAnnotation(SocketExpectations.class);
+            socketExpectation = testClass.getAnnotation(SocketExpectation.class);
+        }
+
+
+
+        List<Expectation> expectationList = new ArrayList<Expectation>();
+        List<SocketExpectation> socketExpectationList = new ArrayList<SocketExpectation>();
+
+
+        if (null != socketExpectation) {
+            socketExpectationList.add(socketExpectation);
+        }
+
+        if (null != socketExpectations) {
+            socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
+        }
+
+
         if (null != expectation && null != notAllowedQueries) {
             return new InvalidAnnotationsStatement(statement,
                     new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method")
@@ -57,8 +80,6 @@ public class QueryCounter implements TestRule {
                     new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method")
             );
         } else if (null != expectations || null != expectation) {
-
-            List<Expectation> expectationList = new ArrayList<Expectation>();
 
             if (null != expectation) {
                 expectationList.add(expectation);
@@ -76,46 +97,13 @@ public class QueryCounter implements TestRule {
                 }
             }
 
-
-            List<SocketExpectation> socketExpectationList = new ArrayList<SocketExpectation>();
-
-            if (null != socketExpectation) {
-                socketExpectationList.add(socketExpectation);
-            }
-
-            if (null != socketExpectations) {
-                socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
-            }
-
-
-            return new SnifferStatement(statement, expectationList, socketExpectationList);
-
         } else if (null != notAllowedQueries) {
             Expectation annotation = NoQueriesAllowed.class.getAnnotation(Expectation.class);
+            expectationList.add(annotation);
+        }
 
-            List<SocketExpectation> socketExpectationList = new ArrayList<SocketExpectation>();
-
-            if (null != socketExpectation) {
-                socketExpectationList.add(socketExpectation);
-            }
-
-            if (null != socketExpectations) {
-                socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
-            }
-
-            return new SnifferStatement(statement, Collections.singletonList(annotation), socketExpectationList);
-        } else if (null != socketExpectations || null != socketExpectation) {
-            List<SocketExpectation> socketExpectationList = new ArrayList<SocketExpectation>();
-
-            if (null != socketExpectation) {
-                socketExpectationList.add(socketExpectation);
-            }
-
-            if (null != socketExpectations) {
-                socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
-            }
-
-            return new SnifferStatement(statement, Collections.<Expectation>emptyList(), socketExpectationList);
+        if (!expectationList.isEmpty() || !socketExpectationList.isEmpty()) {
+            return new SnifferStatement(statement, expectationList, socketExpectationList);
         } else {
             return statement;
         }

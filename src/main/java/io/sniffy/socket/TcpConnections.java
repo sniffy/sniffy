@@ -3,7 +3,6 @@ package io.sniffy.socket;
 import io.sniffy.*;
 import io.sniffy.util.Range;
 
-import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;

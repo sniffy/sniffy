@@ -1,12 +1,12 @@
-package io.sniffy;
+package io.sniffy.socket;
 
 import io.sniffy.junit.QueryCounter;
+import io.sniffy.socket.SocketExpectation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.net.Socket;
 
 /**
  * Container for multiple {@link SocketExpectation} annotations
