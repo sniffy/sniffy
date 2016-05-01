@@ -2,9 +2,13 @@ package io.sniffy.socket;
 
 import io.sniffy.*;
 import io.sniffy.junit.QueryCounter;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import java.io.IOException;
 
 /**
  * Created by bedrin on 01.05.2016.
@@ -17,9 +21,42 @@ public class QueryCounterSocketExpectationsTest extends BaseSocketTest {
     @Rule
     public final QueryCounter queryCounter = new QueryCounter();
 
+    // TODO: make autodiscoverable
+    @Before
+    public void installSocketFactory() throws IOException {
+        SnifferSocketImplFactory.install();
+    }
+
+    @After
+    public void uninstallSocketFactory() {
+        SnifferSocketImplFactory.uninstall();
+    }
+
+    @Test
+    @SocketExpectation(connections = @Count(2))
+    public void testExactConnections() {
+        performSocketOperation();
+        performSocketOperation();
+    }
+
     @Test
     @SocketExpectation(connections = @Count(3))
-    public void testExactConnections() {
+    public void testExactConnections_Failed() {
+        performSocketOperation();
+        performSocketOperation();
+        thrown.expect(SniffyAssertionError.class);
+    }
+
+    @Test
+    @SocketExpectation(connections = @Count(2))
+    public void testMinConnections() {
+        performSocketOperation();
+        performSocketOperation();
+    }
+
+    @Test
+    @SocketExpectation(connections = @Count(3))
+    public void testMinConnections_Failed() {
         performSocketOperation();
         performSocketOperation();
         thrown.expect(SniffyAssertionError.class);

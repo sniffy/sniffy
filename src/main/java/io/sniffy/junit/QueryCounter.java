@@ -1,6 +1,7 @@
 package io.sniffy.junit;
 
 import io.sniffy.*;
+import io.sniffy.socket.NoSocketsAllowed;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.SocketExpectations;
 import io.sniffy.socket.TcpConnections;
@@ -11,7 +12,6 @@ import org.junit.runners.model.Statement;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -26,59 +26,100 @@ import java.util.List;
  * @see Expectations
  * @see Expectation
  * @see NoQueriesAllowed
+ * @see SocketExpectations
+ * @see SocketExpectation
+ * @see NoSocketsAllowed
  * @since 1.3
  */
 public class QueryCounter implements TestRule {
 
     public Statement apply(Statement statement, Description description) {
 
+        List<Expectation> expectationList;
+        try {
+            expectationList = buildSqlExpectationList(description);
+        } catch (IllegalArgumentException e) {
+            return new InvalidAnnotationsStatement(statement, e);
+        }
+
+        List<SocketExpectation> socketExpectationList;
+        try {
+            socketExpectationList = buildSocketExpectationList(description);
+        } catch (IllegalArgumentException e) {
+            return new InvalidAnnotationsStatement(statement, e);
+        }
+
+        if (!expectationList.isEmpty() || !socketExpectationList.isEmpty()) {
+            return new SnifferStatement(statement, expectationList, socketExpectationList);
+        } else {
+            return statement;
+        }
+
+    }
+
+    private static List<SocketExpectation> buildSocketExpectationList(Description description) {
+
+        SocketExpectation socketExpectation = description.getAnnotation(SocketExpectation.class);
+        SocketExpectations socketExpectations = description.getAnnotation(SocketExpectations.class);
+        NoSocketsAllowed noSocketsAllowed = description.getAnnotation(NoSocketsAllowed.class);
+
+        for (Class<?> testClass = description.getTestClass();
+             null == socketExpectations && null == socketExpectation && null == noSocketsAllowed && !Object.class.equals(testClass);
+             testClass = testClass.getSuperclass()) {
+            socketExpectations = testClass.getAnnotation(SocketExpectations.class);
+            socketExpectation = testClass.getAnnotation(SocketExpectation.class);
+            noSocketsAllowed = testClass.getAnnotation(NoSocketsAllowed.class);
+        }
+
+        List<SocketExpectation> socketExpectationList = new ArrayList<SocketExpectation>();
+
+        if (null != socketExpectation && null != noSocketsAllowed) {
+            throw new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method");
+        } else if (null != socketExpectations && null != noSocketsAllowed) {
+            throw new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method");
+        } else if (null != socketExpectations || null != socketExpectation) {
+
+            if (null != socketExpectation) {
+                socketExpectationList.add(socketExpectation);
+            }
+
+            if (null != socketExpectations) {
+                socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
+            }
+
+            for (SocketExpectation expectation1 : socketExpectationList) {
+                Range.parse(expectation1.connections());
+            }
+
+        } else if (null != noSocketsAllowed) {
+            SocketExpectation annotation = NoQueriesAllowed.class.getAnnotation(SocketExpectation.class);
+            socketExpectationList.add(annotation);
+        }
+
+        return socketExpectationList;
+
+    }
+
+    private static List<Expectation> buildSqlExpectationList(Description description) {
+
         Expectations expectations = description.getAnnotation(Expectations.class);
         Expectation expectation = description.getAnnotation(Expectation.class);
         NoQueriesAllowed notAllowedQueries = description.getAnnotation(NoQueriesAllowed.class);
 
-        SocketExpectation socketExpectation = description.getAnnotation(SocketExpectation.class);
-        SocketExpectations socketExpectations = description.getAnnotation(SocketExpectations.class);
-        // TODO create NoSocketsAllowed annotation
-
-        // If no annotations present, check the test class and its superclasses
         for (Class<?> testClass = description.getTestClass();
              null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
-                testClass = testClass.getSuperclass()) {
+             testClass = testClass.getSuperclass()) {
             expectations = testClass.getAnnotation(Expectations.class);
             expectation = testClass.getAnnotation(Expectation.class);
             notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
         }
 
-        for (Class<?> testClass = description.getTestClass();
-             null == socketExpectations && null == socketExpectation && !Object.class.equals(testClass);
-                testClass = testClass.getSuperclass()) {
-            socketExpectations = testClass.getAnnotation(SocketExpectations.class);
-            socketExpectation = testClass.getAnnotation(SocketExpectation.class);
-        }
-
-
-
         List<Expectation> expectationList = new ArrayList<Expectation>();
-        List<SocketExpectation> socketExpectationList = new ArrayList<SocketExpectation>();
-
-
-        if (null != socketExpectation) {
-            socketExpectationList.add(socketExpectation);
-        }
-
-        if (null != socketExpectations) {
-            socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
-        }
-
 
         if (null != expectation && null != notAllowedQueries) {
-            return new InvalidAnnotationsStatement(statement,
-                    new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method")
-            );
+            throw new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method");
         } else if (null != expectations && null != notAllowedQueries) {
-            return new InvalidAnnotationsStatement(statement,
-                    new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method")
-            );
+            throw new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method");
         } else if (null != expectations || null != expectation) {
 
             if (null != expectation) {
@@ -90,11 +131,7 @@ public class QueryCounter implements TestRule {
             }
 
             for (Expectation expectation1 : expectationList) {
-                try {
-                    Range.parse(expectation1);
-                } catch (IllegalArgumentException e) {
-                    return new InvalidAnnotationsStatement(statement, e);
-                }
+                Range.parse(expectation1);
             }
 
         } else if (null != notAllowedQueries) {
@@ -102,11 +139,7 @@ public class QueryCounter implements TestRule {
             expectationList.add(annotation);
         }
 
-        if (!expectationList.isEmpty() || !socketExpectationList.isEmpty()) {
-            return new SnifferStatement(statement, expectationList, socketExpectationList);
-        } else {
-            return statement;
-        }
+        return expectationList;
 
     }
 

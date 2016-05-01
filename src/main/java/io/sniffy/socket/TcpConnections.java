@@ -51,7 +51,7 @@ public class TcpConnections {
                     Range.parse(socketExpectation.connections()).min,
                     Range.parse(socketExpectation.connections()).max,
                     socketExpectation.threads(),
-                    socketExpectation.hostName()
+                    "".equals(socketExpectation.hostName()) ? null : socketExpectation.hostName()
             );
         }
 
@@ -74,7 +74,7 @@ public class TcpConnections {
 
             int numConnections = connectionIds.size();
 
-            if (numConnections > max || numConnections < min) {
+            if ((-1 != max && numConnections > max) || (-1 != min && numConnections < min)) {
                 // TODO: throw some specific exception instead
                 throw new SniffyAssertionError(String.format(
                         "Expected to get between %d and %d connections but observerd %d", min, max, numConnections
