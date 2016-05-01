@@ -1,22 +1,20 @@
 package io.sniffy.spring;
 
-import io.sniffy.Sniffer;
+import io.sniffy.Expectation;
 import io.sniffy.Spy;
 import io.sniffy.WrongNumberOfQueriesError;
-import io.sniffy.Expectation;
-import io.sniffy.Expectations;
-import io.sniffy.NoQueriesAllowed;
+import io.sniffy.socket.SocketExpectation;
+import io.sniffy.socket.TcpConnections;
+import io.sniffy.test.AnnotationProcessor;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.Range;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+
+import static io.sniffy.Sniffer.expect;
 
 /**
  * @since 2.2
@@ -94,45 +92,21 @@ public class QueryCounterListener extends AbstractTestExecutionListener {
 
         Method testMethod = getTestMethod(testContext);
 
-        Expectations expectations = testMethod.getAnnotation(Expectations.class);
-        Expectation expectation = testMethod.getAnnotation(Expectation.class);
-        NoQueriesAllowed notAllowedQueries = testMethod.getAnnotation(NoQueriesAllowed.class);
+        List<SocketExpectation> socketExpectationList = AnnotationProcessor.buildSocketExpectationList(testMethod);
+        List<Expectation> expectationList = AnnotationProcessor.buildSqlExpectationList(testMethod);
 
-        // If no annotations present, check the test class and its superclasses
-        for (Class<?> testClass = testMethod.getDeclaringClass();
-             null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
-             testClass = testClass.getSuperclass()) {
-            expectations = testClass.getAnnotation(Expectations.class);
-            expectation = testClass.getAnnotation(Expectation.class);
-            notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
-        }
+        if ((null != expectationList && !expectationList.isEmpty()) ||
+                (null != socketExpectationList && !socketExpectationList.isEmpty())) {
 
-        if (null != expectation && null != notAllowedQueries) {
-            throw new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method");
-        } else if (null != expectations && null != notAllowedQueries) {
-            throw new IllegalArgumentException("Cannot specify @Expectations and @NotAllowedQueries on one test method");
-        } else if (null != expectations || null != expectation) {
+            Spy spy = expect(expectationList);
 
-            List<Expectation> expectationList = new ArrayList<Expectation>();
-
-            if (null != expectation) {
-                expectationList.add(expectation);
+            if (null != socketExpectationList) {
+                for (SocketExpectation socketExpectation : socketExpectationList) {
+                    spy = spy.expect(new TcpConnections.TcpExpectation(socketExpectation));
+                }
             }
 
-            if (null != expectations) {
-                expectationList.addAll(Arrays.asList(expectations.value()));
-            }
-
-            for (Expectation expectation1 : expectationList) {
-                Range.parse(expectation1);
-            }
-
-            setAttribute(testContext, SPY_ATTRIBUTE_NAME, Sniffer.expect(expectationList));
-
-        } else if (null != notAllowedQueries) {
-            setAttribute(testContext, SPY_ATTRIBUTE_NAME,
-                    Sniffer.expect(Collections.singletonList(NoQueriesAllowed.class.getAnnotation(Expectation.class)))
-            );
+            setAttribute(testContext, SPY_ATTRIBUTE_NAME, spy);
         }
 
     }

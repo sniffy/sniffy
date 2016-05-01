@@ -8,6 +8,7 @@ import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.SocketExpectations;
 import io.sniffy.util.Range;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +51,25 @@ public class AnnotationProcessor {
         return socketExpectationList;
     }
 
+    public static List<SocketExpectation> buildSocketExpectationList(Method method) {
+
+        SocketExpectations socketExpectations = method.getAnnotation(SocketExpectations.class);
+        SocketExpectation socketExpectation = method.getAnnotation(SocketExpectation.class);
+        NoSocketsAllowed noSocketsAllowed = method.getAnnotation(NoSocketsAllowed.class);
+
+        // If no annotations present, check the test class and its superclasses
+        for (Class<?> testClass = method.getDeclaringClass();
+             null == socketExpectations && null == socketExpectation && null == noSocketsAllowed && !Object.class.equals(testClass);
+             testClass = testClass.getSuperclass()) {
+            socketExpectations = testClass.getAnnotation(SocketExpectations.class);
+            socketExpectation = testClass.getAnnotation(SocketExpectation.class);
+            noSocketsAllowed = testClass.getAnnotation(NoSocketsAllowed.class);
+        }
+
+        return AnnotationProcessor.buildSocketExpectationList(socketExpectation, socketExpectations, noSocketsAllowed);
+
+    }
+
     public static List<Expectation> buildSqlExpectationList(
             Expectations expectations,
             Expectation expectation,
@@ -81,6 +101,25 @@ public class AnnotationProcessor {
         }
 
         return expectationList;
+    }
+
+    public static List<Expectation> buildSqlExpectationList(Method method) {
+
+        Expectations expectations = method.getAnnotation(Expectations.class);
+        Expectation expectation = method.getAnnotation(Expectation.class);
+        NoQueriesAllowed notAllowedQueries = method.getAnnotation(NoQueriesAllowed.class);
+
+        // If no annotations present, check the test class and its superclasses
+        for (Class<?> testClass = method.getDeclaringClass();
+             null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
+             testClass = testClass.getSuperclass()) {
+            expectations = testClass.getAnnotation(Expectations.class);
+            expectation = testClass.getAnnotation(Expectation.class);
+            notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
+        }
+
+        return AnnotationProcessor.buildSqlExpectationList(expectations, expectation, notAllowedQueries);
+
     }
 
 }

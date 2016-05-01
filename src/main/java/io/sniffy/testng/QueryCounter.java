@@ -1,9 +1,7 @@
 package io.sniffy.testng;
 
 import io.sniffy.*;
-import io.sniffy.socket.NoSocketsAllowed;
 import io.sniffy.socket.SocketExpectation;
-import io.sniffy.socket.SocketExpectations;
 import io.sniffy.socket.TcpConnections;
 import io.sniffy.test.AnnotationProcessor;
 import io.sniffy.util.ExceptionUtil;
@@ -49,14 +47,14 @@ public class QueryCounter implements IInvokedMethodListener {
 
         List<Expectation> expectationList = null;
         try {
-            expectationList = buildSqlExpectationList(method);
+            expectationList = AnnotationProcessor.buildSqlExpectationList(method);
         } catch (IllegalArgumentException e) {
             fail(testResult, e.getMessage());
         }
 
         List<SocketExpectation> socketExpectationList = null;
         try {
-            socketExpectationList = buildSocketExpectationList(method);
+            socketExpectationList = AnnotationProcessor.buildSocketExpectationList(method);
         } catch (IllegalArgumentException e) {
             fail(testResult, e.getMessage());
         }
@@ -75,44 +73,6 @@ public class QueryCounter implements IInvokedMethodListener {
 
             testResult.setAttribute(SPY_ATTRIBUTE_NAME, spy);
         }
-
-    }
-
-    private static List<SocketExpectation> buildSocketExpectationList(Method method) {
-
-        SocketExpectations socketExpectations = method.getAnnotation(SocketExpectations.class);
-        SocketExpectation socketExpectation = method.getAnnotation(SocketExpectation.class);
-        NoSocketsAllowed noSocketsAllowed = method.getAnnotation(NoSocketsAllowed.class);
-
-        // If no annotations present, check the test class and its superclasses
-        for (Class<?> testClass = method.getDeclaringClass();
-             null == socketExpectations && null == socketExpectation && null == noSocketsAllowed && !Object.class.equals(testClass);
-             testClass = testClass.getSuperclass()) {
-            socketExpectations = testClass.getAnnotation(SocketExpectations.class);
-            socketExpectation = testClass.getAnnotation(SocketExpectation.class);
-            noSocketsAllowed = testClass.getAnnotation(NoSocketsAllowed.class);
-        }
-
-        return AnnotationProcessor.buildSocketExpectationList(socketExpectation, socketExpectations, noSocketsAllowed);
-
-    }
-
-    private static List<Expectation> buildSqlExpectationList(Method method) {
-
-        Expectations expectations = method.getAnnotation(Expectations.class);
-        Expectation expectation = method.getAnnotation(Expectation.class);
-        NoQueriesAllowed notAllowedQueries = method.getAnnotation(NoQueriesAllowed.class);
-
-        // If no annotations present, check the test class and its superclasses
-        for (Class<?> testClass = method.getDeclaringClass();
-             null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
-             testClass = testClass.getSuperclass()) {
-            expectations = testClass.getAnnotation(Expectations.class);
-            expectation = testClass.getAnnotation(Expectation.class);
-            notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
-        }
-
-        return AnnotationProcessor.buildSqlExpectationList(expectations, expectation, notAllowedQueries);
 
     }
 
