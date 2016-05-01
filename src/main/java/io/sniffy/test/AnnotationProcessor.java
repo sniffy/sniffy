@@ -15,9 +15,6 @@ import java.util.List;
 
 public class AnnotationProcessor {
 
-
-
-
     public static List<SocketExpectation> buildSocketExpectationList(
             SocketExpectation socketExpectation,
             SocketExpectations socketExpectations,
