@@ -13,7 +13,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
@@ -52,11 +51,9 @@ public class SnifferInputStreamTest {
         assertEquals(4, sis.read(buff));
         assertArrayEquals(DATA, buff);
 
-        verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
-        reset(snifferSocket); // TODO: get rid of reset method - see its documentation
-
         assertEquals(0, sis.available());
 
+        verify(snifferSocket).logSocket(anyInt(), eq(4), eq(0));
         verify(snifferSocket).logSocket(anyInt());
     }
 
@@ -66,15 +63,16 @@ public class SnifferInputStreamTest {
         ByteArrayInputStream bais = new ByteArrayInputStream(DATA);
         SnifferInputStream sis = new SnifferInputStream(snifferSocket, bais);
 
+        byte[] expected = new byte[DATA.length];
+        System.arraycopy(DATA, 0, expected, 1, 2);
+
         byte[] buff = new byte[4];
-        assertEquals(4, sis.read(buff, 0, 4));
-        assertArrayEquals(DATA, buff);
+        assertEquals(2, sis.read(buff, 1, 2));
+        assertArrayEquals(expected, buff);
 
-        verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
-        reset(snifferSocket); // TODO: get rid of reset method - see its documentation
+        assertEquals(2, sis.available());
 
-        assertEquals(0, sis.available());
-
+        verify(snifferSocket).logSocket(anyInt(), eq(2), eq(0));
         verify(snifferSocket).logSocket(anyInt());
     }
 
@@ -85,19 +83,15 @@ public class SnifferInputStreamTest {
         SnifferInputStream sis = new SnifferInputStream(snifferSocket, bais);
 
         assertEquals(1, sis.skip(1));
-        verify(snifferSocket).logSocket(anyInt());
-        reset(snifferSocket); // TODO: get rid of reset method - see its documentation
 
         byte[] buff = new byte[4];
         assertEquals(3, sis.read(buff));
         assertArrayEquals(new byte[]{2,3,4,0}, buff);
 
-        verify(snifferSocket).logSocket(anyInt(), anyInt(), anyInt());
-        reset(snifferSocket); // TODO: get rid of reset method - see its documentation
-
         assertEquals(0, sis.available());
 
-        verify(snifferSocket).logSocket(anyInt());
+        verify(snifferSocket, times(2)).logSocket(anyInt()); // skip() and available() calls
+        verify(snifferSocket).logSocket(anyInt(), eq(3), eq(0));
     }
 
     @Test
