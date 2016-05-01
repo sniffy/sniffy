@@ -1,18 +1,17 @@
 package io.sniffy.testng;
 
-import io.sniffy.Spy;
-import io.sniffy.WrongNumberOfQueriesError;
-import io.sniffy.Expectation;
-import io.sniffy.Expectations;
-import io.sniffy.NoQueriesAllowed;
+import io.sniffy.*;
+import io.sniffy.socket.NoSocketsAllowed;
+import io.sniffy.socket.SocketExpectation;
+import io.sniffy.socket.SocketExpectations;
+import io.sniffy.socket.TcpConnections;
+import io.sniffy.test.AnnotationProcessor;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.Range;
-import org.testng.*;
+import org.testng.IInvokedMethod;
+import org.testng.IInvokedMethodListener;
+import org.testng.ITestResult;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static io.sniffy.Sniffer.expect;
@@ -48,6 +47,58 @@ public class QueryCounter implements IInvokedMethodListener {
 
         Method method = invokedMethod.getTestMethod().getConstructorOrMethod().getMethod();
 
+        List<Expectation> expectationList = null;
+        try {
+            expectationList = buildSqlExpectationList(method);
+        } catch (IllegalArgumentException e) {
+            fail(testResult, e.getMessage());
+        }
+
+        List<SocketExpectation> socketExpectationList = null;
+        try {
+            socketExpectationList = buildSocketExpectationList(method);
+        } catch (IllegalArgumentException e) {
+            fail(testResult, e.getMessage());
+        }
+
+
+        if ((null != expectationList && !expectationList.isEmpty()) ||
+                (null != socketExpectationList && !socketExpectationList.isEmpty())) {
+
+            Spy spy = expect(expectationList);
+
+            if (null != socketExpectationList) {
+                for (SocketExpectation socketExpectation : socketExpectationList) {
+                    spy = spy.expect(new TcpConnections.TcpExpectation(socketExpectation));
+                }
+            }
+
+            testResult.setAttribute(SPY_ATTRIBUTE_NAME, spy);
+        }
+
+    }
+
+    private static List<SocketExpectation> buildSocketExpectationList(Method method) {
+
+        SocketExpectations socketExpectations = method.getAnnotation(SocketExpectations.class);
+        SocketExpectation socketExpectation = method.getAnnotation(SocketExpectation.class);
+        NoSocketsAllowed noSocketsAllowed = method.getAnnotation(NoSocketsAllowed.class);
+
+        // If no annotations present, check the test class and its superclasses
+        for (Class<?> testClass = method.getDeclaringClass();
+             null == socketExpectations && null == socketExpectation && null == noSocketsAllowed && !Object.class.equals(testClass);
+             testClass = testClass.getSuperclass()) {
+            socketExpectations = testClass.getAnnotation(SocketExpectations.class);
+            socketExpectation = testClass.getAnnotation(SocketExpectation.class);
+            noSocketsAllowed = testClass.getAnnotation(NoSocketsAllowed.class);
+        }
+
+        return AnnotationProcessor.buildSocketExpectationList(socketExpectation, socketExpectations, noSocketsAllowed);
+
+    }
+
+    private static List<Expectation> buildSqlExpectationList(Method method) {
+
         Expectations expectations = method.getAnnotation(Expectations.class);
         Expectation expectation = method.getAnnotation(Expectation.class);
         NoQueriesAllowed notAllowedQueries = method.getAnnotation(NoQueriesAllowed.class);
@@ -61,36 +112,7 @@ public class QueryCounter implements IInvokedMethodListener {
             notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
         }
 
-        if (null != expectation && null != notAllowedQueries) {
-            fail(testResult, "Cannot specify @Expectation and @NotAllowedQueries on one test method");
-        } else if (null != expectations && null != notAllowedQueries) {
-            fail(testResult, "Cannot specify @Expectations and @NotAllowedQueries on one test method");
-        } else if (null != expectations || null != expectation) {
-
-            List<Expectation> expectationList = new ArrayList<Expectation>();
-
-            if (null != expectation) {
-                expectationList.add(expectation);
-            }
-
-            if (null != expectations) {
-                expectationList.addAll(Arrays.asList(expectations.value()));
-            }
-
-            for (Expectation expectation1 : expectationList) {
-                try {
-                    Range.parse(expectation1);
-                } catch (IllegalArgumentException e) {
-                    fail(testResult, e.getMessage());
-                }
-            }
-
-            testResult.setAttribute(SPY_ATTRIBUTE_NAME, expect(expectationList));
-
-        } else if (null != notAllowedQueries) {
-            Expectation annotation = NoQueriesAllowed.class.getAnnotation(Expectation.class);
-            testResult.setAttribute(SPY_ATTRIBUTE_NAME, expect(Collections.singletonList(annotation)));
-        }
+        return AnnotationProcessor.buildSqlExpectationList(expectations, expectation, notAllowedQueries);
 
     }
 
