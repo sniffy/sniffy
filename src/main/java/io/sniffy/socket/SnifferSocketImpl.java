@@ -33,8 +33,9 @@ class SnifferSocketImpl extends SocketImpl {
 
     protected void logSocket(long millis, int bytesDown, int bytesUp) {
         String stackTrace = StackTraceExtractor.printStackTrace(StackTraceExtractor.getTraceTillPackage("java.net"));
-        // TODO: remove empty calls (all equal to zero)
-        if (null != address) Sniffer.logSocket(stackTrace, id, address, millis, bytesDown, bytesUp);
+        if (null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
+            Sniffer.logSocket(stackTrace, id, address, millis, bytesDown, bytesUp);
+        }
     }
 
     // TODO in order to support server sockets we should also copy fields to delegate
