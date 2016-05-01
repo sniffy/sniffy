@@ -115,7 +115,7 @@ public class QueryCounter implements TestRule {
                 socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
             }
 
-            return new SnifferStatement(statement, Collections.emptyList(), socketExpectationList);
+            return new SnifferStatement(statement, Collections.<Expectation>emptyList(), socketExpectationList);
         } else {
             return statement;
         }
