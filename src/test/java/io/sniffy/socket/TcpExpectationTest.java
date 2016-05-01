@@ -20,8 +20,42 @@ public class TcpExpectationTest extends BaseSocketTest {
     }
 
     @Test(expected = SniffyAssertionError.class)
-    public void testExactConnections_Exception() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2))) {
+    public void testAtMostOneConnection_Exception() {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.atMostOnce())) {
+            performSocketOperation();
+            performSocketOperation();
+        }
+    }
+
+    @Test(expected = SniffyAssertionError.class)
+    public void testMinConnections_Exception() {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.min(2))) {
+            performSocketOperation();
+        }
+    }
+
+    @Test(expected = SniffyAssertionError.class)
+    public void testMaxOneConnection_Exception() {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.max(1))) {
+            performSocketOperation();
+            performSocketOperation();
+        }
+    }
+
+    @Test(expected = SniffyAssertionError.class)
+    public void testMinMaxOneConnection_Exception() {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.min(1).max(2))) {
+            performSocketOperation();
+            performSocketOperation();
+            performSocketOperation();
+        }
+    }
+
+    @Test(expected = SniffyAssertionError.class)
+    public void testMaxMinOneConnection_Exception() {
+        try (Spy<?> s = Sniffer.expect(TcpConnections.max(2).min(1))) {
+            performSocketOperation();
+            performSocketOperation();
             performSocketOperation();
         }
     }
