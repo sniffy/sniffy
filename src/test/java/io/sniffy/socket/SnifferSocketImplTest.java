@@ -10,6 +10,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketImpl;
 
 import static org.junit.Assert.assertEquals;
@@ -174,6 +176,82 @@ public class SnifferSocketImplTest {
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);
+
+    }
+
+    @Test
+    public void testSetPerformancePreferences() throws Exception {
+
+        sniffySocket.setPerformancePreferences(1, 2, 3);
+
+        verifyPrivate(delegate).invoke("setPerformancePreferences", 1, 2, 3);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testCreate() throws Exception {
+
+        sniffySocket.create(true);
+
+        verifyPrivate(delegate).invoke("create", true);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testConnect() throws Exception {
+
+        sniffySocket.connect("localhost", 123);
+
+        verifyPrivate(delegate).invoke("connect", "localhost", 123);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testConnectInetAddress() throws Exception {
+
+        InetAddress inetAddress = InetAddress.getLoopbackAddress();
+
+        sniffySocket.connect(inetAddress, 123);
+
+        verifyPrivate(delegate).invoke("connect", inetAddress, 123);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testConnectSocketAddress() throws Exception {
+
+        SocketAddress socketAddress = new InetSocketAddress(InetAddress.getLocalHost(), 123);
+
+        sniffySocket.connect(socketAddress, 123);
+
+        verifyPrivate(delegate).invoke("connect", socketAddress, 123);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testBindInetAddress() throws Exception {
+
+        InetAddress inetAddress = InetAddress.getLoopbackAddress();
+
+        sniffySocket.bind(inetAddress, 123);
+
+        verifyPrivate(delegate).invoke("bind", inetAddress, 123);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testListen() throws Exception {
+
+        sniffySocket.listen(123);
+
+        verifyPrivate(delegate).invoke("listen", 123);
+        verifyNoMoreInteractions(delegate);
 
     }
 

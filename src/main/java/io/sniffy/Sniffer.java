@@ -1,6 +1,5 @@
 package io.sniffy;
 
-import io.sniffy.log.QueryLogger;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
@@ -28,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class Sniffer {
 
+    @Deprecated
     private final static AtomicInteger executedStatementsGlobalCounter = new AtomicInteger();
 
     private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
@@ -89,8 +89,6 @@ public final class Sniffer {
     }
 
     public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
-        // TODO log socket operation
-
         // increment counters
         SocketStats socketStats = new SocketStats(elapsedTime, bytesDown, bytesUp);
         SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread());
@@ -100,9 +98,6 @@ public final class Sniffer {
     }
 
     public static void executeStatement(String sql, long elapsedTime, String stackTrace) {
-        // log query
-        QueryLogger.logQuery(sql, elapsedTime);
-
         // increment global counter
         executedStatementsGlobalCounter.incrementAndGet();
 
@@ -111,28 +106,19 @@ public final class Sniffer {
     }
 
     /**
-     * @return number of SQL statements executed by current thread since some fixed moment of time
-     * @since 1.0
-     */
-    @Deprecated
-    public static int executedStatements() {
-        return executedStatementsGlobalCounter.intValue();
-    }
-
-    /**
      * @return a new {@link Spy} instance
      * @since 2.0
      */
     public static <T extends Spy<T>> Spy<? extends Spy<T>> spy() {
-        return new Spy<T>();
+        return new Spy<T>(false);
     }
 
     /**
      * @return a new {@link Spy} instance
-     * @since 2.0
+     * @since 3.1
      */
-    public static <T extends Spy<T>> Spy<? extends Spy<T>> spy(Threads threads) {
-        return new Spy<T>(); // TODO: implement spy listenning only for changes from threads
+    public static <T extends Spy<T>> Spy<? extends Spy<T>> spyCurrentThread() {
+        return new Spy<T>(true);
     }
 
     public static Spy expect(Spy.Expectation expectation) {
@@ -222,6 +208,15 @@ public final class Sniffer {
 
 
 
+
+    /**
+     * @return number of SQL statements executed by current thread since some fixed moment of time
+     * @since 1.0
+     */
+    @Deprecated
+    public static int executedStatements() {
+        return executedStatementsGlobalCounter.intValue();
+    }
 
     // never methods
 

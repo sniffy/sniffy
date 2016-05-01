@@ -5,6 +5,7 @@ public final class SpyWithValue<V> extends Spy<SpyWithValue<V>> {
     private final V value;
 
     SpyWithValue(V value) {
+        super(false);
         this.value = value;
     }
 

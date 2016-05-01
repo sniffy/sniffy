@@ -34,6 +34,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     private final WeakReference<Spy> selfReference;
     private final Thread owner;
+    private final boolean spyCurrentThreadOnly;
 
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
@@ -41,13 +42,17 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
     protected void addExecutedStatement(StatementMetaData statementMetaData) {
-        executedStatements.add(statementMetaData);
+        if (!spyCurrentThreadOnly || owner.equals(statementMetaData.owner)) {
+            executedStatements.add(statementMetaData);
+        }
     }
 
     protected void addSocketOperation(SocketMetaData socketMetaData, SocketStats socketStats) {
-        SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
-        if (null != existingSocketStats) {
-            existingSocketStats.accumulate(socketStats);
+        if (!spyCurrentThreadOnly || owner.equals(socketMetaData.owner)) {
+            SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
+            if (null != existingSocketStats) {
+                existingSocketStats.accumulate(socketStats);
+            }
         }
     }
 
@@ -87,9 +92,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
         return Collections.unmodifiableList(statements);
     }
 
-    Spy() {
+    Spy(boolean spyCurrentThreadOnly) {
         owner = Thread.currentThread();
         selfReference = Sniffer.registerSpy(this);
+        this.spyCurrentThreadOnly = spyCurrentThreadOnly;
         reset();
     }
 
