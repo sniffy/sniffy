@@ -1,4 +1,4 @@
-package io.sniffy;
+package io.sniffy.sql;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 
-class ConnectionInvocationHandler implements InvocationHandler {
+public class ConnectionInvocationHandler implements InvocationHandler {
 
     private final Connection delegate;
 

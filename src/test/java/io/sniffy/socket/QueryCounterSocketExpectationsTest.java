@@ -1,14 +1,11 @@
 package io.sniffy.socket;
 
-import io.sniffy.*;
 import io.sniffy.junit.QueryCounter;
-import org.junit.After;
-import org.junit.Before;
+import io.sniffy.test.Count;
+import io.sniffy.test.SniffyAssertionError;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import java.io.IOException;
 
 /**
  * Created by bedrin on 01.05.2016.

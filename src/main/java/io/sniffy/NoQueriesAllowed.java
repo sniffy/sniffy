@@ -1,6 +1,7 @@
 package io.sniffy;
 
 import io.sniffy.junit.QueryCounter;
+import io.sniffy.test.Count;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

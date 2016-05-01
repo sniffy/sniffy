@@ -99,7 +99,7 @@ public final class Sniffer {
         notifyListeners(socketMetaData, socketStats);
     }
 
-    protected static void executeStatement(String sql, long elapsedTime, String stackTrace) {
+    public static void executeStatement(String sql, long elapsedTime, String stackTrace) {
         // log query
         QueryLogger.logQuery(sql, elapsedTime);
 

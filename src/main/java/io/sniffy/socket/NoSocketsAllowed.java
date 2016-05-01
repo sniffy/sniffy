@@ -1,6 +1,6 @@
 package io.sniffy.socket;
 
-import io.sniffy.Count;
+import io.sniffy.test.Count;
 import io.sniffy.junit.QueryCounter;
 
 import java.lang.annotation.ElementType;

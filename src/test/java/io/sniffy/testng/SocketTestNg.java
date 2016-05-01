@@ -1,7 +1,7 @@
 package io.sniffy.testng;
 
-import io.sniffy.Count;
-import io.sniffy.SniffyAssertionError;
+import io.sniffy.test.Count;
+import io.sniffy.test.SniffyAssertionError;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SocketExpectation;
 import org.testng.annotations.*;

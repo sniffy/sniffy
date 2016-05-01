@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import io.sniffy.sql.ConnectionInvocationHandler;
 import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Proxy;

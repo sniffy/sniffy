@@ -1,4 +1,4 @@
-package io.sniffy;
+package io.sniffy.test;
 
 /**
  * Created by bedrin on 01.05.2016.

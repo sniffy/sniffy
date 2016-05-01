@@ -1,4 +1,6 @@
-package io.sniffy;
+package io.sniffy.sql;
+
+import io.sniffy.Sniffer;
 
 import static io.sniffy.util.StackTraceExtractor.*;
 

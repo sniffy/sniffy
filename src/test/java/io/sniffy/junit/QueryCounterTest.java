@@ -1,6 +1,7 @@
 package io.sniffy.junit;
 
 import io.sniffy.*;
+import io.sniffy.test.Count;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;

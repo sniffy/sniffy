@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.*;
+import io.sniffy.test.SniffyAssertionError;
 import io.sniffy.util.Range;
 
 import java.util.HashSet;

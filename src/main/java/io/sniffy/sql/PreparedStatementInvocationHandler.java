@@ -1,4 +1,4 @@
-package io.sniffy;
+package io.sniffy.sql;
 
 import java.lang.reflect.Method;
 

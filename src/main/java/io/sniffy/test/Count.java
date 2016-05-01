@@ -1,4 +1,4 @@
-package io.sniffy;
+package io.sniffy.test;
 
 public @interface Count {
 

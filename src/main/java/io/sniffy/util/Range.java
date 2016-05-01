@@ -1,6 +1,6 @@
 package io.sniffy.util;
 
-import io.sniffy.Count;
+import io.sniffy.test.Count;
 import io.sniffy.Expectation;
 
 public class Range {
