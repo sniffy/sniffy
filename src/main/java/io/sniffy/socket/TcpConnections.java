@@ -1,9 +1,7 @@
 package io.sniffy.socket;
 
-import io.sniffy.SniffyAssertionError;
-import io.sniffy.Spy;
-import io.sniffy.Threads;
-import io.sniffy.WrongNumberOfQueriesError;
+import io.sniffy.*;
+import io.sniffy.util.Range;
 
 import java.net.InetAddress;
 import java.util.HashSet;
@@ -42,12 +40,21 @@ public class TcpConnections {
         return new TcpExpectation_Max(max);
     }
 
-    private static class TcpExpectation implements Spy.Expectation {
+    public static class TcpExpectation implements Spy.Expectation {
 
         protected final int min;
         protected final int max;
         protected final Threads threads;
         protected final String host;
+
+        public TcpExpectation(SocketExpectation socketExpectation) {
+            this(
+                    Range.parse(socketExpectation.connections()).min,
+                    Range.parse(socketExpectation.connections()).max,
+                    socketExpectation.threads(),
+                    socketExpectation.hostName()
+            );
+        }
 
         protected TcpExpectation(int min, int max, Threads threads, String host) {
             this.min = min;

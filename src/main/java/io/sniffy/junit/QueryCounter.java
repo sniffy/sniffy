@@ -1,11 +1,13 @@
 package io.sniffy.junit;
 
 import io.sniffy.*;
+import io.sniffy.socket.TcpConnections;
 import io.sniffy.util.Range;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +34,10 @@ public class QueryCounter implements TestRule {
         Expectations expectations = description.getAnnotation(Expectations.class);
         Expectation expectation = description.getAnnotation(Expectation.class);
         NoQueriesAllowed notAllowedQueries = description.getAnnotation(NoQueriesAllowed.class);
+
+        SocketExpectation socketExpectation = description.getAnnotation(SocketExpectation.class);
+        SocketExpectations socketExpectations = description.getAnnotation(SocketExpectations.class);
+        // TODO create NoSocketsAllowed annotation
 
         // If no annotations present, check the test class and its superclasses
         for (Class<?> testClass = description.getTestClass();
@@ -70,11 +76,46 @@ public class QueryCounter implements TestRule {
                 }
             }
 
-            return new SnifferStatement(statement, expectationList);
+
+            List<SocketExpectation> socketExpectationList = new ArrayList<SocketExpectation>();
+
+            if (null != socketExpectation) {
+                socketExpectationList.add(socketExpectation);
+            }
+
+            if (null != socketExpectations) {
+                socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
+            }
+
+
+            return new SnifferStatement(statement, expectationList, socketExpectationList);
 
         } else if (null != notAllowedQueries) {
             Expectation annotation = NoQueriesAllowed.class.getAnnotation(Expectation.class);
-            return new SnifferStatement(statement, Collections.singletonList(annotation));
+
+            List<SocketExpectation> socketExpectationList = new ArrayList<SocketExpectation>();
+
+            if (null != socketExpectation) {
+                socketExpectationList.add(socketExpectation);
+            }
+
+            if (null != socketExpectations) {
+                socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
+            }
+
+            return new SnifferStatement(statement, Collections.singletonList(annotation), socketExpectationList);
+        } else if (null != socketExpectations || null != socketExpectation) {
+            List<SocketExpectation> socketExpectationList = new ArrayList<SocketExpectation>();
+
+            if (null != socketExpectation) {
+                socketExpectationList.add(socketExpectation);
+            }
+
+            if (null != socketExpectations) {
+                socketExpectationList.addAll(Arrays.asList(socketExpectations.value()));
+            }
+
+            return new SnifferStatement(statement, Collections.emptyList(), socketExpectationList);
         } else {
             return statement;
         }
@@ -106,16 +147,24 @@ public class QueryCounter implements TestRule {
 
         private final Statement delegate;
         private final List<Expectation> expectationList;
+        private final List<SocketExpectation> socketExpectationList;
 
-        public SnifferStatement(Statement delegate, List<Expectation> expectationList) {
+        public SnifferStatement(Statement delegate, List<Expectation> expectationList, List<SocketExpectation> socketExpectationList) {
             this.delegate = delegate;
             this.expectationList = expectationList;
+            this.socketExpectationList = socketExpectationList;
         }
 
         @Override
         public void evaluate() throws Throwable {
 
             Spy spy = Sniffer.expect(expectationList);
+
+            if (null != socketExpectationList) {
+                for (SocketExpectation socketExpectation : socketExpectationList) {
+                    spy = spy.expect(new TcpConnections.TcpExpectation(socketExpectation));
+                }
+            }
 
             spy.execute(new Sniffer.Executable() {
                 public void execute() throws Throwable{

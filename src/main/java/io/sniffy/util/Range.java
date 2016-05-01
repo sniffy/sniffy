@@ -15,6 +15,20 @@ public class Range {
         this.max = max;
     }
 
+    public static Range parse(Count count) {
+
+        int value = count.value();
+        int min = count.min();
+        int max = count.max();
+
+        if (-1 != value && (-1 != min || -1 != max)) {
+            throw new IllegalArgumentException("Ambiguous configuration - parameter value used together with atLeast/atMost");
+        }
+
+        return new Range(value, min, max);
+
+    }
+
     public static Range parse(Expectation expectation) {
 
         int value = expectation.value();
