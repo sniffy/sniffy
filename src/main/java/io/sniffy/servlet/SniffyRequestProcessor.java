@@ -113,7 +113,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 updateRequestCache();
                 responseWrapper.flushIfPossible();
             } catch (Exception e) {
-                snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
+                if (null != snifferFilter.servletContext) {
+                    snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
+                } else {
+                    e.printStackTrace();
+                }
             }
         }
 

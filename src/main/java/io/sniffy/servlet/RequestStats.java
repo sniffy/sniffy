@@ -12,7 +12,7 @@ class RequestStats {
     private long timeToFirstByte;
     private long elapsedTime;
     private List<StatementMetaData> executedStatements;
-    Map<SocketMetaData, SocketStats> socketOperations;
+    private Map<SocketMetaData, SocketStats> socketOperations;
 
     public RequestStats() {
     }

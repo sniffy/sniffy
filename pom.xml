@@ -134,8 +134,13 @@
                         </Import-Package>
                         <Export-Package>
                             io.sniffy,
+                            io.sniffy.boot,
                             io.sniffy.junit,
+                            io.sniffy.servlet,
+                            io.sniffy.socket,
                             io.sniffy.spring,
+                            io.sniffy.sql,
+                            io.sniffy.test,
                             io.sniffy.testng
                         </Export-Package>
                     </instructions>
@@ -242,8 +247,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.2</version>
                 <configuration>
-                    <source>1.5</source>
-                    <target>1.5</target>
+                    <source>1.6</source>
+                    <target>1.6</target>
                     <testSource>1.8</testSource>
                     <testTarget>1.8</testTarget>
                 </configuration>
@@ -287,6 +292,12 @@
     </build>
 
     <dependencies>
+        <!-- TODO: use SHADE plugin -->
+        <dependency>
+            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+            <artifactId>concurrentlinkedhashmap-lru</artifactId>
+            <version>1.4.2</version>
+        </dependency>
 
         <dependency>
             <!--<groupId>org.webjars.bower</groupId>

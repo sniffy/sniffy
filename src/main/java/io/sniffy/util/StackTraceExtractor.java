@@ -54,9 +54,10 @@ public class StackTraceExtractor {
                     !"io.sniffy.socket.SnifferOutputStream".equals(traceElementClassName) &&
                     !"io.sniffy.util.StackTraceExtractor".equals(traceElementClassName)
                     ) {
-                startIndex = i;
+                startIndex = i > 1 ? i - 1 : i;
                 break;
             }
+            // TODO go back until non java.io. trace
         }
         if (startIndex <= 0) {
             // no proxy, return entire collection

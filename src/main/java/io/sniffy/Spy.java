@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlQueries;
@@ -12,10 +13,7 @@ import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 
 import static io.sniffy.Threads.CURRENT;
 import static io.sniffy.util.ExceptionUtil.throwException;
@@ -30,7 +28,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     // TODO: add invocationcount to StatementMetaData; collapse similar queries
     private volatile Collection<StatementMetaData> executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
-    private volatile ConcurrentMap<SocketMetaData, SocketStats> socketOperations = new ConcurrentHashMap<SocketMetaData, SocketStats>();
+    private volatile ConcurrentLinkedHashMap<SocketMetaData, SocketStats> socketOperations =
+            new ConcurrentLinkedHashMap.Builder<SocketMetaData, SocketStats>().
+                    maximumWeightedCapacity(Long.MAX_VALUE).
+                    build();
 
     private final WeakReference<Spy> selfReference;
     private final Thread owner;
@@ -61,7 +62,9 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     protected void resetSocketOpertions() {
-        socketOperations = new ConcurrentHashMap<SocketMetaData, SocketStats>();
+        socketOperations = new ConcurrentLinkedHashMap.Builder<SocketMetaData, SocketStats>().
+                maximumWeightedCapacity(Long.MAX_VALUE).
+                build();
     }
 
     public List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
@@ -134,8 +137,8 @@ public class Spy<C extends Spy<C>> implements Closeable {
         Map<SocketMetaData, SocketStats> socketOperations;
         switch (threadMatcher) {
             case CURRENT:
-                socketOperations = new HashMap<SocketMetaData, SocketStats>();
-                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.entrySet()) {
+                socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();
+                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {
 
                     SocketMetaData socketMetaData = entry.getKey();
 
@@ -151,16 +154,18 @@ public class Spy<C extends Spy<C>> implements Closeable {
                             (null == port || port == socketAddress.getPort())
                             ) {
                         SocketStats socketStats = new SocketStats(entry.getValue());
-                        SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
-                        if (null != existingSocketStats) {
+                        SocketStats existingSocketStats = socketOperations.get(socketMetaData);
+                        if (null == existingSocketStats) {
+                            socketOperations.put(socketMetaData, socketStats);
+                        } else {
                             existingSocketStats.accumulate(socketStats);
                         }
                     }
                 }
                 break;
             case OTHERS:
-                socketOperations = new HashMap<SocketMetaData, SocketStats>();
-                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.entrySet()) {
+                socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();
+                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {
 
                     SocketMetaData socketMetaData = entry.getKey();
 
@@ -176,16 +181,18 @@ public class Spy<C extends Spy<C>> implements Closeable {
                             (null == port || port == socketAddress.getPort())
                             ) {
                         SocketStats socketStats = new SocketStats(entry.getValue());
-                        SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
-                        if (null != existingSocketStats) {
+                        SocketStats existingSocketStats = socketOperations.get(socketMetaData);
+                        if (null == existingSocketStats) {
+                            socketOperations.put(socketMetaData, socketStats);
+                        } else {
                             existingSocketStats.accumulate(socketStats);
                         }
                     }
                 }
                 break;
             case ANY:
-                socketOperations = new HashMap<SocketMetaData, SocketStats>();
-                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.entrySet()) {
+                socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();
+                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {
 
                     SocketMetaData socketMetaData = entry.getKey();
 
@@ -199,8 +206,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
                     if ((null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
                             (null == port || port == socketAddress.getPort()) ) {
                         SocketStats socketStats = new SocketStats(entry.getValue());
-                        SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
-                        if (null != existingSocketStats) {
+                        SocketStats existingSocketStats = socketOperations.get(socketMetaData);
+                        if (null == existingSocketStats) {
+                            socketOperations.put(socketMetaData, socketStats);
+                        } else {
                             existingSocketStats.accumulate(socketStats);
                         }
                     }
