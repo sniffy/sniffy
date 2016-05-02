@@ -942,7 +942,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query) {
-        // TODO: try to call here verify instead of expect and see if test fails
         return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query));
     }
 
