@@ -92,4 +92,15 @@ public class ExceptionUtil {
 
     }
 
+    public static RuntimeException processException(Throwable e) {
+        if (null != e) {
+            if (e instanceof InvocationTargetException) {
+                throwTargetException((InvocationTargetException) e);
+            } else {
+                throwException(e);
+            }
+        }
+        return new RuntimeException(e);
+    }
+
 }
