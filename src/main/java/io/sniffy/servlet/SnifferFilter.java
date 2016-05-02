@@ -1,7 +1,7 @@
 package io.sniffy.servlet;
 
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.Constants;
-import io.sniffy.util.LruCache;
 
 import javax.servlet.*;
 import javax.servlet.http.Cookie;
@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -72,8 +71,9 @@ public class SnifferFilter implements Filter {
     protected boolean enabled = true;
     protected Pattern excludePattern = null;
 
-    // TODO: consider replacing with some concurrent collection instead
-    protected final Map<String, RequestStats> cache = Collections.synchronizedMap(new LruCache<String, RequestStats>(10000));
+    protected final Map<String, RequestStats> cache = new ConcurrentLinkedHashMap.Builder<String, RequestStats>().
+                    maximumWeightedCapacity(10000).
+                    build();
 
     protected SnifferServlet snifferServlet;
     protected ServletContext servletContext;
