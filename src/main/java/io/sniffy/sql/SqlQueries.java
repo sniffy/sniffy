@@ -144,7 +144,7 @@ public class SqlQueries {
         }
 
         public SqlExpectation_Count_Threads anyThreads() {
-            return threads(Threads.CURRENT);
+            return threads(Threads.ANY);
         }
 
     }
