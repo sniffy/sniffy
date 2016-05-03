@@ -15,13 +15,20 @@ public class Range {
             if (-1 != min || -1 != max) {
                 throw new IllegalArgumentException("Ambiguous configuration - parameter value used together with min/max");
             } else {
-                min = max = value;
+                this.min = this.max = this.value = value;
+            }
+        } else {
+            if (max > min) {
+                throw new IllegalArgumentException("Max parameter cannot be lather than min parameter");
+            } else if (max == min) {
+                this.min = this.max = this.value = max;
+            } else {
+                this.value = value;
+                this.min = min;
+                this.max = max;
             }
         }
 
-        this.value = value;
-        this.min = min;
-        this.max = max;
     }
 
     public static Range parse(Count count) {

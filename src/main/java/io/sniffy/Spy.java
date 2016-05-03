@@ -135,7 +135,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
             }
         }
 
-        Map<SocketMetaData, SocketStats> socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();;
+        Map<SocketMetaData, SocketStats> socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();
         for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {
 
             SocketMetaData socketMetaData = entry.getKey();
