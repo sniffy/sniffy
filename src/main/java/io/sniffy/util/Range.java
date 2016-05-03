@@ -18,7 +18,7 @@ public class Range {
                 this.min = this.max = this.value = value;
             }
         } else {
-            if (min > max) {
+            if (min > max && -1 != max) {
                 throw new IllegalArgumentException("Min parameter cannot be larger than max parameter");
             } else if (max == min) {
                 this.min = this.max = this.value = max;
