@@ -126,6 +126,7 @@ public class SqlQueries {
             return type(Query.MERGE);
         }
 
+        // TODO: change name since it clashes with otherThreads()
         public SqlExpectation_Count_Query other() {
             return type(Query.OTHER);
         }
@@ -167,7 +168,7 @@ public class SqlQueries {
         }
 
         public SqlExpectation anyThreads() {
-            return threads(Threads.CURRENT);
+            return threads(Threads.ANY);
         }
 
     }
