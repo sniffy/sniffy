@@ -21,7 +21,23 @@ public class SnifferExpectApiTest extends BaseTest {
 
     @Test
     public void testExactlyOneThreadLocalInsert() throws Exception {
-        try (Spy $= Sniffer.expect(1, Threads.CURRENT, Query.INSERT)) {
+        try (Spy $= Sniffer.expect(1, Query.INSERT)) {
+            executeStatement(Query.INSERT);
+        }
+    }
+
+    @Test
+    public void testExactlyOneOtherThreadInsert() throws Exception {
+        try (Spy $= Sniffer.expect(1, Threads.OTHERS, Query.INSERT)) {
+            executeStatement(Query.INSERT);
+            executeStatementInOtherThread(Query.INSERT);
+            executeStatements(2, Query.UPDATE);
+        }
+    }
+
+    @Test
+    public void testExactlyTwoInsertsAnyThread() throws Exception {
+        try (Spy $= Sniffer.expect(2, Query.INSERT, Threads.ANY)) {
             executeStatement(Query.INSERT);
             executeStatementInOtherThread(Query.INSERT);
             executeStatements(2, Query.UPDATE);

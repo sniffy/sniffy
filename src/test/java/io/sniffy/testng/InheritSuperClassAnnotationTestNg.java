@@ -1,6 +1,7 @@
 package io.sniffy.testng;
 
 import io.sniffy.BaseTest;
+import io.sniffy.WrongNumberOfQueriesError;
 import io.sniffy.junit.BasedNoQueriesAllowedTest;
 import io.sniffy.Expectation;
 import org.testng.annotations.BeforeClass;
@@ -22,7 +23,7 @@ public class InheritSuperClassAnnotationTestNg extends BasedNoQueriesAllowedTest
     }
 
     @Test
-    @MustFail
+    @MustFail(WrongNumberOfQueriesError.class)
     public void testNoQueriesAllowedBySuperTest() {
         try {
             try (Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");

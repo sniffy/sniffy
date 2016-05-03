@@ -1,6 +1,8 @@
-package io.sniffy;
+package io.sniffy.sql;
 
-import static io.sniffy.trace.StackTraceExtractor.*;
+import io.sniffy.Sniffer;
+
+import static io.sniffy.util.StackTraceExtractor.*;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;

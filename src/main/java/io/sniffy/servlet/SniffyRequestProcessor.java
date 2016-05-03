@@ -3,6 +3,8 @@ package io.sniffy.servlet;
 import io.sniffy.Sniffer;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
+import io.sniffy.socket.SocketMetaData;
+import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.StatementMetaData;
 
 import javax.servlet.FilterChain;
@@ -14,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
@@ -110,7 +113,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 updateRequestCache();
                 responseWrapper.flushIfPossible();
             } catch (Exception e) {
-                snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
+                if (null != snifferFilter.servletContext) {
+                    snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
+                } else {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -118,8 +125,15 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     private void updateRequestCache() {
         List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
-        if (null != executedStatements && !executedStatements.isEmpty()) {
-            requestStats.setExecutedStatements(executedStatements);
+        Map<SocketMetaData, SocketStats> socketOperations = spy.getSocketOperations(Threads.CURRENT, null, false);
+        if ((null != executedStatements && !executedStatements.isEmpty()) ||
+                (null != socketOperations && !socketOperations.isEmpty())) {
+            if (null != executedStatements && !executedStatements.isEmpty()) {
+                requestStats.setExecutedStatements(executedStatements);
+            }
+            if (null != socketOperations && !socketOperations.isEmpty()) {
+                requestStats.setSocketOperations(socketOperations);
+            }
             snifferFilter.cache.put(requestId, requestStats);
         }
     }
@@ -131,7 +145,6 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
-        // TODO: can this method be called multiple times?
         wrapper.addCorsHeadersHeaderIfRequired();
         wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
         wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
@@ -163,7 +176,6 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     @Override
-    // TODO: can this method be called multiple times?
     public void beforeClose(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
 
         updateRequestCache();

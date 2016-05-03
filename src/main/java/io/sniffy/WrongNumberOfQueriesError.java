@@ -1,7 +1,6 @@
 package io.sniffy;
 
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.sql.StatementMetaData;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,7 +11,7 @@ import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 /**
  * @since 2.0
  */
-public class WrongNumberOfQueriesError extends AssertionError {
+public class WrongNumberOfQueriesError extends SniffyAssertionError {
 
     private final Threads threadMatcher;
     private final Query query;

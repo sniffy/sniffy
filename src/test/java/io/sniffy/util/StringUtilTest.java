@@ -8,7 +8,7 @@ public class StringUtilTest {
 
     @Test
     public void testEscapeJsonString() throws Exception {
-        assertEquals("\"\\\\\\\"\\t\\n\\r\\f\\/\"", StringUtil.escapeJsonString("\\\"\t\n\r\f/"));
+        assertEquals("\"\\u0001\\b\\\\\\\"\\t\\n\\r\\f/_<\\/script>\"", StringUtil.escapeJsonString("\u0001\b\\\"\t\n\r\f/_</script>"));
         assertEquals("\"\"", StringUtil.escapeJsonString(null));
     }
 

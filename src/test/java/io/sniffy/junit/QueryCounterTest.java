@@ -1,11 +1,13 @@
 package io.sniffy.junit;
 
 import io.sniffy.*;
+import io.sniffy.test.Count;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 @NoQueriesAllowed
+// TODO created a copy for new Count API
 public class QueryCounterTest extends BaseTest {
 
     @Rule
@@ -21,14 +23,26 @@ public class QueryCounterTest extends BaseTest {
     }
 
     @Test
-    @Expectation(1)
+    @Expectation(count = @Count(1))
     public void testAllowedOneQuery() {
         executeStatement();
     }
 
     @Test
-    @Expectation(value = 5, atLeast = 2)
+    @Expectation(1)
+    public void testAllowedOneQuery_DeprecatedApi() {
+        executeStatement();
+    }
+
+    @Test
+    @Expectation(count = @Count(value = 5, min = 2))
     public void testAmbiguousExpectationAnnotation() {
+        thrown.expect(IllegalArgumentException.class);
+    }
+
+    @Test
+    @Expectation(value = 5, atLeast = 2)
+    public void testAmbiguousExpectationAnnotation_DeprecatedApi() {
         thrown.expect(IllegalArgumentException.class);
     }
 

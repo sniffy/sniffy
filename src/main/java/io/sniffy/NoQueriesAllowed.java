@@ -1,20 +1,19 @@
 package io.sniffy;
 
-import io.sniffy.junit.QueryCounter;
+import io.sniffy.test.Count;
+import io.sniffy.test.junit.SniffyRule;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
- * Alias for {@code @Expectation(0)}
+ * Alias for {@code @Expectation(count = @Count(0), threads = Threads.CURRENT)}
  * @see Expectation
- * @see QueryCounter
+ * @see SniffyRule
  * @since 2.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
-@Expectation(value = 0, threads = Threads.ANY)
+@Inherited
+@Expectation(count = @Count(0), threads = Threads.CURRENT)
 public @interface NoQueriesAllowed {
 }
