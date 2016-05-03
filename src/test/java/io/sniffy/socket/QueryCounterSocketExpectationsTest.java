@@ -2,14 +2,10 @@ package io.sniffy.socket;
 
 import io.sniffy.junit.QueryCounter;
 import io.sniffy.test.Count;
-import io.sniffy.test.SniffyAssertionError;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-/**
- * Created by bedrin on 01.05.2016.
- */
 public class QueryCounterSocketExpectationsTest extends BaseSocketTest {
 
     @Rule
@@ -30,7 +26,7 @@ public class QueryCounterSocketExpectationsTest extends BaseSocketTest {
     public void testExactConnections_Failed() {
         performSocketOperation();
         performSocketOperation();
-        thrown.expect(SniffyAssertionError.class);
+        thrown.expect(TcpConnectionsExpectationError.class);
     }
 
     @Test
@@ -45,7 +41,7 @@ public class QueryCounterSocketExpectationsTest extends BaseSocketTest {
     public void testMinConnections_Failed() {
         performSocketOperation();
         performSocketOperation();
-        thrown.expect(SniffyAssertionError.class);
+        thrown.expect(TcpConnectionsExpectationError.class);
     }
 
 

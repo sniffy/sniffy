@@ -1,7 +1,6 @@
 package io.sniffy;
 
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.test.SniffyAssertionError;
 
 import java.util.ArrayList;
 import java.util.Collections;

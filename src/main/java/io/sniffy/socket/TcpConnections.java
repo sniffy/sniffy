@@ -1,7 +1,6 @@
 package io.sniffy.socket;
 
 import io.sniffy.*;
-import io.sniffy.test.SniffyAssertionError;
 import io.sniffy.util.Range;
 
 import java.util.HashSet;
@@ -76,24 +75,8 @@ public class TcpConnections {
             int numConnections = connectionIds.size();
 
             if ((-1 != max && numConnections > max) || (-1 != min && numConnections < min)) {
-                // TODO: throw some specific exception instead
-                throw new SniffyAssertionError(String.format(
-                        "Expected to get between %d and %d connections but observerd %d", min, max, numConnections
-                ));
+                throw new TcpConnectionsExpectationError(this, socketOperations, numConnections);
             }
-
-            /*
-            int numQueries = spy.executedStatements(threads, type);
-
-            if (numQueries > max || numQueries < min) {
-                throw new WrongNumberOfQueriesError(
-                        threads, type,
-                        min, max, numQueries,
-                        spy.getExecutedStatements(threads)
-                );
-            }
-             */
-
 
             return spy;
 

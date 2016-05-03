@@ -145,7 +145,6 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
-        // TODO: can this method be called multiple times?
         wrapper.addCorsHeadersHeaderIfRequired();
         wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
         wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
@@ -177,7 +176,6 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     @Override
-    // TODO: can this method be called multiple times?
     public void beforeClose(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
 
         updateRequestCache();

@@ -1,7 +1,7 @@
 package io.sniffy.testng;
 
+import io.sniffy.socket.TcpConnectionsExpectationError;
 import io.sniffy.test.Count;
-import io.sniffy.test.SniffyAssertionError;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SocketExpectation;
 import org.testng.annotations.*;
@@ -34,9 +34,9 @@ public class SocketTestNg extends BaseSocketTest {
         performSocketOperation();
     }
 
-    @Test(expectedExceptions = SniffyAssertionError.class)
+    @Test
     @SocketExpectation(connections = @Count(2))
-    @MustFail(SniffyAssertionError.class)
+    @MustFail(TcpConnectionsExpectationError.class)
     public void testAllowedOneQuery_Fails() {
         performSocketOperation();
         performSocketOperation();

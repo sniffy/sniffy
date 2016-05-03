@@ -5,7 +5,6 @@ import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlQueries;
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.test.SniffyAssertionError;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.Closeable;
