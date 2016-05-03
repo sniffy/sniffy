@@ -10,16 +10,6 @@ public class Range {
     public final int max;
 
     public Range(int value, int min, int max) {
-        this.value = value;
-        this.min = min;
-        this.max = max;
-    }
-
-    public static Range parse(Count count) {
-
-        int value = count.value();
-        int min = count.min();
-        int max = count.max();
 
         if (-1 != value) {
             if (-1 != min || -1 != max) {
@@ -29,8 +19,13 @@ public class Range {
             }
         }
 
-        return new Range(value, min, max);
+        this.value = value;
+        this.min = min;
+        this.max = max;
+    }
 
+    public static Range parse(Count count) {
+        return new Range(count.value(), count.min(), count.max());
     }
 
     public static Range parse(Expectation expectation) {
@@ -67,10 +62,6 @@ public class Range {
             } else {
                 max = count.max();
             }
-        }
-
-        if (-1 != value && (-1 != min || -1 != max)) {
-            throw new IllegalArgumentException("Ambiguous configuration - parameter value used together with min/max");
         }
 
         return new Range(value, min, max);

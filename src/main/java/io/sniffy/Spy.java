@@ -14,7 +14,9 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static io.sniffy.Threads.ANY;
 import static io.sniffy.Threads.CURRENT;
+import static io.sniffy.Threads.OTHERS;
 import static io.sniffy.util.ExceptionUtil.throwException;
 
 /**
@@ -133,89 +135,32 @@ public class Spy<C extends Spy<C>> implements Closeable {
             }
         }
 
-        Map<SocketMetaData, SocketStats> socketOperations;
-        switch (threadMatcher) {
-            case CURRENT:
-                socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();
-                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {
+        Map<SocketMetaData, SocketStats> socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();;
+        for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {
 
-                    SocketMetaData socketMetaData = entry.getKey();
+            SocketMetaData socketMetaData = entry.getKey();
 
-                    if (removeStackTraces) socketMetaData = new SocketMetaData(
-                            socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.owner
-                    );
+            if (removeStackTraces) socketMetaData = new SocketMetaData(
+                    socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.owner
+            );
 
-                    InetSocketAddress socketAddress = socketMetaData.address;
-                    InetAddress inetAddress = socketAddress.getAddress();
+            InetSocketAddress socketAddress = socketMetaData.address;
+            InetAddress inetAddress = socketAddress.getAddress();
 
-                    if (socketMetaData.owner == this.owner &&
-                            (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
-                            (null == port || port == socketAddress.getPort())
-                            ) {
-                        SocketStats socketStats = new SocketStats(entry.getValue());
-                        SocketStats existingSocketStats = socketOperations.get(socketMetaData);
-                        if (null == existingSocketStats) {
-                            socketOperations.put(socketMetaData, socketStats);
-                        } else {
-                            existingSocketStats.accumulate(socketStats);
-                        }
-                    }
+            if ( ( (CURRENT == threadMatcher && socketMetaData.owner == this.owner) ||
+                    (OTHERS == threadMatcher && socketMetaData.owner != this.owner) ||
+                    (ANY == threadMatcher || null == threadMatcher) ) &&
+                    (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
+                    (null == port || port == socketAddress.getPort())
+                    ) {
+                SocketStats socketStats = new SocketStats(entry.getValue());
+                SocketStats existingSocketStats = socketOperations.get(socketMetaData);
+                if (null == existingSocketStats) {
+                    socketOperations.put(socketMetaData, socketStats);
+                } else {
+                    existingSocketStats.accumulate(socketStats);
                 }
-                break;
-            case OTHERS:
-                socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();
-                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {
-
-                    SocketMetaData socketMetaData = entry.getKey();
-
-                    if (removeStackTraces) socketMetaData = new SocketMetaData(
-                            socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.owner
-                    );
-
-                    InetSocketAddress socketAddress = socketMetaData.address;
-                    InetAddress inetAddress = socketAddress.getAddress();
-
-                    if (socketMetaData.owner != this.owner &&
-                            (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
-                            (null == port || port == socketAddress.getPort())
-                            ) {
-                        SocketStats socketStats = new SocketStats(entry.getValue());
-                        SocketStats existingSocketStats = socketOperations.get(socketMetaData);
-                        if (null == existingSocketStats) {
-                            socketOperations.put(socketMetaData, socketStats);
-                        } else {
-                            existingSocketStats.accumulate(socketStats);
-                        }
-                    }
-                }
-                break;
-            case ANY:
-                socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();
-                for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {
-
-                    SocketMetaData socketMetaData = entry.getKey();
-
-                    if (removeStackTraces) socketMetaData = new SocketMetaData(
-                            socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.owner
-                    );
-
-                    InetSocketAddress socketAddress = socketMetaData.address;
-                    InetAddress inetAddress = socketAddress.getAddress();
-
-                    if ((null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
-                            (null == port || port == socketAddress.getPort()) ) {
-                        SocketStats socketStats = new SocketStats(entry.getValue());
-                        SocketStats existingSocketStats = socketOperations.get(socketMetaData);
-                        if (null == existingSocketStats) {
-                            socketOperations.put(socketMetaData, socketStats);
-                        } else {
-                            existingSocketStats.accumulate(socketStats);
-                        }
-                    }
-                }
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
+            }
         }
 
         return Collections.unmodifiableMap(socketOperations);
