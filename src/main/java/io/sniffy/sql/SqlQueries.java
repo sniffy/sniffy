@@ -5,7 +5,6 @@ import io.sniffy.Spy;
 import io.sniffy.Threads;
 import io.sniffy.WrongNumberOfQueriesError;
 
-// TODO add validation to methods
 public class SqlQueries {
 
     private SqlQueries() {
@@ -76,6 +75,7 @@ public class SqlQueries {
         }
 
         public SqlExpectation_Count max(int max) {
+            if (max < min) throw new IllegalArgumentException("max cannot be less than min");
             return new SqlExpectation_Count(min, max);
         }
 
@@ -88,6 +88,7 @@ public class SqlQueries {
         }
 
         public SqlExpectation_Count min(int min) {
+            if (max < min) throw new IllegalArgumentException("max cannot be less than min");
             return new SqlExpectation_Count(min, max);
         }
 
@@ -97,6 +98,8 @@ public class SqlQueries {
 
         private SqlExpectation_Count(int min, int max) {
             super(min, max, Threads.CURRENT, Query.ANY);
+            if (min < 0) throw new IllegalArgumentException("min cannot be negative");
+            if (max < min) throw new IllegalArgumentException("max cannot be less than min");
         }
 
         public SqlExpectation_Count_Query type(Query query) {

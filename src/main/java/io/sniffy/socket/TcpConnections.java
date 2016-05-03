@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 
 // TODO: support bytesUp, bytesDown, bytesTotal and port expectations once code generation is in place
-// TODO add validation to methods
 public class TcpConnections {
 
     private TcpConnections() {
@@ -91,6 +90,7 @@ public class TcpConnections {
         }
 
         public TcpExpectation_Count max(int max) {
+            if (max < min) throw new IllegalArgumentException("max cannot be less than min");
             return new TcpExpectation_Count(min, max);
         }
 
@@ -103,6 +103,7 @@ public class TcpConnections {
         }
 
         public TcpExpectation_Count min(int min) {
+            if (max < min) throw new IllegalArgumentException("max cannot be less than min");
             return new TcpExpectation_Count(min, max);
         }
 
@@ -112,6 +113,8 @@ public class TcpConnections {
 
         private TcpExpectation_Count(int min, int max) {
             super(min, max, Threads.CURRENT, null);
+            if (min < 0) throw new IllegalArgumentException("min cannot be negative");
+            if (max < min) throw new IllegalArgumentException("max cannot be less than min");
         }
 
         public TcpExpectation_Count_Host host(String host) {
