@@ -11,7 +11,7 @@ import java.net.SocketImplFactory;
 
 public class SnifferSocketImplFactory implements SocketImplFactory {
 
-    private final static Constructor<? extends SocketImpl> defaultSocketImplClassConstructor =
+    protected final static Constructor<? extends SocketImpl> defaultSocketImplClassConstructor =
             getDefaultSocketImplClassConstructor();
 
     private volatile static SocketImplFactory previousSocketImplFactory;

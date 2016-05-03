@@ -2,7 +2,14 @@ package io.sniffy.socket;
 
 import io.sniffy.Sniffer;
 import io.sniffy.Spy;
+import io.sniffy.util.ExceptionUtil;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketImpl;
+import java.net.SocketImplFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.sniffy.Threads.*;
 import static org.junit.Assert.assertEquals;
@@ -10,6 +17,61 @@ import static org.junit.Assert.assertTrue;
 
 // TODO: test with another socket factory which is already set
 public class SnifferSocketImplFactoryTest extends BaseSocketTest {
+
+    private static class TestSocketImplFactory implements SocketImplFactory {
+
+        private AtomicInteger invocationCounter = new AtomicInteger();
+
+        @Override
+        public SocketImpl createSocketImpl() {
+            try {
+                return SnifferSocketImplFactory.defaultSocketImplClassConstructor.newInstance();
+            } catch (Exception e) {
+                ExceptionUtil.throwException(e);
+                return null;
+            } finally {
+
+                StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+
+                boolean serverSocket = false;
+
+                if (null != stackTrace) {
+                    for (StackTraceElement ste : stackTrace) {
+                        if (ste.getClassName().startsWith("java.net.ServerSocket")) {
+                            serverSocket = true;
+                        }
+                    }
+                }
+
+                if (!serverSocket) {
+                    invocationCounter.incrementAndGet();
+                }
+            }
+        }
+
+    }
+
+    @Test
+    public void testExistingFactory() throws IOException {
+
+        TestSocketImplFactory testSocketImplFactory = new TestSocketImplFactory();
+
+        SnifferSocketImplFactory.uninstall();
+        Socket.setSocketImplFactory(testSocketImplFactory);
+
+        SnifferSocketImplFactory.install();
+
+        performSocketOperation();
+
+        assertEquals(1, testSocketImplFactory.invocationCounter.intValue());
+
+        SnifferSocketImplFactory.uninstall();
+
+        performSocketOperation();
+
+        assertEquals(2, testSocketImplFactory.invocationCounter.intValue());
+
+    }
 
     @Test
     public void testInstall() throws Exception {
