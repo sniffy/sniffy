@@ -115,7 +115,7 @@ public class SqlQueriesTest extends BaseTest {
     }
 
     @Test
-    public void testExactTwoCurrentThreadSelectQueries() {
+    public void testExactTwoSelectCurrentThreadQueries() {
         try (Spy $= Sniffer.expect(SqlQueries.exact(2).select().currentThread())) {
             executeStatement();
             executeStatement();
@@ -124,7 +124,7 @@ public class SqlQueriesTest extends BaseTest {
     }
 
     @Test
-    public void testExactTwoOtherThreadsSelectQueries() {
+    public void testExactTwoSelectOtherThreadsQueries() {
         try (Spy $= Sniffer.expect(SqlQueries.exact(2).select().otherThreads())) {
             executeStatementInOtherThread();
             executeStatementInOtherThread();
@@ -133,10 +133,58 @@ public class SqlQueriesTest extends BaseTest {
     }
 
     @Test
-    public void testExactTwoAnyThreadsSelectQueries() {
+    public void testExactTwoSelectAnyThreadsQueries() {
         try (Spy $= Sniffer.expect(SqlQueries.exact(2).select().anyThreads())) {
             executeStatementInOtherThread();
             executeStatement();
+        }
+    }
+
+    @Test
+    public void testExactTwoAnyThreadsSelectQueries() {
+        try (Spy $= Sniffer.expect(SqlQueries.exact(2).anyThreads().select())) {
+            executeStatement(SELECT);
+            executeStatementInOtherThread(SELECT);
+        }
+    }
+
+    @Test
+    public void testExactTwoAnyThreadsInsertQueries() {
+        try (Spy $= Sniffer.expect(SqlQueries.exact(2).anyThreads().insert())) {
+            executeStatement(INSERT);
+            executeStatementInOtherThread(INSERT);
+        }
+    }
+
+    @Test
+    public void testExactTwoAnyThreadsUpdateQueries() {
+        try (Spy $= Sniffer.expect(SqlQueries.exact(2).anyThreads().update())) {
+            executeStatement(UPDATE);
+            executeStatementInOtherThread(UPDATE);
+        }
+    }
+
+    @Test
+    public void testExactTwoAnyThreadsDeleteQueries() {
+        try (Spy $= Sniffer.expect(SqlQueries.exact(2).anyThreads().delete())) {
+            executeStatement(DELETE);
+            executeStatementInOtherThread(DELETE);
+        }
+    }
+
+    @Test
+    public void testExactTwoAnyThreadsMergeQueries() {
+        try (Spy $= Sniffer.expect(SqlQueries.exact(2).anyThreads().merge())) {
+            executeStatement(MERGE);
+            executeStatementInOtherThread(MERGE);
+        }
+    }
+
+    @Test
+    public void testExactTwoAnyThreadsOtherQueries() {
+        try (Spy $= Sniffer.expect(SqlQueries.exact(2).anyThreads().other())) {
+            executeStatement(OTHER);
+            executeStatementInOtherThread(OTHER);
         }
     }
 
