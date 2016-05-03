@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 class SnifferSocketImpl extends SocketImpl {
 
     private final static ReflectionFieldCopier socketCopier =
@@ -98,7 +99,7 @@ class SnifferSocketImpl extends SocketImpl {
         try {
             method("sendUrgentData", int.class).invoke(delegate, data);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -112,7 +113,7 @@ class SnifferSocketImpl extends SocketImpl {
         try {
             method("shutdownInput").invoke(delegate);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -126,7 +127,7 @@ class SnifferSocketImpl extends SocketImpl {
         try {
             method("shutdownOutput").invoke(delegate);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -222,7 +223,7 @@ class SnifferSocketImpl extends SocketImpl {
         try {
             method("setPerformancePreferences", int.class, int.class, int.class).invoke(delegate, connectionTime, latency, bandwidth);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -236,7 +237,7 @@ class SnifferSocketImpl extends SocketImpl {
         try {
             method("create", boolean.class).invoke(delegate, stream);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -251,7 +252,7 @@ class SnifferSocketImpl extends SocketImpl {
             method("connect", String.class, int.class).invoke(delegate, host, port);
             this.address = new InetSocketAddress(host, port);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -266,7 +267,7 @@ class SnifferSocketImpl extends SocketImpl {
             method("connect", InetAddress.class, int.class).invoke(delegate, address, port);
             this.address = new InetSocketAddress(address, port);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -283,7 +284,7 @@ class SnifferSocketImpl extends SocketImpl {
                 this.address = (InetSocketAddress) address;
             }
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -297,7 +298,7 @@ class SnifferSocketImpl extends SocketImpl {
         try {
             method("bind", InetAddress.class, int.class).invoke(delegate, host, port);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -311,7 +312,7 @@ class SnifferSocketImpl extends SocketImpl {
         try {
             method("listen", int.class).invoke(delegate, backlog);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -325,7 +326,7 @@ class SnifferSocketImpl extends SocketImpl {
         try {
             method("accept", SocketImpl.class).invoke(delegate, s);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
@@ -381,7 +382,7 @@ class SnifferSocketImpl extends SocketImpl {
         try {
             method("close").invoke(delegate);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            ExceptionUtil.processException(e);
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
