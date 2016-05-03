@@ -18,8 +18,8 @@ public class Range {
                 this.min = this.max = this.value = value;
             }
         } else {
-            if (max > min) {
-                throw new IllegalArgumentException("Max parameter cannot be lather than min parameter");
+            if (min > max) {
+                throw new IllegalArgumentException("Min parameter cannot be larger than max parameter");
             } else if (max == min) {
                 this.min = this.max = this.value = max;
             } else {
