@@ -72,7 +72,7 @@ public class SnifferFilter implements Filter {
     protected Pattern excludePattern = null;
 
     protected final Map<String, RequestStats> cache = new ConcurrentLinkedHashMap.Builder<String, RequestStats>().
-                    maximumWeightedCapacity(10000).
+                    maximumWeightedCapacity(200).
                     build();
 
     protected SnifferServlet snifferServlet;
