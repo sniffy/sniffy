@@ -18,6 +18,8 @@ import java.util.*;
 
 class SnifferServlet extends HttpServlet {
 
+    public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
+
     protected final Map<String, RequestStats> cache;
 
     protected byte[] javascript;
@@ -43,17 +45,18 @@ class SnifferServlet extends HttpServlet {
         String path = request.getRequestURI().substring(request.getContextPath().length());
 
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
-            serveContent(response, "application/javascript", javascript);
+            serveContent(response, JAVASCRIPT_MIME_TYPE, javascript);
         } else if (SnifferFilter.JAVASCRIPT_MAP_URI.equals(path)) {
-            serveContent(response, "application/javascript", map);
+            serveContent(response, JAVASCRIPT_MIME_TYPE, map);
         } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
             byte[] requestStatsJson = getRequestStatsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
 
             if (null == requestStatsJson) {
-                response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentType(JAVASCRIPT_MIME_TYPE);
                 response.flushBuffer();
             } else {
-                response.setContentType("application/json");
+                response.setContentType(JAVASCRIPT_MIME_TYPE);
                 response.setContentLength(requestStatsJson.length);
 
                 ServletOutputStream outputStream = response.getOutputStream();
