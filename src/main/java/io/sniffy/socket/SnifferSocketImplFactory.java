@@ -24,7 +24,6 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
             Field factoryField = Socket.class.getDeclaredField("factory");
             factoryField.setAccessible(true);
             currentSocketImplFactory = (SocketImplFactory) factoryField.get(null);
-            factoryField.set(null, null);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (NoSuchFieldException e) {
@@ -32,6 +31,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         }
 
         if (null == currentSocketImplFactory || !SnifferSocketImplFactory.class.equals(currentSocketImplFactory.getClass())) {
+            factoryField.set(null, null);
             Socket.setSocketImplFactory(new SnifferSocketImplFactory());
             previousSocketImplFactory = currentSocketImplFactory;
         }
