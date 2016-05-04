@@ -3,11 +3,12 @@ package io.sniffy.servlet;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.springframework.mock.web.*;
+import org.springframework.mock.web.MockFilterConfig;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.servlet.ServletConfig;
@@ -16,7 +17,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -73,7 +73,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("application/json", response.getContentType());
+        assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":300.999}]}", response.getContentAsString());
 
@@ -110,7 +110,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("application/json", response.getContentType());
+        assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("{\"timeToFirstByte\":21,\"time\":42," +
                 "\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":300.999}]," +
@@ -137,7 +137,7 @@ public class SnifferServletTest {
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("application/json", response.getContentType());
+        assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"stackTrace\":\"io.sniffy.Test.method(Test.java:99)\",\"time\":300.999}]}", response.getContentAsString());
 
@@ -155,7 +155,8 @@ public class SnifferServletTest {
 
         snifferServlet.service(request, response);
 
-        assertEquals(HttpServletResponse.SC_NO_CONTENT, response.getStatus());
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());assertEquals(0, response.getContentLength());
+        assertEquals(0, response.getContentLength());
 
     }
 
