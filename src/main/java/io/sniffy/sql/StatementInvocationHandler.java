@@ -70,14 +70,14 @@ class StatementInvocationHandler implements InvocationHandler {
     }
 
     protected Object invokeTargetAndRecord(Method method, Object[] args, String sql) throws Throwable {
-        long start = System.nanoTime();
+        long start = System.currentTimeMillis();
         try {
             return method.invoke(delegate, args);
         } catch (InvocationTargetException e) {
             throw e.getTargetException();
         } finally {
             String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
-            Sniffer.executeStatement(sql, System.nanoTime() - start, stackTrace);
+            Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace);
         }
     }
 
