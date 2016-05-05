@@ -30,9 +30,7 @@ public class StatementMetaData {
     }
 
     public static StatementMetaData parse(String sql, long elapsedTime, String stackTrace) {
-        if (null == sql) return null;
-        else sql = sql.intern();
-        return new StatementMetaData(sql, guessQueryType(sql), elapsedTime, stackTrace);
+        return new StatementMetaData(null == sql ? null : sql.intern(), guessQueryType(sql), elapsedTime, stackTrace);
     }
 
     private static Query guessQueryType(String sql) {
