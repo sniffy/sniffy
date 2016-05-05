@@ -10,13 +10,13 @@ public class SocketMetaData {
     public final InetSocketAddress address;
     public final int connectionId;
     public final String stackTrace;
-    public final Thread owner;
+    public final long ownerThreadId;
 
-    public SocketMetaData(InetSocketAddress address, int connectionId, String stackTrace, Thread owner) {
+    public SocketMetaData(InetSocketAddress address, int connectionId, String stackTrace, long ownerThreadId) {
         this.address = address;
         this.connectionId = connectionId;
         this.stackTrace = null == stackTrace ? null : stackTrace.intern();
-        this.owner = owner;
+        this.ownerThreadId = ownerThreadId;
     }
 
     @Override
@@ -27,18 +27,19 @@ public class SocketMetaData {
         SocketMetaData that = (SocketMetaData) o;
 
         if (connectionId != that.connectionId) return false;
-        if (!address.equals(that.address)) return false;
-        if (stackTrace != null ? !stackTrace.equals(that.stackTrace) : that.stackTrace != null) return false;
-        return owner.equals(that.owner);
+        if (ownerThreadId != that.ownerThreadId) return false;
+        if (address != null ? !address.equals(that.address) : that.address != null) return false;
+        return stackTrace != null ? stackTrace.equals(that.stackTrace) : that.stackTrace == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = address.hashCode();
+        int result = address != null ? address.hashCode() : 0;
         result = 31 * result + connectionId;
         result = 31 * result + (stackTrace != null ? stackTrace.hashCode() : 0);
-        result = 31 * result + owner.hashCode();
+        result = 31 * result + (int) (ownerThreadId ^ (ownerThreadId >>> 32));
         return result;
     }
+
 }

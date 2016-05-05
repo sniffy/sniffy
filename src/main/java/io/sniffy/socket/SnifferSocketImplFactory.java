@@ -49,16 +49,20 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
     @Override
     public SocketImpl createSocketImpl() {
+        return isServerSocket() ? newSocketImpl() : new SnifferSocketImpl(newSocketImpl());
+    }
+
+    private static boolean isServerSocket() {
+        // TODO: improve this check
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         if (null != stackTrace) {
             for (StackTraceElement ste : stackTrace) {
                 if (ste.getClassName().startsWith("java.net.ServerSocket")) {
-                    return newSocketImpl();
+                    return true;
                 }
             }
         }
-
-        return new SnifferSocketImpl(newSocketImpl());
+        return false;
     }
 
     private static SocketImpl newSocketImpl() {

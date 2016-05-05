@@ -12,11 +12,10 @@ import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static io.sniffy.Threads.ANY;
-import static io.sniffy.Threads.CURRENT;
-import static io.sniffy.Threads.OTHERS;
+import static io.sniffy.Threads.*;
 import static io.sniffy.util.ExceptionUtil.throwException;
 
 /**
@@ -35,7 +34,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
                     build();
 
     private final WeakReference<Spy> selfReference;
-    private final Thread owner;
+    private final long ownerThreadId;
     private final boolean spyCurrentThreadOnly;
 
     private boolean closed = false;
@@ -44,13 +43,13 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
     protected void addExecutedStatement(StatementMetaData statementMetaData) {
-        if (!spyCurrentThreadOnly || owner.equals(statementMetaData.owner)) {
+        if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
             executedStatements.add(statementMetaData);
         }
     }
 
     protected void addSocketOperation(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
-        if (!spyCurrentThreadOnly || owner.equals(socketMetaData.owner)) {
+        if (!spyCurrentThreadOnly || ownerThreadId == socketMetaData.ownerThreadId) {
             SocketStats socketStats = socketOperations.get(socketMetaData);
             if (null == socketStats) {
                 socketStats = socketOperations.putIfAbsent(socketMetaData, new SocketStats(elapsedTime, bytesDown, bytesUp));
@@ -77,7 +76,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
             case CURRENT:
                 statements = new ArrayList<StatementMetaData>();
                 for (StatementMetaData statement : executedStatements) {
-                    if (statement.owner == this.owner) {
+                    if (statement.ownerThreadId == this.ownerThreadId) {
                         statements.add(statement);
                     }
                 }
@@ -85,7 +84,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
             case OTHERS:
                 statements = new ArrayList<StatementMetaData>();
                 for (StatementMetaData statement : executedStatements) {
-                    if (statement.owner != this.owner) {
+                    if (statement.ownerThreadId != this.ownerThreadId) {
                         statements.add(statement);
                     }
                 }
@@ -100,7 +99,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     Spy(boolean spyCurrentThreadOnly) {
-        owner = Thread.currentThread();
+        ownerThreadId = Thread.currentThread().getId();
         selfReference = Sniffer.registerSpy(this);
         this.spyCurrentThreadOnly = spyCurrentThreadOnly;
         reset();
@@ -144,14 +143,14 @@ public class Spy<C extends Spy<C>> implements Closeable {
             SocketMetaData socketMetaData = entry.getKey();
 
             if (removeStackTraces) socketMetaData = new SocketMetaData(
-                    socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.owner
+                    socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.ownerThreadId
             );
 
             InetSocketAddress socketAddress = socketMetaData.address;
             InetAddress inetAddress = socketAddress.getAddress();
 
-            if ( ( (CURRENT == threadMatcher && socketMetaData.owner == this.owner) ||
-                    (OTHERS == threadMatcher && socketMetaData.owner != this.owner) ||
+            if ( ( (CURRENT == threadMatcher && socketMetaData.ownerThreadId == this.ownerThreadId) ||
+                    (OTHERS == threadMatcher && socketMetaData.ownerThreadId != this.ownerThreadId) ||
                     (ANY == threadMatcher || null == threadMatcher) ) &&
                     (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
                     (null == port || port == socketAddress.getPort())
@@ -206,7 +205,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
             case CURRENT:
             case OTHERS:
                 for (StatementMetaData statementMetaData : executedStatements) {
-                    if (Thread.currentThread().equals(statementMetaData.owner) == (CURRENT == threadMatcher) &&
+                    if ((Thread.currentThread().getId() == statementMetaData.ownerThreadId) == (CURRENT == threadMatcher) &&
                             (query == Query.ANY || query == statementMetaData.query)) count++;
                 }
                 break;

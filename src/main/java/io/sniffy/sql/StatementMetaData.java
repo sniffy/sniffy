@@ -11,14 +11,14 @@ public class StatementMetaData {
     public final Query query;
     public final long elapsedTime;
     public final String stackTrace;
-    public final Thread owner;
+    public final long ownerThreadId;
 
     protected StatementMetaData(String sql, Query query, long elapsedTime, String stackTrace) {
         this.sql = sql;
         this.query = query;
         this.stackTrace = stackTrace;
         this.elapsedTime = elapsedTime;
-        this.owner = Thread.currentThread();
+        this.ownerThreadId = Thread.currentThread().getId();
     }
 
     public static StatementMetaData parse(String sql) {

@@ -98,7 +98,7 @@ public class SnifferServletTest {
                                         new InetSocketAddress(InetAddress.getLocalHost(), 5555),
                                         42,
                                         "stackTrace",
-                                        Thread.currentThread()
+                                        Thread.currentThread().getId()
                                 ),
                                 new SocketStats(100, 200, 300)
                         )
