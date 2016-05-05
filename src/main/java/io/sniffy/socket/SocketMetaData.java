@@ -28,14 +28,14 @@ public class SocketMetaData {
 
         if (connectionId != that.connectionId) return false;
         if (ownerThreadId != that.ownerThreadId) return false;
-        if (address != null ? !address.equals(that.address) : that.address != null) return false;
+        if (!address.equals(that.address)) return false;
         return stackTrace != null ? stackTrace.equals(that.stackTrace) : that.stackTrace == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = address != null ? address.hashCode() : 0;
+        int result = address.hashCode();
         result = 31 * result + connectionId;
         result = 31 * result + (stackTrace != null ? stackTrace.hashCode() : 0);
         result = 31 * result + (int) (ownerThreadId ^ (ownerThreadId >>> 32));
