@@ -2,7 +2,6 @@ package io.sniffy;
 
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
-import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlQueries;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.Range;
@@ -75,7 +74,7 @@ public final class Sniffer {
         }
     }
 
-    private static synchronized void notifyListeners(SocketMetaData socketMetaData, SocketStats socketStats) {
+    private static synchronized void notifyListeners(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -83,18 +82,17 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addSocketOperation(socketMetaData, new SocketStats(socketStats));
+                spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
             }
         }
     }
 
     public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
         // increment counters
-        SocketStats socketStats = new SocketStats(elapsedTime, bytesDown, bytesUp);
-        SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread());
+        SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
 
         // notify listeners
-        notifyListeners(socketMetaData, socketStats);
+        notifyListeners(socketMetaData, elapsedTime, bytesDown, bytesUp);
     }
 
     public static void executeStatement(String sql, long elapsedTime, String stackTrace) {

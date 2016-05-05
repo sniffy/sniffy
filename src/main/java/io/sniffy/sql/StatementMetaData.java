@@ -11,50 +11,53 @@ public class StatementMetaData {
     public final Query query;
     public final long elapsedTime;
     public final String stackTrace;
-    public final Thread owner;
-
+    public final long ownerThreadId;
 
     protected StatementMetaData(String sql, Query query, long elapsedTime, String stackTrace) {
         this.sql = sql;
         this.query = query;
         this.stackTrace = stackTrace;
         this.elapsedTime = elapsedTime;
-        this.owner = Thread.currentThread();
+        this.ownerThreadId = Thread.currentThread().getId();
     }
 
     public static StatementMetaData parse(String sql) {
         return parse(sql, -1);
     }
 
-    public static StatementMetaData parse(String sql, long elapsedTime, String stackTrace) {
-
-        if (null == sql) return null;
-
-        String normalized = sql.trim().toLowerCase();
-
-        Query query;
-
-        if (normalized.startsWith("select ")) {
-            // TODO: can start with "WITH" statement
-            query = Query.SELECT;
-        } else if (normalized.startsWith("insert ")) {
-            query = Query.INSERT;
-        } else if (normalized.startsWith("update ")) {
-            query = Query.UPDATE;
-        } else if (normalized.startsWith("delete ")) {
-            query = Query.DELETE;
-        } else if (normalized.startsWith("merge ")) {
-            // TODO: can start with "WITH" statement
-            query = Query.MERGE;
-        } else {
-            query = Query.OTHER;
-        }
-
-        return new StatementMetaData(sql, query, elapsedTime, stackTrace);
-    }
-
     public static StatementMetaData parse(String sql, long elapsedTime) {
         return parse(sql, elapsedTime, null);
+    }
+
+    public static StatementMetaData parse(String sql, long elapsedTime, String stackTrace) {
+        return new StatementMetaData(null == sql ? null : sql.intern(), guessQueryType(sql), elapsedTime, stackTrace);
+    }
+
+    private static Query guessQueryType(String sql) {
+        // TODO: some queries can start with "WITH" statement
+
+        for (int i = 0; i < sql.length(); i++) {
+            if (!Character.isWhitespace(sql.charAt(i))) {
+                String normalized;
+                if (sql.length() > (i + 7)) {
+                    normalized = sql.substring(i, i + 7).toLowerCase();
+                    if (normalized.equals("select ")) {
+                        return Query.SELECT;
+                    } else if (normalized.equals("insert ")) {
+                        return Query.INSERT;
+                    } else if (normalized.equals("update ")) {
+                        return Query.UPDATE;
+                    } else if (normalized.equals("delete ")) {
+                        return Query.DELETE;
+                    }
+                }
+                if (sql.length() > (i + 6) && sql.substring(i, i + 6).toLowerCase().equals("merge ")) {
+                    return Query.MERGE;
+                }
+            }
+        }
+
+        return Query.OTHER;
     }
 
 }

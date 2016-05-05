@@ -18,10 +18,14 @@ public class SocketStats {
         this.bytesUp.set(bytesUp);
     }
 
+    public void accumulate(long elapsedTime, int bytesDown, int bytesUp) {
+        this.elapsedTime.addAndGet(elapsedTime);
+        this.bytesDown.addAndGet(bytesDown);
+        this.bytesUp.addAndGet(bytesUp);
+    }
+
     public void accumulate(SocketStats that) {
-        elapsedTime.addAndGet(that.elapsedTime.get());
-        bytesDown.addAndGet(that.bytesDown.get());
-        bytesUp.addAndGet(that.bytesUp.get());
+        accumulate(that.elapsedTime.longValue(), that.bytesDown.intValue(), that.bytesUp.intValue());
     }
 
 }
