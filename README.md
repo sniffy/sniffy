@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/sniffy/sniffy.png?label=ready&title=Ready)](https://waffle.io/sniffy/sniffy)
 Sniffy
 ============
 
