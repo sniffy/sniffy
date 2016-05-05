@@ -15,7 +15,7 @@ public class SocketMetaData {
     public SocketMetaData(InetSocketAddress address, int connectionId, String stackTrace, Thread owner) {
         this.address = address;
         this.connectionId = connectionId;
-        this.stackTrace = stackTrace;
+        this.stackTrace = null == stackTrace ? null : stackTrace.intern();
         this.owner = owner;
     }
 

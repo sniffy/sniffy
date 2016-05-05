@@ -49,11 +49,14 @@ public class Spy<C extends Spy<C>> implements Closeable {
         }
     }
 
-    protected void addSocketOperation(SocketMetaData socketMetaData, SocketStats socketStats) {
+    protected void addSocketOperation(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
         if (!spyCurrentThreadOnly || owner.equals(socketMetaData.owner)) {
-            SocketStats existingSocketStats = socketOperations.putIfAbsent(socketMetaData, socketStats);
-            if (null != existingSocketStats) {
-                existingSocketStats.accumulate(socketStats);
+            SocketStats socketStats = socketOperations.get(socketMetaData);
+            if (null == socketStats) {
+                socketStats = socketOperations.putIfAbsent(socketMetaData, new SocketStats(elapsedTime, bytesDown, bytesUp));
+            }
+            if (null != socketStats) {
+                socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
             }
         }
     }
@@ -153,12 +156,11 @@ public class Spy<C extends Spy<C>> implements Closeable {
                     (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
                     (null == port || port == socketAddress.getPort())
                     ) {
-                SocketStats socketStats = new SocketStats(entry.getValue());
                 SocketStats existingSocketStats = socketOperations.get(socketMetaData);
                 if (null == existingSocketStats) {
-                    socketOperations.put(socketMetaData, socketStats);
+                    socketOperations.put(socketMetaData, new SocketStats(entry.getValue()));
                 } else {
-                    existingSocketStats.accumulate(socketStats);
+                    existingSocketStats.accumulate(entry.getValue());
                 }
             }
         }

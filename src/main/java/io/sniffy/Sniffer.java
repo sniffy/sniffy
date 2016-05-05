@@ -75,7 +75,7 @@ public final class Sniffer {
         }
     }
 
-    private static synchronized void notifyListeners(SocketMetaData socketMetaData, SocketStats socketStats) {
+    private static synchronized void notifyListeners(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -83,18 +83,17 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addSocketOperation(socketMetaData, new SocketStats(socketStats));
+                spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
             }
         }
     }
 
     public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
         // increment counters
-        SocketStats socketStats = new SocketStats(elapsedTime, bytesDown, bytesUp);
         SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread());
 
         // notify listeners
-        notifyListeners(socketMetaData, socketStats);
+        notifyListeners(socketMetaData, elapsedTime, bytesDown, bytesUp);
     }
 
     public static void executeStatement(String sql, long elapsedTime, String stackTrace) {
