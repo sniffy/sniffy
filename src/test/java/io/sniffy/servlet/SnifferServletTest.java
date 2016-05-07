@@ -81,7 +81,7 @@ public class SnifferServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
-        assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":300.999}]}", response.getContentAsString());
+        assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":300.999,\"bytesDown\":0,\"bytesUp\":0}]}", response.getContentAsString());
 
     }
 
@@ -102,7 +102,7 @@ public class SnifferServletTest {
                                         StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
                                         "",
                                         Thread.currentThread().getId()
-                                ), new SqlStats(300999, 0, 0)),
+                                ), new SqlStats(300999, 200, 300)),
                         Collections.singletonMap(
                                 new SocketMetaData(
                                         new InetSocketAddress(InetAddress.getLocalHost(), 5555),
@@ -123,7 +123,7 @@ public class SnifferServletTest {
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("{\"timeToFirstByte\":21,\"time\":42," +
-                "\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":300.999}]," +
+                "\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":300.999,\"bytesDown\":200,\"bytesUp\":300}]," +
                 "\"networkConnections\":[{\"host\":\"" + InetAddress.getLocalHost().toString() + ":5555\",\"stackTrace\":\"stackTrace\",\"time\":100.000,\"bytesDown\":200,\"bytesUp\":300}]" +
                 "}", response.getContentAsString());
 
@@ -153,7 +153,7 @@ public class SnifferServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
-        assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"stackTrace\":\"io.sniffy.Test.method(Test.java:99)\",\"time\":300.999}]}", response.getContentAsString());
+        assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"stackTrace\":\"io.sniffy.Test.method(Test.java:99)\",\"time\":300.999,\"bytesDown\":0,\"bytesUp\":0}]}", response.getContentAsString());
 
     }
 

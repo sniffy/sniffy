@@ -97,6 +97,12 @@ class SnifferServlet extends HttpServlet {
                             append(",").
                             append("\"time\":").
                             append(String.format(Locale.ENGLISH, "%.3f", sqlStats.elapsedTime.doubleValue() / 1000)).
+                            append(",").
+                            append("\"bytesDown\":").
+                            append(sqlStats.bytesDown.longValue()).
+                            append(",").
+                            append("\"bytesUp\":").
+                            append(sqlStats.bytesUp.longValue()).
                             append("}");
                     if (statementsIt.hasNext()) {
                         sb.append(",");
