@@ -5,6 +5,7 @@ import io.sniffy.Spy;
 import io.sniffy.Threads;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 
 import javax.servlet.FilterChain;
@@ -15,7 +16,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -124,7 +124,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     private void updateRequestCache() {
-        List<StatementMetaData> executedStatements = spy.getExecutedStatements(Threads.CURRENT);
+        Map<StatementMetaData, SqlStats> executedStatements = spy.getExecutedStatements(Threads.CURRENT, false);
         Map<SocketMetaData, SocketStats> socketOperations = spy.getSocketOperations(Threads.CURRENT, null, false);
         if ((null != executedStatements && !executedStatements.isEmpty()) ||
                 (null != socketOperations && !socketOperations.isEmpty())) {

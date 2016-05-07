@@ -4,6 +4,7 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlQueries;
+import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
 
@@ -26,8 +27,12 @@ import static io.sniffy.util.ExceptionUtil.throwException;
  */
 public class Spy<C extends Spy<C>> implements Closeable {
 
-    // TODO: add invocationcount to StatementMetaData; collapse similar queries
-    private volatile Collection<StatementMetaData> executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
+    // TODO: add invocationcount to executedStatements and socketOperations; collapse similar queries
+    private volatile ConcurrentLinkedHashMap<StatementMetaData, SqlStats> executedStatements =
+            new ConcurrentLinkedHashMap.Builder<StatementMetaData, SqlStats>().
+                    maximumWeightedCapacity(Long.MAX_VALUE).
+                    build();
+
     private volatile ConcurrentLinkedHashMap<SocketMetaData, SocketStats> socketOperations =
             new ConcurrentLinkedHashMap.Builder<SocketMetaData, SocketStats>().
                     maximumWeightedCapacity(Long.MAX_VALUE).
@@ -42,9 +47,15 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
-    protected void addExecutedStatement(StatementMetaData statementMetaData) {
+    protected void addExecutedStatement(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp) {
         if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
-            executedStatements.add(statementMetaData);
+            SqlStats sqlStats = executedStatements.get(statementMetaData);
+            if (null == sqlStats) {
+                sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp));
+            }
+            if (null != sqlStats) {
+                sqlStats.accumulate(elapsedTime, bytesDown, bytesUp);
+            }
         }
     }
 
@@ -61,7 +72,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     protected void resetExecutedStatements() {
-        executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
+        executedStatements =
+                new ConcurrentLinkedHashMap.Builder<StatementMetaData, SqlStats>().
+                        maximumWeightedCapacity(Long.MAX_VALUE).
+                        build();
     }
 
     protected void resetSocketOpertions() {
@@ -70,32 +84,30 @@ public class Spy<C extends Spy<C>> implements Closeable {
                 build();
     }
 
-    public List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
-        List<StatementMetaData> statements;
-        switch (threadMatcher) {
-            case CURRENT:
-                statements = new ArrayList<StatementMetaData>();
-                for (StatementMetaData statement : executedStatements) {
-                    if (statement.ownerThreadId == this.ownerThreadId) {
-                        statements.add(statement);
-                    }
+    public Map<StatementMetaData, SqlStats> getExecutedStatements(Threads threadMatcher, boolean removeStackTraces) {
+
+        Map<StatementMetaData, SqlStats> executedStatements = new LinkedHashMap<StatementMetaData, SqlStats>();
+        for (Map.Entry<StatementMetaData, SqlStats> entry : this.executedStatements.ascendingMap().entrySet()) {
+
+            StatementMetaData statementMetaData = entry.getKey();
+
+            if (removeStackTraces) statementMetaData = new StatementMetaData(
+                    statementMetaData.sql, statementMetaData.query, null, statementMetaData.ownerThreadId
+            );
+
+            if ( ( (CURRENT == threadMatcher && statementMetaData.ownerThreadId == this.ownerThreadId) ||
+                    (OTHERS == threadMatcher && statementMetaData.ownerThreadId != this.ownerThreadId) ||
+                    (ANY == threadMatcher || null == threadMatcher) ) ) {
+                SqlStats existingSocketStats = executedStatements.get(statementMetaData);
+                if (null == existingSocketStats) {
+                    executedStatements.put(statementMetaData, new SqlStats(entry.getValue()));
+                } else {
+                    existingSocketStats.accumulate(entry.getValue());
                 }
-                break;
-            case OTHERS:
-                statements = new ArrayList<StatementMetaData>();
-                for (StatementMetaData statement : executedStatements) {
-                    if (statement.ownerThreadId != this.ownerThreadId) {
-                        statements.add(statement);
-                    }
-                }
-                break;
-            case ANY:
-                statements = new ArrayList<StatementMetaData>(executedStatements);
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
+            }
         }
-        return Collections.unmodifiableList(statements);
+
+        return Collections.unmodifiableMap(executedStatements);
     }
 
     Spy(boolean spyCurrentThreadOnly) {
@@ -116,10 +128,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
         resetSocketOpertions();
         expectations.clear();
         return self();
-    }
-
-    public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher) {
-        return getSocketOperations(threadMatcher, null, true);
     }
 
     public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher, String address, boolean removeStackTraces) {
@@ -198,13 +206,13 @@ public class Spy<C extends Spy<C>> implements Closeable {
         switch (threadMatcher) {
             case ANY:
                 if (query == Query.ANY) count = executedStatements.size();
-                else for (StatementMetaData statementMetaData : executedStatements) {
+                else for (StatementMetaData statementMetaData : executedStatements.keySet()) {
                     if (query == statementMetaData.query) count++;
                 }
                 break;
             case CURRENT:
             case OTHERS:
-                for (StatementMetaData statementMetaData : executedStatements) {
+                for (StatementMetaData statementMetaData : executedStatements.keySet()) {
                     if ((Thread.currentThread().getId() == statementMetaData.ownerThreadId) == (CURRENT == threadMatcher) &&
                             (query == Query.ANY || query == statementMetaData.query)) count++;
                 }

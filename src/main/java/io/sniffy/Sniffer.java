@@ -2,6 +2,7 @@ package io.sniffy;
 
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
+import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlQueries;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.Range;
@@ -61,7 +62,7 @@ public final class Sniffer {
         return Collections.unmodifiableList(registeredSpies);
     }
 
-    private static synchronized void notifyListeners(StatementMetaData statementMetaData) {
+    private static synchronized void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -69,7 +70,7 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addExecutedStatement(statementMetaData);
+                spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp);
             }
         }
     }
@@ -88,19 +89,43 @@ public final class Sniffer {
     }
 
     public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
-        // increment counters
-        SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
+        
+        // do not track JDBC socket operations
+        SocketStats socketStats = sqlSocketStats.get();
+        if (null != socketStats) {
+            socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
+        } else {
+            // increment counters
+            SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
 
-        // notify listeners
-        notifyListeners(socketMetaData, elapsedTime, bytesDown, bytesUp);
+            // notify listeners
+            notifyListeners(socketMetaData, elapsedTime, bytesDown, bytesUp);
+        }
+    }
+
+    private static ThreadLocal<SocketStats> sqlSocketStats = new ThreadLocal<SocketStats>();
+
+    public static void enterJdbcMethod() {
+        sqlSocketStats.set(new SocketStats(0, 0, 0));
     }
 
     public static void executeStatement(String sql, long elapsedTime, String stackTrace) {
         // increment global counter
         executedStatementsGlobalCounter.incrementAndGet();
 
+        // get accumulated socket stats
+        SocketStats socketStats = sqlSocketStats.get();
+
         // notify listeners
-        notifyListeners(StatementMetaData.parse(sql, elapsedTime, stackTrace));
+        StatementMetaData statementMetaData = new StatementMetaData(sql, StatementMetaData.guessQueryType(sql), stackTrace, Thread.currentThread().getId());
+        notifyListeners(
+                statementMetaData,
+                elapsedTime,
+                null == socketStats ? 0 : socketStats.bytesDown.intValue(),
+                null == socketStats ? 0 : socketStats.bytesUp.intValue()
+        );
+
+        sqlSocketStats.remove();
     }
 
     /**

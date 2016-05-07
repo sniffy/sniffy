@@ -34,6 +34,9 @@ public class MockDriver implements Driver {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        Sniffer.initialize();
+
     }
 
     public Connection connect(String url, Properties info) throws SQLException {

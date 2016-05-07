@@ -72,9 +72,8 @@ class StatementInvocationHandler implements InvocationHandler {
     protected Object invokeTargetAndRecord(Method method, Object[] args, String sql) throws Throwable {
         long start = System.currentTimeMillis();
         try {
-            return method.invoke(delegate, args);
-        } catch (InvocationTargetException e) {
-            throw e.getTargetException();
+            Sniffer.enterJdbcMethod();
+            return invokeTarget(method, args);
         } finally {
             String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
             Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace);

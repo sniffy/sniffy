@@ -58,7 +58,7 @@ public class SqlQueries {
                 throw new WrongNumberOfQueriesError(
                         threads, type,
                         min, max, numQueries,
-                        spy.getExecutedStatements(threads)
+                        spy.getExecutedStatements(threads, true).keySet()
                 );
             }
 

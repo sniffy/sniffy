@@ -2,6 +2,7 @@ package io.sniffy.servlet;
 
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,9 +65,14 @@ public class SnifferServletTest {
                 get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
-        cache.put("foo", new RequestStats(21,42,Collections.singletonList(
-                StatementMetaData.parse("SELECT 1 FROM DUAL", 300999)
-        )));
+        cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
+                new StatementMetaData(
+                        "SELECT 1 FROM DUAL",
+                        StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
+                        "",
+                        Thread.currentThread().getId()
+                ), new SqlStats(300999, 0, 0))
+        ));
 
         request.setContextPath("/petclinic");
 
@@ -90,9 +96,13 @@ public class SnifferServletTest {
         cache.put("foo", new RequestStats(
                         21,
                         42,
-                        Collections.singletonList(
-                                StatementMetaData.parse("SELECT 1 FROM DUAL", 300999)
-                        ),
+                        Collections.singletonMap(
+                                new StatementMetaData(
+                                        "SELECT 1 FROM DUAL",
+                                        StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
+                                        "",
+                                        Thread.currentThread().getId()
+                                ), new SqlStats(300999, 0, 0)),
                         Collections.singletonMap(
                                 new SocketMetaData(
                                         new InetSocketAddress(InetAddress.getLocalHost(), 5555),
@@ -127,10 +137,14 @@ public class SnifferServletTest {
                 get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
-        cache.put("foo", new RequestStats(21, 42, Collections.singletonList(
-                StatementMetaData.parse("SELECT \r\n" +
-                        "\"1\" FROM 'DUAL'", 300999, "io.sniffy.Test.method(Test.java:99)")
-        )));
+        cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
+                new StatementMetaData(
+                        "SELECT \r\n\"1\" FROM 'DUAL'",
+                        StatementMetaData.guessQueryType("SELECT \r\n\"1\" FROM 'DUAL'"),
+                        "io.sniffy.Test.method(Test.java:99)",
+                        Thread.currentThread().getId()
+                ), new SqlStats(300999, 0, 0))
+        ));
 
         request.setContextPath("/petclinic");
 
@@ -155,7 +169,8 @@ public class SnifferServletTest {
 
         snifferServlet.service(request, response);
 
-        assertEquals(HttpServletResponse.SC_OK, response.getStatus());assertEquals(0, response.getContentLength());
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals(0, response.getContentLength());
         assertEquals(0, response.getContentLength());
 
     }
