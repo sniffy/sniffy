@@ -7,16 +7,15 @@ import static io.sniffy.util.StackTraceExtractor.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Statement;
 import java.util.*;
 
-class StatementInvocationHandler implements InvocationHandler {
-
-    protected final Object delegate;
+class StatementInvocationHandler extends SniffyInvocationHandler<Object> implements InvocationHandler {
 
     private Map<String, Integer> batchedSql;
 
     public StatementInvocationHandler(Object delegate) {
-        this.delegate = delegate;
+        super(delegate);
     }
 
     protected enum StatementMethodType {
@@ -61,19 +60,11 @@ class StatementInvocationHandler implements InvocationHandler {
 
     }
 
-    protected Object invokeTarget(Method method, Object[] args) throws Throwable {
-        try {
-            return method.invoke(delegate, args);
-        } catch (InvocationTargetException e) {
-            throw e.getTargetException();
-        }
-    }
-
     protected Object invokeTargetAndRecord(Method method, Object[] args, String sql) throws Throwable {
         long start = System.currentTimeMillis();
         try {
             Sniffer.enterJdbcMethod();
-            return invokeTarget(method, args);
+            return invokeTargetImpl(method, args);
         } finally {
             String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
             Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace);

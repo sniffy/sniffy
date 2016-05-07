@@ -9,6 +9,7 @@ import io.sniffy.util.Range;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Iterator;
@@ -16,6 +17,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
+import static io.sniffy.util.StackTraceExtractor.printStackTrace;
 
 /**
  * Sniffer is an entry point for using Sniffy library
@@ -107,6 +111,30 @@ public final class Sniffer {
 
     public static void enterJdbcMethod() {
         socketStatsAccumulator.set(new SocketStats(0, 0, 0));
+    }
+
+    public static void exitJdbcMethod(Method method, long elapsedTime) {
+        // get accumulated socket stats
+        SocketStats socketStats = socketStatsAccumulator.get();
+
+        if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
+            String stackTrace = null;
+            try {
+                stackTrace = printStackTrace(getTraceForProxiedMethod(method));
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            StatementMetaData statementMetaData = new StatementMetaData(method.toString(), Query.OTHER, stackTrace, Thread.currentThread().getId());
+            notifyListeners(
+                    statementMetaData,
+                    elapsedTime,
+                    socketStats.bytesDown.intValue(),
+                    socketStats.bytesUp.intValue()
+            );
+        }
+
+        socketStatsAccumulator.remove();
+
     }
 
     public static void executeStatement(String sql, long elapsedTime, String stackTrace) {
