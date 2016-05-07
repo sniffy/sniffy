@@ -2,18 +2,22 @@ package io.sniffy.sql;
 
 import io.sniffy.Sniffer;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-/**
- * Created by bedrin on 08.05.2016.
- */
-public class SniffyInvocationHandler<T> {
+public class SniffyInvocationHandler<T> implements InvocationHandler {
 
     protected final T delegate;
 
     public SniffyInvocationHandler(T delegate) {
         this.delegate = delegate;
+    }
+
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        return invokeTarget(method, args);
     }
 
     protected Object invokeTarget(Method method, Object[] args) throws Throwable {

@@ -15,7 +15,7 @@ public class StatementMetaData {
     public StatementMetaData(String sql, Query query, String stackTrace, long ownerThreadId) {
         this.sql = sql;
         this.query = query;
-        this.stackTrace = stackTrace;
+        this.stackTrace = null == stackTrace ? null : stackTrace.intern();
         this.ownerThreadId = ownerThreadId;
     }
 

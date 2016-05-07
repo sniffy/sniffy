@@ -2,17 +2,20 @@ package io.sniffy.sql;
 
 import io.sniffy.Sniffer;
 
-import static io.sniffy.util.StackTraceExtractor.*;
-
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.Statement;
-import java.util.*;
+import java.lang.reflect.Proxy;
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
 
-class StatementInvocationHandler extends SniffyInvocationHandler<Object> implements InvocationHandler {
+import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
+import static io.sniffy.util.StackTraceExtractor.printStackTrace;
+
+class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
 
     private Map<String, Integer> batchedSql;
+
+    protected StatementMetaData lastStatementMetaData;
 
     public StatementInvocationHandler(Object delegate) {
         super(delegate);
@@ -41,22 +44,43 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> impleme
         }
     }
 
+    // TODO: getConnection() should return a proxy!
+    // TODO: wrap complex parameters and results like streams and blobs
+
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+        Object result;
+
         switch (StatementMethodType.parse(method.getName())) {
             case ADD_BATCH:
                 addBatch(String.class.cast(args[0]));
-                return invokeTarget(method, args);
+                result = invokeTarget(method, args);
+                break;
             case CLEAR_BATCH:
                 clearBatch();
-                return invokeTarget(method, args);
+                result = invokeTarget(method, args);
+                break;
             case EXECUTE_BATCH:
-                return invokeTargetAndRecord(method, args, getBatchedSql());
+                result = invokeTargetAndRecord(method, args, getBatchedSql());
+                break;
             case EXECUTE_SQL:
-                return invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null);
+                result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null);
+                break;
             case OTHER:
             default:
-                return invokeTarget(method, args);
+                result = invokeTarget(method, args);
+                break;
         }
+
+        if (result instanceof ResultSet) {
+            return Proxy.newProxyInstance(
+                    ResultSetInvocationHandler.class.getClassLoader(),
+                    new Class[]{ResultSet.class},
+                    new ResultSetInvocationHandler(result, lastStatementMetaData)
+            );
+        }
+
+        return result;
 
     }
 
@@ -67,7 +91,7 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> impleme
             return invokeTargetImpl(method, args);
         } finally {
             String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
-            Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace);
+            lastStatementMetaData = Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace);
         }
     }
 

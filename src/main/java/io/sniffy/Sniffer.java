@@ -81,6 +81,19 @@ public final class Sniffer {
         }
     }
 
+    private static synchronized void notifyListeners(StatementMetaData statementMetaData) {
+        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+        while (iterator.hasNext()) {
+            WeakReference<Spy> spyReference = iterator.next();
+            Spy spy = spyReference.get();
+            if (null == spy) {
+                iterator.remove();
+            } else {
+                spy.addReturnedRow(statementMetaData);
+            }
+        }
+    }
+
     private static synchronized void notifyListeners(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
@@ -117,27 +130,41 @@ public final class Sniffer {
         // get accumulated socket stats
         SocketStats socketStats = socketStatsAccumulator.get();
 
-        if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
-            String stackTrace = null;
-            try {
-                stackTrace = printStackTrace(getTraceForProxiedMethod(method));
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-            StatementMetaData statementMetaData = new StatementMetaData(method.toString(), Query.OTHER, stackTrace, Thread.currentThread().getId());
-            notifyListeners(
-                    statementMetaData,
-                    elapsedTime,
-                    socketStats.bytesDown.intValue(),
-                    socketStats.bytesUp.intValue()
-            );
-        }
+        if (null != socketStats) {
 
-        socketStatsAccumulator.remove();
+            if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
+                String stackTrace = null;
+                try {
+                    stackTrace = printStackTrace(getTraceForProxiedMethod(method));
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                StatementMetaData statementMetaData = new StatementMetaData(
+                        method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()",
+                        Query.SYSTEM,
+                        stackTrace,
+                        Thread.currentThread().getId()
+                );
+                notifyListeners(
+                        statementMetaData,
+                        elapsedTime,
+                        socketStats.bytesDown.intValue(),
+                        socketStats.bytesUp.intValue()
+                );
+            }
+
+            socketStatsAccumulator.remove();
+        }
 
     }
 
-    public static void executeStatement(String sql, long elapsedTime, String stackTrace) {
+    public static void readDatabaseRow(Method method, long elapsedTime, StatementMetaData statementMetaData) {
+        exitJdbcMethod(method, elapsedTime);
+
+        notifyListeners(statementMetaData);
+    }
+
+    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace) {
         // increment global counter
         executedStatementsGlobalCounter.incrementAndGet();
 
@@ -154,6 +181,8 @@ public final class Sniffer {
         );
 
         socketStatsAccumulator.remove();
+
+        return statementMetaData;
     }
 
     /**

@@ -51,10 +51,19 @@ public class Spy<C extends Spy<C>> implements Closeable {
         if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
             SqlStats sqlStats = executedStatements.get(statementMetaData);
             if (null == sqlStats) {
-                sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp));
+                sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp, 0));
             }
             if (null != sqlStats) {
                 sqlStats.accumulate(elapsedTime, bytesDown, bytesUp);
+            }
+        }
+    }
+
+    protected void addReturnedRow(StatementMetaData statementMetaData) {
+        if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
+            SqlStats sqlStats = executedStatements.get(statementMetaData);
+            if (null != sqlStats) {
+                sqlStats.accumulate(0, 0, 0, 1);
             }
         }
     }

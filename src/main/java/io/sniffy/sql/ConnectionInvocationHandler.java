@@ -1,12 +1,13 @@
 package io.sniffy.sql;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.sql.*;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 
-public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connection> implements InvocationHandler {
+public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connection> {
 
     public ConnectionInvocationHandler(Connection delegate) {
         super(delegate);
