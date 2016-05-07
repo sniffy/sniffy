@@ -32,6 +32,8 @@ public final class Sniffer {
 
     private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
 
+    private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
+
     private Sniffer() {
 
     }
@@ -91,7 +93,7 @@ public final class Sniffer {
     public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
         
         // do not track JDBC socket operations
-        SocketStats socketStats = sqlSocketStats.get();
+        SocketStats socketStats = socketStatsAccumulator.get();
         if (null != socketStats) {
             socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
         } else {
@@ -103,10 +105,8 @@ public final class Sniffer {
         }
     }
 
-    private static ThreadLocal<SocketStats> sqlSocketStats = new ThreadLocal<SocketStats>();
-
     public static void enterJdbcMethod() {
-        sqlSocketStats.set(new SocketStats(0, 0, 0));
+        socketStatsAccumulator.set(new SocketStats(0, 0, 0));
     }
 
     public static void executeStatement(String sql, long elapsedTime, String stackTrace) {
@@ -114,7 +114,7 @@ public final class Sniffer {
         executedStatementsGlobalCounter.incrementAndGet();
 
         // get accumulated socket stats
-        SocketStats socketStats = sqlSocketStats.get();
+        SocketStats socketStats = socketStatsAccumulator.get();
 
         // notify listeners
         StatementMetaData statementMetaData = new StatementMetaData(sql, StatementMetaData.guessQueryType(sql), stackTrace, Thread.currentThread().getId());
@@ -125,7 +125,7 @@ public final class Sniffer {
                 null == socketStats ? 0 : socketStats.bytesUp.intValue()
         );
 
-        sqlSocketStats.remove();
+        socketStatsAccumulator.remove();
     }
 
     /**
