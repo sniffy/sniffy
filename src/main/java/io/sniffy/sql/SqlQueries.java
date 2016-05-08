@@ -5,6 +5,7 @@ import io.sniffy.*;
 import java.util.Map;
 
 import static io.sniffy.Query.ANY;
+import static io.sniffy.Query.SYSTEM;
 
 public class SqlQueries {
 
@@ -84,7 +85,7 @@ public class SqlQueries {
             int numRows = 0;
 
             for (Map.Entry<StatementMetaData, SqlStats> entry : spy.getExecutedStatements(threads, true).entrySet()) {
-                if (ANY == type || type == entry.getKey().query) {
+                if ((ANY == type && SYSTEM != entry.getKey().query) || type == entry.getKey().query) {
                     SqlStats sqlStats = entry.getValue();
                     numQueries++;
                     numRows += sqlStats.rows.intValue();
