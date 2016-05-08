@@ -21,6 +21,23 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test(expected = WrongNumberOfRowsError.class)
+    public void testTwoQueryMinTwoRows_Exception() {
+        executeStatement(Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactQueries(2).minRows(2).delete().anyThreads())) {
+            executeStatement(Query.DELETE);
+            executeStatement(Query.DELETE);
+        }
+    }
+
+    @Test
+    public void testTwoQueryMaxTwoMergeRowsOtherThreads() {
+        executeStatement(Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactQueries(2).maxRows(2).otherThreads().merge())) {
+            executeStatementsInOtherThread(2, Query.MERGE);
+        }
+    }
+
     @Test
     public void testMinMaxRows() {
         try (Spy $= Sniffer.expect(SqlQueries.minRows(2).maxRows(3))) {
