@@ -272,4 +272,41 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testOneRowMerge() {
+        executeStatement(Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneRow().merge().currentThread())) {
+            executeStatement(Query.MERGE);
+        }
+    }
+
+    @Test
+    public void testOneRowOneQuerySelectOtherThread() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneRow().atMostOneQuery().select().otherThreads())) {
+            executeStatementInOtherThread(Query.SELECT);
+        }
+    }
+
+    @Test
+    public void testTwoRowsTwoQueriesUpdateAnyThreads() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (Spy $= Sniffer.expect(SqlQueries.queriesBetween(2,2).exactRows(2).update().anyThreads())) {
+            executeStatement(Query.UPDATE);
+            executeStatementInOtherThread(Query.UPDATE);
+        }
+    }
+
+    @Test
+    public void testTwoRowsTwoQueriesMergeAnyThreads() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (Spy $= Sniffer.expect(SqlQueries.maxQueries(2).minQueries(2).minRows(2).maxRows(2).merge().anyThreads())) {
+            executeStatement(Query.MERGE);
+            executeStatementInOtherThread(Query.MERGE);
+        }
+    }
+
 }
