@@ -219,13 +219,13 @@ public final class Sniffer {
             Range range = Range.parse(expectation);
 
             if (-1 != range.value) {
-                spy.expect(SqlQueries.exact(range.value).threads(expectation.threads()).type(expectation.query()));
+                spy.expect(SqlQueries.exactQueries(range.value).threads(expectation.threads()).type(expectation.query()));
             } else if (-1 != range.min && -1 != range.max) {
-                spy.expect(SqlQueries.between(range.min, range.max).threads(expectation.threads()).type(expectation.query()));
+                spy.expect(SqlQueries.queriesBetween(range.min, range.max).threads(expectation.threads()).type(expectation.query()));
             } else if (-1 != range.min) {
-                spy.expect(SqlQueries.min(range.min).threads(expectation.threads()).type(expectation.query()));
+                spy.expect(SqlQueries.minQueries(range.min).threads(expectation.threads()).type(expectation.query()));
             } else if (-1 != range.max) {
-                spy.expect(SqlQueries.max(range.max).threads(expectation.threads()).type(expectation.query()));
+                spy.expect(SqlQueries.maxQueries(range.max).threads(expectation.threads()).type(expectation.query()));
             }
         }
 

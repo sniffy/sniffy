@@ -14,28 +14,52 @@ public class SqlQueries {
     private SqlQueries() {
     }
 
-    public static SqlExpectation_CountQueries none() {
-        return exact(0);
+    public static SqlExpectation_CountQueries noneQueries() {
+        return exactQueries(0);
     }
 
-    public static SqlExpectation_CountQueries atMostOnce() {
-        return between(0,1);
+    public static SqlExpectation_CountQueries atMostOneQuery() {
+        return queriesBetween(0,1);
     }
 
-    public static SqlExpectation_CountQueries exact(int count) {
-        return between(count, count);
+    public static SqlExpectation_CountQueries exactQueries(int countQueries) {
+        return queriesBetween(countQueries, countQueries);
     }
 
-    public static SqlExpectation_CountQueries between(int min, int max) {
-        return new SqlExpectation_CountQueries(min, max);
+    public static SqlExpectation_CountQueries queriesBetween(int minQueries, int maxQueries) {
+        return new SqlExpectation_CountQueries(minQueries, maxQueries);
     }
 
-    public static SqlExpectation_MinQueries min(int min) {
-        return new SqlExpectation_MinQueries(min);
+    public static SqlExpectation_MinQueries minQueries(int minQueries) {
+        return new SqlExpectation_MinQueries(minQueries);
     }
 
-    public static SqlExpectation_MaxQueries max(int max) {
-        return new SqlExpectation_MaxQueries(max);
+    public static SqlExpectation_MaxQueries maxQueries(int maxQueries) {
+        return new SqlExpectation_MaxQueries(maxQueries);
+    }
+
+    public static SqlExpectation_CountRows noneRows() {
+        return exactRows(0);
+    }
+
+    public static SqlExpectation_CountRows atMostOneRows() {
+        return rowsBetween(0,1);
+    }
+
+    public static SqlExpectation_CountRows exactRows(int countRows) {
+        return rowsBetween(countRows, countRows);
+    }
+
+    public static SqlExpectation_CountRows rowsBetween(int minRows, int maxRows) {
+        return new SqlExpectation_CountRows(minRows, maxRows);
+    }
+
+    public static SqlExpectation_CountRows minRows(int minRows) {
+        return new SqlExpectation_MinRows(minRows);
+    }
+
+    public static SqlExpectation_CountRows maxRows(int maxRows) {
+        return new SqlExpectation_MaxRows(maxRows);
     }
 
     private static class SqlExpectation implements Spy.Expectation {
@@ -90,7 +114,7 @@ public class SqlQueries {
             super(minQueries, Integer.MAX_VALUE);
         }
 
-        public SqlExpectation_CountQueries max(int maxQueries) {
+        public SqlExpectation_CountQueries maxQueries(int maxQueries) {
             if (maxQueries < minQueries) throw new IllegalArgumentException("max cannot be less than min");
             return new SqlExpectation_CountQueries(minQueries, maxQueries);
         }
@@ -103,7 +127,7 @@ public class SqlQueries {
             super(0, maxQueries);
         }
 
-        public SqlExpectation_CountQueries min(int minQueries) {
+        public SqlExpectation_CountQueries minQueries(int minQueries) {
             if (maxQueries < minQueries) throw new IllegalArgumentException("max cannot be less than min");
             return new SqlExpectation_CountQueries(minQueries, maxQueries);
         }
@@ -165,6 +189,87 @@ public class SqlQueries {
 
     }
 
+    public static class SqlExpectation_MinRows extends SqlExpectation_CountRows {
+
+        private SqlExpectation_MinRows(int minRows) {
+            super(minRows, Integer.MAX_VALUE);
+        }
+
+        public SqlExpectation_CountQueries maxRows(int maxRows) {
+            if (maxRows < minRows) throw new IllegalArgumentException("max cannot be less than min");
+            return new SqlExpectation_CountQueries(minRows, maxRows);
+        }
+
+    }
+
+    public static class SqlExpectation_MaxRows extends SqlExpectation_CountRows {
+
+        private SqlExpectation_MaxRows(int maxRows) {
+            super(0, maxRows);
+        }
+
+        public SqlExpectation_CountQueries minRows(int minRows) {
+            if (maxRows < minRows) throw new IllegalArgumentException("max cannot be less than min");
+            return new SqlExpectation_CountQueries(minRows, maxRows);
+        }
+
+    }
+
+    public static class SqlExpectation_CountRows extends SqlExpectation {
+
+        private SqlExpectation_CountRows(int minRows, int maxRows) {
+            super(0, Integer.MAX_VALUE, minRows, maxRows, Threads.CURRENT, ANY);
+            if (minRows < 0) throw new IllegalArgumentException("min cannot be negative");
+            if (maxRows < minRows) throw new IllegalArgumentException("max cannot be less than min");
+        }
+
+        public SqlExpectation_CountRows_QueryType type(Query query) {
+            return new SqlExpectation_CountRows_QueryType(minQueries, maxQueries, query);
+        }
+
+        public SqlExpectation_CountRows_QueryType select() {
+            return type(Query.SELECT);
+        }
+
+        public SqlExpectation_CountRows_QueryType insert() {
+            return type(Query.INSERT);
+        }
+
+        public SqlExpectation_CountRows_QueryType update() {
+            return type(Query.UPDATE);
+        }
+
+        public SqlExpectation_CountRows_QueryType delete() {
+            return type(Query.DELETE);
+        }
+
+        public SqlExpectation_CountRows_QueryType merge() {
+            return type(Query.MERGE);
+        }
+
+        // TODO: change name since it clashes with otherThreads()
+        public SqlExpectation_CountRows_QueryType other() {
+            return type(Query.OTHER);
+        }
+
+        public SqlExpectation_CountRows_Threads threads(Threads threads) {
+            return new SqlExpectation_CountRows_Threads(minQueries, maxQueries, threads);
+        }
+
+        public SqlExpectation_CountRows_Threads currentThread() {
+            return threads(Threads.CURRENT);
+        }
+
+        public SqlExpectation_CountRows_Threads otherThreads() {
+            return threads(Threads.OTHERS);
+        }
+
+        public SqlExpectation_CountRows_Threads anyThreads() {
+            return threads(Threads.ANY);
+        }
+
+    }
+
     public static class SqlExpectation_CountQueries_QueryType extends SqlExpectation {
 
         private SqlExpectation_CountQueries_QueryType(int minQueries, int maxQueries, Query query) {
@@ -172,7 +277,31 @@ public class SqlQueries {
         }
 
         public SqlExpectation threads(Threads threads) {
-            return new SqlExpectation(minQueries, maxQueries, minRows, maxRows, threads, type);
+            return new SqlExpectation_CountQueries_Threads_QueryType(minQueries, maxQueries, threads, type);
+        }
+
+        public SqlExpectation currentThread() {
+            return threads(Threads.CURRENT);
+        }
+
+        public SqlExpectation otherThreads() {
+            return threads(Threads.OTHERS);
+        }
+
+        public SqlExpectation anyThreads() {
+            return threads(Threads.ANY);
+        }
+
+    }
+
+    public static class SqlExpectation_CountRows_QueryType extends SqlExpectation {
+
+        private SqlExpectation_CountRows_QueryType(int minRows, int maxRows, Query query) {
+            super( 0, Integer.MAX_VALUE, minRows, maxRows, Threads.CURRENT, query);
+        }
+
+        public SqlExpectation threads(Threads threads) {
+            return new SqlExpectation_CountRows_Threads_QueryType(minRows, maxRows, threads, type);
         }
 
         public SqlExpectation currentThread() {
@@ -196,7 +325,7 @@ public class SqlQueries {
         }
 
         public SqlExpectation type(Query query) {
-            return new SqlExpectation(minQueries, maxQueries, minRows, maxRows, threads, query);
+            return new SqlExpectation_CountQueries_Threads_QueryType(minQueries, maxQueries, threads, query);
         }
 
         public SqlExpectation select() {
@@ -222,6 +351,62 @@ public class SqlQueries {
         public SqlExpectation other() {
             return type(Query.OTHER);
         }
+
+    }
+
+    public static class SqlExpectation_CountRows_Threads extends SqlExpectation {
+
+        private SqlExpectation_CountRows_Threads(int minRows, int maxRows, Threads threads) {
+            super(0, Integer.MAX_VALUE, minRows, maxRows, threads, ANY);
+        }
+
+        public SqlExpectation type(Query query) {
+            return new SqlExpectation_CountRows_Threads_QueryType(minRows, maxRows, threads, query);
+        }
+
+        public SqlExpectation select() {
+            return type(Query.SELECT);
+        }
+
+        public SqlExpectation insert() {
+            return type(Query.INSERT);
+        }
+
+        public SqlExpectation update() {
+            return type(Query.UPDATE);
+        }
+
+        public SqlExpectation delete() {
+            return type(Query.DELETE);
+        }
+
+        public SqlExpectation merge() {
+            return type(Query.MERGE);
+        }
+
+        public SqlExpectation other() {
+            return type(Query.OTHER);
+        }
+
+    }
+
+    public static class SqlExpectation_CountQueries_Threads_QueryType extends SqlExpectation {
+
+        private SqlExpectation_CountQueries_Threads_QueryType(int minQueries, int maxQueries, Threads threads, Query queryType) {
+            super(minQueries, maxQueries, 0, Integer.MAX_VALUE, threads, queryType);
+        }
+
+        // TODO implement rows methods
+
+    }
+
+    public static class SqlExpectation_CountRows_Threads_QueryType extends SqlExpectation {
+
+        private SqlExpectation_CountRows_Threads_QueryType(int minRows, int maxRows, Threads threads, Query queryType) {
+            super(0, Integer.MAX_VALUE, minRows, maxRows, threads, queryType);
+        }
+
+        // TODO implement rows methods
 
     }
 
