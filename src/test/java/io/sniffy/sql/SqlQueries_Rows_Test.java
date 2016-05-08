@@ -25,7 +25,7 @@ public class SqlQueries_Rows_Test extends BaseTest {
     public void testOneMergeRow() {
         executeStatement(Query.DELETE);
         executeStatement(Query.INSERT);
-        try (Spy $= Sniffer.expect(SqlQueries.atMostOneRow().merge())) {
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneRow().currentThread().merge())) {
             executeStatement(Query.MERGE);
         }
     }
@@ -229,6 +229,30 @@ public class SqlQueries_Rows_Test extends BaseTest {
             executeStatementsInOtherThread(3, Query.INSERT);
             executeStatementsInOtherThread(2, Query.DELETE);
             executeStatements(2, Query.DELETE);
+        }
+    }
+
+    @Test(expected = WrongNumberOfRowsError.class)
+    public void testOneRowAnyThreads_Exception() {
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneRow().anyThreads())) {
+            executeStatement(Query.INSERT);
+            executeStatementInOtherThread(Query.INSERT);
+        }
+    }
+
+    @Test(expected = WrongNumberOfQueriesError.class)
+    public void testOneRowNoneQueries_Exception() {
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneRow().noneQueries().otherThreads().insert())) {
+            executeStatement(Query.INSERT);
+            executeStatementInOtherThread(Query.INSERT);
+        }
+    }
+
+    @Test
+    public void testOneRowOneQueryInsertOtherThreads() {
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneRow().atMostOneQuery().insert().otherThreads())) {
+            executeStatement(Query.INSERT);
+            executeStatementInOtherThread(Query.INSERT);
         }
     }
 

@@ -302,6 +302,7 @@ public class SqlQueries {
             return threads(Threads.ANY);
         }
 
+        // TODO: This method does not make sense as probably some others
         public SqlExpectation_CountQueries_CountRows noneQueries() {
             return exactQueries(0);
         }
