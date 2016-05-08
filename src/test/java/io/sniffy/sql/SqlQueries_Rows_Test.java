@@ -479,19 +479,28 @@ public class SqlQueries_Rows_Test extends BaseTest {
     }
 
     @Test
-    public void testOneRowOtherThreadExactTwoQueriesDelete() {
+    public void testOneRowOtherThreadMaxMinQueriesDelete() {
         executeStatement(Query.DELETE);
         executeStatement(Query.INSERT);
-        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactRows(1).otherThreads().exactQueries(2).delete())) {
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactRows(1).otherThreads().maxQueries(2).minQueries(2).delete())) {
             executeStatementsInOtherThread(2, Query.DELETE);
         }
     }
 
     @Test
-    public void testNoneRowsOtherThreadExactTwoQueriesOther() {
+    public void testOneRowOtherThreadMinMaxQueriesDelete() {
         executeStatement(Query.DELETE);
         executeStatement(Query.INSERT);
-        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.noneRows().otherThreads().other().exactQueries(2))) {
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactRows(1).otherThreads().minQueries(2).maxQueries(2).delete())) {
+            executeStatementsInOtherThread(2, Query.DELETE);
+        }
+    }
+
+    @Test
+    public void testNoneRowsOtherThreadMinMaxQueriesOther() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.noneRows().otherThreads().other().minQueries(2).maxQueries(2))) {
             executeStatementsInOtherThread(2, Query.OTHER);
         }
     }

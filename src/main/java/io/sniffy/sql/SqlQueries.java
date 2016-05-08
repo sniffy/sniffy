@@ -568,6 +568,32 @@ public class SqlQueries {
 
     }
 
+    public static class SqlExpectation_CountRows_MinQueries_Threads extends SqlExpectation_CountQueries_CountRows_Threads {
+
+        private SqlExpectation_CountRows_MinQueries_Threads(int minRows, int maxRows, int minQueries, Threads threads) {
+            super(minQueries, Integer.MAX_VALUE, minRows, maxRows, threads);
+        }
+
+        public SqlExpectation_CountQueries_CountRows_Threads maxQueries(int maxQueries) {
+            if (maxQueries < minQueries) throw new IllegalArgumentException("max cannot be less than min");
+            return new SqlExpectation_CountQueries_CountRows_Threads(minQueries, maxQueries, minRows, maxRows, threads);
+        }
+
+    }
+
+    public static class SqlExpectation_CountRows_MaxQueries_Threads extends SqlExpectation_CountQueries_CountRows_Threads {
+
+        private SqlExpectation_CountRows_MaxQueries_Threads(int minRows, int maxRows, int maxQueries, Threads threads) {
+            super(0, maxQueries, minRows, maxRows, threads);
+        }
+
+        public SqlExpectation_CountQueries_CountRows_Threads minQueries(int minQueries) {
+            if (maxQueries < minQueries) throw new IllegalArgumentException("max cannot be less than min");
+            return new SqlExpectation_CountQueries_CountRows_Threads(minQueries, maxQueries, minRows, maxRows, threads);
+        }
+
+    }
+
     // rowCount + queryType
 
     public static class SqlExpectation_CountRows_QueryType extends SqlExpectation {
@@ -732,12 +758,12 @@ public class SqlQueries {
             return new SqlExpectation_CountQueries_CountRows_Threads(minQueries, maxQueries, minRows, maxRows, threads);
         }
 
-        public SqlExpectation_CountQueries_MinRows_Threads minQueries(int minQueries) {
-            return new SqlExpectation_CountQueries_MinRows_Threads(minQueries, minRows, maxRows, threads);
+        public SqlExpectation_CountRows_MinQueries_Threads minQueries(int minQueries) {
+            return new SqlExpectation_CountRows_MinQueries_Threads(minRows, maxRows, minQueries, threads);
         }
 
-        public SqlExpectation_CountQueries_MinRows_Threads maxQueries(int maxQueries) {
-            return new SqlExpectation_CountQueries_MinRows_Threads(maxQueries, minRows, maxRows, threads);
+        public SqlExpectation_CountRows_MaxQueries_Threads maxQueries(int maxQueries) {
+            return new SqlExpectation_CountRows_MaxQueries_Threads(minRows, maxRows, maxQueries, threads);
         }
 
     }
