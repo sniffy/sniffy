@@ -149,4 +149,22 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testExactQueriesExactRows() {
+        executeStatementsInOtherThread(1, Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactQueries(2).exactRows(3))) {
+            executeStatementsInOtherThread(3, Query.INSERT);
+            executeStatements(2, Query.DELETE);
+        }
+    }
+
+    @Test
+    public void testExactQueriesBetweenRowsAnyThreads() {
+        executeStatementsInOtherThread(1, Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactQueries(5).exactRows(6).anyThreads())) {
+            executeStatementsInOtherThread(3, Query.INSERT);
+            executeStatements(2, Query.DELETE);
+        }
+    }
+
 }
