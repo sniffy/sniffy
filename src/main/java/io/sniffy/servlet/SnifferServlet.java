@@ -101,6 +101,9 @@ class SnifferServlet extends HttpServlet {
                             append("\"rows\":").
                             append(sqlStats.rows.longValue()).
                             append(",").
+                            append("\"type\":\"").
+                            append(statement.query.name()).
+                            append("\",").
                             append("\"bytesDown\":").
                             append(sqlStats.bytesDown.longValue()).
                             append(",").

@@ -213,16 +213,15 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
         switch (threadMatcher) {
             case ANY:
-                if (query == Query.ANY) count = executedStatements.size();
-                else for (StatementMetaData statementMetaData : executedStatements.keySet()) {
-                    if (query == statementMetaData.query) count++;
+                for (StatementMetaData statementMetaData : executedStatements.keySet()) {
+                    if ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query) count++;
                 }
                 break;
             case CURRENT:
             case OTHERS:
                 for (StatementMetaData statementMetaData : executedStatements.keySet()) {
                     if ((Thread.currentThread().getId() == statementMetaData.ownerThreadId) == (CURRENT == threadMatcher) &&
-                            (query == Query.ANY || query == statementMetaData.query)) count++;
+                            ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query)) count++;
                 }
                 break;
             default:
