@@ -505,4 +505,46 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testOneQueryOneRowCurrentThreadSelect() {
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactQueries(1).exactRows(1).currentThread().select())) {
+            executeStatement(Query.SELECT);
+        }
+    }
+
+    @Test
+    public void testOneQueryOneRowCurrentThreadUpdate() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactQueries(1).exactRows(1).currentThread().update())) {
+            executeStatement(Query.UPDATE);
+        }
+    }
+
+    @Test
+    public void testOneQueryCurrentThreadDeleteNoneRows() {
+        executeStatement(Query.DELETE);
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactQueries(1).currentThread().delete().noneRows())) {
+            executeStatement(Query.DELETE);
+        }
+    }
+
+    @Test
+    public void testOneQueryAnyThreadsDeleteAtMostOneRow() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactQueries(1).anyThreads().delete().atMostOneRow())) {
+            executeStatement(Query.DELETE);
+        }
+    }
+
+    @Test
+    public void testOneQueryOtherThreadsDeleteExactTwoRows() {
+        executeStatement(Query.DELETE);
+        executeStatements(2, Query.INSERT);
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactQueries(1).otherThreads().delete().exactRows(2))) {
+            executeStatementInOtherThread(Query.DELETE);
+        }
+    }
+
 }
