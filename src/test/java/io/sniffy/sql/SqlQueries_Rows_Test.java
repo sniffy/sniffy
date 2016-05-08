@@ -167,4 +167,23 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test(expected = WrongNumberOfRowsError.class)
+    public void testExactQueriesMaxMinRows_Exception() {
+        executeStatementsInOtherThread(1, Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactQueries(2).maxRows(10).minRows(9))) {
+            executeStatementsInOtherThread(3, Query.INSERT);
+            executeStatements(2, Query.DELETE);
+        }
+    }
+
+    @Test
+    public void testExactQueriesAtMostOneRow_Exception() {
+        executeStatementsInOtherThread(1, Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactQueries(2).atMostOneRow().otherThreads())) {
+            executeStatements(3, Query.INSERT);
+            executeStatements(2, Query.DELETE);
+            executeStatementsInOtherThread(2, Query.DELETE);
+        }
+    }
+
 }
