@@ -487,4 +487,13 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testNoneRowsOtherThreadExactTwoQueriesOther() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.noneRows().otherThreads().other().exactQueries(2))) {
+            executeStatementsInOtherThread(2, Query.OTHER);
+        }
+    }
+
 }
