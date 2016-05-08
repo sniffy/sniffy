@@ -310,16 +310,43 @@ public class SqlQueries_Rows_Test extends BaseTest {
     }
 
     @Test
-    public void testOneRwoOneQueryOtherCurrentThread() {
+    public void testOneRowOneQueryOtherCurrentThread() {
         try (Spy $= Sniffer.expect(SqlQueries.atMostOneQuery().atMostOneRow().other().currentThread())) {
             executeStatement(Query.OTHER);
         }
     }
 
     @Test
-    public void testOneRwoOneQueryCurrentThreadOther() {
+    public void testOneRowOneQueryCurrentThreadOther() {
         try (Spy $= Sniffer.expect(SqlQueries.atMostOneQuery().atMostOneRow().currentThread().other())) {
             executeStatement(Query.OTHER);
+        }
+    }
+
+    @Test
+    public void testAtMostOneSelectQueryReturnsAtMostOneRow() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneQuery().select().atMostOneRow())) {
+            executeStatement(Query.SELECT);
+        }
+    }
+
+    @Test
+    public void testAtMostOneUpdateQueryReturnsValidMinMaxRows() {
+        executeStatement(Query.DELETE);
+        executeStatements(3, Query.INSERT);
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneQuery().merge().minRows(1).maxRows(1).currentThread())) {
+            executeStatement(Query.MERGE);
+        }
+    }
+
+    @Test
+    public void testAtMostOneDeleteQueryReturnsValidMaxMinRows() {
+        executeStatement(Query.DELETE);
+        executeStatements(3, Query.INSERT);
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneQuery().delete().maxRows(4).minRows(2).otherThreads())) {
+            executeStatementInOtherThread(Query.DELETE);
         }
     }
 
