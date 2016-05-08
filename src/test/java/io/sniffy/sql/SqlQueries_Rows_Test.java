@@ -57,4 +57,23 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testExactThreeRowsDeleteOtherQueries() {
+        executeStatementsInOtherThread(1, Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactRows(3).delete().otherThreads())) {
+            executeStatementsInOtherThread(3, Query.INSERT);
+            executeStatementsInOtherThread(1, Query.DELETE);
+        }
+    }
+
+    @Test(expected = WrongNumberOfRowsError.class)
+    public void testBetweenNineAndElevenRowSelectedAllQueries_Exception() {
+        try (Spy $= Sniffer.expect(SqlQueries.rowsBetween(9,11).select().anyThreads())) {
+            executeStatements(2, Query.INSERT);
+            executeStatementsInOtherThread(3, Query.INSERT);
+            executeStatements(1, Query.SELECT);
+            executeStatementsInOtherThread(1, Query.SELECT);
+        }
+    }
+
 }
