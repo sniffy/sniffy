@@ -91,7 +91,7 @@ public class SqlQueries_Rows_Test extends BaseTest {
     }
 
     @Test
-    public void testExactThreeRowsDeleteOtherQueries() {
+    public void testExactThreeRowsDeleteOtherThreads() {
         executeStatementsInOtherThread(1, Query.DELETE);
         try (Spy $= Sniffer.expect(SqlQueries.exactRows(3).delete().otherThreads())) {
             executeStatementsInOtherThread(3, Query.INSERT);
@@ -106,6 +106,26 @@ public class SqlQueries_Rows_Test extends BaseTest {
             executeStatementsInOtherThread(3, Query.INSERT);
             executeStatements(1, Query.SELECT);
             executeStatementsInOtherThread(1, Query.SELECT);
+        }
+    }
+
+    @Test
+    public void testExactThreeRowsDeleteOtherThreadsMinMaxQueries() {
+        executeStatementsInOtherThread(1, Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactRows(3).delete().otherThreads().minQueries(5).maxQueries(7))) {
+            executeStatementsInOtherThread(3, Query.INSERT);
+            executeStatementsInOtherThread(6, Query.DELETE);
+            executeStatements(2, Query.DELETE);
+        }
+    }
+
+    @Test(expected = WrongNumberOfQueriesError.class)
+    public void testExactThreeRowsDeleteOtherThreadsMaxMinQueries_Exception() {
+        executeStatementsInOtherThread(1, Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactRows(3).otherThreads().delete().minQueries(5).maxQueries(7))) {
+            executeStatementsInOtherThread(3, Query.INSERT);
+            executeStatementsInOtherThread(4, Query.DELETE);
+            executeStatements(2, Query.DELETE);
         }
     }
 

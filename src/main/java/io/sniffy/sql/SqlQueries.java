@@ -661,31 +661,31 @@ public class SqlQueries {
             super(0, Integer.MAX_VALUE, minRows, maxRows, threads, ANY);
         }
 
-        public SqlExpectation type(Query query) {
+        public SqlExpectation_CountRows_Threads_QueryType type(Query query) {
             return new SqlExpectation_CountRows_Threads_QueryType(minRows, maxRows, threads, query);
         }
 
-        public SqlExpectation select() {
+        public SqlExpectation_CountRows_Threads_QueryType select() {
             return type(Query.SELECT);
         }
 
-        public SqlExpectation insert() {
+        public SqlExpectation_CountRows_Threads_QueryType insert() {
             return type(Query.INSERT);
         }
 
-        public SqlExpectation update() {
+        public SqlExpectation_CountRows_Threads_QueryType update() {
             return type(Query.UPDATE);
         }
 
-        public SqlExpectation delete() {
+        public SqlExpectation_CountRows_Threads_QueryType delete() {
             return type(Query.DELETE);
         }
 
-        public SqlExpectation merge() {
+        public SqlExpectation_CountRows_Threads_QueryType merge() {
             return type(Query.MERGE);
         }
 
-        public SqlExpectation other() {
+        public SqlExpectation_CountRows_Threads_QueryType other() {
             return type(Query.OTHER);
         }
 
