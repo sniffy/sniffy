@@ -40,4 +40,21 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testMaxRowsInserted() {
+        try (Spy $= Sniffer.expect(SqlQueries.maxRows(3).insert())) {
+            executeStatements(4, Query.SELECT);
+            executeStatements(2, Query.INSERT);
+        }
+    }
+
+    @Test(expected = WrongNumberOfRowsError.class)
+    public void testAtMostOneRowUpdated_Exception() {
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneRow().update())) {
+            executeStatements(2, Query.INSERT);
+            executeStatements(2, Query.UPDATE);
+            executeStatements(1, Query.DELETE);
+        }
+    }
+
 }

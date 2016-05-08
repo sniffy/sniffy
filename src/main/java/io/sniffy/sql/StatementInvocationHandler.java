@@ -23,15 +23,17 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
 
     protected enum StatementMethodType {
         EXECUTE_SQL,
+        EXECUTE_UPDATE,
         ADD_BATCH,
         CLEAR_BATCH,
         EXECUTE_BATCH,
         OTHER;
 
         static StatementMethodType parse(String methodName) {
-            if ("execute".equals(methodName) || "executeQuery".equals(methodName)
-                    || "executeUpdate".equals(methodName) ||  "executeLargeUpdate".equals(methodName)) {
+            if ("execute".equals(methodName) || "executeQuery".equals(methodName)) {
                 return EXECUTE_SQL;
+            } else if ("executeUpdate".equals(methodName) ||  "executeLargeUpdate".equals(methodName)) {
+                return EXECUTE_UPDATE;
             } else if ("addBatch".equals(methodName)) {
                 return ADD_BATCH;
             } else if ("clearBatch".equals(methodName)) {
@@ -61,10 +63,13 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
                 result = invokeTarget(method, args);
                 break;
             case EXECUTE_BATCH:
-                result = invokeTargetAndRecord(method, args, getBatchedSql());
+                result = invokeTargetAndRecord(method, args, getBatchedSql(), false);
+                break;
+            case EXECUTE_UPDATE:
+                result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null, true);
                 break;
             case EXECUTE_SQL:
-                result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null);
+                result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null, false);
                 break;
             case OTHER:
             default:
@@ -84,14 +89,19 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
 
     }
 
-    protected Object invokeTargetAndRecord(Method method, Object[] args, String sql) throws Throwable {
+    protected Object invokeTargetAndRecord(Method method, Object[] args, String sql, boolean isUpdateQuery) throws Throwable {
         long start = System.currentTimeMillis();
+        int rowsUpdated = 0;
         try {
             Sniffer.enterJdbcMethod();
-            return invokeTargetImpl(method, args);
+            Object result = invokeTargetImpl(method, args);
+            if (result instanceof Number) {
+                rowsUpdated = ((Number) result).intValue();
+            }
+            return result;
         } finally {
             String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
-            lastStatementMetaData = Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace);
+            lastStatementMetaData = Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace, rowsUpdated);
         }
     }
 

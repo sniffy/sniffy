@@ -68,7 +68,7 @@ public final class Sniffer {
         return Collections.unmodifiableList(registeredSpies);
     }
 
-    private static synchronized void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp) {
+    private static synchronized void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -76,7 +76,7 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp);
+                spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
             }
         }
     }
@@ -149,7 +149,8 @@ public final class Sniffer {
                         statementMetaData,
                         elapsedTime,
                         socketStats.bytesDown.intValue(),
-                        socketStats.bytesUp.intValue()
+                        socketStats.bytesUp.intValue(),
+                        0
                 );
             }
 
@@ -165,6 +166,10 @@ public final class Sniffer {
     }
 
     public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace) {
+        return executeStatement(sql, elapsedTime, stackTrace, 0);
+    }
+
+    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace, int rowsUpdated) {
         // increment global counter
         executedStatementsGlobalCounter.incrementAndGet();
 
@@ -177,7 +182,8 @@ public final class Sniffer {
                 statementMetaData,
                 elapsedTime,
                 null == socketStats ? 0 : socketStats.bytesDown.intValue(),
-                null == socketStats ? 0 : socketStats.bytesUp.intValue()
+                null == socketStats ? 0 : socketStats.bytesUp.intValue(),
+                rowsUpdated
         );
 
         socketStatsAccumulator.remove();

@@ -28,10 +28,13 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
                 result = invokeTarget(method, args);
                 break;
             case EXECUTE_BATCH:
-                result = invokeTargetAndRecord(method, args, getBatchedSql());
+                result = invokeTargetAndRecord(method, args, getBatchedSql(), false);
+                break;
+            case EXECUTE_UPDATE:
+                result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null, true);
                 break;
             case EXECUTE_SQL:
-                result =  invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : sql);
+                result =  invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : sql, false);
                 break;
             case OTHER:
             default:

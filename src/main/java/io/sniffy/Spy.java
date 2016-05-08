@@ -46,14 +46,14 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
-    protected void addExecutedStatement(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp) {
+    protected void addExecutedStatement(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
         if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
             SqlStats sqlStats = executedStatements.get(statementMetaData);
             if (null == sqlStats) {
-                sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp, 0));
+                sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp, rowsUpdated));
             }
             if (null != sqlStats) {
-                sqlStats.accumulate(elapsedTime, bytesDown, bytesUp);
+                sqlStats.accumulate(elapsedTime, bytesDown, bytesUp, rowsUpdated);
             }
         }
     }

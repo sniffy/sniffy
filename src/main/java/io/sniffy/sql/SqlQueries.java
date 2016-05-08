@@ -257,7 +257,7 @@ public class SqlQueries {
         }
 
         public SqlExpectation_CountRows_QueryType type(Query query) {
-            return new SqlExpectation_CountRows_QueryType(minQueries, maxQueries, query);
+            return new SqlExpectation_CountRows_QueryType(minRows, maxRows, query);
         }
 
         public SqlExpectation_CountRows_QueryType select() {
