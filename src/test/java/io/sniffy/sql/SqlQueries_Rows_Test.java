@@ -434,4 +434,27 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testOneRowCurrentThreadSelectMaxMinQueries() {
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.atMostOneRow().currentThread().select().maxQueries(2).minQueries(1))) {
+            executeStatement(Query.SELECT);
+        }
+    }
+
+    @Test
+    public void testOneRowOtherThreadInsertMinMaxQueries() {
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.atMostOneRow().otherThreads().insert().minQueries(1).maxQueries(2))) {
+            executeStatementInOtherThread(Query.INSERT);
+        }
+    }
+
+    @Test
+    public void testTwoRowsAnyThreadUpdateMinMaxQueries() {
+        executeStatement(Query.DELETE);
+        executeStatements(2, Query.INSERT);
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.maxRows(2).minRows(2).anyThreads().update().atMostOneQuery())) {
+            executeStatementInOtherThread(Query.UPDATE);
+        }
+    }
+
 }
