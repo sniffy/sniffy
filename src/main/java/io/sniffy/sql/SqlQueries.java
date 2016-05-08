@@ -108,6 +108,8 @@ public class SqlQueries {
 
     }
 
+    // queryCount
+
     public static class SqlExpectation_MinQueries extends SqlExpectation_CountQueries {
 
         private SqlExpectation_MinQueries(int minQueries) {
@@ -213,6 +215,8 @@ public class SqlQueries {
 
     }
 
+    // rowCount
+
     public static class SqlExpectation_MinRows extends SqlExpectation_CountRows {
 
         private SqlExpectation_MinRows(int minRows) {
@@ -317,6 +321,8 @@ public class SqlQueries {
         }
 
     }
+
+    // queryCount + rowCount
 
     public static class SqlExpectation_CountQueries_CountRows extends SqlExpectation {
 
@@ -429,6 +435,8 @@ public class SqlQueries {
 
     }
 
+    // queryCount + queryType
+
     public static class SqlExpectation_CountQueries_QueryType extends SqlExpectation {
 
         private SqlExpectation_CountQueries_QueryType(int minQueries, int maxQueries, Query query) {
@@ -451,7 +459,11 @@ public class SqlQueries {
             return threads(Threads.ANY);
         }
 
+        // TODO: rows methods
+
     }
+
+    // rowCount + queryType
 
     public static class SqlExpectation_CountRows_QueryType extends SqlExpectation {
 
@@ -475,7 +487,11 @@ public class SqlQueries {
             return threads(Threads.ANY);
         }
 
+        // queryMethods
+
     }
+
+    // queryCount + threads
 
     public static class SqlExpectation_CountQueries_Threads extends SqlExpectation {
 
@@ -483,35 +499,39 @@ public class SqlQueries {
             super(minQueries, maxQueries, 0, Integer.MAX_VALUE, threads, ANY);
         }
 
-        public SqlExpectation type(Query query) {
+        public SqlExpectation_CountQueries_Threads_QueryType type(Query query) {
             return new SqlExpectation_CountQueries_Threads_QueryType(minQueries, maxQueries, threads, query);
         }
 
-        public SqlExpectation select() {
+        public SqlExpectation_CountQueries_Threads_QueryType select() {
             return type(Query.SELECT);
         }
 
-        public SqlExpectation insert() {
+        public SqlExpectation_CountQueries_Threads_QueryType insert() {
             return type(Query.INSERT);
         }
 
-        public SqlExpectation update() {
+        public SqlExpectation_CountQueries_Threads_QueryType update() {
             return type(Query.UPDATE);
         }
 
-        public SqlExpectation delete() {
+        public SqlExpectation_CountQueries_Threads_QueryType delete() {
             return type(Query.DELETE);
         }
 
-        public SqlExpectation merge() {
+        public SqlExpectation_CountQueries_Threads_QueryType merge() {
             return type(Query.MERGE);
         }
 
-        public SqlExpectation other() {
+        public SqlExpectation_CountQueries_Threads_QueryType other() {
             return type(Query.OTHER);
         }
 
+        // TODO: row methods
+
     }
+
+    // rowCount + threads
 
     public static class SqlExpectation_CountRows_Threads extends SqlExpectation {
 
@@ -549,6 +569,8 @@ public class SqlQueries {
 
     }
 
+    // queryCount + thread + queryType
+
     public static class SqlExpectation_CountQueries_Threads_QueryType extends SqlExpectation {
 
         private SqlExpectation_CountQueries_Threads_QueryType(int minQueries, int maxQueries, Threads threads, Query queryType) {
@@ -559,13 +581,15 @@ public class SqlQueries {
 
     }
 
+    // rowCount + thread + queryType
+
     public static class SqlExpectation_CountRows_Threads_QueryType extends SqlExpectation {
 
         private SqlExpectation_CountRows_Threads_QueryType(int minRows, int maxRows, Threads threads, Query queryType) {
             super(0, Integer.MAX_VALUE, minRows, maxRows, threads, queryType);
         }
 
-        // TODO implement rows methods
+        // TODO implement queries methods
 
     }
 
