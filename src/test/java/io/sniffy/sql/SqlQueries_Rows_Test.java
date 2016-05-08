@@ -6,6 +6,22 @@ import org.junit.Test;
 public class SqlQueries_Rows_Test extends BaseTest {
 
     @Test
+    public void testNoneRows() {
+        executeStatement(Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.noneRows())) {
+            executeStatement(Query.DELETE);
+        }
+    }
+
+    @Test
+    public void testOneQueryNoRows() {
+        executeStatement(Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneQuery().delete().noneRows())) {
+            executeStatement(Query.DELETE);
+        }
+    }
+
+    @Test
     public void testMinMaxRows() {
         try (Spy $= Sniffer.expect(SqlQueries.minRows(2).maxRows(3))) {
             executeStatement();
