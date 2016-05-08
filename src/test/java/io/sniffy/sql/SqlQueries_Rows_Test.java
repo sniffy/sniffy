@@ -21,6 +21,24 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testOneMergeRow() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneRow().merge())) {
+            executeStatement(Query.MERGE);
+        }
+    }
+
+    @Test(expected = WrongNumberOfRowsError.class)
+    public void testOneOtherRow_Exception() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (Spy $= Sniffer.expect(SqlQueries.exactRows(1).other())) {
+            executeStatement(Query.OTHER);
+        }
+    }
+
     @Test(expected = WrongNumberOfRowsError.class)
     public void testTwoQueryMinTwoRows_Exception() {
         executeStatement(Query.DELETE);
@@ -41,6 +59,24 @@ public class SqlQueries_Rows_Test extends BaseTest {
     @Test
     public void testMinMaxRows() {
         try (Spy $= Sniffer.expect(SqlQueries.minRows(2).maxRows(3))) {
+            executeStatement();
+            executeStatement();
+            executeStatement();
+        }
+    }
+
+    @Test(expected = WrongNumberOfRowsError.class)
+    public void testMaxMinRows_Exception() {
+        try (Spy $= Sniffer.expect(SqlQueries.maxRows(5).minRows(4))) {
+            executeStatement();
+            executeStatement();
+            executeStatement();
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMaxMinRows_IllegalArgumentException() {
+        try (Spy $= Sniffer.expect(SqlQueries.maxRows(5).minRows(6))) {
             executeStatement();
             executeStatement();
             executeStatement();
@@ -177,12 +213,22 @@ public class SqlQueries_Rows_Test extends BaseTest {
     }
 
     @Test
-    public void testExactQueriesAtMostOneRow_Exception() {
+    public void testExactQueriesAtMostOneRow() {
         executeStatementsInOtherThread(1, Query.DELETE);
         try (Spy $= Sniffer.expect(SqlQueries.exactQueries(2).atMostOneRow().otherThreads())) {
             executeStatements(3, Query.INSERT);
             executeStatements(2, Query.DELETE);
             executeStatementsInOtherThread(2, Query.DELETE);
+        }
+    }
+
+    @Test
+    public void testExactQueriesNoRows_Exception() {
+        executeStatementsInOtherThread(1, Query.DELETE);
+        try (Spy $= Sniffer.expect(SqlQueries.exactQueries(2).noneRows())) {
+            executeStatementsInOtherThread(3, Query.INSERT);
+            executeStatementsInOtherThread(2, Query.DELETE);
+            executeStatements(2, Query.DELETE);
         }
     }
 
