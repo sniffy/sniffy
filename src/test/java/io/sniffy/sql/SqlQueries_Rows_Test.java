@@ -256,4 +256,20 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testTwoRowsMinMaxQueries() {
+        try (Spy $= Sniffer.expect(SqlQueries.rowsBetween(2,2).minQueries(1).maxQueries(2).anyThreads().insert())) {
+            executeStatement(Query.INSERT);
+            executeStatementInOtherThread(Query.INSERT);
+        }
+    }
+
+    @Test(expected = WrongNumberOfQueriesError.class)
+    public void testTwoRowsMaxMinQueries_Exception() {
+        try (Spy $= Sniffer.expect(SqlQueries.rowsBetween(2,2).maxQueries(4).minQueries(3).insert().anyThreads())) {
+            executeStatement(Query.INSERT);
+            executeStatementInOtherThread(Query.INSERT);
+        }
+    }
+
 }
