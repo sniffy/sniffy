@@ -542,6 +542,32 @@ public class SqlQueries {
 
     }
 
+    public static class SqlExpectation_CountRows_MinQueries_QueryType extends SqlExpectation_CountQueries_CountRows_QueryType {
+
+        private SqlExpectation_CountRows_MinQueries_QueryType(int minRows, int maxRows, int minQueries, Query type) {
+            super(minQueries, Integer.MAX_VALUE, minRows, maxRows, type);
+        }
+
+        public SqlExpectation_CountQueries_CountRows_QueryType maxQueries(int maxQueries) {
+            if (maxQueries < minQueries) throw new IllegalArgumentException("max cannot be less than min");
+            return new SqlExpectation_CountQueries_CountRows_QueryType(minQueries, maxQueries, minRows, maxRows, type);
+        }
+
+    }
+
+    public static class SqlExpectation_CountRows_MaxQueries_QueryType extends SqlExpectation_CountQueries_CountRows_QueryType {
+
+        private SqlExpectation_CountRows_MaxQueries_QueryType(int minRows, int maxRows, int maxQueries, Query type) {
+            super(0, maxQueries, minRows, maxRows, type);
+        }
+
+        public SqlExpectation_CountQueries_CountRows_QueryType minQueries(int minQueries) {
+            if (maxQueries < minQueries) throw new IllegalArgumentException("max cannot be less than min");
+            return new SqlExpectation_CountQueries_CountRows_QueryType(minQueries, maxQueries, minRows, maxRows, type);
+        }
+
+    }
+
     // rowCount + queryType
 
     public static class SqlExpectation_CountRows_QueryType extends SqlExpectation {
@@ -582,12 +608,12 @@ public class SqlQueries {
             return new SqlExpectation_CountQueries_CountRows_QueryType(minQueries, maxQueries, minRows, maxRows, type);
         }
 
-        public SqlExpectation_CountQueries_MinRows_QueryType minQueries(int minQueries) {
-            return new SqlExpectation_CountQueries_MinRows_QueryType(minQueries, minRows, maxRows, type);
+        public SqlExpectation_CountRows_MinQueries_QueryType minQueries(int minQueries) {
+            return new SqlExpectation_CountRows_MinQueries_QueryType(minRows, maxRows, minQueries, type);
         }
 
-        public SqlExpectation_CountQueries_MinRows_QueryType maxQueries(int maxQueries) {
-            return new SqlExpectation_CountQueries_MinRows_QueryType(maxQueries, minRows, maxRows, type);
+        public SqlExpectation_CountRows_MaxQueries_QueryType maxQueries(int maxQueries) {
+            return new SqlExpectation_CountRows_MaxQueries_QueryType(minRows, maxRows, maxQueries, type);
         }
 
     }
