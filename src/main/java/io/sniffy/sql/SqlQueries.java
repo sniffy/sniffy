@@ -801,7 +801,7 @@ public class SqlQueries {
         }
 
         public SqlExpectation_CountQueries_CountRows_Threads minRows(int minRows) {
-            if (minRows < maxRows) throw new IllegalArgumentException("max cannot be less than min");
+            if (maxRows < minRows) throw new IllegalArgumentException("max cannot be less than min");
             return new SqlExpectation_CountQueries_CountRows_Threads(minQueries, maxQueries, minRows, maxRows, threads);
         }
 
