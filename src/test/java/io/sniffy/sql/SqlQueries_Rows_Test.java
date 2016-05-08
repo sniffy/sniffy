@@ -316,4 +316,11 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testOneRwoOneQueryCurrentThreadOther() {
+        try (Spy $= Sniffer.expect(SqlQueries.atMostOneQuery().atMostOneRow().currentThread().other())) {
+            executeStatement(Query.OTHER);
+        }
+    }
+
 }
