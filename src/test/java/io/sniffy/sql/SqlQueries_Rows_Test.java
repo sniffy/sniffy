@@ -457,4 +457,34 @@ public class SqlQueries_Rows_Test extends BaseTest {
         }
     }
 
+    @Test
+    public void testNoneRowsCurrentThreadOtherQueriesMaxMin() {
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.noneRows().currentThread().other().maxQueries(2).minQueries(1))) {
+            executeStatement(Query.OTHER);
+        }
+    }
+
+    @Test
+    public void testNoneRowsCurrentThreadNoneQueriesOfTypeSelect() {
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.noneRows().currentThread().noneQueries().type(Query.SELECT))) {
+            executeStatement(Query.OTHER);
+        }
+    }
+
+    @Test
+    public void testNoneRowsAnyThreadAtMostOneQueryOther() {
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.noneRows().anyThreads().atMostOneQuery().other())) {
+            executeStatement(Query.OTHER);
+        }
+    }
+
+    @Test
+    public void testOneRowOtherThreadExactTwoQueriesDelete() {
+        executeStatement(Query.DELETE);
+        executeStatement(Query.INSERT);
+        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactRows(1).otherThreads().exactQueries(2).delete())) {
+            executeStatementsInOtherThread(2, Query.DELETE);
+        }
+    }
+
 }
