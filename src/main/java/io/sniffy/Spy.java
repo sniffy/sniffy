@@ -53,6 +53,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
                 sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp, rowsUpdated));
             }
             if (null != sqlStats) {
+                // TODO: can we miss some queries in this way?
                 sqlStats.accumulate(elapsedTime, bytesDown, bytesUp, rowsUpdated);
             }
         }
