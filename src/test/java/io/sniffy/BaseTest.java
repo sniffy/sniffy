@@ -3,10 +3,7 @@ package io.sniffy;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public abstract class BaseTest {
 
@@ -68,6 +65,7 @@ public abstract class BaseTest {
                         case ANY:
                         default:
                             statement.execute("SELECT 1 FROM DUAL");
+                            statement.getResultSet().next();
                             break;
                     }
                 }

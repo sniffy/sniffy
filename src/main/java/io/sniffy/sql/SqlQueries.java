@@ -1,9 +1,6 @@
 package io.sniffy.sql;
 
-import io.sniffy.Query;
-import io.sniffy.Spy;
-import io.sniffy.Threads;
-import io.sniffy.WrongNumberOfQueriesError;
+import io.sniffy.*;
 
 import java.util.Map;
 
@@ -54,11 +51,11 @@ public class SqlQueries {
         return new SqlExpectation_CountRows(minRows, maxRows);
     }
 
-    public static SqlExpectation_CountRows minRows(int minRows) {
+    public static SqlExpectation_MinRows minRows(int minRows) {
         return new SqlExpectation_MinRows(minRows);
     }
 
-    public static SqlExpectation_CountRows maxRows(int maxRows) {
+    public static SqlExpectation_MaxRows maxRows(int maxRows) {
         return new SqlExpectation_MaxRows(maxRows);
     }
 
@@ -81,7 +78,7 @@ public class SqlQueries {
         }
 
         @Override
-        public <T extends Spy<T>> Spy<T> verify(Spy<T> spy) throws WrongNumberOfQueriesError {
+        public <T extends Spy<T>> Spy<T> verify(Spy<T> spy) throws SniffyAssertionError {
 
             int numQueries = 0;
             int numRows = 0;
@@ -98,6 +95,14 @@ public class SqlQueries {
                 throw new WrongNumberOfQueriesError(
                         threads, type,
                         minQueries, maxQueries, numQueries,
+                        spy.getExecutedStatements(threads, true).keySet()
+                );
+            }
+
+            if (numRows > maxRows || numRows < minRows) {
+                throw new WrongNumberOfRowsError(
+                        threads, type,
+                        minRows, maxRows, numRows,
                         spy.getExecutedStatements(threads, true).keySet()
                 );
             }
@@ -223,9 +228,9 @@ public class SqlQueries {
             super(minRows, Integer.MAX_VALUE);
         }
 
-        public SqlExpectation_CountQueries maxRows(int maxRows) {
+        public SqlExpectation_CountRows maxRows(int maxRows) {
             if (maxRows < minRows) throw new IllegalArgumentException("max cannot be less than min");
-            return new SqlExpectation_CountQueries(minRows, maxRows);
+            return new SqlExpectation_CountRows(minRows, maxRows);
         }
 
     }
@@ -236,9 +241,9 @@ public class SqlQueries {
             super(0, maxRows);
         }
 
-        public SqlExpectation_CountQueries minRows(int minRows) {
+        public SqlExpectation_CountRows minRows(int minRows) {
             if (maxRows < minRows) throw new IllegalArgumentException("max cannot be less than min");
-            return new SqlExpectation_CountQueries(minRows, maxRows);
+            return new SqlExpectation_CountRows(minRows, maxRows);
         }
 
     }
@@ -281,7 +286,7 @@ public class SqlQueries {
         }
 
         public SqlExpectation_CountRows_Threads threads(Threads threads) {
-            return new SqlExpectation_CountRows_Threads(minQueries, maxQueries, threads);
+            return new SqlExpectation_CountRows_Threads(minRows, maxRows, threads);
         }
 
         public SqlExpectation_CountRows_Threads currentThread() {
