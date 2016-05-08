@@ -103,7 +103,7 @@ public class SqlQueries {
                 throw new WrongNumberOfRowsError(
                         threads, type,
                         minRows, maxRows, numRows,
-                        spy.getExecutedStatements(threads, true).keySet()
+                        spy.getExecutedStatements(threads, true)
                 );
             }
 

@@ -1,11 +1,9 @@
 package io.sniffy;
 
+import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 
@@ -19,19 +17,19 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
     private final int minimumRows;
     private final int maximumRows;
     private final int numRows;
-    private final Collection<StatementMetaData> executedStatements;
+    private final Map<StatementMetaData, SqlStats> executedStatements;
 
     public WrongNumberOfRowsError(
             Threads threadMatcher, Query query,
             int minimumRows, int maximumQueries, int numRows,
-            Collection<StatementMetaData> executedStatements) {
+            Map<StatementMetaData, SqlStats> executedStatements) {
         super(buildDetailMessage(threadMatcher, query, minimumRows, maximumQueries, numRows, executedStatements));
         this.threadMatcher = threadMatcher;
         this.query = query;
         this.minimumRows = minimumRows;
         this.maximumRows = maximumQueries;
         this.numRows = numRows;
-        this.executedStatements = Collections.unmodifiableCollection(executedStatements);
+        this.executedStatements = Collections.unmodifiableMap(executedStatements);
     }
 
     public Threads getThreadMatcher() {
@@ -59,12 +57,12 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
      * @return
      */
     public Collection<StatementMetaData> getExecutedStatements() {
-        return executedStatements;
+        return executedStatements.keySet();
     }
 
     public List<String> getExecutedSqls() {
         List<String> executedSqls = new ArrayList<String>(executedStatements.size());
-        for (StatementMetaData statement : executedStatements) {
+        for (StatementMetaData statement : executedStatements.keySet()) {
             executedSqls.add(statement.sql);
         }
         return executedSqls;
@@ -73,7 +71,7 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
     private static String buildDetailMessage(
             Threads threadMatcher, Query query,
             int minimumQueries, int maximumQueries, int numQueries,
-            Collection<StatementMetaData> executedStatements) {
+            Map<StatementMetaData, SqlStats> executedStatements) {
         StringBuilder sb = new StringBuilder();
         sb.append("Expected between ").append(minimumQueries).append(" and ").append(maximumQueries);
         if (Threads.CURRENT == threadMatcher) {
@@ -86,6 +84,13 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
         }
         sb.append(" rows returned / affected").append(LINE_SEPARATOR);
         sb.append("Observed ").append(numQueries).append(" rows instead:");
+        if (null != executedStatements) for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
+            StatementMetaData statement = entry.getKey();
+            SqlStats sqlStats = entry.getValue();
+            if (Query.ANY == query || null == query || statement.query == query) {
+                sb.append(statement.sql).append("; /* ").append(sqlStats.rows).append(" rows */").append(LINE_SEPARATOR);
+            }
+        }
         return sb.toString();
     }
 
