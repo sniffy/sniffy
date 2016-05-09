@@ -26,7 +26,6 @@ import static io.sniffy.util.ExceptionUtil.throwException;
  */
 public class Spy<C extends Spy<C>> implements Closeable {
 
-    // TODO: add invocationcount to executedStatements and socketOperations; collapse similar queries
     private volatile ConcurrentLinkedHashMap<StatementMetaData, SqlStats> executedStatements =
             new ConcurrentLinkedHashMap.Builder<StatementMetaData, SqlStats>().
                     maximumWeightedCapacity(Long.MAX_VALUE).
