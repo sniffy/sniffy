@@ -6,6 +6,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import static io.sniffy.Query.INSERT;
+
 @NoQueriesAllowed
 // TODO created a copy for new Count API
 public class QueryCounterTest extends BaseTest {
@@ -90,14 +92,14 @@ public class QueryCounterTest extends BaseTest {
     @Test
     @Expectations({
             @Expectation(value = 1, query = Query.SELECT),
-            @Expectation(value = 1, query = Query.INSERT),
+            @Expectation(value = 1, query = INSERT),
             @Expectation(value = 1, query = Query.UPDATE),
             @Expectation(value = 1, query = Query.DELETE),
             @Expectation(value = 1, query = Query.MERGE)
     })
     public void testDifferentQueries() {
         executeStatement(Query.SELECT);
-        executeStatement(Query.INSERT);
+        executeStatement(INSERT);
         executeStatement(Query.UPDATE);
         executeStatement(Query.DELETE);
         executeStatement(Query.MERGE);
@@ -127,6 +129,19 @@ public class QueryCounterTest extends BaseTest {
     public void testAllowedExactTwoQueriesExecutedThree() {
         executeStatements(3);
         thrown.expect(WrongNumberOfQueriesError.class);
+    }
+
+    @Test
+    @Expectation(rows = @Count(2))
+    public void testAllowedExactTwoRows() {
+        executeStatements(2, INSERT);
+    }
+
+    @Test
+    @Expectation(rows = @Count(2))
+    public void testAllowedExactTwoRowsReturnedThree() {
+        executeStatements(3, INSERT);
+        thrown.expect(WrongNumberOfRowsError.class);
     }
 
     @Test
