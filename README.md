@@ -1,6 +1,7 @@
 Sniffy
 ============
 
+[![Stories in Ready](https://badge.waffle.io/sniffy/sniffy.png?label=ready&title=Ready)](https://waffle.io/sniffy/sniffy)
 [![Join the chat at https://gitter.im/sniffy/sniffy](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sniffy/sniffy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/ec48f442755f4df5b62bf3bcba3a2246)](https://www.codacy.com/app/sniffy/sniffy)
 [![CI Status](https://travis-ci.org/sniffy/sniffy.svg?branch=master)](https://travis-ci.org/sniffy/sniffy)
@@ -9,21 +10,13 @@ Sniffy
 [![Download](https://api.bintray.com/packages/sniffy/sniffy/sniffy/images/download.svg) ](https://bintray.com/sniffy/sniffy/sniffy/_latestVersion)
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://badges.mit-license.org)
 
-Sniffy counts the number of executed SQL queries and provides an API for validating them
-It is designed for unit tests and allows you to test if particular method doesn't make more than N SQL queries
-Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at early stages 
+Sniffy is a lightweight low-overhead Java profiler which shows the results directly in your browser
 
-```java
-try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
-     Statement statement = connection.createStatement()) {
-    statement.execute("SELECT 1 FROM DUAL");
-    // Sniffy will throw an Exception if you execute query other than SELECT or uncomment line below
-    //statement.execute("SELECT 1 FROM DUAL");
-}
-```
+![RecordedDemo](http://sniffy.io/demo.gif)
 
-You can also use Sniffy in your test environments to see the number of SQL queries executed by each HTTP request.
-Just add it to your `web.xml` file:
+Live Demo - [http://demo.sniffy.io/](http://demo.sniffy.io/owners.html?lastName=)
+
+In order to enable Sniffy simply add it to your `web.xml` file:
 ```xml
 <filter>
     <filter-name>sniffer</filter-name>
@@ -41,9 +34,17 @@ Just add it to your `web.xml` file:
 
 Restart your server and you will see the number of queries in bottom right corner of your app:
 
-![RecordedDemo](http://sniffy.io/demo.gif)
+Sniffy also allows you to check if particular method doesn't make more than N SQL queries in your unit tests
+Especially it's useful to catch the ORM [N+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) at early stages 
 
-Live Demo - [http://demo.sniffy.io/](http://demo.sniffy.io/owners.html?lastName=)
+```java
+try (Spy s = Sniffer.expectAtMostOnce(Query.SELECT).expectNever(Threads.OTHERS);
+     Statement statement = connection.createStatement()) {
+    statement.execute("SELECT 1 FROM DUAL");
+    // Sniffy will throw an Exception if you execute query other than SELECT or uncomment line below
+    //statement.execute("SELECT 1 FROM DUAL");
+}
+```
 
 Maven
 ============
@@ -74,7 +75,7 @@ Setup
 ============
 Simply add sniffy.jar to your classpath and add `sniffer:` prefix to the JDBC connection url
 For example `jdbc:h2:~/test` should be changed to `sniffer:jdbc:h2:mem:`
-The sniffer JDBC driver class name is `io.sniffy.MockDriver`
+The Sniffy JDBC driver class name is `io.sniffy.MockDriver`
 
 HTML injection is configured in `web.xml` file:
 ```xml
@@ -107,7 +108,14 @@ HTML injection is configured in `web.xml` file:
 </filter-mapping>
 ```
 
-Or if you are using Spring Boot, simply add `@EnableSniffy` to your application class
+Or if you are using [Spring Boot](http://projects.spring.io/spring-boot/), simply add `@EnableSniffy` to your application class.
+You still need to modify the JDBC settings in order to intercept SQL queries:
+```yml
+spring:
+  datasource:
+    url: sniffer:jdbc:mysql://127.0.0.1:3306/petstore
+    driver-class-name: io.sniffy.MockDriver
+```
 
 Using Sniffy in unit tests
 ============
@@ -194,6 +202,10 @@ Sniffy provides integration with popular testing frameworks - see our wiki for d
  * [Spring Framework](https://github.com/sniffy/sniffy/wiki/Spring-Framework)
  * [Spock Framework](https://github.com/sniffy/sniffy/wiki/Spock-Framework)
  * [Test NG](https://github.com/sniffy/sniffy/wiki/Test-NG)
+
+Support
+============
+Ask questions on stackoverflow with tag [sniffy](http://stackoverflow.com/questions/tagged/sniffy)
 
 Building
 ============
