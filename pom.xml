@@ -93,10 +93,10 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <!--<groupId>org.webjars.bower</groupId>
-                                    <artifactId>sniffy</artifactId>-->
-                                    <groupId>io.sniffy</groupId>
-                                    <artifactId>sniffy-ui</artifactId>
+                                    <groupId>org.webjars.bower</groupId>
+                                    <artifactId>sniffy</artifactId>
+                                    <!--<groupId>io.sniffy</groupId>
+                                    <artifactId>sniffy-ui</artifactId>-->
                                     <version>${sniffy.ui.version}</version>
                                     <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
                                     <includes>
