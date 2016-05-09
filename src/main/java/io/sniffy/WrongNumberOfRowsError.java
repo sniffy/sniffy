@@ -5,6 +5,7 @@ import io.sniffy.sql.StatementMetaData;
 
 import java.util.*;
 
+import static io.sniffy.Query.*;
 import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -79,10 +80,15 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
         } else if (Threads.OTHERS == threadMatcher) {
             sb.append(" other threads");
         }
-        if (Query.ANY != query && null != query) {
-            sb.append(" ").append(query);
+        sb.append(" rows ");
+        if (SELECT == query) {
+            sb.append("returned / affected");
+        } else if (INSERT == query || UPDATE == query || MERGE == query) {
+            sb.append("affected");
+        } else {
+            sb.append("returned / affected");
         }
-        sb.append(" rows returned / affected").append(LINE_SEPARATOR);
+        sb.append(LINE_SEPARATOR);
         sb.append("Observed ").append(numQueries).append(" rows instead:");
         if (null != executedStatements) for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
             StatementMetaData statement = entry.getKey();

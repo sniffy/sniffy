@@ -63,7 +63,7 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
                 result = invokeTarget(method, args);
                 break;
             case EXECUTE_BATCH:
-                result = invokeTargetAndRecord(method, args, getBatchedSql(), false);
+                result = invokeTargetAndRecord(method, args, getBatchedSql(), true);
                 break;
             case EXECUTE_UPDATE:
                 result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null, true);
@@ -95,8 +95,22 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
         try {
             Sniffer.enterJdbcMethod();
             Object result = invokeTargetImpl(method, args);
-            if (result instanceof Number) {
-                rowsUpdated = ((Number) result).intValue();
+            if (isUpdateQuery) {
+                if (result instanceof Number) {
+                    rowsUpdated = ((Number) result).intValue();
+                }
+                if (result instanceof int[]) {
+                    int[] updatedRows = (int[]) result;
+                    for (int i : updatedRows) {
+                        if (-1 != i) rowsUpdated += i;
+                    }
+                }
+                if (result instanceof long[]) {
+                    long[] updatedRows = (long[]) result;
+                    for (long i : updatedRows) {
+                        if (-1 != i) rowsUpdated += i;
+                    }
+                }
             }
             return result;
         } finally {

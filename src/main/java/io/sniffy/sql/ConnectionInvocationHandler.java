@@ -34,6 +34,7 @@ public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connect
                     new PreparedStatementInvocationHandler(result, String.class.cast(args[0]))
             );
         } else {
+            // TODO: proxe other classes which can produce network like getDatabaseMetaData() and others
             return result;
         }
     }
