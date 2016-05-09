@@ -39,6 +39,11 @@ public @interface Expectation {
     Count count() default @Count;
 
     /**
+     * since 3.1
+     */
+    Count rows() default @Count;
+
+    /**
      * @since 2.0
      */
     Threads threads() default Threads.CURRENT;

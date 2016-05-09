@@ -222,17 +222,38 @@ public final class Sniffer {
 
         for (Expectation expectation : expectationList) {
 
-            Range range = Range.parse(expectation);
+            Range queriesRange = Range.parse(expectation);
 
-            if (-1 != range.value) {
-                spy.expect(SqlQueries.exactQueries(range.value).threads(expectation.threads()).type(expectation.query()));
-            } else if (-1 != range.min && -1 != range.max) {
-                spy.expect(SqlQueries.queriesBetween(range.min, range.max).threads(expectation.threads()).type(expectation.query()));
-            } else if (-1 != range.min) {
-                spy.expect(SqlQueries.minQueries(range.min).threads(expectation.threads()).type(expectation.query()));
-            } else if (-1 != range.max) {
-                spy.expect(SqlQueries.maxQueries(range.max).threads(expectation.threads()).type(expectation.query()));
+            SqlQueries.SqlExpectation_CountQueries sqlExpectation = null;
+
+            if (-1 != queriesRange.value) {
+                sqlExpectation = SqlQueries.exactQueries(queriesRange.value);
+            } else if (-1 != queriesRange.min && -1 != queriesRange.max) {
+                sqlExpectation = SqlQueries.queriesBetween(queriesRange.min, queriesRange.max);
+            } else if (-1 != queriesRange.min) {
+                sqlExpectation = SqlQueries.minQueries(queriesRange.min);
+            } else if (-1 != queriesRange.max) {
+                sqlExpectation = SqlQueries.maxQueries(queriesRange.max);
             }
+
+            Range rowsRange = Range.parse(expectation.rows());
+
+            if (-1 != rowsRange.value) {
+                if (null != sqlExpectation) spy.expect(sqlExpectation.exactRows(rowsRange.value).threads(expectation.threads()).type(expectation.query()));
+                else spy.expect(SqlQueries.exactRows(rowsRange.value).threads(expectation.threads()).type(expectation.query()));
+            } else if (-1 != rowsRange.min && -1 != rowsRange.max) {
+                if (null != sqlExpectation) spy.expect(sqlExpectation.rowsBetween(rowsRange.min, rowsRange.max).threads(expectation.threads()).type(expectation.query()));
+                else spy.expect(SqlQueries.rowsBetween(rowsRange.min, rowsRange.max).threads(expectation.threads()).type(expectation.query()));
+            } else if (-1 != rowsRange.min) {
+                if (null != sqlExpectation) spy.expect(sqlExpectation.minRows(rowsRange.min).threads(expectation.threads()).type(expectation.query()));
+                else spy.expect(SqlQueries.minRows(rowsRange.min).threads(expectation.threads()).type(expectation.query()));
+            } else if (-1 != rowsRange.max) {
+                if (null != sqlExpectation) spy.expect(sqlExpectation.maxRows(rowsRange.max).threads(expectation.threads()).type(expectation.query()));
+                else spy.expect(SqlQueries.maxRows(rowsRange.max).threads(expectation.threads()).type(expectation.query()));
+            } else if (null != sqlExpectation) {
+                spy.expect(sqlExpectation.threads(expectation.threads()).type(expectation.query()));
+            }
+
         }
 
         return spy;
