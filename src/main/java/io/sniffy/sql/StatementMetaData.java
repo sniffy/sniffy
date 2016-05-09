@@ -47,4 +47,27 @@ public class StatementMetaData {
         return Query.OTHER;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        StatementMetaData that = (StatementMetaData) o;
+
+        if (ownerThreadId != that.ownerThreadId) return false;
+        if (sql != null ? !sql.equals(that.sql) : that.sql != null) return false;
+        if (query != that.query) return false;
+        return stackTrace != null ? stackTrace.equals(that.stackTrace) : that.stackTrace == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = sql != null ? sql.hashCode() : 0;
+        result = 31 * result + query.hashCode();
+        result = 31 * result + (stackTrace != null ? stackTrace.hashCode() : 0);
+        result = 31 * result + (int) (ownerThreadId ^ (ownerThreadId >>> 32));
+        return result;
+    }
+
 }

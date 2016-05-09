@@ -50,11 +50,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
         if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
             SqlStats sqlStats = executedStatements.get(statementMetaData);
             if (null == sqlStats) {
-                sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp, rowsUpdated));
+                sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp, rowsUpdated, 1));
             }
             if (null != sqlStats) {
-                // TODO: can we miss some queries in this way?
-                sqlStats.accumulate(elapsedTime, bytesDown, bytesUp, rowsUpdated);
+                sqlStats.accumulate(elapsedTime, bytesDown, bytesUp, rowsUpdated, 1);
             }
         }
     }
@@ -63,7 +62,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
             SqlStats sqlStats = executedStatements.get(statementMetaData);
             if (null != sqlStats) {
-                sqlStats.accumulate(0, 0, 0, 1);
+                sqlStats.accumulate(0, 0, 0, 1, 0);
             }
         }
     }
@@ -214,15 +213,23 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
         switch (threadMatcher) {
             case ANY:
-                for (StatementMetaData statementMetaData : executedStatements.keySet()) {
-                    if ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query) count++;
+                for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
+                    StatementMetaData statementMetaData = entry.getKey();
+                    SqlStats sqlStats = entry.getValue();
+                    if ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query) {
+                        count += sqlStats.queries.intValue();
+                    }
                 }
                 break;
             case CURRENT:
             case OTHERS:
-                for (StatementMetaData statementMetaData : executedStatements.keySet()) {
+                for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
+                    StatementMetaData statementMetaData = entry.getKey();
+                    SqlStats sqlStats = entry.getValue();
                     if ((Thread.currentThread().getId() == statementMetaData.ownerThreadId) == (CURRENT == threadMatcher) &&
-                            ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query)) count++;
+                            ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query)) {
+                        count += sqlStats.queries.intValue();
+                    }
                 }
                 break;
             default:

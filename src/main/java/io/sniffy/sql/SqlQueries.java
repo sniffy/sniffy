@@ -87,7 +87,7 @@ public class SqlQueries {
             for (Map.Entry<StatementMetaData, SqlStats> entry : spy.getExecutedStatements(threads, true).entrySet()) {
                 if ((ANY == type && SYSTEM != entry.getKey().query) || type == entry.getKey().query) {
                     SqlStats sqlStats = entry.getValue();
-                    numQueries++;
+                    numQueries += sqlStats.queries.intValue();
                     numRows += sqlStats.rows.intValue();
                 }
             }

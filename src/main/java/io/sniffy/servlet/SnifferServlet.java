@@ -98,6 +98,9 @@ class SnifferServlet extends HttpServlet {
                             append("\"time\":").
                             append(String.format(Locale.ENGLISH, "%.3f", sqlStats.elapsedTime.doubleValue() / 1000)).
                             append(",").
+                            append("\"invocations\":").
+                            append(sqlStats.queries.longValue()).
+                            append(",").
                             append("\"rows\":").
                             append(sqlStats.rows.longValue()).
                             append(",").

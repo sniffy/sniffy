@@ -112,7 +112,7 @@ public class SnifferListenersTest extends BaseTest {
     public void testQueryFromOtherThread() {
         try (@SuppressWarnings("unused") Spy spy = Sniffer.expect(1)) {
             executeStatement();
-            executeStatement();
+            executeStatement(Query.INSERT);
             executeStatementInOtherThread();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
