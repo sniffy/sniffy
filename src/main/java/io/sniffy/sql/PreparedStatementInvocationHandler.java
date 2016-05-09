@@ -1,6 +1,8 @@
 package io.sniffy.sql;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.sql.ResultSet;
 
 class PreparedStatementInvocationHandler extends StatementInvocationHandler {
 
@@ -13,21 +15,42 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+        Object result;
+
         switch (StatementMethodType.parse(method.getName())) {
             case ADD_BATCH:
                 addBatch(sql);
-                return invokeTarget(method, args);
+                result = invokeTarget(method, args);
+                break;
             case CLEAR_BATCH:
                 clearBatch();
-                return invokeTarget(method, args);
+                result = invokeTarget(method, args);
+                break;
             case EXECUTE_BATCH:
-                return invokeTargetAndRecord(method, args, getBatchedSql());
+                result = invokeTargetAndRecord(method, args, getBatchedSql(), true);
+                break;
+            case EXECUTE_UPDATE:
+                result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null, true);
+                break;
             case EXECUTE_SQL:
-                return invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : sql);
+                result =  invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : sql, false);
+                break;
             case OTHER:
             default:
-                return invokeTarget(method, args);
+                result = invokeTarget(method, args);
+                break;
         }
+
+        if (result instanceof ResultSet) {
+            return Proxy.newProxyInstance(
+                    ResultSetInvocationHandler.class.getClassLoader(),
+                    new Class[]{ResultSet.class},
+                    new ResultSetInvocationHandler(result, lastStatementMetaData)
+            );
+        }
+
+        return result;
 
     }
 

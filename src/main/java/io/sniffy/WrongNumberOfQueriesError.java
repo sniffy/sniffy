@@ -3,6 +3,7 @@ package io.sniffy;
 import io.sniffy.sql.StatementMetaData;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,19 +19,19 @@ public class WrongNumberOfQueriesError extends SniffyAssertionError {
     private final int minimumQueries;
     private final int maximumQueries;
     private final int numQueries;
-    private final List<StatementMetaData> executedStatements;
+    private final Collection<StatementMetaData> executedStatements;
 
     public WrongNumberOfQueriesError(
             Threads threadMatcher, Query query,
             int minimumQueries, int maximumQueries, int numQueries,
-            List<StatementMetaData> executedStatements) {
+            Collection<StatementMetaData> executedStatements) {
         super(buildDetailMessage(threadMatcher, query, minimumQueries, maximumQueries, numQueries, executedStatements));
         this.threadMatcher = threadMatcher;
         this.query = query;
         this.minimumQueries = minimumQueries;
         this.maximumQueries = maximumQueries;
         this.numQueries = numQueries;
-        this.executedStatements = Collections.unmodifiableList(executedStatements);
+        this.executedStatements = Collections.unmodifiableCollection(executedStatements);
     }
 
     public Threads getThreadMatcher() {
@@ -57,7 +58,7 @@ public class WrongNumberOfQueriesError extends SniffyAssertionError {
      * @since 2.3.1
      * @return
      */
-    public List<StatementMetaData> getExecutedStatements() {
+    public Collection<StatementMetaData> getExecutedStatements() {
         return executedStatements;
     }
 
@@ -72,7 +73,7 @@ public class WrongNumberOfQueriesError extends SniffyAssertionError {
     private static String buildDetailMessage(
             Threads threadMatcher, Query query,
             int minimumQueries, int maximumQueries, int numQueries,
-            List<StatementMetaData> executedStatements) {
+            Collection<StatementMetaData> executedStatements) {
         StringBuilder sb = new StringBuilder();
         sb.append("Expected between ").append(minimumQueries).append(" and ").append(maximumQueries);
         if (Threads.CURRENT == threadMatcher) {

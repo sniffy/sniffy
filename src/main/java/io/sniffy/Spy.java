@@ -4,6 +4,7 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlQueries;
+import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
 
@@ -13,7 +14,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static io.sniffy.Threads.*;
 import static io.sniffy.util.ExceptionUtil.throwException;
@@ -26,8 +26,11 @@ import static io.sniffy.util.ExceptionUtil.throwException;
  */
 public class Spy<C extends Spy<C>> implements Closeable {
 
-    // TODO: add invocationcount to StatementMetaData; collapse similar queries
-    private volatile Collection<StatementMetaData> executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
+    private volatile ConcurrentLinkedHashMap<StatementMetaData, SqlStats> executedStatements =
+            new ConcurrentLinkedHashMap.Builder<StatementMetaData, SqlStats>().
+                    maximumWeightedCapacity(Long.MAX_VALUE).
+                    build();
+
     private volatile ConcurrentLinkedHashMap<SocketMetaData, SocketStats> socketOperations =
             new ConcurrentLinkedHashMap.Builder<SocketMetaData, SocketStats>().
                     maximumWeightedCapacity(Long.MAX_VALUE).
@@ -42,9 +45,24 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
-    protected void addExecutedStatement(StatementMetaData statementMetaData) {
+    protected void addExecutedStatement(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
         if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
-            executedStatements.add(statementMetaData);
+            SqlStats sqlStats = executedStatements.get(statementMetaData);
+            if (null == sqlStats) {
+                sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp, rowsUpdated, 1));
+            }
+            if (null != sqlStats) {
+                sqlStats.accumulate(elapsedTime, bytesDown, bytesUp, rowsUpdated, 1);
+            }
+        }
+    }
+
+    protected void addReturnedRow(StatementMetaData statementMetaData) {
+        if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
+            SqlStats sqlStats = executedStatements.get(statementMetaData);
+            if (null != sqlStats) {
+                sqlStats.accumulate(0, 0, 0, 1, 0);
+            }
         }
     }
 
@@ -61,7 +79,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     protected void resetExecutedStatements() {
-        executedStatements = new ConcurrentLinkedQueue<StatementMetaData>();
+        executedStatements =
+                new ConcurrentLinkedHashMap.Builder<StatementMetaData, SqlStats>().
+                        maximumWeightedCapacity(Long.MAX_VALUE).
+                        build();
     }
 
     protected void resetSocketOpertions() {
@@ -70,32 +91,30 @@ public class Spy<C extends Spy<C>> implements Closeable {
                 build();
     }
 
-    public List<StatementMetaData> getExecutedStatements(Threads threadMatcher) {
-        List<StatementMetaData> statements;
-        switch (threadMatcher) {
-            case CURRENT:
-                statements = new ArrayList<StatementMetaData>();
-                for (StatementMetaData statement : executedStatements) {
-                    if (statement.ownerThreadId == this.ownerThreadId) {
-                        statements.add(statement);
-                    }
+    public Map<StatementMetaData, SqlStats> getExecutedStatements(Threads threadMatcher, boolean removeStackTraces) {
+
+        Map<StatementMetaData, SqlStats> executedStatements = new LinkedHashMap<StatementMetaData, SqlStats>();
+        for (Map.Entry<StatementMetaData, SqlStats> entry : this.executedStatements.ascendingMap().entrySet()) {
+
+            StatementMetaData statementMetaData = entry.getKey();
+
+            if (removeStackTraces) statementMetaData = new StatementMetaData(
+                    statementMetaData.sql, statementMetaData.query, null, statementMetaData.ownerThreadId
+            );
+
+            if ( ( (CURRENT == threadMatcher && statementMetaData.ownerThreadId == this.ownerThreadId) ||
+                    (OTHERS == threadMatcher && statementMetaData.ownerThreadId != this.ownerThreadId) ||
+                    (ANY == threadMatcher || null == threadMatcher) ) ) {
+                SqlStats existingSocketStats = executedStatements.get(statementMetaData);
+                if (null == existingSocketStats) {
+                    executedStatements.put(statementMetaData, new SqlStats(entry.getValue()));
+                } else {
+                    existingSocketStats.accumulate(entry.getValue());
                 }
-                break;
-            case OTHERS:
-                statements = new ArrayList<StatementMetaData>();
-                for (StatementMetaData statement : executedStatements) {
-                    if (statement.ownerThreadId != this.ownerThreadId) {
-                        statements.add(statement);
-                    }
-                }
-                break;
-            case ANY:
-                statements = new ArrayList<StatementMetaData>(executedStatements);
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
+            }
         }
-        return Collections.unmodifiableList(statements);
+
+        return Collections.unmodifiableMap(executedStatements);
     }
 
     Spy(boolean spyCurrentThreadOnly) {
@@ -116,10 +135,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
         resetSocketOpertions();
         expectations.clear();
         return self();
-    }
-
-    public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher) {
-        return getSocketOperations(threadMatcher, null, true);
     }
 
     public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher, String address, boolean removeStackTraces) {
@@ -197,16 +212,23 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
         switch (threadMatcher) {
             case ANY:
-                if (query == Query.ANY) count = executedStatements.size();
-                else for (StatementMetaData statementMetaData : executedStatements) {
-                    if (query == statementMetaData.query) count++;
+                for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
+                    StatementMetaData statementMetaData = entry.getKey();
+                    SqlStats sqlStats = entry.getValue();
+                    if ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query) {
+                        count += sqlStats.queries.intValue();
+                    }
                 }
                 break;
             case CURRENT:
             case OTHERS:
-                for (StatementMetaData statementMetaData : executedStatements) {
+                for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
+                    StatementMetaData statementMetaData = entry.getKey();
+                    SqlStats sqlStats = entry.getValue();
                     if ((Thread.currentThread().getId() == statementMetaData.ownerThreadId) == (CURRENT == threadMatcher) &&
-                            (query == Query.ANY || query == statementMetaData.query)) count++;
+                            ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query)) {
+                        count += sqlStats.queries.intValue();
+                    }
                 }
                 break;
             default:
@@ -413,7 +435,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectNever() {
-        return expect(SqlQueries.none());
+        return expect(SqlQueries.noneQueries());
     }
 
     /**
@@ -422,7 +444,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectNever(Threads threadMatcher) {
-        return expect(SqlQueries.none().threads(threadMatcher));
+        return expect(SqlQueries.noneQueries().threads(threadMatcher));
     }
 
     /**
@@ -431,7 +453,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectNever(Query query) {
-        return expect(SqlQueries.none().type(query));
+        return expect(SqlQueries.noneQueries().type(query));
     }
 
     /**
@@ -440,7 +462,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectNever(Threads threadMatcher, Query query) {
-        return expect(SqlQueries.none().threads(threadMatcher).type(query));
+        return expect(SqlQueries.noneQueries().threads(threadMatcher).type(query));
     }
 
     /**
@@ -449,7 +471,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectNever(Query query, Threads threadMatcher) {
-        return expect(SqlQueries.none().type(query).threads(threadMatcher));
+        return expect(SqlQueries.noneQueries().type(query).threads(threadMatcher));
     }
 
     /**
@@ -458,7 +480,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyNever() throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.none());
+        return verify(SqlQueries.noneQueries());
     }
 
     /**
@@ -467,7 +489,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyNever(Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.none().threads(threadMatcher));
+        return verify(SqlQueries.noneQueries().threads(threadMatcher));
     }
 
     /**
@@ -476,7 +498,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyNever(Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.none().type(query));
+        return verify(SqlQueries.noneQueries().type(query));
     }
 
     /**
@@ -485,7 +507,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyNever(Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.none().threads(threadMatcher).type(query));
+        return verify(SqlQueries.noneQueries().threads(threadMatcher).type(query));
     }
 
     /**
@@ -494,7 +516,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyNever(Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.none().type(query).threads(threadMatcher));
+        return verify(SqlQueries.noneQueries().type(query).threads(threadMatcher));
     }
 
     // atMostOnce methods
@@ -505,7 +527,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMostOnce() {
-        return expect(SqlQueries.atMostOnce());
+        return expect(SqlQueries.atMostOneQuery());
     }
 
     /**
@@ -514,7 +536,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMostOnce(Threads threadMatcher) {
-        return expect(SqlQueries.atMostOnce().threads(threadMatcher));
+        return expect(SqlQueries.atMostOneQuery().threads(threadMatcher));
     }
 
     /**
@@ -523,7 +545,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMostOnce(Query query) {
-        return expect(SqlQueries.atMostOnce().type(query));
+        return expect(SqlQueries.atMostOneQuery().type(query));
     }
 
     /**
@@ -532,7 +554,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMostOnce(Threads threadMatcher, Query query) {
-        return expect(SqlQueries.atMostOnce().threads(threadMatcher).type(query));
+        return expect(SqlQueries.atMostOneQuery().threads(threadMatcher).type(query));
     }
 
     /**
@@ -541,7 +563,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMostOnce(Query query, Threads threadMatcher) {
-        return expect(SqlQueries.atMostOnce().type(query).threads(threadMatcher));
+        return expect(SqlQueries.atMostOneQuery().type(query).threads(threadMatcher));
     }
 
     /**
@@ -550,7 +572,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMostOnce() throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.atMostOnce());
+        return verify(SqlQueries.atMostOneQuery());
     }
 
     /**
@@ -559,7 +581,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMostOnce(Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.atMostOnce().threads(threadMatcher));
+        return verify(SqlQueries.atMostOneQuery().threads(threadMatcher));
     }
 
     /**
@@ -568,7 +590,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMostOnce(Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.atMostOnce().type(query));
+        return verify(SqlQueries.atMostOneQuery().type(query));
 
     }
 
@@ -578,7 +600,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMostOnce(Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.atMostOnce().threads(threadMatcher).type(query));
+        return verify(SqlQueries.atMostOneQuery().threads(threadMatcher).type(query));
     }
 
     /**
@@ -587,7 +609,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMostOnce(Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.atMostOnce().type(query).threads(threadMatcher));
+        return verify(SqlQueries.atMostOneQuery().type(query).threads(threadMatcher));
     }
 
     // atMost methods
@@ -598,7 +620,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMost(int allowedStatements) {
-        return expect(SqlQueries.max(allowedStatements));
+        return expect(SqlQueries.maxQueries(allowedStatements));
     }
 
     /**
@@ -607,7 +629,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMost(int allowedStatements, Threads threadMatcher) {
-        return expect(SqlQueries.max(allowedStatements).threads(threadMatcher));
+        return expect(SqlQueries.maxQueries(allowedStatements).threads(threadMatcher));
     }
 
     /**
@@ -616,7 +638,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMost(int allowedStatements, Query query) {
-        return expect(SqlQueries.max(allowedStatements).type(query));
+        return expect(SqlQueries.maxQueries(allowedStatements).type(query));
     }
 
     /**
@@ -625,7 +647,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMost(int allowedStatements, Threads threadMatcher, Query query) {
-        return expect(SqlQueries.max(allowedStatements).threads(threadMatcher).type(query));
+        return expect(SqlQueries.maxQueries(allowedStatements).threads(threadMatcher).type(query));
     }
 
     /**
@@ -634,7 +656,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtMost(int allowedStatements, Query query, Threads threadMatcher) {
-        return expect(SqlQueries.max(allowedStatements).type(query).threads(threadMatcher));
+        return expect(SqlQueries.maxQueries(allowedStatements).type(query).threads(threadMatcher));
     }
 
     /**
@@ -643,7 +665,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMost(int allowedStatements) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.max(allowedStatements));
+        return verify(SqlQueries.maxQueries(allowedStatements));
     }
 
     /**
@@ -652,7 +674,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMost(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.max(allowedStatements).threads(threadMatcher));
+        return verify(SqlQueries.maxQueries(allowedStatements).threads(threadMatcher));
     }
 
     /**
@@ -661,7 +683,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMost(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.max(allowedStatements).type(query));
+        return verify(SqlQueries.maxQueries(allowedStatements).type(query));
     }
 
     /**
@@ -670,7 +692,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMost(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.max(allowedStatements).threads(threadMatcher).type(query));
+        return verify(SqlQueries.maxQueries(allowedStatements).threads(threadMatcher).type(query));
     }
 
     /**
@@ -679,7 +701,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtMost(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.max(allowedStatements).type(query).threads(threadMatcher));
+        return verify(SqlQueries.maxQueries(allowedStatements).type(query).threads(threadMatcher));
     }
 
     // exact methods
@@ -690,7 +712,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expect(int allowedStatements) {
-        return expect(SqlQueries.exact(allowedStatements));
+        return expect(SqlQueries.exactQueries(allowedStatements));
     }
 
     /**
@@ -699,7 +721,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expect(int allowedStatements, Threads threadMatcher) {
-        return expect(SqlQueries.exact(allowedStatements).threads(threadMatcher));
+        return expect(SqlQueries.exactQueries(allowedStatements).threads(threadMatcher));
     }
 
     /**
@@ -708,7 +730,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expect(int allowedStatements, Query query) {
-        return expect(SqlQueries.exact(allowedStatements).type(query));
+        return expect(SqlQueries.exactQueries(allowedStatements).type(query));
     }
 
     /**
@@ -717,7 +739,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expect(int allowedStatements, Threads threadMatcher, Query query) {
-        return expect(SqlQueries.exact(allowedStatements).threads(threadMatcher).type(query));
+        return expect(SqlQueries.exactQueries(allowedStatements).threads(threadMatcher).type(query));
     }
 
     /**
@@ -726,7 +748,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expect(int allowedStatements, Query query, Threads threadMatcher) {
-        return expect(SqlQueries.exact(allowedStatements).type(query).threads(threadMatcher));
+        return expect(SqlQueries.exactQueries(allowedStatements).type(query).threads(threadMatcher));
     }
 
     /**
@@ -735,7 +757,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verify(int allowedStatements) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.exact(allowedStatements));
+        return verify(SqlQueries.exactQueries(allowedStatements));
     }
 
     /**
@@ -744,7 +766,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verify(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.exact(allowedStatements).threads(threadMatcher));
+        return verify(SqlQueries.exactQueries(allowedStatements).threads(threadMatcher));
     }
 
     /**
@@ -753,7 +775,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verify(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.exact(allowedStatements).type(query));
+        return verify(SqlQueries.exactQueries(allowedStatements).type(query));
     }
 
     /**
@@ -762,7 +784,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verify(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.exact(allowedStatements).threads(threadMatcher).type(query));
+        return verify(SqlQueries.exactQueries(allowedStatements).threads(threadMatcher).type(query));
     }
 
     /**
@@ -771,7 +793,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verify(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.exact(allowedStatements).type(query).threads(threadMatcher));
+        return verify(SqlQueries.exactQueries(allowedStatements).type(query).threads(threadMatcher));
     }
 
     // atLeast methods
@@ -782,7 +804,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtLeast(int allowedStatements) {
-        return expect(SqlQueries.min(allowedStatements));
+        return expect(SqlQueries.minQueries(allowedStatements));
     }
 
     /**
@@ -791,7 +813,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtLeast(int allowedStatements, Threads threadMatcher) {
-        return expect(SqlQueries.min(allowedStatements).threads(threadMatcher));
+        return expect(SqlQueries.minQueries(allowedStatements).threads(threadMatcher));
     }
 
     /**
@@ -800,7 +822,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtLeast(int allowedStatements, Query query) {
-        return expect(SqlQueries.min(allowedStatements).type(query));
+        return expect(SqlQueries.minQueries(allowedStatements).type(query));
     }
 
     /**
@@ -809,7 +831,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtLeast(int allowedStatements, Threads threadMatcher, Query query) {
-        return expect(SqlQueries.min(allowedStatements).threads(threadMatcher).type(query));
+        return expect(SqlQueries.minQueries(allowedStatements).threads(threadMatcher).type(query));
     }
 
     /**
@@ -818,7 +840,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectAtLeast(int allowedStatements, Query query, Threads threadMatcher) {
-        return expect(SqlQueries.min(allowedStatements).type(query).threads(threadMatcher));
+        return expect(SqlQueries.minQueries(allowedStatements).type(query).threads(threadMatcher));
     }
 
     /**
@@ -827,7 +849,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtLeast(int allowedStatements) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.min(allowedStatements));
+        return verify(SqlQueries.minQueries(allowedStatements));
     }
 
     /**
@@ -836,7 +858,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtLeast(int allowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.min(allowedStatements).threads(threadMatcher));
+        return verify(SqlQueries.minQueries(allowedStatements).threads(threadMatcher));
     }
 
     /**
@@ -845,7 +867,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtLeast(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.min(allowedStatements).type(query));
+        return verify(SqlQueries.minQueries(allowedStatements).type(query));
     }
 
     /**
@@ -854,7 +876,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtLeast(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.min(allowedStatements).threads(threadMatcher).type(query));
+        return verify(SqlQueries.minQueries(allowedStatements).threads(threadMatcher).type(query));
     }
 
     /**
@@ -863,7 +885,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyAtLeast(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.min(allowedStatements).type(query).threads(threadMatcher));
+        return verify(SqlQueries.minQueries(allowedStatements).type(query).threads(threadMatcher));
     }
 
     // between methods
@@ -874,7 +896,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements) {
-        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements));
+        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements));
     }
 
     /**
@@ -885,7 +907,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
-        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).threads(threadMatcher));
+        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).threads(threadMatcher));
     }
 
     /**
@@ -896,7 +918,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query) {
-        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query));
+        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(query));
     }
 
     /**
@@ -907,7 +929,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) {
-        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(query));
+        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(query));
     }
 
     /**
@@ -918,7 +940,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) {
-        return expect(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query).threads(threadMatcher));
+        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(query).threads(threadMatcher));
     }
 
     /**
@@ -927,7 +949,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements));
+        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements));
     }
 
     /**
@@ -939,7 +961,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements).threads(threadMatcher));
+        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).threads(threadMatcher));
     }
 
     /**
@@ -951,7 +973,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query));
+        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(query));
     }
 
     /**
@@ -963,7 +985,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(query));
+        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(query));
     }
 
     /**
@@ -975,7 +997,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
      */
     @Deprecated
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.between(minAllowedStatements, maxAllowedStatements).type(query).threads(threadMatcher));
+        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(query).threads(threadMatcher));
     }
 
 }

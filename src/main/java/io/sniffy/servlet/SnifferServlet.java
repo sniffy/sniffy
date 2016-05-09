@@ -2,6 +2,7 @@ package io.sniffy.servlet;
 
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
 
@@ -80,9 +81,12 @@ class SnifferServlet extends HttpServlet {
                     append(requestStats.getElapsedTime());
             if (null != requestStats.getExecutedStatements()) {
                 sb.append(",\"executedQueries\":[");
-                Iterator<StatementMetaData> statementsIt = requestStats.getExecutedStatements().iterator();
+                Set<Map.Entry<StatementMetaData, SqlStats>> entries = requestStats.getExecutedStatements().entrySet();
+                Iterator<Map.Entry<StatementMetaData, SqlStats>> statementsIt = entries.iterator();
                 while (statementsIt.hasNext()) {
-                    StatementMetaData statement = statementsIt.next();
+                    Map.Entry<StatementMetaData, SqlStats> entry = statementsIt.next();
+                    StatementMetaData statement = entry.getKey();
+                    SqlStats sqlStats = entry.getValue();
                     sb.
                             append("{").
                             append("\"query\":").
@@ -92,7 +96,22 @@ class SnifferServlet extends HttpServlet {
                             append(StringUtil.escapeJsonString(statement.stackTrace)).
                             append(",").
                             append("\"time\":").
-                            append(String.format(Locale.ENGLISH, "%.3f", (double) statement.elapsedTime / 1000)).
+                            append(String.format(Locale.ENGLISH, "%.3f", sqlStats.elapsedTime.doubleValue() / 1000)).
+                            append(",").
+                            append("\"invocations\":").
+                            append(sqlStats.queries.longValue()).
+                            append(",").
+                            append("\"rows\":").
+                            append(sqlStats.rows.longValue()).
+                            append(",").
+                            append("\"type\":\"").
+                            append(statement.query.name()).
+                            append("\",").
+                            append("\"bytesDown\":").
+                            append(sqlStats.bytesDown.longValue()).
+                            append(",").
+                            append("\"bytesUp\":").
+                            append(sqlStats.bytesUp.longValue()).
                             append("}");
                     if (statementsIt.hasNext()) {
                         sb.append(",");

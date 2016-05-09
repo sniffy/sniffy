@@ -2,34 +2,38 @@ package io.sniffy.sql;
 
 import io.sniffy.Sniffer;
 
-import static io.sniffy.util.StackTraceExtractor.*;
-
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.lang.reflect.Proxy;
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
 
-class StatementInvocationHandler implements InvocationHandler {
+import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
+import static io.sniffy.util.StackTraceExtractor.printStackTrace;
 
-    protected final Object delegate;
+class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
 
     private Map<String, Integer> batchedSql;
 
+    protected StatementMetaData lastStatementMetaData;
+
     public StatementInvocationHandler(Object delegate) {
-        this.delegate = delegate;
+        super(delegate);
     }
 
     protected enum StatementMethodType {
         EXECUTE_SQL,
+        EXECUTE_UPDATE,
         ADD_BATCH,
         CLEAR_BATCH,
         EXECUTE_BATCH,
         OTHER;
 
         static StatementMethodType parse(String methodName) {
-            if ("execute".equals(methodName) || "executeQuery".equals(methodName)
-                    || "executeUpdate".equals(methodName) ||  "executeLargeUpdate".equals(methodName)) {
+            if ("execute".equals(methodName) || "executeQuery".equals(methodName)) {
                 return EXECUTE_SQL;
+            } else if ("executeUpdate".equals(methodName) ||  "executeLargeUpdate".equals(methodName)) {
+                return EXECUTE_UPDATE;
             } else if ("addBatch".equals(methodName)) {
                 return ADD_BATCH;
             } else if ("clearBatch".equals(methodName)) {
@@ -42,42 +46,76 @@ class StatementInvocationHandler implements InvocationHandler {
         }
     }
 
+    // TODO: getConnection() should return a proxy!
+    // TODO: wrap complex parameters and results like streams and blobs
+
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+        Object result;
+
         switch (StatementMethodType.parse(method.getName())) {
             case ADD_BATCH:
                 addBatch(String.class.cast(args[0]));
-                return invokeTarget(method, args);
+                result = invokeTarget(method, args);
+                break;
             case CLEAR_BATCH:
                 clearBatch();
-                return invokeTarget(method, args);
+                result = invokeTarget(method, args);
+                break;
             case EXECUTE_BATCH:
-                return invokeTargetAndRecord(method, args, getBatchedSql());
+                result = invokeTargetAndRecord(method, args, getBatchedSql(), true);
+                break;
+            case EXECUTE_UPDATE:
+                result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null, true);
+                break;
             case EXECUTE_SQL:
-                return invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null);
+                result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null, false);
+                break;
             case OTHER:
             default:
-                return invokeTarget(method, args);
+                result = invokeTarget(method, args);
+                break;
         }
+
+        if (result instanceof ResultSet) {
+            return Proxy.newProxyInstance(
+                    ResultSetInvocationHandler.class.getClassLoader(),
+                    new Class[]{ResultSet.class},
+                    new ResultSetInvocationHandler(result, lastStatementMetaData)
+            );
+        }
+
+        return result;
 
     }
 
-    protected Object invokeTarget(Method method, Object[] args) throws Throwable {
-        try {
-            return method.invoke(delegate, args);
-        } catch (InvocationTargetException e) {
-            throw e.getTargetException();
-        }
-    }
-
-    protected Object invokeTargetAndRecord(Method method, Object[] args, String sql) throws Throwable {
+    protected Object invokeTargetAndRecord(Method method, Object[] args, String sql, boolean isUpdateQuery) throws Throwable {
         long start = System.currentTimeMillis();
+        int rowsUpdated = 0;
         try {
-            return method.invoke(delegate, args);
-        } catch (InvocationTargetException e) {
-            throw e.getTargetException();
+            Sniffer.enterJdbcMethod();
+            Object result = invokeTargetImpl(method, args);
+            if (isUpdateQuery) {
+                if (result instanceof Number) {
+                    rowsUpdated = ((Number) result).intValue();
+                }
+                if (result instanceof int[]) {
+                    int[] updatedRows = (int[]) result;
+                    for (int i : updatedRows) {
+                        if (-1 != i) rowsUpdated += i;
+                    }
+                }
+                if (result instanceof long[]) {
+                    long[] updatedRows = (long[]) result;
+                    for (long i : updatedRows) {
+                        if (-1 != i) rowsUpdated += i;
+                    }
+                }
+            }
+            return result;
         } finally {
             String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
-            Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace);
+            lastStatementMetaData = Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace, rowsUpdated);
         }
     }
 

@@ -2,12 +2,14 @@ package io.sniffy;
 
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
+import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlQueries;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.Range;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Iterator;
@@ -15,6 +17,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
+import static io.sniffy.util.StackTraceExtractor.printStackTrace;
 
 /**
  * Sniffer is an entry point for using Sniffy library
@@ -30,6 +35,8 @@ public final class Sniffer {
     private final static AtomicInteger executedStatementsGlobalCounter = new AtomicInteger();
 
     private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+
+    private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
 
     private Sniffer() {
 
@@ -61,6 +68,19 @@ public final class Sniffer {
         return Collections.unmodifiableList(registeredSpies);
     }
 
+    private static synchronized void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
+        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+        while (iterator.hasNext()) {
+            WeakReference<Spy> spyReference = iterator.next();
+            Spy spy = spyReference.get();
+            if (null == spy) {
+                iterator.remove();
+            } else {
+                spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
+            }
+        }
+    }
+
     private static synchronized void notifyListeners(StatementMetaData statementMetaData) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
@@ -69,7 +89,7 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addExecutedStatement(statementMetaData);
+                spy.addReturnedRow(statementMetaData);
             }
         }
     }
@@ -88,19 +108,87 @@ public final class Sniffer {
     }
 
     public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
-        // increment counters
-        SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
 
-        // notify listeners
-        notifyListeners(socketMetaData, elapsedTime, bytesDown, bytesUp);
+        // do not track JDBC socket operations
+        SocketStats socketStats = socketStatsAccumulator.get();
+        if (null != socketStats) {
+            socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
+        } else {
+            // increment counters
+            SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
+
+            // notify listeners
+            notifyListeners(socketMetaData, elapsedTime, bytesDown, bytesUp);
+        }
     }
 
-    public static void executeStatement(String sql, long elapsedTime, String stackTrace) {
+    public static void enterJdbcMethod() {
+        socketStatsAccumulator.set(new SocketStats(0, 0, 0));
+    }
+
+    public static void exitJdbcMethod(Method method, long elapsedTime) {
+        // get accumulated socket stats
+        SocketStats socketStats = socketStatsAccumulator.get();
+
+        if (null != socketStats) {
+
+            if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
+                String stackTrace = null;
+                try {
+                    stackTrace = printStackTrace(getTraceForProxiedMethod(method));
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                StatementMetaData statementMetaData = new StatementMetaData(
+                        method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()",
+                        Query.SYSTEM,
+                        stackTrace,
+                        Thread.currentThread().getId()
+                );
+                notifyListeners(
+                        statementMetaData,
+                        elapsedTime,
+                        socketStats.bytesDown.intValue(),
+                        socketStats.bytesUp.intValue(),
+                        0
+                );
+            }
+
+            socketStatsAccumulator.remove();
+        }
+
+    }
+
+    public static void readDatabaseRow(Method method, long elapsedTime, StatementMetaData statementMetaData) {
+        exitJdbcMethod(method, elapsedTime);
+
+        notifyListeners(statementMetaData);
+    }
+
+    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace) {
+        return executeStatement(sql, elapsedTime, stackTrace, 0);
+    }
+
+    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace, int rowsUpdated) {
         // increment global counter
         executedStatementsGlobalCounter.incrementAndGet();
 
+        // get accumulated socket stats
+        SocketStats socketStats = socketStatsAccumulator.get();
+
         // notify listeners
-        notifyListeners(StatementMetaData.parse(sql, elapsedTime, stackTrace));
+        StatementMetaData statementMetaData = new StatementMetaData(sql, StatementMetaData.guessQueryType(sql), stackTrace, Thread.currentThread().getId());
+        notifyListeners(
+                statementMetaData,
+                elapsedTime,
+                null == socketStats ? 0 : socketStats.bytesDown.intValue(),
+                null == socketStats ? 0 : socketStats.bytesUp.intValue(),
+                rowsUpdated
+        );
+
+        socketStatsAccumulator.remove();
+
+        return statementMetaData;
     }
 
     /**
@@ -134,17 +222,18 @@ public final class Sniffer {
 
         for (Expectation expectation : expectationList) {
 
-            Range range = Range.parse(expectation);
+            Range queriesRange = Range.parse(expectation);
+            Range rowsRange = Range.parse(expectation.rows());
 
-            if (-1 != range.value) {
-                spy.expect(SqlQueries.exact(range.value).threads(expectation.threads()).type(expectation.query()));
-            } else if (-1 != range.min && -1 != range.max) {
-                spy.expect(SqlQueries.between(range.min, range.max).threads(expectation.threads()).type(expectation.query()));
-            } else if (-1 != range.min) {
-                spy.expect(SqlQueries.min(range.min).threads(expectation.threads()).type(expectation.query()));
-            } else if (-1 != range.max) {
-                spy.expect(SqlQueries.max(range.max).threads(expectation.threads()).type(expectation.query()));
+            if (-1 != queriesRange.min || -1 != queriesRange.max || -1 != rowsRange.min || -1 != rowsRange.max) {
+                spy.expect(SqlQueries.
+                        queriesBetween(-1 == queriesRange.min ? 0 : queriesRange.min, -1 == queriesRange.max ? Integer.MAX_VALUE : queriesRange.max).
+                        rowsBetween(-1 == rowsRange.min ? 0 : rowsRange.min, -1 == rowsRange.max ? Integer.MAX_VALUE : rowsRange.max).
+                        threads(expectation.threads()).
+                        type(expectation.query())
+                );
             }
+
         }
 
         return spy;

@@ -2,6 +2,7 @@ package io.sniffy.servlet;
 
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 
 import java.util.List;
@@ -11,20 +12,20 @@ class RequestStats {
 
     private long timeToFirstByte;
     private long elapsedTime;
-    private List<StatementMetaData> executedStatements;
+    private Map<StatementMetaData, SqlStats> executedStatements;
     private Map<SocketMetaData, SocketStats> socketOperations;
 
     public RequestStats() {
     }
 
-    public RequestStats(long timeToFirstByte, long elapsedTime, List<StatementMetaData> executedStatements) {
+    public RequestStats(long timeToFirstByte, long elapsedTime, Map<StatementMetaData, SqlStats> executedStatements) {
         this(timeToFirstByte, elapsedTime, executedStatements, null);
     }
 
     public RequestStats(
             long timeToFirstByte,
             long elapsedTime,
-            List<StatementMetaData> executedStatements,
+            Map<StatementMetaData, SqlStats> executedStatements,
             Map<SocketMetaData, SocketStats> socketOperations) {
         this.timeToFirstByte = timeToFirstByte;
         this.elapsedTime = elapsedTime;
@@ -48,11 +49,11 @@ class RequestStats {
         this.elapsedTime = elapsedTime;
     }
 
-    public List<StatementMetaData> getExecutedStatements() {
+    public Map<StatementMetaData, SqlStats> getExecutedStatements() {
         return executedStatements;
     }
 
-    public void setExecutedStatements(List<StatementMetaData> executedStatements) {
+    public void setExecutedStatements(Map<StatementMetaData, SqlStats> executedStatements) {
         this.executedStatements = executedStatements;
     }
 

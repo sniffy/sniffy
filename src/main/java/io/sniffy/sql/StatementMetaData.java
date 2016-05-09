@@ -9,32 +9,19 @@ public class StatementMetaData {
 
     public final String sql;
     public final Query query;
-    public final long elapsedTime;
     public final String stackTrace;
     public final long ownerThreadId;
 
-    protected StatementMetaData(String sql, Query query, long elapsedTime, String stackTrace) {
+    public StatementMetaData(String sql, Query query, String stackTrace, long ownerThreadId) {
         this.sql = sql;
         this.query = query;
-        this.stackTrace = stackTrace;
-        this.elapsedTime = elapsedTime;
-        this.ownerThreadId = Thread.currentThread().getId();
+        this.stackTrace = null == stackTrace ? null : stackTrace.intern();
+        this.ownerThreadId = ownerThreadId;
     }
 
-    public static StatementMetaData parse(String sql) {
-        return parse(sql, -1);
-    }
-
-    public static StatementMetaData parse(String sql, long elapsedTime) {
-        return parse(sql, elapsedTime, null);
-    }
-
-    public static StatementMetaData parse(String sql, long elapsedTime, String stackTrace) {
-        return new StatementMetaData(null == sql ? null : sql.intern(), guessQueryType(sql), elapsedTime, stackTrace);
-    }
-
-    private static Query guessQueryType(String sql) {
+    public static Query guessQueryType(String sql) {
         // TODO: some queries can start with "WITH" statement
+        // TODO: move to StatementInvocationHandler
 
         for (int i = 0; i < sql.length(); i++) {
             if (!Character.isWhitespace(sql.charAt(i))) {
@@ -58,6 +45,29 @@ public class StatementMetaData {
         }
 
         return Query.OTHER;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        StatementMetaData that = (StatementMetaData) o;
+
+        if (ownerThreadId != that.ownerThreadId) return false;
+        if (sql != null ? !sql.equals(that.sql) : that.sql != null) return false;
+        if (query != that.query) return false;
+        return stackTrace != null ? stackTrace.equals(that.stackTrace) : that.stackTrace == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = sql != null ? sql.hashCode() : 0;
+        result = 31 * result + query.hashCode();
+        result = 31 * result + (stackTrace != null ? stackTrace.hashCode() : 0);
+        result = 31 * result + (int) (ownerThreadId ^ (ownerThreadId >>> 32));
+        return result;
     }
 
 }

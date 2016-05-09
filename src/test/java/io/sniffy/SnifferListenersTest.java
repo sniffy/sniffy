@@ -1,11 +1,13 @@
 package io.sniffy;
 
+import io.sniffy.sql.StatementMetaData;
 import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.Iterator;
 
 import static org.junit.Assert.*;
 
@@ -96,7 +98,9 @@ public class SnifferListenersTest extends BaseTest {
             assertEquals(1, e.getNumQueries());
             assertEquals(1, e.getExecutedStatements().size());
             assertEquals(1, e.getExecutedSqls().size());
-            assertEquals("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/", e.getExecutedStatements().get(0).sql);
+            Iterator<StatementMetaData> statementsIt = e.getExecutedStatements().iterator();
+            assertEquals("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/", statementsIt.next().sql);
+            assertFalse(statementsIt.hasNext());
             assertEquals(Threads.CURRENT, e.getThreadMatcher());
             assertEquals(Query.ANY, e.getQuery());
             assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/"));
@@ -108,7 +112,7 @@ public class SnifferListenersTest extends BaseTest {
     public void testQueryFromOtherThread() {
         try (@SuppressWarnings("unused") Spy spy = Sniffer.expect(1)) {
             executeStatement();
-            executeStatement();
+            executeStatement(Query.INSERT);
             executeStatementInOtherThread();
         } catch (WrongNumberOfQueriesError e) {
             assertNotNull(e);
