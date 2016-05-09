@@ -29,7 +29,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     private final ServletRequest request;
     private final ServletResponse response;
 
-    private final Spy<? extends Spy> spy;
+    private final Spy<?> spy;
     private final String requestId;
     private final RequestStats requestStats = new RequestStats();
 
@@ -56,7 +56,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         this.request = request;
         this.response = response;
 
-        spy = Sniffer.spy();
+        spy = Sniffer.spyCurrentThread();
         requestId = UUID.randomUUID().toString();
     }
 
