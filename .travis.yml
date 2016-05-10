@@ -2,7 +2,5 @@ language: java
 sudo: false
 jdk:
   - oraclejdk8
-before_install:
-  - mvn -U install
 after_success:
   - mvn clean test javadoc:javadoc jacoco:report coveralls:report
