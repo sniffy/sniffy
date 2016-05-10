@@ -15,10 +15,10 @@ public class SnifferListenersTest extends BaseTest {
 
     @Test
     public void testSpyRemovedOnClose() throws Exception {
-        Spy spy = Sniffer.spy();
+        Spy spy = Sniffy.spy();
         spy.close();
 
-        Sniffer.registeredSpies().stream().
+        Sniffy.registeredSpies().stream().
                 filter(spyReference -> spyReference.get() == spy).
                 forEach(spyReference -> fail("Spy was not removed from Sniffer observers"));
 

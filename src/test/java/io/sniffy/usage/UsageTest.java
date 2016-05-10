@@ -1,9 +1,6 @@
 package io.sniffy.usage;
 
-import io.sniffy.Expectation;
-import io.sniffy.Sniffer;
-import io.sniffy.Spy;
-import io.sniffy.Threads;
+import io.sniffy.*;
 import io.sniffy.junit.QueryCounter;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,7 +20,7 @@ public class UsageTest {
         Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
         // Spy holds the amount of queries executed till the given amount of time
         // It acts as a base for further assertions
-        Spy spy = Sniffer.spy();
+        Spy spy = Sniffy.spy();
         // You do not need to modify your JDBC code
         connection.createStatement().execute("SELECT 1 FROM DUAL");
         assertEquals(1, spy.executedStatements());

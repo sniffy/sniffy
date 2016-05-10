@@ -135,7 +135,7 @@ public class SniffyRule implements TestRule {
                 }
             }
 
-            spy.execute(new Sniffer.Executable() {
+            spy.execute(new Executable() {
                 public void execute() throws Throwable{
                     delegate.evaluate();
                 }

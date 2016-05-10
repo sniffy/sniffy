@@ -17,8 +17,8 @@ import java.util.logging.Logger;
  * For example:
  * {@code sniffer:jdbc:h2:mem:}
  *
- * After that you'll be able to verify the number of executed statements using the {@link Sniffer} class
- * @see Sniffer
+ * After that you'll be able to verify the number of executed statements using the {@link Sniffy} class
+ * @see Sniffy
  */
 public class MockDriver implements Driver {
 
@@ -35,7 +35,7 @@ public class MockDriver implements Driver {
             e.printStackTrace();
         }
 
-        Sniffer.initialize();
+        Sniffy.initialize();
 
     }
 

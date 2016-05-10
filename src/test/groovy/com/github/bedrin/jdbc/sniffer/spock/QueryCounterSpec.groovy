@@ -1,6 +1,6 @@
 package io.sniffy.spock
 
-import io.sniffy.Sniffer
+import io.sniffy.Sniffy
 import io.sniffy.WrongNumberOfQueriesError
 import groovy.sql.Sql
 import spock.lang.*
@@ -10,7 +10,7 @@ class QueryCounterSpec extends Specification {
     @Shared
     def sql = Sql.newInstance("sniffer:jdbc:h2:mem:", "sa", "sa")
 
-    def spy = Sniffer.spy()
+    def spy = Sniffy.spy()
 
     @FailsWith(WrongNumberOfQueriesError)
     def "Execute single query - negative"() {

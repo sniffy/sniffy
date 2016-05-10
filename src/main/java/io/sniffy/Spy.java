@@ -20,8 +20,8 @@ import static io.sniffy.util.ExceptionUtil.throwException;
 
 /**
  * Spy holds a number of queries which were executed at some point of time and uses it as a base for further assertions
- * @see Sniffer#spy()
- * @see Sniffer#expect(int)
+ * @see Sniffy#spy()
+ * @see Sniffy#expect(Expectation)
  * @since 2.0
  */
 public class Spy<C extends Spy<C>> implements Closeable {
@@ -122,13 +122,13 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     Spy(boolean spyCurrentThreadOnly) {
         ownerThreadId = Thread.currentThread().getId();
-        selfReference = Sniffer.registerSpy(this);
+        selfReference = Sniffy.registerSpy(this);
         this.spyCurrentThreadOnly = spyCurrentThreadOnly;
         reset();
     }
 
     /**
-     * Wrapper for {@link Sniffer#spy()} method; useful for chaining
+     * Wrapper for {@link Sniffy#spy()} method; useful for chaining
      * @return a new {@link Spy} instance
      * @since 2.0
      */
@@ -271,7 +271,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
         try {
             verify();
         } finally {
-            Sniffer.removeSpyReference(selfReference);
+            Sniffy.removeSpyReference(selfReference);
             closed = true;
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
             closeStackTrace = new StackTraceElement[stackTrace.length - 1];
@@ -286,11 +286,11 @@ public class Spy<C extends Spy<C>> implements Closeable {
     }
 
     /**
-     * Executes the {@link Sniffer.Executable#execute()} method on provided argument and verifies the expectations
+     * Executes the {@link io.sniffy.Executable#execute()} method on provided argument and verifies the expectations
      * @throws SniffyAssertionError if wrong number of queries was executed
-     * @since 2.0
+     * @since 3.1
      */
-    public C execute(Sniffer.Executable executable) throws SniffyAssertionError {
+    public C execute(io.sniffy.Executable executable) throws SniffyAssertionError {
         checkOpened();
         try {
             executable.execute();
@@ -372,6 +372,15 @@ public class Spy<C extends Spy<C>> implements Closeable {
     // DEPRECATED API
 
 
+    /**
+     * Executes the {@link Sniffer.Executable#execute()} method on provided argument and verifies the expectations
+     * @throws SniffyAssertionError if wrong number of queries was executed
+     * @since 2.0
+     */
+    @Deprecated
+    public C execute(Sniffer.Executable executable) throws SniffyAssertionError {
+        return execute((io.sniffy.Executable) executable);
+    }
 
     /**
      * @return WrongNumberOfQueriesError or null if there are no errors

@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffer;
+import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.util.ExceptionUtil;
 import org.junit.Test;
@@ -79,7 +80,7 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        try (Spy<?> s = Sniffer.spy()) {
+        try (Spy<?> s = Sniffy.spy()) {
 
             performSocketOperation();
 
@@ -121,11 +122,11 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
     @Test
     public void testUninstall() throws Exception {
 
-        Sniffer.initialize();
+        Sniffy.initialize();
 
         SnifferSocketImplFactory.uninstall();
 
-        try (Spy<?> s = Sniffer.spy()) {
+        try (Spy<?> s = Sniffy.spy()) {
 
             performSocketOperation();
 
