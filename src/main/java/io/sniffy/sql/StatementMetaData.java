@@ -24,7 +24,7 @@ public class StatementMetaData {
     }
 
     private int computeHashCode() {
-        int result = System.identityHashCode(sql.hashCode());
+        int result = System.identityHashCode(sql);
         result = 31 * result + query.hashCode();
         result = 31 * result + System.identityHashCode(stackTrace);
         result = 31 * result + (int) (ownerThreadId ^ (ownerThreadId >>> 32));
