@@ -1,7 +1,6 @@
 package io.sniffy.junit;
 
 import io.sniffy.WrongNumberOfQueriesError;
-import io.sniffy.WrongNumberOfQueriesError;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;

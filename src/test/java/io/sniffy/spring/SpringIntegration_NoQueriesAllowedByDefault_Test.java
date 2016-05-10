@@ -7,7 +7,6 @@ import io.sniffy.WrongNumberOfQueriesError;
 import io.sniffy.Expectation;
 import io.sniffy.Expectations;
 import io.sniffy.NoQueriesAllowed;
-import io.sniffy.Threads;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;

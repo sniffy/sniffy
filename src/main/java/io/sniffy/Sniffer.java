@@ -200,16 +200,83 @@ public final class Sniffer {
     }
 
     /**
-     * @return a new {@link Spy} instance
+     * @return a new {@link Spy} instance for currenth thread only
      * @since 3.1
      */
     public static <T extends Spy<T>> Spy<? extends Spy<T>> spyCurrentThread() {
         return new Spy<T>(true);
     }
 
+    /**
+     * @param expectation a {@link Spy.Expectation} implementation
+     * @return a new {@link Spy} instance with given expectation
+     * @see #spy()
+     * @since 3.1
+     */
     public static Spy expect(Spy.Expectation expectation) {
         return spy().expect(expectation);
     }
+
+    /**
+     * Executable interface is similar to {@link java.lang.Runnable} but it allows throwing {@link java.lang.Exception}
+     * from it's {@link #execute()} method
+     * @since 2.0
+     */
+    public interface Executable {
+
+        /**
+         * When {@link Sniffer#execute(Sniffer.Executable)}
+         * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
+         * {@link Spy} object with stats
+         * @throws Exception code under test can throw any exception
+         */
+        void execute() throws Throwable;
+
+    }
+
+    /**
+     * Execute the {@link Sniffer.Executable#execute()} method, record the SQL queries
+     * and return the {@link Spy} object with stats
+     * @param executable code to test
+     * @return statistics on executed queries
+     * @throws RuntimeException if underlying code under test throws an Exception
+     * @since 2.0
+     */
+    public static Spy execute(Executable executable) {
+        return spy().execute(executable);
+    }
+
+    /**
+     * Execute the {@link Runnable#run()} method, record the SQL queries
+     * and return the {@link Spy} object with stats
+     * @param runnable code to test
+     * @return statistics on executed queries
+     * @since 2.0
+     */
+    public static Spy run(Runnable runnable) {
+        return spy().run(runnable);
+    }
+
+    /**
+     * Execute the {@link Callable#call()} method, record the SQL queries
+     * and return the {@link SpyWithValue} object with stats
+     * @param callable code to test
+     * @param <V> type of return value
+     * @return statistics on executed queries
+     * @throws Exception if underlying code under test throws an Exception
+     * @since 2.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <V> SpyWithValue<V> call(Callable<V> callable) throws Exception {
+        return spy().call(callable);
+    }
+
+
+
+    // DEPRECATED API
+
+
+
 
     /**
      * @param expectationList a list of {@link Expectation} annotations
@@ -217,6 +284,7 @@ public final class Sniffer {
      * @see #spy()
      * @since 2.1
      */
+    @Deprecated
     public static Spy expect(List<Expectation> expectationList) {
         Spy spy = Sniffer.spy();
 
@@ -238,63 +306,6 @@ public final class Sniffer {
 
         return spy;
     }
-
-    /**
-     * Executable interface is similar to {@link java.lang.Runnable} but it allows throwing {@link java.lang.Exception}
-     * from it's {@link #execute()} method
-     */
-    public interface Executable {
-
-        /**
-         * When {@link Sniffer#execute(Sniffer.Executable)}
-         * method is called, it will execute the Executable.execute() method, record the SQL queries and return the
-         * {@link Spy} object with stats
-         * @throws Exception code under test can throw any exception
-         */
-        void execute() throws Throwable;
-
-    }
-
-    /**
-     * Execute the {@link Sniffer.Executable#execute()} method, record the SQL queries
-     * and return the {@link Spy} object with stats
-     * @param executable code to test
-     * @return statistics on executed queries
-     * @throws RuntimeException if underlying code under test throws an Exception
-     */
-    public static Spy execute(Executable executable) {
-        return spy().execute(executable);
-    }
-
-    /**
-     * Execute the {@link Runnable#run()} method, record the SQL queries
-     * and return the {@link Spy} object with stats
-     * @param runnable code to test
-     * @return statistics on executed queries
-     */
-    public static Spy run(Runnable runnable) {
-        return spy().run(runnable);
-    }
-
-    /**
-     * Execute the {@link Callable#call()} method, record the SQL queries
-     * and return the {@link SpyWithValue} object with stats
-     * @param callable code to test
-     * @param <V> type of return value
-     * @return statistics on executed queries
-     * @throws Exception if underlying code under test throws an Exception
-     */
-    @SuppressWarnings("unchecked")
-    public static <V> SpyWithValue<V> call(Callable<V> callable) throws Exception {
-        return spy().call(callable);
-    }
-
-
-
-    // DEPRECATED API
-
-
-
 
     /**
      * @return number of SQL statements executed by current thread since some fixed moment of time

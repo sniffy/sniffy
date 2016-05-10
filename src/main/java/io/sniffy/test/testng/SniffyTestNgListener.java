@@ -91,7 +91,7 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
 
             try {
                 spy.close();
-            } catch (WrongNumberOfQueriesError sniffyError) {
+            } catch (SniffyAssertionError sniffyError) {
 
                 testResult.setStatus(FAILURE);
 

@@ -1,8 +1,8 @@
 package io.sniffy.test.spring;
 
 import io.sniffy.Expectation;
+import io.sniffy.SniffyAssertionError;
 import io.sniffy.Spy;
-import io.sniffy.WrongNumberOfQueriesError;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.TcpConnections;
 import io.sniffy.test.AnnotationProcessor;
@@ -123,7 +123,7 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
 
             try {
                 spy.close();
-            } catch (WrongNumberOfQueriesError sniffyError) {
+            } catch (SniffyAssertionError sniffyError) {
 
                 Throwable throwable = getTestException(testContext);
                 if (null != throwable) {

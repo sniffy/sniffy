@@ -1,7 +1,5 @@
 package io.sniffy.testng;
 
-import io.sniffy.WrongNumberOfQueriesError;
-import io.sniffy.WrongNumberOfQueriesError;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;

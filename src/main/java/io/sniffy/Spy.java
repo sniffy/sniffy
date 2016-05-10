@@ -91,6 +91,9 @@ public class Spy<C extends Spy<C>> implements Closeable {
                 build();
     }
 
+    /**
+     * @since 3.1
+     */
     public Map<StatementMetaData, SqlStats> getExecutedStatements(Threads threadMatcher, boolean removeStackTraces) {
 
         Map<StatementMetaData, SqlStats> executedStatements = new LinkedHashMap<StatementMetaData, SqlStats>();
@@ -137,6 +140,9 @@ public class Spy<C extends Spy<C>> implements Closeable {
         return self();
     }
 
+    /**
+     * @since 3.1
+     */
     public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher, String address, boolean removeStackTraces) {
 
         String hostName = null;
@@ -183,63 +189,6 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     }
 
-    /**
-     * @return number of SQL statements executed by current thread since some fixed moment of time
-     * @since 2.0
-     */
-    public int executedStatements() {
-        return executedStatements(CURRENT);
-    }
-
-    /**
-     * @param threadMatcher chooses {@link Thread}s for calculating the number of executed queries
-     * @return number of SQL statements executed since some fixed moment of time
-     * @since 2.0
-     */
-    public int executedStatements(Threads threadMatcher) {
-        return executedStatements(threadMatcher, Query.ANY);
-    }
-
-    /**
-     * @param threadMatcher chooses {@link Thread}s for calculating the number of executed queries
-     * @return number of SQL statements executed since some fixed moment of time
-     * @since 2.2
-     */
-    public int executedStatements(Threads threadMatcher, Query query) {
-        checkOpened();
-
-        int count = 0;
-
-        switch (threadMatcher) {
-            case ANY:
-                for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
-                    StatementMetaData statementMetaData = entry.getKey();
-                    SqlStats sqlStats = entry.getValue();
-                    if ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query) {
-                        count += sqlStats.queries.intValue();
-                    }
-                }
-                break;
-            case CURRENT:
-            case OTHERS:
-                for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
-                    StatementMetaData statementMetaData = entry.getKey();
-                    SqlStats sqlStats = entry.getValue();
-                    if ((Thread.currentThread().getId() == statementMetaData.ownerThreadId) == (CURRENT == threadMatcher) &&
-                            ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query)) {
-                        count += sqlStats.queries.intValue();
-                    }
-                }
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
-        }
-
-        return count;
-
-    }
-
-
     // Expect and verify methods
 
 
@@ -267,30 +216,29 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     /**
      * Verifies all expectations added previously using {@code expect} methods family
-     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
+     * @throws SniffyAssertionError if wrong number of queries was executed
      * @since 2.0
      */
-    public void verify() throws WrongNumberOfQueriesError {
+    public void verify() throws SniffyAssertionError {
         checkOpened();
-        WrongNumberOfQueriesError assertionError = getWrongNumberOfQueriesError();
+        SniffyAssertionError assertionError = getSniffyAssertionError();
         if (null != assertionError) {
             throw assertionError;
         }
     }
 
     /**
-     *
-     * @return WrongNumberOfQueriesError or null if there are no errors
-     * @since 2.1
+     * @return SniffyAssertionError or null if there are no errors
+     * @since 3.1
      */
-    public WrongNumberOfQueriesError getWrongNumberOfQueriesError() {
+    public SniffyAssertionError getSniffyAssertionError() {
         checkOpened();
-        WrongNumberOfQueriesError assertionError = null;
+        SniffyAssertionError assertionError = null;
         Throwable currentException = null;
         for (Expectation expectation : expectations) {
             try {
                 expectation.verify(this);
-            } catch (WrongNumberOfQueriesError e) {
+            } catch (SniffyAssertionError e) {
                 if (null == assertionError) {
                     currentException = assertionError = e;
                 } else {
@@ -339,10 +287,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     /**
      * Executes the {@link Sniffer.Executable#execute()} method on provided argument and verifies the expectations
-     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
+     * @throws SniffyAssertionError if wrong number of queries was executed
      * @since 2.0
      */
-    public C execute(Sniffer.Executable executable) {
+    public C execute(Sniffer.Executable executable) throws SniffyAssertionError {
         checkOpened();
         try {
             executable.execute();
@@ -356,10 +304,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     /**
      * Executes the {@link Runnable#run()} method on provided argument and verifies the expectations
-     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
+     * @throws SniffyAssertionError if wrong number of queries was executed
      * @since 2.0
      */
-    public C run(Runnable runnable) {
+    public C run(Runnable runnable) throws SniffyAssertionError {
         checkOpened();
         try {
             runnable.run();
@@ -373,10 +321,10 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
     /**
      * Executes the {@link Callable#call()} method on provided argument and verifies the expectations
-     * @throws WrongNumberOfQueriesError if wrong number of queries was executed
+     * @throws SniffyAssertionError if wrong number of queries was executed
      * @since 2.0
      */
-    public <V> SpyWithValue<V> call(Callable<V> callable) {
+    public <V> SpyWithValue<V> call(Callable<V> callable) throws SniffyAssertionError {
         checkOpened();
         V result;
 
@@ -393,7 +341,7 @@ public class Spy<C extends Spy<C>> implements Closeable {
     private RuntimeException verifyAndAddToException(Throwable e) {
         try {
             verify();
-        } catch (WrongNumberOfQueriesError ae) {
+        } catch (SniffyAssertionError ae) {
             if (!ExceptionUtil.addSuppressed(e, ae)) {
                 ae.printStackTrace();
             }
@@ -425,6 +373,85 @@ public class Spy<C extends Spy<C>> implements Closeable {
 
 
 
+    /**
+     * @return WrongNumberOfQueriesError or null if there are no errors
+     * @since 2.1
+     */
+    @Deprecated
+    public WrongNumberOfQueriesError getWrongNumberOfQueriesError() {
+        WrongNumberOfQueriesError wrongNumberOfQueriesError = null;
+        Throwable throwable = getSniffyAssertionError();
+        while (null != throwable) {
+            if (throwable instanceof WrongNumberOfQueriesError) {
+                if (null != wrongNumberOfQueriesError) {
+                    wrongNumberOfQueriesError.initCause(throwable);
+                }
+                wrongNumberOfQueriesError = (WrongNumberOfQueriesError) throwable;
+            }
+            throwable = throwable.getCause();
+        }
+        return wrongNumberOfQueriesError;
+    }
+
+
+    /**
+     * @return number of SQL statements executed by current thread since some fixed moment of time
+     * @since 2.0
+     */
+    @Deprecated
+    public int executedStatements() {
+        return executedStatements(CURRENT);
+    }
+
+    /**
+     * @param threadMatcher chooses {@link Thread}s for calculating the number of executed queries
+     * @return number of SQL statements executed since some fixed moment of time
+     * @since 2.0
+     */
+    @Deprecated
+    public int executedStatements(Threads threadMatcher) {
+        return executedStatements(threadMatcher, Query.ANY);
+    }
+
+    /**
+     * @param threadMatcher chooses {@link Thread}s for calculating the number of executed queries
+     * @return number of SQL statements executed since some fixed moment of time
+     * @since 2.2
+     */
+    @Deprecated
+    public int executedStatements(Threads threadMatcher, Query query) {
+        checkOpened();
+
+        int count = 0;
+
+        switch (threadMatcher) {
+            case ANY:
+                for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
+                    StatementMetaData statementMetaData = entry.getKey();
+                    SqlStats sqlStats = entry.getValue();
+                    if ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query) {
+                        count += sqlStats.queries.intValue();
+                    }
+                }
+                break;
+            case CURRENT:
+            case OTHERS:
+                for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
+                    StatementMetaData statementMetaData = entry.getKey();
+                    SqlStats sqlStats = entry.getValue();
+                    if ((Thread.currentThread().getId() == statementMetaData.ownerThreadId) == (CURRENT == threadMatcher) &&
+                            ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query)) {
+                        count += sqlStats.queries.intValue();
+                    }
+                }
+                break;
+            default:
+                throw new IllegalArgumentException(String.format("Unknown thread matcher %s", threadMatcher.getClass().getName()));
+        }
+
+        return count;
+
+    }
 
 
     // never methods
