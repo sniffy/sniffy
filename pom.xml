@@ -6,7 +6,7 @@
 
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy</artifactId>
-    <version>3.1.0-SNAPSHOT</version>
+    <version>3.1.0-RC1</version>
 
     <name>Sniffy</name>
     <url>http://sniffy.io/</url>
@@ -15,7 +15,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
-        <sniffy.ui.version>3.1.0-SNAPSHOT</sniffy.ui.version>
+        <sniffy.ui.version>3.1.0-RC1</sniffy.ui.version>
         <spring.version>4.2.5.RELEASE</spring.version>
     </properties>
 
@@ -93,10 +93,10 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <!--<groupId>org.webjars.bower</groupId>
-                                    <artifactId>sniffy</artifactId>-->
-                                    <groupId>io.sniffy</groupId>
-                                    <artifactId>sniffy-ui</artifactId>
+                                    <groupId>org.webjars.bower</groupId>
+                                    <artifactId>sniffy</artifactId>
+                                    <!--<groupId>io.sniffy</groupId>
+                                    <artifactId>sniffy-ui</artifactId>-->
                                     <version>${sniffy.ui.version}</version>
                                     <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
                                     <includes>
@@ -326,10 +326,10 @@
         </dependency>
 
         <dependency>
-            <!--<groupId>org.webjars.bower</groupId>
-            <artifactId>sniffy</artifactId>-->
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-ui</artifactId>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>sniffy</artifactId>
+            <!--<groupId>io.sniffy</groupId>
+            <artifactId>sniffy-ui</artifactId>-->
             <version>${sniffy.ui.version}</version>
             <scope>provided</scope>
             <exclusions>
