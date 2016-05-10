@@ -80,4 +80,27 @@ public class ExceptionUtil {
         return sb.toString();
     }
 
+    public static void throwTargetException(InvocationTargetException ite) {
+
+        Throwable targetException = ite.getTargetException();
+
+        if (null == targetException) {
+            targetException = ite;
+        }
+
+        throwException(targetException);
+
+    }
+
+    public static RuntimeException processException(Throwable e) {
+        if (null != e) {
+            if (e instanceof InvocationTargetException) {
+                throwTargetException((InvocationTargetException) e);
+            } else {
+                throwException(e);
+            }
+        }
+        return new RuntimeException(e);
+    }
+
 }

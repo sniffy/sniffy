@@ -1,5 +1,8 @@
 package io.sniffy.servlet;
 
+import io.sniffy.socket.SocketMetaData;
+import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
 
@@ -16,6 +19,8 @@ import java.util.*;
 
 class SnifferServlet extends HttpServlet {
 
+    public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
+
     protected final Map<String, RequestStats> cache;
 
     protected byte[] javascript;
@@ -28,8 +33,8 @@ class SnifferServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.0.7/dist/sniffy.min.js");
-            map = loadResource("/META-INF/resources/webjars/sniffy/3.0.7/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC1/dist/sniffy.min.js");
+            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC1/dist/sniffy.map");
         } catch (IOException e) {
             throw new ServletException(e);
         }
@@ -41,17 +46,18 @@ class SnifferServlet extends HttpServlet {
         String path = request.getRequestURI().substring(request.getContextPath().length());
 
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
-            serveContent(response, "application/javascript", javascript);
+            serveContent(response, JAVASCRIPT_MIME_TYPE, javascript);
         } else if (SnifferFilter.JAVASCRIPT_MAP_URI.equals(path)) {
-            serveContent(response, "application/javascript", map);
+            serveContent(response, JAVASCRIPT_MIME_TYPE, map);
         } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
             byte[] requestStatsJson = getRequestStatsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
 
             if (null == requestStatsJson) {
-                response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentType(JAVASCRIPT_MIME_TYPE);
                 response.flushBuffer();
             } else {
-                response.setContentType("application/json");
+                response.setContentType(JAVASCRIPT_MIME_TYPE);
                 response.setContentLength(requestStatsJson.length);
 
                 ServletOutputStream outputStream = response.getOutputStream();
@@ -75,9 +81,12 @@ class SnifferServlet extends HttpServlet {
                     append(requestStats.getElapsedTime());
             if (null != requestStats.getExecutedStatements()) {
                 sb.append(",\"executedQueries\":[");
-                Iterator<StatementMetaData> statementsIt = requestStats.getExecutedStatements().iterator();
+                Set<Map.Entry<StatementMetaData, SqlStats>> entries = requestStats.getExecutedStatements().entrySet();
+                Iterator<Map.Entry<StatementMetaData, SqlStats>> statementsIt = entries.iterator();
                 while (statementsIt.hasNext()) {
-                    StatementMetaData statement = statementsIt.next();
+                    Map.Entry<StatementMetaData, SqlStats> entry = statementsIt.next();
+                    StatementMetaData statement = entry.getKey();
+                    SqlStats sqlStats = entry.getValue();
                     sb.
                             append("{").
                             append("\"query\":").
@@ -87,7 +96,53 @@ class SnifferServlet extends HttpServlet {
                             append(StringUtil.escapeJsonString(statement.stackTrace)).
                             append(",").
                             append("\"time\":").
-                            append(String.format(Locale.ENGLISH, "%.3f", (double) statement.elapsedTime / 1000 / 1000)).
+                            append(String.format(Locale.ENGLISH, "%.3f", sqlStats.elapsedTime.doubleValue() / 1000)).
+                            append(",").
+                            append("\"invocations\":").
+                            append(sqlStats.queries.longValue()).
+                            append(",").
+                            append("\"rows\":").
+                            append(sqlStats.rows.longValue()).
+                            append(",").
+                            append("\"type\":\"").
+                            append(statement.query.name()).
+                            append("\",").
+                            append("\"bytesDown\":").
+                            append(sqlStats.bytesDown.longValue()).
+                            append(",").
+                            append("\"bytesUp\":").
+                            append(sqlStats.bytesUp.longValue()).
+                            append("}");
+                    if (statementsIt.hasNext()) {
+                        sb.append(",");
+                    }
+                }
+                sb.append("]");
+            }
+            if (null != requestStats.getSocketOperations()) {
+                sb.append(",\"networkConnections\":[");
+                Iterator<Map.Entry<SocketMetaData, SocketStats>> statementsIt = requestStats.getSocketOperations().entrySet().iterator();
+                while (statementsIt.hasNext()) {
+                    Map.Entry<SocketMetaData, SocketStats> entry = statementsIt.next();
+                    SocketMetaData socketMetaData = entry.getKey();
+                    SocketStats socketStats = entry.getValue();
+
+                    sb.
+                            append("{").
+                            append("\"host\":").
+                            append(StringUtil.escapeJsonString(socketMetaData.address.toString())).
+                            append(",").
+                            append("\"stackTrace\":").
+                            append(StringUtil.escapeJsonString(socketMetaData.stackTrace)).
+                            append(",").
+                            append("\"time\":").
+                            append(String.format(Locale.ENGLISH, "%.3f", (double) socketStats.elapsedTime.longValue())).
+                            append(",").
+                            append("\"bytesDown\":").
+                            append(socketStats.bytesDown.longValue()).
+                            append(",").
+                            append("\"bytesUp\":").
+                            append(socketStats.bytesUp.longValue()).
                             append("}");
                     if (statementsIt.hasNext()) {
                         sb.append(",");

@@ -1,26 +1,20 @@
-package io.sniffy;
+package io.sniffy.sql;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.sql.*;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 
-class ConnectionInvocationHandler implements InvocationHandler {
-
-    private final Connection delegate;
+public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connection> {
 
     public ConnectionInvocationHandler(Connection delegate) {
-        this.delegate = delegate;
+        super(delegate);
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Object result;
-        try {
-            result = method.invoke(delegate, args);
-        } catch (InvocationTargetException e) {
-            throw e.getTargetException();
-        }
+        Object result = invokeTarget(method, args);
         if ("createStatement".equals(method.getName())) {
             return Proxy.newProxyInstance(
                     ConnectionInvocationHandler.class.getClassLoader(),
@@ -40,6 +34,7 @@ class ConnectionInvocationHandler implements InvocationHandler {
                     new PreparedStatementInvocationHandler(result, String.class.cast(args[0]))
             );
         } else {
+            // TODO: proxe other classes which can produce network like getDatabaseMetaData() and others
             return result;
         }
     }

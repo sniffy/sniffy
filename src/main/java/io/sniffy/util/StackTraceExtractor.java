@@ -1,4 +1,4 @@
-package io.sniffy.trace;
+package io.sniffy.util;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -34,6 +34,36 @@ public class StackTraceExtractor {
             result.add(baseMethodTrace);
             result.addAll(Arrays.asList(Arrays.copyOfRange(stackTraceElements, startIndex, stackTraceElements.length - 1)));
             return result;
+        }
+    }
+
+    // TODO: refactor this method
+    public static List<StackTraceElement> getTraceTillPackage(String packageName) {
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        // skip all elements until proxied call
+        int startIndex = 0;
+        for (int i = 1; i < stackTraceElements.length; i++) {
+            StackTraceElement traceElement = stackTraceElements[i];
+            String traceElementClassName = traceElement.getClassName();
+            if (!traceElementClassName.startsWith(packageName) &&
+                    !traceElementClassName.startsWith("java") &&
+                    !traceElementClassName.startsWith("com.sun") &&
+                    !traceElementClassName.startsWith("sun") &&
+                    !"io.sniffy.socket.SnifferSocketImpl".equals(traceElementClassName) &&
+                    !"io.sniffy.socket.SnifferInputStream".equals(traceElementClassName) &&
+                    !"io.sniffy.socket.SnifferOutputStream".equals(traceElementClassName) &&
+                    !"io.sniffy.util.StackTraceExtractor".equals(traceElementClassName)
+                    ) {
+                startIndex = i > 1 ? i - 1 : i;
+                break;
+            }
+            // TODO go back until non java.io. trace
+        }
+        if (startIndex <= 0) {
+            // no proxy, return entire collection
+            return Arrays.asList(stackTraceElements);
+        } else {
+            return Arrays.asList(Arrays.copyOfRange(stackTraceElements, startIndex, stackTraceElements.length - 1));
         }
     }
 

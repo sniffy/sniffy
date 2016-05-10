@@ -1,26 +1,36 @@
 package io.sniffy.servlet;
 
+import io.sniffy.socket.SocketMetaData;
+import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 
 import java.util.List;
+import java.util.Map;
 
 class RequestStats {
 
     private long timeToFirstByte;
     private long elapsedTime;
-    private List<StatementMetaData> executedStatements;
+    private Map<StatementMetaData, SqlStats> executedStatements;
+    private Map<SocketMetaData, SocketStats> socketOperations;
 
     public RequestStats() {
     }
 
-    public RequestStats(List<StatementMetaData> executedStatements) {
-        this.executedStatements = executedStatements;
+    public RequestStats(long timeToFirstByte, long elapsedTime, Map<StatementMetaData, SqlStats> executedStatements) {
+        this(timeToFirstByte, elapsedTime, executedStatements, null);
     }
 
-    public RequestStats(long timeToFirstByte, long elapsedTime, List<StatementMetaData> executedStatements) {
+    public RequestStats(
+            long timeToFirstByte,
+            long elapsedTime,
+            Map<StatementMetaData, SqlStats> executedStatements,
+            Map<SocketMetaData, SocketStats> socketOperations) {
         this.timeToFirstByte = timeToFirstByte;
         this.elapsedTime = elapsedTime;
         this.executedStatements = executedStatements;
+        this.socketOperations = socketOperations;
     }
 
     public long getTimeToFirstByte() {
@@ -39,12 +49,20 @@ class RequestStats {
         this.elapsedTime = elapsedTime;
     }
 
-    public List<StatementMetaData> getExecutedStatements() {
+    public Map<StatementMetaData, SqlStats> getExecutedStatements() {
         return executedStatements;
     }
 
-    public void setExecutedStatements(List<StatementMetaData> executedStatements) {
+    public void setExecutedStatements(Map<StatementMetaData, SqlStats> executedStatements) {
         this.executedStatements = executedStatements;
+    }
+
+    public Map<SocketMetaData, SocketStats> getSocketOperations() {
+        return socketOperations;
+    }
+
+    public void setSocketOperations(Map<SocketMetaData, SocketStats> socketOperations) {
+        this.socketOperations = socketOperations;
     }
 
 }

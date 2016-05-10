@@ -25,9 +25,9 @@ public class StringUtil {
                     sb.append(c);
                     break;
                 case '/':
-                    //                if (b == '<') {
-                    sb.append('\\');
-                    //                }
+                    if (i > 0 && string.charAt(i - 1) == '<') {
+                        sb.append('\\');
+                    }
                     sb.append(c);
                     break;
                 case '\b':

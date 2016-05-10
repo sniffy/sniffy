@@ -1,5 +1,6 @@
-package io.sniffy.trace;
+package io.sniffy.util;
 
+import io.sniffy.util.StackTraceExtractor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -45,8 +46,8 @@ public class StackTraceExtractorTest {
         testProxy.testBaseMethod();
         String stackTraceString = StackTraceExtractor.printStackTrace(traceExtractor.traceElements);
         Assert.assertNotNull(stackTraceString);
-        Assert.assertTrue(stackTraceString.startsWith("io.sniffy.trace.StackTraceExtractorTest.TestBase.testBaseMethod(Unknown Source)"));
-        Assert.assertTrue(stackTraceString.contains("io.sniffy.trace.StackTraceExtractorTest.testPrintStackTrace(StackTraceExtractorTest.java"));
+        Assert.assertTrue(stackTraceString.startsWith("io.sniffy.util.StackTraceExtractorTest.TestBase.testBaseMethod(Unknown Source)"));
+        Assert.assertTrue(stackTraceString.contains("io.sniffy.util.StackTraceExtractorTest.testPrintStackTrace(StackTraceExtractorTest.java"));
     }
 
     @Test

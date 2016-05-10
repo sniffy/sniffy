@@ -3,7 +3,8 @@ package io.sniffy;
 import io.sniffy.sql.StatementMetaData;
 import org.junit.Test;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Iterator;
 
 import static org.junit.Assert.*;
 
@@ -26,11 +27,14 @@ public class SnifferTest extends BaseTest {
 
     @Test
     public void testSpyExecutedStatements_StackTraceTracked() throws Exception {
-        Spy spy = Sniffer.spy();
+        Spy<?> spy = Sniffer.spy();
         executeStatement();
-        List<StatementMetaData> statements = spy.getExecutedStatements(Threads.ANY);
-        assertNotNull(statements.get(0).stackTrace);
-        assertTrue(statements.get(0).stackTrace.contains("testSpyExecutedStatements_StackTraceTracked"));
+        Collection<StatementMetaData> statements = spy.getExecutedStatements(Threads.ANY, false).keySet();
+        Iterator<StatementMetaData> statementsIt = statements.iterator();
+        StatementMetaData statementMetaData = statementsIt.next();
+        assertNotNull(statementMetaData.stackTrace);
+        assertTrue(statementMetaData.stackTrace.contains("testSpyExecutedStatements_StackTraceTracked"));
+        assertFalse(statementsIt.hasNext());
     }
 
     @Test

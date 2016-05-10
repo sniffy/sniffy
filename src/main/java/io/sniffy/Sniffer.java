@@ -1,14 +1,25 @@
 package io.sniffy;
 
-import io.sniffy.log.QueryLogger;
+import io.sniffy.socket.SnifferSocketImplFactory;
+import io.sniffy.socket.SocketMetaData;
+import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlQueries;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.Range;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
+import static io.sniffy.util.StackTraceExtractor.printStackTrace;
 
 /**
  * Sniffer is an entry point for using Sniffy library
@@ -20,13 +31,28 @@ import java.util.concurrent.Callable;
  */
 public final class Sniffer {
 
+    @Deprecated
+    private final static AtomicInteger executedStatementsGlobalCounter = new AtomicInteger();
+
+    private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+
+    private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
+
     private Sniffer() {
 
     }
 
-    // Registered listeners (i.e. spies)
+    static {
+        initialize();
+    }
 
-    private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+    public static void initialize() {
+        try {
+            SnifferSocketImplFactory.install();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     protected static synchronized WeakReference<Spy> registerSpy(Spy spy) {
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
@@ -42,6 +68,19 @@ public final class Sniffer {
         return Collections.unmodifiableList(registeredSpies);
     }
 
+    private static synchronized void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
+        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+        while (iterator.hasNext()) {
+            WeakReference<Spy> spyReference = iterator.next();
+            Spy spy = spyReference.get();
+            if (null == spy) {
+                iterator.remove();
+            } else {
+                spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
+            }
+        }
+    }
+
     private static synchronized void notifyListeners(StatementMetaData statementMetaData) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
@@ -50,43 +89,106 @@ public final class Sniffer {
             if (null == spy) {
                 iterator.remove();
             } else {
-                spy.addExecutedStatement(statementMetaData);
+                spy.addReturnedRow(statementMetaData);
             }
         }
     }
 
-    // query counters
+    private static synchronized void notifyListeners(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
+        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+        while (iterator.hasNext()) {
+            WeakReference<Spy> spyReference = iterator.next();
+            Spy spy = spyReference.get();
+            if (null == spy) {
+                iterator.remove();
+            } else {
+                spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
+            }
+        }
+    }
 
-    protected static final Counter COUNTER = new Counter();
+    public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
 
-    protected static final ThreadLocal<Counter> THREAD_LOCAL_COUNTER = new ThreadLocal<Counter>() {
+        // do not track JDBC socket operations
+        SocketStats socketStats = socketStatsAccumulator.get();
+        if (null != socketStats) {
+            socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
+        } else {
+            // increment counters
+            SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
 
-        @Override
-        protected Counter initialValue() {
-            return new Counter();
+            // notify listeners
+            notifyListeners(socketMetaData, elapsedTime, bytesDown, bytesUp);
+        }
+    }
+
+    public static void enterJdbcMethod() {
+        socketStatsAccumulator.set(new SocketStats(0, 0, 0));
+    }
+
+    public static void exitJdbcMethod(Method method, long elapsedTime) {
+        // get accumulated socket stats
+        SocketStats socketStats = socketStatsAccumulator.get();
+
+        if (null != socketStats) {
+
+            if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
+                String stackTrace = null;
+                try {
+                    stackTrace = printStackTrace(getTraceForProxiedMethod(method));
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                StatementMetaData statementMetaData = new StatementMetaData(
+                        method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()",
+                        Query.SYSTEM,
+                        stackTrace,
+                        Thread.currentThread().getId()
+                );
+                notifyListeners(
+                        statementMetaData,
+                        elapsedTime,
+                        socketStats.bytesDown.intValue(),
+                        socketStats.bytesUp.intValue(),
+                        0
+                );
+            }
+
+            socketStatsAccumulator.remove();
         }
 
-    };
+    }
 
-    protected static void executeStatement(String sql, long elapsedTime, String stackTrace) {
-        // log query
-        QueryLogger.logQuery(sql, elapsedTime);
+    public static void readDatabaseRow(Method method, long elapsedTime, StatementMetaData statementMetaData) {
+        exitJdbcMethod(method, elapsedTime);
 
-        // increment counters
-        StatementMetaData statementMetaData = StatementMetaData.parse(sql, elapsedTime, stackTrace);
-        COUNTER.executeStatement(statementMetaData.query);
-        THREAD_LOCAL_COUNTER.get().executeStatement(statementMetaData.query);
-
-        // notify listeners
         notifyListeners(statementMetaData);
     }
 
-    /**
-     * @return number of SQL statements executed by current thread since some fixed moment of time
-     * @since 1.0
-     */
-    public static int executedStatements() {
-        return COUNTER.executedStatements(Query.ANY);
+    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace) {
+        return executeStatement(sql, elapsedTime, stackTrace, 0);
+    }
+
+    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace, int rowsUpdated) {
+        // increment global counter
+        executedStatementsGlobalCounter.incrementAndGet();
+
+        // get accumulated socket stats
+        SocketStats socketStats = socketStatsAccumulator.get();
+
+        // notify listeners
+        StatementMetaData statementMetaData = new StatementMetaData(sql, StatementMetaData.guessQueryType(sql), stackTrace, Thread.currentThread().getId());
+        notifyListeners(
+                statementMetaData,
+                elapsedTime,
+                null == socketStats ? 0 : socketStats.bytesDown.intValue(),
+                null == socketStats ? 0 : socketStats.bytesUp.intValue(),
+                rowsUpdated
+        );
+
+        socketStatsAccumulator.remove();
+
+        return statementMetaData;
     }
 
     /**
@@ -94,319 +196,19 @@ public final class Sniffer {
      * @since 2.0
      */
     public static <T extends Spy<T>> Spy<? extends Spy<T>> spy() {
-        return new Spy<T>();
-    }
-
-    // never methods
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectNever()
-     * @since 2.0
-     */
-    public static Spy expectNever() {
-        return spy().expectNever();
+        return new Spy<T>(false);
     }
 
     /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectNever(Threads)
-     * @since 2.0
+     * @return a new {@link Spy} instance
+     * @since 3.1
      */
-    public static Spy expectNever(Threads threadMatcher) {
-        return spy().expectNever(threadMatcher);
+    public static <T extends Spy<T>> Spy<? extends Spy<T>> spyCurrentThread() {
+        return new Spy<T>(true);
     }
 
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectNever(Query)
-     * @since 2.2
-     */
-    public static Spy expectNever(Query query) {
-        return spy().expectNever(query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectNever(Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expectNever(Threads threadMatcher, Query query) {
-        return spy().expectNever(threadMatcher, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectNever(Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expectNever(Query query, Threads threadMatcher) {
-        return spy().expectNever(query, threadMatcher);
-    }
-
-    // atMostOnce methods
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMostOnce()
-     * @since 2.0
-     */
-    public static Spy expectAtMostOnce() {
-        return spy().expectAtMostOnce();
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMostOnce(Threads)
-     * @since 2.0
-     */
-    public static Spy expectAtMostOnce(Threads threadMatcher) {
-        return spy().expectAtMostOnce(threadMatcher);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMostOnce(Query)
-     * @since 2.2
-     */
-    public static Spy expectAtMostOnce(Query query) {
-        return spy().expectAtMostOnce(query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMostOnce(Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expectAtMostOnce(Threads threadMatcher, Query query) {
-        return spy().expectAtMostOnce(threadMatcher, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMostOnce(Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expectAtMostOnce(Query query, Threads threadMatcher) {
-        return spy().expectAtMostOnce(query, threadMatcher);
-    }
-
-    // notMoreThan methods
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMost(int)
-     * @since 2.0
-     */
-    public static Spy expectAtMost(int allowedStatements) {
-        return spy().expectAtMost(allowedStatements);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMost(int, Threads)
-     * @since 2.0
-     */
-    public static Spy expectAtMost(int allowedStatements, Threads threadMatcher) {
-        return spy().expectAtMost(allowedStatements, threadMatcher);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMost(int, Query)
-     * @since 2.2
-     */
-    public static Spy expectAtMost(int allowedStatements, Query query) {
-        return spy().expectAtMost(allowedStatements, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMost(int, Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expectAtMost(int allowedStatements, Threads threadMatcher, Query query) {
-        return spy().expectAtMost(allowedStatements, threadMatcher, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtMost(int, Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expectAtMost(int allowedStatements, Query query, Threads threadMatcher) {
-        return spy().expectAtMost(allowedStatements, query, threadMatcher);
-    }
-
-    // exact methods
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expect(int)
-     * @since 2.0
-     */
-    public static Spy expect(int allowedStatements) {
-        return spy().expect(allowedStatements);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expect(int, Threads)
-     * @since 2.0
-     */
-    public static Spy expect(int allowedStatements, Threads threadMatcher) {
-        return spy().expect(allowedStatements, threadMatcher);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expect(int, Query)
-     * @since 2.2
-     */
-    public static Spy expect(int allowedStatements, Query query) {
-        return spy().expect(allowedStatements, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expect(int, Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expect(int allowedStatements, Threads threadMatcher, Query query) {
-        return spy().expect(allowedStatements, threadMatcher, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expect(int, Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expect(int allowedStatements, Query query, Threads threadMatcher) {
-        return spy().expect(allowedStatements, query, threadMatcher);
-    }
-
-    // atLeast methods
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtLeast(int)
-     * @since 2.0
-     */
-    public static Spy expectAtLeast(int allowedStatements) {
-        return spy().expectAtLeast(allowedStatements);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtLeast(int, Threads)
-     * @since 2.0
-     */
-    public static Spy expectAtLeast(int allowedStatements, Threads threadMatcher) {
-        return spy().expectAtLeast(allowedStatements, threadMatcher);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtLeast(int, Query)
-     * @since 2.2
-     */
-    public static Spy expectAtLeast(int allowedStatements, Query query) {
-        return spy().expectAtLeast(allowedStatements, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtLeast(int, Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expectAtLeast(int allowedStatements, Threads threadMatcher, Query query) {
-        return spy().expectAtLeast(allowedStatements, threadMatcher, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectAtLeast(int, Threads, Query)
-     * @since 2.2
-     */
-    public static Spy expectAtLeast(int allowedStatements, Query query, Threads threadMatcher) {
-        return spy().expectAtLeast(allowedStatements, query, threadMatcher);
-    }
-
-    // between methods methods
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy
-     * @see Spy#expectBetween(int, int)
-     * @since 2.0
-     */
-    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements) {
-        return spy().expectBetween(minAllowedStatements, maxAllowedStatements);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectBetween(int, int, Threads)
-     * @since 2.0
-     */
-    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
-        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectBetween(int, int, Query)
-     * @since 2.0
-     */
-    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query) {
-        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectBetween(int, int, Threads, Query)
-     * @since 2.0
-     */
-    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) {
-        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher, query);
-    }
-
-    /**
-     * @return a new {@link Spy} instance with an expectation initialized
-     * @see #spy()
-     * @see Spy#expectBetween(int, int, Threads, Query)
-     * @since 2.0
-     */
-    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) {
-        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, query, threadMatcher);
+    public static Spy expect(Spy.Expectation expectation) {
+        return spy().expect(expectation);
     }
 
     /**
@@ -419,19 +221,19 @@ public final class Sniffer {
         Spy spy = Sniffer.spy();
 
         for (Expectation expectation : expectationList) {
-            if (-1 != expectation.value()) {
-                spy.expect(expectation.value(), expectation.threads(), expectation.query());
+
+            Range queriesRange = Range.parse(expectation);
+            Range rowsRange = Range.parse(expectation.rows());
+
+            if (-1 != queriesRange.min || -1 != queriesRange.max || -1 != rowsRange.min || -1 != rowsRange.max) {
+                spy.expect(SqlQueries.
+                        queriesBetween(-1 == queriesRange.min ? 0 : queriesRange.min, -1 == queriesRange.max ? Integer.MAX_VALUE : queriesRange.max).
+                        rowsBetween(-1 == rowsRange.min ? 0 : rowsRange.min, -1 == rowsRange.max ? Integer.MAX_VALUE : rowsRange.max).
+                        threads(expectation.threads()).
+                        type(expectation.query())
+                );
             }
-            if (-1 != expectation.atLeast() && -1 != expectation.atMost()) {
-                spy.expectBetween(expectation.atLeast(), expectation.atMost(),
-                        expectation.threads(), expectation.query());
-            } else if (-1 != expectation.atLeast()) {
-                spy.expectAtLeast(expectation.atLeast(),
-                        expectation.threads(), expectation.query());
-            } else if (-1 != expectation.atMost()) {
-                spy.expectAtMost(expectation.atMost(),
-                        expectation.threads(), expectation.query());
-            }
+
         }
 
         return spy;
@@ -487,6 +289,362 @@ public final class Sniffer {
         return spy().call(callable);
     }
 
-    protected final static Threads DEFAULT_THREAD_MATCHER = Threads.CURRENT;
+
+
+    // DEPRECATED API
+
+
+
+
+    /**
+     * @return number of SQL statements executed by current thread since some fixed moment of time
+     * @since 1.0
+     */
+    @Deprecated
+    public static int executedStatements() {
+        return executedStatementsGlobalCounter.intValue();
+    }
+
+    // never methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectNever()
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectNever() {
+        return spy().expectNever();
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectNever(Threads)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectNever(Threads threadMatcher) {
+        return spy().expectNever(threadMatcher);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectNever(Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectNever(Query query) {
+        return spy().expectNever(query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectNever(Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectNever(Threads threadMatcher, Query query) {
+        return spy().expectNever(threadMatcher, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectNever(Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectNever(Query query, Threads threadMatcher) {
+        return spy().expectNever(query, threadMatcher);
+    }
+
+    // atMostOnce methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMostOnce()
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectAtMostOnce() {
+        return spy().expectAtMostOnce();
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMostOnce(Threads)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectAtMostOnce(Threads threadMatcher) {
+        return spy().expectAtMostOnce(threadMatcher);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMostOnce(Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectAtMostOnce(Query query) {
+        return spy().expectAtMostOnce(query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMostOnce(Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectAtMostOnce(Threads threadMatcher, Query query) {
+        return spy().expectAtMostOnce(threadMatcher, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMostOnce(Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectAtMostOnce(Query query, Threads threadMatcher) {
+        return spy().expectAtMostOnce(query, threadMatcher);
+    }
+
+    // notMoreThan methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMost(int)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectAtMost(int allowedStatements) {
+        return spy().expectAtMost(allowedStatements);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMost(int, Threads)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectAtMost(int allowedStatements, Threads threadMatcher) {
+        return spy().expectAtMost(allowedStatements, threadMatcher);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMost(int, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectAtMost(int allowedStatements, Query query) {
+        return spy().expectAtMost(allowedStatements, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMost(int, Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectAtMost(int allowedStatements, Threads threadMatcher, Query query) {
+        return spy().expectAtMost(allowedStatements, threadMatcher, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtMost(int, Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectAtMost(int allowedStatements, Query query, Threads threadMatcher) {
+        return spy().expectAtMost(allowedStatements, query, threadMatcher);
+    }
+
+    // exact methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expect(int)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expect(int allowedStatements) {
+        return spy().expect(allowedStatements);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expect(int, Threads)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expect(int allowedStatements, Threads threadMatcher) {
+        return spy().expect(allowedStatements, threadMatcher);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expect(int, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expect(int allowedStatements, Query query) {
+        return spy().expect(allowedStatements, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expect(int, Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expect(int allowedStatements, Threads threadMatcher, Query query) {
+        return spy().expect(allowedStatements, threadMatcher, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expect(int, Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expect(int allowedStatements, Query query, Threads threadMatcher) {
+        return spy().expect(allowedStatements, query, threadMatcher);
+    }
+
+    // atLeast methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtLeast(int)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectAtLeast(int allowedStatements) {
+        return spy().expectAtLeast(allowedStatements);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtLeast(int, Threads)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectAtLeast(int allowedStatements, Threads threadMatcher) {
+        return spy().expectAtLeast(allowedStatements, threadMatcher);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtLeast(int, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectAtLeast(int allowedStatements, Query query) {
+        return spy().expectAtLeast(allowedStatements, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtLeast(int, Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectAtLeast(int allowedStatements, Threads threadMatcher, Query query) {
+        return spy().expectAtLeast(allowedStatements, threadMatcher, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectAtLeast(int, Threads, Query)
+     * @since 2.2
+     */
+    @Deprecated
+    public static Spy expectAtLeast(int allowedStatements, Query query, Threads threadMatcher) {
+        return spy().expectAtLeast(allowedStatements, query, threadMatcher);
+    }
+
+    // between methods methods
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy
+     * @see Spy#expectBetween(int, int)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectBetween(int, int, Threads)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectBetween(int, int, Query)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectBetween(int, int, Threads, Query)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, threadMatcher, query);
+    }
+
+    /**
+     * @return a new {@link Spy} instance with an expectation initialized
+     * @see #spy()
+     * @see Spy#expectBetween(int, int, Threads, Query)
+     * @since 2.0
+     */
+    @Deprecated
+    public static Spy expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) {
+        return spy().expectBetween(minAllowedStatements, maxAllowedStatements, query, threadMatcher);
+    }
 
 }

@@ -1,11 +1,15 @@
 package io.sniffy.junit;
 
 import io.sniffy.*;
+import io.sniffy.test.Count;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import static io.sniffy.Query.INSERT;
+
 @NoQueriesAllowed
+// TODO created a copy for new Count API
 public class QueryCounterTest extends BaseTest {
 
     @Rule
@@ -21,14 +25,26 @@ public class QueryCounterTest extends BaseTest {
     }
 
     @Test
-    @Expectation(1)
+    @Expectation(count = @Count(1))
     public void testAllowedOneQuery() {
         executeStatement();
     }
 
     @Test
-    @Expectation(value = 5, atLeast = 2)
+    @Expectation(1)
+    public void testAllowedOneQuery_DeprecatedApi() {
+        executeStatement();
+    }
+
+    @Test
+    @Expectation(count = @Count(value = 5, min = 2))
     public void testAmbiguousExpectationAnnotation() {
+        thrown.expect(IllegalArgumentException.class);
+    }
+
+    @Test
+    @Expectation(value = 5, atLeast = 2)
+    public void testAmbiguousExpectationAnnotation_DeprecatedApi() {
         thrown.expect(IllegalArgumentException.class);
     }
 
@@ -76,14 +92,14 @@ public class QueryCounterTest extends BaseTest {
     @Test
     @Expectations({
             @Expectation(value = 1, query = Query.SELECT),
-            @Expectation(value = 1, query = Query.INSERT),
+            @Expectation(value = 1, query = INSERT),
             @Expectation(value = 1, query = Query.UPDATE),
             @Expectation(value = 1, query = Query.DELETE),
             @Expectation(value = 1, query = Query.MERGE)
     })
     public void testDifferentQueries() {
         executeStatement(Query.SELECT);
-        executeStatement(Query.INSERT);
+        executeStatement(INSERT);
         executeStatement(Query.UPDATE);
         executeStatement(Query.DELETE);
         executeStatement(Query.MERGE);
@@ -113,6 +129,19 @@ public class QueryCounterTest extends BaseTest {
     public void testAllowedExactTwoQueriesExecutedThree() {
         executeStatements(3);
         thrown.expect(WrongNumberOfQueriesError.class);
+    }
+
+    @Test
+    @Expectation(rows = @Count(2))
+    public void testAllowedExactTwoRows() {
+        executeStatements(2, INSERT);
+    }
+
+    @Test
+    @Expectation(rows = @Count(2))
+    public void testAllowedExactTwoRowsReturnedThree() {
+        executeStatements(3, INSERT);
+        thrown.expect(WrongNumberOfRowsError.class);
     }
 
     @Test

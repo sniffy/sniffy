@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import io.sniffy.sql.ConnectionInvocationHandler;
 import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Proxy;
@@ -33,6 +34,9 @@ public class MockDriver implements Driver {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        Sniffer.initialize();
+
     }
 
     public Connection connect(String url, Properties info) throws SQLException {

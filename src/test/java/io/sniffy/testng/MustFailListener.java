@@ -40,7 +40,7 @@ public class MustFailListener implements ITestListener {
         if (null != mustFail) {
             if (result.getStatus() == ITestResult.FAILURE &&
                     null != result.getThrowable() &&
-                    WrongNumberOfQueriesError.class.isAssignableFrom(result.getThrowable().getClass())) {
+                    mustFail.value().isAssignableFrom(result.getThrowable().getClass())) {
                 result.setStatus(ITestResult.SUCCESS);
                 result.setThrowable(null);
                 return;
