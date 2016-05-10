@@ -33,4 +33,16 @@ public class PreparedStatementInvocationHandlerTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testExecuteInsertPreparedStatement() throws Exception {
+        try (Connection connection = openConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(
+                     "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, ?)"
+             )) {
+            preparedStatement.setString(1, "foo");
+            int result = preparedStatement.executeUpdate();
+            assertEquals(1, result);
+        }
+    }
+
 }
