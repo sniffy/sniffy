@@ -68,6 +68,7 @@ class SnifferServlet extends HttpServlet {
 
     }
 
+    // TODO: stream JSON instead; otherwise we are creating unnecessary garbage out of interned strings mostly
     private byte[] getRequestStatsJson(String requestId) {
         RequestStats requestStats = cache.get(requestId);
         if (null != requestStats) {
