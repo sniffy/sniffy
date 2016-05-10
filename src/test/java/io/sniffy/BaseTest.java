@@ -7,6 +7,7 @@ import java.sql.*;
 
 public abstract class BaseTest {
 
+    protected static final String INSERT_PREPARED_STATEMENT = "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, ?)";
     /**
      * H2 is keeping the schema while we have at least one connection
      */
