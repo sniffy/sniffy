@@ -2,9 +2,6 @@ package io.sniffy.socket;
 
 import java.net.InetSocketAddress;
 
-/**
- * Created by bedrin on 29.04.2016.
- */
 public class SocketMetaData {
 
     public final InetSocketAddress address;
@@ -12,11 +9,22 @@ public class SocketMetaData {
     public final String stackTrace;
     public final long ownerThreadId;
 
+    private final int hashCode;
+
     public SocketMetaData(InetSocketAddress address, int connectionId, String stackTrace, long ownerThreadId) {
         this.address = address;
         this.connectionId = connectionId;
         this.stackTrace = null == stackTrace ? null : stackTrace.intern();
         this.ownerThreadId = ownerThreadId;
+        hashCode = computeHashCode();
+    }
+
+    private int computeHashCode() {
+        int result = address.hashCode();
+        result = 31 * result + connectionId;
+        result = 31 * result + System.identityHashCode(stackTrace);
+        result = 31 * result + (int) (ownerThreadId ^ (ownerThreadId >>> 32));
+        return result;
     }
 
     @Override
@@ -29,17 +37,13 @@ public class SocketMetaData {
         if (connectionId != that.connectionId) return false;
         if (ownerThreadId != that.ownerThreadId) return false;
         if (!address.equals(that.address)) return false;
-        return stackTrace != null ? stackTrace.equals(that.stackTrace) : that.stackTrace == null;
+        return stackTrace == that.stackTrace;
 
     }
 
     @Override
     public int hashCode() {
-        int result = address.hashCode();
-        result = 31 * result + connectionId;
-        result = 31 * result + (stackTrace != null ? stackTrace.hashCode() : 0);
-        result = 31 * result + (int) (ownerThreadId ^ (ownerThreadId >>> 32));
-        return result;
+        return hashCode;
     }
 
 }

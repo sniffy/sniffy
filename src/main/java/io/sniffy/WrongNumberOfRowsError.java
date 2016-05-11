@@ -90,6 +90,7 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
         }
         sb.append(LINE_SEPARATOR);
         sb.append("Observed ").append(numQueries).append(" rows instead:");
+        sb.append(LINE_SEPARATOR);
         if (null != executedStatements) for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
             StatementMetaData statement = entry.getKey();
             SqlStats sqlStats = entry.getValue();
