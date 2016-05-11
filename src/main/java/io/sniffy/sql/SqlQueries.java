@@ -1,7 +1,6 @@
 package io.sniffy.sql;
 
 import io.sniffy.*;
-import io.sniffy.socket.SocketExpectation;
 import io.sniffy.util.Range;
 
 import java.util.Map;

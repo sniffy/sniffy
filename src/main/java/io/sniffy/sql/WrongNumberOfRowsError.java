@@ -1,5 +1,8 @@
-package io.sniffy;
+package io.sniffy.sql;
 
+import io.sniffy.Query;
+import io.sniffy.SniffyAssertionError;
+import io.sniffy.Threads;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 

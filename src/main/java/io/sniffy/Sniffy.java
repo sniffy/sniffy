@@ -14,7 +14,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
 import static io.sniffy.util.StackTraceExtractor.printStackTrace;

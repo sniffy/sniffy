@@ -26,7 +26,7 @@ public @interface SocketExpectation {
 
     Count bytesDown();
 
-    Count bytsTotal();*/
+    Count bytesTotal();*/
 
     /**
      * @since 3.1

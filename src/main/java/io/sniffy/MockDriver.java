@@ -1,16 +1,9 @@
 package io.sniffy;
 
-import io.sniffy.sql.ConnectionInvocationHandler;
-import io.sniffy.util.ExceptionUtil;
+import io.sniffy.sql.SniffyDriver;
 
-import java.lang.reflect.Proxy;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.sql.*;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.ServiceLoader;
-import java.util.logging.Logger;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 /**
  * Enable JDBC Sniffer by adding a {@code sniffer:} prefix to your JDBC URL.
@@ -20,9 +13,12 @@ import java.util.logging.Logger;
  * After that you'll be able to verify the number of executed statements using the {@link Sniffy} class
  * @see Sniffy
  */
-public class MockDriver implements Driver {
+@Deprecated
+public class MockDriver extends SniffyDriver {
 
     private static final MockDriver INSTANCE = new MockDriver();
+
+    private static final String LEGACY_DRIVER_PREFIX = "sniffer:";
 
     static {
         load();
@@ -39,87 +35,16 @@ public class MockDriver implements Driver {
 
     }
 
-    public Connection connect(String url, Properties info) throws SQLException {
-        String originUrl = extractOriginUrl(url);
-        Driver originDriver;
-        try {
-            originDriver = DriverManager.getDriver(originUrl);
-        } catch (SQLException e) {
-            try {
-                reloadServiceProviders();
-                originDriver = DriverManager.getDriver(originUrl);
-            } catch (Exception e2) {
-                throw e;
-            }
-        }
-        Connection delegateConnection = originDriver.connect(originUrl, info);
-
-        return Connection.class.cast(Proxy.newProxyInstance(
-                MockDriver.class.getClassLoader(),
-                new Class[]{Connection.class},
-                new ConnectionInvocationHandler(delegateConnection)
-        ));
-    }
-
-    private void reloadServiceProviders() {
-
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-
-                ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
-                Iterator<Driver> driversIterator = loadedDrivers.iterator();
-
-                try {
-                    while (driversIterator.hasNext()) {
-                        driversIterator.next();
-                    }
-                } catch (Throwable t) {
-                    // Do nothing
-                }
-                return null;
-            }
-        });
-
-    }
-
-    private Driver getOriginDriver(String url) throws SQLException {
-        String originUrl = extractOriginUrl(url);
-        return DriverManager.getDriver(originUrl);
-    }
-
-    private static String extractOriginUrl(String url) {
+    @Override
+    protected String extractOriginUrl(String url) {
         if (null == url) return null;
-        if (url.startsWith(Constants.DRIVER_PREFIX)) return url.substring(Constants.DRIVER_PREFIX.length());
+        if (url.startsWith(LEGACY_DRIVER_PREFIX)) return url.substring(LEGACY_DRIVER_PREFIX.length());
         return url;
     }
 
+    @Override
     public boolean acceptsURL(String url) throws SQLException {
-        return null != url && url.startsWith(Constants.DRIVER_PREFIX);
-    }
-
-    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-        Driver originDriver = getOriginDriver(url);
-        return originDriver.getPropertyInfo(url, info);
-    }
-
-    public int getMajorVersion() {
-        return Constants.MAJOR_VERSION;
-    }
-
-    public int getMinorVersion() {
-        return Constants.MINOR_VERSION;
-    }
-
-    public boolean jdbcCompliant() {
-        return true;
-    }
-
-    public Logger getParentLogger() {
-        String message = "getParentLogger() method is not implemented in Sniffy";
-        if (!ExceptionUtil.throwException("java.sql.SQLFeatureNotSupportedException", message)) {
-            throw new UnsupportedOperationException(message);
-        }
-        return null;
+        return null != url && url.startsWith(LEGACY_DRIVER_PREFIX);
     }
 
 }

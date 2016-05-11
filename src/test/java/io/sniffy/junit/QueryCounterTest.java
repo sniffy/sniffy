@@ -2,6 +2,7 @@ package io.sniffy.junit;
 
 import io.sniffy.*;
 import io.sniffy.sql.SqlExpectation;
+import io.sniffy.sql.WrongNumberOfRowsError;
 import io.sniffy.test.Count;
 import org.junit.Rule;
 import org.junit.Test;

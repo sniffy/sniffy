@@ -1,7 +1,6 @@
 package io.sniffy;
 
 import io.sniffy.sql.SqlExpectation;
-import io.sniffy.sql.SqlExpectations;
 import io.sniffy.test.Count;
 import io.sniffy.test.junit.SniffyRule;
 

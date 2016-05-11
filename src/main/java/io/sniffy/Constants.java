@@ -10,7 +10,7 @@ public interface Constants {
     /**
      * Prefix to be used in JDBC URL, for exaple {@code sniffer:jdbc:h2:mem:}
      */
-    String DRIVER_PREFIX = "sniffer:";
+    String DRIVER_PREFIX = "sniffy:";
 
     /**
      * The major version of Sniffy
