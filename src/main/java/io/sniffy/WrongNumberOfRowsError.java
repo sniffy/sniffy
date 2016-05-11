@@ -9,7 +9,7 @@ import static io.sniffy.Query.*;
 import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 
 /**
- * @since 2.0
+ * @since 3.1
  */
 public class WrongNumberOfRowsError extends SniffyAssertionError {
 
@@ -54,7 +54,7 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
     }
 
     /**
-     * @since 2.3.1
+     * @since 3.1
      * @return
      */
     public Collection<StatementMetaData> getExecutedStatements() {

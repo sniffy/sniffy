@@ -196,7 +196,7 @@
                                 <include>**/*Spec.java</include>
                             </includes>
                             <!-- to continue on next execution in case of failures here -->
-                            <testFailureIgnore>true</testFailureIgnore>
+                            <!--<testFailureIgnore>true</testFailureIgnore>-->
                         </configuration>
                     </execution>
                     <execution>
@@ -212,7 +212,7 @@
                                 <include>%regex[.*TestNg.*]</include>
                             </includes>
                             <!-- to continue on next execution in case of failures here -->
-                            <testFailureIgnore>true</testFailureIgnore>
+                            <!--<testFailureIgnore>true</testFailureIgnore>-->
                         </configuration>
                     </execution>
                     <execution>

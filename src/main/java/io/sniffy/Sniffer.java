@@ -84,35 +84,6 @@ public final class Sniffer extends Sniffy {
     }
 
     /**
-     * @param expectationList a list of {@link Expectation} annotations
-     * @return a new {@link Spy} instance with given expectations
-     * @see #spy()
-     * @since 2.1
-     */
-    @Deprecated
-    public static Spy expect(List<Expectation> expectationList) {
-        Spy spy = Sniffy.spy();
-
-        for (Expectation expectation : expectationList) {
-
-            Range queriesRange = Range.parse(expectation);
-            Range rowsRange = Range.parse(expectation.rows());
-
-            if (-1 != queriesRange.min || -1 != queriesRange.max || -1 != rowsRange.min || -1 != rowsRange.max) {
-                spy.expect(SqlQueries.
-                        queriesBetween(-1 == queriesRange.min ? 0 : queriesRange.min, -1 == queriesRange.max ? Integer.MAX_VALUE : queriesRange.max).
-                        rowsBetween(-1 == rowsRange.min ? 0 : rowsRange.min, -1 == rowsRange.max ? Integer.MAX_VALUE : rowsRange.max).
-                        threads(expectation.threads()).
-                        type(expectation.query())
-                );
-            }
-
-        }
-
-        return spy;
-    }
-
-    /**
      * @return number of SQL statements executed by current thread since some fixed moment of time
      * @since 1.0
      */

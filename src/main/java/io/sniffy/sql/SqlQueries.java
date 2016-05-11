@@ -1,6 +1,8 @@
 package io.sniffy.sql;
 
 import io.sniffy.*;
+import io.sniffy.socket.SocketExpectation;
+import io.sniffy.util.Range;
 
 import java.util.Map;
 
@@ -60,7 +62,7 @@ public class SqlQueries {
         return new SqlExpectation_MaxRows(maxRows);
     }
 
-    private static class SqlExpectation implements Spy.Expectation {
+    public static class SqlExpectation implements Spy.Expectation {
 
         protected final int minQueries;
         protected final int maxQueries;
@@ -76,6 +78,17 @@ public class SqlQueries {
             this.maxRows = maxRows;
             this.threads = threads;
             this.type = type;
+        }
+
+        public SqlExpectation(io.sniffy.sql.SqlExpectation sqlExpectation) {
+            this(
+                    Range.parse(sqlExpectation.count()).min,
+                    Range.parse(sqlExpectation.count()).max,
+                    Range.parse(sqlExpectation.rows()).min,
+                    Range.parse(sqlExpectation.rows()).max,
+                    sqlExpectation.threads(),
+                    sqlExpectation.query()
+            );
         }
 
         @Override
