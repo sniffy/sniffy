@@ -13,7 +13,7 @@ import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 public class WrongNumberOfQueriesError extends io.sniffy.WrongNumberOfQueriesError {
 
     public WrongNumberOfQueriesError(
-            Threads threadMatcher, Query query,
+            Threads threadMatcher, SqlStatement query,
             int minimumQueries, int maximumQueries, int numQueries,
             Collection<StatementMetaData> executedStatements) {
         super(
@@ -25,7 +25,7 @@ public class WrongNumberOfQueriesError extends io.sniffy.WrongNumberOfQueriesErr
     }
 
     private static String buildDetailMessage(
-            Threads threadMatcher, Query query,
+            Threads threadMatcher, SqlStatement query,
             int minimumQueries, int maximumQueries, int numQueries,
             Collection<StatementMetaData> executedStatements) {
         StringBuilder sb = new StringBuilder();
@@ -35,13 +35,13 @@ public class WrongNumberOfQueriesError extends io.sniffy.WrongNumberOfQueriesErr
         } else if (Threads.OTHERS == threadMatcher) {
             sb.append(" other threads");
         }
-        if (Query.ANY != query && null != query) {
+        if (SqlStatement.ANY != query && null != query) {
             sb.append(" ").append(query);
         }
         sb.append(" queries").append(LINE_SEPARATOR);
         sb.append("Observed ").append(numQueries).append(" queries instead:").append(LINE_SEPARATOR);
         if (null != executedStatements) for (StatementMetaData statement : executedStatements) {
-            if (Query.ANY == query || null == query || statement.query == query) {
+            if (SqlStatement.ANY == query || null == query || statement.query == query) {
                 sb.append(statement.sql).append(';').append(LINE_SEPARATOR);
             }
         }

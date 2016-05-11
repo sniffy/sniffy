@@ -3,10 +3,10 @@ package io.sniffy;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
-import io.sniffy.sql.SqlQueries;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.StringUtil;
 
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
@@ -357,6 +357,9 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
         return new RuntimeException(e);
     }
 
+    /**
+     * @since 3.1
+     */
     public interface Expectation {
 
         <T extends Spy<T>> Spy<T> verify(Spy<T> spy) throws SniffyAssertionError;
@@ -366,6 +369,24 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
     @SuppressWarnings("unchecked")
     private C self() {
         return (C) this;
+    }
+
+    /**
+     * @since 3.1
+     */
+    public static class SpyClosedException extends IllegalStateException {
+
+        private final StackTraceElement[] closeStackTrace;
+
+        public SpyClosedException(String s, StackTraceElement[] closeStackTrace) {
+            super(ExceptionUtil.generateMessage(s + StringUtil.LINE_SEPARATOR + "Close stack trace:", closeStackTrace));
+            this.closeStackTrace = closeStackTrace;
+        }
+
+        public StackTraceElement[] getCloseStackTrace() {
+            return null == closeStackTrace ? null : closeStackTrace.clone();
+        }
+
     }
 
 }

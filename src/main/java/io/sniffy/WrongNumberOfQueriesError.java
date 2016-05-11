@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.StatementMetaData;
 
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import java.util.List;
 public class WrongNumberOfQueriesError extends SniffyAssertionError {
 
     protected final Threads threadMatcher;
-    protected final Query query;
+    protected final SqlStatement query;
     protected final int minimumQueries;
     protected final int maximumQueries;
     protected final int numQueries;
@@ -22,7 +23,7 @@ public class WrongNumberOfQueriesError extends SniffyAssertionError {
 
     public WrongNumberOfQueriesError(
             String message,
-            Threads threadMatcher, Query query,
+            Threads threadMatcher, SqlStatement query,
             int minimumQueries, int maximumQueries, int numQueries,
             Collection<StatementMetaData> executedStatements) {
         super(message);
@@ -38,7 +39,7 @@ public class WrongNumberOfQueriesError extends SniffyAssertionError {
         return threadMatcher;
     }
 
-    public Query getQuery() {
+    public SqlStatement getQuery() {
         return query;
     }
 

@@ -1,14 +1,11 @@
 package io.sniffy.sql;
 
-import io.sniffy.Query;
 import io.sniffy.SniffyAssertionError;
 import io.sniffy.Threads;
-import io.sniffy.sql.SqlStats;
-import io.sniffy.sql.StatementMetaData;
 
 import java.util.*;
 
-import static io.sniffy.Query.*;
+import static io.sniffy.sql.SqlStatement.*;
 import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -17,14 +14,14 @@ import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 public class WrongNumberOfRowsError extends SniffyAssertionError {
 
     private final Threads threadMatcher;
-    private final Query query;
+    private final SqlStatement query;
     private final int minimumRows;
     private final int maximumRows;
     private final int numRows;
     private final Map<StatementMetaData, SqlStats> executedStatements;
 
     public WrongNumberOfRowsError(
-            Threads threadMatcher, Query query,
+            Threads threadMatcher, SqlStatement query,
             int minimumRows, int maximumQueries, int numRows,
             Map<StatementMetaData, SqlStats> executedStatements) {
         super(buildDetailMessage(threadMatcher, query, minimumRows, maximumQueries, numRows, executedStatements));
@@ -40,7 +37,7 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
         return threadMatcher;
     }
 
-    public Query getQuery() {
+    public SqlStatement getQuery() {
         return query;
     }
 
@@ -73,7 +70,7 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
     }
 
     private static String buildDetailMessage(
-            Threads threadMatcher, Query query,
+            Threads threadMatcher, SqlStatement query,
             int minimumQueries, int maximumQueries, int numQueries,
             Map<StatementMetaData, SqlStats> executedStatements) {
         StringBuilder sb = new StringBuilder();

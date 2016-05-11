@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.StatementMetaData;
 import org.junit.Test;
 
@@ -65,7 +66,7 @@ public class SnifferListenersTest extends BaseTest {
             assertEquals(3, e.getExecutedStatements().size());
             assertEquals(3, e.getExecutedSqls().size());
             assertEquals(Threads.CURRENT, e.getThreadMatcher());
-            assertEquals(Query.INSERT, e.getQuery());
+            assertEquals(SqlStatement.INSERT, e.getQuery());
             assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES ('foo')"));
             assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (LOWER('bar'))"));
             assertFalse(e.getMessage().contains("UPDATE TEMPORARY_TABLE SET BAZ = UPPER(BAZ)"));
@@ -102,7 +103,7 @@ public class SnifferListenersTest extends BaseTest {
             assertEquals("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/", statementsIt.next().sql);
             assertFalse(statementsIt.hasNext());
             assertEquals(Threads.CURRENT, e.getThreadMatcher());
-            assertEquals(Query.ANY, e.getQuery());
+            assertEquals(SqlStatement.ANY, e.getQuery());
             assertTrue(e.getMessage().contains("INSERT INTO TEMPORARY_TABLE (BAZ) VALUES (?) /*2 times*/"));
         }
 

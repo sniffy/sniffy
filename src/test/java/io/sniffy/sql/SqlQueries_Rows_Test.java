@@ -466,7 +466,7 @@ public class SqlQueries_Rows_Test extends BaseTest {
 
     @Test
     public void testNoneRowsCurrentThreadNoneQueriesOfTypeSelect() {
-        try (@SuppressWarnings("unused") Spy $= Sniffy.expect(SqlQueries.noneRows().currentThread().noneQueries().type(Query.SELECT))) {
+        try (@SuppressWarnings("unused") Spy $= Sniffy.expect(SqlQueries.noneRows().currentThread().noneQueries().type(SqlStatement.SELECT))) {
             executeStatement(Query.OTHER);
         }
     }

@@ -35,6 +35,6 @@ public @interface SqlExpectation {
     /**
      * @since 2.2
      */
-    Query query() default Query.ANY;
+    SqlStatement query() default SqlStatement.ANY;
 
 }

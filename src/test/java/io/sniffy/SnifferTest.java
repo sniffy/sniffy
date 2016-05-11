@@ -357,7 +357,7 @@ public class SnifferTest extends BaseTest {
         spy.close();
         try {
             spy.verify(1);
-        } catch (SpyClosedException e) {
+        } catch (Spy.SpyClosedException e) {
             assertNotNull(e);
             assertNotNull(e.getCloseStackTrace());
             assertNotNull(e.getCloseStackTrace()[1]);

@@ -3,6 +3,7 @@ package io.sniffy;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.StatementMetaData;
 
 import java.io.IOException;
@@ -128,7 +129,7 @@ public class Sniffy {
                 }
                 StatementMetaData statementMetaData = new StatementMetaData(
                         method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()",
-                        Query.SYSTEM,
+                        SqlStatement.SYSTEM,
                         stackTrace,
                         Thread.currentThread().getId()
                 );

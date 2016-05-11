@@ -1,6 +1,7 @@
 package io.sniffy;
 
 import io.sniffy.sql.SqlExpectation;
+import io.sniffy.sql.SqlStatement;
 import io.sniffy.test.Count;
 import io.sniffy.test.junit.SniffyRule;
 
@@ -107,8 +108,8 @@ public @interface Expectation {
         }
 
         @Override
-        public Query query() {
-            return expectation.query();
+        public SqlStatement query() {
+            return LegacySpy.adapter(expectation.query());
         }
 
         @Override

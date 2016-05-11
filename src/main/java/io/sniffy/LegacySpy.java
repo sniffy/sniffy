@@ -1,6 +1,7 @@
 package io.sniffy;
 
 import io.sniffy.sql.SqlQueries;
+import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 
@@ -10,6 +11,29 @@ import static io.sniffy.Threads.CURRENT;
 
 @Deprecated
 abstract class LegacySpy<C extends Spy<C>> {
+
+    public final static SqlStatement adapter(Query query) {
+        switch (query) {
+            case SELECT:
+                return SqlStatement.SELECT;
+            case INSERT:
+                return SqlStatement.INSERT;
+            case UPDATE:
+                return SqlStatement.UPDATE;
+            case DELETE:
+                return SqlStatement.DELETE;
+            case MERGE:
+                return SqlStatement.MERGE;
+            case OTHER:
+                return SqlStatement.OTHER;
+            case SYSTEM:
+                return SqlStatement.SYSTEM;
+            case ANY:
+            default:
+                return SqlStatement.ANY;
+        }
+    }
+
 
     /**
      * Executes the {@link Sniffer.Executable#execute()} method on provided argument and verifies the expectations
@@ -72,11 +96,13 @@ abstract class LegacySpy<C extends Spy<C>> {
 
         int count = 0;
 
+        SqlStatement sqlStatement = adapter(query);
+
         Map<StatementMetaData, SqlStats> executedStatements = getExecutedStatements(threadMatcher, false);
         if (null != executedStatements) for (Map.Entry<StatementMetaData, SqlStats> entry : executedStatements.entrySet()) {
             StatementMetaData statementMetaData = entry.getKey();
             SqlStats sqlStats = entry.getValue();
-            if ((query == Query.ANY && statementMetaData.query != Query.SYSTEM) || query == statementMetaData.query) {
+            if ((sqlStatement == SqlStatement.ANY && statementMetaData.query != SqlStatement.SYSTEM) || sqlStatement == statementMetaData.query) {
                 count += sqlStats.queries.intValue();
             }
         }
@@ -112,7 +138,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectNever(Query query) {
-        return expect(SqlQueries.noneQueries().type(query));
+        return expect(SqlQueries.noneQueries().type(adapter(query)));
     }
 
     /**
@@ -121,7 +147,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectNever(Threads threadMatcher, Query query) {
-        return expect(SqlQueries.noneQueries().threads(threadMatcher).type(query));
+        return expect(SqlQueries.noneQueries().threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -130,7 +156,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectNever(Query query, Threads threadMatcher) {
-        return expect(SqlQueries.noneQueries().type(query).threads(threadMatcher));
+        return expect(SqlQueries.noneQueries().type(adapter(query)).threads(threadMatcher));
     }
 
     /**
@@ -157,7 +183,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyNever(Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.noneQueries().type(query));
+        return verify(SqlQueries.noneQueries().type(adapter(query)));
     }
 
     /**
@@ -166,7 +192,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyNever(Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.noneQueries().threads(threadMatcher).type(query));
+        return verify(SqlQueries.noneQueries().threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -175,7 +201,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyNever(Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.noneQueries().type(query).threads(threadMatcher));
+        return verify(SqlQueries.noneQueries().type(adapter(query)).threads(threadMatcher));
     }
 
     // atMostOnce methods
@@ -204,7 +230,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectAtMostOnce(Query query) {
-        return expect(SqlQueries.atMostOneQuery().type(query));
+        return expect(SqlQueries.atMostOneQuery().type(adapter(query)));
     }
 
     /**
@@ -213,7 +239,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectAtMostOnce(Threads threadMatcher, Query query) {
-        return expect(SqlQueries.atMostOneQuery().threads(threadMatcher).type(query));
+        return expect(SqlQueries.atMostOneQuery().threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -222,7 +248,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectAtMostOnce(Query query, Threads threadMatcher) {
-        return expect(SqlQueries.atMostOneQuery().type(query).threads(threadMatcher));
+        return expect(SqlQueries.atMostOneQuery().type(adapter(query)).threads(threadMatcher));
     }
 
     /**
@@ -249,7 +275,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyAtMostOnce(Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.atMostOneQuery().type(query));
+        return verify(SqlQueries.atMostOneQuery().type(adapter(query)));
 
     }
 
@@ -259,7 +285,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyAtMostOnce(Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.atMostOneQuery().threads(threadMatcher).type(query));
+        return verify(SqlQueries.atMostOneQuery().threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -268,7 +294,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyAtMostOnce(Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.atMostOneQuery().type(query).threads(threadMatcher));
+        return verify(SqlQueries.atMostOneQuery().type(adapter(query)).threads(threadMatcher));
     }
 
     // atMost methods
@@ -297,7 +323,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectAtMost(int allowedStatements, Query query) {
-        return expect(SqlQueries.maxQueries(allowedStatements).type(query));
+        return expect(SqlQueries.maxQueries(allowedStatements).type(adapter(query)));
     }
 
     /**
@@ -306,7 +332,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectAtMost(int allowedStatements, Threads threadMatcher, Query query) {
-        return expect(SqlQueries.maxQueries(allowedStatements).threads(threadMatcher).type(query));
+        return expect(SqlQueries.maxQueries(allowedStatements).threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -315,7 +341,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectAtMost(int allowedStatements, Query query, Threads threadMatcher) {
-        return expect(SqlQueries.maxQueries(allowedStatements).type(query).threads(threadMatcher));
+        return expect(SqlQueries.maxQueries(allowedStatements).type(adapter(query)).threads(threadMatcher));
     }
 
     /**
@@ -342,7 +368,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyAtMost(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.maxQueries(allowedStatements).type(query));
+        return verify(SqlQueries.maxQueries(allowedStatements).type(adapter(query)));
     }
 
     /**
@@ -351,7 +377,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyAtMost(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.maxQueries(allowedStatements).threads(threadMatcher).type(query));
+        return verify(SqlQueries.maxQueries(allowedStatements).threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -360,7 +386,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyAtMost(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.maxQueries(allowedStatements).type(query).threads(threadMatcher));
+        return verify(SqlQueries.maxQueries(allowedStatements).type(adapter(query)).threads(threadMatcher));
     }
 
     // exact methods
@@ -389,7 +415,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expect(int allowedStatements, Query query) {
-        return expect(SqlQueries.exactQueries(allowedStatements).type(query));
+        return expect(SqlQueries.exactQueries(allowedStatements).type(adapter(query)));
     }
 
     /**
@@ -398,7 +424,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expect(int allowedStatements, Threads threadMatcher, Query query) {
-        return expect(SqlQueries.exactQueries(allowedStatements).threads(threadMatcher).type(query));
+        return expect(SqlQueries.exactQueries(allowedStatements).threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -407,7 +433,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expect(int allowedStatements, Query query, Threads threadMatcher) {
-        return expect(SqlQueries.exactQueries(allowedStatements).type(query).threads(threadMatcher));
+        return expect(SqlQueries.exactQueries(allowedStatements).type(adapter(query)).threads(threadMatcher));
     }
 
     /**
@@ -434,7 +460,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verify(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.exactQueries(allowedStatements).type(query));
+        return verify(SqlQueries.exactQueries(allowedStatements).type(adapter(query)));
     }
 
     /**
@@ -443,7 +469,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verify(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.exactQueries(allowedStatements).threads(threadMatcher).type(query));
+        return verify(SqlQueries.exactQueries(allowedStatements).threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -452,7 +478,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verify(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.exactQueries(allowedStatements).type(query).threads(threadMatcher));
+        return verify(SqlQueries.exactQueries(allowedStatements).type(adapter(query)).threads(threadMatcher));
     }
 
     // atLeast methods
@@ -481,7 +507,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectAtLeast(int allowedStatements, Query query) {
-        return expect(SqlQueries.minQueries(allowedStatements).type(query));
+        return expect(SqlQueries.minQueries(allowedStatements).type(adapter(query)));
     }
 
     /**
@@ -490,7 +516,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectAtLeast(int allowedStatements, Threads threadMatcher, Query query) {
-        return expect(SqlQueries.minQueries(allowedStatements).threads(threadMatcher).type(query));
+        return expect(SqlQueries.minQueries(allowedStatements).threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -499,7 +525,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectAtLeast(int allowedStatements, Query query, Threads threadMatcher) {
-        return expect(SqlQueries.minQueries(allowedStatements).type(query).threads(threadMatcher));
+        return expect(SqlQueries.minQueries(allowedStatements).type(adapter(query)).threads(threadMatcher));
     }
 
     /**
@@ -526,7 +552,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyAtLeast(int allowedStatements, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.minQueries(allowedStatements).type(query));
+        return verify(SqlQueries.minQueries(allowedStatements).type(adapter(query)));
     }
 
     /**
@@ -535,7 +561,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyAtLeast(int allowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.minQueries(allowedStatements).threads(threadMatcher).type(query));
+        return verify(SqlQueries.minQueries(allowedStatements).threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -544,7 +570,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyAtLeast(int allowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.minQueries(allowedStatements).type(query).threads(threadMatcher));
+        return verify(SqlQueries.minQueries(allowedStatements).type(adapter(query)).threads(threadMatcher));
     }
 
     // between methods
@@ -577,7 +603,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query) {
-        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(query));
+        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(adapter(query)));
     }
 
     /**
@@ -588,7 +614,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) {
-        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(query));
+        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -599,7 +625,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C expectBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) {
-        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(query).threads(threadMatcher));
+        return expect(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(adapter(query)).threads(threadMatcher));
     }
 
     /**
@@ -632,7 +658,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(query));
+        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(adapter(query)));
     }
 
     /**
@@ -644,7 +670,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Threads threadMatcher, Query query) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(query));
+        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).threads(threadMatcher).type(adapter(query)));
     }
 
     /**
@@ -656,7 +682,7 @@ abstract class LegacySpy<C extends Spy<C>> {
      */
     @Deprecated
     public C verifyBetween(int minAllowedStatements, int maxAllowedStatements, Query query, Threads threadMatcher) throws WrongNumberOfQueriesError {
-        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(query).threads(threadMatcher));
+        return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(adapter(query)).threads(threadMatcher));
     }
 
     public abstract Map<StatementMetaData, SqlStats> getExecutedStatements(Threads threadMatcher, boolean removeStackTraces);
