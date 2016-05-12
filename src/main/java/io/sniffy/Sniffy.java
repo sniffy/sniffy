@@ -230,7 +230,7 @@ public class Sniffy {
 
     /**
      * Execute the {@link Callable#call()} method, record the SQL queries
-     * and return the {@link SpyWithValue} object with stats
+     * and return the {@link Spy.SpyWithValue} object with stats
      * @param callable code to test
      * @param <V> type of return value
      * @return statistics on executed queries
@@ -238,7 +238,7 @@ public class Sniffy {
      * @since 3.1
      */
     @SuppressWarnings("unchecked")
-    public static <V> SpyWithValue<V> call(Callable<V> callable) throws Exception {
+    public static <V> Spy.SpyWithValue<V> call(Callable<V> callable) throws Exception {
         return spy().call(callable);
     }
 }

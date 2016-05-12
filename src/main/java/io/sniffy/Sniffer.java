@@ -1,9 +1,5 @@
 package io.sniffy;
 
-import io.sniffy.sql.SqlQueries;
-import io.sniffy.util.Range;
-
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -70,7 +66,7 @@ public final class Sniffer extends Sniffy {
 
     /**
      * Execute the {@link Callable#call()} method, record the SQL queries
-     * and return the {@link SpyWithValue} object with stats
+     * and return the {@link Spy.SpyWithValue} object with stats
      * @param callable code to test
      * @param <V> type of return value
      * @return statistics on executed queries
@@ -79,7 +75,7 @@ public final class Sniffer extends Sniffy {
      */
     @SuppressWarnings("unchecked")
     @Deprecated
-    public static <V> SpyWithValue<V> call(Callable<V> callable) throws Exception {
+    public static <V> Spy.SpyWithValue<V> call(Callable<V> callable) throws Exception {
         return Sniffy.call(callable);
     }
 

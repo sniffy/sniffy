@@ -389,4 +389,18 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
 
     }
 
+    public static final class SpyWithValue<V> extends Spy<SpyWithValue<V>> {
+
+        private final V value;
+
+        SpyWithValue(V value) {
+            super(false);
+            this.value = value;
+        }
+
+        public V getValue() {
+            return value;
+        }
+
+    }
 }
