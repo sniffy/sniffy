@@ -11,18 +11,18 @@ public class ThreadLocalSnifferTest extends BaseTest {
     @Test
     public void testVerifyExact() throws Exception {
         // test positive case 1
-        Spy spy = Sniffer.spy();
+        Spy spy = Sniffy.spy();
         executeStatement();
         spy.verify(1, Threads.CURRENT);
 
         // test positive case 2
-        spy = Sniffer.spy();
+        spy = Sniffy.spy();
         executeStatement();
         executeStatementInOtherThread();
         spy.verify(1, Threads.CURRENT);
 
         // test negative case 1
-        spy = Sniffer.spy();
+        spy = Sniffy.spy();
         try {
             spy.verify(1, Threads.CURRENT);
             fail();
@@ -31,7 +31,7 @@ public class ThreadLocalSnifferTest extends BaseTest {
         }
 
         // test negative case 2
-        spy = Sniffer.spy();
+        spy = Sniffy.spy();
         executeStatement();
         executeStatementInOtherThread();
         try {

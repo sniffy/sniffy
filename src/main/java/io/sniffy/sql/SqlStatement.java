@@ -1,10 +1,9 @@
-package io.sniffy;
+package io.sniffy.sql;
 
 /**
- * @since 2.2
+ * @since 3.1
  */
-@Deprecated
-public enum Query {
+public enum SqlStatement {
     SELECT,
     INSERT,
     UPDATE,

@@ -1,6 +1,6 @@
 package io.sniffy.sql;
 
-import io.sniffy.Sniffer;
+import io.sniffy.Sniffy;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -23,10 +23,10 @@ public class SniffyInvocationHandler<T> implements InvocationHandler {
     protected Object invokeTarget(Method method, Object[] args) throws Throwable {
         long start = System.currentTimeMillis();
         try {
-            Sniffer.enterJdbcMethod();
+            Sniffy.enterJdbcMethod();
             return invokeTargetImpl(method, args);
         } finally {
-            Sniffer.exitJdbcMethod(method, System.currentTimeMillis() - start);
+            Sniffy.exitJdbcMethod(method, System.currentTimeMillis() - start);
         }
     }
 

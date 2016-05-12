@@ -1,10 +1,12 @@
 package io.sniffy.test.spring;
 
-import io.sniffy.Expectation;
+import io.sniffy.Sniffy;
+import io.sniffy.SniffyAssertionError;
 import io.sniffy.Spy;
-import io.sniffy.WrongNumberOfQueriesError;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.TcpConnections;
+import io.sniffy.sql.SqlExpectation;
+import io.sniffy.sql.SqlQueries;
 import io.sniffy.test.AnnotationProcessor;
 import io.sniffy.util.ExceptionUtil;
 import org.springframework.test.context.TestContext;
@@ -13,8 +15,6 @@ import org.springframework.test.context.support.AbstractTestExecutionListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
-
-import static io.sniffy.Sniffer.expect;
 
 /**
  * @since 3.1
@@ -93,13 +93,18 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
         Method testMethod = getTestMethod(testContext);
 
         List<SocketExpectation> socketExpectationList = AnnotationProcessor.buildSocketExpectationList(testMethod);
-        List<Expectation> expectationList = AnnotationProcessor.buildSqlExpectationList(testMethod);
+        List<SqlExpectation> sqlExpectationList = AnnotationProcessor.buildSqlExpectationList(testMethod);
 
-        if ((null != expectationList && !expectationList.isEmpty()) ||
+        if ((null != sqlExpectationList && !sqlExpectationList.isEmpty()) ||
                 (null != socketExpectationList && !socketExpectationList.isEmpty())) {
 
-            Spy spy = expect(expectationList);
+            Spy spy = Sniffy.spy();
 
+            if (null != sqlExpectationList) {
+                for (SqlExpectation sqlExpectation : sqlExpectationList) {
+                    spy = spy.expect(new SqlQueries.SqlExpectation(sqlExpectation));
+                }
+            }
             if (null != socketExpectationList) {
                 for (SocketExpectation socketExpectation : socketExpectationList) {
                     spy = spy.expect(new TcpConnections.TcpExpectation(socketExpectation));
@@ -123,7 +128,7 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
 
             try {
                 spy.close();
-            } catch (WrongNumberOfQueriesError sniffyError) {
+            } catch (SniffyAssertionError sniffyError) {
 
                 Throwable throwable = getTestException(testContext);
                 if (null != throwable) {

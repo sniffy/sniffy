@@ -25,7 +25,7 @@ public class PreparedStatementInvocationHandlerTest extends BaseTest {
 
     @Test
     public void testExecuteBatchCountUpdatedRows() throws Exception {
-        try (@SuppressWarnings("unused") Spy $= Sniffer.expect(SqlQueries.exactRows(2));
+        try (@SuppressWarnings("unused") Spy $= Sniffy.expect(SqlQueries.exactRows(2));
              Connection connection = openConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PREPARED_STATEMENT)) {
             preparedStatement.setString(1, "foo");

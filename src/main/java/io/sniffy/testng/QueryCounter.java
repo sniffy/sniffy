@@ -1,8 +1,8 @@
 package io.sniffy.testng;
 
-import io.sniffy.Expectation;
-import io.sniffy.Expectations;
-import io.sniffy.NoQueriesAllowed;
+import io.sniffy.sql.NoSql;
+import io.sniffy.sql.SqlExpectation;
+import io.sniffy.sql.SqlExpectations;
 import io.sniffy.test.testng.SniffyTestNgListener;
 
 /**
@@ -15,9 +15,9 @@ import io.sniffy.test.testng.SniffyTestNgListener;
  * }
  * </code>
  * </pre>
- * @see Expectations
- * @see Expectation
- * @see NoQueriesAllowed
+ * @see SqlExpectations
+ * @see SqlExpectation
+ * @see NoSql
  * @since 2.1
  */
 @Deprecated

@@ -6,8 +6,8 @@ import io.sniffy.Threads;
 import io.sniffy.WrongNumberOfQueriesError;
 import io.sniffy.Expectation;
 import io.sniffy.Expectations;
-import io.sniffy.NoQueriesAllowed;
-import io.sniffy.Threads;
+import io.sniffy.sql.NoSql;
+import io.sniffy.test.spring.SniffySpringTestListener;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -16,10 +16,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@NoQueriesAllowed
+@NoSql
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = SpringIntegration_NoQueriesAllowedByDefault_Test.class)
-@TestExecutionListeners(QueryCounterListener.class)
+@TestExecutionListeners(SniffySpringTestListener.class)
 public class SpringIntegration_NoQueriesAllowedByDefault_Test extends BaseTest {
 
     @Rule

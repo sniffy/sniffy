@@ -5,6 +5,10 @@ import io.sniffy.socket.NoSocketsAllowed;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.SocketExpectations;
 import io.sniffy.socket.TcpConnections;
+import io.sniffy.sql.NoSql;
+import io.sniffy.sql.SqlExpectation;
+import io.sniffy.sql.SqlExpectations;
+import io.sniffy.sql.SqlQueries;
 import io.sniffy.test.AnnotationProcessor;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -21,9 +25,6 @@ import java.util.List;
  * }
  * </code>
  * </pre>
- * @see Expectations
- * @see Expectation
- * @see NoQueriesAllowed
  * @see SocketExpectations
  * @see SocketExpectation
  * @see NoSocketsAllowed
@@ -33,7 +34,7 @@ public class SniffyRule implements TestRule {
 
     public Statement apply(Statement statement, Description description) {
 
-        List<Expectation> expectationList;
+        List<SqlExpectation> expectationList;
         try {
             expectationList = buildSqlExpectationList(description);
         } catch (IllegalArgumentException e) {
@@ -73,21 +74,22 @@ public class SniffyRule implements TestRule {
 
     }
 
-    private static List<Expectation> buildSqlExpectationList(Description description) {
+    private static List<SqlExpectation> buildSqlExpectationList(Description description) {
 
-        Expectations expectations = description.getAnnotation(Expectations.class);
-        Expectation expectation = description.getAnnotation(Expectation.class);
-        NoQueriesAllowed notAllowedQueries = description.getAnnotation(NoQueriesAllowed.class);
+        SqlExpectations sqlExpectations = description.getAnnotation(SqlExpectations.class);
+        SqlExpectation sqlExpectation = description.getAnnotation(SqlExpectation.class);
+        NoSql noSql = description.getAnnotation(NoSql.class);
 
-        for (Class<?> testClass = description.getTestClass();
-             null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
-             testClass = testClass.getSuperclass()) {
-            expectations = testClass.getAnnotation(Expectations.class);
-            expectation = testClass.getAnnotation(Expectation.class);
-            notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
-        }
+        if (null == sqlExpectations) sqlExpectations = Expectations.SqlExpectationsAdapter.adapter(
+                description.getAnnotation(Expectations.class)
+        );
+        if (null == sqlExpectation) sqlExpectation = Expectation.SqlExpectationAdapter.adapter(
+                description.getAnnotation(Expectation.class)
+        );
+        if (null == noSql && null != description.getAnnotation(NoQueriesAllowed.class)) noSql =
+                description.getAnnotation(NoQueriesAllowed.class).annotationType().getAnnotation(NoSql.class);
 
-        return AnnotationProcessor.buildSqlExpectationList(expectations, expectation, notAllowedQueries);
+        return AnnotationProcessor.buildSqlExpectationList(description.getTestClass(), sqlExpectations, sqlExpectation, noSql);
 
     }
 
@@ -115,27 +117,32 @@ public class SniffyRule implements TestRule {
     private static class SnifferStatement extends Statement {
 
         private final Statement delegate;
-        private final List<Expectation> expectationList;
+        private final List<SqlExpectation> sqlExpectationList;
         private final List<SocketExpectation> socketExpectationList;
 
-        public SnifferStatement(Statement delegate, List<Expectation> expectationList, List<SocketExpectation> socketExpectationList) {
+        public SnifferStatement(Statement delegate, List<SqlExpectation> sqlExpectationList, List<SocketExpectation> socketExpectationList) {
             this.delegate = delegate;
-            this.expectationList = expectationList;
+            this.sqlExpectationList = sqlExpectationList;
             this.socketExpectationList = socketExpectationList;
         }
 
         @Override
         public void evaluate() throws Throwable {
 
-            Spy spy = Sniffer.expect(expectationList);
+            Spy spy = Sniffy.spy();
 
+            if (null != sqlExpectationList) {
+                for (SqlExpectation sqlExpectation : sqlExpectationList) {
+                    spy = spy.expect(new SqlQueries.SqlExpectation(sqlExpectation));
+                }
+            }
             if (null != socketExpectationList) {
                 for (SocketExpectation socketExpectation : socketExpectationList) {
                     spy = spy.expect(new TcpConnections.TcpExpectation(socketExpectation));
                 }
             }
 
-            spy.execute(new Sniffer.Executable() {
+            spy.execute(new Executable() {
                 public void execute() throws Throwable{
                     delegate.evaluate();
                 }
