@@ -1,6 +1,5 @@
 package io.sniffy.sql;
 
-import io.sniffy.Query;
 import io.sniffy.Threads;
 import io.sniffy.test.Count;
 import io.sniffy.test.junit.SniffyRule;

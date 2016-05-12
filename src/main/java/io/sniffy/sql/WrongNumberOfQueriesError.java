@@ -1,6 +1,5 @@
 package io.sniffy.sql;
 
-import io.sniffy.Query;
 import io.sniffy.Threads;
 
 import java.util.Collection;
