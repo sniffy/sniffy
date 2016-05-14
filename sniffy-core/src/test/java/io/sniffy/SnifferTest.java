@@ -20,14 +20,14 @@ public class SnifferTest extends BaseTest {
 
     @Test
     public void testSpyExecutedStatements() throws Exception {
-        Spy spy = Sniffer.spy();
+        Spy spy = Sniffy.spy();
         executeStatement();
         assertEquals(1, spy.executedStatements(Threads.ANY));
     }
 
     @Test
     public void testSpyExecutedStatements_StackTraceTracked() throws Exception {
-        Spy<?> spy = Sniffer.spy();
+        Spy<?> spy = Sniffy.spy();
         executeStatement();
         Collection<StatementMetaData> statements = spy.getExecutedStatements(Threads.ANY, false).keySet();
         Iterator<StatementMetaData> statementsIt = statements.iterator();
@@ -39,21 +39,21 @@ public class SnifferTest extends BaseTest {
 
     @Test
     public void testSpyExecutedStatementsCurrentThread() throws Exception {
-        Spy spy = Sniffer.spy();
+        Spy spy = Sniffy.spy();
         executeStatement();
         assertEquals(1, spy.executedStatements());
     }
 
     @Test
     public void testSpyExecutedStatementsOtherThreads() throws Exception {
-        Spy spy = Sniffer.spy();
+        Spy spy = Sniffy.spy();
         executeStatementInOtherThread();
         assertEquals(1, spy.executedStatements(Threads.OTHERS));
     }
 
     @Test
     public void testSpyExecutedDeleteStatements() throws Exception {
-        Spy spy = Sniffer.spy();
+        Spy spy = Sniffy.spy();
         executeStatement();
         executeStatement(Query.DELETE);
         assertEquals(1, spy.executedStatements(Threads.ANY, Query.DELETE));
@@ -62,12 +62,12 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testVerifyExact() throws Exception {
         // test positive
-        Spy spy = Sniffer.spy();
+        Spy spy = Sniffy.spy();
         executeStatement();
         spy.verify(1);
 
         // test negative case 1
-        spy = Sniffer.spy();
+        spy = Sniffy.spy();
         try {
             spy.verify(1);
             fail();
@@ -76,7 +76,7 @@ public class SnifferTest extends BaseTest {
         }
 
         // test negative case 2
-        spy = Sniffer.spy();
+        spy = Sniffy.spy();
         executeStatements(2);
         try {
             spy.verify(1);
@@ -89,7 +89,7 @@ public class SnifferTest extends BaseTest {
     @Test
     public void testVerifyExactUpdate() throws Exception {
         // test positive
-        Spy spy = Sniffer.spy();
+        Spy spy = Sniffy.spy();
         executeStatement(Query.SELECT);
         executeStatement(Query.INSERT);
         executeStatement(Query.UPDATE);
@@ -100,7 +100,7 @@ public class SnifferTest extends BaseTest {
         spy.verify(6, Query.ANY);
 
         // test negative case 1
-        spy = Sniffer.spy();
+        spy = Sniffy.spy();
         try {
             spy.verify(1);
             fail();
@@ -109,7 +109,7 @@ public class SnifferTest extends BaseTest {
         }
 
         // test negative case 2
-        spy = Sniffer.spy();
+        spy = Sniffy.spy();
         executeStatements(2, Query.UPDATE);
         try {
             spy.verify(1, Query.UPDATE);
@@ -357,7 +357,7 @@ public class SnifferTest extends BaseTest {
         spy.close();
         try {
             spy.verify(1);
-        } catch (SpyClosedException e) {
+        } catch (Spy.SpyClosedException e) {
             assertNotNull(e);
             assertNotNull(e.getCloseStackTrace());
             assertNotNull(e.getCloseStackTrace()[1]);

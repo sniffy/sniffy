@@ -62,7 +62,7 @@ public class TcpConnections {
         }
 
         @Override
-        public <T extends Spy<T>> Spy<T> verify(Spy<T> spy) throws WrongNumberOfQueriesError {
+        public <T extends Spy<T>> Spy<T> verify(Spy<T> spy) throws TcpConnectionsExpectationError {
 
             Map<SocketMetaData, SocketStats> socketOperations = spy.getSocketOperations(threads, host, true);
 

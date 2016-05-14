@@ -1,6 +1,6 @@
 package io.sniffy.socket;
 
-import io.sniffy.Sniffer;
+import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
 import org.junit.Test;
@@ -9,7 +9,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test
     public void testExactConnections() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2))) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.exact(2))) {
             performSocketOperation();
             performSocketOperation();
         }
@@ -17,14 +17,14 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test(expected = TcpConnectionsExpectationError.class)
     public void testNone_Exception() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.none())) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.none())) {
             performSocketOperation();
         }
     }
 
     @Test(expected = TcpConnectionsExpectationError.class)
     public void testAtMostOneConnection_Exception() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.atMostOnce())) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.atMostOnce())) {
             performSocketOperation();
             performSocketOperation();
         }
@@ -32,14 +32,14 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test(expected = TcpConnectionsExpectationError.class)
     public void testMinConnections_Exception() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.min(2))) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.min(2))) {
             performSocketOperation();
         }
     }
 
     @Test(expected = TcpConnectionsExpectationError.class)
     public void testMaxOneConnection_Exception() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.max(1))) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.max(1))) {
             performSocketOperation();
             performSocketOperation();
         }
@@ -47,7 +47,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test(expected = TcpConnectionsExpectationError.class)
     public void testMinMaxOneConnection_Exception() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.min(1).max(2))) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.min(1).max(2))) {
             performSocketOperation();
             performSocketOperation();
             performSocketOperation();
@@ -56,7 +56,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test(expected = TcpConnectionsExpectationError.class)
     public void testMaxMinOneConnection_Exception() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.max(2).min(1))) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.max(2).min(1))) {
             performSocketOperation();
             performSocketOperation();
             performSocketOperation();
@@ -65,7 +65,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test
     public void testExactConnectionsCurrentThread() throws InterruptedException {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2).otherThreads())) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.exact(2).otherThreads())) {
             performSocketOperationOtherThread();
             performSocketOperationOtherThread();
         }
@@ -73,7 +73,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test(expected = TcpConnectionsExpectationError.class)
     public void testExactConnectionsCurrentThread_Exception() throws InterruptedException {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2).otherThreads())) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.exact(2).otherThreads())) {
             performSocketOperation();
             performSocketOperationOtherThread();
         }
@@ -87,7 +87,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test
     public void testExactConnectionsCurrentThreadHostName() throws InterruptedException {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2).otherThreads().host("localhost"))) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.exact(2).otherThreads().host("localhost"))) {
             performSocketOperationOtherThread();
             performSocketOperationOtherThread();
         }
@@ -95,7 +95,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test(expected = TcpConnectionsExpectationError.class)
     public void testExactConnectionsCurrentThreadHostName_Exception() throws InterruptedException {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2).otherThreads().host("google.com"))) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.exact(2).otherThreads().host("google.com"))) {
             performSocketOperationOtherThread();
             performSocketOperationOtherThread();
         }
@@ -103,7 +103,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test(expected = TcpConnectionsExpectationError.class)
     public void testMinConnectionsHost_Exception() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.min(2).host("google.com"))) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.min(2).host("google.com"))) {
             performSocketOperation();
             performSocketOperation();
         }
@@ -111,7 +111,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test
     public void testMinConnectionsCurrentThread() {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.min(2).currentThread())) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.min(2).currentThread())) {
             performSocketOperation();
             performSocketOperation();
         }
@@ -119,7 +119,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test
     public void testMinConnectionsAnyThreads() throws InterruptedException {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.min(3).anyThreads())) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.min(3).anyThreads())) {
             performSocketOperation();
             performSocketOperation();
             performSocketOperationOtherThread();
@@ -128,7 +128,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test
     public void testMinConnectionsHostThreads() throws InterruptedException {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.min(3).host("localhost:" + echoServerRule.getBoundPort()).threads(Threads.ANY))) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.min(3).host("localhost:" + echoServerRule.getBoundPort()).threads(Threads.ANY))) {
             performSocketOperation();
             performSocketOperation();
             performSocketOperationOtherThread();
@@ -137,7 +137,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test
     public void testMinConnectionsHostAnyThreads() throws InterruptedException {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.min(3).host("localhost:" + echoServerRule.getBoundPort()).anyThreads())) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.min(3).host("localhost:" + echoServerRule.getBoundPort()).anyThreads())) {
             performSocketOperation();
             performSocketOperation();
             performSocketOperationOtherThread();
@@ -146,7 +146,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test
     public void testExactConnectionsHostCurrentThread() throws InterruptedException {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(2).host("localhost:" + echoServerRule.getBoundPort()).currentThread())) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.exact(2).host("localhost:" + echoServerRule.getBoundPort()).currentThread())) {
             performSocketOperation();
             performSocketOperation();
             performSocketOperationOtherThread();
@@ -155,7 +155,7 @@ public class TcpExpectationTest extends BaseSocketTest {
 
     @Test
     public void testExactConnectionsHostOtherThreads() throws InterruptedException {
-        try (Spy<?> s = Sniffer.expect(TcpConnections.exact(1).host("localhost:" + echoServerRule.getBoundPort()).otherThreads())) {
+        try (Spy<?> s = Sniffy.expect(TcpConnections.exact(1).host("localhost:" + echoServerRule.getBoundPort()).otherThreads())) {
             performSocketOperation();
             performSocketOperation();
             performSocketOperationOtherThread();

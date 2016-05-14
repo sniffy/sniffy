@@ -1,6 +1,8 @@
 package io.sniffy.junit;
 
 import io.sniffy.*;
+import io.sniffy.sql.SqlExpectation;
+import io.sniffy.sql.WrongNumberOfRowsError;
 import io.sniffy.test.Count;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,7 +27,7 @@ public class QueryCounterTest extends BaseTest {
     }
 
     @Test
-    @Expectation(count = @Count(1))
+    @SqlExpectation(count = @Count(1))
     public void testAllowedOneQuery() {
         executeStatement();
     }
@@ -37,7 +39,7 @@ public class QueryCounterTest extends BaseTest {
     }
 
     @Test
-    @Expectation(count = @Count(value = 5, min = 2))
+    @SqlExpectation(count = @Count(value = 5, min = 2))
     public void testAmbiguousExpectationAnnotation() {
         thrown.expect(IllegalArgumentException.class);
     }
@@ -132,13 +134,13 @@ public class QueryCounterTest extends BaseTest {
     }
 
     @Test
-    @Expectation(rows = @Count(2))
+    @SqlExpectation(rows = @Count(2))
     public void testAllowedExactTwoRows() {
         executeStatements(2, INSERT);
     }
 
     @Test
-    @Expectation(rows = @Count(2))
+    @SqlExpectation(rows = @Count(2))
     public void testAllowedExactTwoRowsReturnedThree() {
         executeStatements(3, INSERT);
         thrown.expect(WrongNumberOfRowsError.class);

@@ -1,9 +1,10 @@
 package io.sniffy.testng;
 
 import io.sniffy.BaseTest;
+import io.sniffy.Expectation;
 import io.sniffy.WrongNumberOfQueriesError;
 import io.sniffy.junit.BasedNoQueriesAllowedTest;
-import io.sniffy.Expectation;
+import io.sniffy.test.testng.SniffyTestNgListener;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
@@ -13,7 +14,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-@Listeners({QueryCounter.class, MustFailListener.class})
+@Listeners({SniffyTestNgListener.class, MustFailListener.class})
 public class InheritSuperClassAnnotationTestNg extends BasedNoQueriesAllowedTest {
 
     @BeforeClass

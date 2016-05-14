@@ -8,13 +8,13 @@ import io.sniffy.Query;
 public class StatementMetaData {
 
     public final String sql;
-    public final Query query;
+    public final SqlStatement query;
     public final String stackTrace;
     public final long ownerThreadId;
 
     private final int hashCode;
 
-    public StatementMetaData(String sql, Query query, String stackTrace, long ownerThreadId) {
+    public StatementMetaData(String sql, SqlStatement query, String stackTrace, long ownerThreadId) {
         this.sql = null == sql ? null : sql.intern();
         this.query = query;
         this.stackTrace = null == stackTrace ? null : stackTrace.intern();
@@ -50,7 +50,7 @@ public class StatementMetaData {
         return hashCode;
     }
 
-    public static Query guessQueryType(String sql) {
+    public static SqlStatement guessQueryType(String sql) {
         // TODO: some queries can start with "WITH" statement
         // TODO: move to StatementInvocationHandler
 
@@ -60,22 +60,22 @@ public class StatementMetaData {
                 if (sql.length() > (i + 7)) {
                     normalized = sql.substring(i, i + 7).toLowerCase();
                     if (normalized.equals("select ")) {
-                        return Query.SELECT;
+                        return SqlStatement.SELECT;
                     } else if (normalized.equals("insert ")) {
-                        return Query.INSERT;
+                        return SqlStatement.INSERT;
                     } else if (normalized.equals("update ")) {
-                        return Query.UPDATE;
+                        return SqlStatement.UPDATE;
                     } else if (normalized.equals("delete ")) {
-                        return Query.DELETE;
+                        return SqlStatement.DELETE;
                     }
                 }
                 if (sql.length() > (i + 6) && sql.substring(i, i + 6).toLowerCase().equals("merge ")) {
-                    return Query.MERGE;
+                    return SqlStatement.MERGE;
                 }
             }
         }
 
-        return Query.OTHER;
+        return SqlStatement.OTHER;
     }
 
 }

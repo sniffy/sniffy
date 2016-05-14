@@ -1,10 +1,14 @@
 package io.sniffy.test.testng;
 
-import io.sniffy.*;
+import io.sniffy.Sniffy;
+import io.sniffy.SniffyAssertionError;
+import io.sniffy.Spy;
 import io.sniffy.socket.NoSocketsAllowed;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.SocketExpectations;
 import io.sniffy.socket.TcpConnections;
+import io.sniffy.sql.SqlExpectation;
+import io.sniffy.sql.SqlQueries;
 import io.sniffy.test.AnnotationProcessor;
 import io.sniffy.util.ExceptionUtil;
 import org.testng.IInvokedMethod;
@@ -14,7 +18,6 @@ import org.testng.ITestResult;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import static io.sniffy.Sniffer.expect;
 import static org.testng.ITestResult.FAILURE;
 
 /**
@@ -27,9 +30,6 @@ import static org.testng.ITestResult.FAILURE;
  * }
  * </code>
  * </pre>
- * @see Expectations
- * @see Expectation
- * @see NoQueriesAllowed
  * @see SocketExpectations
  * @see SocketExpectation
  * @see NoSocketsAllowed
@@ -50,9 +50,9 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
 
         Method method = invokedMethod.getTestMethod().getConstructorOrMethod().getMethod();
 
-        List<Expectation> expectationList = null;
+        List<SqlExpectation> sqlExpectationList = null;
         try {
-            expectationList = AnnotationProcessor.buildSqlExpectationList(method);
+            sqlExpectationList = AnnotationProcessor.buildSqlExpectationList(method);
         } catch (IllegalArgumentException e) {
             fail(testResult, e.getMessage());
         }
@@ -65,11 +65,16 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
         }
 
 
-        if ((null != expectationList && !expectationList.isEmpty()) ||
+        if ((null != sqlExpectationList && !sqlExpectationList.isEmpty()) ||
                 (null != socketExpectationList && !socketExpectationList.isEmpty())) {
 
-            Spy spy = expect(expectationList);
+            Spy spy = Sniffy.spy();
 
+            if (null != sqlExpectationList) {
+                for (SqlExpectation sqlExpectation : sqlExpectationList) {
+                    spy = spy.expect(new SqlQueries.SqlExpectation(sqlExpectation));
+                }
+            }
             if (null != socketExpectationList) {
                 for (SocketExpectation socketExpectation : socketExpectationList) {
                     spy = spy.expect(new TcpConnections.TcpExpectation(socketExpectation));
@@ -91,7 +96,7 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
 
             try {
                 spy.close();
-            } catch (WrongNumberOfQueriesError sniffyError) {
+            } catch (SniffyAssertionError sniffyError) {
 
                 testResult.setStatus(FAILURE);
 
@@ -107,6 +112,8 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
                 testResult.setThrowable(throwable);
 
             }
+
+            testResult.removeAttribute(SPY_ATTRIBUTE_NAME);
 
         }
 

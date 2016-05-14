@@ -1,6 +1,5 @@
 package io.sniffy.testng;
 
-import io.sniffy.*;
 import io.sniffy.BaseTest;
 import io.sniffy.Expectation;
 import org.testng.annotations.BeforeClass;

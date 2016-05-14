@@ -1,6 +1,6 @@
 package io.sniffy.sql;
 
-import io.sniffy.Sniffer;
+import io.sniffy.Sniffy;
 
 import java.lang.reflect.Method;
 
@@ -33,14 +33,14 @@ public class ResultSetInvocationHandler extends SniffyInvocationHandler<Object> 
     protected Object invokeTargetAndRecord(Method method, Object[] args) throws Throwable {
         long start = System.currentTimeMillis();
         try {
-            Sniffer.enterJdbcMethod();
+            Sniffy.enterJdbcMethod();
             Object result = invokeTargetImpl(method, args);
             if (Boolean.TRUE.equals(result)) {
-                Sniffer.readDatabaseRow(method, System.currentTimeMillis() - start, statementMetaData);
+                Sniffy.readDatabaseRow(method, System.currentTimeMillis() - start, statementMetaData);
             }
             return result;
         } finally {
-            Sniffer.exitJdbcMethod(method, System.currentTimeMillis() - start);
+            Sniffy.exitJdbcMethod(method, System.currentTimeMillis() - start);
         }
     }
 }

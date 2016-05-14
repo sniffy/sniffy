@@ -1,11 +1,12 @@
 package io.sniffy.test;
 
-import io.sniffy.Expectation;
-import io.sniffy.Expectations;
-import io.sniffy.NoQueriesAllowed;
+import io.sniffy.*;
 import io.sniffy.socket.NoSocketsAllowed;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.SocketExpectations;
+import io.sniffy.sql.NoSql;
+import io.sniffy.sql.SqlExpectation;
+import io.sniffy.sql.SqlExpectations;
 import io.sniffy.util.Range;
 
 import java.lang.reflect.Method;
@@ -41,7 +42,7 @@ public class AnnotationProcessor {
             }
 
         } else if (null != noSocketsAllowed) {
-            SocketExpectation annotation = NoQueriesAllowed.class.getAnnotation(SocketExpectation.class);
+            SocketExpectation annotation = NoSocketsAllowed.class.getAnnotation(SocketExpectation.class);
             socketExpectationList.add(annotation);
         }
 
@@ -67,12 +68,12 @@ public class AnnotationProcessor {
 
     }
 
-    public static List<Expectation> buildSqlExpectationList(
-            Expectations expectations,
-            Expectation expectation,
-            NoQueriesAllowed notAllowedQueries) {
+    public static List<SqlExpectation> buildSqlExpectationList(
+            SqlExpectations expectations,
+            SqlExpectation expectation,
+            NoSql notAllowedQueries) {
 
-        List<Expectation> expectationList = new ArrayList<Expectation>();
+        List<SqlExpectation> expectationList = new ArrayList<SqlExpectation>();
 
         if (null != expectation && null != notAllowedQueries) {
             throw new IllegalArgumentException("Cannot specify @Expectation and @NotAllowedQueries on one test method");
@@ -88,35 +89,59 @@ public class AnnotationProcessor {
                 expectationList.addAll(Arrays.asList(expectations.value()));
             }
 
-            for (Expectation expectation1 : expectationList) {
-                Range.parse(expectation1);
+            for (SqlExpectation expectation1 : expectationList) {
+                Range.parse(expectation1.count());
+                Range.parse(expectation1.rows());
             }
 
         } else if (null != notAllowedQueries) {
-            Expectation annotation = NoQueriesAllowed.class.getAnnotation(Expectation.class);
+            SqlExpectation annotation = NoSql.class.getAnnotation(SqlExpectation.class);
             expectationList.add(annotation);
         }
 
         return expectationList;
     }
 
-    public static List<Expectation> buildSqlExpectationList(Method method) {
+    public static List<SqlExpectation> buildSqlExpectationList(Method method) {
 
-        Expectations expectations = method.getAnnotation(Expectations.class);
-        Expectation expectation = method.getAnnotation(Expectation.class);
-        NoQueriesAllowed notAllowedQueries = method.getAnnotation(NoQueriesAllowed.class);
+        SqlExpectations sqlExpectations = method.getAnnotation(SqlExpectations.class);
+        SqlExpectation sqlExpectation = method.getAnnotation(SqlExpectation.class);
+        NoSql noSql = method.getAnnotation(NoSql.class);
 
+        if (null == sqlExpectations) sqlExpectations = Expectations.SqlExpectationsAdapter.adapter(
+                method.getAnnotation(Expectations.class)
+        );
+        if (null == sqlExpectation) sqlExpectation = Expectation.SqlExpectationAdapter.adapter(
+                method.getAnnotation(Expectation.class)
+        );
+        if (null == noSql && null != method.getAnnotation(NoQueriesAllowed.class)) noSql =
+                method.getAnnotation(NoQueriesAllowed.class).annotationType().getAnnotation(NoSql.class);
+
+        return buildSqlExpectationList(method.getDeclaringClass(), sqlExpectations, sqlExpectation, noSql);
+
+
+    }
+
+    public static List<SqlExpectation> buildSqlExpectationList(Class<?> declaringClass, SqlExpectations sqlExpectations, SqlExpectation sqlExpectation, NoSql noSql) {
         // If no annotations present, check the test class and its superclasses
-        for (Class<?> testClass = method.getDeclaringClass();
-             null == expectations && null == expectation && null == notAllowedQueries && !Object.class.equals(testClass);
+        for (Class<?> testClass = declaringClass;
+             null == sqlExpectations && null == sqlExpectation && null == noSql && !Object.class.equals(testClass);
              testClass = testClass.getSuperclass()) {
-            expectations = testClass.getAnnotation(Expectations.class);
-            expectation = testClass.getAnnotation(Expectation.class);
-            notAllowedQueries = testClass.getAnnotation(NoQueriesAllowed.class);
+            sqlExpectations = testClass.getAnnotation(SqlExpectations.class);
+            sqlExpectation = testClass.getAnnotation(SqlExpectation.class);
+            noSql = testClass.getAnnotation(NoSql.class);
+
+            if (null == sqlExpectations) sqlExpectations = Expectations.SqlExpectationsAdapter.adapter(
+                    testClass.getAnnotation(Expectations.class)
+            );
+            if (null == sqlExpectation) sqlExpectation = Expectation.SqlExpectationAdapter.adapter(
+                    testClass.getAnnotation(Expectation.class)
+            );
+            if (null == noSql && null != testClass.getAnnotation(NoQueriesAllowed.class)) noSql =
+                    testClass.getAnnotation(NoQueriesAllowed.class).annotationType().getAnnotation(NoSql.class);
         }
 
-        return AnnotationProcessor.buildSqlExpectationList(expectations, expectation, notAllowedQueries);
-
+        return AnnotationProcessor.buildSqlExpectationList(sqlExpectations, sqlExpectation, noSql);
     }
 
 }

@@ -1,10 +1,10 @@
 package io.sniffy.util;
 
-import io.sniffy.Expectation;
+import io.sniffy.sql.SqlExpectation;
 import io.sniffy.test.Count;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class RangeTest {
 
@@ -18,28 +18,10 @@ public class RangeTest {
         new Range(-1,4,3);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    @Expectation(value = 2, count = @Count(3))
-    public void testParseExpectationWithAmbiguousConfiguration1() throws NoSuchMethodException {
-        Range.parse(RangeTest.class.getMethod("testParseExpectationWithAmbiguousConfiguration1").getAnnotation(Expectation.class));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    @Expectation(atLeast = 2, count = @Count(min = 3))
-    public void testParseExpectationWithAmbiguousConfiguration2() throws NoSuchMethodException {
-        Range.parse(RangeTest.class.getMethod("testParseExpectationWithAmbiguousConfiguration1").getAnnotation(Expectation.class));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    @Expectation(atMost = 2, count = @Count(max = 3))
-    public void testParseExpectationWithAmbiguousConfiguration3() throws NoSuchMethodException {
-        Range.parse(RangeTest.class.getMethod("testParseExpectationWithAmbiguousConfiguration1").getAnnotation(Expectation.class));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    @Expectation(count = @Count(max = 3))
+    @Test
+    @SqlExpectation(count = @Count(max = 3))
     public void testParseExpectation() throws NoSuchMethodException {
-        Range range = Range.parse(RangeTest.class.getMethod("testParseExpectationWithAmbiguousConfiguration1").getAnnotation(Expectation.class));
+        Range range = Range.parse(RangeTest.class.getMethod("testParseExpectation").getAnnotation(SqlExpectation.class).count());
         assertEquals(3, range.max);
     }
 

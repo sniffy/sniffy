@@ -1,6 +1,6 @@
 package io.sniffy.sql;
 
-import io.sniffy.Sniffer;
+import io.sniffy.Sniffy;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -93,7 +93,7 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
         long start = System.currentTimeMillis();
         int rowsUpdated = 0;
         try {
-            Sniffer.enterJdbcMethod();
+            Sniffy.enterJdbcMethod();
             Object result = invokeTargetImpl(method, args);
             if (isUpdateQuery) {
                 if (result instanceof Number) {
@@ -115,7 +115,7 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
             return result;
         } finally {
             String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
-            lastStatementMetaData = Sniffer.executeStatement(sql, System.currentTimeMillis() - start, stackTrace, rowsUpdated);
+            lastStatementMetaData = Sniffy.executeStatement(sql, System.currentTimeMillis() - start, stackTrace, rowsUpdated);
         }
     }
 

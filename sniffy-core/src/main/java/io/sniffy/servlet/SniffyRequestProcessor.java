@@ -1,6 +1,6 @@
 package io.sniffy.servlet;
 
-import io.sniffy.Sniffer;
+import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
 import io.sniffy.socket.SocketMetaData;
@@ -56,7 +56,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         this.request = request;
         this.response = response;
 
-        spy = Sniffer.spyCurrentThread();
+        spy = Sniffy.spyCurrentThread();
         requestId = UUID.randomUUID().toString();
     }
 
