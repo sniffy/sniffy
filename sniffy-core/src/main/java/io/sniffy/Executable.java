@@ -1,7 +1,7 @@
 package io.sniffy;
 
 /**
- * Executable interface is similar to {@link java.lang.Runnable} but it allows throwing {@link java.lang.Exception}
+ * Executable interface is similar to {@link Runnable} but it allows throwing {@link Exception}
  * from it's {@link #execute()} method
  * @since 3.1
  */
