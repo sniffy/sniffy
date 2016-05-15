@@ -1,3 +1,13 @@
+Using Sniffy Core API
+============
+
+Sniffy provides a convenient API for validating the number of executed database queries, affected database rows or even number of active TCP connections.
+The main classes you should use are `io.sniffy.Sniffy` and `io.sniffy.Spy`
+
+`Spy` objects are responsible for recording the executed queries and bytes sent over the wire. `Spy` stores all the information since the moment it was created.
+`Sniffy` class provides convenient factory methods for creating `Spy` instances
+
+```java
 package io.sniffy.usage;
 
 import io.sniffy.Sniffy;
@@ -72,3 +82,6 @@ public class UsageTest {
     }
 
 }
+```
+
+
