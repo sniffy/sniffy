@@ -103,7 +103,7 @@ class SnifferServlet extends HttpServlet {
                     if (null != port) {
                         if (null != hostName) writer.write(',');
                         writer.write("\"port\":\"");
-                        writer.write(port);
+                        writer.write(port.toString());
                         writer.write("\"");
                     }
                     writer.write(',');
