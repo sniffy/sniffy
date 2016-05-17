@@ -36,8 +36,14 @@ public enum SocketsRegistry {
 
         }
 
+        setSocketAddressStatus(inetSocketAddress.getHostName(), inetSocketAddress.getPort(), OPEN);
+
         return OPEN;
 
+    }
+
+    public Map<Map.Entry<String, Integer>, SocketAddressStatus> getDiscoveredAdresses() {
+        return discoveredAdresses;
     }
 
     public void setSocketAddressStatus(String hostName, Integer port, SocketAddressStatus socketAddressStatus) {
