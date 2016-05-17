@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.CLOSED;
+
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 class SnifferSocketImpl extends SocketImpl {
 
@@ -55,6 +57,13 @@ class SnifferSocketImpl extends SocketImpl {
             Sniffy.logSocket(stackTrace, id, address, millis, bytesDown, bytesUp);
         }
     }
+
+    private void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
+        if (CLOSED == SocketsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress)) {
+            throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
+        }
+    }
+
 
     public static ReflectionFieldCopier[] getReflectionFieldCopiers() {
         if (null == reflectionFieldCopiers) {
@@ -249,8 +258,8 @@ class SnifferSocketImpl extends SocketImpl {
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
+            checkConnectionAllowed(this.address = new InetSocketAddress(host, port));
             method("connect", String.class, int.class).invoke(delegate, host, port);
-            this.address = new InetSocketAddress(host, port);
         } catch (Exception e) {
             ExceptionUtil.processException(e);
         } finally {
@@ -264,8 +273,8 @@ class SnifferSocketImpl extends SocketImpl {
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
+            checkConnectionAllowed(this.address = new InetSocketAddress(address, port));
             method("connect", InetAddress.class, int.class).invoke(delegate, address, port);
-            this.address = new InetSocketAddress(address, port);
         } catch (Exception e) {
             ExceptionUtil.processException(e);
         } finally {
@@ -279,10 +288,10 @@ class SnifferSocketImpl extends SocketImpl {
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            method("connect", SocketAddress.class, int.class).invoke(delegate, address, timeout);
             if (address instanceof InetSocketAddress) {
-                this.address = (InetSocketAddress) address;
+                checkConnectionAllowed(this.address = (InetSocketAddress) address);
             }
+            method("connect", SocketAddress.class, int.class).invoke(delegate, address, timeout);
         } catch (Exception e) {
             ExceptionUtil.processException(e);
         } finally {
