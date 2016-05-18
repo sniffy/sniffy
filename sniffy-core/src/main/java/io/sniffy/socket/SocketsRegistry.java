@@ -46,6 +46,25 @@ public enum SocketsRegistry {
         return discoveredAdresses;
     }
 
+    public void setSocketAddressStatus(String socketAddress, SocketAddressStatus socketAddressStatus) {
+
+        String hostName = null;
+        Integer port = null;
+
+        if (null != socketAddress) {
+            if (-1 != socketAddress.indexOf(':')) {
+                String[] split = socketAddress.split(":");
+                hostName = split[0];
+                port = Integer.valueOf(split[1]);
+            } else {
+                hostName = socketAddress;
+            }
+        }
+
+        setSocketAddressStatus(hostName, port, socketAddressStatus);
+
+    }
+
     public void setSocketAddressStatus(String hostName, Integer port, SocketAddressStatus socketAddressStatus) {
         discoveredAdresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), socketAddressStatus);
     }
