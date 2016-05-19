@@ -2,6 +2,7 @@ package io.sniffy.servlet;
 
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.socket.SocketsRegistry;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
@@ -54,6 +55,29 @@ public class SnifferServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
+
+    }
+
+    @Test
+    public void testGetSocketRegistry() throws Exception {
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic" + SnifferServlet.SOCKET_REGISTRY_URI_PREFIX).
+                buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
+
+        SocketsRegistry.INSTANCE.setSocketAddressStatus("localhost", SocketsRegistry.SocketAddressStatus.OPEN);
+
+        snifferServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/javascript", response.getContentType());
+        assertTrue(response.getContentAsByteArray().length > 0);
+        //assertTrue(response.getContentLength() > 0);
+
+        SocketsRegistry.INSTANCE.clear();
 
     }
 

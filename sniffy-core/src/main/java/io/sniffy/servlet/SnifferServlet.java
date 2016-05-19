@@ -2,6 +2,7 @@ package io.sniffy.servlet;
 
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.socket.SocketsRegistry;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
@@ -15,11 +16,18 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.*;
+
+import static io.sniffy.servlet.SnifferFilter.SNIFFER_URI_PREFIX;
+import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.CLOSED;
+import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.OPEN;
 
 class SnifferServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
+
+    public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/socketregistry/";
 
     protected final Map<String, RequestStats> cache;
 
@@ -33,8 +41,8 @@ class SnifferServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC1/dist/sniffy.min.js");
-            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC1/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC3-SNAPSHOT/dist/sniffy.min.js");
+            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC3-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
             throw new ServletException(e);
         }
@@ -63,6 +71,71 @@ class SnifferServlet extends HttpServlet {
                 ServletOutputStream outputStream = response.getOutputStream();
                 outputStream.write(requestStatsJson);
                 outputStream.flush();
+            }
+        } else if (path.equals(SOCKET_REGISTRY_URI_PREFIX)) {
+
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType(JAVASCRIPT_MIME_TYPE);
+
+            Map<Map.Entry<String, Integer>, SocketsRegistry.SocketAddressStatus> discoveredAdresses =
+                    SocketsRegistry.INSTANCE.getDiscoveredAdresses();
+
+            if (discoveredAdresses.isEmpty()) {
+                response.flushBuffer();
+            } else {
+
+                Iterator<Map.Entry<Map.Entry<String, Integer>, SocketsRegistry.SocketAddressStatus>> iterator =
+                        discoveredAdresses.entrySet().iterator();
+
+                PrintWriter writer = response.getWriter();
+
+                writer.write('[');
+
+                while (iterator.hasNext()) {
+                    Map.Entry<Map.Entry<String,Integer>, SocketsRegistry.SocketAddressStatus> entry = iterator.next();
+
+                    String hostName = entry.getKey().getKey();
+                    Integer port = entry.getKey().getValue();
+
+                    writer.write('{');
+                    if (null != hostName) {
+                        writer.write("\"host\":\"");
+                        writer.write(hostName);
+                        writer.write("\"");
+                    }
+                    if (null != port) {
+                        if (null != hostName) writer.write(',');
+                        writer.write("\"port\":\"");
+                        writer.write(port.toString());
+                        writer.write("\"");
+                    }
+                    writer.write(',');
+                    writer.write("\"status\":\"");
+                    writer.write(entry.getValue().name());
+                    writer.write("\"");
+                    writer.write('}');
+                    if (iterator.hasNext()) writer.write(',');
+
+                }
+
+                writer.write(']');
+
+                writer.flush();
+
+            }
+
+        } else if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
+            SocketsRegistry.SocketAddressStatus status = null;
+            if ("POST".equalsIgnoreCase(request.getMethod())) {
+                status = OPEN;
+            } else if ("DELETE".equalsIgnoreCase(request.getMethod())) {
+                status = CLOSED;
+            }
+            if (null != status) {
+                String socketAddress = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
+                SocketsRegistry.INSTANCE.setSocketAddressStatus(socketAddress, status);
+                response.setStatus(HttpServletResponse.SC_CREATED);
+                response.flushBuffer();
             }
         }
 

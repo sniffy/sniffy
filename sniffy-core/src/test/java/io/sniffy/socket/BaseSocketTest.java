@@ -20,7 +20,7 @@ public class BaseSocketTest {
     protected final static byte[] RESPONSE = new byte[]{9,8,7,6,5,4,3,2};
     protected final static byte[] REQUEST = new byte[]{1, 2, 3, 4};
 
-    private static InetAddress localhost;
+    protected static InetAddress localhost;
 
     @Rule
     public EchoServerRule echoServerRule = new EchoServerRule(RESPONSE);
