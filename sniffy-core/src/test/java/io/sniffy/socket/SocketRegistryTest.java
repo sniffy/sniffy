@@ -7,6 +7,7 @@ import java.net.ConnectException;
 import java.net.Socket;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class SocketRegistryTest extends BaseSocketTest {
@@ -28,7 +29,7 @@ public class SocketRegistryTest extends BaseSocketTest {
 
         try {
             socket = new Socket(localhost, echoServerRule.getBoundPort());
-            fail("Should hve failed since this connection is forbidden by sniffy");
+            fail("Should have failed since this connection is forbidden by sniffy");
         } catch (ConnectException e) {
             assertNotNull(e);
         } finally {
@@ -43,7 +44,11 @@ public class SocketRegistryTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        new Socket(localhost, echoServerRule.getBoundPort()).close();
+        Socket socket = new Socket(localhost, echoServerRule.getBoundPort());
+
+        assertTrue(socket.isConnected());
+
+        socket.close();
 
     }
 
