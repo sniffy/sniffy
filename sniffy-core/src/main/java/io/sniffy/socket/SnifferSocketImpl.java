@@ -58,8 +58,12 @@ class SnifferSocketImpl extends SocketImpl {
         }
     }
 
+    private void checkConnectionAllowed() throws ConnectException {
+        checkConnectionAllowed(address);
+    }
+
     private void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
-        if (CLOSED == SocketsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress)) {
+        if (null != inetSocketAddress && CLOSED == SocketsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress)) {
             throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
         }
     }
@@ -344,6 +348,7 @@ class SnifferSocketImpl extends SocketImpl {
 
     @Override
     protected InputStream getInputStream() throws IOException {
+        checkConnectionAllowed();
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
@@ -358,6 +363,7 @@ class SnifferSocketImpl extends SocketImpl {
 
     @Override
     protected OutputStream getOutputStream() throws IOException {
+        checkConnectionAllowed();
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
