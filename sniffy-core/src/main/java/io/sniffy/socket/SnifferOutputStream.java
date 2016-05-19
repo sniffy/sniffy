@@ -15,6 +15,7 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
+        snifferSocket.checkConnectionAllowed();
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
@@ -25,6 +26,7 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b) throws IOException {
+        snifferSocket.checkConnectionAllowed();
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
@@ -35,6 +37,7 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        snifferSocket.checkConnectionAllowed();
         long start = System.currentTimeMillis();
         try {
             delegate.write(b, off, len);
@@ -45,6 +48,7 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void flush() throws IOException {
+        snifferSocket.checkConnectionAllowed();
         long start = System.currentTimeMillis();
         try {
             delegate.flush();
@@ -55,6 +59,7 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void close() throws IOException {
+        snifferSocket.checkConnectionAllowed();
         long start = System.currentTimeMillis();
         try {
             delegate.close();

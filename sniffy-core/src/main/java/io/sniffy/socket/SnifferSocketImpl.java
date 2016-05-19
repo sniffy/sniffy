@@ -58,11 +58,11 @@ class SnifferSocketImpl extends SocketImpl {
         }
     }
 
-    private void checkConnectionAllowed() throws ConnectException {
+    protected void checkConnectionAllowed() throws ConnectException {
         checkConnectionAllowed(address);
     }
 
-    private void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
+    protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
         if (null != inetSocketAddress && CLOSED == SocketsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress)) {
             throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
         }
