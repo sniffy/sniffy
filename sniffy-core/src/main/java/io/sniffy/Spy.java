@@ -174,7 +174,7 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
             if ( ( (CURRENT == threadMatcher && socketMetaData.ownerThreadId == this.ownerThreadId) ||
                     (OTHERS == threadMatcher && socketMetaData.ownerThreadId != this.ownerThreadId) ||
                     (ANY == threadMatcher || null == threadMatcher) ) &&
-                    (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
+                    (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress())) &&
                     (null == port || port == socketAddress.getPort())
                     ) {
                 SocketStats existingSocketStats = socketOperations.get(socketMetaData);

@@ -28,7 +28,7 @@ public enum SocketsRegistry {
             String hostName = entry.getKey().getKey();
             Integer port = entry.getKey().getValue();
 
-            if ((null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress()) || hostName.equals(inetAddress.getCanonicalHostName())) &&
+            if ((null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress())) &&
                     (null == port || port == inetSocketAddress.getPort()) &&
                     OPEN != entry.getValue()) {
                 return entry.getValue();
