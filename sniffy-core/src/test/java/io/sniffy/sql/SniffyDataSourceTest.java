@@ -6,10 +6,8 @@ import io.sniffy.Spy;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 
-import javax.sql.DataSource;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.Statement;
 
 import static org.junit.Assert.assertNotNull;
