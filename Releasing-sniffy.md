@@ -20,6 +20,9 @@
 1. Update sniffy UI version in `pom.xml`
 1. Remove SNAPSHOT from version in `pom.xml` of **ALL** modules and in `SnifferServlet.java`
 1. `mvn clean test package javadoc:javadoc`
+1. `git commit -am 'version bumped to <VERSION>'`
+1. `git push`
+1. Wait for successful [Travis build](https://travis-ci.org/sniffy/sniffy)
 1. `git hf release finish <VERSION>`
 1. `mvn clean install deploy`
 1. Bump version in `pom.xml` of **ALL** modules
