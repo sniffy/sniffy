@@ -25,7 +25,7 @@
 1. `git push`
 1. Wait for successful [Travis build](https://travis-ci.org/sniffy/sniffy)
 1. `git hf release finish <VERSION>`
-1. `mvn clean install deploy`
+1. `mvn clean install deploy -Psonatype-oss-release`
 1. Bump version in `pom.xml` of **ALL** modules
 1. `git commit -am 'Version bumped to <VERSION+1>-SNAPSHOT'`
 1. `git push`
