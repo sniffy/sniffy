@@ -155,9 +155,13 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
             if (null != buffer && null == contentEncoding && null != contentType && contentType.startsWith("text/html")) {
                 // adjust content length with the size of injected content
-                int contentLength = wrapper.getContentLength();
+                long contentLength = wrapper.getContentLength();
                 if (contentLength > 0) {
-                    wrapper.setContentLength(contentLength + maximumInjectSize(snifferFilter.contextPath));
+                    if (contentLength > Integer.MAX_VALUE) {
+                        wrapper.setContentLengthLong(contentLength + maximumInjectSize(snifferFilter.contextPath));
+                    } else {
+                        wrapper.setContentLength((int) contentLength + maximumInjectSize(snifferFilter.contextPath));
+                    }
                 }
                 isHtmlPage = true;
 

@@ -464,6 +464,38 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testInjectHtmlSetContentLengthLong() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            response.setContentLengthLong(actualContent.length());
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        String contentAsString = httpServletResponse.getContentAsString();
+        assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"sniffy\""));
+        assertEquals(contentAsString.length(), httpServletResponse.getContentLength());
+        assertTrue(httpServletResponse.getContentLength() > actualContent.length());
+
+    }
+
+    @Test
     public void testInjectHtmlSetContentLengthHeader() throws IOException, ServletException {
 
         String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
@@ -508,6 +540,39 @@ public class SnifferFilterTest extends BaseTest {
             PrintWriter printWriter = response.getWriter();
             executeStatement();
             response.setIntHeader("Content-Length", actualContent.length());
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        String contentAsString = httpServletResponse.getContentAsString();
+        assertTrue(contentAsString.substring(actualContent.length()).contains("id=\"sniffy\""));
+        assertEquals(contentAsString.length(), httpServletResponse.getContentLength());
+        assertTrue(httpServletResponse.getContentLength() > actualContent.length());
+
+    }
+
+    @Test
+    public void testInjectHtmlSetContentLengthAddIntHeader() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            response.addIntHeader("Content-Length", 42);
+            response.addIntHeader("Content-Length", actualContent.length());
             printWriter.append(actualContent);
             executeStatement();
             printWriter.flush();
