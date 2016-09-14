@@ -1,6 +1,7 @@
 package io.sniffy.servlet;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import java.io.IOException;
 
 class BufferedServletOutputStream extends ServletOutputStream {
@@ -112,6 +113,18 @@ class BufferedServletOutputStream extends ServletOutputStream {
         checkOpen();
         flushIfOverflow(len);
         buffer.write(b, off, len);
+    }
+
+    // TODO: add tests with different servlet api versions (2.5, 3.0.1, 3.1.0, 4.0-betas)
+
+    @Override
+    public boolean isReady() {
+        return target.isReady();
+    }
+
+    @Override
+    public void setWriteListener(WriteListener writeListener) {
+        target.setWriteListener(writeListener);
     }
 
 }

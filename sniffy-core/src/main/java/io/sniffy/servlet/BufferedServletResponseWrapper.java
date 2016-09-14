@@ -17,7 +17,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     private BufferedPrintWriter writer;
 
     private boolean committed;
-    private int contentLength;
+    private long contentLength;
     private String contentEncoding;
     private boolean corsHeadersHeaderAdded = false;
 
@@ -84,7 +84,13 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         this.contentLength = len;
     }
 
-    public int getContentLength() {
+    @Override
+    public void setContentLengthLong(long len) {
+        super.setContentLengthLong(len);
+        this.contentLength = len;
+    }
+
+    public long getContentLength() {
         return contentLength;
     }
 
@@ -108,7 +114,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             contentEncoding = processedValue;
         } else if ("Content-Length".equals(name) && null != processedValue) {
             try {
-                contentLength = Integer.parseInt(processedValue);
+                contentLength = Long.parseLong(processedValue);
             } catch (NumberFormatException e) {
                 // sniffy is not interested in this exception
             }
@@ -130,7 +136,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             contentEncoding = processedValue;
         } else if ("Content-Length".equals(name)) {
             try {
-                contentLength = Integer.parseInt(processedValue);
+                contentLength = Long.parseLong(processedValue);
             } catch (NumberFormatException e) {
                 // sniffy is not interested in this exception
             }
@@ -146,7 +152,13 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         }
     }
 
-
+    @Override
+    public void addIntHeader(String name, int value) {
+        super.addIntHeader(name, value);
+        if ("Content-Length".equals(name)) {
+            contentLength = value;
+        }
+    }
 
     public String getContentEncoding() {
         return contentEncoding;
