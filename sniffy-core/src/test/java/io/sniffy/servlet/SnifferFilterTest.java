@@ -15,8 +15,16 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static io.sniffy.servlet.SnifferFilter.*;
 import static org.junit.Assert.*;
@@ -365,6 +373,47 @@ public class SnifferFilterTest extends BaseTest {
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
 
+    }
+
+    @Test
+    public void testInjectHtmlCharacterEncoding() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Привет, мир!</body></html>";
+        final String cp1251 = "cp1251";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setContentType("text/html");
+            response.setCharacterEncoding(cp1251);
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(
+                -1 != Collections.indexOfSubList(
+                        stream(httpServletResponse.getContentAsByteArray()).boxed().collect(Collectors.toList()),
+                        stream("Привет, мир!".getBytes(cp1251)).boxed().collect(Collectors.toList())
+                )
+        );
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
+
+    }
+
+    public static IntStream stream(byte[] bytes) {
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        return IntStream.generate(buffer::get).limit(buffer.remaining());
     }
 
     @Test

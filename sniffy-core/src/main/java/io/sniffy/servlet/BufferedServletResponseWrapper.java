@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Locale;
 
 import static io.sniffy.servlet.SnifferFilter.*;
 import static java.lang.String.format;
@@ -160,6 +161,18 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         }
     }
 
+    @Override
+    public void setCharacterEncoding(String charset) {
+        super.setCharacterEncoding(charset);
+        this.contentEncoding = charset;
+    }
+
+    @Override
+    public void setLocale(Locale loc) {
+        super.setLocale(loc);
+        contentEncoding = getCharacterEncoding();
+    }
+
     public String getContentEncoding() {
         return contentEncoding;
     }
@@ -268,7 +281,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != outputStream) {
             throw new IllegalStateException("getOutputStream() method has been called on this response");
         } else {
-            writer = new BufferedPrintWriter(getBufferedServletOutputStream()); // TODO: pass charset here
+            writer = new BufferedPrintWriter(getBufferedServletOutputStream(), contentEncoding);
             return writer;
         }
     }

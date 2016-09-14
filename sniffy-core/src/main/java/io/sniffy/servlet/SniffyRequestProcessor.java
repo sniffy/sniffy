@@ -151,9 +151,9 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         wrapper.addHeader(HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
         if (snifferFilter.injectHtml) {
             String contentType = wrapper.getContentType();
-            String contentEncoding = wrapper.getContentEncoding();
+            String characterEncoding = wrapper.getCharacterEncoding();
 
-            if (null != buffer && null == contentEncoding && null != contentType && contentType.startsWith("text/html")) {
+            if (null != buffer && null != contentType && contentType.startsWith("text/html")) {
                 // adjust content length with the size of injected content
                 long contentLength = wrapper.getContentLength();
                 if (contentLength > 0) {
@@ -165,7 +165,6 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 }
                 isHtmlPage = true;
 
-                String characterEncoding = wrapper.getCharacterEncoding();
                 if (null == characterEncoding) {
                     characterEncoding = Charset.defaultCharset().name();
                 }
