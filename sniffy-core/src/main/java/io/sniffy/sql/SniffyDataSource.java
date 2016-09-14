@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  */
 public class SniffyDataSource implements DataSource {
 
-    private DataSource target;
+    private final DataSource target;
 
     public SniffyDataSource(DataSource target) {
         this.target = target;
