@@ -9,6 +9,7 @@
 1. `mvn clean install`
 1. `git hf release finish <VERSION>`
 1. `mvn clean install deploy`
+1. Go to [Sonatype OSS Nexus](https://oss.sonatype.org/) close and release the iosniffy repository
 1. Bump version in `package.json` and `pom.xml`
 1. `grunt`
 1. `git commit -am 'Version bumped to <VERSION+1>-SNAPSHOT'`
