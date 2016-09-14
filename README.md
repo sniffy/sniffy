@@ -210,7 +210,7 @@ Ask questions on stackoverflow with tag [sniffy](http://stackoverflow.com/questi
 Building
 ============
 JDBC sniffer is built using JDK8+ and Maven 3.2+ - just checkout the project and type `mvn install`
-JDK8 is required only for building the project - once it's built, you can use Sniffy with any JRE 1.5+
+JDK8 is required only for building the project - once it's built, you can use Sniffy with any JRE 1.6+
 
 UI part of Sniffy is maintained in a separate repository [sniffy-ui](https://github.com/sniffy/sniffy-ui)
 
