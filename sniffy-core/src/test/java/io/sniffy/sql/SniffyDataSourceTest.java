@@ -89,4 +89,30 @@ public class SniffyDataSourceTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testGetConnectionWithCredentialsWithSocketOperation() throws Exception {
+        JdbcDataSource h2DataSource = new JdbcDataSource();
+        h2DataSource.setURL("jdbc:h2:mem:");
+
+        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
+
+        Mockito.when(targetDataSource.getConnection()).then(invocation -> {
+            Sniffy.logSocket("stackTrace", 1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+            return invocation.callRealMethod();
+        });
+
+        SniffyDataSource sniffyDataSource = new SniffyDataSource(targetDataSource);
+
+        try (Spy spy = Sniffy.expect(SqlQueries.exactQueries(1)).expect(TcpConnections.none());
+             Connection connection = sniffyDataSource.getConnection("sa","sa")) {
+            assertNotNull(connection);
+            assertTrue(Proxy.isProxyClass(connection.getClass()));
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("SELECT 1 FROM DUAL");
+                statement.getResultSet().next();
+            }
+            assertTrue(spy.getSocketOperations(Threads.CURRENT, null, false).isEmpty());
+        }
+    }
+
 }
