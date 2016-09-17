@@ -1,26 +1,42 @@
 package io.sniffy.sql;
 
+import io.sniffy.Sniffy;
+
+import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 
 public class PooledConnectionInvocationHandler extends SniffyInvocationHandler<PooledConnection> {
+
+    private final static Method GET_CONNECTION_METHOD;
+
+    static {
+        Method getConnectionMethod;
+        try {
+            getConnectionMethod = PooledConnection.class.getMethod("getConnection");
+        } catch (NoSuchMethodException e) {
+            getConnectionMethod = null;
+        }
+
+        GET_CONNECTION_METHOD = getConnectionMethod;
+    }
 
     public PooledConnectionInvocationHandler(PooledConnection delegate) {
         super(delegate);
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Object result = invokeTarget(method, args);
         if ("getConnection".equals(method.getName())) {
-            return new ConnectionInvocationHandler(Connection.class.cast(result));
+            long start = System.currentTimeMillis();
+            try {
+                Sniffy.enterJdbcMethod();
+                return new ConnectionInvocationHandler(Connection.class.cast(invokeTarget(method, args)));
+            } finally {
+                Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
+            }
         } else {
-            // TODO: proxe other classes which can produce network like getDatabaseMetaData() and others
-            return result;
+            return invokeTarget(method, args);
         }
     }
 

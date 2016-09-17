@@ -3,6 +3,7 @@ package io.sniffy.sql;
 import io.sniffy.BaseTest;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
+import io.sniffy.Threads;
 import io.sniffy.socket.TcpConnections;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
@@ -40,10 +41,10 @@ public class SniffyDataSourceTest extends BaseTest {
         h2DataSource.setURL("jdbc:h2:mem:");
 
         DataSource wrap = SniffyDataSource.wrap(h2DataSource);
-        JdbcDataSource unwrap = wrap.unwrap(JdbcDataSource.class);
-
         assertNotNull(wrap);
-        assertNotNull(unwrap);
+
+        assertTrue(wrap.isWrapperFor(JdbcDataSource.class));
+        assertNotNull(wrap.unwrap(JdbcDataSource.class));
     }
 
     @Test
@@ -86,6 +87,7 @@ public class SniffyDataSourceTest extends BaseTest {
                 statement.execute("SELECT 1 FROM DUAL");
                 statement.getResultSet().next();
             }
+            assertTrue(spy.getSocketOperations(Threads.CURRENT, null, false).isEmpty());
         }
     }
 
