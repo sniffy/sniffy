@@ -8,11 +8,16 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import javax.servlet.Servlet;
+import javax.sql.DataSource;
+import javax.sql.XADataSource;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -20,11 +25,33 @@ import static org.junit.Assert.assertTrue;
 public class SniffyDataSourceTest extends BaseTest {
 
     @Test
+    public void testWrap() {
+        JdbcDataSource h2DataSource = new JdbcDataSource();
+        h2DataSource.setURL("jdbc:h2:mem:");
+
+        XADataSource wrap = SniffyDataSource.wrap(h2DataSource);
+
+        assertNotNull(wrap);
+    }
+
+    @Test
+    public void testUnWrap() throws SQLException {
+        JdbcDataSource h2DataSource = new JdbcDataSource();
+        h2DataSource.setURL("jdbc:h2:mem:");
+
+        DataSource wrap = SniffyDataSource.wrap(h2DataSource);
+        JdbcDataSource unwrap = wrap.unwrap(JdbcDataSource.class);
+
+        assertNotNull(wrap);
+        assertNotNull(unwrap);
+    }
+
+    @Test
     public void testGetConnection() throws Exception {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
-        SniffyDataSource sniffyDataSource = new SniffyDataSource(h2DataSource);
+        DataSource sniffyDataSource = new SniffyDataSource(h2DataSource);
 
         try (Connection connection = sniffyDataSource.getConnection()) {
             assertNotNull(connection);
