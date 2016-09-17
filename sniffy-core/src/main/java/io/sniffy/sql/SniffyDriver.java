@@ -4,6 +4,8 @@ import io.sniffy.Constants;
 import io.sniffy.Sniffy;
 import io.sniffy.util.ExceptionUtil;
 
+import javax.sql.PooledConnection;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -24,6 +26,19 @@ import java.util.logging.Logger;
 public class SniffyDriver implements Driver, Constants {
 
     private static final SniffyDriver INSTANCE = new SniffyDriver();
+
+    private final static Method GET_CONNECTION_METHOD;
+
+    static {
+        Method getConnectionMethod;
+        try {
+            getConnectionMethod = Driver.class.getMethod("getConnection");
+        } catch (NoSuchMethodException e) {
+            getConnectionMethod = null;
+        }
+
+        GET_CONNECTION_METHOD = getConnectionMethod;
+    }
 
     static {
         load();
@@ -56,13 +71,19 @@ public class SniffyDriver implements Driver, Constants {
                 throw e;
             }
         }
-        Connection delegateConnection = originDriver.connect(originUrl, info);
 
-        return Connection.class.cast(Proxy.newProxyInstance(
-                SniffyDriver.class.getClassLoader(),
-                new Class[]{Connection.class},
-                new ConnectionInvocationHandler(delegateConnection)
-        ));
+        long start = System.currentTimeMillis();
+        try {
+            Sniffy.enterJdbcMethod();
+            Connection delegateConnection = originDriver.connect(originUrl, info);
+            return Connection.class.cast(Proxy.newProxyInstance(
+                    SniffyDriver.class.getClassLoader(),
+                    new Class[]{Connection.class},
+                    new ConnectionInvocationHandler(delegateConnection)
+            ));
+        } finally {
+            Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
+        }
     }
 
     private void reloadServiceProviders() {

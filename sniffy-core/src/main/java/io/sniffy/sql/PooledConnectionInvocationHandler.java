@@ -2,7 +2,6 @@ package io.sniffy.sql;
 
 import io.sniffy.Sniffy;
 
-import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import java.lang.reflect.Method;
 import java.sql.Connection;

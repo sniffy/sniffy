@@ -9,7 +9,6 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.servlet.Servlet;
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
 import java.lang.reflect.Proxy;
@@ -18,7 +17,6 @@ import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
