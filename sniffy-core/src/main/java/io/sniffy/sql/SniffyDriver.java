@@ -4,7 +4,6 @@ import io.sniffy.Constants;
 import io.sniffy.Sniffy;
 import io.sniffy.util.ExceptionUtil;
 
-import javax.sql.PooledConnection;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessController;
