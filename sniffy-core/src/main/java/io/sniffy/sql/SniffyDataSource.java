@@ -119,7 +119,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         return XAConnection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
-                new Class[]{Connection.class},
+                new Class[]{XAConnection.class},
                 new PooledConnectionInvocationHandler(delegateConnection)
         ));
 
@@ -142,7 +142,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         return XAConnection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
-                new Class[]{Connection.class},
+                new Class[]{XAConnection.class},
                 new PooledConnectionInvocationHandler(delegateConnection)
         ));
 
@@ -165,7 +165,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         return PooledConnection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
-                new Class[]{Connection.class},
+                new Class[]{PooledConnection.class},
                 new PooledConnectionInvocationHandler(delegateConnection)
         ));
 
@@ -188,7 +188,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         return PooledConnection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
-                new Class[]{Connection.class},
+                new Class[]{PooledConnection.class},
                 new PooledConnectionInvocationHandler(delegateConnection)
         ));
 

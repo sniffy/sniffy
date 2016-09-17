@@ -4,6 +4,7 @@ import io.sniffy.Sniffy;
 
 import javax.sql.PooledConnection;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
 
 public class PooledConnectionInvocationHandler extends SniffyInvocationHandler<PooledConnection> {
@@ -30,7 +31,11 @@ public class PooledConnectionInvocationHandler extends SniffyInvocationHandler<P
             long start = System.currentTimeMillis();
             try {
                 Sniffy.enterJdbcMethod();
-                return new ConnectionInvocationHandler(Connection.class.cast(invokeTarget(method, args)));
+                return Connection.class.cast(Proxy.newProxyInstance(
+                        PooledConnectionInvocationHandler.class.getClassLoader(),
+                        new Class[]{Connection.class},
+                        new ConnectionInvocationHandler(Connection.class.cast(invokeTarget(method, args)))
+                ));
             } finally {
                 Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
             }
