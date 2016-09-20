@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.0-RC3</version>
+        <version>3.1.0-RC4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -23,7 +23,12 @@
 
     <build>
 
-        <sourceDirectory>target/generated-sources</sourceDirectory>
+        <sourceDirectory>../sniffy-core/src/main/java</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>../sniffy-core/src/main/resources</directory>
+            </resource>
+        </resources>
 
         <plugins>
 
@@ -61,32 +66,6 @@
                             <includeArtifactIds>sniffy-core</includeArtifactIds>
                             <excludeTransitive>true</excludeTransitive>
                             <outputDirectory>${project.build.directory}/classes</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>unpack-sources</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <classifier>sources</classifier>
-                            <includeArtifactIds>sniffy-core</includeArtifactIds>
-                            <excludeTransitive>true</excludeTransitive>
-                            <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>unpack-javadocs</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <classifier>javadoc</classifier>
-                            <includeArtifactIds>sniffy-core</includeArtifactIds>
-                            <excludeTransitive>true</excludeTransitive>
-                            <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
