@@ -148,7 +148,7 @@ public class SnifferFilter implements Filter {
 
         SniffyRequestProcessor sniffyRequestProcessor;
         try {
-            sniffyRequestProcessor = new SniffyRequestProcessor(this, request, response);
+            sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse);
         } catch (Exception e) {
             servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
             chain.doFilter(request, response);

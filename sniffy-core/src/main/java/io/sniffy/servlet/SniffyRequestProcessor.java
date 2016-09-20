@@ -26,12 +26,13 @@ import static io.sniffy.servlet.SnifferFilter.HEADER_TIME_TO_FIRST_BYTE;
 class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     private final SnifferFilter snifferFilter;
-    private final ServletRequest request;
-    private final ServletResponse response;
+    private final HttpServletRequest httpServletRequest;
+    private final HttpServletResponse httpServletResponse;
 
     private final Spy<?> spy;
     private final String requestId;
     private final RequestStats requestStats = new RequestStats();
+    private final String relativeUrl;
 
     private long startMillis;
     private long timeToFirstByte;
@@ -51,42 +52,32 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         return elapsedTime;
     }
 
-    public SniffyRequestProcessor(SnifferFilter snifferFilter, ServletRequest request, ServletResponse response) {
+    public SniffyRequestProcessor(SnifferFilter snifferFilter, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         this.snifferFilter = snifferFilter;
-        this.request = request;
-        this.response = response;
+        this.httpServletRequest = httpServletRequest;
+        this.httpServletResponse = httpServletResponse;
 
         spy = Sniffy.spyCurrentThread();
         requestId = UUID.randomUUID().toString();
+
+        String relativeUrl = null;
+
+        try {
+            String contextPath = httpServletRequest.getContextPath();
+            relativeUrl = null == httpServletRequest.getRequestURI() ? null : httpServletRequest.getRequestURI().substring(contextPath.length());
+        } catch (Exception e) {
+            snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+        }
+
+        this.relativeUrl = relativeUrl;
     }
 
     public void process(FilterChain chain) throws IOException, ServletException {
 
-        // extract some basic data from request and response
-
-        HttpServletRequest httpServletRequest;
-        HttpServletResponse httpServletResponse;
-        String contextPath;
-        String relativeUrl;
-
-        try {
-
-            httpServletRequest = (HttpServletRequest) request;
-            httpServletResponse = (HttpServletResponse) response;
-            contextPath = httpServletRequest.getContextPath();
-            relativeUrl = null == httpServletRequest.getRequestURI() ? null :
-                    httpServletRequest.getRequestURI().substring(contextPath.length());
-
-        } catch (Exception e) {
-            snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
-            chain.doFilter(request, response);
-            return;
-        }
-
         // if excluded by pattern return immediately
 
         if (null != snifferFilter.excludePattern && null != relativeUrl && snifferFilter.excludePattern.matcher(relativeUrl).matches()) {
-            chain.doFilter(request, response);
+            chain.doFilter(httpServletRequest, httpServletResponse);
             return;
         }
 
@@ -98,14 +89,14 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             responseWrapper = new BufferedServletResponseWrapper(httpServletResponse, this);
         } catch (Exception e) {
             snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
-            chain.doFilter(request, response);
+            chain.doFilter(httpServletRequest, httpServletResponse);
             return;
         }
 
         // call chain
         try {
             initStartMillis();
-            chain.doFilter(request, responseWrapper);
+            chain.doFilter(httpServletRequest, responseWrapper);
         } finally {
             try {
                 requestStats.setTimeToFirstByte(getTimeToFirstByte());
@@ -148,7 +139,18 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         wrapper.addCorsHeadersHeaderIfRequired();
         wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
         wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
-        wrapper.addHeader(HEADER_REQUEST_DETAILS, snifferFilter.contextPath + SnifferFilter.REQUEST_URI_PREFIX + requestId);
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < relativeUrl.length(); i++) {
+            if ('/' == relativeUrl.charAt(i)) {
+                if (sb.length() > 0) sb.append('/');
+                sb.append("..");
+            }
+        }
+        sb.append(SnifferFilter.REQUEST_URI_PREFIX).append(requestId);
+
+        wrapper.addHeader(HEADER_REQUEST_DETAILS, sb.toString());
+
         if (snifferFilter.injectHtml) {
             String contentType = wrapper.getContentType();
             String characterEncoding = wrapper.getCharacterEncoding();
