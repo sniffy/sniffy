@@ -1,6 +1,5 @@
 package io.sniffy.util;
 
-import io.sniffy.util.StackTraceExtractor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -8,7 +7,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class StackTraceExtractorTest {
 
@@ -18,41 +18,42 @@ public class StackTraceExtractorTest {
 
     static class TestTraceExtractor implements InvocationHandler {
 
-        private List<StackTraceElement> traceElements;
+        private Future<String> stackTrace;
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            traceElements = StackTraceExtractor.getTraceForProxiedMethod(method);
+            stackTrace = StackTraceExtractor.getStatckTraceFuture(method);
             return null;
         }
     }
 
     @Test
-    public void testGetTraceForProxiedMethod() {
+    public void testGetTraceForProxiedMethod() throws ExecutionException, InterruptedException {
         TestTraceExtractor traceExtractor = new TestTraceExtractor();
         TestBase testProxy = (TestBase) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{TestBase.class}, traceExtractor);
         testProxy.testBaseMethod();
-        Assert.assertTrue(traceExtractor.traceElements.size() > 0);
-        Assert.assertEquals("Should start with base method", "testBaseMethod", traceExtractor.traceElements.get(0).getMethodName());
-        Assert.assertEquals("Should be followed by unit test name",
-                "testGetTraceForProxiedMethod", traceExtractor.traceElements.get(1).getMethodName());
+        String[] stackTrace = traceExtractor.stackTrace.get().split("\\n");
+        Assert.assertTrue(stackTrace.length > 0);
+        Assert.assertTrue("Should start with base method", stackTrace[0].contains("testBaseMethod"));
+        Assert.assertTrue("Should be followed by unit test name", stackTrace[1].contains("testGetTraceForProxiedMethod"));
 
     }
 
     @Test
-    public void testPrintStackTrace() {
+    public void testPrintStackTrace() throws ExecutionException, InterruptedException {
         TestTraceExtractor traceExtractor = new TestTraceExtractor();
         TestBase testProxy = (TestBase) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{TestBase.class}, traceExtractor);
         testProxy.testBaseMethod();
-        String stackTraceString = StackTraceExtractor.printStackTrace(traceExtractor.traceElements);
+        String stackTraceString = traceExtractor.stackTrace.get();
         Assert.assertNotNull(stackTraceString);
         Assert.assertTrue(stackTraceString.startsWith("io.sniffy.util.StackTraceExtractorTest.TestBase.testBaseMethod(Unknown Source)"));
         Assert.assertTrue(stackTraceString.contains("io.sniffy.util.StackTraceExtractorTest.testPrintStackTrace(StackTraceExtractorTest.java"));
     }
 
     @Test
-    public void testPrintStackTrace_Empty() {
-        Assert.assertEquals("", StackTraceExtractor.printStackTrace(null));
-        Assert.assertEquals("", StackTraceExtractor.printStackTrace(Collections.EMPTY_LIST));
+    public void testPrintStackTrace_Empty() throws ExecutionException, InterruptedException {
+        Assert.assertEquals("", StackTraceExtractor.getStatckTraceFuture((Method)null).get());
+        Assert.assertEquals("", StackTraceExtractor.getStatckTraceFuture((String)null).get());
     }
+
 }

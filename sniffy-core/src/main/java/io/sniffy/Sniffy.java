@@ -5,6 +5,7 @@ import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.StackTraceExtractor;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -15,9 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
-
-import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
-import static io.sniffy.util.StackTraceExtractor.printStackTrace;
+import java.util.concurrent.Future;
 
 /**
  * @since 3.1
@@ -95,7 +94,7 @@ public class Sniffy {
         }
     }
 
-    public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
+    public static void logSocket(Future<String> stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
 
         // do not track JDBC socket operations
         SocketStats socketStats = socketStatsAccumulator.get();
@@ -121,12 +120,7 @@ public class Sniffy {
         if (null != socketStats) {
 
             if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
-                String stackTrace = null;
-                try {
-                    stackTrace = printStackTrace(getTraceForProxiedMethod(method));
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
+                Future<String> stackTrace = StackTraceExtractor.getStatckTraceFuture(method);
                 StatementMetaData statementMetaData = new StatementMetaData(
                         method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()",
                         SqlStatement.SYSTEM,
@@ -153,11 +147,11 @@ public class Sniffy {
         notifyListeners(statementMetaData);
     }
 
-    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace) {
+    public static StatementMetaData executeStatement(String sql, long elapsedTime, Future<String> stackTrace) {
         return executeStatement(sql, elapsedTime, stackTrace, 0);
     }
 
-    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace, int rowsUpdated) {
+    public static StatementMetaData executeStatement(String sql, long elapsedTime, Future<String> stackTrace, int rowsUpdated) {
         // increment global counter
         Sniffer.executedStatementsGlobalCounter.incrementAndGet();
 

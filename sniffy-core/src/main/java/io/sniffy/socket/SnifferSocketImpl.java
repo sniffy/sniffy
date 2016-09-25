@@ -13,6 +13,7 @@ import java.lang.reflect.Method;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.CLOSED;
@@ -52,7 +53,7 @@ class SnifferSocketImpl extends SocketImpl {
     }
 
     protected void logSocket(long millis, int bytesDown, int bytesUp) {
-        String stackTrace = StackTraceExtractor.printStackTrace(StackTraceExtractor.getTraceTillPackage("java.net"));
+        Future<String> stackTrace = StackTraceExtractor.getStatckTraceFuture("java.net");
         if (null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
             Sniffy.logSocket(stackTrace, id, address, millis, bytesDown, bytesUp);
         }

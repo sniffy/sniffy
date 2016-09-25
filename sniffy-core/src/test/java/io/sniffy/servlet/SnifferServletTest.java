@@ -11,6 +11,7 @@ import org.springframework.mock.web.MockFilterConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import javax.servlet.ServletConfig;
@@ -93,7 +94,7 @@ public class SnifferServletTest {
                 new StatementMetaData(
                         "SELECT 1 FROM DUAL",
                         StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
-                        "",
+                        new AsyncResult<String>(""),
                         Thread.currentThread().getId()
                 ), new SqlStats(300999, 0, 0, 0, 1))
         ));
@@ -124,14 +125,14 @@ public class SnifferServletTest {
                                 new StatementMetaData(
                                         "SELECT 1 FROM DUAL",
                                         StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
-                                        "",
+                                        new AsyncResult<String>(""),
                                         Thread.currentThread().getId()
                                 ), new SqlStats(300999, 200, 300, 0, 1)),
                         Collections.singletonMap(
                                 new SocketMetaData(
                                         new InetSocketAddress(InetAddress.getLocalHost(), 5555),
                                         42,
-                                        "stackTrace",
+                                        new AsyncResult<String>("stackTrace"),
                                         Thread.currentThread().getId()
                                 ),
                                 new SocketStats(100, 200, 300)
@@ -165,7 +166,7 @@ public class SnifferServletTest {
                 new StatementMetaData(
                         "SELECT \r\n\"1\" FROM 'DUAL'",
                         StatementMetaData.guessQueryType("SELECT \r\n\"1\" FROM 'DUAL'"),
-                        "io.sniffy.Test.method(Test.java:99)",
+                        new AsyncResult<String>("io.sniffy.Test.method(Test.java:99)"),
                         Thread.currentThread().getId()
                 ), new SqlStats(300999, 0, 0, 0, 1))
         ));

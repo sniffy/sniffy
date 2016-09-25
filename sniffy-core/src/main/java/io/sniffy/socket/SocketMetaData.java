@@ -1,20 +1,21 @@
 package io.sniffy.socket;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.Future;
 
 public class SocketMetaData {
 
     public final InetSocketAddress address;
     public final int connectionId;
-    public final String stackTrace;
+    public final Future<String> stackTrace;
     public final long ownerThreadId;
 
     private final int hashCode;
 
-    public SocketMetaData(InetSocketAddress address, int connectionId, String stackTrace, long ownerThreadId) {
+    public SocketMetaData(InetSocketAddress address, int connectionId, Future<String> stackTrace, long ownerThreadId) {
         this.address = address;
         this.connectionId = connectionId;
-        this.stackTrace = null == stackTrace ? null : stackTrace.intern();
+        this.stackTrace = stackTrace;
         this.ownerThreadId = ownerThreadId;
         hashCode = computeHashCode();
     }

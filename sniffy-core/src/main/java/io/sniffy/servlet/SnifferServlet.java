@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import static io.sniffy.servlet.SnifferFilter.SNIFFER_URI_PREFIX;
 import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.CLOSED;
@@ -166,9 +167,15 @@ class SnifferServlet extends HttpServlet {
                             append("\"query\":").
                             append(StringUtil.escapeJsonString(statement.sql)).
                             append(",").
-                            append("\"stackTrace\":").
-                            append(StringUtil.escapeJsonString(statement.stackTrace)).
-                            append(",").
+                            append("\"stackTrace\":");
+                    try {
+                        sb.append(StringUtil.escapeJsonString(statement.stackTrace.get()));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                    sb.append(",").
                             append("\"time\":").
                             append(String.format(Locale.ENGLISH, "%.3f", sqlStats.elapsedTime.doubleValue() / 1000)).
                             append(",").
@@ -206,9 +213,15 @@ class SnifferServlet extends HttpServlet {
                             append("\"host\":").
                             append(StringUtil.escapeJsonString(socketMetaData.address.toString())).
                             append(",").
-                            append("\"stackTrace\":").
-                            append(StringUtil.escapeJsonString(socketMetaData.stackTrace)).
-                            append(",").
+                            append("\"stackTrace\":");
+                    try {
+                        sb.append(StringUtil.escapeJsonString(socketMetaData.stackTrace.get()));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                    sb.append(",").
                             append("\"time\":").
                             append(String.format(Locale.ENGLISH, "%.3f", (double) socketStats.elapsedTime.longValue())).
                             append(",").

@@ -1,15 +1,14 @@
 package io.sniffy.sql;
 
 import io.sniffy.Sniffy;
+import io.sniffy.util.StackTraceExtractor;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
-
-import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
-import static io.sniffy.util.StackTraceExtractor.printStackTrace;
+import java.util.concurrent.Future;
 
 class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
 
@@ -114,7 +113,7 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
             }
             return result;
         } finally {
-            String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
+            Future<String> stackTrace = StackTraceExtractor.getStatckTraceFuture(method);
             lastStatementMetaData = Sniffy.executeStatement(sql, System.currentTimeMillis() - start, stackTrace, rowsUpdated);
         }
     }

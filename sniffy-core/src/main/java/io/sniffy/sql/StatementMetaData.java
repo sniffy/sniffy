@@ -2,6 +2,8 @@ package io.sniffy.sql;
 
 import io.sniffy.Query;
 
+import java.util.concurrent.Future;
+
 /**
  * Represents an executed query - actual SQL, query type (SELECT, INSERT, e.t.c.) and the calling thread
  */
@@ -9,15 +11,15 @@ public class StatementMetaData {
 
     public final String sql;
     public final SqlStatement query;
-    public final String stackTrace;
+    public final Future<String> stackTrace;
     public final long ownerThreadId;
 
     private final int hashCode;
 
-    public StatementMetaData(String sql, SqlStatement query, String stackTrace, long ownerThreadId) {
+    public StatementMetaData(String sql, SqlStatement query, Future<String> stackTrace, long ownerThreadId) {
         this.sql = null == sql ? null : sql.intern();
         this.query = query;
-        this.stackTrace = null == stackTrace ? null : stackTrace.intern();
+        this.stackTrace = stackTrace;
         this.ownerThreadId = ownerThreadId;
 
         hashCode = computeHashCode();

@@ -33,7 +33,7 @@ public class SnifferTest extends BaseTest {
         Iterator<StatementMetaData> statementsIt = statements.iterator();
         StatementMetaData statementMetaData = statementsIt.next();
         assertNotNull(statementMetaData.stackTrace);
-        assertTrue(statementMetaData.stackTrace.contains("testSpyExecutedStatements_StackTraceTracked"));
+        assertTrue(statementMetaData.stackTrace.get().contains("testSpyExecutedStatements_StackTraceTracked"));
         assertFalse(statementsIt.hasNext());
     }
 
