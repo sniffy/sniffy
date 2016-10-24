@@ -5,6 +5,7 @@ import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.StackTraceExtractor;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -109,13 +110,16 @@ public class Sniffy {
         return false;
     }
 
-    public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
+    public static void logSocket(int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
 
         // do not track JDBC socket operations
         SocketStats socketStats = socketStatsAccumulator.get();
         if (null != socketStats) {
             socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
         } else {
+            // build stackTrace
+            String stackTrace = StackTraceExtractor.printStackTrace(StackTraceExtractor.getTraceTillPackage("java.net"));
+
             // increment counters
             SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
 

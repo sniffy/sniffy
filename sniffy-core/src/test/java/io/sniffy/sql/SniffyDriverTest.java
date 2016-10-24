@@ -54,7 +54,7 @@ public class SniffyDriverTest extends BaseTest {
 
         try {
             doAnswer(invocation -> {
-                Sniffy.logSocket("stackTrace", 1, loopbackAddress, 100, 2, 3);
+                Sniffy.logSocket(1, loopbackAddress, 100, 2, 3);
                 return invocation.callRealMethod();
             }).when(testDriver).connect(any(), any());
 

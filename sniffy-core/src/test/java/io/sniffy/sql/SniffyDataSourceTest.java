@@ -85,7 +85,7 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
         Mockito.when(targetDataSource.getConnection()).then(invocation -> {
-            Sniffy.logSocket("stackTrace", 1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
 
@@ -111,7 +111,7 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
         Mockito.when(targetDataSource.getConnection(anyString(), anyString())).then(invocation -> {
-            Sniffy.logSocket("stackTrace", 1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
 
@@ -137,7 +137,7 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
         Mockito.when(targetDataSource.getXAConnection()).then(invocation -> {
-            Sniffy.logSocket("stackTrace", 1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
 
@@ -163,7 +163,7 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
         Mockito.when(targetDataSource.getXAConnection(anyString(), anyString())).then(invocation -> {
-            Sniffy.logSocket("stackTrace", 1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
 
@@ -189,7 +189,7 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
         Mockito.when(targetDataSource.getXAConnection()).then(invocation -> {
-            Sniffy.logSocket("stackTrace", 1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
 
@@ -215,7 +215,7 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
         Mockito.when(targetDataSource.getXAConnection(anyString(), anyString())).then(invocation -> {
-            Sniffy.logSocket("stackTrace", 1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
 

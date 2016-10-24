@@ -53,9 +53,8 @@ class SnifferSocketImpl extends SocketImpl {
 
     protected void logSocket(long millis, int bytesDown, int bytesUp) {
         if (Sniffy.hasSpies()) {
-            String stackTrace = StackTraceExtractor.printStackTrace(StackTraceExtractor.getTraceTillPackage("java.net"));
             if (null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
-                Sniffy.logSocket(stackTrace, id, address, millis, bytesDown, bytesUp);
+                Sniffy.logSocket(id, address, millis, bytesDown, bytesUp);
             }
         }
     }
