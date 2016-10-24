@@ -1,9 +1,8 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffy;
-import io.sniffy.util.ReflectionFieldCopier;
-import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.ReflectionFieldCopier;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -52,10 +51,8 @@ class SnifferSocketImpl extends SocketImpl {
     }
 
     protected void logSocket(long millis, int bytesDown, int bytesUp) {
-        if (Sniffy.hasSpies()) {
-            if (null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
-                Sniffy.logSocket(id, address, millis, bytesDown, bytesUp);
-            }
+        if (Sniffy.hasSpies() && null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
+            Sniffy.logSocket(id, address, millis, bytesDown, bytesUp);
         }
     }
 
