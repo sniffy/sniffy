@@ -63,7 +63,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         String relativeUrl = null;
 
         try {
-            String contextPath = httpServletRequest.getContextPath();
+            String contextPath = httpServletRequest.getContextPath(); // like "/petclinic"
             relativeUrl = null == httpServletRequest.getRequestURI() ? null : httpServletRequest.getRequestURI().substring(contextPath.length());
         } catch (Exception e) {
             if (null != snifferFilter.servletContext) {
@@ -157,6 +157,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         }
 
         String contextRelativePath = sb.toString();
+        if (contextRelativePath.isEmpty()) contextRelativePath = ".";
 
         sb.append(SnifferFilter.REQUEST_URI_PREFIX).append(requestId);
 
