@@ -49,6 +49,18 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testUnitializedFilter() throws IOException, ServletException {
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.setInjectHtml(true);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertTrue(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
+
+    }
+
+    @Test
     public void testExcludePattern() throws IOException, ServletException {
 
         FilterConfig filterConfig = getFilterConfig();
