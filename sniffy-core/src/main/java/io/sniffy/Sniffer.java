@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class Sniffer extends Sniffy {
 
     @Deprecated
-    protected final static AtomicInteger executedStatementsGlobalCounter = new AtomicInteger();
+    public final static AtomicInteger executedStatementsGlobalCounter = new AtomicInteger();
 
     @Deprecated
     private Sniffer() {

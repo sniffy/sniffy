@@ -16,8 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
-import static io.sniffy.util.StackTraceExtractor.printStackTrace;
+import static io.sniffy.util.StackTraceExtractor.*;
 
 /**
  * @since 3.1
@@ -95,13 +94,30 @@ public class Sniffy {
         }
     }
 
-    public static void logSocket(String stackTrace, int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
+    public static boolean hasSpies() {
+        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+        while (iterator.hasNext()) {
+            WeakReference<Spy> spyReference = iterator.next();
+            Spy spy = spyReference.get();
+            if (null == spy) {
+                iterator.remove();
+            } else {
+                if (spy.acceptsCurrentThread()) return true;
+            }
+        }
+        return false;
+    }
+
+    public static void logSocket(int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
 
         // do not track JDBC socket operations
         SocketStats socketStats = socketStatsAccumulator.get();
         if (null != socketStats) {
             socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
         } else {
+            // build stackTrace
+            String stackTrace = printStackTrace(getTraceTillPackage("java.net"));
+
             // increment counters
             SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
 
@@ -111,40 +127,42 @@ public class Sniffy {
     }
 
     public static void enterJdbcMethod() {
+        // TODO: check if it supports reentrant calls
         socketStatsAccumulator.set(new SocketStats(0, 0, 0));
     }
 
     public static void exitJdbcMethod(Method method, long elapsedTime) {
-        // get accumulated socket stats
-        SocketStats socketStats = socketStatsAccumulator.get();
+        if (Sniffy.hasSpies()) {
+            // get accumulated socket stats
+            SocketStats socketStats = socketStatsAccumulator.get();
 
-        if (null != socketStats) {
+            if (null != socketStats) {
 
-            if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
-                String stackTrace = null;
-                try {
-                    stackTrace = printStackTrace(getTraceForProxiedMethod(method));
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
+                    String stackTrace = null;
+                    try {
+                        stackTrace = printStackTrace(getTraceForProxiedMethod(method));
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    StatementMetaData statementMetaData = new StatementMetaData(
+                            method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()",
+                            SqlStatement.SYSTEM,
+                            stackTrace,
+                            Thread.currentThread().getId()
+                    );
+                    notifyListeners(
+                            statementMetaData,
+                            elapsedTime,
+                            socketStats.bytesDown.intValue(),
+                            socketStats.bytesUp.intValue(),
+                            0
+                    );
                 }
-                StatementMetaData statementMetaData = new StatementMetaData(
-                        method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()",
-                        SqlStatement.SYSTEM,
-                        stackTrace,
-                        Thread.currentThread().getId()
-                );
-                notifyListeners(
-                        statementMetaData,
-                        elapsedTime,
-                        socketStats.bytesDown.intValue(),
-                        socketStats.bytesUp.intValue(),
-                        0
-                );
+
+                socketStatsAccumulator.remove();
             }
-
-            socketStatsAccumulator.remove();
         }
-
     }
 
     public static void readDatabaseRow(Method method, long elapsedTime, StatementMetaData statementMetaData) {
