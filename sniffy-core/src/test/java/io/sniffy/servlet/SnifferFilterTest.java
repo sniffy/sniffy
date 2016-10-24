@@ -56,6 +56,18 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testUnitializedFilter() throws IOException, ServletException {
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.setInjectHtml(true);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+
+        assertTrue(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
+
+    }
+
+    @Test
     public void testFilterSniffyInjected() throws IOException, ServletException, ParserConfigurationException, SAXException {
 
         String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";

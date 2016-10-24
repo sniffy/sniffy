@@ -130,12 +130,12 @@ public class SnifferFilter implements Filter {
 
         // process Sniffy REST calls
 
-        if (injectHtml) {
+        if (injectHtml && null != snifferServlet) {
             try {
                 snifferServlet.service(request, response);
                 if (response.isCommitted()) return;
             } catch (Exception e) {
-                servletContext.log("Exception in SniffyServlet; calling original chain", e);
+                if (null != servletContext) servletContext.log("Exception in SniffyServlet; calling original chain", e);
                 chain.doFilter(request, response);
                 return;
             }
@@ -147,7 +147,7 @@ public class SnifferFilter implements Filter {
         try {
             sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse);
         } catch (Exception e) {
-            servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
+            if (null != servletContext) servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
             chain.doFilter(request, response);
             return;
         }
