@@ -76,7 +76,7 @@ public class SnifferFilter implements Filter {
                     build();
 
     protected SnifferServlet snifferServlet;
-    protected ServletContext servletContext;
+    protected ServletContext servletContext; // TODO: log via slf4j if available
 
     public void init(FilterConfig filterConfig) throws ServletException {
         String injectHtml = filterConfig.getInitParameter("inject-html");
