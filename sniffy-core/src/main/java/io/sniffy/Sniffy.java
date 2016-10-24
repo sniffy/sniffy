@@ -5,7 +5,6 @@ import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.util.StackTraceExtractor;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -17,8 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
-import static io.sniffy.util.StackTraceExtractor.printStackTrace;
+import static io.sniffy.util.StackTraceExtractor.*;
 
 /**
  * @since 3.1
@@ -118,7 +116,7 @@ public class Sniffy {
             socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
         } else {
             // build stackTrace
-            String stackTrace = StackTraceExtractor.printStackTrace(StackTraceExtractor.getTraceTillPackage("java.net"));
+            String stackTrace = printStackTrace(getTraceTillPackage("java.net"));
 
             // increment counters
             SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
