@@ -78,8 +78,6 @@ public class SnifferFilter implements Filter {
     protected SnifferServlet snifferServlet;
     protected ServletContext servletContext;
 
-    protected String contextPath;
-
     public void init(FilterConfig filterConfig) throws ServletException {
         String injectHtml = filterConfig.getInitParameter("inject-html");
         if (null != injectHtml) {
@@ -98,7 +96,6 @@ public class SnifferFilter implements Filter {
         snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
 
         servletContext = filterConfig.getServletContext();
-        contextPath = servletContext.getContextPath();
 
     }
 
