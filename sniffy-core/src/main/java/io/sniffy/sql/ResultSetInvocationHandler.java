@@ -31,16 +31,22 @@ public class ResultSetInvocationHandler extends SniffyInvocationHandler<Object> 
     }
 
     protected Object invokeTargetAndRecord(Method method, Object[] args) throws Throwable {
-        long start = System.currentTimeMillis();
-        try {
-            Sniffy.enterJdbcMethod();
-            Object result = invokeTargetImpl(method, args);
-            if (Boolean.TRUE.equals(result)) {
-                Sniffy.readDatabaseRow(method, System.currentTimeMillis() - start, statementMetaData);
+
+        if (Sniffy.hasSpies()) {
+            long start = System.currentTimeMillis();
+            try {
+                Sniffy.enterJdbcMethod();
+                Object result = invokeTargetImpl(method, args);
+                if (Boolean.TRUE.equals(result)) {
+                    Sniffy.readDatabaseRow(method, System.currentTimeMillis() - start, statementMetaData);
+                }
+                return result;
+            } finally {
+                Sniffy.exitJdbcMethod(method, System.currentTimeMillis() - start);
             }
-            return result;
-        } finally {
-            Sniffy.exitJdbcMethod(method, System.currentTimeMillis() - start);
+        } else {
+            return invokeTargetImpl(method, args);
         }
+
     }
 }

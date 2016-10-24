@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
  *
  * @since 2.3.0
  */
+// TODO: rename to SniffyFilter
 public class SnifferFilter implements Filter {
 
     public static final String HEADER_CORS_HEADERS = "Access-Control-Expose-Headers";

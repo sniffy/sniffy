@@ -45,6 +45,10 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
 
+    protected boolean acceptsCurrentThread() {
+        return !spyCurrentThreadOnly || ownerThreadId == Thread.currentThread().getId();
+    }
+
     protected void addExecutedStatement(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
         if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
             SqlStats sqlStats = executedStatements.get(statementMetaData);
