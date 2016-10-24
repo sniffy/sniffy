@@ -9,7 +9,6 @@ import org.mockito.Mockito;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.sql.*;
 import java.util.Enumeration;
