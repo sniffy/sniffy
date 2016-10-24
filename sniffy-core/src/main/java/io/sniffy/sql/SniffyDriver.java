@@ -31,7 +31,7 @@ public class SniffyDriver implements Driver, Constants {
     static {
         Method getConnectionMethod;
         try {
-            getConnectionMethod = Driver.class.getMethod("getConnection", String.class, Properties.class);
+            getConnectionMethod = Driver.class.getMethod("connect", String.class, Properties.class);
         } catch (NoSuchMethodException e) {
             getConnectionMethod = null;
         }
