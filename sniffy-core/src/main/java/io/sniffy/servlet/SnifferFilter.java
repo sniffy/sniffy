@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
  *
  * @since 2.3.0
  */
+// TODO: rename to SniffyFilter
 public class SnifferFilter implements Filter {
 
     public static final String HEADER_CORS_HEADERS = "Access-Control-Expose-Headers";
@@ -76,9 +77,7 @@ public class SnifferFilter implements Filter {
                     build();
 
     protected SnifferServlet snifferServlet;
-    protected ServletContext servletContext;
-
-    protected String contextPath;
+    protected ServletContext servletContext; // TODO: log via slf4j if available
 
     public void init(FilterConfig filterConfig) throws ServletException {
         String injectHtml = filterConfig.getInitParameter("inject-html");
@@ -98,7 +97,6 @@ public class SnifferFilter implements Filter {
         snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
 
         servletContext = filterConfig.getServletContext();
-        contextPath = servletContext.getContextPath();
 
     }
 
@@ -133,12 +131,12 @@ public class SnifferFilter implements Filter {
 
         // process Sniffy REST calls
 
-        if (injectHtml) {
+        if (injectHtml && null != snifferServlet) {
             try {
                 snifferServlet.service(request, response);
                 if (response.isCommitted()) return;
             } catch (Exception e) {
-                servletContext.log("Exception in SniffyServlet; calling original chain", e);
+                if (null != servletContext) servletContext.log("Exception in SniffyServlet; calling original chain", e);
                 chain.doFilter(request, response);
                 return;
             }
@@ -150,7 +148,7 @@ public class SnifferFilter implements Filter {
         try {
             sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse);
         } catch (Exception e) {
-            servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
+            if (null != servletContext) servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
             chain.doFilter(request, response);
             return;
         }

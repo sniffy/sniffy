@@ -63,10 +63,14 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         String relativeUrl = null;
 
         try {
-            String contextPath = httpServletRequest.getContextPath();
+            String contextPath = httpServletRequest.getContextPath(); // like "/petclinic"
             relativeUrl = null == httpServletRequest.getRequestURI() ? null : httpServletRequest.getRequestURI().substring(contextPath.length());
         } catch (Exception e) {
-            snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+            if (null != snifferFilter.servletContext) {
+                snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+            } else {
+                e.printStackTrace();
+            }
         }
 
         this.relativeUrl = relativeUrl;
@@ -88,7 +92,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         try {
             responseWrapper = new BufferedServletResponseWrapper(httpServletResponse, this);
         } catch (Exception e) {
-            snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+            if (null != snifferFilter.servletContext) {
+                snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+            } else {
+                e.printStackTrace();
+            }
             chain.doFilter(httpServletRequest, httpServletResponse);
             return;
         }
@@ -141,12 +149,16 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
 
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < relativeUrl.length(); i++) {
+        for (int i = 1; i < relativeUrl.length(); i++) {
             if ('/' == relativeUrl.charAt(i)) {
                 if (sb.length() > 0) sb.append('/');
                 sb.append("..");
             }
         }
+
+        String contextRelativePath = sb.toString();
+        if (contextRelativePath.isEmpty()) contextRelativePath = ".";
+
         sb.append(SnifferFilter.REQUEST_URI_PREFIX).append(requestId);
 
         wrapper.addHeader(HEADER_REQUEST_DETAILS, sb.toString());
@@ -160,9 +172,9 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 long contentLength = wrapper.getContentLength();
                 if (contentLength > 0) {
                     if (contentLength > Integer.MAX_VALUE) {
-                        wrapper.setContentLengthLong(contentLength + maximumInjectSize(snifferFilter.contextPath));
+                        wrapper.setContentLengthLong(contentLength + maximumInjectSize(contextRelativePath));
                     } else {
-                        wrapper.setContentLength((int) contentLength + maximumInjectSize(snifferFilter.contextPath));
+                        wrapper.setContentLength((int) contentLength + maximumInjectSize(contextRelativePath));
                     }
                 }
                 isHtmlPage = true;
@@ -171,7 +183,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                     characterEncoding = Charset.defaultCharset().name();
                 }
 
-                String snifferHeader = generateHeaderHtml(snifferFilter.contextPath, requestId).toString();
+                String snifferHeader = generateHeaderHtml(contextRelativePath, requestId).toString();
 
                 HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
                 htmlInjector.injectAtTheBeginning(snifferHeader);

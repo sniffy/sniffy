@@ -15,7 +15,7 @@ public abstract class BaseTest {
 
     @BeforeClass
     public static void loadDriverAndCreateTables() throws ClassNotFoundException, SQLException {
-        Class.forName("io.sniffy.MockDriver");
+        Class.forName("io.sniffy.sql.SniffyDriver");
         keepAlive = openConnection();
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
@@ -77,7 +77,7 @@ public abstract class BaseTest {
     }
 
     protected static Connection openConnection() throws SQLException {
-        return DriverManager.getConnection("sniffer:jdbc:h2:mem:project", "sa", "sa");
+        return DriverManager.getConnection("sniffy:jdbc:h2:mem:project", "sa", "sa");
     }
 
     protected static void executeStatementInOtherThread() {
