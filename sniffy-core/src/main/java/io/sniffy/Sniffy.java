@@ -23,7 +23,7 @@ import static io.sniffy.util.StackTraceExtractor.*;
  */
 public class Sniffy {
 
-    private static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+    protected static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
 
     protected Sniffy() {
@@ -94,7 +94,7 @@ public class Sniffy {
         }
     }
 
-    public static boolean hasSpies() {
+    public static synchronized boolean hasSpies() {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
