@@ -68,7 +68,7 @@ public class SnifferServletTest {
 
         request.setContextPath("/petclinic");
 
-        SocketsRegistry.INSTANCE.setSocketAddressStatus("localhost", SocketsRegistry.SocketAddressStatus.OPEN);
+        SocketsRegistry.INSTANCE.setSocketAddressStatus("localhost", SocketsRegistry.ConnectionStatus.OPEN);
 
         snifferServlet.service(request, response);
 

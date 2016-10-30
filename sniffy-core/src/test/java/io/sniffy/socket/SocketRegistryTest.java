@@ -23,7 +23,7 @@ public class SocketRegistryTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        SocketsRegistry.INSTANCE.setSocketAddressStatus(localhost.getHostName(), echoServerRule.getBoundPort(), SocketsRegistry.SocketAddressStatus.CLOSED);
+        SocketsRegistry.INSTANCE.setSocketAddressStatus(localhost.getHostName(), echoServerRule.getBoundPort(), SocketsRegistry.ConnectionStatus.CLOSED);
 
         Socket socket = null;
 

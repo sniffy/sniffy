@@ -20,8 +20,8 @@ import java.io.PrintWriter;
 import java.util.*;
 
 import static io.sniffy.servlet.SnifferFilter.SNIFFER_URI_PREFIX;
-import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.CLOSED;
-import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.OPEN;
+import static io.sniffy.socket.SocketsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.socket.SocketsRegistry.ConnectionStatus.OPEN;
 
 class SnifferServlet extends HttpServlet {
 
@@ -77,14 +77,14 @@ class SnifferServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType(JAVASCRIPT_MIME_TYPE);
 
-            Map<Map.Entry<String, Integer>, SocketsRegistry.SocketAddressStatus> discoveredAdresses =
-                    SocketsRegistry.INSTANCE.getDiscoveredAdresses();
+            Map<Map.Entry<String, Integer>, SocketsRegistry.ConnectionStatus> discoveredAdresses =
+                    SocketsRegistry.INSTANCE.getDiscoveredAddresses();
 
             if (discoveredAdresses.isEmpty()) {
                 response.flushBuffer();
             } else {
 
-                Iterator<Map.Entry<Map.Entry<String, Integer>, SocketsRegistry.SocketAddressStatus>> iterator =
+                Iterator<Map.Entry<Map.Entry<String, Integer>, SocketsRegistry.ConnectionStatus>> iterator =
                         discoveredAdresses.entrySet().iterator();
 
                 PrintWriter writer = response.getWriter();
@@ -92,7 +92,7 @@ class SnifferServlet extends HttpServlet {
                 writer.write('[');
 
                 while (iterator.hasNext()) {
-                    Map.Entry<Map.Entry<String,Integer>, SocketsRegistry.SocketAddressStatus> entry = iterator.next();
+                    Map.Entry<Map.Entry<String,Integer>, SocketsRegistry.ConnectionStatus> entry = iterator.next();
 
                     String hostName = entry.getKey().getKey();
                     Integer port = entry.getKey().getValue();
@@ -125,7 +125,7 @@ class SnifferServlet extends HttpServlet {
             }
 
         } else if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
-            SocketsRegistry.SocketAddressStatus status = null;
+            SocketsRegistry.ConnectionStatus status = null;
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 status = OPEN;
             } else if ("DELETE".equalsIgnoreCase(request.getMethod())) {

@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.CLOSED;
+import static io.sniffy.socket.SocketsRegistry.ConnectionStatus.CLOSED;
 
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 class SnifferSocketImpl extends SocketImpl {
