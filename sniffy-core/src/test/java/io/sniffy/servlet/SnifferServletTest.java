@@ -63,19 +63,22 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferServlet.SOCKET_REGISTRY_URI_PREFIX).
+                get("/petclinic" + SnifferServlet.CONNECTION_REGISTRY_URI_PREFIX).
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", ConnectionsRegistry.ConnectionStatus.OPEN);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", ConnectionsRegistry.ConnectionStatus.OPEN);
 
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentAsByteArray().length > 0);
-        //assertTrue(response.getContentLength() > 0);
+
+        assertTrue(response.getContentAsString().contains("\"sockets\":"));
+        assertTrue(response.getContentAsString().contains("\"dataSources\":"));
 
         ConnectionsRegistry.INSTANCE.clear();
 

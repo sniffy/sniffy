@@ -27,7 +27,7 @@ class SnifferServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
 
-    public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/socketregistry/";
+    public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/";
 
     protected final Map<String, RequestStats> cache;
 
@@ -41,8 +41,8 @@ class SnifferServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC5/dist/sniffy.min.js");
-            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC5/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC8-SNAPSHOT/dist/sniffy.min.js");
+            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC8-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
             throw new ServletException(e);
         }
@@ -72,7 +72,7 @@ class SnifferServlet extends HttpServlet {
                 outputStream.write(requestStatsJson);
                 outputStream.flush();
             }
-        } else if (path.equals(SOCKET_REGISTRY_URI_PREFIX)) {
+        } else if (path.equals(CONNECTION_REGISTRY_URI_PREFIX)) {
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType(JAVASCRIPT_MIME_TYPE);
@@ -80,16 +80,15 @@ class SnifferServlet extends HttpServlet {
             Map<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus> discoveredAdresses =
                     ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
 
-            if (discoveredAdresses.isEmpty()) {
-                response.flushBuffer();
-            } else {
+            PrintWriter writer = response.getWriter();
+            writer.write("{");
+
+            if (!discoveredAdresses.isEmpty()) {
+
+                writer.write("\"sockets\":[");
 
                 Iterator<Map.Entry<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus>> iterator =
                         discoveredAdresses.entrySet().iterator();
-
-                PrintWriter writer = response.getWriter();
-
-                writer.write('[');
 
                 while (iterator.hasNext()) {
                     Map.Entry<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
@@ -124,7 +123,56 @@ class SnifferServlet extends HttpServlet {
 
             }
 
-        } else if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
+            Map<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus> discoveredDataSources =
+                    ConnectionsRegistry.INSTANCE.getDiscoveredDataSources();
+
+            if (!discoveredDataSources.isEmpty()) {
+
+                if (!discoveredAdresses.isEmpty()) {
+                    writer.write(',');
+                }
+
+                writer.write("\"dataSources\":[");
+
+                Iterator<Map.Entry<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus>> iterator =
+                        discoveredDataSources.entrySet().iterator();
+
+                while (iterator.hasNext()) {
+                    Map.Entry<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
+
+                    String url = entry.getKey().getKey();
+                    String userName = entry.getKey().getValue();
+
+                    writer.write('{');
+                    if (null != url) {
+                        writer.write("\"url\":\"");
+                        writer.write(url);
+                        writer.write("\"");
+                    }
+                    if (null != userName) {
+                        if (null != url) writer.write(',');
+                        writer.write("\"userName\":\"");
+                        writer.write(userName.toString());
+                        writer.write("\"");
+                    }
+                    writer.write(',');
+                    writer.write("\"status\":\"");
+                    writer.write(entry.getValue().name());
+                    writer.write("\"");
+                    writer.write('}');
+                    if (iterator.hasNext()) writer.write(',');
+
+                }
+
+                writer.write(']');
+
+                writer.flush();
+
+            }
+
+            writer.write("}");
+
+        } else if (path.startsWith(CONNECTION_REGISTRY_URI_PREFIX)) {
             ConnectionsRegistry.ConnectionStatus status = null;
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 status = OPEN;
@@ -132,7 +180,7 @@ class SnifferServlet extends HttpServlet {
                 status = CLOSED;
             }
             if (null != status) {
-                String socketAddress = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
+                String socketAddress = path.substring(CONNECTION_REGISTRY_URI_PREFIX.length());
                 ConnectionsRegistry.INSTANCE.setSocketAddressStatus(socketAddress, status);
                 response.setStatus(HttpServletResponse.SC_CREATED);
                 response.flushBuffer();
