@@ -183,7 +183,7 @@ class SnifferServlet extends HttpServlet {
             }
 
             if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
-                String connectionString = path.substring(CONNECTION_REGISTRY_URI_PREFIX.length());
+                String connectionString = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
                 String[] split = connectionString.split("/");
                 ConnectionsRegistry.INSTANCE.setSocketAddressStatus(split[0], Integer.parseInt(split[1]), status);
             } else if (path.startsWith(DATASOURCE_REGISTRY_URI_PREFIX)) {
