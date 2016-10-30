@@ -12,10 +12,9 @@ import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.Map;
 
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
 import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class DataSourceRegistryTest {
 
@@ -39,6 +38,20 @@ public class DataSourceRegistryTest {
         assertNotNull(discoveredDataSources);
         assertEquals(1, discoveredDataSources.size());
         assertEquals(OPEN, discoveredDataSources.get(new AbstractMap.SimpleEntry<String, String>("jdbc:h2:mem:", "sa")));
+
+    }
+
+    @Test
+    public void testDataSourceDisabled() throws SQLException {
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", CLOSED);
+
+        try {
+            DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa");
+            fail("Connection should have been forbidden");
+        } catch (SQLException e) {
+            assertNotNull(e);
+        }
 
     }
 
