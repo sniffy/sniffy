@@ -28,6 +28,8 @@ class SnifferServlet extends HttpServlet {
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
 
     public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/";
+    public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/socket/";
+    public static final String DATASOURCE_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/datasource/";
 
     protected final Map<String, RequestStats> cache;
 
@@ -152,7 +154,7 @@ class SnifferServlet extends HttpServlet {
                     if (null != userName) {
                         if (null != url) writer.write(',');
                         writer.write("\"userName\":\"");
-                        writer.write(userName.toString());
+                        writer.write(userName);
                         writer.write("\"");
                     }
                     writer.write(',');
@@ -179,12 +181,20 @@ class SnifferServlet extends HttpServlet {
             } else if ("DELETE".equalsIgnoreCase(request.getMethod())) {
                 status = CLOSED;
             }
-            if (null != status) {
-                String socketAddress = path.substring(CONNECTION_REGISTRY_URI_PREFIX.length());
-                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(socketAddress, status);
-                response.setStatus(HttpServletResponse.SC_CREATED);
-                response.flushBuffer();
+
+            if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
+                String connectionString = path.substring(CONNECTION_REGISTRY_URI_PREFIX.length());
+                String[] split = connectionString.split("/");
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(split[0], Integer.parseInt(split[1]), status);
+            } else if (path.startsWith(DATASOURCE_REGISTRY_URI_PREFIX)) {
+                String connectionString = path.substring(DATASOURCE_REGISTRY_URI_PREFIX.length());
+                String[] split = connectionString.split("/");
+                ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
             }
+
+            response.setStatus(HttpServletResponse.SC_CREATED);
+            response.flushBuffer();
+
         }
 
     }
