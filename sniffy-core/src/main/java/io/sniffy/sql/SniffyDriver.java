@@ -57,10 +57,7 @@ public class SniffyDriver implements Driver, Constants {
 
     }
 
-    public void checkConnectionAllowed(String url, Properties info) throws SQLException {
-
-        String userName = info.getProperty("user");
-
+    protected static void checkConnectionAllowed(String url, String userName) throws SQLException {
         if (CLOSED == ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName)) {
             throw new SQLException(String.format("Connection to %s (%s) refused by Sniffy", url, userName));
         }
@@ -71,8 +68,9 @@ public class SniffyDriver implements Driver, Constants {
         if (null == url || !acceptsURL(url)) return null;
 
         String originUrl = extractOriginUrl(url);
+        String userName = info.getProperty("user");
 
-        checkConnectionAllowed(originUrl, info);
+        checkConnectionAllowed(originUrl, userName);
 
         Driver originDriver;
         try {
@@ -93,7 +91,7 @@ public class SniffyDriver implements Driver, Constants {
             return Connection.class.cast(Proxy.newProxyInstance(
                     SniffyDriver.class.getClassLoader(),
                     new Class[]{Connection.class},
-                    new ConnectionInvocationHandler(delegateConnection)
+                    new ConnectionInvocationHandler(delegateConnection, originUrl, userName)
             ));
         } finally {
             Sniffy.exitJdbcMethod(CONNECT_METHOD, System.currentTimeMillis() - start);

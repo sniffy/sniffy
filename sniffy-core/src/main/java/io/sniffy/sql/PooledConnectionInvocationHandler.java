@@ -22,11 +22,14 @@ public class PooledConnectionInvocationHandler extends SniffyInvocationHandler<P
         GET_CONNECTION_METHOD = getConnectionMethod;
     }
 
-    public PooledConnectionInvocationHandler(PooledConnection delegate) {
-        super(delegate);
+    public PooledConnectionInvocationHandler(PooledConnection delegate, String url, String userName) {
+        super(delegate, url, userName);
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+        checkConnectionAllowed();
+
         if ("getConnection".equals(method.getName())) {
             long start = System.currentTimeMillis();
             try {
@@ -34,7 +37,7 @@ public class PooledConnectionInvocationHandler extends SniffyInvocationHandler<P
                 return Connection.class.cast(Proxy.newProxyInstance(
                         PooledConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{Connection.class},
-                        new ConnectionInvocationHandler(Connection.class.cast(invokeTarget(method, args)))
+                        new ConnectionInvocationHandler(Connection.class.cast(invokeTarget(method, args)), url, userName)
                 ));
             } finally {
                 Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);

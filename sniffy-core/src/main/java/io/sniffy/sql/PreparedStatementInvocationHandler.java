@@ -8,13 +8,15 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
 
     private final String sql;
 
-    public PreparedStatementInvocationHandler(Object delegate, String sql) {
-        super(delegate);
+    public PreparedStatementInvocationHandler(Object delegate, String url, String userName, String sql) {
+        super(delegate, url, userName);
         this.sql = sql;
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+        checkConnectionAllowed();
 
         Object result;
 
@@ -46,7 +48,7 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
             return Proxy.newProxyInstance(
                     ResultSetInvocationHandler.class.getClassLoader(),
                     new Class[]{ResultSet.class},
-                    new ResultSetInvocationHandler(result, lastStatementMetaData)
+                    new ResultSetInvocationHandler(result, url, userName, lastStatementMetaData)
             );
         }
 

@@ -18,8 +18,8 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
 
     protected StatementMetaData lastStatementMetaData;
 
-    public StatementInvocationHandler(Object delegate) {
-        super(delegate);
+    public StatementInvocationHandler(Object delegate, String url, String userName) {
+        super(delegate, url, userName);
     }
 
     protected enum StatementMethodType {
@@ -52,6 +52,8 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
+        checkConnectionAllowed();
+
         Object result;
 
         switch (StatementMethodType.parse(method.getName())) {
@@ -82,7 +84,7 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
             return Proxy.newProxyInstance(
                     ResultSetInvocationHandler.class.getClassLoader(),
                     new Class[]{ResultSet.class},
-                    new ResultSetInvocationHandler(result, lastStatementMetaData)
+                    new ResultSetInvocationHandler(result, url, userName, lastStatementMetaData)
             );
         }
 

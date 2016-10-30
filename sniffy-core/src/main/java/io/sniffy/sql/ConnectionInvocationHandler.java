@@ -11,11 +11,14 @@ import java.sql.Statement;
 
 public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connection> {
 
-    public ConnectionInvocationHandler(Connection delegate) {
-        super(delegate);
+    public ConnectionInvocationHandler(Connection delegate, String url, String userName) {
+        super(delegate, url, userName);
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+        checkConnectionAllowed();
+
         long start = System.currentTimeMillis();
         try {
             Sniffy.enterJdbcMethod();
@@ -24,19 +27,19 @@ public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connect
                 return Proxy.newProxyInstance(
                         ConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{Statement.class},
-                        new StatementInvocationHandler(result)
+                        new StatementInvocationHandler(result, url, userName)
                 );
             } else if ("prepareStatement".equals(method.getName())) {
                 return Proxy.newProxyInstance(
                         ConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{PreparedStatement.class},
-                        new PreparedStatementInvocationHandler(result, String.class.cast(args[0]))
+                        new PreparedStatementInvocationHandler(result, url, userName, String.class.cast(args[0]))
                 );
             } else if ("prepareCall".equals(method.getName())) {
                 return Proxy.newProxyInstance(
                         ConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{CallableStatement.class},
-                        new PreparedStatementInvocationHandler(result, String.class.cast(args[0]))
+                        new PreparedStatementInvocationHandler(result, url, userName, String.class.cast(args[0]))
                 );
             } else {
                 // TODO: proxy other classes which can produce network like getDatabaseMetaData() and others

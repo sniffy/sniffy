@@ -66,9 +66,17 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         Connection delegateConnection;
         long start = System.currentTimeMillis();
 
+        String url;
+        String userName;
+
         try {
             Sniffy.enterJdbcMethod();
             delegateConnection = dataSource.getConnection();
+
+            url = delegateConnection.getMetaData().getURL();
+            userName = delegateConnection.getMetaData().getUserName();
+
+            SniffyDriver.checkConnectionAllowed(url, userName);
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
         }
@@ -76,21 +84,27 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         return Connection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
                 new Class[]{Connection.class},
-                new ConnectionInvocationHandler(delegateConnection)
+                new ConnectionInvocationHandler(delegateConnection, url, userName)
         ));
     }
 
     @Override
-    public Connection getConnection(String username, String password) throws SQLException {
+    public Connection getConnection(String userName, String password) throws SQLException {
 
         if (null == dataSource) throw new SQLException("Target is not a DataSource instance");
 
         Connection delegateConnection;
         long start = System.currentTimeMillis();
 
+        String url;
+
         try {
             Sniffy.enterJdbcMethod();
-            delegateConnection = dataSource.getConnection(username, password);
+            delegateConnection = dataSource.getConnection(userName, password);
+
+            url = delegateConnection.getMetaData().getURL();
+
+            SniffyDriver.checkConnectionAllowed(url, userName);
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_WITH_CREDENTIALS_METHOD, System.currentTimeMillis() - start);
         }
@@ -98,7 +112,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         return Connection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
                 new Class[]{Connection.class},
-                new ConnectionInvocationHandler(delegateConnection)
+                new ConnectionInvocationHandler(delegateConnection, url, userName)
         ));
     }
 
@@ -110,9 +124,15 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         XAConnection delegateConnection;
         long start = System.currentTimeMillis();
 
+        String url;
+        String userName;
+
         try {
             Sniffy.enterJdbcMethod();
             delegateConnection = xaDataSource.getXAConnection();
+
+            url = delegateConnection.getConnection().getMetaData().getURL();
+            userName = delegateConnection.getConnection().getMetaData().getUserName();
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
         }
@@ -120,7 +140,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         return XAConnection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
                 new Class[]{XAConnection.class},
-                new PooledConnectionInvocationHandler(delegateConnection)
+                new PooledConnectionInvocationHandler(delegateConnection, url, userName)
         ));
 
     }
@@ -133,9 +153,16 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         XAConnection delegateConnection;
         long start = System.currentTimeMillis();
 
+        String url;
+        String userName;
+
         try {
             Sniffy.enterJdbcMethod();
             delegateConnection = xaDataSource.getXAConnection(user, password);
+
+            // TODO: do not call getConnection() here - move this logic to invocation handler instead
+            url = delegateConnection.getConnection().getMetaData().getURL();
+            userName = delegateConnection.getConnection().getMetaData().getUserName();
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
         }
@@ -143,7 +170,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         return XAConnection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
                 new Class[]{XAConnection.class},
-                new PooledConnectionInvocationHandler(delegateConnection)
+                new PooledConnectionInvocationHandler(delegateConnection, url, userName)
         ));
 
     }
@@ -156,9 +183,15 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         PooledConnection delegateConnection;
         long start = System.currentTimeMillis();
 
+        String url;
+        String userName;
+
         try {
             Sniffy.enterJdbcMethod();
             delegateConnection = connectionPoolDataSource.getPooledConnection();
+
+            url = delegateConnection.getConnection().getMetaData().getURL();
+            userName = delegateConnection.getConnection().getMetaData().getUserName();
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
         }
@@ -166,7 +199,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         return PooledConnection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
                 new Class[]{PooledConnection.class},
-                new PooledConnectionInvocationHandler(delegateConnection)
+                new PooledConnectionInvocationHandler(delegateConnection, url, userName)
         ));
 
     }
@@ -179,9 +212,15 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         PooledConnection delegateConnection;
         long start = System.currentTimeMillis();
 
+        String url;
+        String userName;
+
         try {
             Sniffy.enterJdbcMethod();
             delegateConnection = connectionPoolDataSource.getPooledConnection(user, password);
+
+            url = delegateConnection.getConnection().getMetaData().getURL();
+            userName = delegateConnection.getConnection().getMetaData().getUserName();
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
         }
@@ -189,7 +228,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
         return PooledConnection.class.cast(Proxy.newProxyInstance(
                 SniffyDriver.class.getClassLoader(),
                 new Class[]{PooledConnection.class},
-                new PooledConnectionInvocationHandler(delegateConnection)
+                new PooledConnectionInvocationHandler(delegateConnection, url, userName)
         ));
 
     }
