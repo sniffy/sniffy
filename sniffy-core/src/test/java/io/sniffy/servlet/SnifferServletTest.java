@@ -2,7 +2,7 @@ package io.sniffy.servlet;
 
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
-import io.sniffy.socket.SocketsRegistry;
+import io.sniffy.socket.ConnectionsRegistry;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
@@ -68,7 +68,7 @@ public class SnifferServletTest {
 
         request.setContextPath("/petclinic");
 
-        SocketsRegistry.INSTANCE.setSocketAddressStatus("localhost", SocketsRegistry.ConnectionStatus.OPEN);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", ConnectionsRegistry.ConnectionStatus.OPEN);
 
         snifferServlet.service(request, response);
 
@@ -77,7 +77,7 @@ public class SnifferServletTest {
         assertTrue(response.getContentAsByteArray().length > 0);
         //assertTrue(response.getContentLength() > 0);
 
-        SocketsRegistry.INSTANCE.clear();
+        ConnectionsRegistry.INSTANCE.clear();
 
     }
 

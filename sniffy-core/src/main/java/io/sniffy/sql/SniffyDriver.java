@@ -2,7 +2,7 @@ package io.sniffy.sql;
 
 import io.sniffy.Constants;
 import io.sniffy.Sniffy;
-import io.sniffy.socket.SocketsRegistry;
+import io.sniffy.socket.ConnectionsRegistry;
 import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Method;
@@ -15,7 +15,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
-import static io.sniffy.socket.SocketsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
 
 /**
  * Enable JDBC Sniffer by adding a {@code sniffy:} prefix to your JDBC URL.
@@ -61,7 +61,7 @@ public class SniffyDriver implements Driver, Constants {
 
         String userName = info.getProperty("user");
 
-        if (CLOSED == SocketsRegistry.INSTANCE.resolveDataSourceStatus(url, userName)) {
+        if (CLOSED == ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName)) {
             throw new SQLException(String.format("Connection to %s (%s) refused by Sniffy", url, userName));
         }
     }
@@ -71,6 +71,9 @@ public class SniffyDriver implements Driver, Constants {
         if (null == url || !acceptsURL(url)) return null;
 
         String originUrl = extractOriginUrl(url);
+
+        checkConnectionAllowed(originUrl, info);
+
         Driver originDriver;
         try {
             originDriver = DriverManager.getDriver(originUrl);

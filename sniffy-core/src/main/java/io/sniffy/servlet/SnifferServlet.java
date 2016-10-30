@@ -2,7 +2,7 @@ package io.sniffy.servlet;
 
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
-import io.sniffy.socket.SocketsRegistry;
+import io.sniffy.socket.ConnectionsRegistry;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
@@ -20,8 +20,8 @@ import java.io.PrintWriter;
 import java.util.*;
 
 import static io.sniffy.servlet.SnifferFilter.SNIFFER_URI_PREFIX;
-import static io.sniffy.socket.SocketsRegistry.ConnectionStatus.CLOSED;
-import static io.sniffy.socket.SocketsRegistry.ConnectionStatus.OPEN;
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
 
 class SnifferServlet extends HttpServlet {
 
@@ -77,14 +77,14 @@ class SnifferServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType(JAVASCRIPT_MIME_TYPE);
 
-            Map<Map.Entry<String, Integer>, SocketsRegistry.ConnectionStatus> discoveredAdresses =
-                    SocketsRegistry.INSTANCE.getDiscoveredAddresses();
+            Map<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus> discoveredAdresses =
+                    ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
 
             if (discoveredAdresses.isEmpty()) {
                 response.flushBuffer();
             } else {
 
-                Iterator<Map.Entry<Map.Entry<String, Integer>, SocketsRegistry.ConnectionStatus>> iterator =
+                Iterator<Map.Entry<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus>> iterator =
                         discoveredAdresses.entrySet().iterator();
 
                 PrintWriter writer = response.getWriter();
@@ -92,7 +92,7 @@ class SnifferServlet extends HttpServlet {
                 writer.write('[');
 
                 while (iterator.hasNext()) {
-                    Map.Entry<Map.Entry<String,Integer>, SocketsRegistry.ConnectionStatus> entry = iterator.next();
+                    Map.Entry<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
 
                     String hostName = entry.getKey().getKey();
                     Integer port = entry.getKey().getValue();
@@ -125,7 +125,7 @@ class SnifferServlet extends HttpServlet {
             }
 
         } else if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
-            SocketsRegistry.ConnectionStatus status = null;
+            ConnectionsRegistry.ConnectionStatus status = null;
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 status = OPEN;
             } else if ("DELETE".equalsIgnoreCase(request.getMethod())) {
@@ -133,7 +133,7 @@ class SnifferServlet extends HttpServlet {
             }
             if (null != status) {
                 String socketAddress = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
-                SocketsRegistry.INSTANCE.setSocketAddressStatus(socketAddress, status);
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(socketAddress, status);
                 response.setStatus(HttpServletResponse.SC_CREATED);
                 response.flushBuffer();
             }

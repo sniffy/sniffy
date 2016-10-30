@@ -8,9 +8,9 @@ import java.util.AbstractMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.sniffy.socket.SocketsRegistry.ConnectionStatus.OPEN;
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
 
-public enum SocketsRegistry {
+public enum ConnectionsRegistry {
     INSTANCE;
 
     public enum ConnectionStatus {
@@ -30,13 +30,13 @@ public enum SocketsRegistry {
 
             if ((null == url || url.equals(entry.getKey().getKey())) &&
                     (null == userName || userName.equals(entry.getKey().getValue())) &&
-                    OPEN != entry.getValue()) {
+                    OPEN != entry.getValue()) { // TODO: why OPEN !=  ???
                 return entry.getValue();
             }
 
-            setDataSourceStatus(url, userName, OPEN);
-
         }
+
+        setDataSourceStatus(url, userName, OPEN);
 
         return OPEN;
 
@@ -53,7 +53,7 @@ public enum SocketsRegistry {
 
             if ((null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress())) &&
                     (null == port || port == inetSocketAddress.getPort()) &&
-                    OPEN != entry.getValue()) {
+                    OPEN != entry.getValue()) { // TODO: why OPEN !=  ???
                 return entry.getValue();
             }
 
@@ -89,7 +89,7 @@ public enum SocketsRegistry {
     }
 
     public void setDataSourceStatus(String url, String userName, ConnectionStatus status) {
-        discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(userName, url), status);
+        discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(url, userName), status);
     }
 
     public void clear() {
