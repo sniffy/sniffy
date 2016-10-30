@@ -13,10 +13,8 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.URLDecoder;
 import java.util.*;
 
 import static io.sniffy.servlet.SnifferFilter.SNIFFER_URI_PREFIX;
@@ -184,11 +182,11 @@ class SnifferServlet extends HttpServlet {
 
             if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
                 String connectionString = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
-                String[] split = connectionString.split("/");
+                String[] split = splitBySlashAndDecode(connectionString);
                 ConnectionsRegistry.INSTANCE.setSocketAddressStatus(split[0], Integer.parseInt(split[1]), status);
             } else if (path.startsWith(DATASOURCE_REGISTRY_URI_PREFIX)) {
                 String connectionString = path.substring(DATASOURCE_REGISTRY_URI_PREFIX.length());
-                String[] split = connectionString.split("/");
+                String[] split = splitBySlashAndDecode(connectionString);
                 ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
             }
 
@@ -197,6 +195,14 @@ class SnifferServlet extends HttpServlet {
 
         }
 
+    }
+
+    private String[] splitBySlashAndDecode(String connectionString) throws UnsupportedEncodingException {
+        String[] split = connectionString.split("/");
+        for (int i = 0; i < split.length; i++) {
+            split[i] = URLDecoder.decode(split[1], "UTF-8");
+        }
+        return split;
     }
 
     // TODO: stream JSON instead; otherwise we are creating unnecessary garbage out of interned strings mostly
