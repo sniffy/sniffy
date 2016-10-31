@@ -27,19 +27,19 @@ public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connect
                 return Proxy.newProxyInstance(
                         ConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{Statement.class},
-                        new StatementInvocationHandler(result, url, userName)
+                        new StatementInvocationHandler(result, proxy, url, userName)
                 );
             } else if ("prepareStatement".equals(method.getName())) {
                 return Proxy.newProxyInstance(
                         ConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{PreparedStatement.class},
-                        new PreparedStatementInvocationHandler(result, url, userName, String.class.cast(args[0]))
+                        new PreparedStatementInvocationHandler(result, proxy, url, userName, String.class.cast(args[0]))
                 );
             } else if ("prepareCall".equals(method.getName())) {
                 return Proxy.newProxyInstance(
                         ConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{CallableStatement.class},
-                        new PreparedStatementInvocationHandler(result, url, userName, String.class.cast(args[0]))
+                        new PreparedStatementInvocationHandler(result, proxy, url, userName, String.class.cast(args[0]))
                 );
             } else {
                 // TODO: proxy other classes which can produce network like getDatabaseMetaData() and others

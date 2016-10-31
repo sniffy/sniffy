@@ -16,10 +16,13 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
 
     private Map<String, Integer> batchedSql;
 
+    protected final Object sniffyConnectionProxy;
+
     protected StatementMetaData lastStatementMetaData;
 
-    public StatementInvocationHandler(Object delegate, String url, String userName) {
+    public StatementInvocationHandler(Object delegate, Object sniffyConnectionProxy, String url, String userName) {
         super(delegate, url, userName);
+        this.sniffyConnectionProxy = sniffyConnectionProxy;
     }
 
     protected enum StatementMethodType {
@@ -28,6 +31,7 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
         ADD_BATCH,
         CLEAR_BATCH,
         EXECUTE_BATCH,
+        GET_CONNECTION,
         OTHER;
 
         static StatementMethodType parse(String methodName) {
@@ -41,15 +45,15 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
                 return CLEAR_BATCH;
             } else if ("executeBatch".equals(methodName) || "executeLargeBatch".equals(methodName)) {
                 return EXECUTE_BATCH;
+            } else if ("getConnection".equals(methodName)) {
+                return GET_CONNECTION;
             } else {
                 return OTHER;
             }
         }
     }
 
-    // TODO: getConnection() should return a proxy!
     // TODO: wrap complex parameters and results like streams and blobs
-
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
         checkConnectionAllowed();
@@ -73,6 +77,9 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
                 break;
             case EXECUTE_SQL:
                 result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null, false);
+                break;
+            case GET_CONNECTION:
+                result = sniffyConnectionProxy;
                 break;
             case OTHER:
             default:

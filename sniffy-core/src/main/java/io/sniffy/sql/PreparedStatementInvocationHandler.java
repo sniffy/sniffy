@@ -8,8 +8,8 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
 
     private final String sql;
 
-    public PreparedStatementInvocationHandler(Object delegate, String url, String userName, String sql) {
-        super(delegate, url, userName);
+    public PreparedStatementInvocationHandler(Object delegate, Object sniffyConnectionProxy, String url, String userName, String sql) {
+        super(delegate, sniffyConnectionProxy, url, userName);
         this.sql = sql;
     }
 
@@ -37,6 +37,9 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
                 break;
             case EXECUTE_SQL:
                 result =  invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : sql, false);
+                break;
+            case GET_CONNECTION:
+                result = sniffyConnectionProxy;
                 break;
             case OTHER:
             default:
