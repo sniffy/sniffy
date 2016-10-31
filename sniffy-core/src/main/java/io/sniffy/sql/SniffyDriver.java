@@ -57,6 +57,17 @@ public class SniffyDriver implements Driver, Constants {
 
     }
 
+    protected static void checkConnectionAllowed(Connection connection, String url, String userName) throws SQLException {
+        if (CLOSED == ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName)) {
+            try {
+                connection.close();
+            } catch (Exception e) {
+                //
+            }
+            throw new SQLException(String.format("Connection to %s (%s) refused by Sniffy", url, userName));
+        }
+    }
+
     protected static void checkConnectionAllowed(String url, String userName) throws SQLException {
         if (CLOSED == ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName)) {
             throw new SQLException(String.format("Connection to %s (%s) refused by Sniffy", url, userName));

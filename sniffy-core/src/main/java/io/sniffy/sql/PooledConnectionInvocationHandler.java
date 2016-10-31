@@ -41,7 +41,7 @@ public class PooledConnectionInvocationHandler implements InvocationHandler {
                 String url = targetConnection.getMetaData().getURL();
                 String userName = targetConnection.getMetaData().getUserName();
 
-                SniffyDriver.checkConnectionAllowed(url, userName); // TODO: close connection in order to avoid resource leakage
+                SniffyDriver.checkConnectionAllowed(targetConnection, url, userName);
 
                 return Connection.class.cast(Proxy.newProxyInstance(
                         PooledConnectionInvocationHandler.class.getClassLoader(),
