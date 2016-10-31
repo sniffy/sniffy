@@ -54,6 +54,7 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
     }
 
     // TODO: wrap complex parameters and results like streams and blobs
+    // TODO: support methods fro Object class such as equals here as well as in other invocation handlers
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
         checkConnectionAllowed();
