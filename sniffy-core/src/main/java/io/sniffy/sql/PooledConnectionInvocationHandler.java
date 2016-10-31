@@ -3,11 +3,14 @@ package io.sniffy.sql;
 import io.sniffy.Sniffy;
 
 import javax.sql.PooledConnection;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 
-public class PooledConnectionInvocationHandler extends SniffyInvocationHandler<PooledConnection> {
+public class PooledConnectionInvocationHandler implements InvocationHandler {
+
+    private final PooledConnection delegate;
 
     private final static Method GET_CONNECTION_METHOD;
 
@@ -22,28 +25,34 @@ public class PooledConnectionInvocationHandler extends SniffyInvocationHandler<P
         GET_CONNECTION_METHOD = getConnectionMethod;
     }
 
-    public PooledConnectionInvocationHandler(PooledConnection delegate, String url, String userName) {
-        super(delegate, url, userName);
+    public PooledConnectionInvocationHandler(PooledConnection delegate) {
+        this.delegate = delegate;
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-
-        checkConnectionAllowed();
 
         if ("getConnection".equals(method.getName())) {
             long start = System.currentTimeMillis();
             try {
                 Sniffy.enterJdbcMethod();
+
+                Connection targetConnection = Connection.class.cast(method.invoke(delegate, args));
+
+                String url = targetConnection.getMetaData().getURL();
+                String userName = targetConnection.getMetaData().getUserName();
+
+                SniffyDriver.checkConnectionAllowed(url, userName); // TODO: close connection in order to avoid resource leakage
+
                 return Connection.class.cast(Proxy.newProxyInstance(
                         PooledConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{Connection.class},
-                        new ConnectionInvocationHandler(Connection.class.cast(invokeTarget(method, args)), url, userName)
+                        new ConnectionInvocationHandler(targetConnection, url, userName)
                 ));
             } finally {
                 Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
             }
         } else {
-            return invokeTarget(method, args);
+            return method.invoke(delegate, args);
         }
     }
 

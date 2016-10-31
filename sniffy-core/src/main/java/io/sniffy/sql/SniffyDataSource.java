@@ -121,27 +121,18 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         if (null == dataSource) throw new SQLException("Target is not a XADataSource instance");
 
-        XAConnection delegateConnection;
         long start = System.currentTimeMillis();
-
-        String url;
-        String userName;
 
         try {
             Sniffy.enterJdbcMethod();
-            delegateConnection = xaDataSource.getXAConnection();
-
-            url = delegateConnection.getConnection().getMetaData().getURL();
-            userName = delegateConnection.getConnection().getMetaData().getUserName();
+            return XAConnection.class.cast(Proxy.newProxyInstance(
+                    SniffyDriver.class.getClassLoader(),
+                    new Class[]{XAConnection.class},
+                    new PooledConnectionInvocationHandler(xaDataSource.getXAConnection())
+            ));
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
         }
-
-        return XAConnection.class.cast(Proxy.newProxyInstance(
-                SniffyDriver.class.getClassLoader(),
-                new Class[]{XAConnection.class},
-                new PooledConnectionInvocationHandler(delegateConnection, url, userName)
-        ));
 
     }
 
@@ -150,28 +141,18 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         if (null == dataSource) throw new SQLException("Target is not a XADataSource instance");
 
-        XAConnection delegateConnection;
         long start = System.currentTimeMillis();
-
-        String url;
-        String userName;
 
         try {
             Sniffy.enterJdbcMethod();
-            delegateConnection = xaDataSource.getXAConnection(user, password);
-
-            // TODO: do not call getConnection() here - move this logic to invocation handler instead
-            url = delegateConnection.getConnection().getMetaData().getURL();
-            userName = delegateConnection.getConnection().getMetaData().getUserName();
+            return XAConnection.class.cast(Proxy.newProxyInstance(
+                    SniffyDriver.class.getClassLoader(),
+                    new Class[]{XAConnection.class},
+                    new PooledConnectionInvocationHandler(xaDataSource.getXAConnection(user, password))
+            ));
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
         }
-
-        return XAConnection.class.cast(Proxy.newProxyInstance(
-                SniffyDriver.class.getClassLoader(),
-                new Class[]{XAConnection.class},
-                new PooledConnectionInvocationHandler(delegateConnection, url, userName)
-        ));
 
     }
 
@@ -180,27 +161,18 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         if (null == connectionPoolDataSource) throw new SQLException("Target is not a ConnectionPoolDataSource instance");
 
-        PooledConnection delegateConnection;
         long start = System.currentTimeMillis();
-
-        String url;
-        String userName;
 
         try {
             Sniffy.enterJdbcMethod();
-            delegateConnection = connectionPoolDataSource.getPooledConnection();
-
-            url = delegateConnection.getConnection().getMetaData().getURL();
-            userName = delegateConnection.getConnection().getMetaData().getUserName();
+            return PooledConnection.class.cast(Proxy.newProxyInstance(
+                    SniffyDriver.class.getClassLoader(),
+                    new Class[]{PooledConnection.class},
+                    new PooledConnectionInvocationHandler(connectionPoolDataSource.getPooledConnection())
+            ));
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
         }
-
-        return PooledConnection.class.cast(Proxy.newProxyInstance(
-                SniffyDriver.class.getClassLoader(),
-                new Class[]{PooledConnection.class},
-                new PooledConnectionInvocationHandler(delegateConnection, url, userName)
-        ));
 
     }
 
@@ -209,27 +181,17 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         if (null == connectionPoolDataSource) throw new SQLException("Target is not a ConnectionPoolDataSource instance");
 
-        PooledConnection delegateConnection;
         long start = System.currentTimeMillis();
-
-        String url;
-        String userName;
-
         try {
             Sniffy.enterJdbcMethod();
-            delegateConnection = connectionPoolDataSource.getPooledConnection(user, password);
-
-            url = delegateConnection.getConnection().getMetaData().getURL();
-            userName = delegateConnection.getConnection().getMetaData().getUserName();
+            return PooledConnection.class.cast(Proxy.newProxyInstance(
+                    SniffyDriver.class.getClassLoader(),
+                    new Class[]{PooledConnection.class},
+                    new PooledConnectionInvocationHandler(connectionPoolDataSource.getPooledConnection(user, password))
+            ));
         } finally {
             Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
         }
-
-        return PooledConnection.class.cast(Proxy.newProxyInstance(
-                SniffyDriver.class.getClassLoader(),
-                new Class[]{PooledConnection.class},
-                new PooledConnectionInvocationHandler(delegateConnection, url, userName)
-        ));
 
     }
 
