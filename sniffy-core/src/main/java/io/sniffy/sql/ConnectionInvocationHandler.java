@@ -41,6 +41,10 @@ public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connect
                         new Class[]{CallableStatement.class},
                         new PreparedStatementInvocationHandler(result, proxy, url, userName, String.class.cast(args[0]))
                 );
+            } else if ("equals".equals(method.getName())) {
+                Object that = args[0];
+                return null == that ? Boolean.valueOf(false) :
+                        Proxy.isProxyClass(that.getClass()) ? proxy == args[0] : result;
             } else {
                 // TODO: proxy other classes which can produce network like getDatabaseMetaData() and others
                 return result;
