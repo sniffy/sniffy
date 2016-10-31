@@ -1,14 +1,17 @@
 package io.sniffy;
 
 import io.sniffy.sql.SqlQueries;
-import org.h2.command.Prepared;
 import org.junit.Test;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.OptionalInt;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PreparedStatementInvocationHandlerTest extends BaseTest {
 
