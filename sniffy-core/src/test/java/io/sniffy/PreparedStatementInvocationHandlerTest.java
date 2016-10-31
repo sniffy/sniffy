@@ -1,10 +1,10 @@
 package io.sniffy;
 
 import io.sniffy.sql.SqlQueries;
+import org.h2.command.Prepared;
 import org.junit.Test;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.OptionalInt;
 
@@ -55,6 +55,14 @@ public class PreparedStatementInvocationHandlerTest extends BaseTest {
             preparedStatement.setString(1, "foo");
             int result = preparedStatement.executeUpdate();
             assertEquals(1, result);
+        }
+    }
+
+    @Test
+    public void getConnectionFromPreparedStatement() throws SQLException {
+        try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa");
+             PreparedStatement statement = connection.prepareStatement("SELECT 1 FROM DUAL")) {
+            assertEquals(connection, statement.getConnection());
         }
     }
 
