@@ -17,10 +17,14 @@ import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletResponse;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static org.junit.Assert.*;
 
 public class SnifferServletTest {
@@ -68,8 +72,8 @@ public class SnifferServletTest {
 
         request.setContextPath("/petclinic");
 
-        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", ConnectionsRegistry.ConnectionStatus.OPEN);
-        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", ConnectionsRegistry.ConnectionStatus.OPEN);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", OPEN);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", OPEN);
 
         snifferServlet.service(request, response);
 
@@ -79,6 +83,51 @@ public class SnifferServletTest {
 
         assertTrue(response.getContentAsString().contains("\"sockets\":"));
         assertTrue(response.getContentAsString().contains("\"dataSources\":"));
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+    }
+
+    @Test
+    public void testEditSocketRegistry() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+        URI dataSource1URI = new URI("/petclinic" + SnifferServlet.DATASOURCE_REGISTRY_URI_PREFIX +
+                URLEncoder.encode("jdbc:h2:mem:data/base", "UTF-8") + "/sa");
+
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.post(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            snifferServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().size());
+            Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
+            assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
+            assertEquals("sa", datasource.getValue());
+            assertEquals(OPEN, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource));
+        }
+
+        // delete datasource from registry
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.delete(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            snifferServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().size());
+            Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
+            assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
+            assertEquals("sa", datasource.getValue());
+            assertEquals(CLOSED, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource));
+        }
 
         ConnectionsRegistry.INSTANCE.clear();
 
