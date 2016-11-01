@@ -2,6 +2,7 @@ package io.sniffy.sql;
 
 import io.sniffy.Constants;
 import io.sniffy.Sniffy;
+import io.sniffy.socket.ConnectionsRegistry;
 import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Method;
@@ -13,6 +14,8 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
+
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
 
 /**
  * Enable JDBC Sniffer by adding a {@code sniffy:} prefix to your JDBC URL.
@@ -54,11 +57,32 @@ public class SniffyDriver implements Driver, Constants {
 
     }
 
+    protected static void checkConnectionAllowed(Connection connection, String url, String userName) throws SQLException {
+        if (CLOSED == ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName)) {
+            try {
+                connection.close();
+            } catch (Exception e) {
+                //
+            }
+            throw new SQLException(String.format("Connection to %s (%s) refused by Sniffy", url, userName));
+        }
+    }
+
+    protected static void checkConnectionAllowed(String url, String userName) throws SQLException {
+        if (CLOSED == ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName)) {
+            throw new SQLException(String.format("Connection to %s (%s) refused by Sniffy", url, userName));
+        }
+    }
+
     public Connection connect(String url, Properties info) throws SQLException {
 
         if (null == url || !acceptsURL(url)) return null;
 
         String originUrl = extractOriginUrl(url);
+        String userName = info.getProperty("user");
+
+        checkConnectionAllowed(originUrl, userName);
+
         Driver originDriver;
         try {
             originDriver = DriverManager.getDriver(originUrl);
@@ -78,7 +102,7 @@ public class SniffyDriver implements Driver, Constants {
             return Connection.class.cast(Proxy.newProxyInstance(
                     SniffyDriver.class.getClassLoader(),
                     new Class[]{Connection.class},
-                    new ConnectionInvocationHandler(delegateConnection)
+                    new ConnectionInvocationHandler(delegateConnection, originUrl, userName)
             ));
         } finally {
             Sniffy.exitJdbcMethod(CONNECT_METHOD, System.currentTimeMillis() - start);

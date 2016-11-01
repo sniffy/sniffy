@@ -196,6 +196,14 @@ public class SniffyDriverTest extends BaseTest {
         assertEquals(1, spy.executedStatements());
     }
 
+    @Test
+    public void getConnectionFromStatement() throws SQLException {
+        try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa");
+             Statement statement = connection.createStatement()) {
+            assertEquals(connection, statement.getConnection());
+        }
+    }
+
     /**
      * This method is used in {@link #testCallStatement()} - do NOT remove it
      * @param arg any integer parameter

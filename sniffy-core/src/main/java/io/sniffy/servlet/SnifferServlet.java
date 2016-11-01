@@ -2,7 +2,7 @@ package io.sniffy.servlet;
 
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
-import io.sniffy.socket.SocketsRegistry;
+import io.sniffy.socket.ConnectionsRegistry;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
@@ -13,21 +13,21 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.URLDecoder;
 import java.util.*;
 
 import static io.sniffy.servlet.SnifferFilter.SNIFFER_URI_PREFIX;
-import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.CLOSED;
-import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.OPEN;
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
 
 class SnifferServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
 
-    public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/socketregistry/";
+    public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/";
+    public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/socket/";
+    public static final String DATASOURCE_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/datasource/";
 
     protected final Map<String, RequestStats> cache;
 
@@ -41,8 +41,8 @@ class SnifferServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC5/dist/sniffy.min.js");
-            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC5/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC8-SNAPSHOT/dist/sniffy.min.js");
+            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC8-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
             throw new ServletException(e);
         }
@@ -72,27 +72,26 @@ class SnifferServlet extends HttpServlet {
                 outputStream.write(requestStatsJson);
                 outputStream.flush();
             }
-        } else if (path.equals(SOCKET_REGISTRY_URI_PREFIX)) {
+        } else if (path.equals(CONNECTION_REGISTRY_URI_PREFIX)) {
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType(JAVASCRIPT_MIME_TYPE);
 
-            Map<Map.Entry<String, Integer>, SocketsRegistry.SocketAddressStatus> discoveredAdresses =
-                    SocketsRegistry.INSTANCE.getDiscoveredAdresses();
+            Map<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus> discoveredAdresses =
+                    ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
 
-            if (discoveredAdresses.isEmpty()) {
-                response.flushBuffer();
-            } else {
+            PrintWriter writer = response.getWriter();
+            writer.write("{");
 
-                Iterator<Map.Entry<Map.Entry<String, Integer>, SocketsRegistry.SocketAddressStatus>> iterator =
+            if (!discoveredAdresses.isEmpty()) {
+
+                writer.write("\"sockets\":[");
+
+                Iterator<Map.Entry<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus>> iterator =
                         discoveredAdresses.entrySet().iterator();
 
-                PrintWriter writer = response.getWriter();
-
-                writer.write('[');
-
                 while (iterator.hasNext()) {
-                    Map.Entry<Map.Entry<String,Integer>, SocketsRegistry.SocketAddressStatus> entry = iterator.next();
+                    Map.Entry<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
 
                     String hostName = entry.getKey().getKey();
                     Integer port = entry.getKey().getValue();
@@ -124,21 +123,86 @@ class SnifferServlet extends HttpServlet {
 
             }
 
-        } else if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
-            SocketsRegistry.SocketAddressStatus status = null;
+            Map<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus> discoveredDataSources =
+                    ConnectionsRegistry.INSTANCE.getDiscoveredDataSources();
+
+            if (!discoveredDataSources.isEmpty()) {
+
+                if (!discoveredAdresses.isEmpty()) {
+                    writer.write(',');
+                }
+
+                writer.write("\"dataSources\":[");
+
+                Iterator<Map.Entry<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus>> iterator =
+                        discoveredDataSources.entrySet().iterator();
+
+                while (iterator.hasNext()) {
+                    Map.Entry<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
+
+                    String url = entry.getKey().getKey();
+                    String userName = entry.getKey().getValue();
+
+                    writer.write('{');
+                    if (null != url) {
+                        writer.write("\"url\":\"");
+                        writer.write(url);
+                        writer.write("\"");
+                    }
+                    if (null != userName) {
+                        if (null != url) writer.write(',');
+                        writer.write("\"userName\":\"");
+                        writer.write(userName);
+                        writer.write("\"");
+                    }
+                    writer.write(',');
+                    writer.write("\"status\":\"");
+                    writer.write(entry.getValue().name());
+                    writer.write("\"");
+                    writer.write('}');
+                    if (iterator.hasNext()) writer.write(',');
+
+                }
+
+                writer.write(']');
+
+                writer.flush();
+
+            }
+
+            writer.write("}");
+
+        } else if (path.startsWith(CONNECTION_REGISTRY_URI_PREFIX)) {
+            ConnectionsRegistry.ConnectionStatus status = null;
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 status = OPEN;
             } else if ("DELETE".equalsIgnoreCase(request.getMethod())) {
                 status = CLOSED;
             }
-            if (null != status) {
-                String socketAddress = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
-                SocketsRegistry.INSTANCE.setSocketAddressStatus(socketAddress, status);
-                response.setStatus(HttpServletResponse.SC_CREATED);
-                response.flushBuffer();
+
+            if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
+                String connectionString = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
+                String[] split = splitBySlashAndDecode(connectionString);
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(split[0], Integer.parseInt(split[1]), status);
+            } else if (path.startsWith(DATASOURCE_REGISTRY_URI_PREFIX)) {
+                String connectionString = path.substring(DATASOURCE_REGISTRY_URI_PREFIX.length());
+                String[] split = splitBySlashAndDecode(connectionString);
+                ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
             }
+
+            response.setStatus(HttpServletResponse.SC_CREATED);
+            response.flushBuffer();
+
         }
 
+    }
+
+    private String[] splitBySlashAndDecode(String connectionString) throws UnsupportedEncodingException {
+        String[] split = connectionString.split("/");
+        for (int i = 0; i < split.length; i++) {
+            split[i] = URLDecoder.decode(split[i], "UTF-8");
+        }
+        return split;
     }
 
     // TODO: stream JSON instead; otherwise we are creating unnecessary garbage out of interned strings mostly

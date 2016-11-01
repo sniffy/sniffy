@@ -14,7 +14,7 @@ public class SocketRegistryTest extends BaseSocketTest {
 
     @After
     public void clearConnectionRules() {
-        SocketsRegistry.INSTANCE.clear();
+        ConnectionsRegistry.INSTANCE.clear();
     }
 
     @Test
@@ -23,7 +23,7 @@ public class SocketRegistryTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        SocketsRegistry.INSTANCE.setSocketAddressStatus(localhost.getHostName(), echoServerRule.getBoundPort(), SocketsRegistry.SocketAddressStatus.CLOSED);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus(localhost.getHostName(), echoServerRule.getBoundPort(), ConnectionsRegistry.ConnectionStatus.CLOSED);
 
         Socket socket = null;
 
