@@ -1,7 +1,9 @@
 package io.sniffy.registry;
 
+import jodd.json.JsonParser;
+
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -20,13 +22,9 @@ public enum ConnectionsRegistry {
         CLOSED
     }
 
-    private Map<Map.Entry<String,Integer>, ConnectionStatus> discoveredAdresses = new
-            ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionStatus>();
-
-    private Map<Map.Entry<String,String>, ConnectionStatus> discoveredDataSources = new
-            ConcurrentHashMap<Map.Entry<String,String>, ConnectionStatus>();
-
-    private boolean persistRegistry = false;
+    private final Map<Map.Entry<String,Integer>, ConnectionStatus> discoveredAddresses = new ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionStatus>();
+    private final Map<Map.Entry<String,String>, ConnectionStatus> discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, ConnectionStatus>();
+    private volatile boolean persistRegistry = false;
 
     public ConnectionStatus resolveDataSourceStatus(String url, String userName) {
 
@@ -34,7 +32,7 @@ public enum ConnectionsRegistry {
 
             if ((null == url || url.equals(entry.getKey().getKey())) &&
                     (null == userName || userName.equals(entry.getKey().getValue())) &&
-                    OPEN != entry.getValue()) { // TODO: why OPEN !=  ???
+                    OPEN != entry.getValue()) {
                 return entry.getValue();
             }
 
@@ -50,14 +48,14 @@ public enum ConnectionsRegistry {
 
         InetAddress inetAddress = inetSocketAddress.getAddress();
 
-        for (Map.Entry<Map.Entry<String,Integer>, ConnectionStatus> entry : discoveredAdresses.entrySet()) {
+        for (Map.Entry<Map.Entry<String,Integer>, ConnectionStatus> entry : discoveredAddresses.entrySet()) {
 
             String hostName = entry.getKey().getKey();
             Integer port = entry.getKey().getValue();
 
             if ((null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress())) &&
                     (null == port || port == inetSocketAddress.getPort()) &&
-                    OPEN != entry.getValue()) { // TODO: why OPEN !=  ???
+                    OPEN != entry.getValue()) {
                 return entry.getValue();
             }
 
@@ -70,11 +68,11 @@ public enum ConnectionsRegistry {
     }
 
     public Map<Map.Entry<String, Integer>, ConnectionStatus> getDiscoveredAddresses() {
-        return discoveredAdresses;
+        return discoveredAddresses;
     }
 
     public void setSocketAddressStatus(String hostName, Integer port, ConnectionStatus connectionStatus) {
-        discoveredAdresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
+        discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
     }
 
     public Map<Map.Entry<String, String>, ConnectionStatus> getDiscoveredDataSources() {
@@ -94,20 +92,55 @@ public enum ConnectionsRegistry {
     }
 
     public void clear() {
-        discoveredAdresses.clear();
+        discoveredAddresses.clear();
         discoveredDataSources.clear();
+        persistRegistry = false;
+    }
+
+    public void readFrom(Reader reader) throws IOException {
+        clear();
+
+        StringBuilder sb = new StringBuilder();
+        int i;
+
+        while((i = reader.read()) != -1) {
+            sb.append((char) i);
+        }
+
+        JsonParser jsonParser = new JsonParser();
+        Map map = jsonParser.parse(sb.toString());
+
+        Object socketNodes = map.get("sockets");
+        if (socketNodes instanceof Map[]) {
+            for (Map socketNode : (Map[])socketNodes) {
+                String hostName = (String) socketNode.get("host");
+                Integer port = Integer.parseInt((String) socketNode.get("port"));
+                ConnectionStatus connectionStatus = ConnectionStatus.valueOf((String) socketNode.get("status"));
+                setSocketAddressStatus(hostName, port, connectionStatus);
+            }
+        }
+
+        Object dataSourceNodes = map.get("dataSources");
+        if (dataSourceNodes instanceof Map[]) {
+            for (Map dataSourceNode : (Map[])dataSourceNodes) {
+                String url = (String) dataSourceNode.get("url");
+                String userName = (String) dataSourceNode.get("userName");
+                ConnectionStatus connectionStatus = ConnectionStatus.valueOf((String) dataSourceNode.get("status"));
+                setDataSourceStatus(url, userName, connectionStatus);
+            }
+        }
     }
 
     public void writeTo(Writer writer) throws IOException {
 
         writer.write("{");
 
-        if (!discoveredAdresses.isEmpty()) {
+        if (!discoveredAddresses.isEmpty()) {
 
             writer.write("\"sockets\":[");
 
             Iterator<Map.Entry<Map.Entry<String, Integer>, ConnectionStatus>> iterator =
-                    discoveredAdresses.entrySet().iterator();
+                    discoveredAddresses.entrySet().iterator();
 
             while (iterator.hasNext()) {
                 Map.Entry<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
@@ -144,7 +177,7 @@ public enum ConnectionsRegistry {
 
         if (!discoveredDataSources.isEmpty()) {
 
-            if (!discoveredAdresses.isEmpty()) {
+            if (!discoveredAddresses.isEmpty()) {
                 writer.write(',');
             }
 

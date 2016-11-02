@@ -5,6 +5,7 @@ import io.sniffy.socket.SnifferSocketImplFactory;
 import org.junit.After;
 import org.junit.Test;
 
+import java.io.StringReader;
 import java.net.ConnectException;
 import java.net.Socket;
 
@@ -52,4 +53,13 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
     }
 
+    @Test
+    public void testLoadFromReader() throws Exception {
+
+        String json = "{\"sockets\":[{\"host\":\"google.com\",\"port\":\"42\",\"status\":\"OPEN\"}]," +
+                "\"dataSources\":[{\"url\":\"jdbc:h2:mem:test\",\"userName\":\"sa\",\"status\":\"OPEN\"}]}";
+
+        ConnectionsRegistry.INSTANCE.readFrom(new StringReader(json));
+
+    }
 }
