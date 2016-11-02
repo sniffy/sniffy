@@ -1,16 +1,16 @@
-package io.sniffy.socket;
+package io.sniffy.registry;
 
+import io.sniffy.socket.BaseSocketTest;
+import io.sniffy.socket.SnifferSocketImplFactory;
 import org.junit.After;
 import org.junit.Test;
 
 import java.net.ConnectException;
 import java.net.Socket;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-public class SocketRegistryTest extends BaseSocketTest {
+public class ConnectionsRegistryTest extends BaseSocketTest {
 
     @After
     public void clearConnectionRules() {

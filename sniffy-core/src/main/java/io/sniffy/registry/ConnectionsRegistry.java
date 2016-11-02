@@ -1,6 +1,4 @@
-package io.sniffy.socket;
-
-import io.sniffy.util.SocketUtil;
+package io.sniffy.registry;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -8,7 +6,7 @@ import java.util.AbstractMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 
 public enum ConnectionsRegistry {
     INSTANCE;
@@ -23,6 +21,8 @@ public enum ConnectionsRegistry {
 
     private Map<Map.Entry<String,String>, ConnectionStatus> discoveredDataSources = new
             ConcurrentHashMap<Map.Entry<String,String>, ConnectionStatus>();
+
+    private boolean persistRegistry = false;
 
     public ConnectionStatus resolveDataSourceStatus(String url, String userName) {
 
@@ -69,17 +69,6 @@ public enum ConnectionsRegistry {
         return discoveredAdresses;
     }
 
-    public void setSocketAddressStatus(String socketAddress, ConnectionStatus connectionStatus) {
-
-        Map.Entry<String, Integer> hostAndPort = SocketUtil.parseSocketAddress(socketAddress);
-
-        String hostName = hostAndPort.getKey();
-        Integer port = hostAndPort.getValue();
-
-        setSocketAddressStatus(hostName, port, connectionStatus);
-
-    }
-
     public void setSocketAddressStatus(String hostName, Integer port, ConnectionStatus connectionStatus) {
         discoveredAdresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
     }
@@ -90,6 +79,14 @@ public enum ConnectionsRegistry {
 
     public void setDataSourceStatus(String url, String userName, ConnectionStatus status) {
         discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(url, userName), status);
+    }
+
+    public boolean isPersistRegistry() {
+        return persistRegistry;
+    }
+
+    public void setPersistRegistry(boolean persistRegistry) {
+        this.persistRegistry = persistRegistry;
     }
 
     public void clear() {

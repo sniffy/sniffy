@@ -1,6 +1,6 @@
 package io.sniffy.sql;
 
-import io.sniffy.socket.ConnectionsRegistry;
+import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,8 +12,8 @@ import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.Map;
 
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static org.junit.Assert.*;
 
 public class DataSourceRegistryTest {

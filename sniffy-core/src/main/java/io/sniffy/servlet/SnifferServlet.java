@@ -1,8 +1,8 @@
 package io.sniffy.servlet;
 
+import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
-import io.sniffy.socket.ConnectionsRegistry;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
@@ -17,9 +17,9 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.util.*;
 
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static io.sniffy.servlet.SnifferFilter.SNIFFER_URI_PREFIX;
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
 
 class SnifferServlet extends HttpServlet {
 
@@ -189,6 +189,8 @@ class SnifferServlet extends HttpServlet {
                 String[] split = splitBySlashAndDecode(connectionString);
                 ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
             }
+
+            // todo: manage persistent flag here
 
             response.setStatus(HttpServletResponse.SC_CREATED);
             response.flushBuffer();

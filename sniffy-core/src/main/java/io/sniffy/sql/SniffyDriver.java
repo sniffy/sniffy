@@ -2,7 +2,7 @@ package io.sniffy.sql;
 
 import io.sniffy.Constants;
 import io.sniffy.Sniffy;
-import io.sniffy.socket.ConnectionsRegistry;
+import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Method;
@@ -15,7 +15,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 
 /**
  * Enable JDBC Sniffer by adding a {@code sniffy:} prefix to your JDBC URL.
