@@ -8,11 +8,13 @@ import java.io.Writer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
+import static io.sniffy.util.StringUtil.loadStringFromReader;
 
 public enum ConnectionsRegistry {
     INSTANCE;
@@ -100,19 +102,12 @@ public enum ConnectionsRegistry {
     public void readFrom(Reader reader) throws IOException {
         clear();
 
-        StringBuilder sb = new StringBuilder();
-        int i;
-
-        while((i = reader.read()) != -1) {
-            sb.append((char) i);
-        }
-
         JsonParser jsonParser = new JsonParser();
-        Map map = jsonParser.parse(sb.toString());
+        Map map = jsonParser.parse(loadStringFromReader(reader));
 
         Object socketNodes = map.get("sockets");
-        if (socketNodes instanceof Map[]) {
-            for (Map socketNode : (Map[])socketNodes) {
+        if (socketNodes instanceof Collection) {
+            for (Map socketNode : (Collection<Map>)socketNodes) {
                 String hostName = (String) socketNode.get("host");
                 Integer port = Integer.parseInt((String) socketNode.get("port"));
                 ConnectionStatus connectionStatus = ConnectionStatus.valueOf((String) socketNode.get("status"));
@@ -121,8 +116,8 @@ public enum ConnectionsRegistry {
         }
 
         Object dataSourceNodes = map.get("dataSources");
-        if (dataSourceNodes instanceof Map[]) {
-            for (Map dataSourceNode : (Map[])dataSourceNodes) {
+        if (dataSourceNodes instanceof Collection) {
+            for (Map dataSourceNode : (Collection<Map>)dataSourceNodes) {
                 String url = (String) dataSourceNode.get("url");
                 String userName = (String) dataSourceNode.get("userName");
                 ConnectionStatus connectionStatus = ConnectionStatus.valueOf((String) dataSourceNode.get("status"));
