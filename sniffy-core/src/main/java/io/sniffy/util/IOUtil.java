@@ -2,7 +2,9 @@ package io.sniffy.util;
 
 import sun.misc.IOUtils;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 
 public class IOUtil {
 
@@ -13,6 +15,16 @@ public class IOUtil {
 
     protected static volatile String applicationId;
     protected static volatile File applicationSniffyFolder;
+
+    public static void closeSilently(Closeable closeable) {
+        if (null != closeable) {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                // TODO: some logging maybe?
+            }
+        }
+    }
 
     public static File getApplicationSniffyFolder() {
 

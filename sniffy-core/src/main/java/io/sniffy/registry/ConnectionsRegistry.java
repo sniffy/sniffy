@@ -28,6 +28,14 @@ public enum ConnectionsRegistry {
     private final Map<Map.Entry<String,String>, ConnectionStatus> discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, ConnectionStatus>();
     private volatile boolean persistRegistry = false;
 
+    ConnectionsRegistry() {
+        try {
+            ConnectionsRegistryStorage.INSTANCE.loadConnectionsRegistry();
+        } catch (IOException e) {
+            // TODO: some logging maybe?
+        }
+    }
+
     public ConnectionStatus resolveDataSourceStatus(String url, String userName) {
 
         for (Map.Entry<Map.Entry<String, String>, ConnectionStatus> entry : discoveredDataSources.entrySet()) {
@@ -75,6 +83,13 @@ public enum ConnectionsRegistry {
 
     public void setSocketAddressStatus(String hostName, Integer port, ConnectionStatus connectionStatus) {
         discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
+        if (persistRegistry) {
+            try {
+                ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry();
+            } catch (IOException e) {
+                // TODO: some logging maybe?
+            }
+        }
     }
 
     public Map<Map.Entry<String, String>, ConnectionStatus> getDiscoveredDataSources() {
@@ -83,6 +98,13 @@ public enum ConnectionsRegistry {
 
     public void setDataSourceStatus(String url, String userName, ConnectionStatus status) {
         discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(url, userName), status);
+        if (persistRegistry) {
+            try {
+                ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry();
+            } catch (IOException e) {
+                // TODO: some logging maybe?
+            }
+        }
     }
 
     public boolean isPersistRegistry() {
@@ -100,7 +122,6 @@ public enum ConnectionsRegistry {
     }
 
     public void readFrom(Reader reader) throws IOException {
-        clear();
 
         JsonParser jsonParser = new JsonParser();
         Map map = jsonParser.parse(loadStringFromReader(reader));
@@ -111,7 +132,7 @@ public enum ConnectionsRegistry {
                 String hostName = (String) socketNode.get("host");
                 Integer port = Integer.parseInt((String) socketNode.get("port"));
                 ConnectionStatus connectionStatus = ConnectionStatus.valueOf((String) socketNode.get("status"));
-                setSocketAddressStatus(hostName, port, connectionStatus);
+                discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
             }
         }
 
@@ -121,7 +142,7 @@ public enum ConnectionsRegistry {
                 String url = (String) dataSourceNode.get("url");
                 String userName = (String) dataSourceNode.get("userName");
                 ConnectionStatus connectionStatus = ConnectionStatus.valueOf((String) dataSourceNode.get("status"));
-                setDataSourceStatus(url, userName, connectionStatus);
+                discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(url, userName), connectionStatus);
             }
         }
     }

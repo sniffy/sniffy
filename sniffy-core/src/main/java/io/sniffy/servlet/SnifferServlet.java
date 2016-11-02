@@ -1,6 +1,7 @@
 package io.sniffy.servlet;
 
 import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.registry.ConnectionsRegistryStorage;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
@@ -28,6 +29,7 @@ class SnifferServlet extends HttpServlet {
     public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/";
     public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/socket/";
     public static final String DATASOURCE_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/datasource/";
+    public static final String PERSISTENT_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/persistent/";
 
     protected final Map<String, RequestStats> cache;
 
@@ -95,9 +97,16 @@ class SnifferServlet extends HttpServlet {
                 String connectionString = path.substring(DATASOURCE_REGISTRY_URI_PREFIX.length());
                 String[] split = splitBySlashAndDecode(connectionString);
                 ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
-            }
+            } else if (path.startsWith(PERSISTENT_REGISTRY_URI_PREFIX)) {
 
-            // todo: manage persistent flag here
+                if (OPEN == status) {
+                    ConnectionsRegistry.INSTANCE.setPersistRegistry(true);
+                    ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry();
+                } else {
+                    ConnectionsRegistry.INSTANCE.setPersistRegistry(false);
+                }
+
+            }
 
             response.setStatus(HttpServletResponse.SC_CREATED);
             response.flushBuffer();
