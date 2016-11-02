@@ -31,7 +31,11 @@ public class IOUtil {
         if (null == applicationSniffyFolder) {
             synchronized (IOUtils.class) {
                 if (null == applicationSniffyFolder) {
-                    File applicationSniffyFolder = new File(new File(System.getProperty(TEMP_DIRECTORY_PROPERTY_NAME)), getApplicationId());
+                    File applicationSniffyFolder = new File(
+                            new File (
+                                    new File(System.getProperty(TEMP_DIRECTORY_PROPERTY_NAME)),
+                                    ".sniffy"
+                            ), getApplicationId());
                     applicationSniffyFolder.mkdirs();
                     IOUtil.applicationSniffyFolder = applicationSniffyFolder;
                 }
@@ -50,7 +54,11 @@ public class IOUtil {
                     StringBuilder sb = new StringBuilder();
 
                     String mainClassName = System.getProperty(MAIN_CLASS_PROPERTY_NAME);
-                    if (null == mainClassName) mainClassName = "SniffyApplication";
+                    if (null == mainClassName) {
+                        mainClassName = "SniffyApplication";
+                    } else if (mainClassName.contains(" ")) {
+                        mainClassName = mainClassName.substring(0, mainClassName.indexOf(" "));
+                    }
 
                     sb.append(mainClassName).append('.');
 

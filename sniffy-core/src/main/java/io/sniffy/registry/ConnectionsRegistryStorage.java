@@ -15,20 +15,25 @@ public enum ConnectionsRegistryStorage {
 
     private File file = new File(IOUtil.getApplicationSniffyFolder(), "connectionsRegistry.json");
 
-    public void loadConnectionsRegistry() throws IOException {
+    public void loadConnectionsRegistry(ConnectionsRegistry connectionsRegistry) throws IOException {
         FileReader reader = null;
         try {
-            ConnectionsRegistry.INSTANCE.readFrom(reader = new FileReader(file));
+            if (file.exists()) {
+                connectionsRegistry.readFrom(reader = new FileReader(file));
+            }
         } finally {
             IOUtil.closeSilently(reader);
             file.delete();
         }
     }
 
-    public void storeConnectionsRegistry() throws IOException {
+    public void storeConnectionsRegistry(ConnectionsRegistry connectionsRegistry) throws IOException {
         FileWriter writer = null;
         try {
-            ConnectionsRegistry.INSTANCE.writeTo(writer = new FileWriter(file));
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            connectionsRegistry.writeTo(writer = new FileWriter(file));
         } finally {
             IOUtil.closeSilently(writer);
         }

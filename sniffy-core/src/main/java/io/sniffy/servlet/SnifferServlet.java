@@ -101,7 +101,7 @@ class SnifferServlet extends HttpServlet {
 
                 if (OPEN == status) {
                     ConnectionsRegistry.INSTANCE.setPersistRegistry(true);
-                    ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry();
+                    ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry(ConnectionsRegistry.INSTANCE);
                 } else {
                     ConnectionsRegistry.INSTANCE.setPersistRegistry(false);
                 }

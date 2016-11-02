@@ -30,9 +30,9 @@ public enum ConnectionsRegistry {
 
     ConnectionsRegistry() {
         try {
-            ConnectionsRegistryStorage.INSTANCE.loadConnectionsRegistry();
-        } catch (IOException e) {
-            // TODO: some logging maybe?
+            ConnectionsRegistryStorage.INSTANCE.loadConnectionsRegistry(this);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -85,9 +85,9 @@ public enum ConnectionsRegistry {
         discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
         if (persistRegistry) {
             try {
-                ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry();
+                ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry(this);
             } catch (IOException e) {
-                // TODO: some logging maybe?
+                e.printStackTrace();
             }
         }
     }
@@ -100,9 +100,9 @@ public enum ConnectionsRegistry {
         discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(url, userName), status);
         if (persistRegistry) {
             try {
-                ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry();
+                ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry(this);
             } catch (IOException e) {
-                // TODO: some logging maybe?
+                e.printStackTrace();
             }
         }
     }
@@ -151,9 +151,12 @@ public enum ConnectionsRegistry {
 
         writer.write("{");
 
+        writer.write("\"persistent\":");
+        writer.write(Boolean.toString(persistRegistry));
+
         if (!discoveredAddresses.isEmpty()) {
 
-            writer.write("\"sockets\":[");
+            writer.write(",\"sockets\":[");
 
             Iterator<Map.Entry<Map.Entry<String, Integer>, ConnectionStatus>> iterator =
                     discoveredAddresses.entrySet().iterator();
@@ -193,11 +196,7 @@ public enum ConnectionsRegistry {
 
         if (!discoveredDataSources.isEmpty()) {
 
-            if (!discoveredAddresses.isEmpty()) {
-                writer.write(',');
-            }
-
-            writer.write("\"dataSources\":[");
+            writer.write(",\"dataSources\":[");
 
             Iterator<Map.Entry<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus>> iterator =
                     discoveredDataSources.entrySet().iterator();
