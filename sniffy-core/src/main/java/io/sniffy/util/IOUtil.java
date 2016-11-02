@@ -2,9 +2,9 @@ package io.sniffy.util;
 
 public class IOUtil {
 
-    private static final String MAIN_CLASS_PROPERTY_NAME = "sun.java.command";
-    private static final String WORKING_DIRECTORY_PROPERTY_NAME = "user.dir";
-    private static final String JAVA_CLASS_PATH_PROPERTY_NAME = "java.class.path";
+    protected static final String MAIN_CLASS_PROPERTY_NAME = "sun.java.command";
+    protected static final String WORKING_DIRECTORY_PROPERTY_NAME = "user.dir";
+    protected static final String JAVA_CLASS_PATH_PROPERTY_NAME = "java.class.path";
 
     public static String getProcessID() {
 
