@@ -1,6 +1,8 @@
 package io.sniffy.registry;
 
-import jodd.json.JsonParser;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -8,13 +10,11 @@ import java.io.Writer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.AbstractMap;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
-import static io.sniffy.util.StringUtil.loadStringFromReader;
 
 public enum ConnectionsRegistry {
     INSTANCE;
@@ -123,28 +123,30 @@ public enum ConnectionsRegistry {
 
     public void readFrom(Reader reader) throws IOException {
 
-        JsonParser jsonParser = new JsonParser();
-        Map map = jsonParser.parse(loadStringFromReader(reader));
+        JsonObject json = Json.parse(reader).asObject();
 
-        Object socketNodes = map.get("sockets");
-        if (socketNodes instanceof Collection) {
-            for (Map socketNode : (Collection<Map>)socketNodes) {
-                String hostName = (String) socketNode.get("host");
-                Integer port = Integer.parseInt((String) socketNode.get("port"));
-                ConnectionStatus connectionStatus = ConnectionStatus.valueOf((String) socketNode.get("status"));
+        if (null != json.get("sockets")) {
+            JsonArray sockets = json.get("sockets").asArray();
+            for (int i = 0; i < sockets.size(); i++) {
+                JsonObject socket = sockets.get(i).asObject();
+                String hostName = socket.get("host").asString();
+                int port = Integer.parseInt(socket.get("port").asString());
+                ConnectionStatus connectionStatus = ConnectionStatus.valueOf(socket.get("status").asString());
                 discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
             }
         }
 
-        Object dataSourceNodes = map.get("dataSources");
-        if (dataSourceNodes instanceof Collection) {
-            for (Map dataSourceNode : (Collection<Map>)dataSourceNodes) {
-                String url = (String) dataSourceNode.get("url");
-                String userName = (String) dataSourceNode.get("userName");
-                ConnectionStatus connectionStatus = ConnectionStatus.valueOf((String) dataSourceNode.get("status"));
+        if (null != json.get("dataSources")) {
+            JsonArray dataSources = json.get("dataSources").asArray();
+            for (int i = 0; i < dataSources.size(); i++) {
+                JsonObject dataSource = dataSources.get(i).asObject();
+                String url = dataSource.get("url").asString();
+                String userName = dataSource.get("userName").asString();
+                ConnectionStatus connectionStatus = ConnectionStatus.valueOf(dataSource.get("status").asString());
                 discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(url, userName), connectionStatus);
             }
         }
+
     }
 
     public void writeTo(Writer writer) throws IOException {
