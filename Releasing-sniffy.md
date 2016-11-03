@@ -8,7 +8,7 @@
 1. Wait for successful [Travis build](https://travis-ci.org/sniffy/sniffy-ui)
 1. `mvn clean install`
 1. `git hf release finish <VERSION>`
-1. `mvn clean install deploy`
+1. `mvn clean deploy`
 1. Go to [Sonatype OSS Nexus](https://oss.sonatype.org/) close and release the iosniffy repository
 1. Bump version in `package.json` and `pom.xml`
 1. `grunt`
