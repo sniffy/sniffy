@@ -5,15 +5,24 @@ import io.sniffy.Sniffy;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 
 public class SniffyInvocationHandler<T> implements InvocationHandler {
 
     protected final T delegate;
 
-    public SniffyInvocationHandler(T delegate) {
+    protected final String url;
+    protected final String userName;
+
+    public SniffyInvocationHandler(T delegate, String url, String userName) {
         this.delegate = delegate;
+        this.url = url;
+        this.userName = userName;
     }
 
+    protected void checkConnectionAllowed() throws SQLException {
+        SniffyDriver.checkConnectionAllowed(url, userName);
+    }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {

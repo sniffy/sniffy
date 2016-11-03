@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffy;
+import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionFieldCopier;
 
@@ -14,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.sniffy.socket.SocketsRegistry.SocketAddressStatus.CLOSED;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 class SnifferSocketImpl extends SocketImpl {
@@ -61,7 +62,7 @@ class SnifferSocketImpl extends SocketImpl {
     }
 
     protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
-        if (null != inetSocketAddress && CLOSED == SocketsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress)) {
+        if (null != inetSocketAddress && CLOSED == ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress)) {
             throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
         }
     }

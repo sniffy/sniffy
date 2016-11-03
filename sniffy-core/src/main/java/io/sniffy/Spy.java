@@ -6,6 +6,7 @@ import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.SocketUtil;
 import io.sniffy.util.StringUtil;
 
 import java.io.Closeable;
@@ -150,18 +151,10 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
      */
     public Map<SocketMetaData, SocketStats> getSocketOperations(Threads threadMatcher, String address, boolean removeStackTraces) {
 
-        String hostName = null;
-        Integer port = null;
+        Map.Entry<String, Integer> hostAndPort = SocketUtil.parseSocketAddress(address);
 
-        if (null != address) {
-            if (-1 != address.indexOf(':')) {
-                String[] split = address.split(":");
-                hostName = split[0];
-                port = Integer.valueOf(split[1]);
-            } else {
-                hostName = address;
-            }
-        }
+        String hostName = hostAndPort.getKey();
+        Integer port = hostAndPort.getValue();
 
         Map<SocketMetaData, SocketStats> socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();
         for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {

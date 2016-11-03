@@ -8,13 +8,15 @@ public class ResultSetInvocationHandler extends SniffyInvocationHandler<Object> 
 
     private final StatementMetaData statementMetaData;
 
-    public ResultSetInvocationHandler(Object delegate, StatementMetaData statementMetaData) {
-        super(delegate);
+    public ResultSetInvocationHandler(Object delegate, String url, String userName, StatementMetaData statementMetaData) {
+        super(delegate, url, userName);
         this.statementMetaData = statementMetaData;
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+        checkConnectionAllowed();
 
         String methodName = method.getName();
 

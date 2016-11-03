@@ -1,8 +1,8 @@
 package io.sniffy.servlet;
 
+import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
-import io.sniffy.socket.SocketsRegistry;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
@@ -17,10 +17,14 @@ import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletResponse;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static org.junit.Assert.*;
 
 public class SnifferServletTest {
@@ -63,21 +67,114 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferServlet.SOCKET_REGISTRY_URI_PREFIX).
+                get("/petclinic" + SnifferServlet.CONNECTION_REGISTRY_URI_PREFIX).
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");
 
-        SocketsRegistry.INSTANCE.setSocketAddressStatus("localhost", SocketsRegistry.SocketAddressStatus.OPEN);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 8181, OPEN);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", OPEN);
 
         snifferServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentAsByteArray().length > 0);
-        //assertTrue(response.getContentLength() > 0);
 
-        SocketsRegistry.INSTANCE.clear();
+        assertTrue(response.getContentAsString().contains("\"sockets\":"));
+        assertTrue(response.getContentAsString().contains("\"dataSources\":"));
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+    }
+
+    @Test
+    public void testEditDatasourceRegistry() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+        URI dataSource1URI = new URI("/petclinic" + SnifferServlet.DATASOURCE_REGISTRY_URI_PREFIX +
+                URLEncoder.encode("jdbc:h2:mem:data/base", "UTF-8") + "/sa");
+
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.post(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            snifferServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().size());
+            Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
+            assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
+            assertEquals("sa", datasource.getValue());
+            assertEquals(OPEN, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource));
+        }
+
+        // delete datasource from registry
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.delete(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            snifferServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().size());
+            Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
+            assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
+            assertEquals("sa", datasource.getValue());
+            assertEquals(CLOSED, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource));
+        }
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+    }
+
+    @Test
+    public void testEditSocketRegistry() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+        URI dataSource1URI = new URI("/petclinic" + SnifferServlet.SOCKET_REGISTRY_URI_PREFIX +
+                URLEncoder.encode("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "UTF-8") + "/1234");
+
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.post(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            snifferServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().size());
+            Map.Entry<String, Integer> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().keySet().iterator().next();
+            assertEquals("2001:0db8:85a3:0000:0000:8a2e:0370:7334", datasource.getKey());
+            assertEquals(1234, datasource.getValue().intValue());
+            assertEquals(OPEN, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().get(datasource));
+        }
+
+        // delete datasource from registry
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.delete(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            snifferServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().size());
+            Map.Entry<String, Integer> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().keySet().iterator().next();
+            assertEquals("2001:0db8:85a3:0000:0000:8a2e:0370:7334", datasource.getKey());
+            assertEquals(1234, datasource.getValue().intValue());
+            assertEquals(CLOSED, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().get(datasource));
+        }
+
+        ConnectionsRegistry.INSTANCE.clear();
 
     }
 

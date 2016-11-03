@@ -4,11 +4,14 @@ import io.sniffy.sql.SqlQueries;
 import org.junit.Test;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.OptionalInt;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PreparedStatementInvocationHandlerTest extends BaseTest {
 
@@ -55,6 +58,14 @@ public class PreparedStatementInvocationHandlerTest extends BaseTest {
             preparedStatement.setString(1, "foo");
             int result = preparedStatement.executeUpdate();
             assertEquals(1, result);
+        }
+    }
+
+    @Test
+    public void getConnectionFromPreparedStatement() throws SQLException {
+        try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa");
+             PreparedStatement statement = connection.prepareStatement("SELECT 1 FROM DUAL")) {
+            assertEquals(connection, statement.getConnection());
         }
     }
 

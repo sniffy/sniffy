@@ -11,11 +11,14 @@ import java.sql.Statement;
 
 public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connection> {
 
-    public ConnectionInvocationHandler(Connection delegate) {
-        super(delegate);
+    public ConnectionInvocationHandler(Connection delegate, String url, String userName) {
+        super(delegate, url, userName);
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+        checkConnectionAllowed();
+
         long start = System.currentTimeMillis();
         try {
             Sniffy.enterJdbcMethod();
@@ -24,20 +27,24 @@ public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connect
                 return Proxy.newProxyInstance(
                         ConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{Statement.class},
-                        new StatementInvocationHandler(result)
+                        new StatementInvocationHandler(result, proxy, url, userName)
                 );
             } else if ("prepareStatement".equals(method.getName())) {
                 return Proxy.newProxyInstance(
                         ConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{PreparedStatement.class},
-                        new PreparedStatementInvocationHandler(result, String.class.cast(args[0]))
+                        new PreparedStatementInvocationHandler(result, proxy, url, userName, String.class.cast(args[0]))
                 );
             } else if ("prepareCall".equals(method.getName())) {
                 return Proxy.newProxyInstance(
                         ConnectionInvocationHandler.class.getClassLoader(),
                         new Class[]{CallableStatement.class},
-                        new PreparedStatementInvocationHandler(result, String.class.cast(args[0]))
+                        new PreparedStatementInvocationHandler(result, proxy, url, userName, String.class.cast(args[0]))
                 );
+            } else if ("equals".equals(method.getName())) {
+                Object that = args[0];
+                return null == that ? Boolean.FALSE :
+                        Proxy.isProxyClass(that.getClass()) ? proxy == args[0] : result;
             } else {
                 // TODO: proxy other classes which can produce network like getDatabaseMetaData() and others
                 return result;
