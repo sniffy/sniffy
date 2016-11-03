@@ -1,8 +1,9 @@
 package io.sniffy.servlet;
 
+import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.registry.ConnectionsRegistryStorage;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
-import io.sniffy.socket.ConnectionsRegistry;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
@@ -17,9 +18,9 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.util.*;
 
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static io.sniffy.servlet.SnifferFilter.SNIFFER_URI_PREFIX;
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
 
 class SnifferServlet extends HttpServlet {
 
@@ -28,6 +29,7 @@ class SnifferServlet extends HttpServlet {
     public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/";
     public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/socket/";
     public static final String DATASOURCE_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/datasource/";
+    public static final String PERSISTENT_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/persistent/";
 
     protected final Map<String, RequestStats> cache;
 
@@ -77,100 +79,7 @@ class SnifferServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType(JAVASCRIPT_MIME_TYPE);
 
-            Map<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus> discoveredAdresses =
-                    ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
-
-            PrintWriter writer = response.getWriter();
-            writer.write("{");
-
-            if (!discoveredAdresses.isEmpty()) {
-
-                writer.write("\"sockets\":[");
-
-                Iterator<Map.Entry<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus>> iterator =
-                        discoveredAdresses.entrySet().iterator();
-
-                while (iterator.hasNext()) {
-                    Map.Entry<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
-
-                    String hostName = entry.getKey().getKey();
-                    Integer port = entry.getKey().getValue();
-
-                    writer.write('{');
-                    if (null != hostName) {
-                        writer.write("\"host\":\"");
-                        writer.write(hostName);
-                        writer.write("\"");
-                    }
-                    if (null != port) {
-                        if (null != hostName) writer.write(',');
-                        writer.write("\"port\":\"");
-                        writer.write(port.toString());
-                        writer.write("\"");
-                    }
-                    writer.write(',');
-                    writer.write("\"status\":\"");
-                    writer.write(entry.getValue().name());
-                    writer.write("\"");
-                    writer.write('}');
-                    if (iterator.hasNext()) writer.write(',');
-
-                }
-
-                writer.write(']');
-
-                writer.flush();
-
-            }
-
-            Map<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus> discoveredDataSources =
-                    ConnectionsRegistry.INSTANCE.getDiscoveredDataSources();
-
-            if (!discoveredDataSources.isEmpty()) {
-
-                if (!discoveredAdresses.isEmpty()) {
-                    writer.write(',');
-                }
-
-                writer.write("\"dataSources\":[");
-
-                Iterator<Map.Entry<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus>> iterator =
-                        discoveredDataSources.entrySet().iterator();
-
-                while (iterator.hasNext()) {
-                    Map.Entry<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
-
-                    String url = entry.getKey().getKey();
-                    String userName = entry.getKey().getValue();
-
-                    writer.write('{');
-                    if (null != url) {
-                        writer.write("\"url\":\"");
-                        writer.write(url);
-                        writer.write("\"");
-                    }
-                    if (null != userName) {
-                        if (null != url) writer.write(',');
-                        writer.write("\"userName\":\"");
-                        writer.write(userName);
-                        writer.write("\"");
-                    }
-                    writer.write(',');
-                    writer.write("\"status\":\"");
-                    writer.write(entry.getValue().name());
-                    writer.write("\"");
-                    writer.write('}');
-                    if (iterator.hasNext()) writer.write(',');
-
-                }
-
-                writer.write(']');
-
-                writer.flush();
-
-            }
-
-            writer.write("}");
+            ConnectionsRegistry.INSTANCE.writeTo(response.getWriter());
 
         } else if (path.startsWith(CONNECTION_REGISTRY_URI_PREFIX)) {
             ConnectionsRegistry.ConnectionStatus status = null;
@@ -188,6 +97,15 @@ class SnifferServlet extends HttpServlet {
                 String connectionString = path.substring(DATASOURCE_REGISTRY_URI_PREFIX.length());
                 String[] split = splitBySlashAndDecode(connectionString);
                 ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
+            } else if (path.startsWith(PERSISTENT_REGISTRY_URI_PREFIX)) {
+
+                if (OPEN == status) {
+                    ConnectionsRegistry.INSTANCE.setPersistRegistry(true);
+                    ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry(ConnectionsRegistry.INSTANCE);
+                } else {
+                    ConnectionsRegistry.INSTANCE.setPersistRegistry(false);
+                }
+
             }
 
             response.setStatus(HttpServletResponse.SC_CREATED);

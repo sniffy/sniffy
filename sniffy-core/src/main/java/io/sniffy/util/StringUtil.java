@@ -1,8 +1,22 @@
 package io.sniffy.util;
 
+import java.io.IOException;
+import java.io.Reader;
+
 public class StringUtil {
 
     public final static String LINE_SEPARATOR = System.getProperty("line.separator");
+
+    public static String loadStringFromReader(Reader reader) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int i;
+
+        while((i = reader.read()) != -1) {
+            sb.append((char) i);
+        }
+
+        return sb.toString();
+    }
 
     public static String escapeJsonString(String string) {
         if (string == null || string.length() == 0) {

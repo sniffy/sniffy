@@ -1,8 +1,8 @@
 package io.sniffy.servlet;
 
+import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
-import io.sniffy.socket.ConnectionsRegistry;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.CLOSED;
-import static io.sniffy.socket.ConnectionsRegistry.ConnectionStatus.OPEN;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
+import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static org.junit.Assert.*;
 
 public class SnifferServletTest {
@@ -72,7 +72,7 @@ public class SnifferServletTest {
 
         request.setContextPath("/petclinic");
 
-        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", OPEN);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 8181, OPEN);
         ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", OPEN);
 
         snifferServlet.service(request, response);

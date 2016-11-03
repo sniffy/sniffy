@@ -219,6 +219,12 @@
                 <version>1.4.2</version>
                 <scope>compile</scope>
             </dependency>
+            <dependency>
+                <groupId>com.eclipsesource.minimal-json</groupId>
+                <artifactId>minimal-json</artifactId>
+                <version>0.9.4</version>
+                <scope>compile</scope>
+            </dependency>
 
             <dependency>
                 <!--<groupId>org.webjars.bower</groupId>
