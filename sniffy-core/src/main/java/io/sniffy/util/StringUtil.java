@@ -1,29 +1,15 @@
 package io.sniffy.util;
 
-import java.io.IOException;
-import java.io.Reader;
-
 public class StringUtil {
 
     public final static String LINE_SEPARATOR = System.getProperty("line.separator");
-
-    public static String loadStringFromReader(Reader reader) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        int i;
-
-        while((i = reader.read()) != -1) {
-            sb.append((char) i);
-        }
-
-        return sb.toString();
-    }
 
     public static String escapeJsonString(String string) {
         if (string == null || string.length() == 0) {
             return "\"\"";
         }
 
-        char         c = 0;
+        char         c;
         int          i;
         int          len = string.length();
         StringBuilder sb = new StringBuilder(len + 4);
@@ -62,7 +48,7 @@ public class StringUtil {
                 default:
                     if (c < ' ') {
                         t = "000" + Integer.toHexString(c);
-                        sb.append("\\u" + t.substring(t.length() - 4));
+                        sb.append("\\u").append(t.substring(t.length() - 4));
                     } else {
                         sb.append(c);
                     }
