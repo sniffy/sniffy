@@ -59,7 +59,4 @@ public class StringUtil {
         return sb.toString();
     }
 
-    protected StringUtil() {
-    }
-
 }
