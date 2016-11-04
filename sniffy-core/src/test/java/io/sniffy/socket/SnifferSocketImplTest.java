@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketImpl;
+import java.sql.SQLException;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
@@ -36,6 +37,23 @@ public class SnifferSocketImplTest {
     public void testSendUrgentData() throws Exception {
 
         sniffySocket.sendUrgentData(1);
+
+        verifyPrivate(delegate).invoke("sendUrgentData",1);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testSendUrgentDataThrowsIOException() throws Exception {
+
+        IOException expected = new IOException();
+        when(delegate, "sendUrgentData", anyInt()).thenThrow(expected);
+
+        try {
+            sniffySocket.sendUrgentData(1);
+        } catch (IOException actual) {
+            assertEquals(expected, actual);
+        }
 
         verifyPrivate(delegate).invoke("sendUrgentData",1);
         verifyNoMoreInteractions(delegate);
