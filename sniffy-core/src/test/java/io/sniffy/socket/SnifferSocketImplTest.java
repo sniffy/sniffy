@@ -358,4 +358,19 @@ public class SnifferSocketImplTest {
 
     }
 
+    @Test
+    public void testToString() throws Exception {
+
+        String expected = "expected";
+
+        when(delegate, "toString").thenReturn(expected);
+
+        String actual = sniffySocket.toString();
+
+        verifyNoMoreInteractions(delegate);
+
+        assertEquals(expected, actual);
+
+    }
+
 }
