@@ -11,6 +11,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.servlet.*;
@@ -44,14 +45,18 @@ public class SnifferFilterTest extends BaseTest {
     private MockServletContext servletContext;
     private MockHttpServletRequest httpServletRequest;
     private MockHttpServletRequest httpServletRequest2;
+    private MockHttpServletRequest httpServletRequest3;
+    private MockHttpServletRequest httpServletRequest4;
     private SnifferFilter filter;
 
     @Before
     public void setupServletApiMocks() {
         httpServletResponse = new MockHttpServletResponse();
-        servletContext = new MockServletContext("/petclinic/");
+        servletContext = new MockServletContext("/petclinic");
         httpServletRequest = MockMvcRequestBuilders.get("/petclinic/foo/bar?baz").contextPath("/petclinic").buildRequest(servletContext);
         httpServletRequest2 = MockMvcRequestBuilders.get("/petclinic/foo/bar/").contextPath("/petclinic").buildRequest(servletContext);
+        httpServletRequest3 = MockMvcRequestBuilders.get("/petclinic").contextPath("/petclinic").buildRequest(servletContext);
+        httpServletRequest4 = MockMvcRequestBuilders.get("/petclinic/").contextPath("/petclinic").buildRequest(servletContext);
         filter = new SnifferFilter();
     }
 
@@ -131,6 +136,52 @@ public class SnifferFilterTest extends BaseTest {
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
         assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../.." + REQUEST_URI_PREFIX));
+
+    }
+
+    @Test
+    public void testFilterSniffyInjected3() throws IOException, ServletException, ParserConfigurationException, SAXException {
+
+        answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest3, httpServletResponse, filterChain);
+
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
+
+        Node scriptTag = doc.getElementsByTagName("script").item(0);
+        assertNull(scriptTag.getAttributes().getNamedItem("src"));
+        assertTrue(scriptTag.getTextContent().contains("document.write"));
+
+        String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
+
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("./" + REQUEST_URI_PREFIX));
+
+    }
+
+    @Test
+    public void testFilterSniffyInjected4() throws IOException, ServletException, ParserConfigurationException, SAXException {
+
+        answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(httpServletRequest4, httpServletResponse, filterChain);
+
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
+
+        String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
+
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith(SNIFFER_URI_PREFIX));
+
+        String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
+
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith(REQUEST_URI_PREFIX));
 
     }
 
