@@ -117,7 +117,7 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
-    public void testFilterSniffyInjected_RequestWithPath() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjectedRequestWithPath() throws IOException, ServletException, ParserConfigurationException, SAXException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
@@ -140,7 +140,7 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
-    public void testFilterSniffyInjected_ContextWithoutTrailingSlash() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjectedContextWithoutTrailingSlash() throws IOException, ServletException, ParserConfigurationException, SAXException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
@@ -163,7 +163,7 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
-    public void testFilterSniffyInjected_Context() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjectedContext() throws IOException, ServletException, ParserConfigurationException, SAXException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
