@@ -97,11 +97,11 @@ public class SnifferFilterTest extends BaseTest {
 
         String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
 
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith(".." + SNIFFER_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFER_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
-        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith(".." + REQUEST_URI_PREFIX));
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../" + REQUEST_URI_PREFIX));
     }
 
     private void answerWithContent(String actualContent) throws IOException, ServletException {
@@ -131,11 +131,11 @@ public class SnifferFilterTest extends BaseTest {
 
         String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
 
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../.." + SNIFFER_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../../" + SNIFFER_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
-        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../.." + REQUEST_URI_PREFIX));
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../../" + REQUEST_URI_PREFIX));
 
     }
 
@@ -223,7 +223,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.init(filterConfig);
 
         MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.JAVASCRIPT_URI).
+                get("/petclinic/" + SnifferFilter.JAVASCRIPT_URI).
                 contextPath("/petclinic").buildRequest(servletContext);
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
@@ -243,7 +243,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.init(filterConfig);
 
         MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.JAVASCRIPT_MAP_URI).
+                get("/petclinic/" + SnifferFilter.JAVASCRIPT_MAP_URI).
                 contextPath("/petclinic").buildRequest(servletContext);
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);

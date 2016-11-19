@@ -157,8 +157,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         } else {
             for (int i = 1; i < relativeUrl.length(); i++) {
                 if ('/' == relativeUrl.charAt(i)) {
-                    if (sb.length() > 0) sb.append('/');
-                    sb.append("..");
+                    sb.append("../");
                 }
             }
 
@@ -222,12 +221,14 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
         if (contextPath.startsWith("./")) {
             return new StringBuilder().
-                    append("<script id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
-                    append(requestId).append("\">").
-                    append("document.write('<script type=\"application/javascript\" src=\"'+location.href+'").
+                    append("<script type=\"application/javascript\">").
+                    append("document.write('\\x3Cscript ").
+                    append("id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
+                    append(requestId).
+                    append("\" src=\"'+location.href+'").
                     append(contextPath.substring(1)).
                     append(SnifferFilter.JAVASCRIPT_URI).
-                    append("\"></script>');</script>");
+                    append("\">\\x3C/script>');</script>");
         } else {
             return new StringBuilder().
                     append("<script id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").

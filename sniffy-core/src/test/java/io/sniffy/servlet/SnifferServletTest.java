@@ -49,7 +49,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.JAVASCRIPT_URI).
+                get("/petclinic/" + SnifferFilter.JAVASCRIPT_URI).
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");
@@ -67,7 +67,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferServlet.CONNECTION_REGISTRY_URI_PREFIX).
+                get("/petclinic/" + SnifferServlet.CONNECTION_REGISTRY_URI_PREFIX).
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");
@@ -93,7 +93,7 @@ public class SnifferServletTest {
 
         ConnectionsRegistry.INSTANCE.clear();
 
-        URI dataSource1URI = new URI("/petclinic" + SnifferServlet.DATASOURCE_REGISTRY_URI_PREFIX +
+        URI dataSource1URI = new URI("/petclinic/" + SnifferServlet.DATASOURCE_REGISTRY_URI_PREFIX +
                 URLEncoder.encode("jdbc:h2:mem:data/base", "UTF-8") + "/sa");
 
         {
@@ -138,7 +138,7 @@ public class SnifferServletTest {
 
         ConnectionsRegistry.INSTANCE.clear();
 
-        URI dataSource1URI = new URI("/petclinic" + SnifferServlet.SOCKET_REGISTRY_URI_PREFIX +
+        URI dataSource1URI = new URI("/petclinic/" + SnifferServlet.SOCKET_REGISTRY_URI_PREFIX +
                 URLEncoder.encode("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "UTF-8") + "/1234");
 
         {
@@ -183,7 +183,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
+                get("/petclinic/" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
         cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
@@ -211,7 +211,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
+                get("/petclinic/" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
         cache.put("foo", new RequestStats(
@@ -255,7 +255,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
+                get("/petclinic/" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
         cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
@@ -283,7 +283,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
+                get("/petclinic/" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");
