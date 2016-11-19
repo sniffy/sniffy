@@ -156,7 +156,7 @@ class SnifferServlet extends HttpServlet {
                             append(StringUtil.escapeJsonString(statement.stackTrace)).
                             append(",").
                             append("\"time\":").
-                            append(String.format(Locale.ENGLISH, "%.3f", sqlStats.elapsedTime.doubleValue() / 1000)).
+                            append(sqlStats.elapsedTime.longValue()).
                             append(",").
                             append("\"invocations\":").
                             append(sqlStats.queries.longValue()).
@@ -196,7 +196,7 @@ class SnifferServlet extends HttpServlet {
                             append(StringUtil.escapeJsonString(socketMetaData.stackTrace)).
                             append(",").
                             append("\"time\":").
-                            append(String.format(Locale.ENGLISH, "%.3f", (double) socketStats.elapsedTime.longValue())).
+                            append(socketStats.elapsedTime.longValue()).
                             append(",").
                             append("\"bytesDown\":").
                             append(socketStats.bytesDown.longValue()).
