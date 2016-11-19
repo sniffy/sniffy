@@ -223,7 +223,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.init(filterConfig);
 
         MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
-                get("/petclinic/" + SnifferFilter.JAVASCRIPT_URI).
+                get("/petclinic/" + JAVASCRIPT_URI).
                 contextPath("/petclinic").buildRequest(servletContext);
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
@@ -243,7 +243,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.init(filterConfig);
 
         MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
-                get("/petclinic/" + SnifferFilter.JAVASCRIPT_MAP_URI).
+                get("/petclinic/" + JAVASCRIPT_MAP_URI).
                 contextPath("/petclinic").buildRequest(servletContext);
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
