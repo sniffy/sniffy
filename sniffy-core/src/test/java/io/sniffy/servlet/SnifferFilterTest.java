@@ -11,6 +11,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.servlet.*;
@@ -42,16 +43,20 @@ public class SnifferFilterTest extends BaseTest {
 
     private MockHttpServletResponse httpServletResponse;
     private MockServletContext servletContext;
-    private MockHttpServletRequest httpServletRequest;
-    private MockHttpServletRequest httpServletRequest2;
+    private MockHttpServletRequest requestWithPathAndQueryParameter;
+    private MockHttpServletRequest requestWithPath;
+    private MockHttpServletRequest requestContextWithoutTrailingSlash;
+    private MockHttpServletRequest requestContext;
     private SnifferFilter filter;
 
     @Before
     public void setupServletApiMocks() {
         httpServletResponse = new MockHttpServletResponse();
-        servletContext = new MockServletContext("/petclinic/");
-        httpServletRequest = MockMvcRequestBuilders.get("/petclinic/foo/bar?baz").contextPath("/petclinic").buildRequest(servletContext);
-        httpServletRequest2 = MockMvcRequestBuilders.get("/petclinic/foo/bar/").contextPath("/petclinic").buildRequest(servletContext);
+        servletContext = new MockServletContext("/petclinic");
+        requestWithPathAndQueryParameter = MockMvcRequestBuilders.get("/petclinic/foo/bar?baz").contextPath("/petclinic").buildRequest(servletContext);
+        requestWithPath = MockMvcRequestBuilders.get("/petclinic/foo/bar/").contextPath("/petclinic").buildRequest(servletContext);
+        requestContextWithoutTrailingSlash = MockMvcRequestBuilders.get("/petclinic").contextPath("/petclinic").buildRequest(servletContext);
+        requestContext = MockMvcRequestBuilders.get("/petclinic/").contextPath("/petclinic").buildRequest(servletContext);
         filter = new SnifferFilter();
     }
 
@@ -71,7 +76,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.setInjectHtml(true);
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertTrue(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
 
@@ -85,18 +90,18 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
 
         String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
 
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith(".." + SNIFFER_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFER_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
-        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith(".." + REQUEST_URI_PREFIX));
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../" + REQUEST_URI_PREFIX));
     }
 
     private void answerWithContent(String actualContent) throws IOException, ServletException {
@@ -112,25 +117,71 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
-    public void testFilterSniffyInjected2() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjectedRequestWithPath() throws IOException, ServletException, ParserConfigurationException, SAXException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest2, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPath, httpServletResponse, filterChain);
 
         DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
 
         String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
 
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../.." + SNIFFER_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../../" + SNIFFER_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
-        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../.." + REQUEST_URI_PREFIX));
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../../" + REQUEST_URI_PREFIX));
+
+    }
+
+    @Test
+    public void testFilterSniffyInjectedContextWithoutTrailingSlash() throws IOException, ServletException, ParserConfigurationException, SAXException {
+
+        answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(requestContextWithoutTrailingSlash, httpServletResponse, filterChain);
+
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
+
+        Node scriptTag = doc.getElementsByTagName("script").item(0);
+        assertNull(scriptTag.getAttributes().getNamedItem("src"));
+        assertTrue(scriptTag.getTextContent().contains("document.write"));
+
+        String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
+
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("./" + REQUEST_URI_PREFIX));
+
+    }
+
+    @Test
+    public void testFilterSniffyInjectedContext() throws IOException, ServletException, ParserConfigurationException, SAXException {
+
+        answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+
+        SnifferFilter filter = new SnifferFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(requestContext, httpServletResponse, filterChain);
+
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
+
+        String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
+
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith(SNIFFER_URI_PREFIX));
+
+        String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
+
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith(REQUEST_URI_PREFIX));
 
     }
 
@@ -143,7 +194,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(filterConfig);
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertFalse(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
 
@@ -172,7 +223,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.init(filterConfig);
 
         MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.JAVASCRIPT_URI).
+                get("/petclinic/" + JAVASCRIPT_URI).
                 contextPath("/petclinic").buildRequest(servletContext);
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
@@ -192,7 +243,7 @@ public class SnifferFilterTest extends BaseTest {
         filter.init(filterConfig);
 
         MockHttpServletRequest httpServletRequest = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.JAVASCRIPT_MAP_URI).
+                get("/petclinic/" + JAVASCRIPT_MAP_URI).
                 contextPath("/petclinic").buildRequest(servletContext);
 
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
@@ -205,7 +256,7 @@ public class SnifferFilterTest extends BaseTest {
     @Test
     public void testFilterNoQueries() throws IOException, ServletException {
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
 
@@ -217,7 +268,7 @@ public class SnifferFilterTest extends BaseTest {
         doAnswer(invocation -> {executeStatement(); return null;}).
                 when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
 
@@ -234,7 +285,7 @@ public class SnifferFilterTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
 
         try {
-            filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+            filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
             fail();
         } catch (Exception e) {
             assertNotNull(e);
@@ -252,7 +303,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.setEnabled(false);
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
 
@@ -270,7 +321,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(filterConfig);
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
 
@@ -282,8 +333,8 @@ public class SnifferFilterTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
         SnifferFilter filter = new SnifferFilter();
         filter.setEnabled(false);
-        httpServletRequest.setParameter("sniffy", "true");
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        requestWithPathAndQueryParameter.setParameter("sniffy", "true");
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
         assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
         assertEquals("Check cookie parameter specified", "true", httpServletResponse.getCookie("sniffy").getValue());
     }
@@ -294,8 +345,8 @@ public class SnifferFilterTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
         SnifferFilter filter = new SnifferFilter();
         filter.setEnabled(false);
-        httpServletRequest.setCookies((Cookie[]) null);
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        requestWithPathAndQueryParameter.setCookies((Cookie[]) null);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
         assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }
 
@@ -305,8 +356,8 @@ public class SnifferFilterTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
         SnifferFilter filter = new SnifferFilter();
         filter.setEnabled(false);
-        httpServletRequest.setCookies(new Cookie("sniffy", "true"));
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        requestWithPathAndQueryParameter.setCookies(new Cookie("sniffy", "true"));
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
         assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }
 
@@ -316,9 +367,9 @@ public class SnifferFilterTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
         SnifferFilter filter = new SnifferFilter();
         filter.setEnabled(false);
-        httpServletRequest.setParameter("sniffy", "false");
-        httpServletRequest.setCookies(new Cookie("sniffy", "true"));
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        requestWithPathAndQueryParameter.setParameter("sniffy", "false");
+        requestWithPathAndQueryParameter.setCookies(new Cookie("sniffy", "true"));
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
         assertFalse("Filter must be disabled", httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
         assertEquals("Cookie parameter must be replaced", "false", httpServletResponse.getCookie("sniffy").getValue());
     }
@@ -329,8 +380,8 @@ public class SnifferFilterTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
         SnifferFilter filter = new SnifferFilter();
         filter.setEnabled(true);
-        httpServletRequest.setParameter("sniffy", "false");
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        requestWithPathAndQueryParameter.setParameter("sniffy", "false");
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
         assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }
 
@@ -344,7 +395,7 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertArrayEquals("Hello, World".getBytes(), httpServletResponse.getContentAsByteArray());
@@ -356,7 +407,7 @@ public class SnifferFilterTest extends BaseTest {
 
         doExecuteQueryOnAnyRequest();
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertArrayEquals("Hello, World".getBytes(), httpServletResponse.getContentAsByteArray());
@@ -372,7 +423,7 @@ public class SnifferFilterTest extends BaseTest {
 
         doExecuteQueryOnAnyRequest();
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         verify(sos).close();
 
@@ -391,7 +442,7 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(100 * 1024, httpServletResponse.getContentAsByteArray().length);
@@ -422,7 +473,7 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(100 * 1024, httpServletResponse.getContentAsByteArray().length);
@@ -450,7 +501,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
@@ -480,7 +531,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(
@@ -520,7 +571,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
@@ -552,7 +603,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
@@ -584,7 +635,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
@@ -616,7 +667,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
@@ -648,7 +699,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
@@ -680,7 +731,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
@@ -713,7 +764,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         String contentAsString = httpServletResponse.getContentAsString();
@@ -733,7 +784,7 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(HttpServletResponse.SC_CONFLICT, httpServletResponse.getStatus());
@@ -751,7 +802,7 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(HttpServletResponse.SC_CONFLICT, httpServletResponse.getStatus());
@@ -768,7 +819,7 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(1, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(HttpServletResponse.SC_MOVED_TEMPORARILY, httpServletResponse.getStatus());
@@ -799,7 +850,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
@@ -829,7 +880,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
@@ -860,7 +911,7 @@ public class SnifferFilterTest extends BaseTest {
 
         SnifferFilter filter = new SnifferFilter();
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(4, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertEquals(250 * 1024, httpServletResponse.getContentAsByteArray().length);
@@ -870,7 +921,7 @@ public class SnifferFilterTest extends BaseTest {
     @Test
     public void testFilterNoCorsHeaders() throws IOException, ServletException {
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
@@ -889,7 +940,7 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_TIME_TO_FIRST_BYTE));
@@ -910,7 +961,7 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertEquals(0, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getHeader(HEADER_CORS_HEADERS).contains(HEADER_NUMBER_OF_QUERIES));
@@ -932,7 +983,7 @@ public class SnifferFilterTest extends BaseTest {
             return null;
         }).when(filterChain).doFilter(any(), any());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertTrue(httpServletResponse.containsHeader(HEADER_TIME_TO_FIRST_BYTE));
         assertTrue(Integer.parseInt(httpServletResponse.getHeader(HEADER_TIME_TO_FIRST_BYTE)) >= 1);
@@ -947,7 +998,7 @@ public class SnifferFilterTest extends BaseTest {
         SnifferFilter filter = new SnifferFilter();
         filter.init(getFilterConfig());
 
-        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         Matcher matcher = Pattern.
                 compile(".*data-server-time=\"(\\d+)\".*").

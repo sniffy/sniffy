@@ -149,15 +149,20 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
 
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < relativeUrl.length(); i++) {
-            if ('/' == relativeUrl.charAt(i)) {
-                if (sb.length() > 0) sb.append('/');
-                sb.append("..");
-            }
-        }
+        String contextRelativePath;
 
-        String contextRelativePath = sb.toString();
-        if (contextRelativePath.isEmpty()) contextRelativePath = ".";
+        if (null == relativeUrl || relativeUrl.isEmpty()) {
+            contextRelativePath = "./";
+            sb.append(contextRelativePath);
+        } else {
+            for (int i = 1; i < relativeUrl.length(); i++) {
+                if ('/' == relativeUrl.charAt(i)) {
+                    sb.append("../");
+                }
+            }
+
+            contextRelativePath = sb.toString();
+        }
 
         sb.append(SnifferFilter.REQUEST_URI_PREFIX).append(requestId);
 
@@ -214,13 +219,25 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
-        return new StringBuilder().
-                append("<script id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
-                append(requestId).
-                append("\" src=\"").
-                append(contextPath).
-                append(SnifferFilter.JAVASCRIPT_URI).
-                append("\"></script>");
+        if (contextPath.startsWith("./")) {
+            return new StringBuilder().
+                    append("<script type=\"application/javascript\">").
+                    append("document.write('\\x3Cscript ").
+                    append("id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
+                    append(requestId).
+                    append("\" src=\"'+location.href+'").
+                    append(contextPath.substring(1)).
+                    append(SnifferFilter.JAVASCRIPT_URI).
+                    append("\">\\x3C/script>');</script>");
+        } else {
+            return new StringBuilder().
+                    append("<script id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
+                    append(requestId).
+                    append("\" src=\"").
+                    append(contextPath).
+                    append(SnifferFilter.JAVASCRIPT_URI).
+                    append("\"></script>");
+        }
     }
 
     private int maximumInjectSize;

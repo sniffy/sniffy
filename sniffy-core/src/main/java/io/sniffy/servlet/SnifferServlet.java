@@ -55,6 +55,10 @@ class SnifferServlet extends HttpServlet {
 
         String path = request.getRequestURI().substring(request.getContextPath().length());
 
+        if (path.length() > 0) {
+            path = path.substring(1);
+        }
+
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
             serveContent(response, JAVASCRIPT_MIME_TYPE, javascript);
         } else if (SnifferFilter.JAVASCRIPT_MAP_URI.equals(path)) {
