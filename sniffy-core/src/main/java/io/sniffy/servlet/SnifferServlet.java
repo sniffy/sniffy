@@ -43,8 +43,8 @@ class SnifferServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC8/dist/sniffy.min.js");
-            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC8/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC9/dist/sniffy.min.js");
+            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0-RC9/dist/sniffy.map");
         } catch (IOException e) {
             throw new ServletException(e);
         }
@@ -54,6 +54,10 @@ class SnifferServlet extends HttpServlet {
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         String path = request.getRequestURI().substring(request.getContextPath().length());
+
+        if (path.length() > 0) {
+            path = path.substring(1);
+        }
 
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
             serveContent(response, JAVASCRIPT_MIME_TYPE, javascript);
@@ -152,7 +156,7 @@ class SnifferServlet extends HttpServlet {
                             append(StringUtil.escapeJsonString(statement.stackTrace)).
                             append(",").
                             append("\"time\":").
-                            append(String.format(Locale.ENGLISH, "%.3f", sqlStats.elapsedTime.doubleValue() / 1000)).
+                            append(sqlStats.elapsedTime.longValue()).
                             append(",").
                             append("\"invocations\":").
                             append(sqlStats.queries.longValue()).
@@ -192,7 +196,7 @@ class SnifferServlet extends HttpServlet {
                             append(StringUtil.escapeJsonString(socketMetaData.stackTrace)).
                             append(",").
                             append("\"time\":").
-                            append(String.format(Locale.ENGLISH, "%.3f", (double) socketStats.elapsedTime.longValue())).
+                            append(socketStats.elapsedTime.longValue()).
                             append(",").
                             append("\"bytesDown\":").
                             append(socketStats.bytesDown.longValue()).

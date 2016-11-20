@@ -15,7 +15,6 @@ import java.net.SocketImpl;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyObject;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
@@ -43,7 +42,7 @@ public class SnifferSocketImplTest {
     }
 
     @Test
-    public void testSendUrgentDataThrowIOException() throws Exception {
+    public void testSendUrgentDataThrowsIOException() throws Exception {
 
         IOException expected = new IOException();
         when(delegate, "sendUrgentData", anyInt()).thenThrow(expected);
@@ -61,7 +60,7 @@ public class SnifferSocketImplTest {
     }
 
     @Test
-    public void testSendUrgentDataThrowRuntimeException() throws Exception {
+    public void testSendUrgentDataThrowsRuntimeException() throws Exception {
 
         RuntimeException expected = new RuntimeException();
         when(delegate, "sendUrgentData", anyInt()).thenThrow(expected);
@@ -82,6 +81,42 @@ public class SnifferSocketImplTest {
     public void testShutdownInput() throws Exception {
 
         sniffySocket.shutdownInput();
+
+        verifyPrivate(delegate).invoke("shutdownInput");
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testShutdownInputThrowsIOException() throws Exception {
+
+        IOException expected = new IOException();
+        when(delegate, "shutdownInput").thenThrow(expected);
+
+        try {
+            sniffySocket.shutdownInput();
+            fail();
+        } catch (IOException actual) {
+            assertEquals(expected, actual);
+        }
+
+        verifyPrivate(delegate).invoke("shutdownInput");
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    public void testShutdownInputThrowsRuntimeException() throws Exception {
+
+        RuntimeException expected = new RuntimeException();
+        when(delegate, "shutdownInput").thenThrow(expected);
+
+        try {
+            sniffySocket.shutdownInput();
+            fail();
+        } catch (Exception actual) {
+            assertEquals(expected, actual);
+        }
 
         verifyPrivate(delegate).invoke("shutdownInput");
         verifyNoMoreInteractions(delegate);
@@ -352,6 +387,21 @@ public class SnifferSocketImplTest {
         Object actual = sniffySocket.getOption(1);
 
         verifyPrivate(delegate).invoke("getOption", 1);
+        verifyNoMoreInteractions(delegate);
+
+        assertEquals(expected, actual);
+
+    }
+
+    @Test
+    public void testToString() throws Exception {
+
+        String expected = "expected";
+
+        when(delegate, "toString").thenReturn(expected);
+
+        String actual = sniffySocket.toString();
+
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);

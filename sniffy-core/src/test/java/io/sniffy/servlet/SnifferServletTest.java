@@ -49,7 +49,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.JAVASCRIPT_URI).
+                get("/petclinic/" + SnifferFilter.JAVASCRIPT_URI).
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");
@@ -67,7 +67,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferServlet.CONNECTION_REGISTRY_URI_PREFIX).
+                get("/petclinic/" + SnifferServlet.CONNECTION_REGISTRY_URI_PREFIX).
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");
@@ -93,7 +93,7 @@ public class SnifferServletTest {
 
         ConnectionsRegistry.INSTANCE.clear();
 
-        URI dataSource1URI = new URI("/petclinic" + SnifferServlet.DATASOURCE_REGISTRY_URI_PREFIX +
+        URI dataSource1URI = new URI("/petclinic/" + SnifferServlet.DATASOURCE_REGISTRY_URI_PREFIX +
                 URLEncoder.encode("jdbc:h2:mem:data/base", "UTF-8") + "/sa");
 
         {
@@ -138,7 +138,7 @@ public class SnifferServletTest {
 
         ConnectionsRegistry.INSTANCE.clear();
 
-        URI dataSource1URI = new URI("/petclinic" + SnifferServlet.SOCKET_REGISTRY_URI_PREFIX +
+        URI dataSource1URI = new URI("/petclinic/" + SnifferServlet.SOCKET_REGISTRY_URI_PREFIX +
                 URLEncoder.encode("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "UTF-8") + "/1234");
 
         {
@@ -183,7 +183,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
+                get("/petclinic/" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
         cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
@@ -192,7 +192,7 @@ public class SnifferServletTest {
                         StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
                         "",
                         Thread.currentThread().getId()
-                ), new SqlStats(300999, 0, 0, 0, 1))
+                ), new SqlStats(301, 0, 0, 0, 1))
         ));
 
         request.setContextPath("/petclinic");
@@ -202,7 +202,7 @@ public class SnifferServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
-        assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":300.999,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":0,\"bytesUp\":0}]}", response.getContentAsString());
+        assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":301,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":0,\"bytesUp\":0}]}", response.getContentAsString());
 
     }
 
@@ -211,7 +211,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
+                get("/petclinic/" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
         cache.put("foo", new RequestStats(
@@ -223,7 +223,7 @@ public class SnifferServletTest {
                                         StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
                                         "",
                                         Thread.currentThread().getId()
-                                ), new SqlStats(300999, 200, 300, 0, 1)),
+                                ), new SqlStats(301, 200, 300, 0, 1)),
                         Collections.singletonMap(
                                 new SocketMetaData(
                                         new InetSocketAddress(InetAddress.getLocalHost(), 5555),
@@ -244,8 +244,8 @@ public class SnifferServletTest {
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("{\"timeToFirstByte\":21,\"time\":42," +
-                "\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":300.999,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":200,\"bytesUp\":300}]," +
-                "\"networkConnections\":[{\"host\":\"" + InetAddress.getLocalHost().toString() + ":5555\",\"stackTrace\":\"stackTrace\",\"time\":100.000,\"bytesDown\":200,\"bytesUp\":300}]" +
+                "\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":301,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":200,\"bytesUp\":300}]," +
+                "\"networkConnections\":[{\"host\":\"" + InetAddress.getLocalHost().toString() + ":5555\",\"stackTrace\":\"stackTrace\",\"time\":100,\"bytesDown\":200,\"bytesUp\":300}]" +
                 "}", response.getContentAsString());
 
     }
@@ -255,7 +255,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
+                get("/petclinic/" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
         cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
@@ -264,7 +264,7 @@ public class SnifferServletTest {
                         StatementMetaData.guessQueryType("SELECT \r\n\"1\" FROM 'DUAL'"),
                         "io.sniffy.Test.method(Test.java:99)",
                         Thread.currentThread().getId()
-                ), new SqlStats(300999, 0, 0, 0, 1))
+                ), new SqlStats(301, 0, 0, 0, 1))
         ));
 
         request.setContextPath("/petclinic");
@@ -274,7 +274,7 @@ public class SnifferServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
-        assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"stackTrace\":\"io.sniffy.Test.method(Test.java:99)\",\"time\":300.999,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":0,\"bytesUp\":0}]}", response.getContentAsString());
+        assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"stackTrace\":\"io.sniffy.Test.method(Test.java:99)\",\"time\":301,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":0,\"bytesUp\":0}]}", response.getContentAsString());
 
     }
 
@@ -283,7 +283,7 @@ public class SnifferServletTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
-                get("/petclinic" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
+                get("/petclinic/" + SnifferFilter.REQUEST_URI_PREFIX + "foo").
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.0-RC8</version>
+        <version>3.1.0-RC9</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

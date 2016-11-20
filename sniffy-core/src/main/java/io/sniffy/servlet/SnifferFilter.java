@@ -56,7 +56,7 @@ public class SnifferFilter implements Filter {
     public static final String HEADER_REQUEST_DETAILS = "X-Request-Details";
 
     public static final String SNIFFER_URI_PREFIX =
-            "/sniffy/" +
+            "sniffy/" +
                     Constants.MAJOR_VERSION +
                     "." +
                     Constants.MINOR_VERSION +

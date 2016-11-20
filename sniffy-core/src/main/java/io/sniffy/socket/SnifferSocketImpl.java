@@ -228,6 +228,8 @@ class SnifferSocketImpl extends SocketImpl {
         }
     }
 
+    // TODO: wrap equals and hashCode methods
+
     @Override
     protected void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
         copyToDelegate();
