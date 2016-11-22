@@ -1,7 +1,5 @@
 package io.sniffy.util;
 
-import sun.misc.IOUtils;
-
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +27,7 @@ public class IOUtil {
     public static File getApplicationSniffyFolder() {
 
         if (null == applicationSniffyFolder) {
-            synchronized (IOUtils.class) {
+            synchronized (IOUtil.class) {
                 if (null == applicationSniffyFolder) {
                     File applicationSniffyFolder = new File(
                             new File (
@@ -49,7 +47,7 @@ public class IOUtil {
     public static String getApplicationId() {
 
         if (null == applicationId) {
-            synchronized (IOUtils.class) {
+            synchronized (IOUtil.class) {
                 if (null == applicationId) {
                     StringBuilder sb = new StringBuilder();
 
