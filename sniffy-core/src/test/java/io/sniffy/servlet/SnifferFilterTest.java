@@ -93,6 +93,31 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     @Test
+    public void testThreadLocalConnectionRegistryUsesSession() throws IOException, ServletException {
+
+        ConnectionsRegistry.INSTANCE.setThreadLocal(false);
+        try {
+
+            SnifferFilter filter = new SnifferFilter();
+            filter.init(getFilterConfig(true));
+
+            MockHttpServletRequest servletRequest = MockMvcRequestBuilders.
+                    get("/petclinic/foo/bar?baz").
+                    contextPath("/petclinic").
+                    buildRequest(servletContext);
+
+            filter.doFilter(servletRequest, httpServletResponse, filterChain);
+
+            assertNotNull(servletRequest.getSession().getAttribute(THREAD_LOCAL_DISCOVERED_ADDRESSES));
+            assertNotNull(servletRequest.getSession().getAttribute(THREAD_LOCAL_DISCOVERED_DATA_SOURCES));
+
+        } finally {
+            ConnectionsRegistry.INSTANCE.setThreadLocal(false);
+        }
+
+    }
+
+    @Test
     public void testUnitializedFilter() throws IOException, ServletException {
 
         SnifferFilter filter = new SnifferFilter();

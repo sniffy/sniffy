@@ -70,6 +70,8 @@ public class SnifferFilter implements Filter {
     public static final String JAVASCRIPT_MAP_URI = SNIFFER_URI_PREFIX + "/sniffy.map";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
     public static final String SNIFFY = "sniffy";
+    protected static final String THREAD_LOCAL_DISCOVERED_ADDRESSES = "discoveredAddresses";
+    protected static final String THREAD_LOCAL_DISCOVERED_DATA_SOURCES = "discoveredDataSources";
 
     protected boolean injectHtml = false;
     protected boolean enabled = true;
@@ -146,19 +148,19 @@ public class SnifferFilter implements Filter {
 
             Map<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> discoveredAddresses =
                     (Map<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus>)
-                            session.getAttribute("discoveredAddresses");
+                            session.getAttribute(THREAD_LOCAL_DISCOVERED_ADDRESSES);
             if (null == discoveredAddresses) {
                 discoveredAddresses = new ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus>();
-                session.setAttribute("discoveredAddresses", discoveredAddresses);
+                session.setAttribute(THREAD_LOCAL_DISCOVERED_ADDRESSES, discoveredAddresses);
             }
             ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(discoveredAddresses);
 
             Map<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus> discoveredDataSources =
                     (Map<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus>)
-                            session.getAttribute("discoveredDataSources");
+                            session.getAttribute(THREAD_LOCAL_DISCOVERED_DATA_SOURCES);
             if (null == discoveredDataSources) {
                 discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus>();
-                session.setAttribute("discoveredDataSources", discoveredDataSources);
+                session.setAttribute(THREAD_LOCAL_DISCOVERED_DATA_SOURCES, discoveredDataSources);
             }
             ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredDataSources(discoveredDataSources);
 
