@@ -50,6 +50,14 @@ class SnifferServlet extends HttpServlet {
         }
     }
 
+    private void addCorsHeaders(HttpServletResponse response) {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        response.addHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
+        response.addHeader("Access-Control-Allow-Headers", "X-Requested-With,Content-Type");
+        response.addHeader("Access-Control-Max-Age", "86400");
+        response.addHeader("Access-Control-Allow-Credentials", "true");
+    }
+
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
@@ -60,10 +68,13 @@ class SnifferServlet extends HttpServlet {
         }
 
         if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
+            addCorsHeaders(response);
             serveContent(response, JAVASCRIPT_MIME_TYPE, javascript);
         } else if (SnifferFilter.JAVASCRIPT_MAP_URI.equals(path)) {
+            addCorsHeaders(response);
             serveContent(response, JAVASCRIPT_MIME_TYPE, map);
         } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
+            addCorsHeaders(response);
             byte[] requestStatsJson = getRequestStatsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
 
             if (null == requestStatsJson) {
@@ -80,12 +91,17 @@ class SnifferServlet extends HttpServlet {
             }
         } else if (path.equals(CONNECTION_REGISTRY_URI_PREFIX)) {
 
+            addCorsHeaders(response);
+
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType(JAVASCRIPT_MIME_TYPE);
 
             ConnectionsRegistry.INSTANCE.writeTo(response.getWriter());
 
         } else if (path.startsWith(CONNECTION_REGISTRY_URI_PREFIX)) {
+
+            addCorsHeaders(response);
+
             ConnectionsRegistry.ConnectionStatus status = null;
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 status = OPEN;
