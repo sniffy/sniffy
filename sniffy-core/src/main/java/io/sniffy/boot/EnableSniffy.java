@@ -11,4 +11,6 @@ import java.lang.annotation.Target;
 @Documented
 @Import({SniffyConfiguration.class})
 public @interface EnableSniffy {
+    String enabled() default "true";
+    String injectHtml() default "true";
 }

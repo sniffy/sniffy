@@ -76,7 +76,6 @@ public class SnifferFilter implements Filter {
     protected boolean injectHtml = false;
     protected boolean enabled = true;
     protected Pattern excludePattern = null;
-    protected boolean threadLocalFaultTolerance = false;
 
     protected final Map<String, RequestStats> cache = new ConcurrentLinkedHashMap.Builder<String, RequestStats>().
                     maximumWeightedCapacity(200).
