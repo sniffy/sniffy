@@ -168,7 +168,7 @@ public class SnifferFilter implements Filter {
 
         // process Sniffy REST calls
 
-        if (injectHtml && null != snifferServlet) {
+        if (null != snifferServlet) {
             try {
                 snifferServlet.service(request, response);
                 if (response.isCommitted()) return;
