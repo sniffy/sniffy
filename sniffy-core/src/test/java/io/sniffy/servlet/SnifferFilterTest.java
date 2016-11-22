@@ -1,6 +1,7 @@
 package io.sniffy.servlet;
 
 import io.sniffy.BaseTest;
+import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,13 +62,34 @@ public class SnifferFilterTest extends BaseTest {
     }
 
     private FilterConfig getFilterConfig() {
+        return getFilterConfig(false);
+    }
+
+    private FilterConfig getFilterConfig(boolean faultToleranceCurrentRequest) {
         FilterConfig filterConfig = mock(FilterConfig.class);
         when(filterConfig.getInitParameter("inject-html")).thenReturn("true");
         when(filterConfig.getInitParameter("exclude-pattern")).thenReturn("^/baz/.*$");
+        when(filterConfig.getInitParameter("fault-tolerance-current-request")).thenReturn(Boolean.toString(faultToleranceCurrentRequest));
         ServletContext servletContext = mock(ServletContext.class);
         when(filterConfig.getServletContext()).thenReturn(servletContext);
         when(servletContext.getContextPath()).thenReturn("/petclinic");
         return filterConfig;
+    }
+
+    @Test
+    public void testThreadLocalConnectionRegistry() throws IOException, ServletException {
+
+        ConnectionsRegistry.INSTANCE.setThreadLocal(false);
+        try {
+
+            SnifferFilter filter = new SnifferFilter();
+            filter.init(getFilterConfig(true));
+
+            assertTrue(ConnectionsRegistry.INSTANCE.isThreadLocal());
+        } finally {
+            ConnectionsRegistry.INSTANCE.setThreadLocal(false);
+        }
+
     }
 
     @Test
