@@ -16,6 +16,9 @@ public enum ConnectionsRegistryStorage {
     private File file = new File(IOUtil.getApplicationSniffyFolder(), "connectionsRegistry.json");
 
     public void loadConnectionsRegistry(ConnectionsRegistry connectionsRegistry) throws IOException {
+
+        // if (ConnectionsRegistry.INSTANCE.isThreadLocal()) return; // TODO:
+
         FileReader reader = null;
         try {
             if (file.exists()) {
@@ -28,6 +31,9 @@ public enum ConnectionsRegistryStorage {
     }
 
     public void storeConnectionsRegistry(ConnectionsRegistry connectionsRegistry) throws IOException {
+
+        if (ConnectionsRegistry.INSTANCE.isThreadLocal()) return;
+
         FileWriter writer = null;
         try {
             if (!file.exists()) {
