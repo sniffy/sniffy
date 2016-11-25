@@ -73,6 +73,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
             Sniffy.enterJdbcMethod();
             delegateConnection = dataSource.getConnection();
 
+            // TODO: cache these parameters
             url = delegateConnection.getMetaData().getURL();
             userName = delegateConnection.getMetaData().getUserName();
 

@@ -7,6 +7,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -17,8 +19,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@EnableSniffy(injectHtml = "@injectHtml")
+@EnableSniffy(injectHtml = "#{injectHtml}", enabled = "${enabled}")
 @ContextConfiguration(classes = EnableSniffyTest.class)
+@PropertySource("classpath:/test.properties")
 public class EnableSniffyTest {
 
     @Resource
@@ -27,6 +30,11 @@ public class EnableSniffyTest {
     @Bean
     public boolean injectHtml() {
         return true;
+    }
+
+    @Bean
+    public String enabled() {
+        return "true";
     }
 
     @Bean(name = "dataSource")
@@ -44,6 +52,11 @@ public class EnableSniffyTest {
 
         DataSource dataSource = applicationContext.getBean("dataSource", DataSource.class);
         assertTrue(dataSource instanceof SniffyDataSource);
+    }
+
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertyConfigInDev() {
+        return new PropertySourcesPlaceholderConfigurer();
     }
 
 }
