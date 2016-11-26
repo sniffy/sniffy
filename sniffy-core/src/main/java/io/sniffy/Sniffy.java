@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
@@ -35,7 +36,7 @@ public class Sniffy {
 
     public static void initialize() {
         try {
-            SnifferSocketImplFactory.install();
+            if (SniffyConfiguration.INSTANCE.isMonitorSocket()) SnifferSocketImplFactory.install();
         } catch (IOException e) {
             e.printStackTrace();
         }

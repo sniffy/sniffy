@@ -2,6 +2,7 @@ package io.sniffy.servlet;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.Constants;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import javax.servlet.*;
@@ -14,6 +15,7 @@ import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
@@ -76,24 +78,39 @@ public class SnifferFilter implements Filter {
     protected boolean injectHtml = false;
     protected boolean enabled = true;
     protected Pattern excludePattern = null;
-    protected boolean threadLocalFaultTolerance = false;
 
     protected final Map<String, RequestStats> cache = new ConcurrentLinkedHashMap.Builder<String, RequestStats>().
                     maximumWeightedCapacity(200).
                     build();
 
-    protected SnifferServlet snifferServlet;
+    protected SnifferServlet snifferServlet = new SnifferServlet(cache);
     protected ServletContext servletContext; // TODO: log via slf4j if available
 
+    public SnifferFilter() {
+        enabled = SniffyConfiguration.INSTANCE.isFilterEnabled();
+        injectHtml = SniffyConfiguration.INSTANCE.isInjectHtml();
+        try {
+            String excludePattern = SniffyConfiguration.INSTANCE.getExcludePattern();
+            if (null != excludePattern) {
+                this.excludePattern = Pattern.compile(excludePattern);
+            }
+        } catch (PatternSyntaxException e) {
+            // TODO: log me maybe?
+        }
+    }
+
     public void init(FilterConfig filterConfig) throws ServletException {
+
         String injectHtml = filterConfig.getInitParameter("inject-html");
         if (null != injectHtml) {
             this.injectHtml = Boolean.parseBoolean(injectHtml);
         }
+
         String enabled = filterConfig.getInitParameter("enabled");
         if (null != enabled) {
             this.enabled = Boolean.parseBoolean(enabled);
         }
+
         String excludePattern = filterConfig.getInitParameter("exclude-pattern");
         if (null != excludePattern) {
             this.excludePattern = Pattern.compile(excludePattern); // TODO: can throw exception
@@ -104,7 +121,6 @@ public class SnifferFilter implements Filter {
             ConnectionsRegistry.INSTANCE.setThreadLocal(Boolean.parseBoolean(faultToleranceCurrentRequest));
         }
 
-        snifferServlet = new SnifferServlet(cache);
         snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
 
         servletContext = filterConfig.getServletContext();
