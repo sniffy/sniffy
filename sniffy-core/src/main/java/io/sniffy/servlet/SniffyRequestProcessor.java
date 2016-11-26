@@ -10,8 +10,6 @@ import io.sniffy.sql.StatementMetaData;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -19,13 +17,13 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.UUID;
 
-import static io.sniffy.servlet.SnifferFilter.HEADER_NUMBER_OF_QUERIES;
-import static io.sniffy.servlet.SnifferFilter.HEADER_REQUEST_DETAILS;
-import static io.sniffy.servlet.SnifferFilter.HEADER_TIME_TO_FIRST_BYTE;
+import static io.sniffy.servlet.SniffyFilter.HEADER_NUMBER_OF_QUERIES;
+import static io.sniffy.servlet.SniffyFilter.HEADER_REQUEST_DETAILS;
+import static io.sniffy.servlet.SniffyFilter.HEADER_TIME_TO_FIRST_BYTE;
 
 class SniffyRequestProcessor implements BufferedServletResponseListener {
 
-    private final SnifferFilter snifferFilter;
+    private final SniffyFilter sniffyFilter;
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
 
@@ -52,8 +50,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         return elapsedTime;
     }
 
-    public SniffyRequestProcessor(SnifferFilter snifferFilter, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
-        this.snifferFilter = snifferFilter;
+    public SniffyRequestProcessor(SniffyFilter sniffyFilter, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+        this.sniffyFilter = sniffyFilter;
         this.httpServletRequest = httpServletRequest;
         this.httpServletResponse = httpServletResponse;
 
@@ -66,8 +64,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             String contextPath = httpServletRequest.getContextPath(); // like "/petclinic"
             relativeUrl = null == httpServletRequest.getRequestURI() ? null : httpServletRequest.getRequestURI().substring(contextPath.length());
         } catch (Exception e) {
-            if (null != snifferFilter.servletContext) {
-                snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+            if (null != sniffyFilter.servletContext) {
+                sniffyFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
             } else {
                 e.printStackTrace();
             }
@@ -80,7 +78,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         // if excluded by pattern return immediately
 
-        if (null != snifferFilter.excludePattern && null != relativeUrl && snifferFilter.excludePattern.matcher(relativeUrl).matches()) {
+        if (null != sniffyFilter.excludePattern && null != relativeUrl && sniffyFilter.excludePattern.matcher(relativeUrl).matches()) {
             chain.doFilter(httpServletRequest, httpServletResponse);
             return;
         }
@@ -92,8 +90,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         try {
             responseWrapper = new BufferedServletResponseWrapper(httpServletResponse, this);
         } catch (Exception e) {
-            if (null != snifferFilter.servletContext) {
-                snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+            if (null != sniffyFilter.servletContext) {
+                sniffyFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
             } else {
                 e.printStackTrace();
             }
@@ -112,8 +110,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 updateRequestCache();
                 responseWrapper.flushIfPossible();
             } catch (Exception e) {
-                if (null != snifferFilter.servletContext) {
-                    snifferFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
+                if (null != sniffyFilter.servletContext) {
+                    sniffyFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);
                 } else {
                     e.printStackTrace();
                 }
@@ -133,7 +131,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             if (null != socketOperations && !socketOperations.isEmpty()) {
                 requestStats.setSocketOperations(socketOperations);
             }
-            snifferFilter.cache.put(requestId, requestStats);
+            sniffyFilter.cache.put(requestId, requestStats);
         }
     }
 
@@ -164,11 +162,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             contextRelativePath = sb.toString();
         }
 
-        sb.append(SnifferFilter.REQUEST_URI_PREFIX).append(requestId);
+        sb.append(SniffyFilter.REQUEST_URI_PREFIX).append(requestId);
 
         wrapper.addHeader(HEADER_REQUEST_DETAILS, sb.toString());
 
-        if (snifferFilter.injectHtml) {
+        if (sniffyFilter.injectHtml) {
             String contentType = wrapper.getContentType();
             String characterEncoding = wrapper.getCharacterEncoding();
 
@@ -202,7 +200,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         updateRequestCache();
 
-        if (snifferFilter.injectHtml && isHtmlPage) {
+        if (sniffyFilter.injectHtml && isHtmlPage) {
 
             String characterEncoding = wrapper.getCharacterEncoding();
             if (null == characterEncoding) {
@@ -227,7 +225,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                     append(requestId).
                     append("\" src=\"'+location.href+'").
                     append(contextPath.substring(1)).
-                    append(SnifferFilter.JAVASCRIPT_URI).
+                    append(SniffyFilter.JAVASCRIPT_URI).
                     append("\">\\x3C/script>');</script>");
         } else {
             return new StringBuilder().
@@ -235,7 +233,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                     append(requestId).
                     append("\" src=\"").
                     append(contextPath).
-                    append(SnifferFilter.JAVASCRIPT_URI).
+                    append(SniffyFilter.JAVASCRIPT_URI).
                     append("\"></script>");
         }
     }

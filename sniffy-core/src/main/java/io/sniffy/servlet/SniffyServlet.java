@@ -20,9 +20,9 @@ import java.util.*;
 
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
-import static io.sniffy.servlet.SnifferFilter.SNIFFER_URI_PREFIX;
+import static io.sniffy.servlet.SniffyFilter.SNIFFER_URI_PREFIX;
 
-class SnifferServlet extends HttpServlet {
+class SniffyServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
 
@@ -36,7 +36,7 @@ class SnifferServlet extends HttpServlet {
     protected byte[] javascript;
     protected byte[] map;
 
-    public SnifferServlet(Map<String, RequestStats> cache) {
+    public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
     }
 
@@ -67,15 +67,15 @@ class SnifferServlet extends HttpServlet {
             path = path.substring(1);
         }
 
-        if (SnifferFilter.JAVASCRIPT_URI.equals(path)) {
+        if (SniffyFilter.JAVASCRIPT_URI.equals(path)) {
             addCorsHeaders(response);
             serveContent(response, JAVASCRIPT_MIME_TYPE, javascript);
-        } else if (SnifferFilter.JAVASCRIPT_MAP_URI.equals(path)) {
+        } else if (SniffyFilter.JAVASCRIPT_MAP_URI.equals(path)) {
             addCorsHeaders(response);
             serveContent(response, JAVASCRIPT_MIME_TYPE, map);
-        } else if (path.startsWith(SnifferFilter.REQUEST_URI_PREFIX)) {
+        } else if (path.startsWith(SniffyFilter.REQUEST_URI_PREFIX)) {
             addCorsHeaders(response);
-            byte[] requestStatsJson = getRequestStatsJson(path.substring(SnifferFilter.REQUEST_URI_PREFIX.length()));
+            byte[] requestStatsJson = getRequestStatsJson(path.substring(SniffyFilter.REQUEST_URI_PREFIX.length()));
 
             if (null == requestStatsJson) {
                 response.setStatus(HttpServletResponse.SC_OK);
@@ -261,7 +261,7 @@ class SnifferServlet extends HttpServlet {
         InputStream is = null;
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            is = SnifferFilter.class.getResourceAsStream(resourceName);
+            is = SniffyFilter.class.getResourceAsStream(resourceName);
             byte[] buff = new byte[1024];
             int count;
             while ((count = is.read(buff)) > 0) {

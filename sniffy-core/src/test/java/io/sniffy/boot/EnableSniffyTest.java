@@ -1,6 +1,6 @@
 package io.sniffy.boot;
 
-import io.sniffy.servlet.SnifferFilter;
+import io.sniffy.servlet.SniffyFilter;
 import io.sniffy.sql.SniffyDataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
@@ -41,7 +41,7 @@ public class EnableSniffyTest {
 
     @Test
     public void testFilterBeanCreated() {
-        SnifferFilter filter = applicationContext.getBean(SnifferFilter.class);
+        SniffyFilter filter = applicationContext.getBean(SniffyFilter.class);
         assertNotNull(filter);
         assertTrue(filter.isEnabled());
 

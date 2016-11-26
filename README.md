@@ -20,7 +20,7 @@ In order to enable Sniffy simply add it to your `web.xml` file:
 ```xml
 <filter>
     <filter-name>sniffer</filter-name>
-    <filter-class>io.sniffy.servlet.SnifferFilter</filter-class>
+    <filter-class>io.sniffy.servlet.SniffyFilter</filter-class>
     <init-param>
         <param-name>inject-html</param-name>
         <param-value>true</param-value>
@@ -81,7 +81,7 @@ HTML injection is configured in `web.xml` file:
 ```xml
 <filter>
     <filter-name>sniffer</filter-name>
-    <filter-class>io.sniffy.servlet.SnifferFilter</filter-class>
+    <filter-class>io.sniffy.servlet.SniffyFilter</filter-class>
     <init-param>
         <!-- 
         Enables injection of Sniffy toolbar to HTML

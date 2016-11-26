@@ -29,7 +29,7 @@ import java.util.regex.PatternSyntaxException;
  * {@code
  *   <filter>
  *        <filter-name>sniffer</filter-name>
- *        <filter-class>io.sniffy.servlet.SnifferFilter</filter-class>
+ *        <filter-class>io.sniffy.servlet.SniffyFilter</filter-class>
  *        <init-param>
  *            <param-name>inject-html</param-name>
  *            <param-value>true</param-value>
@@ -52,8 +52,8 @@ import java.util.regex.PatternSyntaxException;
  *
  * @since 2.3.0
  */
-// TODO: rename to SniffyFilter
-public class SnifferFilter implements Filter {
+// TODO: retain SnifferFilter for backwards compatibility with 3.0.x
+public class SniffyFilter implements Filter {
 
     public static final String HEADER_CORS_HEADERS = "Access-Control-Expose-Headers";
     public static final String HEADER_NUMBER_OF_QUERIES = "X-Sql-Queries";
@@ -83,10 +83,10 @@ public class SnifferFilter implements Filter {
                     maximumWeightedCapacity(200).
                     build();
 
-    protected SnifferServlet snifferServlet = new SnifferServlet(cache);
+    protected SniffyServlet sniffyServlet = new SniffyServlet(cache);
     protected ServletContext servletContext; // TODO: log via slf4j if available
 
-    public SnifferFilter() {
+    public SniffyFilter() {
         enabled = SniffyConfiguration.INSTANCE.isFilterEnabled();
         injectHtml = SniffyConfiguration.INSTANCE.isInjectHtml();
         try {
@@ -121,7 +121,7 @@ public class SnifferFilter implements Filter {
             ConnectionsRegistry.INSTANCE.setThreadLocal(Boolean.parseBoolean(faultToleranceCurrentRequest));
         }
 
-        snifferServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
+        sniffyServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
 
         servletContext = filterConfig.getServletContext();
 
@@ -184,9 +184,9 @@ public class SnifferFilter implements Filter {
 
         // process Sniffy REST calls
 
-        if (null != snifferServlet) {
+        if (null != sniffyServlet) {
             try {
-                snifferServlet.service(request, response);
+                sniffyServlet.service(request, response);
                 if (response.isCommitted()) return;
             } catch (Exception e) {
                 if (null != servletContext) servletContext.log("Exception in SniffyServlet; calling original chain", e);

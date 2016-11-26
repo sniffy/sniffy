@@ -1,7 +1,7 @@
 package io.sniffy.boot;
 
 import io.sniffy.configuration.SniffyConfiguration;
-import io.sniffy.servlet.SnifferFilter;
+import io.sniffy.servlet.SniffyFilter;
 import io.sniffy.sql.SniffyDataSource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.TypeConverter;
@@ -52,15 +52,15 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
     }
 
     @Bean
-    public SnifferFilter sniffyFilter() {
+    public SniffyFilter sniffyFilter() {
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(isMonitorSocket());
 
-        SnifferFilter snifferFilter = new SnifferFilter();
-        snifferFilter.setEnabled(isFilterEnabled());
-        snifferFilter.setInjectHtml(isInjectHtml());
+        SniffyFilter sniffyFilter = new SniffyFilter();
+        sniffyFilter.setEnabled(isFilterEnabled());
+        sniffyFilter.setInjectHtml(isInjectHtml());
 
-        return snifferFilter;
+        return sniffyFilter;
     }
 
     private boolean isMonitorJdbc() {
