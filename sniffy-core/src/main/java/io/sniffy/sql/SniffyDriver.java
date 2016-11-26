@@ -2,6 +2,7 @@ package io.sniffy.sql;
 
 import io.sniffy.Constants;
 import io.sniffy.Sniffy;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.util.ExceptionUtil;
 
@@ -94,6 +95,8 @@ public class SniffyDriver implements Driver, Constants {
                 throw e;
             }
         }
+
+        if (!SniffyConfiguration.INSTANCE.isMonitorJdbc()) return originDriver.connect(originUrl, info);
 
         long start = System.currentTimeMillis();
         try {

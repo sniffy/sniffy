@@ -1,9 +1,11 @@
 package io.sniffy.boot;
 
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.servlet.SnifferFilter;
 import io.sniffy.sql.SniffyDataSource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.TypeConverter;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.BeanExpressionContext;
@@ -20,7 +22,7 @@ import javax.sql.DataSource;
 import java.util.Map;
 
 @Configuration
-public class SniffyConfiguration implements ImportAware, BeanFactoryAware, BeanPostProcessor {
+public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware, BeanPostProcessor {
 
     private ConfigurableBeanFactory beanFactory;
     private BeanExpressionResolver resolver;
@@ -46,28 +48,73 @@ public class SniffyConfiguration implements ImportAware, BeanFactoryAware, BeanP
     @Bean
     public SnifferFilter sniffyFilter() {
 
+        SniffyConfiguration.INSTANCE.setMonitorSocket(isMonitorSocket());
+
         SnifferFilter snifferFilter = new SnifferFilter();
-
-        String enabled = enableSniffy.getString("enabled");
-        enabled = beanFactory.resolveEmbeddedValue(enabled);
-        Object enabledObj = resolver.evaluate(enabled, expressionContext);
-
-        String injectHtml = enableSniffy.getString("injectHtml");
-        injectHtml = beanFactory.resolveEmbeddedValue(injectHtml);
-        Object injectHtmlObj = resolver.evaluate(injectHtml, expressionContext);
-
-        snifferFilter.setEnabled(typeConverter.convertIfNecessary(enabledObj, Boolean.class));
-        snifferFilter.setInjectHtml(typeConverter.convertIfNecessary(injectHtmlObj, Boolean.class));
+        snifferFilter.setEnabled(isFilterEnabled());
+        snifferFilter.setInjectHtml(isInjectHtml());
 
         return snifferFilter;
+    }
+
+    private Boolean monitorJdbc;
+    private Boolean monitorSocket;
+
+    private Boolean filterEnabled;
+    private Boolean injectHtml;
+
+    private boolean isMonitorJdbc() {
+        if (null == monitorJdbc) {
+            monitorJdbc = resolveBooleanProperty("monitorJdbc");
+        }
+        return monitorJdbc;
+    }
+
+    private boolean isMonitorSocket() {
+        if (null == monitorSocket) {
+            monitorSocket = resolveBooleanProperty("monitorSocket");
+        }
+        return monitorSocket;
+    }
+
+
+    private boolean isInjectHtml() {
+        if (null == injectHtml) {
+            injectHtml = resolveBooleanProperty("injectHtml");
+        }
+        return injectHtml;
+    }
+
+    private boolean isFilterEnabled() {
+        if (null == filterEnabled) {
+            filterEnabled = resolveBooleanProperty("filterEnabled");
+        }
+        return filterEnabled;
+    }
+
+    private boolean resolveBooleanProperty(String attributeName) {
+        Boolean value;
+
+        String injectHtmlAttribute = enableSniffy.getString(attributeName);
+        injectHtmlAttribute = beanFactory.resolveEmbeddedValue(injectHtmlAttribute);
+        Object injectHtmlObj = resolver.evaluate(injectHtmlAttribute, expressionContext);
+        try {
+            value = typeConverter.convertIfNecessary(injectHtmlObj, Boolean.class);
+        } catch (TypeMismatchException e) {
+            value = false;
+        }
+
+        if (null == value) {
+            value = false;
+        }
+
+        return value;
     }
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 
-        // TODO: check enabled property
-
-        if (bean instanceof DataSource && !(bean instanceof SniffyDataSource)) {
+        if (isMonitorJdbc() && bean instanceof DataSource && !(bean instanceof SniffyDataSource)) {
             return SniffyDataSource.wrap(DataSource.class.cast(bean));
         } else {
             return bean;

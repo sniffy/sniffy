@@ -1,6 +1,7 @@
 package io.sniffy.sql;
 
 import io.sniffy.Sniffy;
+import io.sniffy.configuration.SniffyConfiguration;
 
 import javax.sql.*;
 import java.io.PrintWriter;
@@ -63,6 +64,8 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         if (null == dataSource) throw new SQLException("Target is not a DataSource instance");
 
+        if (!SniffyConfiguration.INSTANCE.isMonitorJdbc()) return dataSource.getConnection();
+
         Connection delegateConnection;
         long start = System.currentTimeMillis();
 
@@ -94,6 +97,8 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         if (null == dataSource) throw new SQLException("Target is not a DataSource instance");
 
+        if (!SniffyConfiguration.INSTANCE.isMonitorJdbc()) return dataSource.getConnection(userName, password);
+
         Connection delegateConnection;
         long start = System.currentTimeMillis();
 
@@ -122,6 +127,8 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         if (null == dataSource) throw new SQLException("Target is not a XADataSource instance");
 
+        if (!SniffyConfiguration.INSTANCE.isMonitorJdbc()) return xaDataSource.getXAConnection();
+
         long start = System.currentTimeMillis();
 
         try {
@@ -141,6 +148,8 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
     public XAConnection getXAConnection(String user, String password) throws SQLException {
 
         if (null == dataSource) throw new SQLException("Target is not a XADataSource instance");
+
+        if (!SniffyConfiguration.INSTANCE.isMonitorJdbc()) return xaDataSource.getXAConnection(user, password);
 
         long start = System.currentTimeMillis();
 
@@ -162,6 +171,8 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
         if (null == connectionPoolDataSource) throw new SQLException("Target is not a ConnectionPoolDataSource instance");
 
+        if (!SniffyConfiguration.INSTANCE.isMonitorJdbc()) return connectionPoolDataSource.getPooledConnection();
+
         long start = System.currentTimeMillis();
 
         try {
@@ -181,6 +192,8 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
     public PooledConnection getPooledConnection(String user, String password) throws SQLException {
 
         if (null == connectionPoolDataSource) throw new SQLException("Target is not a ConnectionPoolDataSource instance");
+
+        if (!SniffyConfiguration.INSTANCE.isMonitorJdbc()) return connectionPoolDataSource.getPooledConnection(user, password);
 
         long start = System.currentTimeMillis();
         try {

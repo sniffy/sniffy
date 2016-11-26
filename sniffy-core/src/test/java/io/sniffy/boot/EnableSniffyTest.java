@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@EnableSniffy(injectHtml = "#{injectHtml}", enabled = "${enabled}")
+@EnableSniffy(injectHtml = "#{injectHtml}", filterEnabled = "${filterEnabled}")
 @ContextConfiguration(classes = EnableSniffyTest.class)
 @PropertySource("classpath:/test.properties")
 public class EnableSniffyTest {
@@ -30,11 +30,6 @@ public class EnableSniffyTest {
     @Bean
     public boolean injectHtml() {
         return true;
-    }
-
-    @Bean
-    public String enabled() {
-        return "true";
     }
 
     @Bean(name = "dataSource")
