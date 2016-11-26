@@ -31,6 +31,12 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
 
     private AnnotationAttributes enableSniffy;
 
+    private Boolean monitorJdbc;
+    private Boolean monitorSocket;
+
+    private Boolean filterEnabled;
+    private Boolean injectHtml;
+
     @Override
     public void setImportMetadata(AnnotationMetadata importMetadata) {
         Map<String, Object> map = importMetadata.getAnnotationAttributes(EnableSniffy.class.getName());
@@ -56,12 +62,6 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
 
         return snifferFilter;
     }
-
-    private Boolean monitorJdbc;
-    private Boolean monitorSocket;
-
-    private Boolean filterEnabled;
-    private Boolean injectHtml;
 
     private boolean isMonitorJdbc() {
         if (null == monitorJdbc) {
