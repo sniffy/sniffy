@@ -60,7 +60,9 @@ public enum SniffyConfiguration {
     }
 
     public void setMonitorSocket(boolean monitorSocket) {
-        this.monitorSocket = monitorSocket;
+        if (!this.monitorSocket) {
+            this.monitorSocket = monitorSocket;
+        }
     }
 
     public boolean isFilterEnabled() {
