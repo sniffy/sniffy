@@ -52,7 +52,6 @@ import java.util.regex.PatternSyntaxException;
  *
  * @since 2.3.0
  */
-// TODO: retain SnifferFilter for backwards compatibility with 3.0.x
 public class SniffyFilter implements Filter {
 
     public static final String HEADER_CORS_HEADERS = "Access-Control-Expose-Headers";
