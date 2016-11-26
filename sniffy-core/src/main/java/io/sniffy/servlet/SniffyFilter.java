@@ -79,8 +79,8 @@ public class SniffyFilter implements Filter {
     protected Pattern excludePattern = null;
 
     protected final Map<String, RequestStats> cache = new ConcurrentLinkedHashMap.Builder<String, RequestStats>().
-                    maximumWeightedCapacity(200).
-                    build();
+            maximumWeightedCapacity(200).
+            build();
 
     protected SniffyServlet sniffyServlet = new SniffyServlet(cache);
     protected ServletContext servletContext; // TODO: log via slf4j if available
@@ -132,7 +132,89 @@ public class SniffyFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 
-        Boolean sniffyEnabled = enabled;
+        // if disabled, run chain and return
+        if (!isSniffyFilterEnabled(request, httpServletRequest, httpServletResponse)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // Copy fault tolerance testing settings from session to thread local storage
+        if (ConnectionsRegistry.INSTANCE.isThreadLocal()) {
+            copyFaultToleranceTestingFromSession((HttpServletRequest) request);
+        }
+
+        // process Sniffy REST calls
+        if (null != sniffyServlet) {
+            try {
+                sniffyServlet.service(request, response);
+                if (response.isCommitted()) return;
+            } catch (Exception e) {
+                if (null != servletContext) servletContext.log("Exception in SniffyServlet; calling original chain", e);
+                chain.doFilter(request, response);
+                return;
+            }
+        }
+
+        // create request decorator
+        SniffyRequestProcessor sniffyRequestProcessor;
+        try {
+            sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse);
+        } catch (Exception e) {
+            if (null != servletContext) servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
+            chain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            sniffyRequestProcessor.process(chain);
+        } finally {
+
+            // Clean fault tolerance testing settings thread local storage
+            cleanThreadLocalFaultToleranceSettings();
+
+        }
+
+    }
+
+    private static void cleanThreadLocalFaultToleranceSettings() {
+        if (ConnectionsRegistry.INSTANCE.isThreadLocal()) {
+            ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(
+                    new ConcurrentHashMap<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus>()
+            );
+            ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredDataSources(
+                    new ConcurrentHashMap<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus>()
+            );
+        }
+    }
+
+    private static void copyFaultToleranceTestingFromSession(HttpServletRequest request) {
+
+        HttpSession session = request.getSession();
+
+        Map<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> discoveredAddresses =
+                (Map<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus>)
+                        session.getAttribute(THREAD_LOCAL_DISCOVERED_ADDRESSES);
+        if (null == discoveredAddresses) {
+            discoveredAddresses = new ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus>();
+            session.setAttribute(THREAD_LOCAL_DISCOVERED_ADDRESSES, discoveredAddresses);
+        }
+        ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(discoveredAddresses);
+
+        Map<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus> discoveredDataSources =
+                (Map<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus>)
+                        session.getAttribute(THREAD_LOCAL_DISCOVERED_DATA_SOURCES);
+        if (null == discoveredDataSources) {
+            discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus>();
+            session.setAttribute(THREAD_LOCAL_DISCOVERED_DATA_SOURCES, discoveredDataSources);
+        }
+
+        ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredDataSources(discoveredDataSources);
+
+    }
+
+    private boolean isSniffyFilterEnabled(ServletRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws MalformedURLException {
+
+        boolean sniffyEnabled = enabled;
 
         // override by request parameter/cookie value if provided
 
@@ -148,79 +230,7 @@ public class SniffyFilter implements Filter {
             }
         }
 
-        // if disabled, run chain and return
-
-        if (!sniffyEnabled) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // Copy fault tolerance testing settings from session to thread local storage
-
-        if (ConnectionsRegistry.INSTANCE.isThreadLocal()) {
-
-            HttpSession session = ((HttpServletRequest) request).getSession();
-
-            Map<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> discoveredAddresses =
-                    (Map<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus>)
-                            session.getAttribute(THREAD_LOCAL_DISCOVERED_ADDRESSES);
-            if (null == discoveredAddresses) {
-                discoveredAddresses = new ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus>();
-                session.setAttribute(THREAD_LOCAL_DISCOVERED_ADDRESSES, discoveredAddresses);
-            }
-            ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(discoveredAddresses);
-
-            Map<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus> discoveredDataSources =
-                    (Map<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus>)
-                            session.getAttribute(THREAD_LOCAL_DISCOVERED_DATA_SOURCES);
-            if (null == discoveredDataSources) {
-                discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus>();
-                session.setAttribute(THREAD_LOCAL_DISCOVERED_DATA_SOURCES, discoveredDataSources);
-            }
-            ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredDataSources(discoveredDataSources);
-
-        }
-
-        // process Sniffy REST calls
-
-        if (null != sniffyServlet) {
-            try {
-                sniffyServlet.service(request, response);
-                if (response.isCommitted()) return;
-            } catch (Exception e) {
-                if (null != servletContext) servletContext.log("Exception in SniffyServlet; calling original chain", e);
-                chain.doFilter(request, response);
-                return;
-            }
-        }
-
-        // create request decorator
-
-        SniffyRequestProcessor sniffyRequestProcessor;
-        try {
-            sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse);
-        } catch (Exception e) {
-            if (null != servletContext) servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
-            chain.doFilter(request, response);
-            return;
-        }
-
-        try {
-            sniffyRequestProcessor.process(chain);
-        } finally {
-
-            // Clean fault tolerance testing settings thread local storage
-
-            if (ConnectionsRegistry.INSTANCE.isThreadLocal()) {
-                ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(
-                        new ConcurrentHashMap<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus>()
-                );
-                ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredDataSources(
-                        new ConcurrentHashMap<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus>()
-                );
-            }
-
-        }
+        return sniffyEnabled;
 
     }
 
@@ -242,7 +252,7 @@ public class SniffyFilter implements Filter {
     }
 
     public void destroy() {
-
+        // TODO: implement some cleanup here if required
     }
 
     public boolean isInjectHtml() {
