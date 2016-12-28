@@ -142,7 +142,7 @@
         </plugins>
     </build>
 
-    <profiles>
+    <!--<profiles>
         <profile>
             <id>sonatype-oss-release</id>
             <build>
@@ -191,7 +191,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.7.6.201602180812</version>
+                        <version>0.7.8</version>
                         <executions>
                             <execution>
                                 <id>prepare-agent</id>
@@ -205,12 +205,12 @@
                         <groupId>org.eluder.coveralls</groupId>
                         <artifactId>coveralls-maven-plugin</artifactId>
                         <version>4.1.0</version>
-                        <!--<configuration>
+                        &lt;!&ndash;<configuration>
                             <repoToken>token</repoToken>
-                        </configuration>-->
+                        </configuration>&ndash;&gt;
                     </plugin>
                 </plugins>
             </build>
         </profile>
-    </profiles>
+    </profiles>-->
 </project>
