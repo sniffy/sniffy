@@ -7,7 +7,6 @@ import java.lang.annotation.*;
 /**
  * Alias for {@code @Expectation(count = @Count(0), threads = Threads.CURRENT)}
  * @see Expectation
- * @see SniffyRule
  * @since 2.0
  */
 @Retention(RetentionPolicy.RUNTIME)

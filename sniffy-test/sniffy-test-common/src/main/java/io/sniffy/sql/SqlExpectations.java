@@ -4,7 +4,6 @@ import java.lang.annotation.*;
 
 /**
  * Container for multiple {@link SqlExpectation} annotations
- * @see SniffyRule
  * @since 2.0
  */
 @Retention(RetentionPolicy.RUNTIME)
