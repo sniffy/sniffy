@@ -1,7 +1,8 @@
 package io.sniffy.sql;
 
-import io.sniffy.*;
-import io.sniffy.util.Range;
+import io.sniffy.SniffyAssertionError;
+import io.sniffy.Spy;
+import io.sniffy.Threads;
 
 import java.util.Map;
 
@@ -70,24 +71,13 @@ public class SqlQueries {
         protected final Threads threads;
         protected final SqlStatement type;
 
-        protected SqlExpectation(int minQueries, int maxQueries, int minRows, int maxRows, Threads threads, SqlStatement type) {
+        public SqlExpectation(int minQueries, int maxQueries, int minRows, int maxRows, Threads threads, SqlStatement type) {
             this.minQueries = minQueries;
             this.maxQueries = maxQueries;
             this.minRows = minRows;
             this.maxRows = maxRows;
             this.threads = threads;
             this.type = type;
-        }
-
-        public SqlExpectation(io.sniffy.sql.SqlExpectation sqlExpectation) {
-            this(
-                    Range.parse(sqlExpectation.count()).min,
-                    Range.parse(sqlExpectation.count()).max,
-                    Range.parse(sqlExpectation.rows()).min,
-                    Range.parse(sqlExpectation.rows()).max,
-                    sqlExpectation.threads(),
-                    sqlExpectation.query()
-            );
         }
 
         @Override

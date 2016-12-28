@@ -1,6 +1,5 @@
 package io.sniffy.util;
 
-import io.sniffy.util.StackTraceExtractor;
 import org.junit.Assert;
 import org.junit.Test;
 

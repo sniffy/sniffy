@@ -3,10 +3,8 @@ package io.sniffy.servlet;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.PushbackReader;
-import java.io.StringReader;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class HtmlInjectorTest {
 

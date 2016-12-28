@@ -3,7 +3,10 @@ package io.sniffy;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public abstract class BaseTest {
 
