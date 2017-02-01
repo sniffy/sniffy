@@ -19,7 +19,7 @@ import java.util.regex.PatternSyntaxException;
 
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
- * as a 'X-Sql-Queries' header in response.
+ * as a 'Sniffy-Sql-Queries' header in response.
  *
  * It also can inject an icon with a number of executed queries to each HTML page
  * This feature is experimental and can be enabled using inject-html filter parameter
@@ -55,9 +55,9 @@ import java.util.regex.PatternSyntaxException;
 public class SniffyFilter implements Filter {
 
     public static final String HEADER_CORS_HEADERS = "Access-Control-Expose-Headers";
-    public static final String HEADER_NUMBER_OF_QUERIES = "X-Sql-Queries";
-    public static final String HEADER_TIME_TO_FIRST_BYTE = "X-Time-To-First-Byte";
-    public static final String HEADER_REQUEST_DETAILS = "X-Request-Details";
+    public static final String HEADER_NUMBER_OF_QUERIES = "Sniffy-Sql-Queries";
+    public static final String HEADER_TIME_TO_FIRST_BYTE = "Sniffy-Time-To-First-Byte";
+    public static final String HEADER_REQUEST_DETAILS = "Sniffy-Request-Details";
 
     public static final String SNIFFER_URI_PREFIX =
             "sniffy/" +
