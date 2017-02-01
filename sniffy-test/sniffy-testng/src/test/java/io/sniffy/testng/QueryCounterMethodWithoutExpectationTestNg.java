@@ -2,7 +2,6 @@ package io.sniffy.testng;
 
 import io.sniffy.BaseTest;
 import io.sniffy.Expectation;
-import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
@@ -28,7 +27,7 @@ public class QueryCounterMethodWithoutExpectationTestNg extends BaseTest {
 
     @Test
     public void testWithoutExpectations() {
-        Assert.assertTrue(true);
+        assertTrue(true);
     }
 
     @Expectation(value = 5, atLeast = 2)
