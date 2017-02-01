@@ -1,6 +1,9 @@
 package io.sniffy.sql;
 
-import io.sniffy.*;
+import io.sniffy.BaseTest;
+import io.sniffy.Query;
+import io.sniffy.Sniffy;
+import io.sniffy.Spy;
 import org.junit.Test;
 
 public class SqlQueries_Rows_Test extends BaseTest {

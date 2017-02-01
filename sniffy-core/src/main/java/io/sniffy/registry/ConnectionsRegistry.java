@@ -26,7 +26,37 @@ public enum ConnectionsRegistry {
 
     private final Map<Map.Entry<String,Integer>, ConnectionStatus> discoveredAddresses = new ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionStatus>();
     private final Map<Map.Entry<String,String>, ConnectionStatus> discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, ConnectionStatus>();
+
     private volatile boolean persistRegistry = false;
+
+    private final ThreadLocal<Map<Map.Entry<String,Integer>, ConnectionStatus>> threadLocalDiscoveredAddresses =
+            new ThreadLocal<Map<Map.Entry<String,Integer>, ConnectionStatus>>() {
+
+                @Override
+                protected Map<Map.Entry<String, Integer>, ConnectionStatus> initialValue() {
+                    return new ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionStatus>();
+                }
+
+            };
+
+    private final ThreadLocal<Map<Map.Entry<String,String>, ConnectionStatus>> threadLocalDiscoveredDataSources =
+            new ThreadLocal<Map<Map.Entry<String,String>, ConnectionStatus>>() {
+
+                @Override
+                protected Map<Map.Entry<String, String>, ConnectionStatus> initialValue() {
+                    return new ConcurrentHashMap<Map.Entry<String,String>, ConnectionStatus>();
+                }
+            };
+
+    private volatile boolean threadLocal = false;
+
+    public void setThreadLocalDiscoveredAddresses(Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses) {
+        threadLocalDiscoveredAddresses.set(discoveredAddresses);
+    }
+
+    public void setThreadLocalDiscoveredDataSources(Map<Map.Entry<String,String>, ConnectionStatus> discoveredDataSources) {
+        threadLocalDiscoveredDataSources.set(discoveredDataSources);
+    }
 
     ConnectionsRegistry() {
         try {
@@ -37,6 +67,8 @@ public enum ConnectionsRegistry {
     }
 
     public ConnectionStatus resolveDataSourceStatus(String url, String userName) {
+
+        Map<Map.Entry<String, String>, ConnectionStatus> discoveredDataSources = getDiscoveredDataSources();
 
         for (Map.Entry<Map.Entry<String, String>, ConnectionStatus> entry : discoveredDataSources.entrySet()) {
 
@@ -55,6 +87,8 @@ public enum ConnectionsRegistry {
     }
 
     public ConnectionStatus resolveSocketAddressStatus(InetSocketAddress inetSocketAddress) {
+
+        Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
 
         InetAddress inetAddress = inetSocketAddress.getAddress();
 
@@ -78,10 +112,13 @@ public enum ConnectionsRegistry {
     }
 
     public Map<Map.Entry<String, Integer>, ConnectionStatus> getDiscoveredAddresses() {
-        return discoveredAddresses;
+        return threadLocal ? threadLocalDiscoveredAddresses.get() : this.discoveredAddresses;
     }
 
     public void setSocketAddressStatus(String hostName, Integer port, ConnectionStatus connectionStatus) {
+
+        Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
+
         discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
         if (persistRegistry) {
             try {
@@ -93,10 +130,13 @@ public enum ConnectionsRegistry {
     }
 
     public Map<Map.Entry<String, String>, ConnectionStatus> getDiscoveredDataSources() {
-        return discoveredDataSources;
+        return threadLocal ? threadLocalDiscoveredDataSources.get() : this.discoveredDataSources;
     }
 
     public void setDataSourceStatus(String url, String userName, ConnectionStatus status) {
+
+        Map<Map.Entry<String, String>, ConnectionStatus> discoveredDataSources = getDiscoveredDataSources();
+
         discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(url, userName), status);
         if (persistRegistry) {
             try {
@@ -113,6 +153,14 @@ public enum ConnectionsRegistry {
 
     public void setPersistRegistry(boolean persistRegistry) {
         this.persistRegistry = persistRegistry;
+    }
+
+    public boolean isThreadLocal() {
+        return threadLocal;
+    }
+
+    public void setThreadLocal(boolean threadLocal) {
+        this.threadLocal = threadLocal;
     }
 
     public void clear() {
@@ -150,6 +198,11 @@ public enum ConnectionsRegistry {
     }
 
     public void writeTo(Writer writer) throws IOException {
+
+        // TODO: add thread local parameter
+
+        Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
+        Map<Map.Entry<String, String>, ConnectionStatus> discoveredDataSources = getDiscoveredDataSources();
 
         writer.write("{");
 

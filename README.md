@@ -20,7 +20,7 @@ In order to enable Sniffy simply add it to your `web.xml` file:
 ```xml
 <filter>
     <filter-name>sniffer</filter-name>
-    <filter-class>io.sniffy.servlet.SnifferFilter</filter-class>
+    <filter-class>io.sniffy.servlet.SniffyFilter</filter-class>
     <init-param>
         <param-name>inject-html</param-name>
         <param-value>true</param-value>
@@ -81,12 +81,12 @@ HTML injection is configured in `web.xml` file:
 ```xml
 <filter>
     <filter-name>sniffer</filter-name>
-    <filter-class>io.sniffy.servlet.SnifferFilter</filter-class>
+    <filter-class>io.sniffy.servlet.SniffyFilter</filter-class>
     <init-param>
         <!-- 
         Enables injection of Sniffy toolbar to HTML
         If disabled the html remains untouched
-        You still can get the number of executed queries from X-Sql-Queries HTTP header
+        You still can get the number of executed queries from Sniffy-Sql-Queries HTTP header
          -->
         <param-name>inject-html</param-name>
         <param-value>true</param-value> <!-- default: false -->

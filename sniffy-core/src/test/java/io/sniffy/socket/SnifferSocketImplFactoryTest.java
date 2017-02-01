@@ -1,6 +1,5 @@
 package io.sniffy.socket;
 
-import io.sniffy.Sniffer;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.util.ExceptionUtil;

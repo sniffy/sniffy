@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Locale;
 
-import static io.sniffy.servlet.SnifferFilter.*;
+import static io.sniffy.servlet.SniffyFilter.*;
 import static java.lang.String.format;
 
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {

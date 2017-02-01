@@ -1,6 +1,5 @@
 package io.sniffy.sql;
 
-import io.sniffy.Query;
 import org.junit.Assert;
 import org.junit.Test;
 

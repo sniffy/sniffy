@@ -1,7 +1,7 @@
 package io.sniffy.socket;
 
-import io.sniffy.*;
-import io.sniffy.util.Range;
+import io.sniffy.Spy;
+import io.sniffy.Threads;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -45,16 +45,7 @@ public class TcpConnections {
         protected final Threads threads;
         protected final String host;
 
-        public TcpExpectation(SocketExpectation socketExpectation) {
-            this(
-                    Range.parse(socketExpectation.connections()).min,
-                    Range.parse(socketExpectation.connections()).max,
-                    socketExpectation.threads(),
-                    "".equals(socketExpectation.hostName()) ? null : socketExpectation.hostName()
-            );
-        }
-
-        protected TcpExpectation(int min, int max, Threads threads, String host) {
+        public TcpExpectation(int min, int max, Threads threads, String host) {
             this.min = min;
             this.max = max;
             this.threads = threads;
