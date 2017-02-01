@@ -94,7 +94,7 @@ public class SniffyServletTest {
         ConnectionsRegistry.INSTANCE.clear();
 
         URI dataSource1URI = new URI("/petclinic/" + SniffyServlet.DATASOURCE_REGISTRY_URI_PREFIX +
-                URLEncoder.encode("jdbc:h2:mem:data/base", "UTF-8") + "/sa");
+                URLEncoder.encode(URLEncoder.encode("jdbc:h2:mem:data/base", "UTF-8"), "UTF-8") + "/sa");
 
         {
             MockHttpServletResponse response = new MockHttpServletResponse();
@@ -139,7 +139,7 @@ public class SniffyServletTest {
         ConnectionsRegistry.INSTANCE.clear();
 
         URI dataSource1URI = new URI("/petclinic/" + SniffyServlet.SOCKET_REGISTRY_URI_PREFIX +
-                URLEncoder.encode("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "UTF-8") + "/1234");
+                URLEncoder.encode(URLEncoder.encode("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "UTF-8"), "UTF-8") + "/1234");
 
         {
             MockHttpServletResponse response = new MockHttpServletResponse();
