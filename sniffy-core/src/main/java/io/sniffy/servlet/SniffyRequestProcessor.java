@@ -17,9 +17,7 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.UUID;
 
-import static io.sniffy.servlet.SniffyFilter.HEADER_NUMBER_OF_QUERIES;
-import static io.sniffy.servlet.SniffyFilter.HEADER_REQUEST_DETAILS;
-import static io.sniffy.servlet.SniffyFilter.HEADER_TIME_TO_FIRST_BYTE;
+import static io.sniffy.servlet.SniffyFilter.*;
 
 class SniffyRequestProcessor implements BufferedServletResponseListener {
 

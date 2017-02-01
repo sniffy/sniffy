@@ -40,15 +40,15 @@ import static org.mockito.Mockito.*;
 public class SniffyFilterTest extends BaseTest {
 
     @Mock
-    private FilterChain filterChain;
+    protected FilterChain filterChain;
 
-    private MockHttpServletResponse httpServletResponse;
-    private MockServletContext servletContext;
-    private MockHttpServletRequest requestWithPathAndQueryParameter;
-    private MockHttpServletRequest requestWithPath;
-    private MockHttpServletRequest requestContextWithoutTrailingSlash;
-    private MockHttpServletRequest requestContext;
-    private SniffyFilter filter;
+    protected MockHttpServletResponse httpServletResponse;
+    protected MockServletContext servletContext;
+    protected MockHttpServletRequest requestWithPathAndQueryParameter;
+    protected MockHttpServletRequest requestWithPath;
+    protected MockHttpServletRequest requestContextWithoutTrailingSlash;
+    protected MockHttpServletRequest requestContext;
+    protected SniffyFilter filter;
 
     @Before
     public void setupServletApiMocks() {
@@ -61,7 +61,7 @@ public class SniffyFilterTest extends BaseTest {
         filter = new SniffyFilter();
     }
 
-    private FilterConfig getFilterConfig() {
+    protected FilterConfig getFilterConfig() {
         return getFilterConfig(false);
     }
 
@@ -151,7 +151,7 @@ public class SniffyFilterTest extends BaseTest {
         assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../" + REQUEST_URI_PREFIX));
     }
 
-    private void answerWithContent(String actualContent) throws IOException, ServletException {
+    protected void answerWithContent(String actualContent) throws IOException, ServletException {
         doAnswer(invocation -> {
             Thread.sleep(1);
             HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];

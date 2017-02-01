@@ -1,6 +1,8 @@
 package io.sniffy.sql;
 
-import io.sniffy.*;
+import io.sniffy.BaseTest;
+import io.sniffy.Sniffy;
+import io.sniffy.Spy;
 import org.junit.Test;
 
 import static io.sniffy.Query.*;

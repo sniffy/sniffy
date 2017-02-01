@@ -8,7 +8,7 @@ The main classes you should use are `io.sniffy.Sniffy` and `io.sniffy.Spy`
 `Sniffy` class provides convenient factory methods for creating `Spy` instances
 
 ```java
-package io.sniffy.usage;
+package io.sniffy.junit.usage;
 
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;

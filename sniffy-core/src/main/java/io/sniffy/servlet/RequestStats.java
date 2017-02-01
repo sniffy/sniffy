@@ -5,7 +5,6 @@ import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 
-import java.util.List;
 import java.util.Map;
 
 class RequestStats {

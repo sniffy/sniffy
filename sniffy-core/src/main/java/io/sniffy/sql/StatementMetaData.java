@@ -1,7 +1,5 @@
 package io.sniffy.sql;
 
-import io.sniffy.Query;
-
 /**
  * Represents an executed query - actual SQL, query type (SELECT, INSERT, e.t.c.) and the calling thread
  */

@@ -12,6 +12,8 @@
     <modules>
         <module>sniffy-core</module>
         <module>sniffy</module>
+        <module>sniffy-test</module>
+        <module>sniffy-integration-tests</module>
     </modules>
 
     <name>Sniffy Parent</name>
@@ -60,7 +62,45 @@
         </repository>
     </distributionManagement>
 
+    <dependencies>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
     <build>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -113,23 +153,6 @@
                         <skip>true</skip>
                     </configuration>
                     <executions>
-                        <execution>
-                            <id>Spock-execution</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>test</goal>
-                            </goals>
-                            <configuration>
-                                <useFile>false</useFile>
-                                <skip>false</skip>
-                                <testNGArtifactName>dev:null</testNGArtifactName>
-                                <includes>
-                                    <include>**/*Spec.java</include>
-                                </includes>
-                                <!-- to continue on next execution in case of failures here -->
-                                <testFailureIgnore>true</testFailureIgnore>
-                            </configuration>
-                        </execution>
                         <execution>
                             <id>TestNg-execution</id>
                             <phase>test</phase>
@@ -382,7 +405,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.7.6.201602180812</version>
+                        <version>0.7.8</version>
                         <executions>
                             <execution>
                                 <id>prepare-agent</id>
@@ -395,7 +418,7 @@
                     <plugin>
                         <groupId>org.eluder.coveralls</groupId>
                         <artifactId>coveralls-maven-plugin</artifactId>
-                        <version>4.1.0</version>
+                        <version>4.3.0</version>
                         <!--<configuration>
                             <repoToken>token</repoToken>
                         </configuration>-->
