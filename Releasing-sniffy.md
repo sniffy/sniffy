@@ -31,3 +31,9 @@
 1. `git commit -am 'Version bumped to <VERSION+1>-SNAPSHOT'`
 1. `git push`
  
+## sniffy-demo
+
+1. Update sniffy version in pom.xml
+1. `git commit -am 'Sniffy version updated to <VERSION>'`
+1. `git push`
+1. `git push heroku master`
