@@ -4,8 +4,10 @@ import io.sniffy.Expectation;
 import io.sniffy.Expectations;
 import io.sniffy.Query;
 import io.sniffy.Threads;
+import io.sniffy.socket.NoSocketsAllowed;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.SocketExpectations;
+import io.sniffy.sql.NoSql;
 import io.sniffy.sql.SqlExpectation;
 import io.sniffy.sql.SqlStatement;
 import org.junit.Test;
@@ -15,6 +17,8 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+@NoSocketsAllowed
+@NoSql
 public class AnnotationProcessorTest {
 
     @Test
@@ -153,6 +157,39 @@ public class AnnotationProcessorTest {
         AnnotationProcessor.buildSocketExpectationList(
                 AnnotationProcessorTest.class.getMethod("testIncorrectSocketExpectationsAnnotation")
         );
+    }
+
+    @Test
+    public void testNoSqlNoSocketsAllowedInClass() throws NoSuchMethodException {
+
+        List<SocketExpectation> socketExpectations = AnnotationProcessor.buildSocketExpectationList(
+                AnnotationProcessorTest.class.getMethod("testNoSqlNoSocketsAllowedInClass")
+        );
+        assertNotNull(socketExpectations);
+        assertEquals(1, socketExpectations.size());
+
+        SocketExpectation socketExpectation = socketExpectations.get(0);
+        assertEquals(Threads.CURRENT, socketExpectation.threads());
+        assertEquals(-1, socketExpectation.connections().min());
+        assertEquals(-1, socketExpectation.connections().max());
+        assertEquals(0, socketExpectation.connections().value());
+
+        List<SqlExpectation> sqlExpectations = AnnotationProcessor.buildSqlExpectationList(
+                AnnotationProcessorTest.class.getMethod("testNoSqlNoSocketsAllowedInClass")
+        );
+        assertNotNull(sqlExpectations);
+        assertEquals(1, sqlExpectations.size());
+
+        SqlExpectation sqlExpectation = sqlExpectations.get(0);
+        assertEquals(SqlStatement.ANY, sqlExpectation.query());
+        assertEquals(Threads.CURRENT, sqlExpectation.threads());
+        assertEquals(-1, sqlExpectation.count().min());
+        assertEquals(-1, sqlExpectation.count().max());
+        assertEquals(0, sqlExpectation.count().value());
+        assertEquals(-1, sqlExpectation.rows().value());
+        assertEquals(-1, sqlExpectation.rows().value());
+        assertEquals(-1, sqlExpectation.rows().value());
+
     }
 
 }
