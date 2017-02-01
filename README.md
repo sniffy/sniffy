@@ -86,7 +86,7 @@ HTML injection is configured in `web.xml` file:
         <!-- 
         Enables injection of Sniffy toolbar to HTML
         If disabled the html remains untouched
-        You still can get the number of executed queries from X-Sql-Queries HTTP header
+        You still can get the number of executed queries from Sniffy-Sql-Queries HTTP header
          -->
         <param-name>inject-html</param-name>
         <param-value>true</param-value> <!-- default: false -->
