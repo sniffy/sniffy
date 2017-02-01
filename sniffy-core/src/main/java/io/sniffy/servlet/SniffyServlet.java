@@ -144,7 +144,7 @@ class SniffyServlet extends HttpServlet {
     private String[] splitBySlashAndDecode(String connectionString) throws UnsupportedEncodingException {
         String[] split = connectionString.split("/");
         for (int i = 0; i < split.length; i++) {
-            split[i] = URLDecoder.decode(split[i], "UTF-8");
+            split[i] = URLDecoder.decode(URLDecoder.decode(split[i], "UTF-8"));
         }
         return split;
     }
