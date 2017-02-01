@@ -4,6 +4,8 @@ import io.sniffy.Expectation;
 import io.sniffy.Expectations;
 import io.sniffy.Query;
 import io.sniffy.Threads;
+import io.sniffy.socket.SocketExpectation;
+import io.sniffy.socket.SocketExpectations;
 import io.sniffy.sql.SqlExpectation;
 import io.sniffy.sql.SqlStatement;
 import org.junit.Test;
@@ -87,6 +89,69 @@ public class AnnotationProcessorTest {
     public void testIncorrectExpectationsAnnotation() throws NoSuchMethodException {
         AnnotationProcessor.buildSqlExpectationList(
                 AnnotationProcessorTest.class.getMethod("testIncorrectExpectationsAnnotation")
+        );
+    }
+
+    @Test
+    @SocketExpectation(threads = Threads.OTHERS, connections = @Count(min = 2, max = 5))
+    public void testCorrectSocketExpectationAnnotation() throws NoSuchMethodException {
+        List<SocketExpectation> socketExpectations = AnnotationProcessor.buildSocketExpectationList(
+                AnnotationProcessorTest.class.getMethod("testCorrectSocketExpectationAnnotation")
+        );
+        assertNotNull(socketExpectations);
+        assertEquals(1, socketExpectations.size());
+
+        SocketExpectation socketExpectation = socketExpectations.get(0);
+        assertEquals(Threads.OTHERS, socketExpectation.threads());
+        assertEquals(2, socketExpectation.connections().min());
+        assertEquals(5, socketExpectation.connections().max());
+        assertEquals(-1, socketExpectation.connections().value());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SocketExpectation(threads = Threads.ANY, connections = @Count(min = 2, max = 5, value = 3))
+    public void testIncorrectSocketExpectationAnnotation() throws NoSuchMethodException {
+        AnnotationProcessor.buildSocketExpectationList(
+                AnnotationProcessorTest.class.getMethod("testIncorrectSocketExpectationAnnotation")
+        );
+    }
+
+    @Test
+    @SocketExpectations({
+        @SocketExpectation(threads = Threads.ANY, connections = @Count(min = 2, max = 5)),
+        @SocketExpectation(threads = Threads.CURRENT, connections = @Count(min = 3, max = 6))
+    })
+    public void testCorrectSocketExpectationsAnnotation() throws NoSuchMethodException {
+        List<SocketExpectation> socketExpectations = AnnotationProcessor.buildSocketExpectationList(
+                AnnotationProcessorTest.class.getMethod("testCorrectSocketExpectationsAnnotation")
+        );
+        assertNotNull(socketExpectations);
+        assertEquals(2, socketExpectations.size());
+
+        {
+            SocketExpectation socketExpectation = socketExpectations.get(0);
+            assertEquals(Threads.ANY, socketExpectation.threads());
+            assertEquals(2, socketExpectation.connections().min());
+            assertEquals(5, socketExpectation.connections().max());
+            assertEquals(-1, socketExpectation.connections().value());
+        }
+
+        {
+            SocketExpectation socketExpectation = socketExpectations.get(1);
+            assertEquals(Threads.CURRENT, socketExpectation.threads());
+            assertEquals(3, socketExpectation.connections().min());
+            assertEquals(6, socketExpectation.connections().max());
+            assertEquals(-1, socketExpectation.connections().value());
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SocketExpectations(
+        @SocketExpectation(threads = Threads.ANY, connections = @Count(min = 2, max = 5, value = 3))
+    )
+    public void testIncorrectSocketExpectationsAnnotation() throws NoSuchMethodException {
+        AnnotationProcessor.buildSocketExpectationList(
+                AnnotationProcessorTest.class.getMethod("testIncorrectSocketExpectationsAnnotation")
         );
     }
 
