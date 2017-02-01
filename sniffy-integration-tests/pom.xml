@@ -12,7 +12,7 @@
     <artifactId>sniffy-integration-tests</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>spock</module>
+        <module>sniffy-integration-tests-spock</module>
     </modules>
 
 
