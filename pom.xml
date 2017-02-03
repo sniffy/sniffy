@@ -14,6 +14,7 @@
         <module>sniffy</module>
         <module>sniffy-test</module>
         <module>sniffy-integration-tests</module>
+        <module>sniffy-documentation</module>
     </modules>
 
     <name>Sniffy Parent</name>
