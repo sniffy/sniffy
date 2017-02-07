@@ -1,6 +1,20 @@
-Sniffy
-============
+:imagesdir: ./images
 
-Sniffy is a lightweight low-overhead Java profiler which shows the results directly in your browser
+= Sniffy
+
+Sniffy is a Java profiler which shows the results directly in your browser.
+It also brings profiling to your unit (or rather component) tests and allows you to disable certain outgoing connections for fault-tolerance testing.
 
 image::demo.gif[]
+
+= Setup
+
+include::setup/Spring Boot.adoc[]
+
+include::setup/Datasource.adoc[]
+
+include::setup/Filter.adoc[]
+
+= Unit and component tests
+
+include::test/Core API.adoc[]

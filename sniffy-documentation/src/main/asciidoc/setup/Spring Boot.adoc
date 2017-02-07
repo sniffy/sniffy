@@ -1,7 +1,6 @@
-Using Sniffy with Spring Boot
-============
+== Using Sniffy with Spring
 
-If you are using [Spring Boot](http://projects.spring.io/spring-boot/), simply add `@EnableSniffy` to your application class:
+If you are using http://projects.spring.io/spring-boot/[Spring Boot], simply add `@EnableSniffy` to your application class:
 
 ```java
 package com.acme;
@@ -13,7 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @EnableAutoConfiguration
-@EnableSniffy
+@EnableSniffy // <1>
 public class Application {
 
     public static void main(String[] args) throws ClassNotFoundException {
@@ -22,11 +21,7 @@ public class Application {
 
 }
 ```
+<1> Put this annotation on a class with spring configuration.
 
-You still need to modify the JDBC settings in order to intercept SQL queries:
-```yml
-spring:
-  datasource:
-    url: sniffy:jdbc:mysql://127.0.0.1:3306/petstore
-    driver-class-name: io.sniffy.sql.SniffyDriver
-```
+It will wrap all existing datasources with `SniffyDataSource` and also create an instance of `SniffyFilter` with bean id `sniffyFilter` which will inject sniffy widget into HTML pages.
+If you are using Spring Boot embedded servlet container t is sufficient - otherwise you should also create a mapping for this filter.
