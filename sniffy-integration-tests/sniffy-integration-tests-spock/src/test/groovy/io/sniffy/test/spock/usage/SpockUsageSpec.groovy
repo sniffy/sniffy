@@ -1,27 +1,27 @@
-package io.sniffy.spock
+package io.sniffy.test.spock.usage
 
 import groovy.sql.Sql
 import io.sniffy.Sniffy
-import io.sniffy.WrongNumberOfQueriesError
+import io.sniffy.sql.SqlQueries
+import io.sniffy.sql.WrongNumberOfQueriesError
 import spock.lang.FailsWith
 import spock.lang.Shared
 import spock.lang.Specification
 
-class QueryCounterSpec extends Specification {
+class SpockUsageSpec extends Specification {
 
-    @Shared
-    def sql = Sql.newInstance("sniffer:jdbc:h2:mem:", "sa", "sa")
+    @Shared sql = Sql.newInstance("sniffy:jdbc:h2:mem:", "sa", "sa")
 
     def spy = Sniffy.spy()
 
     @FailsWith(WrongNumberOfQueriesError)
-    def "Execute single query - negative"() {
+    "Execute single query - negative"() {
         when:
         sql.execute("SELECT 1 FROM DUAL")
         sql.execute("SELECT 1 FROM DUAL")
 
         then:
-        spy.verify(1)
+        spy.verify(SqlQueries.exactQueries(1))
     }
 
     def "Execute single query"() {
@@ -29,13 +29,13 @@ class QueryCounterSpec extends Specification {
         sql.execute("SELECT 1 FROM DUAL")
 
         then:
-        spy.verify(1).reset()
+        spy.verify(SqlQueries.exactQueries(1)).reset()
 
         when:
         sql.execute("SELECT 1 FROM DUAL")
 
         then:
-        spy.verify(1)
+        spy.verify(SqlQueries.exactQueries(1))
     }
 
     def "Execute single query - another one"() {
@@ -43,7 +43,7 @@ class QueryCounterSpec extends Specification {
         sql.execute("SELECT 1 FROM DUAL")
 
         then:
-        spy.verify(1)
+        spy.verify(SqlQueries.exactQueries(1))
     }
 
 }

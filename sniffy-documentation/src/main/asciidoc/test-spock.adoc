@@ -1,0 +1,10 @@
+== Integration with Spock Framework
+
+https://github.com/spockframework/spock[Spock Framework] is a developer testing and specification framework for Java and http://groovy.codehaus.org/[Groovy] applications.
+
+Sniffy can be integrated with Spock Framework using `Spy` field and standard spock `then` block:
+```groovy
+include::../../../../sniffy-integration-tests/sniffy-integration-tests-spock/src/test/groovy/io/sniffy/test/spock/usage/SpockUsageSpec.groovy[]
+```
+
+Do not forget to call `reset()` method on the spy object if you have multiple when-then blocks in a single test method

@@ -21,6 +21,8 @@ include::test-api.adoc[]
 
 include::test-junit.adoc[]
 
+include::test-spring.adoc[]
+
 include::test-testng.adoc[]
 
-include::test-spring.adoc[]
+include::test-spock.adoc[]
