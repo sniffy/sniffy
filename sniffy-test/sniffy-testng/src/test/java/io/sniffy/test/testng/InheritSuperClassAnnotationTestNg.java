@@ -1,10 +1,9 @@
-package io.sniffy.testng;
+package io.sniffy.test.testng;
 
 import io.sniffy.BaseTest;
 import io.sniffy.Expectation;
 import io.sniffy.WrongNumberOfQueriesError;
 import io.sniffy.test.BaseNoQueriesAllowedTest;
-import io.sniffy.test.testng.SniffyTestNgListener;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;

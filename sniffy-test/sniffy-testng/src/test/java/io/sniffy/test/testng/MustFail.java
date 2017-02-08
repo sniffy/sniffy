@@ -1,4 +1,4 @@
-package io.sniffy.testng;
+package io.sniffy.test.testng;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

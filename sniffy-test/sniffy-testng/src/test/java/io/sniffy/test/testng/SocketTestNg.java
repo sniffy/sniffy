@@ -1,9 +1,10 @@
-package io.sniffy.testng;
+package io.sniffy.test.testng;
 
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.TcpConnectionsExpectationError;
 import io.sniffy.test.Count;
+import io.sniffy.testng.QueryCounter;
 import org.testng.annotations.*;
 
 import java.net.UnknownHostException;

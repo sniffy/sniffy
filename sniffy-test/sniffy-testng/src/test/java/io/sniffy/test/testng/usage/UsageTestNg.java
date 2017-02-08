@@ -1,19 +1,17 @@
-package io.sniffy.test.junit.usage;
+package io.sniffy.test.testng.usage;
 
 import io.sniffy.sql.SqlExpectation;
 import io.sniffy.test.Count;
-import io.sniffy.test.junit.SniffyRule;
-import org.junit.Rule;
-import org.junit.Test;
+import io.sniffy.test.testng.SniffyTestNgListener;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class JUnitUsageTest {
-
-    @Rule
-    public final SniffyRule sniffyRule = new SniffyRule(); // <1>
+@Listeners(SniffyTestNgListener.class) // <1>
+public class UsageTestNg {
 
     @Test
     @SqlExpectation(count = @Count(1)) // <2>
