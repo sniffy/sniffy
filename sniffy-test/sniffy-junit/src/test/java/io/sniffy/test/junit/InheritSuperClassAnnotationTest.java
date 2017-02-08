@@ -1,6 +1,7 @@
-package io.sniffy.junit;
+package io.sniffy.test.junit;
 
 import io.sniffy.WrongNumberOfQueriesError;
+import io.sniffy.junit.QueryCounter;
 import io.sniffy.test.BaseNoQueriesAllowedTest;
 import org.junit.BeforeClass;
 import org.junit.Rule;

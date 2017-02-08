@@ -1,6 +1,7 @@
-package io.sniffy.junit;
+package io.sniffy.test.junit;
 
 import io.sniffy.*;
+import io.sniffy.junit.QueryCounter;
 import io.sniffy.sql.SqlExpectation;
 import io.sniffy.sql.WrongNumberOfRowsError;
 import io.sniffy.test.Count;

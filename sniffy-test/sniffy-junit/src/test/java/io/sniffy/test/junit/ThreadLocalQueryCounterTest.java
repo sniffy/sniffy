@@ -1,6 +1,7 @@
-package io.sniffy.junit;
+package io.sniffy.test.junit;
 
 import io.sniffy.*;
+import io.sniffy.junit.QueryCounter;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;

@@ -18,3 +18,5 @@ include::setup-filter.adoc[]
 = Unit and component tests
 
 include::test-api.adoc[]
+
+include::test-junit.adoc[]

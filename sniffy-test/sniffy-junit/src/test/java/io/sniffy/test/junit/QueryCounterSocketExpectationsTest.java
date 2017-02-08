@@ -1,4 +1,4 @@
-package io.sniffy.junit;
+package io.sniffy.test.junit;
 
 import io.sniffy.junit.QueryCounter;
 import io.sniffy.socket.BaseSocketTest;
