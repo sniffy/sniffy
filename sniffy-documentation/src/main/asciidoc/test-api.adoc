@@ -1,4 +1,4 @@
-== Using Sniffy Core API
+== Using Sniffy API
 
 Sniffy provides a convenient API for validating the number of executed database queries, affected database rows or even number of active TCP connections.
 The main classes you should use are `io.sniffy.Sniffy` and `io.sniffy.Spy`.
@@ -9,7 +9,7 @@ The main classes you should use are `io.sniffy.Sniffy` and `io.sniffy.Spy`.
 === Imperative approach
 
 ```java
-include::../../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java[tags=testVerifyApi]
+include::../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java[tags=testVerifyApi]
 ```
 <1> Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
 <2> `Spy` holds the amount of queries executed till the given amount of time. It acts as a base for further assertions.
@@ -20,7 +20,7 @@ include::../../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.j
 === Functional approach
 
 ```java
-include::../../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java[tags=testFunctionalApi]
+include::../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java[tags=testFunctionalApi]
 ```
 <1> Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
 <2> `Sniffy.execute()` method executes the lambda expression and returns an instance of `Spy` which provides methods for validating the number of executed queries in given lambda/
@@ -28,7 +28,7 @@ include::../../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.j
 === Resource approach
 
 ```java
-include::../../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java[tags=testResourceApi]
+include::../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java[tags=testResourceApi]
 ```
 <1> Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
 <2> You can use `Sniffy` in a try-with-resource block using `expect` methods instead of `verify`. When the try-with-resource block is completed, Sniffy will verify all the expectations defined

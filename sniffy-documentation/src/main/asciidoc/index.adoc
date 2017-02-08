@@ -9,12 +9,12 @@ image::demo.gif[]
 
 = Setup
 
-include::setup/Spring Boot.adoc[]
+include::setup-spring.adoc[]
 
-include::setup/Datasource.adoc[]
+include::setup-datasource.adoc[]
 
-include::setup/Filter.adoc[]
+include::setup-filter.adoc[]
 
 = Unit and component tests
 
-include::test/Core API.adoc[]
+include::test-api.adoc[]
