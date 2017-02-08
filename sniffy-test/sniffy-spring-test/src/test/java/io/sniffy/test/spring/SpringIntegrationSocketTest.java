@@ -1,8 +1,9 @@
-package io.sniffy.spring;
+package io.sniffy.test.spring;
 
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.TcpConnectionsExpectationError;
+import io.sniffy.spring.QueryCounterListener;
 import io.sniffy.test.Count;
 import org.junit.Rule;
 import org.junit.Test;

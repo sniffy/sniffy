@@ -1,19 +1,7 @@
-Integration with Spring Framework
-====
+package io.sniffy.test.spring;
 
-Sniffy comes with a [Spring Framework](http://projects.spring.io/spring-framework/) via QueryCounterListener spring [@TestExecutionListener](http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#testcontext-tel-config)
-Just add `@TestExecutionListeners(QueryCounterListener.class)` to your Spring test class and place appropriate expectations on your test methods like shown below:
-
-```java
-package io.sniffy.spring;
-
-import io.sniffy.BaseTest;
-import io.sniffy.Query;
-import io.sniffy.Threads;
-import io.sniffy.WrongNumberOfQueriesError;
-import io.sniffy.Expectation;
-import io.sniffy.Expectations;
-import io.sniffy.NoQueriesAllowed;
+import io.sniffy.*;
+import io.sniffy.sql.NoSql;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -22,11 +10,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@NoQueriesAllowed
+@NoSql
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = QueryCounterTest.class)
-@TestExecutionListeners(QueryCounterListener.class)
-public class QueryCounterTest extends BaseTest {
+@ContextConfiguration(classes = SpringIntegration_NoQueriesAllowedByDefault_Test.class)
+@TestExecutionListeners(SniffySpringTestListener.class)
+public class SpringIntegration_NoQueriesAllowedByDefault_Test extends BaseTest {
 
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
@@ -69,4 +57,3 @@ public class QueryCounterTest extends BaseTest {
     }
 
 }
-```

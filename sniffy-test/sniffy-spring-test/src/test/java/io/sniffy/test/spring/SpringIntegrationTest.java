@@ -1,6 +1,7 @@
-package io.sniffy.spring;
+package io.sniffy.test.spring;
 
 import io.sniffy.*;
+import io.sniffy.spring.QueryCounterListener;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;

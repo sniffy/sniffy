@@ -20,3 +20,7 @@ include::setup-filter.adoc[]
 include::test-api.adoc[]
 
 include::test-junit.adoc[]
+
+include::test-testng.adoc[]
+
+include::test-spring.adoc[]
