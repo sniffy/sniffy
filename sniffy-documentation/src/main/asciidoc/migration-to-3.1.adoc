@@ -1,0 +1,27 @@
+== Migration from 3.0.x to 3.1.x
+
+=== Maven artifacts
+
+Sniffy test support has been extracted to a separate artifacts.
+You should now use following artifacts if you want to use Sniffy in your unit tests:
+
+.Table Maven artifacts
+|===
+|Old artifact |New artifact |Test framework
+
+|io.sniffy:sniffy:test
+|io.sniffy:sniffy-junit:test
+|JUnit
+
+|io.sniffy:sniffy:test
+|io.sniffy:sniffy-spring-test:test
+|Spring Framework
+
+|io.sniffy:sniffy:test
+|io.sniffy:sniffy-testng:test
+|TestNG
+
+|io.sniffy:sniffy:test
+|io.sniffy:sniffy-core:test
+|Spock Framework
+|===
