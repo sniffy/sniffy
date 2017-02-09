@@ -5,7 +5,7 @@
 Sniffy test support has been extracted to a separate artifacts.
 You should now use following artifacts if you want to use Sniffy in your unit tests:
 
-.Table Maven artifacts
+.Table Maven artifacts migration
 |===
 |Old artifact |New artifact |Test framework
 
@@ -24,4 +24,25 @@ You should now use following artifacts if you want to use Sniffy in your unit te
 |io.sniffy:sniffy:test
 |io.sniffy:sniffy-core:test
 |Spock Framework
+|===
+
+=== JDBC Connection String
+
+`sniffer:` connection is deprecated as of Sniffy 3.1.0.
+You should use `sniffy:` instead like shown below:
+
+```
+sniffy:jdbc:h2:mem:
+```
+
+=== Deprecated Classes
+
+Some of Sniffy classes are deprecated as of version 3.1.0 with an equivalent replacement as shown in the table below:
+
+.Table Sniffy 3.1.0 deprecated classes
+|===
+|Deprecated class |New class
+
+|[line-through]#io.sniffy.MockDriver#
+|io.sniffy.sql.SniffyDriver
 |===
