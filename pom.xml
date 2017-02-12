@@ -11,6 +11,7 @@
 
     <modules>
         <module>sniffy-core</module>
+        <module>sniffy-web</module>
         <module>sniffy</module>
         <module>sniffy-test</module>
         <module>sniffy-integration-tests</module>

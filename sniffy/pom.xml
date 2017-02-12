@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-core</artifactId>
+            <artifactId>sniffy-web</artifactId>
             <version>${project.parent.version}</version>
             <optional>true</optional>
         </dependency>
@@ -49,7 +49,7 @@
                             <goal>unpack-dependencies</goal>
                         </goals>
                         <configuration>
-                            <includeArtifactIds>sniffy-core</includeArtifactIds>
+                            <includeArtifactIds>sniffy-web</includeArtifactIds>
                             <excludeTransitive>true</excludeTransitive>
                             <outputDirectory>${project.build.directory}/classes</outputDirectory>
                         </configuration>
