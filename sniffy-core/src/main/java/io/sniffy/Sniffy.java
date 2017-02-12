@@ -27,8 +27,8 @@ public class Sniffy {
 
     protected static final Queue<WeakReference<Spy>> registeredSpies =
             new ConcurrentLinkedQueue<WeakReference<Spy>>();
-    protected static final ConcurrentMap<WeakReference<Thread>, WeakReference<CurrentThreadSpy>> currentThreadSpies =
-            new ConcurrentHashMap<WeakReference<Thread>, WeakReference<CurrentThreadSpy>>();
+    protected static final ConcurrentMap<Long, WeakReference<CurrentThreadSpy>> currentThreadSpies =
+            new ConcurrentHashMap<Long, WeakReference<CurrentThreadSpy>>();
 
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
 
@@ -55,7 +55,7 @@ public class Sniffy {
 
     protected static WeakReference<CurrentThreadSpy> registerCurrentThreadSpy(CurrentThreadSpy spy) {
         WeakReference<CurrentThreadSpy> spyReference = new WeakReference<CurrentThreadSpy>(spy);
-        currentThreadSpies.put(currentThreadReference(), spyReference);
+        currentThreadSpies.put(Thread.currentThread().getId(), spyReference);
         return spyReference;
     }
 
@@ -64,7 +64,7 @@ public class Sniffy {
     }
 
     protected static void removeCurrentThreadSpyReference() {
-        currentThreadSpies.remove(currentThreadReference());
+        currentThreadSpies.remove(Thread.currentThread().getId());
     }
 
     private static void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
@@ -79,22 +79,18 @@ public class Sniffy {
             }
         }
 
-        WeakReference<Thread> threadReference = currentThreadReference();
+        Long threadId = Thread.currentThread().getId();
 
-        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadReference);
+        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
         if (null != spyReference) {
             CurrentThreadSpy spy = spyReference.get();
             if (null == spy) {
-                currentThreadSpies.remove(threadReference);
+                currentThreadSpies.remove(threadId);
             } else {
                 spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
             }
         }
 
-    }
-
-    private static WeakReference<Thread> currentThreadReference() {
-        return new WeakReference<Thread>(Thread.currentThread());
     }
 
     private static void notifyListeners(StatementMetaData statementMetaData) {
@@ -109,13 +105,13 @@ public class Sniffy {
             }
         }
 
-        WeakReference<Thread> threadReference = currentThreadReference();
+        Long threadId = Thread.currentThread().getId();
 
-        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadReference);
+        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
         if (null != spyReference) {
             CurrentThreadSpy spy = spyReference.get();
             if (null == spy) {
-                currentThreadSpies.remove(threadReference);
+                currentThreadSpies.remove(threadId);
             } else {
                 spy.addReturnedRow(statementMetaData);
             }
@@ -134,13 +130,13 @@ public class Sniffy {
             }
         }
 
-        WeakReference<Thread> threadReference = currentThreadReference();
+        Long threadId = Thread.currentThread().getId();
 
-        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadReference);
+        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
         if (null != spyReference) {
             CurrentThreadSpy spy = spyReference.get();
             if (null == spy) {
-                currentThreadSpies.remove(threadReference);
+                currentThreadSpies.remove(threadId);
             } else {
                 spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
             }
@@ -161,13 +157,13 @@ public class Sniffy {
             }
         }
 
-        WeakReference<Thread> threadReference = currentThreadReference();
+        Long threadId = Thread.currentThread().getId();
 
-        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadReference);
+        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
         if (null != spyReference) {
             CurrentThreadSpy spy = spyReference.get();
             if (null == spy) {
-                currentThreadSpies.remove(threadReference);
+                currentThreadSpies.remove(threadId);
             } else {
                 return true;
             }
