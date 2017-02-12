@@ -73,7 +73,7 @@ public class StackTraceExtractor {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        String lineSeparator = System.lineSeparator();
+        String lineSeparator = System.getProperty("line.separator");
         for (StackTraceElement stackTraceElement : stackTraceElements) {
             sb.append(stackTraceElement.toString()).append(lineSeparator);
         }
