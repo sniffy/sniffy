@@ -71,6 +71,7 @@ public class SniffyFilter implements Filter {
     public static final String JAVASCRIPT_MAP_URI = SNIFFER_URI_PREFIX + "/sniffy.map";
     public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
     public static final String SNIFFY = "sniffy";
+    public static final String SNIFFY_ENABLED_HEADER = "Sniffy-Enabled";
     protected static final String THREAD_LOCAL_DISCOVERED_ADDRESSES = "discoveredAddresses";
     protected static final String THREAD_LOCAL_DISCOVERED_DATA_SOURCES = "discoveredDataSources";
 
@@ -215,6 +216,14 @@ public class SniffyFilter implements Filter {
     private boolean isSniffyFilterEnabled(ServletRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws MalformedURLException {
 
         boolean sniffyEnabled = enabled;
+
+        // override by request header
+
+        String sniffyEnabledHeader = httpServletRequest.getHeader(SNIFFY_ENABLED_HEADER);
+
+        if (null != sniffyEnabledHeader) {
+            sniffyEnabled = Boolean.parseBoolean(sniffyEnabledHeader);
+        }
 
         // override by request parameter/cookie value if provided
 

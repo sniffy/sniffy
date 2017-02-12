@@ -409,6 +409,28 @@ public class SniffyFilterTest extends BaseTest {
     }
 
     @Test
+    public void testFilterEnabledByHeader() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SniffyFilter filter = new SniffyFilter();
+        filter.setEnabled(false);
+        requestWithPathAndQueryParameter.addHeader("Sniffy-Enabled", "true");
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
+    }
+
+    @Test
+    public void testFilterDisabledByHeader() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SniffyFilter filter = new SniffyFilter();
+        filter.setEnabled(true);
+        requestWithPathAndQueryParameter.addHeader("Sniffy-Enabled", "false");
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
+    }
+
+    @Test
     public void testFilterEnabledRequestParamOverridesCookie() throws IOException, ServletException {
         doAnswer(invocation -> {executeStatement(); return null;}).
                 when(filterChain).doFilter(any(), any());
