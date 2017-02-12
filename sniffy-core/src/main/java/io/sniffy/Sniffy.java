@@ -224,9 +224,9 @@ public class Sniffy {
                     );
                 }
 
-                socketStatsAccumulator.remove();
             }
         }
+        socketStatsAccumulator.remove();
     }
 
     public static void readDatabaseRow(Method method, long elapsedTime, StatementMetaData statementMetaData) {
