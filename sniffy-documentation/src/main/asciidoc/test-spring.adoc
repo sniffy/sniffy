@@ -1,0 +1,12 @@
+== Integration with Spring Framework
+
+Sniffy comes with a http://projects.spring.io/spring-framework/[Spring Framework] via `SniffySpringTestListener` spring http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#testcontext-tel-config[@TestExecutionListener].
+Just add `@TestExecutionListeners(SniffySpringTestListener.class)` to your Spring test class and place appropriate expectations on your test methods like shown below.
+
+```java
+include::../../../../sniffy-test/sniffy-spring-test/src/test/java/io/sniffy/test/spring/usage/SpringUsageTest.java[]
+```
+<1> - Integrate Sniffy to your test using `@TestExecutionListeners(SniffySpringTestListener.class)`.
+<2> - Now just add `@SqlExpectation` annotation to define number of queries allowed for given method.
+<3> - Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
+<4> - Do not make any changes in your code - just add the `@TestExecutionListeners(SniffySpringTestListener.class)` and put annotations on your test method.

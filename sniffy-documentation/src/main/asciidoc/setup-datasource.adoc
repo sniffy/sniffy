@@ -1,0 +1,15 @@
+== Datasource
+
+=== Add sniffy to classpath
+
+In order to intercept the SQL queries executed by your application you should use Sniffy datasource wrapper.
+At first you should add `sniffy.jar` to classpath of classloader which loads actual driver.
+If your datasource is created by application server and registered in JNDI for later usage, you should copy `sniffy.jar`
+ so it would be available by application server common classloader.
+For example in case of `Apache Tomcat` you should place it to `<TOMCAT-HOME>/lib` folder
+
+=== Enable sniffy for datasource
+
+In order to enable sniffy on a datasource, just add `sniffy:` prefix and use `io.sniffy.sql.SniffyDriver` as a driver class name.
+For example `jdbc:h2:~/test` should be changed to `sniffy:jdbc:h2:mem:`
+The Sniffy JDBC driver class name to `io.sniffy.sql.SniffyDriver`

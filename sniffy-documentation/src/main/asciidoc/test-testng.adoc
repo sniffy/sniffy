@@ -1,0 +1,12 @@
+== Integration with Test NG
+
+Sniffy comes with a http://testng.org/[Test NG] `listener` for quick integration with test framework.
+Just add `@Listeners(SniffyTestNgListener.class)` to your TestNG test class and place appropriate expectations on your test methods like shown below.
+
+```java
+include::../../../../sniffy-test/sniffy-testng/src/test/java/io/sniffy/test/testng/usage/UsageTestNg.java[]
+```
+<1> - Integrate `Sniffy` to your test using `@Listeners(SniffyTestNgListener.class)`.
+<2> - Now just add `@SqlExpectation` annotation to define number of queries allowed for given method.
+<3> - Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
+<4> - Do not make any changes in your code - just add the `@Listeners(SniffyTestNgListener.class)` and put annotations on your test method.

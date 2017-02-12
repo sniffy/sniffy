@@ -1,0 +1,34 @@
+== Using Sniffy API
+
+Sniffy provides a convenient API for validating the number of executed database queries, affected database rows or even number of active TCP connections.
+The main classes you should use are `io.sniffy.Sniffy` and `io.sniffy.Spy`.
+
+`Spy` objects are responsible for recording the executed queries and bytes sent over the wire. `Spy` stores all the information since the moment it was created.
+`Sniffy` class provides convenient factory methods for creating `Spy` instances
+
+=== Imperative approach
+
+```java
+include::../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java[tags=testVerifyApi]
+```
+<1> Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
+<2> `Spy` holds the amount of queries executed till the given amount of time. It acts as a base for further assertions.
+<3> You do not need to modify your JDBC code.
+<4> `spy.verify(SqlQueries.atMostOneQuery())` throws an AssertionError if more than one query was executed.
+<5> `spy.verify(SqlQueries.noneQueries().otherThreads())` throws an AssertionError if at least one query was executed by the thread other than then current one.
+
+=== Functional approach
+
+```java
+include::../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java[tags=testFunctionalApi]
+```
+<1> Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
+<2> `Sniffy.execute()` method executes the lambda expression and returns an instance of `Spy` which provides methods for validating the number of executed queries in given lambda/
+
+=== Resource approach
+
+```java
+include::../../../../sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java[tags=testResourceApi]
+```
+<1> Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
+<2> You can use `Sniffy` in a try-with-resource block using `expect` methods instead of `verify`. When the try-with-resource block is completed, Sniffy will verify all the expectations defined

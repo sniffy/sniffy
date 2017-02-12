@@ -1,0 +1,29 @@
+== Filter
+
+=== Enable Sniffy filter in web.xml
+
+```xml
+<filter>
+    <filter-name>sniffer</filter-name>
+    <filter-class>io.sniffy.servlet.SniffyFilter</filter-class>
+    <init-param>
+        <param-name>inject-html</param-name> <1>
+        <param-value>true</param-value> <!-- default: false -->
+    </init-param>
+    <init-param>
+        <param-name>enabled</param-name> <2>
+        <param-value>true</param-value> <!-- default: true -->
+    </init-param>
+    <init-param>
+        <param-name>exclude-pattern</param-name> <3>
+        <param-value>^/vets.html$</param-value> <!-- optional -->
+    </init-param>
+</filter>
+<filter-mapping>
+    <filter-name>sniffer</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+```
+<1> Enables injection of Sniffy toolbar to HTML. If disabled the html remains untouched. You still can get the number of executed queries from `Sniffy-Sql-Queries` HTTP header.
+<2> Allows disabling the Sniffy filter in `web.xml`
+<3> Allows excluding some of the request URL's from Sniffer filter

@@ -1,0 +1,113 @@
+== Migration from 3.0.x to 3.1.x
+
+=== Maven artifacts
+
+Sniffy test support has been extracted to a separate artifacts.
+You should now use following artifacts if you want to use Sniffy in your unit tests:
+
+.Table Maven artifacts migration
+|===
+|Old artifact |New artifact |Test framework
+
+|io.sniffy:sniffy:test
+|io.sniffy:sniffy-junit:test
+|JUnit
+
+|io.sniffy:sniffy:test
+|io.sniffy:sniffy-spring-test:test
+|Spring Framework
+
+|io.sniffy:sniffy:test
+|io.sniffy:sniffy-testng:test
+|TestNG
+
+|io.sniffy:sniffy:test
+|io.sniffy:sniffy-core:test
+|Spock Framework
+|===
+
+=== JDBC Connection String
+
+`sniffer:` connection is deprecated as of Sniffy 3.1.0.
+You should use `sniffy:` instead like shown below:
+
+```
+sniffy:jdbc:h2:mem:
+```
+
+=== Deprecated Classes
+
+Some of Sniffy classes are deprecated as of version 3.1.0 with an equivalent replacement as shown in the table below:
+
+.Table Sniffy 3.1.0 deprecated classes
+|===
+|Deprecated class |New class
+
+|[line-through]#io.sniffy.MockDriver#
+|io.sniffy.sql.SniffyDriver
+
+|[line-through]#io.sniffy.Query#
+|io.sniffy.sql.SqlStatement
+
+|[line-through]#io.sniffy.Sniffer#
+|io.sniffy.Sniffy
+
+|[line-through]#io.sniffy.WrongNumberOfQueriesError#
+|io.sniffy.sql.WrongNumberOfQueriesError
+
+|[line-through]#io.sniffy.servlet.SnifferFilter#
+|io.sniffy.servlet.SniffyFilter
+
+|[line-through]#io.sniffy.junit.QueryCounter#
+|io.sniffy.test.junit.SniffyRule
+
+|[line-through]#io.sniffy.spring.QueryCounterListener#
+|io.sniffy.test.spring.SniffySpringTestListener
+
+|[line-through]#io.sniffy.Expectation#
+|io.sniffy.sql.SqlExpectation
+
+|[line-through]#io.sniffy.Expectations#
+|io.sniffy.sql.SqlExpectations
+
+|[line-through]#io.sniffy.NoQueriesAllowed#
+|io.sniffy.sql.NoSql
+
+|[line-through]#io.sniffy.testng.QueryCounter#
+|io.sniffy.test.testng.SniffyTestNgListener
+|===
+
+=== Deprecated Methods
+
+==== io.sniffy.Sniffer.*
+
+Some methods in `io.sniffy.Sniffer` class are now deprecated and although they're still available in `io.sniffy.Sniffy` class they will be removed completely in future versions of Sniffy.
+
+.Table io.sniffy.Sniffer deprecated methods
+|===
+|Deprecated method |Replacement
+
+|[line-through]#executedStatements()#
+|spy().getExecutedStatements(Threads threadMatcher, boolean removeStackTraces)
+
+|[line-through]#expect*(...)#
+|expect(Spy.Expectation expectation)
+|===
+
+==== io.sniffy.Spy.*
+
+Some methods in `io.sniffy.Spy` class are now deprecated and will be removed completely in future versions of Sniffy.
+
+.Table io.sniffy.Spy deprecated methods
+|===
+|Deprecated method |Replacement
+
+|[line-through]#executedStatements()#
+|spy().getExecutedStatements(Threads threadMatcher, boolean removeStackTraces)
+
+|[line-through]#expect*(...)#
+|expect(Spy.Expectation expectation)
+
+|[line-through]#verify*(...)#
+|verify(Spy.Expectation expectation)
+|===
