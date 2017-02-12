@@ -50,6 +50,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
         assertEquals(OPEN, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(null));
         assertEquals(OPEN, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress((InetAddress) null, 5555)));
+        assertEquals(OPEN, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress("bad host address", 5555)));
 
     }
 
