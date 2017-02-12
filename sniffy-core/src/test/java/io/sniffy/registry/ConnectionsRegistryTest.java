@@ -7,6 +7,8 @@ import org.junit.Test;
 
 import java.io.StringReader;
 import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.AbstractMap;
 import java.util.Map;
@@ -40,6 +42,15 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
         } finally {
             if (null != socket) socket.close();
         }
+
+    }
+
+    @Test
+    public void testIsNullConnectionOpened() {
+
+        assertEquals(OPEN, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(null));
+        assertEquals(OPEN, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress((InetAddress) null, 5555)));
+        assertEquals(OPEN, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress("bad host address", 5555)));
 
     }
 
