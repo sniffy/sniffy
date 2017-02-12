@@ -5,7 +5,6 @@ import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 
-import java.lang.ref.WeakReference;
 import java.util.Map;
 
 import static io.sniffy.Threads.CURRENT;
