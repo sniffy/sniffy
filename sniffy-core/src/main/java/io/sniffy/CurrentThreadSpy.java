@@ -12,6 +12,10 @@ import java.util.Map;
 
 public class CurrentThreadSpy<C extends CurrentThreadSpy<C>> extends BaseSpy<C> implements Closeable {
 
+    public CurrentThreadSpy() {
+        Sniffy.registerCurrentThreadSpy(this);
+    }
+
     public int executedStatements() {
         int count = 0;
 

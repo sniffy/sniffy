@@ -12,11 +12,11 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static io.sniffy.util.StackTraceExtractor.*;
 
@@ -25,8 +25,8 @@ import static io.sniffy.util.StackTraceExtractor.*;
  */
 public class Sniffy {
 
-    protected static final List<WeakReference<Spy>> registeredSpies =
-            new CopyOnWriteArrayList<WeakReference<Spy>>();
+    protected static final Queue<WeakReference<Spy>> registeredSpies =
+            new ConcurrentLinkedQueue<WeakReference<Spy>>();
     protected static final ConcurrentMap<WeakReference<Thread>, WeakReference<CurrentThreadSpy>> currentThreadSpies =
             new ConcurrentHashMap<WeakReference<Thread>, WeakReference<CurrentThreadSpy>>();
 

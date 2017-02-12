@@ -1,6 +1,5 @@
 package io.sniffy;
 
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
@@ -26,16 +25,6 @@ import static io.sniffy.util.ExceptionUtil.throwException;
  * @since 2.0
  */
 public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
-
-    private volatile ConcurrentLinkedHashMap<StatementMetaData, SqlStats> executedStatements =
-            new ConcurrentLinkedHashMap.Builder<StatementMetaData, SqlStats>().
-                    maximumWeightedCapacity(Long.MAX_VALUE).
-                    build();
-
-    private volatile ConcurrentLinkedHashMap<SocketMetaData, SocketStats> socketOperations =
-            new ConcurrentLinkedHashMap.Builder<SocketMetaData, SocketStats>().
-                    maximumWeightedCapacity(Long.MAX_VALUE).
-                    build();
 
     private final WeakReference<Spy> selfReference;
     private final long ownerThreadId;
