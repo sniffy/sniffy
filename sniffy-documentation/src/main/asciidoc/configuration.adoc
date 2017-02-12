@@ -32,3 +32,13 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |Regexp for excluding sniffy from certain servlet requests
 |
 |===
+
+Sniffy filter can also be enabled or disabled using HTTP query parameters and/or HTTP headers.
+
+If Sniffy filter is currently disabled you can enable it by adding `?sniffy=true` query parameter to your request -
+it will enable the sniffy for current request and will also set a `sniffy` cookie which will enable sniffy on subsequent requests.
+
+For stateless clients who don't maintain the cookie jar it might be more convenient to enable/disable Sniffy using `Sniffy-Enabled: true` / `Sniffy-Enabled: false` headers.
+Unlike the query parameter the HTTP header will only affect a single request.
+
+
