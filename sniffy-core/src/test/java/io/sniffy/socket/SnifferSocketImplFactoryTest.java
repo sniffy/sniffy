@@ -89,7 +89,7 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
             // Current thread socket operations
 
-            assertEquals(1, s.getSocketOperations(CURRENT, null, true).entrySet().stream().count());
+            assertEquals(1, (long) s.getSocketOperations(CURRENT, null, true).entrySet().size());
 
             s.getSocketOperations(CURRENT, null, true).values().stream().findAny().ifPresent((socketStats) -> {
                 assertEquals(REQUEST.length, socketStats.bytesUp.intValue());

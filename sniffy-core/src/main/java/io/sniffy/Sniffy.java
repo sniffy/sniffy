@@ -11,11 +11,12 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 
 import static io.sniffy.util.StackTraceExtractor.*;
 
@@ -24,7 +25,11 @@ import static io.sniffy.util.StackTraceExtractor.*;
  */
 public class Sniffy {
 
-    protected static final List<WeakReference<Spy>> registeredSpies = new LinkedList<WeakReference<Spy>>();
+    protected static final Queue<WeakReference<Spy>> registeredSpies =
+            new ConcurrentLinkedQueue<WeakReference<Spy>>();
+    protected static final ConcurrentMap<Long, WeakReference<CurrentThreadSpy>> currentThreadSpies =
+            new ConcurrentHashMap<Long, WeakReference<CurrentThreadSpy>>();
+
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
 
     protected Sniffy() {
@@ -42,21 +47,27 @@ public class Sniffy {
         }
     }
 
-    protected static synchronized WeakReference<Spy> registerSpy(Spy spy) {
+    protected static WeakReference<Spy> registerSpy(Spy spy) {
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
         registeredSpies.add(spyReference);
         return spyReference;
     }
 
-    protected static synchronized void removeSpyReference(WeakReference<Spy> spyReference) {
+    protected static WeakReference<CurrentThreadSpy> registerCurrentThreadSpy(CurrentThreadSpy spy) {
+        WeakReference<CurrentThreadSpy> spyReference = new WeakReference<CurrentThreadSpy>(spy);
+        currentThreadSpies.put(Thread.currentThread().getId(), spyReference);
+        return spyReference;
+    }
+
+    protected static void removeSpyReference(WeakReference<Spy> spyReference) {
         registeredSpies.remove(spyReference);
     }
 
-    protected static List<WeakReference<Spy>> registeredSpies() {
-        return Collections.unmodifiableList(registeredSpies);
+    protected static void removeCurrentThreadSpyReference() {
+        currentThreadSpies.remove(Thread.currentThread().getId());
     }
 
-    private static synchronized void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
+    private static void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -67,9 +78,22 @@ public class Sniffy {
                 spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
             }
         }
+
+        Long threadId = Thread.currentThread().getId();
+
+        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+        if (null != spyReference) {
+            CurrentThreadSpy spy = spyReference.get();
+            if (null == spy) {
+                currentThreadSpies.remove(threadId);
+            } else {
+                spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
+            }
+        }
+
     }
 
-    private static synchronized void notifyListeners(StatementMetaData statementMetaData) {
+    private static void notifyListeners(StatementMetaData statementMetaData) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -80,9 +104,21 @@ public class Sniffy {
                 spy.addReturnedRow(statementMetaData);
             }
         }
+
+        Long threadId = Thread.currentThread().getId();
+
+        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+        if (null != spyReference) {
+            CurrentThreadSpy spy = spyReference.get();
+            if (null == spy) {
+                currentThreadSpies.remove(threadId);
+            } else {
+                spy.addReturnedRow(statementMetaData);
+            }
+        }
     }
 
-    private static synchronized void notifyListeners(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
+    private static void notifyListeners(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
         Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
         while (iterator.hasNext()) {
             WeakReference<Spy> spyReference = iterator.next();
@@ -93,19 +129,46 @@ public class Sniffy {
                 spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
             }
         }
-    }
 
-    public static synchronized boolean hasSpies() {
-        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-        while (iterator.hasNext()) {
-            WeakReference<Spy> spyReference = iterator.next();
-            Spy spy = spyReference.get();
+        Long threadId = Thread.currentThread().getId();
+
+        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+        if (null != spyReference) {
+            CurrentThreadSpy spy = spyReference.get();
             if (null == spy) {
-                iterator.remove();
+                currentThreadSpies.remove(threadId);
             } else {
-                if (spy.acceptsCurrentThread()) return true;
+                spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
             }
         }
+    }
+
+    public static boolean hasSpies() {
+        if (!registeredSpies.isEmpty()) {
+            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+            while (iterator.hasNext()) {
+                WeakReference<Spy> spyReference = iterator.next();
+                Spy spy = spyReference.get();
+                if (null == spy) {
+                    iterator.remove();
+                } else {
+                    return true;
+                }
+            }
+        }
+
+        Long threadId = Thread.currentThread().getId();
+
+        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+        if (null != spyReference) {
+            CurrentThreadSpy spy = spyReference.get();
+            if (null == spy) {
+                currentThreadSpies.remove(threadId);
+            } else {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -161,9 +224,9 @@ public class Sniffy {
                     );
                 }
 
-                socketStatsAccumulator.remove();
             }
         }
+        socketStatsAccumulator.remove();
     }
 
     public static void readDatabaseRow(Method method, long elapsedTime, StatementMetaData statementMetaData) {
@@ -203,15 +266,15 @@ public class Sniffy {
      * @since 2.0
      */
     public static <T extends Spy<T>> Spy<? extends Spy<T>> spy() {
-        return new Spy<T>(false);
+        return new Spy<T>();
     }
 
     /**
      * @return a new {@link Spy} instance for currenth thread only
      * @since 3.1
      */
-    public static <T extends Spy<T>> Spy<? extends Spy<T>> spyCurrentThread() {
-        return new Spy<T>(true);
+    public static CurrentThreadSpy spyCurrentThread() {
+        return new CurrentThreadSpy();
     }
 
     /**

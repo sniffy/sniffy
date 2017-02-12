@@ -13,6 +13,7 @@ public class SniffyTest {
     @Before
     public void clearSpies() {
         Sniffy.registeredSpies.clear();
+        Sniffy.currentThreadSpies.clear();
     }
 
     @Test
@@ -28,7 +29,7 @@ public class SniffyTest {
 
     @Test
     public void hasNotSpiesFromOtherThreads() throws Exception {
-        try (@SuppressWarnings("unused") Spy spy = Sniffy.spyCurrentThread()) {
+        try (@SuppressWarnings("unused") CurrentThreadSpy spy = Sniffy.spyCurrentThread()) {
             AtomicBoolean hasSpies = new AtomicBoolean();
             Thread thread = new Thread(() -> hasSpies.set(Sniffy.hasSpies()));
             thread.start();

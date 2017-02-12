@@ -1,6 +1,5 @@
 package io.sniffy;
 
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
@@ -27,74 +26,13 @@ import static io.sniffy.util.ExceptionUtil.throwException;
  */
 public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
 
-    private volatile ConcurrentLinkedHashMap<StatementMetaData, SqlStats> executedStatements =
-            new ConcurrentLinkedHashMap.Builder<StatementMetaData, SqlStats>().
-                    maximumWeightedCapacity(Long.MAX_VALUE).
-                    build();
-
-    private volatile ConcurrentLinkedHashMap<SocketMetaData, SocketStats> socketOperations =
-            new ConcurrentLinkedHashMap.Builder<SocketMetaData, SocketStats>().
-                    maximumWeightedCapacity(Long.MAX_VALUE).
-                    build();
-
     private final WeakReference<Spy> selfReference;
     private final long ownerThreadId;
-    private final boolean spyCurrentThreadOnly;
 
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
 
     private List<Expectation> expectations = new ArrayList<Expectation>();
-
-    protected boolean acceptsCurrentThread() {
-        return !spyCurrentThreadOnly || ownerThreadId == Thread.currentThread().getId();
-    }
-
-    protected void addExecutedStatement(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
-        if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
-            SqlStats sqlStats = executedStatements.get(statementMetaData);
-            if (null == sqlStats) {
-                sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp, rowsUpdated, 1));
-            }
-            if (null != sqlStats) {
-                sqlStats.accumulate(elapsedTime, bytesDown, bytesUp, rowsUpdated, 1);
-            }
-        }
-    }
-
-    protected void addReturnedRow(StatementMetaData statementMetaData) {
-        if (!spyCurrentThreadOnly || ownerThreadId == statementMetaData.ownerThreadId) {
-            SqlStats sqlStats = executedStatements.get(statementMetaData);
-            if (null != sqlStats) {
-                sqlStats.accumulate(0, 0, 0, 1, 0);
-            }
-        }
-    }
-
-    protected void addSocketOperation(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
-        if (!spyCurrentThreadOnly || ownerThreadId == socketMetaData.ownerThreadId) {
-            SocketStats socketStats = socketOperations.get(socketMetaData);
-            if (null == socketStats) {
-                socketStats = socketOperations.putIfAbsent(socketMetaData, new SocketStats(elapsedTime, bytesDown, bytesUp));
-            }
-            if (null != socketStats) {
-                socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
-            }
-        }
-    }
-
-    protected void resetExecutedStatements() {
-        executedStatements =
-                new ConcurrentLinkedHashMap.Builder<StatementMetaData, SqlStats>().
-                        maximumWeightedCapacity(Long.MAX_VALUE).
-                        build();
-    }
-
-    protected void resetSocketOpertions() {
-        socketOperations = new ConcurrentLinkedHashMap.Builder<SocketMetaData, SocketStats>().
-                maximumWeightedCapacity(Long.MAX_VALUE).
-                build();
-    }
 
     /**
      * @since 3.1
@@ -126,11 +64,10 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
         return Collections.unmodifiableMap(executedStatements);
     }
 
-    Spy(boolean spyCurrentThreadOnly) {
+    Spy() {
         ownerThreadId = Thread.currentThread().getId();
         selfReference = Sniffy.registerSpy(this);
-        this.spyCurrentThreadOnly = spyCurrentThreadOnly;
-        reset();
+        reset(); // TODO: is it required ?
     }
 
     /**
@@ -138,10 +75,9 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
      * @return a new {@link Spy} instance
      * @since 2.0
      */
-    public Spy reset() {
+    public C reset() {
         checkOpened();
-        resetExecutedStatements();
-        resetSocketOpertions();
+        super.reset();
         expectations.clear();
         return self();
     }
@@ -363,11 +299,6 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
 
     }
 
-    @SuppressWarnings("unchecked")
-    private C self() {
-        return (C) this;
-    }
-
     /**
      * @since 3.1
      */
@@ -391,7 +322,6 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
         private final V value;
 
         SpyWithValue(V value) {
-            super(false);
             this.value = value;
         }
 

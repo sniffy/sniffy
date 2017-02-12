@@ -1,8 +1,7 @@
 package io.sniffy.servlet;
 
+import io.sniffy.CurrentThreadSpy;
 import io.sniffy.Sniffy;
-import io.sniffy.Spy;
-import io.sniffy.Threads;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
@@ -25,7 +24,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
 
-    private final Spy<?> spy;
+    private final CurrentThreadSpy spy;
     private final String requestId;
     private final RequestStats requestStats = new RequestStats();
     private final String relativeUrl;
@@ -73,7 +72,14 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     public void process(FilterChain chain) throws IOException, ServletException {
+        try {
+            processImpl(chain);
+        } finally {
+            spy.close();
+        }
+    }
 
+    private void processImpl(FilterChain chain) throws IOException, ServletException {
         // if excluded by pattern return immediately
 
         if (null != sniffyFilter.excludePattern && null != relativeUrl && sniffyFilter.excludePattern.matcher(relativeUrl).matches()) {
@@ -115,12 +121,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 }
             }
         }
-
     }
 
     private void updateRequestCache() {
-        Map<StatementMetaData, SqlStats> executedStatements = spy.getExecutedStatements(Threads.CURRENT, false);
-        Map<SocketMetaData, SocketStats> socketOperations = spy.getSocketOperations(Threads.CURRENT, null, false);
+        Map<StatementMetaData, SqlStats> executedStatements = spy.getExecutedStatements();
+        Map<SocketMetaData, SocketStats> socketOperations = spy.getSocketOperations();
         if ((null != executedStatements && !executedStatements.isEmpty()) ||
                 (null != socketOperations && !socketOperations.isEmpty())) {
             if (null != executedStatements && !executedStatements.isEmpty()) {
@@ -141,7 +146,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
         wrapper.addCorsHeadersHeaderIfRequired();
-        wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements(Threads.CURRENT));
+        wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements());
         wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
 
         StringBuilder sb = new StringBuilder();
@@ -205,7 +210,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 characterEncoding = Charset.defaultCharset().name();
             }
 
-            String snifferWidget = generateAndPadFooterHtml(spy.executedStatements(Threads.CURRENT), getElapsedTime());
+            String snifferWidget = generateAndPadFooterHtml(spy.executedStatements(), getElapsedTime());
 
             HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
             htmlInjector.injectAtTheEnd(snifferWidget);
