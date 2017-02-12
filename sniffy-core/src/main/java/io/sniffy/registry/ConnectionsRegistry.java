@@ -88,6 +88,10 @@ public enum ConnectionsRegistry {
 
     public ConnectionStatus resolveSocketAddressStatus(InetSocketAddress inetSocketAddress) {
 
+        if (null == inetSocketAddress || null == inetSocketAddress.getAddress()) {
+            return OPEN;
+        }
+
         Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
 
         InetAddress inetAddress = inetSocketAddress.getAddress();
