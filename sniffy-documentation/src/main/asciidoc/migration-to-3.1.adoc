@@ -76,3 +76,38 @@ Some of Sniffy classes are deprecated as of version 3.1.0 with an equivalent rep
 |[line-through]#io.sniffy.testng.QueryCounter#
 |io.sniffy.test.testng.SniffyTestNgListener
 |===
+
+=== Deprecated Methods
+
+==== io.sniffy.Sniffer.*
+
+Some methods in `io.sniffy.Sniffer` class are now deprecated and although they're still available in `io.sniffy.Sniffy` class they will be removed completely in future versions of Sniffy.
+
+.Table io.sniffy.Sniffer deprecated methods
+|===
+|Deprecated method |Replacement
+
+|[line-through]#executedStatements()#
+|spy().getExecutedStatements(Threads threadMatcher, boolean removeStackTraces)
+
+|[line-through]#expect*(...)#
+|expect(Spy.Expectation expectation)
+|===
+
+==== io.sniffy.Spy.*
+
+Some methods in `io.sniffy.Spy` class are now deprecated and will be removed completely in future versions of Sniffy.
+
+.Table io.sniffy.Spy deprecated methods
+|===
+|Deprecated method |Replacement
+
+|[line-through]#executedStatements()#
+|spy().getExecutedStatements(Threads threadMatcher, boolean removeStackTraces)
+
+|[line-through]#expect*(...)#
+|expect(Spy.Expectation expectation)
+
+|[line-through]#verify*(...)#
+|verify(Spy.Expectation expectation)
+|===
