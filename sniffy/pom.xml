@@ -15,6 +15,12 @@
     <dependencies>
         <dependency>
             <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-core</artifactId>
+            <version>${project.parent.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.sniffy</groupId>
             <artifactId>sniffy-web</artifactId>
             <version>${project.parent.version}</version>
             <optional>true</optional>
@@ -23,12 +29,7 @@
 
     <build>
 
-        <sourceDirectory>../sniffy-core/src/main/java</sourceDirectory>
-        <resources>
-            <resource>
-                <directory>../sniffy-core/src/main/resources</directory>
-            </resource>
-        </resources>
+        <sourceDirectory>target/generated-sources</sourceDirectory>
 
         <plugins>
 
@@ -37,6 +38,21 @@
                 <configuration>
                     <skipMain>true</skipMain>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
@@ -49,9 +65,20 @@
                             <goal>unpack-dependencies</goal>
                         </goals>
                         <configuration>
-                            <includeArtifactIds>sniffy-web</includeArtifactIds>
-                            <excludeTransitive>true</excludeTransitive>
+                            <includeArtifactIds>sniffy-web,sniffy-core</includeArtifactIds>
                             <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>sources</classifier>
+                            <includeArtifactIds>sniffy-web,sniffy-core</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

@@ -47,7 +47,6 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <createSourcesJar>true</createSourcesJar>
                             <artifactSet>
                                 <includes>
                                     <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru</include>
