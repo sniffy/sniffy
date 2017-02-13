@@ -3,7 +3,6 @@ package io.sniffy;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
