@@ -22,21 +22,12 @@
 
     <build>
 
-        <sourceDirectory>target/generated-sources</sourceDirectory>
-
         <plugins>
-
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <skipMain>true</skipMain>
-                </configuration>
-            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.4</version>
+                <version>3.0.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -99,7 +90,6 @@
                 </executions>
             </plugin>
 
-
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -107,6 +97,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
+                        <Main-Class>io.sniffy.SniffyUsage</Main-Class>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Bundle-Version>${project.version}</Bundle-Version>
@@ -133,30 +124,22 @@
                 <executions>
                     <execution>
                         <id>bundle-manifest</id>
-                        <phase>prepare-package</phase>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>manifest</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
                 <configuration>
                     <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                        <manifestFile>target/classes/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
         </plugins>
