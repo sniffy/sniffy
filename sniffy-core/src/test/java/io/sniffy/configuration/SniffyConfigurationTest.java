@@ -4,8 +4,6 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.Assert.assertFalse;
