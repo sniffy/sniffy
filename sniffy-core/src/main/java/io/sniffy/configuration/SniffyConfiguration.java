@@ -11,7 +11,10 @@ public enum SniffyConfiguration {
     private volatile String excludePattern;
 
     SniffyConfiguration() {
+        loadSniffyConfiguration();
+    }
 
+    void loadSniffyConfiguration() {
         monitorJdbc = Boolean.parseBoolean(getProperty(
                 "io.sniffy.monitorJdbc", "IO_SNIFFY_MONITOR_JDBC", "true"
         ));
@@ -26,7 +29,6 @@ public enum SniffyConfiguration {
                 "io.sniffy.injectHtml", "IO_SNIFFY_INJECT_HTML", "true"
         ));
         excludePattern = getProperty("io.sniffy.excludePattern", "IO_SNIFFY_EXCLUDE_PATTERN", null);
-
     }
 
     private String getProperty(String systemPropertyName, String environmentVariableName, String defaultValue) {
