@@ -89,11 +89,53 @@ public class SniffyConfigurationTest {
         sniffyConfiguration.loadSniffyConfiguration();
         assertTrue(sniffyConfiguration.isMonitorSocket());
 
-        // overriden value
+        // overriden value - can be enabled but cannot be disabled // TODO: why?
         System.getProperties().remove("io.sniffy.monitorSocket");
         sniffyConfiguration.loadSniffyConfiguration();
         sniffyConfiguration.setMonitorSocket(false);
+        assertTrue(sniffyConfiguration.isMonitorSocket());
+
+        System.setProperty("io.sniffy.monitorSocket", "false");
+        sniffyConfiguration.loadSniffyConfiguration();
         assertFalse(sniffyConfiguration.isMonitorSocket());
+        sniffyConfiguration.setMonitorSocket(true);
+        assertTrue(sniffyConfiguration.isMonitorSocket());
+
+    }
+
+    @Test
+    public void testFilterEnabled() {
+
+        SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
+
+        // enabled
+        System.setProperty("io.sniffy.filterEnabled", "true");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertTrue(sniffyConfiguration.isFilterEnabled());
+
+        System.setProperty("io.sniffy.filterEnabled", "TRUE");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertTrue(sniffyConfiguration.isFilterEnabled());
+
+        // disabled
+        System.setProperty("io.sniffy.filterEnabled", "false");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertFalse(sniffyConfiguration.isFilterEnabled());
+
+        System.setProperty("io.sniffy.filterEnabled", "");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertFalse(sniffyConfiguration.isFilterEnabled());
+
+        // default value
+        System.getProperties().remove("io.sniffy.filterEnabled");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertTrue(sniffyConfiguration.isFilterEnabled());
+
+        // overriden value
+        System.getProperties().remove("io.sniffy.filterEnabled");
+        sniffyConfiguration.loadSniffyConfiguration();
+        sniffyConfiguration.setFilterEnabled(false);
+        assertFalse(sniffyConfiguration.isFilterEnabled());
 
     }
 
