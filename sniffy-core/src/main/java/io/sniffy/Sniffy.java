@@ -21,6 +21,16 @@ import java.util.concurrent.ConcurrentMap;
 import static io.sniffy.util.StackTraceExtractor.*;
 
 /**
+ * Sniffy allows you to validate the number of SQL queries executed by a given block of code
+ * Example usage:
+ * <pre>
+ * <code>
+ *     Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa");
+ *     Spy{@literal <}?{@literal >} spy = Sniffy.spy();
+ *     connection.createStatement().execute("SELECT 1 FROM DUAL");
+ *     spy.verify(SqlQueries.atMostOneQuery());
+ * </code>
+ * </pre>
  * @since 3.1
  */
 public class Sniffy {

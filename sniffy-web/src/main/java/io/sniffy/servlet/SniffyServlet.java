@@ -28,6 +28,10 @@ import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static io.sniffy.servlet.SniffyFilter.SNIFFER_URI_PREFIX;
 
+/**
+ * @see SniffyFilter
+ * @since 2.3.0
+ */
 class SniffyServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";

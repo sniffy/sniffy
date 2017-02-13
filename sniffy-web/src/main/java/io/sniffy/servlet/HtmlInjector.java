@@ -3,6 +3,10 @@ package io.sniffy.servlet;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+/**
+ * @see SniffyFilter
+ * @since 2.3.0
+ */
 class HtmlInjector {
 
     private final Buffer buffer;

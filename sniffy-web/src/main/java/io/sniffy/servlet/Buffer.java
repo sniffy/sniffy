@@ -6,6 +6,10 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.copyOfRange;
 
+/**
+ * @see SniffyFilter
+ * @since 2.3.0
+ */
 class Buffer extends ByteArrayOutputStream {
 
 

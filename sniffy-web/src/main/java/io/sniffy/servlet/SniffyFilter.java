@@ -50,7 +50,7 @@ import java.util.regex.PatternSyntaxException;
  * }
  * </pre>
  *
- * @since 2.3.0
+ * @since 3.1
  */
 public class SniffyFilter implements Filter {
 

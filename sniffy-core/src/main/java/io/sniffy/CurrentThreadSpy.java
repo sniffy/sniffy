@@ -10,6 +10,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * @since 3.1
+ */
 public class CurrentThreadSpy extends BaseSpy<CurrentThreadSpy> implements Closeable {
 
     public CurrentThreadSpy() {

@@ -6,9 +6,9 @@ import io.sniffy.test.Count;
 import java.lang.annotation.*;
 
 /**
- * Alias for {@code @Expectation(count = @Count(0), threads = Threads.CURRENT)}
+ * Alias for {@code @SqlExpectation(count = @Count(0), threads = Threads.CURRENT)}
  * @see SqlExpectation
- * @since 2.0
+ * @since 3.1
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})

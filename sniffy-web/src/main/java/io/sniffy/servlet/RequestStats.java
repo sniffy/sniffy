@@ -7,6 +7,10 @@ import io.sniffy.sql.StatementMetaData;
 
 import java.util.Map;
 
+/**
+ * @see SniffyFilter
+ * @since 2.3.0
+ */
 class RequestStats {
 
     private long timeToFirstByte;

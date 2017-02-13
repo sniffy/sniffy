@@ -16,6 +16,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 
+/**
+ * @since 3.1
+ */
 public enum ConnectionsRegistry {
     INSTANCE;
 

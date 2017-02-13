@@ -21,6 +21,9 @@ import org.springframework.core.type.AnnotationMetadata;
 import javax.sql.DataSource;
 import java.util.Map;
 
+/**
+ * @since 3.1
+ */
 @Configuration
 public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware, BeanPostProcessor {
 

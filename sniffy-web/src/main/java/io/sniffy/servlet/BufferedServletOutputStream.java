@@ -4,6 +4,10 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import java.io.IOException;
 
+/**
+ * @see SniffyFilter
+ * @since 2.3.0
+ */
 class BufferedServletOutputStream extends ServletOutputStream {
 
     private final BufferedServletResponseWrapper responseWrapper;

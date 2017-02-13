@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * @see io.sniffy.sql.WrongNumberOfQueriesError
  * @since 2.0
  */
 @Deprecated

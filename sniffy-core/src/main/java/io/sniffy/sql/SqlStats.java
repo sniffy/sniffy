@@ -4,6 +4,9 @@ import io.sniffy.socket.SocketStats;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * @since 3.1
+ */
 public class SqlStats extends SocketStats {
 
     public final AtomicInteger rows = new AtomicInteger();

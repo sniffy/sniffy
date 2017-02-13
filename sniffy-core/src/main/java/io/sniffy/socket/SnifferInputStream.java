@@ -3,12 +3,15 @@ package io.sniffy.socket;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class SnifferInputStream extends InputStream {
+/**
+ * @since 3.1
+ */
+class SnifferInputStream extends InputStream {
 
     private final SnifferSocketImpl snifferSocket;
     private final InputStream delegate;
 
-    public SnifferInputStream(SnifferSocketImpl snifferSocket, InputStream delegate) {
+    SnifferInputStream(SnifferSocketImpl snifferSocket, InputStream delegate) {
         this.snifferSocket = snifferSocket;
         this.delegate = delegate;
     }

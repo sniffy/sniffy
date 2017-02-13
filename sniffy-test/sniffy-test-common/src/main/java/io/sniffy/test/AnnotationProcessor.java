@@ -16,6 +16,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * @since 3.1
+ */
 public class AnnotationProcessor {
 
     public static List<SocketExpectation> buildSocketExpectationList(

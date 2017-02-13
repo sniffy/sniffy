@@ -5,6 +5,10 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import java.util.Enumeration;
 
+/**
+ * @see SniffyFilter
+ * @since 2.3.0
+ */
 class FilterServletConfigAdapter implements ServletConfig {
 
     private final FilterConfig filterConfig;

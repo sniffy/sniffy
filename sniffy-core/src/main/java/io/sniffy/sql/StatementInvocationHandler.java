@@ -12,15 +12,18 @@ import java.util.Map;
 import static io.sniffy.util.StackTraceExtractor.getTraceForProxiedMethod;
 import static io.sniffy.util.StackTraceExtractor.printStackTrace;
 
+/**
+ * @since 3.1
+ */
 class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
 
     private Map<String, Integer> batchedSql;
 
-    protected final Object sniffyConnectionProxy;
+    final Object sniffyConnectionProxy;
 
-    protected StatementMetaData lastStatementMetaData;
+    StatementMetaData lastStatementMetaData;
 
-    public StatementInvocationHandler(Object delegate, Object sniffyConnectionProxy, String url, String userName) {
+    StatementInvocationHandler(Object delegate, Object sniffyConnectionProxy, String url, String userName) {
         super(delegate, url, userName);
         this.sniffyConnectionProxy = sniffyConnectionProxy;
     }

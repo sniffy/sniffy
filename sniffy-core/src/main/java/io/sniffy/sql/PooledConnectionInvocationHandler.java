@@ -8,7 +8,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 
-public class PooledConnectionInvocationHandler implements InvocationHandler {
+class PooledConnectionInvocationHandler implements InvocationHandler {
 
     private final PooledConnection delegate;
 
@@ -25,7 +25,7 @@ public class PooledConnectionInvocationHandler implements InvocationHandler {
         GET_CONNECTION_METHOD = getConnectionMethod;
     }
 
-    public PooledConnectionInvocationHandler(PooledConnection delegate) {
+    PooledConnectionInvocationHandler(PooledConnection delegate) {
         this.delegate = delegate;
     }
 

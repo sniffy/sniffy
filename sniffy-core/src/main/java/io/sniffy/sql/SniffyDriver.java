@@ -25,6 +25,7 @@ import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
  *
  * After that you'll be able to verify the number of executed statements using the {@link Sniffy} class
  * @see Sniffy
+ * @since 3.1
  */
 public class SniffyDriver implements Driver, Constants {
 

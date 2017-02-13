@@ -197,6 +197,10 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 outputStream.flush();
 
                 socket.shutdownOutput();
+            } catch (SocketException e) {
+                if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
+                    e.printStackTrace();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

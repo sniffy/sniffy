@@ -4,7 +4,7 @@ import java.lang.annotation.*;
 
 /**
  * Container for multiple {@link SqlExpectation} annotations
- * @since 2.0
+ * @since 3.1
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})

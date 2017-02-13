@@ -8,7 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * Created by bedrin on 02.11.2016.
+ * @since 3.1
  */
 public enum ConnectionsRegistryStorage {
     INSTANCE;
