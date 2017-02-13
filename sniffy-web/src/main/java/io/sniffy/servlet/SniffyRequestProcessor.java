@@ -165,7 +165,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             contextRelativePath = sb.toString();
         }
 
-        sb.append(SniffyFilter.REQUEST_URI_PREFIX).append(requestId);
+        sb.append(REQUEST_URI_PREFIX).append(requestId);
 
         wrapper.addHeader(HEADER_REQUEST_DETAILS, sb.toString());
 
@@ -228,7 +228,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                     append(requestId).
                     append("\" src=\"'+location.href+'").
                     append(contextPath.substring(1)).
-                    append(SniffyFilter.JAVASCRIPT_URI).
+                    append(JAVASCRIPT_URI).
                     append("\">\\x3C/script>');</script>");
         } else {
             return new StringBuilder().
@@ -236,7 +236,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                     append(requestId).
                     append("\" src=\"").
                     append(contextPath).
-                    append(SniffyFilter.JAVASCRIPT_URI).
+                    append(JAVASCRIPT_URI).
                     append("\"></script>");
         }
     }

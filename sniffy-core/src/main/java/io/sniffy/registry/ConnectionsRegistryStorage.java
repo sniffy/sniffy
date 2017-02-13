@@ -17,8 +17,6 @@ public enum ConnectionsRegistryStorage {
 
     public void loadConnectionsRegistry(ConnectionsRegistry connectionsRegistry) throws IOException {
 
-        // if (ConnectionsRegistry.INSTANCE.isThreadLocal()) return; // TODO:
-
         FileReader reader = null;
         try {
             if (file.exists()) {

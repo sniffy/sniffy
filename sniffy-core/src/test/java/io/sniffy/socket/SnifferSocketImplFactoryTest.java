@@ -15,7 +15,6 @@ import static io.sniffy.Threads.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-// TODO: test with another socket factory which is already set
 public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
     private static class TestSocketImplFactory implements SocketImplFactory {

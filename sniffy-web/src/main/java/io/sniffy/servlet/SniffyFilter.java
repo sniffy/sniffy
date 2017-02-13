@@ -29,7 +29,7 @@ import java.util.regex.PatternSyntaxException;
  * {@code
  *   <filter>
  *        <filter-name>sniffer</filter-name>
- *        <filter-class>io.sniffy.servlet.SniffyFilter</filter-class>
+ *        <filter-class>SniffyFilter</filter-class>
  *        <init-param>
  *            <param-name>inject-html</param-name>
  *            <param-value>true</param-value>

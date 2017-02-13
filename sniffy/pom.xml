@@ -15,54 +15,89 @@
     <dependencies>
         <dependency>
             <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-core</artifactId>
+            <artifactId>sniffy-web</artifactId>
             <version>${project.parent.version}</version>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 
     <build>
 
-        <sourceDirectory>../sniffy-core/src/main/java</sourceDirectory>
-        <resources>
-            <resource>
-                <directory>../sniffy-core/src/main/resources</directory>
-            </resource>
-        </resources>
-
         <plugins>
 
             <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <skipMain>true</skipMain>
-                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru</include>
+                                    <include>com.eclipsesource.minimal-json:minimal-json</include>
+                                    <include>io.sniffy:*</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.googlecode.concurrentlinkedhashmap</pattern>
+                                    <shadedPattern>io.sniffy.shaded.com.googlecode.concurrentlinkedhashmap</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.eclipsesource</pattern>
+                                    <shadedPattern>io.sniffy.shaded.com.eclipsesource</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>unpack-dependencies</id>
-                        <phase>compile</phase>
+                        <id>unpack-sources</id>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>unpack-dependencies</goal>
                         </goals>
                         <configuration>
-                            <includeArtifactIds>sniffy-core</includeArtifactIds>
-                            <excludeTransitive>true</excludeTransitive>
-                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                            <classifier>sources</classifier>
+                            <includeArtifactIds>sniffy-web,sniffy-core</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.4.0</version>
+                <version>3.2.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
+                        <Main-Class>io.sniffy.SniffyUsage</Main-Class>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Bundle-Version>${project.version}</Bundle-Version>
@@ -89,31 +124,24 @@
                 <executions>
                     <execution>
                         <id>bundle-manifest</id>
-                        <phase>prepare-package</phase>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>manifest</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
                 <configuration>
                     <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                        <manifestFile>target/classes/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
+
         </plugins>
     </build>
 

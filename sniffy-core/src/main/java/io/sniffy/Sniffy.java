@@ -273,7 +273,7 @@ public class Sniffy {
      * @return a new {@link Spy} instance for currenth thread only
      * @since 3.1
      */
-    public static CurrentThreadSpy spyCurrentThread() {
+    public static CurrentThreadSpy  spyCurrentThread() {
         return new CurrentThreadSpy();
     }
 

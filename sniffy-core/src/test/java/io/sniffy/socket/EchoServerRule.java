@@ -114,7 +114,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 socketOutputStreamWriterThread.start();
             }
         } catch (SocketException e) {
-            if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
+            if (null == e.getMessage() || !e.getMessage().toLowerCase().matches("socket.*closed")) {
                 e.printStackTrace();
             }
         } catch (IOException e) {

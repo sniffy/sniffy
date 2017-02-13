@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -88,5 +89,19 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
         assertEquals(1, discoveredDataSources.size());
         assertEquals(CLOSED, discoveredDataSources.get(new AbstractMap.SimpleEntry<>("jdbc:h2:mem:test", "sa")));
 
+    }
+
+    @Test
+    public void testWriteToWriter() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("dataSource","userName", OPEN);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 6666, CLOSED);
+
+        StringWriter sw = new StringWriter();
+        ConnectionsRegistry.INSTANCE.writeTo(sw);
+
+        String persistedConnectionsRegistry = sw.getBuffer().toString();
+
+        assertNotNull(persistedConnectionsRegistry);
     }
 }

@@ -58,7 +58,7 @@ public class StackTraceExtractor {
                 startIndex = i > 1 ? i - 1 : i;
                 break;
             }
-            // TODO go back until non java.io. trace
+            // go back until non java.io. trace
         }
         if (startIndex <= 0) {
             // no proxy, return entire collection
