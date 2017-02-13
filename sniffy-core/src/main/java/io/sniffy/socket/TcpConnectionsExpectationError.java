@@ -7,6 +7,9 @@ import java.util.Map;
 
 import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 
+/**
+ * @since 3.1
+ */
 public class TcpConnectionsExpectationError extends SniffyAssertionError {
 
     private final TcpConnections.TcpExpectation tcpExpectation;

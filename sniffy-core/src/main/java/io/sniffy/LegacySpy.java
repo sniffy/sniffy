@@ -9,6 +9,10 @@ import java.util.Map;
 
 import static io.sniffy.Threads.CURRENT;
 
+/**
+ * @see Spy
+ * @see CurrentThreadSpy
+ */
 @Deprecated
 abstract class LegacySpy<C extends Spy<C>> extends BaseSpy<C> {
 

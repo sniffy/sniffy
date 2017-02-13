@@ -2,6 +2,9 @@ package io.sniffy.socket;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * @since 3.1
+ */
 public class SocketStats {
 
     public final AtomicLong elapsedTime = new AtomicLong();

@@ -7,7 +7,7 @@ import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 
 /**
- * @since 3.1.0
+ * @since 3.1
  */
 public abstract class BaseSpy<C extends BaseSpy<C>> {
 

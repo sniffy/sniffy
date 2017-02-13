@@ -7,6 +7,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * @since 3.1
+ */
 // TODO: support bytesUp, bytesDown, bytesTotal and port expectations once code generation is in place
 public class TcpConnections {
 

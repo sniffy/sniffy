@@ -2,6 +2,9 @@ package io.sniffy.socket;
 
 import java.net.InetSocketAddress;
 
+/**
+ * @since 3.1
+ */
 public class SocketMetaData {
 
     public final InetSocketAddress address;

@@ -8,7 +8,7 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
 
     private final String sql;
 
-    public PreparedStatementInvocationHandler(Object delegate, Object sniffyConnectionProxy, String url, String userName, String sql) {
+    PreparedStatementInvocationHandler(Object delegate, Object sniffyConnectionProxy, String url, String userName, String sql) {
         super(delegate, sniffyConnectionProxy, url, userName);
         this.sql = sql;
     }

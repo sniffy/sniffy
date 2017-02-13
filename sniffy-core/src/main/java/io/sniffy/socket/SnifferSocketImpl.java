@@ -17,6 +17,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 
+/**
+ * @since 3.1
+ */
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 class SnifferSocketImpl extends SocketImpl {
 
@@ -67,8 +70,7 @@ class SnifferSocketImpl extends SocketImpl {
         }
     }
 
-
-    public static ReflectionFieldCopier[] getReflectionFieldCopiers() {
+    private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
         if (null == reflectionFieldCopiers) {
             synchronized (SnifferSocketImpl.class) {
                 if (null == reflectionFieldCopiers) {

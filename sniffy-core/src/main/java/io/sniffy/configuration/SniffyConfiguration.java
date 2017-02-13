@@ -1,5 +1,8 @@
 package io.sniffy.configuration;
 
+/**
+ * @since 3.1
+ */
 public enum SniffyConfiguration {
     INSTANCE;
 

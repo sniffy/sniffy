@@ -2,6 +2,7 @@ package io.sniffy.sql;
 
 /**
  * Represents an executed query - actual SQL, query type (SELECT, INSERT, e.t.c.) and the calling thread
+ * @since 3.0.0
  */
 public class StatementMetaData {
 
