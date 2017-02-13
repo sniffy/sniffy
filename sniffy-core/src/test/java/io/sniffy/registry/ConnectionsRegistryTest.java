@@ -94,8 +94,8 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
     @Test
     public void testWriteToWriter() throws Exception {
 
-        ConnectionsRegistry.INSTANCE.setDataSourceStatus("dataSource","userName", ConnectionsRegistry.ConnectionStatus.OPEN);
-        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 6666, ConnectionsRegistry.ConnectionStatus.CLOSED);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("dataSource","userName", OPEN);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 6666, CLOSED);
 
         StringWriter sw = new StringWriter();
         ConnectionsRegistry.INSTANCE.writeTo(sw);
