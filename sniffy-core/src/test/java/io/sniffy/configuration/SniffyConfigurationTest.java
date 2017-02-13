@@ -53,6 +53,48 @@ public class SniffyConfigurationTest {
         sniffyConfiguration.loadSniffyConfiguration();
         assertTrue(sniffyConfiguration.isMonitorJdbc());
 
+        // overriden value
+        System.getProperties().remove("io.sniffy.monitorJdbc");
+        sniffyConfiguration.loadSniffyConfiguration();
+        sniffyConfiguration.setMonitorJdbc(false);
+        assertFalse(sniffyConfiguration.isMonitorJdbc());
+
+    }
+
+    @Test
+    public void testMonitorSocket() {
+
+        SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
+
+        // enabled
+        System.setProperty("io.sniffy.monitorSocket", "true");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertTrue(sniffyConfiguration.isMonitorSocket());
+
+        System.setProperty("io.sniffy.monitorSocket", "TRUE");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertTrue(sniffyConfiguration.isMonitorSocket());
+
+        // disabled
+        System.setProperty("io.sniffy.monitorSocket", "false");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertFalse(sniffyConfiguration.isMonitorSocket());
+
+        System.setProperty("io.sniffy.monitorSocket", "");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertFalse(sniffyConfiguration.isMonitorSocket());
+
+        // default value
+        System.getProperties().remove("io.sniffy.monitorSocket");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertTrue(sniffyConfiguration.isMonitorSocket());
+
+        // overriden value
+        System.getProperties().remove("io.sniffy.monitorSocket");
+        sniffyConfiguration.loadSniffyConfiguration();
+        sniffyConfiguration.setMonitorSocket(false);
+        assertFalse(sniffyConfiguration.isMonitorSocket());
+
     }
 
 }
