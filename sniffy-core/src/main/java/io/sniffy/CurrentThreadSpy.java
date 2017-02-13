@@ -10,7 +10,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 
-public class CurrentThreadSpy<C extends CurrentThreadSpy<C>> extends BaseSpy<C> implements Closeable {
+public class CurrentThreadSpy extends BaseSpy<CurrentThreadSpy> implements Closeable {
 
     public CurrentThreadSpy() {
         Sniffy.registerCurrentThreadSpy(this);

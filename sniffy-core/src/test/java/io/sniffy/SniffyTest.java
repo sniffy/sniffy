@@ -42,7 +42,7 @@ public class SniffyTest extends BaseTest {
 
     @Test
     public void testCurrentThreadSpy() throws Exception {
-        CurrentThreadSpy<? extends CurrentThreadSpy> spy = Sniffy.spyCurrentThread();
+        CurrentThreadSpy spy = Sniffy.spyCurrentThread();
         executeStatements(2);
         executeStatementsInOtherThread(3);
         assertEquals(2, spy.executedStatements());
