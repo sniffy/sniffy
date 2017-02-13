@@ -87,7 +87,7 @@ public class SniffyConfigurationTest {
         sniffyConfiguration.loadSniffyConfiguration();
         assertTrue(sniffyConfiguration.isMonitorSocket());
 
-        // overriden value - can be enabled but cannot be disabled // TODO: why?
+        // overriden value - can be enabled but cannot be disabled
         System.getProperties().remove("io.sniffy.monitorSocket");
         sniffyConfiguration.loadSniffyConfiguration();
         sniffyConfiguration.setMonitorSocket(false);

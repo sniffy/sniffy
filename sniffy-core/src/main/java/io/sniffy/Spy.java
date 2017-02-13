@@ -67,7 +67,6 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
     Spy() {
         ownerThreadId = Thread.currentThread().getId();
         selfReference = Sniffy.registerSpy(this);
-        reset(); // TODO: is it required ?
     }
 
     /**

@@ -12,7 +12,6 @@ import org.junit.rules.ExpectedException;
 import static io.sniffy.Query.INSERT;
 
 @NoQueriesAllowed
-// TODO created a copy for new Count API
 public class QueryCounterTest extends BaseTest {
 
     @Rule

@@ -62,6 +62,7 @@ public enum SniffyConfiguration {
     }
 
     public void setMonitorSocket(boolean monitorSocket) {
+        // TODO: document why?
         if (!this.monitorSocket) {
             this.monitorSocket = monitorSocket;
         }

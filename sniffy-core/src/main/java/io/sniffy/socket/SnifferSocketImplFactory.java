@@ -53,7 +53,6 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
     }
 
     private static boolean isServerSocket() {
-        // TODO: improve this check
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         if (null != stackTrace) {
             for (StackTraceElement ste : stackTrace) {

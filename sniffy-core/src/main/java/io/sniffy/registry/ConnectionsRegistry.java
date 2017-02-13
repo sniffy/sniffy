@@ -203,8 +203,6 @@ public enum ConnectionsRegistry {
 
     public void writeTo(Writer writer) throws IOException {
 
-        // TODO: add thread local parameter
-
         Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
         Map<Map.Entry<String, String>, ConnectionStatus> discoveredDataSources = getDiscoveredDataSources();
 
