@@ -18,6 +18,10 @@ import java.util.UUID;
 
 import static io.sniffy.servlet.SniffyFilter.*;
 
+/**
+ * @see SniffyFilter
+ * @since 2.3.0
+ */
 class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     private final SniffyFilter sniffyFilter;

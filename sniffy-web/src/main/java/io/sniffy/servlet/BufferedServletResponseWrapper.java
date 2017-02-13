@@ -10,6 +10,10 @@ import java.util.Locale;
 import static io.sniffy.servlet.SniffyFilter.*;
 import static java.lang.String.format;
 
+/**
+ * @see SniffyFilter
+ * @since 2.3.0
+ */
 class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     private BufferedServletOutputStream bufferedServletOutputStream;
