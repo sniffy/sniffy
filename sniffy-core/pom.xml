@@ -38,37 +38,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru</include>
-                                    <include>com.eclipsesource.minimal-json:minimal-json</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.googlecode.concurrentlinkedhashmap</pattern>
-                                    <shadedPattern>io.sniffy.shaded.com.googlecode.concurrentlinkedhashmap</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.eclipsesource</pattern>
-                                    <shadedPattern>io.sniffy.shaded.com.eclipsesource</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <dependencies>
                     <dependency>
@@ -107,12 +76,10 @@
         <dependency>
             <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
             <artifactId>concurrentlinkedhashmap-lru</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.eclipsesource.minimal-json</groupId>
             <artifactId>minimal-json</artifactId>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 

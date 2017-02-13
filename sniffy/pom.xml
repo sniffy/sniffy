@@ -15,15 +15,8 @@
     <dependencies>
         <dependency>
             <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-core</artifactId>
-            <version>${project.parent.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.sniffy</groupId>
             <artifactId>sniffy-web</artifactId>
             <version>${project.parent.version}</version>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 
@@ -56,19 +49,41 @@
             </plugin>
 
             <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
                 <executions>
                     <execution>
-                        <id>unpack-dependencies</id>
-                        <phase>compile</phase>
+                        <phase>package</phase>
                         <goals>
-                            <goal>unpack-dependencies</goal>
+                            <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <includeArtifactIds>sniffy-web,sniffy-core</includeArtifactIds>
-                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru</include>
+                                    <include>com.eclipsesource.minimal-json:minimal-json</include>
+                                    <include>io.sniffy:*</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.googlecode.concurrentlinkedhashmap</pattern>
+                                    <shadedPattern>io.sniffy.shaded.com.googlecode.concurrentlinkedhashmap</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.eclipsesource</pattern>
+                                    <shadedPattern>io.sniffy.shaded.com.eclipsesource</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
                     <execution>
                         <id>unpack-sources</id>
                         <phase>generate-sources</phase>
@@ -80,64 +95,6 @@
                             <includeArtifactIds>sniffy-web,sniffy-core</includeArtifactIds>
                             <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                         </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.4.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Bundle-Version>${project.version}</Bundle-Version>
-                        <Import-Package>
-                            org.osgi.framework,
-                            io.sniffy.*,
-                            *;resolution:=optional
-                        </Import-Package>
-                        <Embed-Dependency>*;scope=optional</Embed-Dependency>
-                        <Embed-Transitive>true</Embed-Transitive>
-                        <Export-Package>
-                            io.sniffy,
-                            io.sniffy.boot,
-                            io.sniffy.configuration,
-                            io.sniffy.registry,
-                            io.sniffy.shaded,
-                            io.sniffy.servlet,
-                            io.sniffy.socket,
-                            io.sniffy.sql,
-                            io.sniffy.util
-                        </Export-Package>
-                    </instructions>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>bundle-manifest</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
