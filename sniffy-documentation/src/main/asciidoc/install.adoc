@@ -1,10 +1,30 @@
 == Standalone setup
 
-Lorem ipsum
+Sniffy comes with an uber-jar which doesn't require any additional dependencies to be installed.
+Just grab the `sniffy-<VERSION>.jar` from our https://github.com/sniffy/sniffy/releases/latest[releases page] and add it to the classpath of your application.
 
-== Spring Integration
+WARNING: If you're using an application server like Tomcat and you're defining a datasource on application server level, `sniffy-<VESRION>.jar` should be added to the common classloader classpath and should be *absent* in web application classpath.
 
-Lorem ipsum
+== Spring Boot Integration
+
+If you're using Spring Boot, add the dependency below to your project in order to use Sniffy.
+[source,xml,indent=0,role="primary"]
+.Maven
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-web</artifactId>
+    <version>3.1.0</version>
+</dependency>
+----
+
+[source,groovy,indent=0,role="secondary"]
+.Gradle
+----
+dependencies {
+    compile 'io.sniffy:sniffy-web:3.1.0'
+}
+----
 
 == Sniffy Test
 
@@ -18,6 +38,7 @@ Sniffy artifacts for unit test frameworks are distributed via Maven Central repo
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-junit</artifactId>
     <version>3.1.0</version>
+    <scope>test</scope>
 </dependency>
 ----
 
@@ -25,6 +46,6 @@ Sniffy artifacts for unit test frameworks are distributed via Maven Central repo
 .Gradle
 ----
 dependencies {
-    compile 'io.sniffy:sniffy-junit:3.1.0'
+    testCompile 'io.sniffy:sniffy-junit:3.1.0'
 }
 ----
