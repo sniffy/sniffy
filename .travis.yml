@@ -5,9 +5,9 @@ addons:
   sonarqube:
     token:
       secure: "MYeEHrxul8OU5jBxkjEITyGtS+J/ApTOlWOHQe4LO+GZuXxPLieUB12FnXbZsLPnUchAlsHqj7wAEEWEpPMqxwhNndQoLSk4Y8D3SG46EVGH9GCPwSc1t5/+Q+W2QtAbvu9Dy5fdHIA9p8vSxfJ0px5El4o4b+TarAmHtNBgn7o="
-  branches:
-    - master
-    - develop
+    branches:
+      - master
+      - develop
 jdk:
   - oraclejdk8
 script:
