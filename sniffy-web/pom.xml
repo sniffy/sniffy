@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.0-RC11</version>
+        <version>3.1.0-RC12-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -96,13 +96,13 @@
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-core</artifactId>
-            <version>3.1.0-RC11</version>
+            <version>3.1.0-RC12-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-core</artifactId>
-            <version>3.1.0-RC11</version>
+            <version>3.1.0-RC12-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
