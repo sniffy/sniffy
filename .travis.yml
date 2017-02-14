@@ -4,7 +4,7 @@ install: true
 addons:
   sonarqube:
     token:
-      secure: "MYeEHrxul8OU5jBxkjEITyGtS+J/ApTOlWOHQe4LO+GZuXxPLieUB12FnXbZsLPnUchAlsHqj7wAEEWEpPMqxwhNndQoLSk4Y8D3SG46EVGH9GCPwSc1t5/+Q+W2QtAbvu9Dy5fdHIA9p8vSxfJ0px5El4o4b+TarAmHtNBgn7o="
+      secure: "rFMDGYB3C4EbfS+CJq9lEuCtTmJgz8FmyrBp39P0lo6Zk/LqcuXolJBR2CLU9xkf/0oIOURov6+H6lMLRtmpYl6ZbmgAB+grq/y5ORLvlqccij+9UM19LeO/w8Nf1raOnwpB+V1VAfUx1dNTnxZIJRO/RrhtJDDdb9nWjyU0ua0="
     branches:
       - master
       - develop
