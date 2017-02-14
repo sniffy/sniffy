@@ -1,6 +1,15 @@
 language: java
 sudo: false
+install: true
+addons:
+  sonarqube:
+    token:
+      secure: "MYeEHrxul8OU5jBxkjEITyGtS+J/ApTOlWOHQe4LO+GZuXxPLieUB12FnXbZsLPnUchAlsHqj7wAEEWEpPMqxwhNndQoLSk4Y8D3SG46EVGH9GCPwSc1t5/+Q+W2QtAbvu9Dy5fdHIA9p8vSxfJ0px5El4o4b+TarAmHtNBgn7o="
 jdk:
   - oraclejdk8
 after_success:
-  - mvn clean test package javadoc:javadoc jacoco:report coveralls:report -U
+  - mvn clean test package javadoc:javadoc jacoco:report coveralls:report sonar:sonar -U
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
