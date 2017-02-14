@@ -17,6 +17,11 @@ public abstract class BaseTest {
     private static Connection keepAlive;
 
     @BeforeClass
+    public static void setupH2TraceFolder() {
+        System.setProperty("h2.clientTraceDirectory", "target/trace.db/");
+    }
+
+    @BeforeClass
     public static void loadDriverAndCreateTables() throws ClassNotFoundException, SQLException {
         Class.forName("io.sniffy.sql.SniffyDriver");
         keepAlive = openConnection();

@@ -16,6 +16,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 
+/**
+ * @since 3.1
+ */
 public enum ConnectionsRegistry {
     INSTANCE;
 
@@ -87,6 +90,10 @@ public enum ConnectionsRegistry {
     }
 
     public ConnectionStatus resolveSocketAddressStatus(InetSocketAddress inetSocketAddress) {
+
+        if (null == inetSocketAddress || null == inetSocketAddress.getAddress()) {
+            return OPEN;
+        }
 
         Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
 
@@ -198,8 +205,6 @@ public enum ConnectionsRegistry {
     }
 
     public void writeTo(Writer writer) throws IOException {
-
-        // TODO: add thread local parameter
 
         Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
         Map<Map.Entry<String, String>, ConnectionStatus> discoveredDataSources = getDiscoveredDataSources();

@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 /**
  * Alias for {@code @SocketExpectation(connections = @Count(0))}
  * @see SocketExpectation
- * @since 2.0
+ * @since 3.1
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})

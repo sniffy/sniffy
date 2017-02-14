@@ -6,12 +6,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Enable JDBC Sniffer by adding a {@code sniffer:} prefix to your JDBC URL.
- * For example:
- * {@code sniffer:jdbc:h2:mem:}
- *
- * After that you'll be able to verify the number of executed statements using the {@link Sniffy} class
- * @see Sniffy
+ * @see SniffyDriver
  */
 @Deprecated
 public class MockDriver extends SniffyDriver {

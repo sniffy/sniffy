@@ -9,6 +9,9 @@ import java.net.Socket;
 import java.net.SocketImpl;
 import java.net.SocketImplFactory;
 
+/**
+ * @since 3.1
+ */
 public class SnifferSocketImplFactory implements SocketImplFactory {
 
     protected final static Constructor<? extends SocketImpl> defaultSocketImplClassConstructor =
@@ -16,6 +19,12 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
     private volatile static SocketImplFactory previousSocketImplFactory;
 
+    /**
+     * Backups the existing {@link SocketImplFactory} and sets the {@link SnifferSocketImplFactory} as a default
+     * @see #uninstall()
+     * @throws IOException if failed to install {@link SnifferSocketImplFactory}
+     * @since 3.1
+     */
     public static void install() throws IOException {
         
         try {
@@ -28,22 +37,28 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
                 previousSocketImplFactory = currentSocketImplFactory;
             }
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
         }
 
     }
 
-    public static void uninstall() {
+    /**
+     * Restores previously saved {@link SocketImplFactory} and sets it as a default
+     * @see #install()
+     * @throws IOException if failed to install {@link SnifferSocketImplFactory}
+     * @since 3.1
+     */
+    public static void uninstall() throws IOException {
         try {
             Field factoryField = Socket.class.getDeclaredField("factory");
             factoryField.setAccessible(true);
             factoryField.set(null, previousSocketImplFactory);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
         }
     }
 
@@ -53,7 +68,6 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
     }
 
     private static boolean isServerSocket() {
-        // TODO: improve this check
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         if (null != stackTrace) {
             for (StackTraceElement ste : stackTrace) {

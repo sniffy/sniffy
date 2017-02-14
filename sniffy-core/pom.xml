@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.0-RC10</version>
+        <version>3.1.0-RC11</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -23,20 +23,7 @@
 
     <build>
 
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>target/generated-resources</directory>
-            </resource>
-        </resources>
-
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -51,73 +38,37 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.10</version>
-                <executions>
-                    <execution>
-                        <id>unpack</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>io.sniffy</groupId>
-                                    <artifactId>sniffy-ui</artifactId>
-                                    <version>${sniffy.ui.version}</version>
-                                    <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
-                                    <includes>
-                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.min.js,
-                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.map
-                                    </includes>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>animal-sniffer-enforcer-rule</artifactId>
+                        <version>1.15</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
-                        <phase>package</phase>
+                        <id>check-signatures</id>
+                        <phase>test</phase>
                         <goals>
-                            <goal>shade</goal>
+                            <goal>enforce</goal>
                         </goals>
                         <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru</include>
-                                    <include>com.eclipsesource.minimal-json:minimal-json</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.googlecode.concurrentlinkedhashmap</pattern>
-                                    <shadedPattern>io.sniffy.shaded.com.googlecode.concurrentlinkedhashmap</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.eclipsesource</pattern>
-                                    <shadedPattern>io.sniffy.shaded.com.eclipsesource</shadedPattern>
-                                </relocation>
-                            </relocations>
+                            <rules>
+                                <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
+                                    <signature>
+                                        <groupId>org.codehaus.mojo.signature</groupId>
+                                        <artifactId>java16</artifactId>
+                                        <version>1.0</version>
+                                    </signature>
+                                </checkSignatureRule>
+                            </rules>
+                            <fail>true</fail>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 
@@ -125,67 +76,11 @@
         <dependency>
             <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
             <artifactId>concurrentlinkedhashmap-lru</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.eclipsesource.minimal-json</groupId>
             <artifactId>minimal-json</artifactId>
-            <scope>compile</scope>
         </dependency>
-
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-ui</artifactId>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.webjars.bower</groupId>
-                    <artifactId>minified</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.webjars.bower</groupId>
-                    <artifactId>highlightjs</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.webjars.bower</groupId>
-                    <artifactId>clipboard</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webmvc</artifactId>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
 </project>

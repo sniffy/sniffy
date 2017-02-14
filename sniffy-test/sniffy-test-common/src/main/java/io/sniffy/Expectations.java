@@ -6,7 +6,7 @@ import io.sniffy.sql.SqlExpectations;
 import java.lang.annotation.*;
 
 /**
- * Container for multiple {@link Expectation} annotations
+ * @see SqlExpectations
  * @since 2.0
  */
 @Retention(RetentionPolicy.RUNTIME)

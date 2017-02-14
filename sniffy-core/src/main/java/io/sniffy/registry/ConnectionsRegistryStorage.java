@@ -8,7 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * Created by bedrin on 02.11.2016.
+ * @since 3.1
  */
 public enum ConnectionsRegistryStorage {
     INSTANCE;
@@ -16,8 +16,6 @@ public enum ConnectionsRegistryStorage {
     private File file = new File(IOUtil.getApplicationSniffyFolder(), "connectionsRegistry.json");
 
     public void loadConnectionsRegistry(ConnectionsRegistry connectionsRegistry) throws IOException {
-
-        // if (ConnectionsRegistry.INSTANCE.isThreadLocal()) return; // TODO:
 
         FileReader reader = null;
         try {

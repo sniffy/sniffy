@@ -9,9 +9,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 
-public class ConnectionInvocationHandler extends SniffyInvocationHandler<Connection> {
+class ConnectionInvocationHandler extends SniffyInvocationHandler<Connection> {
 
-    public ConnectionInvocationHandler(Connection delegate, String url, String userName) {
+    ConnectionInvocationHandler(Connection delegate, String url, String userName) {
         super(delegate, url, userName);
     }
 

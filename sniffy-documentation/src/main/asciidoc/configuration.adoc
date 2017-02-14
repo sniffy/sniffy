@@ -1,0 +1,44 @@
+Sniffy can be configured globally using Java system properties or environment variables.
+This configuration can be overriden in `web.xml` and/or `@EnableSniffy` annotation - see appropriate sections of documentation.
+
+WARNING: sniffy configuration is parsed only once and any changes made to system properties or environment variables in run-time won't have any effect on `Sniffy`
+
+.Table Configuration properties
+|===
+|System Property |Environment Variable |Description |Default Value
+
+|-Dio.sniffy.monitorJdbc
+|IO_SNIFFY_MONITOR_JDBC
+|Monitor JDBC
+|true
+
+|-Dio.sniffy.monitorSocket
+|IO_SNIFFY_MONITOR_SOCKET
+|Monitor socket connections
+|true
+
+|-Dio.sniffy.filterEnabled
+|IO_SNIFFY_FILTER_ENABLED
+|Enable servlet filter
+|true
+
+|-Dio.sniffy.injectHtml
+|IO_SNIFFY_INJECT_HTML
+|Inject Sniffy HTML to result HTML
+|true
+
+|-Dio.sniffy.excludePattern
+|IO_SNIFFY_EXCLUDE_PATTERN
+|Regexp for excluding sniffy from certain servlet requests
+|
+|===
+
+Sniffy filter can also be enabled or disabled using HTTP query parameters and/or HTTP headers.
+
+If Sniffy filter is currently disabled you can enable it by adding `?sniffy=true` query parameter to your request -
+it will enable the sniffy for current request and will also set a `sniffy` cookie which will enable sniffy on subsequent requests.
+
+For stateless clients who don't maintain the cookie jar it might be more convenient to enable/disable Sniffy using `Sniffy-Enabled: true` / `Sniffy-Enabled: false` headers.
+Unlike the query parameter the HTTP header will only affect a single request.
+
+

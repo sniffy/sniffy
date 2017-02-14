@@ -1,0 +1,12 @@
+== Integration with JUnit
+
+Sniffy comes with a http://junit.org/[JUnit] `@Rule` for quick integration with test framework.
+Just add `@Rule public final QueryCounter queryCounter = new QueryCounter();` to your JUnit test class and place appropriate expectations on your test methods like shown below.
+
+```java
+include::../../../../sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit/usage/JUnitUsageTest.java[]
+```
+<1> - Integrate Sniffy to your test using @Rule annotation and a SniffyRule field.
+<2> - Now just add `@SqlExpectation` annotation to define number of queries allowed for given method.
+<3> - Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
+<4> - Do not make any changes in your code - just add the `@Rule SniffyRule` and put annotations on your test method.

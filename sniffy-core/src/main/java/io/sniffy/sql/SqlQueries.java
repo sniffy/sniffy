@@ -1,5 +1,6 @@
 package io.sniffy.sql;
 
+import io.sniffy.Sniffy;
 import io.sniffy.SniffyAssertionError;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
@@ -9,6 +10,12 @@ import java.util.Map;
 import static io.sniffy.sql.SqlStatement.ANY;
 import static io.sniffy.sql.SqlStatement.SYSTEM;
 
+/**
+ * An utility class for creating {@link SqlExpectation}s
+ * @see Spy#expect(Spy.Expectation)
+ * @see Sniffy#expect(Spy.Expectation)
+ * @since 3.1
+ */
 public class SqlQueries {
 
     private SqlQueries() {

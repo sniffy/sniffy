@@ -4,11 +4,11 @@ import io.sniffy.Sniffy;
 
 import java.lang.reflect.Method;
 
-public class ResultSetInvocationHandler extends SniffyInvocationHandler<Object> {
+class ResultSetInvocationHandler extends SniffyInvocationHandler<Object> {
 
     private final StatementMetaData statementMetaData;
 
-    public ResultSetInvocationHandler(Object delegate, String url, String userName, StatementMetaData statementMetaData) {
+    ResultSetInvocationHandler(Object delegate, String url, String userName, StatementMetaData statementMetaData) {
         super(delegate, url, userName);
         this.statementMetaData = statementMetaData;
     }

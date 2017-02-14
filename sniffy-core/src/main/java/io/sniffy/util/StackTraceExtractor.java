@@ -58,7 +58,7 @@ public class StackTraceExtractor {
                 startIndex = i > 1 ? i - 1 : i;
                 break;
             }
-            // TODO go back until non java.io. trace
+            // go back until non java.io. trace
         }
         if (startIndex <= 0) {
             // no proxy, return entire collection
@@ -73,7 +73,7 @@ public class StackTraceExtractor {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        String lineSeparator = System.lineSeparator();
+        String lineSeparator = System.getProperty("line.separator");
         for (StackTraceElement stackTraceElement : stackTraceElements) {
             sb.append(stackTraceElement.toString()).append(lineSeparator);
         }

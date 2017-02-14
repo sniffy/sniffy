@@ -4,12 +4,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Sniffer is an entry point for using Sniffy library
- * See the
- * <a href="{@docRoot}/io/sniffy/package-summary.html#package_description">
- *    package overview
- * </a> for more information.
- * @since 1.0
+ * @see Sniffy
  */
 @Deprecated
 public final class Sniffer extends Sniffy {

@@ -2,6 +2,7 @@ package io.sniffy.sql;
 
 import io.sniffy.Sniffy;
 import io.sniffy.configuration.SniffyConfiguration;
+import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import javax.sql.*;
 import java.io.PrintWriter;
@@ -230,6 +231,8 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
     }
 
     @Override
+    @IgnoreJRERequirement
+    @SuppressWarnings("Since15")
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
         return dataSource.getParentLogger();
     }

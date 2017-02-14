@@ -2,6 +2,9 @@ package io.sniffy.util;
 
 import io.sniffy.test.Count;
 
+/**
+ * @since 3.1
+ */
 public class Range {
 
     public final int min;

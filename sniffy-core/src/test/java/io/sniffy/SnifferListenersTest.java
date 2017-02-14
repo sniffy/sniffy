@@ -19,7 +19,7 @@ public class SnifferListenersTest extends BaseTest {
         Spy spy = Sniffy.spy();
         spy.close();
 
-        Sniffy.registeredSpies().stream().
+        Sniffy.registeredSpies.stream().
                 filter(spyReference -> spyReference.get() == spy).
                 forEach(spyReference -> fail("Spy was not removed from Sniffer observers"));
 
