@@ -7,23 +7,27 @@
 Sniffy is a Java profiler which shows the results directly in your browser.
 It also brings profiling to your unit (or rather component) tests and allows you to disable certain outgoing connections for fault-tolerance testing.
 
-== In-browser profiler
+=== In-browser profiler
 
 image::demo.gif[]
 
-== Asserting number of queries in unit tests
+=== Asserting number of queries in unit tests
 
 ```java
 include::../../../../sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit/usage/JUnitOverviewTest.java[tags=JUnitOverview]
 ```
 
-== Testing bad connectivity
+=== Testing bad connectivity
 
 Discover all outgoing network connections from your server and disable them right from your browser:
 
 image::network-connections.png[]
 
 Sniffy will throw a `java.net.ConnectException` when your application tries to connect to address disallowed by Sniffy.
+
+= Install
+
+include::install.adoc[]
 
 = Setup
 
