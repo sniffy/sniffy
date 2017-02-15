@@ -8,7 +8,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class CoreApiExampleTest {
+public class CoreApiExampleTest extends BaseTest {
 
     @Test
     public void testVerifyApi() throws SQLException {
