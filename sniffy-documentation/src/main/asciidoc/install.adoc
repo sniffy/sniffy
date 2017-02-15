@@ -1,0 +1,91 @@
+== Standalone setup
+
+Sniffy comes with an uber-jar which doesn't require any additional dependencies to be installed.
+Just grab the `sniffy-{sniffy-version}.jar` from our https://github.com/sniffy/sniffy/releases/latest[releases page] and add it to the classpath of your application.
+
+WARNING: If you're using an application server like Tomcat and you're defining a datasource on application server level, `sniffy-{sniffy-version}.jar` should be added to the common classloader classpath and should be *absent* in web application classpath.
+
+== Spring Boot Integration
+
+If you're using Spring Boot, add the dependency below to your project in order to use Sniffy.
+[source,xml,indent=0,subs="normal",role="primary"]
+.Maven
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-web</artifactId>
+    <version>{sniffy-version}</version>
+</dependency>
+----
+
+[source,groovy,indent=0,subs="normal",role="secondary"]
+.Gradle
+----
+dependencies {
+    compile 'io.sniffy:sniffy-web:{sniffy-version}'
+}
+----
+
+== Sniffy Test
+
+Sniffy artifacts for unit test frameworks are distributed via Maven Central repository and can be downloaded using your favorite package manager.
+
+=== JUnit
+[source,xml,indent=0,subs="normal",role="primary"]
+.Maven
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-junit</artifactId>
+    <version>{sniffy-version}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+[source,groovy,indent=0,subs="normal",role="secondary"]
+.Gradle
+----
+dependencies {
+    testCompile 'io.sniffy:sniffy-junit:{sniffy-version}'
+}
+----
+
+=== Spring Test
+[source,xml,indent=0,subs="normal",role="primary"]
+.Maven
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-spring-test</artifactId>
+    <version>{sniffy-version}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+[source,groovy,indent=0,subs="normal",role="secondary"]
+.Gradle
+----
+dependencies {
+    testCompile 'io.sniffy:sniffy-spring-test:{sniffy-version}'
+}
+----
+
+=== TestNG
+[source,xml,indent=0,subs="normal",role="primary"]
+.Maven
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-testng</artifactId>
+    <version>{sniffy-version}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+[source,groovy,indent=0,subs="normal",role="secondary"]
+.Gradle
+----
+dependencies {
+    testCompile 'io.sniffy:sniffy-testng:{sniffy-version}'
+}
+----

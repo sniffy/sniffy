@@ -19,8 +19,41 @@ public class StackTraceExtractor {
         for (int i = 0; i < stackTraceElements.length; i++) {
             StackTraceElement traceElement = stackTraceElements[i];
             String traceElementClassName = traceElement.getClassName();
-            if (traceElementClassName.contains("Proxy")
+            if (traceElementClassName.contains("$Proxy")
                     && baseClass.isAssignableFrom(Class.forName(traceElementClassName))) {
+                baseMethodTrace = createTraceElement(method, traceElement);
+                startIndex = i + 1;
+                break;
+            }
+        }
+
+        if (startIndex == 0) {
+            // no proxy, return entire collection
+            return Arrays.asList(stackTraceElements);
+        } else {
+            return replaceStackTraceElements(stackTraceElements, startIndex, baseMethodTrace);
+        }
+    }
+
+    private static List<StackTraceElement> replaceStackTraceElements(StackTraceElement[] stackTraceElements, int startIndex, StackTraceElement baseMethodTrace) {
+        List<StackTraceElement> result = new ArrayList<StackTraceElement>();
+        result.add(baseMethodTrace);
+        result.addAll(Arrays.asList(Arrays.copyOfRange(stackTraceElements, startIndex, stackTraceElements.length - 1)));
+        return result;
+    }
+
+    public static List<StackTraceElement> getTraceForImplementingMethod(Method method, Method methodImpl) throws ClassNotFoundException {
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+
+        String implClassName = methodImpl.getDeclaringClass().getCanonicalName();
+        String implMethodName = methodImpl.getName();
+
+        // skip all elements until impl call
+        int startIndex = 0;
+        StackTraceElement baseMethodTrace = null;
+        for (int i = 0; i < stackTraceElements.length; i++) {
+            StackTraceElement traceElement = stackTraceElements[i];
+            if (traceElement.getClassName().equals(implClassName) && traceElement.getMethodName().equals(implMethodName)) {
                 baseMethodTrace = createTraceElement(method, traceElement);
                 startIndex = i + 1;
                 break;
@@ -30,10 +63,7 @@ public class StackTraceExtractor {
             // no proxy, return entire collection
             return Arrays.asList(stackTraceElements);
         } else {
-            List<StackTraceElement> result = new ArrayList<StackTraceElement>();
-            result.add(baseMethodTrace);
-            result.addAll(Arrays.asList(Arrays.copyOfRange(stackTraceElements, startIndex, stackTraceElements.length - 1)));
-            return result;
+            return replaceStackTraceElements(stackTraceElements, startIndex, baseMethodTrace);
         }
     }
 

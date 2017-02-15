@@ -32,6 +32,7 @@ public class SniffyDriver implements Driver, Constants {
     private static final SniffyDriver INSTANCE = new SniffyDriver();
 
     private final static Method CONNECT_METHOD;
+    private final static Method CONNECT_METHOD_IMPL;
 
     static {
         Method getConnectionMethod;
@@ -42,6 +43,15 @@ public class SniffyDriver implements Driver, Constants {
         }
 
         CONNECT_METHOD = getConnectionMethod;
+
+        Method getConnectionMethodImpl;
+        try {
+            getConnectionMethodImpl = SniffyDriver.class.getMethod("connect", String.class, Properties.class);
+        } catch (NoSuchMethodException e) {
+            getConnectionMethodImpl = null;
+        }
+
+        CONNECT_METHOD_IMPL = getConnectionMethodImpl;
     }
 
     static {
@@ -109,7 +119,7 @@ public class SniffyDriver implements Driver, Constants {
                     new ConnectionInvocationHandler(delegateConnection, originUrl, userName)
             ));
         } finally {
-            Sniffy.exitJdbcMethod(CONNECT_METHOD, System.currentTimeMillis() - start);
+            Sniffy.exitJdbcMethod(CONNECT_METHOD, System.currentTimeMillis() - start, CONNECT_METHOD_IMPL);
         }
     }
 
