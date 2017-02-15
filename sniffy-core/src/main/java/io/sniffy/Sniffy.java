@@ -206,6 +206,10 @@ public class Sniffy {
     }
 
     public static void exitJdbcMethod(Method method, long elapsedTime) {
+        exitJdbcMethod(method, elapsedTime, null);
+    }
+
+    public static void exitJdbcMethod(Method method, long elapsedTime, Method implMethod) {
         if (Sniffy.hasSpies()) {
             // get accumulated socket stats
             SocketStats socketStats = socketStatsAccumulator.get();
@@ -215,7 +219,10 @@ public class Sniffy {
                 if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
                     String stackTrace = null;
                     try {
-                        stackTrace = printStackTrace(getTraceForProxiedMethod(method));
+                        stackTrace = printStackTrace(null == implMethod ?
+                                getTraceForProxiedMethod(method) :
+                                getTraceForImplementingMethod(method, implMethod)
+                        );
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
                     }

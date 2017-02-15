@@ -18,27 +18,32 @@ import java.util.logging.Logger;
  */
 public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoolDataSource {
 
-    private final static Method GET_CONNECTION_METHOD;
-    private final static Method GET_CONNECTION_WITH_CREDENTIALS_METHOD;
+    private final static Method GET_CONNECTION_METHOD =
+            getMethod(DataSource.class, "getConnection");
+    private final static Method GET_CONNECTION_WITH_CREDENTIALS_METHOD =
+            getMethod(DataSource.class, "getConnection", String.class, String.class);
 
-    static {
-        Method getConnectionMethod;
+    private final static Method GET_CONNECTION_METHOD_IMPL =
+            getMethod(SniffyDataSource.class, "getConnection");
+    private final static Method GET_CONNECTION_WITH_CREDENTIALS_METHOD_IMPL =
+            getMethod(SniffyDataSource.class, "getConnection", String.class, String.class);
+
+    private static Method getMethod(Class<?> clazz, String methodName) {
         try {
-            getConnectionMethod = DataSource.class.getMethod("getConnection");
+            return clazz.getMethod(methodName);
         } catch (NoSuchMethodException e) {
-            getConnectionMethod = null;
+            // TODO: log me may be?
+            return null;
         }
+    }
 
-        GET_CONNECTION_METHOD = getConnectionMethod;
-
-        Method getConnectionWithCredentialsMethod;
+    private static Method getMethod(Class<?> clazz, String methodName, Class<?>... arguments) {
         try {
-            getConnectionWithCredentialsMethod = DataSource.class.getMethod("getConnection", String.class, String.class);
+            return clazz.getMethod(methodName, arguments);
         } catch (NoSuchMethodException e) {
-            getConnectionWithCredentialsMethod = null;
+            // TODO: log me may be?
+            return null;
         }
-
-        GET_CONNECTION_WITH_CREDENTIALS_METHOD = getConnectionWithCredentialsMethod;
     }
 
     private final CommonDataSource target;
@@ -83,7 +88,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
             SniffyDriver.checkConnectionAllowed(url, userName);
         } finally {
-            Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
+            Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start, GET_CONNECTION_METHOD_IMPL);
         }
 
         return Connection.class.cast(Proxy.newProxyInstance(
@@ -113,7 +118,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
 
             SniffyDriver.checkConnectionAllowed(url, userName);
         } finally {
-            Sniffy.exitJdbcMethod(GET_CONNECTION_WITH_CREDENTIALS_METHOD, System.currentTimeMillis() - start);
+            Sniffy.exitJdbcMethod(GET_CONNECTION_WITH_CREDENTIALS_METHOD, System.currentTimeMillis() - start, GET_CONNECTION_WITH_CREDENTIALS_METHOD_IMPL);
         }
 
         return Connection.class.cast(Proxy.newProxyInstance(
