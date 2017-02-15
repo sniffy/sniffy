@@ -28,6 +28,26 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
     private final static Method GET_CONNECTION_WITH_CREDENTIALS_METHOD_IMPL =
             getMethod(SniffyDataSource.class, "getConnection", String.class, String.class);
 
+    private final static Method GET_XA_CONNECTION_METHOD =
+            getMethod(XADataSource.class, "getXAConnection");
+    private final static Method GET_XA_CONNECTION_WITH_CREDENTIALS_METHOD =
+            getMethod(XADataSource.class, "getXAConnection", String.class, String.class);
+
+    private final static Method GET_XA_CONNECTION_METHOD_IMPL =
+            getMethod(SniffyDataSource.class, "getXAConnection");
+    private final static Method GET_XA_CONNECTION_WITH_CREDENTIALS_METHOD_IMPL =
+            getMethod(SniffyDataSource.class, "getXAConnection", String.class, String.class);
+
+    private final static Method GET_POOLED_CONNECTION_METHOD =
+            getMethod(ConnectionPoolDataSource.class, "getPooledConnection");
+    private final static Method GET_POOLED_CONNECTION_WITH_CREDENTIALS_METHOD =
+            getMethod(ConnectionPoolDataSource.class, "getPooledConnection", String.class, String.class);
+
+    private final static Method GET_POOLED_CONNECTION_METHOD_IMPL =
+            getMethod(SniffyDataSource.class, "getPooledConnection");
+    private final static Method GET_POOLED_CONNECTION_WITH_CREDENTIALS_METHOD_IMPL =
+            getMethod(SniffyDataSource.class, "getPooledConnection", String.class, String.class);
+
     private static Method getMethod(Class<?> clazz, String methodName) {
         try {
             return clazz.getMethod(methodName);
@@ -145,7 +165,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
                     new PooledConnectionInvocationHandler(xaDataSource.getXAConnection())
             ));
         } finally {
-            Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
+            Sniffy.exitJdbcMethod(GET_XA_CONNECTION_METHOD, System.currentTimeMillis() - start, GET_XA_CONNECTION_METHOD_IMPL);
         }
 
     }
@@ -167,7 +187,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
                     new PooledConnectionInvocationHandler(xaDataSource.getXAConnection(user, password))
             ));
         } finally {
-            Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
+            Sniffy.exitJdbcMethod(GET_XA_CONNECTION_WITH_CREDENTIALS_METHOD, System.currentTimeMillis() - start, GET_XA_CONNECTION_WITH_CREDENTIALS_METHOD_IMPL);
         }
 
     }
@@ -189,7 +209,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
                     new PooledConnectionInvocationHandler(connectionPoolDataSource.getPooledConnection())
             ));
         } finally {
-            Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
+            Sniffy.exitJdbcMethod(GET_POOLED_CONNECTION_METHOD, System.currentTimeMillis() - start, GET_POOLED_CONNECTION_METHOD_IMPL);
         }
 
     }
@@ -210,7 +230,7 @@ public class SniffyDataSource implements DataSource, XADataSource, ConnectionPoo
                     new PooledConnectionInvocationHandler(connectionPoolDataSource.getPooledConnection(user, password))
             ));
         } finally {
-            Sniffy.exitJdbcMethod(GET_CONNECTION_METHOD, System.currentTimeMillis() - start);
+            Sniffy.exitJdbcMethod(GET_POOLED_CONNECTION_WITH_CREDENTIALS_METHOD, System.currentTimeMillis() - start, GET_POOLED_CONNECTION_WITH_CREDENTIALS_METHOD_IMPL);
         }
 
     }
