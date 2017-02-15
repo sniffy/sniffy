@@ -49,3 +49,43 @@ dependencies {
     testCompile 'io.sniffy:sniffy-junit:{sniffy-version}'
 }
 ----
+
+=== Spring Test
+[source,xml,indent=0,subs="normal",role="primary"]
+.Maven
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-spring-test</artifactId>
+    <version>{sniffy-version}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+[source,groovy,indent=0,subs="normal",role="secondary"]
+.Gradle
+----
+dependencies {
+    testCompile 'io.sniffy:sniffy-spring-test:{sniffy-version}'
+}
+----
+
+=== TestNG
+[source,xml,indent=0,subs="normal",role="primary"]
+.Maven
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-testng</artifactId>
+    <version>{sniffy-version}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+[source,groovy,indent=0,subs="normal",role="secondary"]
+.Gradle
+----
+dependencies {
+    testCompile 'io.sniffy:sniffy-testng:{sniffy-version}'
+}
+----
