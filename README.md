@@ -18,6 +18,7 @@ It also brings profiling to your unit (or rather component) tests and allows you
 ![RecordedDemo](http://sniffy.io/demo.gif)
 
 Live Demo - [http://demo.sniffy.io/](http://demo.sniffy.io/owners.html?lastName=)
+
 Documentation - [http://sniffy.io/docs/latest/](http://sniffy.io/docs/latest/)
 
 Support
