@@ -21,23 +21,17 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import javax.sql.DataSource;
-
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.SecureClassLoader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @EnableSniffy(injectHtml = "#{injectHtml}", filterEnabled = "${filterEnabled}")
