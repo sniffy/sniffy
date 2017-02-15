@@ -18,6 +18,9 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import ru.yandex.qatools.allure.annotations.Issue;
+import ru.yandex.qatools.allure.annotations.Severity;
+import ru.yandex.qatools.allure.model.SeverityLevel;
 
 import javax.annotation.Resource;
 import javax.sql.DataSource;
@@ -76,6 +79,8 @@ public class EnableSniffyTest {
     }
 
     @Test
+    @Issue("issues/264")
+    @Severity(SeverityLevel.NORMAL)
     public void testDataSourceWrapperWorks() throws Exception {
         DataSource dataSource = applicationContext.getBean("dataSource", DataSource.class);
 

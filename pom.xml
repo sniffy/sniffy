@@ -73,6 +73,12 @@
         </dependency>
 
         <dependency>
+            <groupId>ru.yandex.qatools.allure</groupId>
+            <artifactId>allure-java-annotations</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
@@ -346,6 +352,13 @@
                 <artifactId>animal-sniffer-annotations</artifactId>
                 <version>1.15</version>
                 <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>ru.yandex.qatools.allure</groupId>
+                <artifactId>allure-java-annotations</artifactId>
+                <version>1.5.1</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
