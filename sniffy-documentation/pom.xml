@@ -32,6 +32,7 @@
                             <sourceHighlighter>coderay</sourceHighlighter>
                             <attributes>
                                 <toc>left</toc>
+                                <sniffy-version>${project.version}</sniffy-version>
                             </attributes>
                         </configuration>
                     </execution>
