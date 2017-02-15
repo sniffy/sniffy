@@ -8,7 +8,7 @@ WARNING: If you're using an application server like Tomcat and you're defining a
 == Spring Boot Integration
 
 If you're using Spring Boot, add the dependency below to your project in order to use Sniffy.
-[source,xml,indent=0,subs="attributes",role="primary"]
+[source,xml,indent=0,subs="normal",role="primary"]
 .Maven
 ----
 <dependency>
@@ -18,7 +18,7 @@ If you're using Spring Boot, add the dependency below to your project in order t
 </dependency>
 ----
 
-[source,groovy,indent=0,subs="attributes",role="secondary"]
+[source,groovy,indent=0,subs="normal",role="secondary"]
 .Gradle
 ----
 dependencies {
@@ -31,7 +31,7 @@ dependencies {
 Sniffy artifacts for unit test frameworks are distributed via Maven Central repository and can be downloaded using your favorite package manager.
 
 === JUnit
-[source,xml,indent=0,subs="attributes",role="primary"]
+[source,xml,indent=0,subs="normal",role="primary"]
 .Maven
 ----
 <dependency>
@@ -42,7 +42,7 @@ Sniffy artifacts for unit test frameworks are distributed via Maven Central repo
 </dependency>
 ----
 
-[source,groovy,indent=0,subs="attributes",role="secondary"]
+[source,groovy,indent=0,subs="normal",role="secondary"]
 .Gradle
 ----
 dependencies {
