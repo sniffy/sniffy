@@ -59,6 +59,25 @@ public class SniffyServletTest {
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
         assertEquals("application/javascript", response.getContentType());
         assertTrue(response.getContentLength() > 0);
+        assertTrue(response.getContentAsString().contains("sourceMappingURL=sniffy.map"));
+
+    }
+
+    @Test
+    public void testGetJavascriptSource() throws Exception {
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic/" + SniffyFilter.JAVASCRIPT_SOURCE_URI).
+                buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
+
+        sniffyServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/javascript", response.getContentType());
+        assertTrue(response.getContentLength() > 0);
 
     }
 

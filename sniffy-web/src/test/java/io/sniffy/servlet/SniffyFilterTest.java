@@ -77,6 +77,14 @@ public class SniffyFilterTest extends BaseTest {
     }
 
     @Test
+    public void testFailedFilterInitDisablesSniffy() throws ServletException {
+        SniffyFilter filter = new SniffyFilter();
+        filter.setEnabled(true);
+        filter.init(null);
+        assertFalse(filter.isEnabled());
+    }
+
+    @Test
     public void testThreadLocalConnectionRegistry() throws IOException, ServletException {
 
         ConnectionsRegistry.INSTANCE.setThreadLocal(false);
