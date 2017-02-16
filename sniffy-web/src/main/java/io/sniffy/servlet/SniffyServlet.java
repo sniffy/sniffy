@@ -44,7 +44,8 @@ class SniffyServlet extends HttpServlet {
     protected final Map<String, RequestStats> cache;
 
     protected byte[] javascript;
-    protected byte[] map;
+    protected byte[] javascriptSource;
+    protected byte[] javascriptMap;
 
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
@@ -54,7 +55,8 @@ class SniffyServlet extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
         try {
             javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.1-SNAPSHOT/dist/sniffy.min.js");
-            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.1-SNAPSHOT/dist/sniffy.map");
+            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.1-SNAPSHOT/dist/sniffy.js");
+            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.1-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
             throw new ServletException(e);
         }
@@ -80,9 +82,12 @@ class SniffyServlet extends HttpServlet {
         if (SniffyFilter.JAVASCRIPT_URI.equals(path)) {
             addCorsHeaders(response);
             serveContent(response, JAVASCRIPT_MIME_TYPE, javascript);
+        } else if (SniffyFilter.JAVASCRIPT_SOURCE_URI.equals(path)) {
+            addCorsHeaders(response);
+            serveContent(response, JAVASCRIPT_MIME_TYPE, javascriptSource);
         } else if (SniffyFilter.JAVASCRIPT_MAP_URI.equals(path)) {
             addCorsHeaders(response);
-            serveContent(response, JAVASCRIPT_MIME_TYPE, map);
+            serveContent(response, JAVASCRIPT_MIME_TYPE, javascriptMap);
         } else if (path.startsWith(SniffyFilter.REQUEST_URI_PREFIX)) {
             addCorsHeaders(response);
             byte[] requestStatsJson = getRequestStatsJson(path.substring(SniffyFilter.REQUEST_URI_PREFIX.length()));
