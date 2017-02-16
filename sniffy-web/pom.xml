@@ -47,6 +47,7 @@
                                     <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
                                     <includes>
                                         META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.min.js,
+                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.js,
                                         META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.map
                                     </includes>
                                 </artifactItem>
