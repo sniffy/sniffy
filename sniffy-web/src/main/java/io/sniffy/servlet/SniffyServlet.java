@@ -53,8 +53,8 @@ class SniffyServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0/dist/sniffy.min.js");
-            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.1-SNAPSHOT/dist/sniffy.min.js");
+            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.1-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
             throw new ServletException(e);
         }
