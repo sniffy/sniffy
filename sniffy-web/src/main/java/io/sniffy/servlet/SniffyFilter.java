@@ -102,29 +102,36 @@ public class SniffyFilter implements Filter {
 
     public void init(FilterConfig filterConfig) throws ServletException {
 
-        String injectHtml = filterConfig.getInitParameter("inject-html");
-        if (null != injectHtml) {
-            this.injectHtml = Boolean.parseBoolean(injectHtml);
+        try {
+
+            String injectHtml = filterConfig.getInitParameter("inject-html");
+            if (null != injectHtml) {
+                this.injectHtml = Boolean.parseBoolean(injectHtml);
+            }
+
+            String enabled = filterConfig.getInitParameter("enabled");
+            if (null != enabled) {
+                this.enabled = Boolean.parseBoolean(enabled);
+            }
+
+            String excludePattern = filterConfig.getInitParameter("exclude-pattern");
+            if (null != excludePattern) {
+                this.excludePattern = Pattern.compile(excludePattern); // TODO: can throw exception
+            }
+
+            String faultToleranceCurrentRequest = filterConfig.getInitParameter("fault-tolerance-current-request");
+            if (null != faultToleranceCurrentRequest) {
+                ConnectionsRegistry.INSTANCE.setThreadLocal(Boolean.parseBoolean(faultToleranceCurrentRequest));
+            }
+
+            sniffyServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
+
+            servletContext = filterConfig.getServletContext();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            enabled = false;
         }
-
-        String enabled = filterConfig.getInitParameter("enabled");
-        if (null != enabled) {
-            this.enabled = Boolean.parseBoolean(enabled);
-        }
-
-        String excludePattern = filterConfig.getInitParameter("exclude-pattern");
-        if (null != excludePattern) {
-            this.excludePattern = Pattern.compile(excludePattern); // TODO: can throw exception
-        }
-
-        String faultToleranceCurrentRequest = filterConfig.getInitParameter("fault-tolerance-current-request");
-        if (null != faultToleranceCurrentRequest) {
-            ConnectionsRegistry.INSTANCE.setThreadLocal(Boolean.parseBoolean(faultToleranceCurrentRequest));
-        }
-
-        sniffyServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
-
-        servletContext = filterConfig.getServletContext();
 
     }
 
