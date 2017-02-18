@@ -50,6 +50,8 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <createSourcesJar>true</createSourcesJar>
+                            <shadeSourcesContent>true</shadeSourcesContent>
                             <artifactSet>
                                 <includes>
                                     <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru</include>
@@ -67,24 +69,6 @@
                                     <shadedPattern>io.sniffy.shaded.com.eclipsesource</shadedPattern>
                                 </relocation>
                             </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <classifier>sources</classifier>
-                            <includeArtifactIds>sniffy-web,sniffy-core</includeArtifactIds>
-                            <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
