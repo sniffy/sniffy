@@ -50,6 +50,8 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <createSourcesJar>true</createSourcesJar>
+                            <shadeSourcesContent>true</shadeSourcesContent>
                             <artifactSet>
                                 <includes>
                                     <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru</include>
@@ -73,18 +75,21 @@
             </plugin>
 
             <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
                 <executions>
                     <execution>
-                        <id>unpack-sources</id>
-                        <phase>generate-sources</phase>
+                        <id>javadoc-jar</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>unpack-dependencies</goal>
+                            <goal>jar</goal>
                         </goals>
                         <configuration>
-                            <classifier>sources</classifier>
-                            <includeArtifactIds>sniffy-web,sniffy-core</includeArtifactIds>
-                            <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
+                            <includeDependencySources>true</includeDependencySources>
+                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
+                            <dependencySourceIncludes>
+                                <dependencySourceInclude>io.sniffy:*</dependencySourceInclude>
+                            </dependencySourceIncludes>
                         </configuration>
                     </execution>
                 </executions>
