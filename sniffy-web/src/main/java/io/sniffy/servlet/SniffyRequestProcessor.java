@@ -24,13 +24,20 @@ import static io.sniffy.servlet.SniffyFilter.*;
  */
 class SniffyRequestProcessor implements BufferedServletResponseListener {
 
+    private final static String SNIFFY_REQUEST_STATS_REQUEST_ATTRIBUTE_NAME =
+            "io.sniffy.servlet.RequestStats";
+    public final static String SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME =
+                    "io.sniffy.servlet.SniffyRequestProcessor";
+    public final static String SNIFFY_REQUEST_ID_REQUEST_ATTRIBUTE_NAME =
+                    "io.sniffy.servlet.SniffyRequestProcessor.requestId";
+
     private final SniffyFilter sniffyFilter;
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
 
     private final CurrentThreadSpy spy;
     private final String requestId;
-    private final RequestStats requestStats = new RequestStats();
+    private final RequestStats requestStats;
     private final String relativeUrl;
 
     private long startMillis;
@@ -57,7 +64,22 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         this.httpServletResponse = httpServletResponse;
 
         spy = Sniffy.spyCurrentThread();
-        requestId = UUID.randomUUID().toString();
+
+        Object requestIdAttribute = httpServletRequest.getAttribute(SNIFFY_REQUEST_ID_REQUEST_ATTRIBUTE_NAME);
+        if (requestIdAttribute instanceof String) {
+            requestId = (String) requestIdAttribute;
+        } else {
+            requestId = UUID.randomUUID().toString();
+            httpServletRequest.setAttribute(SNIFFY_REQUEST_ID_REQUEST_ATTRIBUTE_NAME, requestId);
+        }
+
+        Object requestStatsAttribute = httpServletRequest.getAttribute(SNIFFY_REQUEST_STATS_REQUEST_ATTRIBUTE_NAME);
+        if (requestStatsAttribute instanceof RequestStats) {
+            requestStats = (RequestStats) requestStatsAttribute;
+        } else {
+            requestStats = new RequestStats();
+            httpServletRequest.setAttribute(SNIFFY_REQUEST_STATS_REQUEST_ATTRIBUTE_NAME, requestStats);
+        }
 
         String relativeUrl = null;
 
@@ -113,8 +135,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             chain.doFilter(httpServletRequest, responseWrapper);
         } finally {
             try {
-                requestStats.setTimeToFirstByte(getTimeToFirstByte());
-                requestStats.setElapsedTime(getElapsedTime());
+                requestStats.incTimeToFirstByte(getTimeToFirstByte());
+                requestStats.incElapsedTime(getElapsedTime());
                 updateRequestCache();
                 responseWrapper.flushIfPossible();
             } catch (Exception e) {
@@ -133,13 +155,14 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         if ((null != executedStatements && !executedStatements.isEmpty()) ||
                 (null != socketOperations && !socketOperations.isEmpty())) {
             if (null != executedStatements && !executedStatements.isEmpty()) {
-                requestStats.setExecutedStatements(executedStatements);
+                requestStats.addExecutedStatements(executedStatements);
             }
             if (null != socketOperations && !socketOperations.isEmpty()) {
-                requestStats.setSocketOperations(socketOperations);
+                requestStats.addSocketOperations(socketOperations);
             }
             sniffyFilter.cache.put(requestId, requestStats);
         }
+        httpServletRequest.setAttribute(SNIFFY_REQUEST_STATS_REQUEST_ATTRIBUTE_NAME, requestStats);
     }
 
     /**

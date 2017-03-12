@@ -42,6 +42,8 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class SniffyFilterTest extends BaseTest {
 
+    private static class ApplicationSpecificException extends RuntimeException {}
+
     @Mock
     protected FilterChain filterChain;
 
@@ -180,6 +182,51 @@ public class SniffyFilterTest extends BaseTest {
         }).when(outerFilterChain).doFilter(any(), any());
 
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, outerFilterChain);
+
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
+
+        NodeList scripts = doc.getElementsByTagName("script");
+        assertEquals(1, scripts.getLength());
+
+        String sniffyJsSrc = scripts.item(0).getAttributes().getNamedItem("src").getNodeValue();
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFER_URI_PREFIX));
+
+        String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
+
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../" + REQUEST_URI_PREFIX));
+    }
+
+    @Test
+    @Issue("issues/260")
+    public void testFilterRequestErrorDispatch() throws IOException, ServletException, ParserConfigurationException, SAXException {
+
+        SniffyFilter filter = new SniffyFilter();
+        filter.init(getFilterConfig());
+
+        doAnswer(invocation -> {
+            executeStatement();
+            throw new ApplicationSpecificException();
+            // TODO: test use case when first controller writes something to output buffer (with and without flushing)
+            /*HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.setContentType("text/html");
+            PrintWriter printWriter = response.getWriter();
+            printWriter.append("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+            return null;*/
+        }).when(filterChain).doFilter(any(), any());
+
+        try {
+            filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+            fail();
+        } catch (ApplicationSpecificException e) {
+            assertNotNull(e);
+        }
+
+        answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertEquals(1, Integer.parseInt(httpServletResponse.getHeader(HEADER_NUMBER_OF_QUERIES)));
 
         DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));

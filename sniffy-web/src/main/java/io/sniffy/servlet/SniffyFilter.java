@@ -17,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import static io.sniffy.servlet.SniffyRequestProcessor.SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME;
+
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
  * as a 'Sniffy-Sql-Queries' header in response.
@@ -53,9 +55,6 @@ import java.util.regex.PatternSyntaxException;
  * @since 3.1
  */
 public class SniffyFilter implements Filter {
-
-    private final static String SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME =
-            "io.sniffy.servlet.SniffyRequestProcessor";
 
     public static final String HEADER_CORS_HEADERS = "Access-Control-Expose-Headers";
     public static final String HEADER_NUMBER_OF_QUERIES = "Sniffy-Sql-Queries";
@@ -188,6 +187,8 @@ public class SniffyFilter implements Filter {
         try {
             sniffyRequestProcessor.process(chain);
         } finally {
+
+            request.removeAttribute(SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME);
 
             // Clean fault tolerance testing settings thread local storage
             cleanThreadLocalFaultToleranceSettings();
