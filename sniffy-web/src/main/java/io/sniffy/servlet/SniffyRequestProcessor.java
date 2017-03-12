@@ -6,6 +6,7 @@ import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.ExceptionUtil;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -133,6 +134,9 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         try {
             initStartMillis();
             chain.doFilter(httpServletRequest, responseWrapper);
+        } catch (Throwable t) {
+            requestStats.addException(t);
+            ExceptionUtil.throwException(t);
         } finally {
             try {
                 requestStats.incTimeToFirstByte(getTimeToFirstByte());
@@ -153,7 +157,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         Map<StatementMetaData, SqlStats> executedStatements = spy.getExecutedStatements();
         Map<SocketMetaData, SocketStats> socketOperations = spy.getSocketOperations();
         if ((null != executedStatements && !executedStatements.isEmpty()) ||
-                (null != socketOperations && !socketOperations.isEmpty())) {
+                (null != socketOperations && !socketOperations.isEmpty()) ||
+                (null != requestStats.getExceptions() && !requestStats.getExceptions().isEmpty())) {
             if (null != executedStatements && !executedStatements.isEmpty()) {
                 requestStats.addExecutedStatements(executedStatements);
             }
@@ -173,8 +178,9 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
         wrapper.addCorsHeadersHeaderIfRequired();
-        wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements());
-        wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
+        wrapper.setIntHeader(HEADER_NUMBER_OF_QUERIES, requestStats.executedStatements() + spy.executedStatements());
+        wrapper.setHeader(HEADER_TIME_TO_FIRST_BYTE, requestStats.getElapsedTime() + Long.toString(getTimeToFirstByte()));
+        // TODO: store startTime of first request processor somewhere
 
         StringBuilder sb = new StringBuilder();
         String contextRelativePath;
@@ -194,7 +200,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         sb.append(REQUEST_URI_PREFIX).append(requestId);
 
-        wrapper.addHeader(HEADER_REQUEST_DETAILS, sb.toString());
+        wrapper.setHeader(HEADER_REQUEST_DETAILS, sb.toString());
 
         if (sniffyFilter.injectHtml) {
             String contentType = wrapper.getContentType();
