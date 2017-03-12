@@ -42,6 +42,8 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class SniffyFilterTest extends BaseTest {
 
+    private static class ApplicationSpecificException extends RuntimeException {}
+
     @Mock
     protected FilterChain filterChain;
 
@@ -204,7 +206,7 @@ public class SniffyFilterTest extends BaseTest {
 
         doAnswer(invocation -> {
             executeStatement();
-            throw new RuntimeException();
+            throw new ApplicationSpecificException();
             /*HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
             response.setContentType("text/html");
             PrintWriter printWriter = response.getWriter();
@@ -215,7 +217,7 @@ public class SniffyFilterTest extends BaseTest {
         try {
             filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
             fail();
-        } catch (RuntimeException e) {
+        } catch (ApplicationSpecificException e) {
             assertNotNull(e);
         }
 
