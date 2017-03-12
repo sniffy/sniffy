@@ -44,12 +44,20 @@ class RequestStats {
         this.timeToFirstByte = timeToFirstByte;
     }
 
+    public void incTimeToFirstByte(long timeToFirstByte) {
+        this.timeToFirstByte += timeToFirstByte;
+    }
+
     public long getElapsedTime() {
         return elapsedTime;
     }
 
     public void setElapsedTime(long elapsedTime) {
         this.elapsedTime = elapsedTime;
+    }
+
+    public void incElapsedTime(long elapsedTime) {
+        this.elapsedTime += elapsedTime;
     }
 
     public Map<StatementMetaData, SqlStats> getExecutedStatements() {
@@ -60,12 +68,28 @@ class RequestStats {
         this.executedStatements = executedStatements;
     }
 
+    public void addExecutedStatements(Map<StatementMetaData, SqlStats> executedStatements) {
+        if (null == this.executedStatements) {
+            this.executedStatements = executedStatements;
+        } else {
+            this.executedStatements.putAll(executedStatements);
+        }
+    }
+
     public Map<SocketMetaData, SocketStats> getSocketOperations() {
         return socketOperations;
     }
 
     public void setSocketOperations(Map<SocketMetaData, SocketStats> socketOperations) {
         this.socketOperations = socketOperations;
+    }
+
+    public void addSocketOperations(Map<SocketMetaData, SocketStats> socketOperations) {
+        if (null == this.socketOperations) {
+            this.socketOperations = socketOperations;
+        } else {
+            this.socketOperations.putAll(socketOperations);
+        }
     }
 
 }

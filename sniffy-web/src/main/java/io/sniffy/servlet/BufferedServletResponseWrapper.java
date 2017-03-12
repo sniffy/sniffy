@@ -31,6 +31,25 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     protected BufferedServletResponseWrapper(HttpServletResponse response,
                                              BufferedServletResponseListener servletResponseListener) {
         super(response);
+
+        committed = response.isCommitted();
+
+        String contentLengthHeader = response.getHeader("Content-Length");
+        if (null != contentLengthHeader) {
+            try {
+                contentLength = Long.parseLong(contentLengthHeader);
+            } catch (Exception e) {
+                // TODO: log me maybe
+            }
+        }
+
+        contentEncoding = response.getCharacterEncoding();
+
+        String corsHeadersHeader = response.getHeader(HEADER_CORS_HEADERS);
+        if (null != corsHeadersHeader && corsHeadersHeader.contains(HEADER_NUMBER_OF_QUERIES)) {
+            corsHeadersHeaderAdded = true;
+        }
+
         this.servletResponseListener = servletResponseListener;
     }
 
@@ -63,6 +82,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
      */
     protected void flushIfPossible() throws IOException {
 
+        // TODO: do not flush if wasn't requested by underlying application
         if (null != bufferedServletOutputStream) bufferedServletOutputStream.setLastChunk();
 
         if (null != writer) writer.flushIfOpen();
