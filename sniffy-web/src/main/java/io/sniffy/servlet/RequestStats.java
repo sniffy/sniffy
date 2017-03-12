@@ -59,6 +59,10 @@ class RequestStats {
         return executedStatements;
     }
 
+    public int executedStatements() {
+        return null == executedStatements ? 0 : exceptions.size();
+    }
+
     public void addExecutedStatements(Map<StatementMetaData, SqlStats> executedStatements) {
         if (null == this.executedStatements) {
             this.executedStatements = executedStatements;

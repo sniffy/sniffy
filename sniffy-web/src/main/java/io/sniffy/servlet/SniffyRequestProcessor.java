@@ -178,8 +178,9 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     @Override
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
         wrapper.addCorsHeadersHeaderIfRequired();
-        wrapper.addIntHeader(HEADER_NUMBER_OF_QUERIES, spy.executedStatements());
-        wrapper.addHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
+        wrapper.setIntHeader(HEADER_NUMBER_OF_QUERIES, requestStats.executedStatements() + spy.executedStatements());
+        wrapper.setHeader(HEADER_TIME_TO_FIRST_BYTE, requestStats.getElapsedTime() + Long.toString(getTimeToFirstByte()));
+        // TODO: store startTime of first request processor somewhere
 
         StringBuilder sb = new StringBuilder();
         String contextRelativePath;
@@ -199,7 +200,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         sb.append(REQUEST_URI_PREFIX).append(requestId);
 
-        wrapper.addHeader(HEADER_REQUEST_DETAILS, sb.toString());
+        wrapper.setHeader(HEADER_REQUEST_DETAILS, sb.toString());
 
         if (sniffyFilter.injectHtml) {
             String contentType = wrapper.getContentType();
