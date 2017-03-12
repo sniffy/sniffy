@@ -207,6 +207,7 @@ public class SniffyFilterTest extends BaseTest {
         doAnswer(invocation -> {
             executeStatement();
             throw new ApplicationSpecificException();
+            // TODO: test use case when first controller writes something to output buffer (with and without flushing)
             /*HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
             response.setContentType("text/html");
             PrintWriter printWriter = response.getWriter();
