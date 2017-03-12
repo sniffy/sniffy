@@ -164,7 +164,7 @@ public class SniffyFilterTest extends BaseTest {
 
     @Test
     @Issue("issues/275")
-    public void testFilterSniffyInjected_RequestForwarded() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterRequestForwarded() throws IOException, ServletException, ParserConfigurationException, SAXException {
 
         SniffyFilter filter = new SniffyFilter();
         filter.init(getFilterConfig());
