@@ -155,10 +155,10 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         if ((null != executedStatements && !executedStatements.isEmpty()) ||
                 (null != socketOperations && !socketOperations.isEmpty())) {
             if (null != executedStatements && !executedStatements.isEmpty()) {
-                requestStats.setExecutedStatements(executedStatements);
+                requestStats.addExecutedStatements(executedStatements);
             }
             if (null != socketOperations && !socketOperations.isEmpty()) {
-                requestStats.setSocketOperations(socketOperations);
+                requestStats.addSocketOperations(socketOperations);
             }
             sniffyFilter.cache.put(requestId, requestStats);
         }
