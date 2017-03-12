@@ -6,6 +6,7 @@ import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.ExceptionUtil;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -133,6 +134,9 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         try {
             initStartMillis();
             chain.doFilter(httpServletRequest, responseWrapper);
+        } catch (Throwable t) {
+            requestStats.addException(t);
+            ExceptionUtil.throwException(t);
         } finally {
             try {
                 requestStats.incTimeToFirstByte(getTimeToFirstByte());
@@ -153,7 +157,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         Map<StatementMetaData, SqlStats> executedStatements = spy.getExecutedStatements();
         Map<SocketMetaData, SocketStats> socketOperations = spy.getSocketOperations();
         if ((null != executedStatements && !executedStatements.isEmpty()) ||
-                (null != socketOperations && !socketOperations.isEmpty())) {
+                (null != socketOperations && !socketOperations.isEmpty()) ||
+                (null != requestStats.getExceptions() && !requestStats.getExceptions().isEmpty())) {
             if (null != executedStatements && !executedStatements.isEmpty()) {
                 requestStats.addExecutedStatements(executedStatements);
             }

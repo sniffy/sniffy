@@ -5,7 +5,9 @@ import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @see SniffyFilter
@@ -17,6 +19,7 @@ class RequestStats {
     private long elapsedTime;
     private Map<StatementMetaData, SqlStats> executedStatements;
     private Map<SocketMetaData, SocketStats> socketOperations;
+    private final List<Throwable> exceptions = new CopyOnWriteArrayList<Throwable>();
 
     public RequestStats() {
     }
@@ -74,6 +77,14 @@ class RequestStats {
         } else {
             this.socketOperations.putAll(socketOperations);
         }
+    }
+
+    public List<Throwable> getExceptions() {
+        return exceptions;
+    }
+
+    public void addException(Throwable exception) {
+        exceptions.add(exception);
     }
 
 }

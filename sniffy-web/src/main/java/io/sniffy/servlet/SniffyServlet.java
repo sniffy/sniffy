@@ -14,10 +14,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -236,6 +233,31 @@ class SniffyServlet extends HttpServlet {
                             append(socketStats.bytesUp.longValue()).
                             append("}");
                     if (statementsIt.hasNext()) {
+                        sb.append(",");
+                    }
+                }
+                sb.append("]");
+            }
+            if (null != requestStats.getExceptions() && !requestStats.getExceptions().isEmpty()) {
+                sb.append(",\"exceptions\":[");
+                Iterator<Throwable> exceptionsIt = requestStats.getExceptions().iterator();
+                while (exceptionsIt.hasNext()) {
+                    Throwable exception = exceptionsIt.next();
+
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    exception.printStackTrace(pw);
+
+                    sb.
+                            append("{").
+                            append("\"class\":").
+                            append(StringUtil.escapeJsonString(exception.getClass().getName())).
+                            append(",\"message\":").
+                            append(StringUtil.escapeJsonString(exception.getMessage())).
+                            append(",\"stackTrace\":").
+                            append(StringUtil.escapeJsonString(sw.toString())).
+                            append("}");
+                    if (exceptionsIt.hasNext()) {
                         sb.append(",");
                     }
                 }
