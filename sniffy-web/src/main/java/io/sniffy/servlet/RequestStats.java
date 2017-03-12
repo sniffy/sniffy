@@ -40,10 +40,6 @@ class RequestStats {
         return timeToFirstByte;
     }
 
-    public void setTimeToFirstByte(long timeToFirstByte) {
-        this.timeToFirstByte = timeToFirstByte;
-    }
-
     public void incTimeToFirstByte(long timeToFirstByte) {
         this.timeToFirstByte += timeToFirstByte;
     }
@@ -52,20 +48,12 @@ class RequestStats {
         return elapsedTime;
     }
 
-    public void setElapsedTime(long elapsedTime) {
-        this.elapsedTime = elapsedTime;
-    }
-
     public void incElapsedTime(long elapsedTime) {
         this.elapsedTime += elapsedTime;
     }
 
     public Map<StatementMetaData, SqlStats> getExecutedStatements() {
         return executedStatements;
-    }
-
-    public void setExecutedStatements(Map<StatementMetaData, SqlStats> executedStatements) {
-        this.executedStatements = executedStatements;
     }
 
     public void addExecutedStatements(Map<StatementMetaData, SqlStats> executedStatements) {
@@ -78,10 +66,6 @@ class RequestStats {
 
     public Map<SocketMetaData, SocketStats> getSocketOperations() {
         return socketOperations;
-    }
-
-    public void setSocketOperations(Map<SocketMetaData, SocketStats> socketOperations) {
-        this.socketOperations = socketOperations;
     }
 
     public void addSocketOperations(Map<SocketMetaData, SocketStats> socketOperations) {
