@@ -54,6 +54,9 @@ import java.util.regex.PatternSyntaxException;
  */
 public class SniffyFilter implements Filter {
 
+    private final static String SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME =
+            "io.sniffy.servlet.SniffyRequestProcessor";
+
     public static final String HEADER_CORS_HEADERS = "Access-Control-Expose-Headers";
     public static final String HEADER_NUMBER_OF_QUERIES = "Sniffy-Sql-Queries";
     public static final String HEADER_TIME_TO_FIRST_BYTE = "Sniffy-Time-To-First-Byte";
@@ -138,6 +141,13 @@ public class SniffyFilter implements Filter {
     public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
 
+        // issues/275 - Sniffy filter is called twice in case of request forwarding
+        Object existingRequestProcessorAttribute = request.getAttribute(SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME);
+        if (null != existingRequestProcessorAttribute) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 
@@ -168,6 +178,7 @@ public class SniffyFilter implements Filter {
         SniffyRequestProcessor sniffyRequestProcessor;
         try {
             sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse);
+            request.setAttribute(SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME, sniffyRequestProcessor);
         } catch (Exception e) {
             if (null != servletContext) servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
             chain.doFilter(request, response);
