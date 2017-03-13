@@ -23,7 +23,7 @@ import java.util.Set;
 
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
-import static io.sniffy.servlet.SniffyFilter.SNIFFER_URI_PREFIX;
+import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
 
 /**
  * @see SniffyFilter
@@ -33,10 +33,10 @@ class SniffyServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
 
-    public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/";
-    public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/socket/";
-    public static final String DATASOURCE_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/datasource/";
-    public static final String PERSISTENT_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/persistent/";
+    public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/";
+    public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/socket/";
+    public static final String DATASOURCE_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/datasource/";
+    public static final String PERSISTENT_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/persistent/";
 
     protected final Map<String, RequestStats> cache;
 
@@ -70,11 +70,14 @@ class SniffyServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        String path = request.getRequestURI().substring(request.getContextPath().length());
+        // TODO: allow prefix from configuration
 
-        if (path.length() > 0) {
-            path = path.substring(1);
-        }
+        String requestURI = request.getRequestURI();
+        int ix = requestURI.indexOf(SNIFFY_URI_PREFIX);
+
+        if (ix < 0) return;
+
+        String path = requestURI.substring(ix);
 
         if (SniffyFilter.JAVASCRIPT_URI.equals(path)) {
             addCorsHeaders(response);

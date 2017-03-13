@@ -61,7 +61,7 @@ public class SniffyFilter implements Filter {
     public static final String HEADER_TIME_TO_FIRST_BYTE = "Sniffy-Time-To-First-Byte";
     public static final String HEADER_REQUEST_DETAILS = "Sniffy-Request-Details";
 
-    public static final String SNIFFER_URI_PREFIX =
+    public static final String SNIFFY_URI_PREFIX =
             "sniffy/" +
                     Constants.MAJOR_VERSION +
                     "." +
@@ -69,10 +69,10 @@ public class SniffyFilter implements Filter {
                     "." +
                     Constants.PATCH_VERSION;
 
-    public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/sniffy.min.js";
-    public static final String JAVASCRIPT_SOURCE_URI = SNIFFER_URI_PREFIX + "/sniffy.js";
-    public static final String JAVASCRIPT_MAP_URI = SNIFFER_URI_PREFIX + "/sniffy.map";
-    public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
+    public static final String JAVASCRIPT_URI = SNIFFY_URI_PREFIX + "/sniffy.min.js";
+    public static final String JAVASCRIPT_SOURCE_URI = SNIFFY_URI_PREFIX + "/sniffy.js";
+    public static final String JAVASCRIPT_MAP_URI = SNIFFY_URI_PREFIX + "/sniffy.map";
+    public static final String REQUEST_URI_PREFIX = SNIFFY_URI_PREFIX + "/request/";
     public static final String SNIFFY = "sniffy";
     public static final String SNIFFY_ENABLED_HEADER = "Sniffy-Enabled";
     protected static final String THREAD_LOCAL_DISCOVERED_ADDRESSES = "discoveredAddresses";

@@ -85,8 +85,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         String relativeUrl = null;
 
         try {
-            String contextPath = httpServletRequest.getContextPath(); // like "/petclinic"
-            relativeUrl = null == httpServletRequest.getRequestURI() ? null : httpServletRequest.getRequestURI().substring(contextPath.length());
+            relativeUrl = getBestContextURI(httpServletRequest);
         } catch (Exception e) {
             if (null != sniffyFilter.servletContext) {
                 sniffyFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
@@ -96,6 +95,30 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         }
 
         this.relativeUrl = relativeUrl;
+    }
+
+    public static String getBestContextURI(HttpServletRequest httpServletRequest) {
+
+        String requestURI = httpServletRequest.getRequestURI();
+        if (null == requestURI) return null;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(httpServletRequest.getContextPath()); // like "/petclinic"
+
+        String servletPath = httpServletRequest.getServletPath();
+        if (null != servletPath) {
+
+            String pathInfo = httpServletRequest.getPathInfo();
+
+            if (null != pathInfo && !pathInfo.isEmpty()) {
+                sb.append(servletPath); // like "/petclinic/servlet"
+            } else {
+                // TODO: check if it is path mapping or exact mapping
+            }
+
+        }
+
+        return requestURI.substring(sb.length());
     }
 
     public void process(FilterChain chain) throws IOException, ServletException {
