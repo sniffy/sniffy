@@ -2,7 +2,17 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.0...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.1...master)
+
+## v3.1.1 - March 14th, 2017
+
+ * [Show exceptions raised on server side](https://github.com/sniffy/sniffy/issues/280)
+ * [Sniffy filter is called twice in case of request forwarding](https://github.com/sniffy/sniffy/issues/275)
+ * [Sniffy widget is not rendered when AUT is behind a reverse proxy which changes paths](https://github.com/sniffy/sniffy/issues/272)
+ * [Sniffy uber jar doesn't come with sources in maven central](https://github.com/sniffy/sniffy/issues/267)
+ * [Sniffy XHR wrapper is not compatible with zone.js](https://github.com/sniffy/sniffy/issues/266)
+ * [Error pages are missing Sniffy](https://github.com/sniffy/sniffy/issues/260)
+ * [JS Map does not work](https://github.com/sniffy/sniffy/issues/213)
 
 ## v3.1.0 - February 16th, 2017
 

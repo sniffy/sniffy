@@ -24,15 +24,8 @@ Support
 ============
 Ask questions on stackoverflow with tag [sniffy](http://stackoverflow.com/questions/tagged/sniffy)
 
-Building
-============
-JDBC sniffer is built using JDK8+ and Maven 3.2+ - just checkout the project and type `mvn install`
-JDK8 is required only for building the project - once it's built, you can use Sniffy with any JRE 1.6+
-
-UI part of Sniffy is maintained in a separate repository [sniffy-ui](https://github.com/sniffy/sniffy-ui)
-
 Contribute
 ============
 You are most welcome to contribute to Sniffy!
 
-Read the [Contribution guidelines](https://github.com/sniffy/sniffy/blob/master/CONTRIBUTING.md)
+Read the [instructions to build Sniffy](https://github.com/sniffy/sniffy/wiki/Building-Sniffy) and [contribution guidelines](https://github.com/sniffy/sniffy/blob/master/CONTRIBUTING.md)
