@@ -17,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import static io.sniffy.servlet.SniffyRequestProcessor.SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME;
+
 /**
  * HTTP Filter will capture the number of executed queries for given HTTP request and return it
  * as a 'Sniffy-Sql-Queries' header in response.
@@ -59,7 +61,7 @@ public class SniffyFilter implements Filter {
     public static final String HEADER_TIME_TO_FIRST_BYTE = "Sniffy-Time-To-First-Byte";
     public static final String HEADER_REQUEST_DETAILS = "Sniffy-Request-Details";
 
-    public static final String SNIFFER_URI_PREFIX =
+    public static final String SNIFFY_URI_PREFIX =
             "sniffy/" +
                     Constants.MAJOR_VERSION +
                     "." +
@@ -67,9 +69,10 @@ public class SniffyFilter implements Filter {
                     "." +
                     Constants.PATCH_VERSION;
 
-    public static final String JAVASCRIPT_URI = SNIFFER_URI_PREFIX + "/sniffy.min.js";
-    public static final String JAVASCRIPT_MAP_URI = SNIFFER_URI_PREFIX + "/sniffy.map";
-    public static final String REQUEST_URI_PREFIX = SNIFFER_URI_PREFIX + "/request/";
+    public static final String JAVASCRIPT_URI = SNIFFY_URI_PREFIX + "/sniffy.min.js";
+    public static final String JAVASCRIPT_SOURCE_URI = SNIFFY_URI_PREFIX + "/sniffy.js";
+    public static final String JAVASCRIPT_MAP_URI = SNIFFY_URI_PREFIX + "/sniffy.map";
+    public static final String REQUEST_URI_PREFIX = SNIFFY_URI_PREFIX + "/request/";
     public static final String SNIFFY = "sniffy";
     public static final String SNIFFY_ENABLED_HEADER = "Sniffy-Enabled";
     protected static final String THREAD_LOCAL_DISCOVERED_ADDRESSES = "discoveredAddresses";
@@ -101,34 +104,48 @@ public class SniffyFilter implements Filter {
 
     public void init(FilterConfig filterConfig) throws ServletException {
 
-        String injectHtml = filterConfig.getInitParameter("inject-html");
-        if (null != injectHtml) {
-            this.injectHtml = Boolean.parseBoolean(injectHtml);
+        try {
+
+            String injectHtml = filterConfig.getInitParameter("inject-html");
+            if (null != injectHtml) {
+                this.injectHtml = Boolean.parseBoolean(injectHtml);
+            }
+
+            String enabled = filterConfig.getInitParameter("enabled");
+            if (null != enabled) {
+                this.enabled = Boolean.parseBoolean(enabled);
+            }
+
+            String excludePattern = filterConfig.getInitParameter("exclude-pattern");
+            if (null != excludePattern) {
+                this.excludePattern = Pattern.compile(excludePattern); // TODO: can throw exception
+            }
+
+            String faultToleranceCurrentRequest = filterConfig.getInitParameter("fault-tolerance-current-request");
+            if (null != faultToleranceCurrentRequest) {
+                ConnectionsRegistry.INSTANCE.setThreadLocal(Boolean.parseBoolean(faultToleranceCurrentRequest));
+            }
+
+            sniffyServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
+
+            servletContext = filterConfig.getServletContext();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            enabled = false;
         }
-
-        String enabled = filterConfig.getInitParameter("enabled");
-        if (null != enabled) {
-            this.enabled = Boolean.parseBoolean(enabled);
-        }
-
-        String excludePattern = filterConfig.getInitParameter("exclude-pattern");
-        if (null != excludePattern) {
-            this.excludePattern = Pattern.compile(excludePattern); // TODO: can throw exception
-        }
-
-        String faultToleranceCurrentRequest = filterConfig.getInitParameter("fault-tolerance-current-request");
-        if (null != faultToleranceCurrentRequest) {
-            ConnectionsRegistry.INSTANCE.setThreadLocal(Boolean.parseBoolean(faultToleranceCurrentRequest));
-        }
-
-        sniffyServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
-
-        servletContext = filterConfig.getServletContext();
 
     }
 
     public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
+
+        // issues/275 - Sniffy filter is called twice in case of request forwarding
+        Object existingRequestProcessorAttribute = request.getAttribute(SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME);
+        if (null != existingRequestProcessorAttribute) {
+            chain.doFilter(request, response);
+            return;
+        }
 
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
@@ -160,6 +177,7 @@ public class SniffyFilter implements Filter {
         SniffyRequestProcessor sniffyRequestProcessor;
         try {
             sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse);
+            request.setAttribute(SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME, sniffyRequestProcessor);
         } catch (Exception e) {
             if (null != servletContext) servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
             chain.doFilter(request, response);
@@ -169,6 +187,8 @@ public class SniffyFilter implements Filter {
         try {
             sniffyRequestProcessor.process(chain);
         } finally {
+
+            request.removeAttribute(SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME);
 
             // Clean fault tolerance testing settings thread local storage
             cleanThreadLocalFaultToleranceSettings();

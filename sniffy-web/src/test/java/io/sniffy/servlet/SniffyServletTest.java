@@ -1,5 +1,6 @@
 package io.sniffy.servlet;
 
+import com.jayway.jsonpath.JsonPath;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
@@ -12,6 +13,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import ru.yandex.qatools.allure.annotations.Issue;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletResponse;
@@ -28,6 +30,14 @@ import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static org.junit.Assert.*;
 
 public class SniffyServletTest {
+
+    private static class SampleApplicationException extends Exception {
+
+        private SampleApplicationException(String message) {
+            super(message);
+        }
+
+    }
 
     private MockServletContext servletContext = new MockServletContext();
     private MockFilterConfig filterConfig = new MockFilterConfig(servletContext, "sniffy");
@@ -50,6 +60,25 @@ public class SniffyServletTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
                 get("/petclinic/" + SniffyFilter.JAVASCRIPT_URI).
+                buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
+
+        sniffyServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/javascript", response.getContentType());
+        assertTrue(response.getContentLength() > 0);
+        assertTrue(response.getContentAsString().contains("sourceMappingURL=sniffy.map"));
+
+    }
+
+    @Test
+    public void testGetJavascriptSource() throws Exception {
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic/" + SniffyFilter.JAVASCRIPT_SOURCE_URI).
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");
@@ -247,6 +276,39 @@ public class SniffyServletTest {
                 "\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":301,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":200,\"bytesUp\":300}]," +
                 "\"networkConnections\":[{\"host\":\"" + InetAddress.getLocalHost().toString() + ":5555\",\"stackTrace\":\"stackTrace\",\"time\":100,\"bytesDown\":200,\"bytesUp\":300}]" +
                 "}", response.getContentAsString());
+
+    }
+
+    @Test
+    @Issue("issues/280")
+    public void testGetRequestWithExceptions() throws Exception {
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic/" + SniffyFilter.REQUEST_URI_PREFIX + "foo").
+                buildRequest(servletContext);
+
+        RequestStats requestStats = new RequestStats(21, 42, null, null);
+        SampleApplicationException exception = new SampleApplicationException("Message");
+        exception.setStackTrace(new StackTraceElement[]{
+                new StackTraceElement("Clazz","foo","Clazz.java", 21),
+                new StackTraceElement("Clazz","bar","Clazz.java", 42)
+        });
+        requestStats.addException(exception);
+        cache.put("foo", requestStats);
+
+        request.setContextPath("/petclinic");
+
+        sniffyServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/javascript", response.getContentType());
+        assertTrue(response.getContentLength() > 0);
+
+        assertEquals(exception.getClass().getName(), JsonPath.read(response.getContentAsString(), "$.exceptions[0].class"));
+        assertEquals(exception.getMessage(), JsonPath.read(response.getContentAsString(), "$.exceptions[0].message"));
+        assertTrue(((String)JsonPath.read(response.getContentAsString(), "$.exceptions[0].stackTrace")).contains("Clazz.foo"));
+        assertTrue(((String)JsonPath.read(response.getContentAsString(), "$.exceptions[0].stackTrace")).contains("Clazz.bar"));
 
     }
 

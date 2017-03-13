@@ -12,13 +12,17 @@ import org.springframework.beans.factory.config.BeanExpressionContext;
 import org.springframework.beans.factory.config.BeanExpressionResolver;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportAware;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
 
+import javax.servlet.DispatcherType;
 import javax.sql.DataSource;
+import java.util.EnumSet;
 import java.util.Map;
 
 /**
@@ -64,6 +68,25 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
         sniffyFilter.setInjectHtml(isInjectHtml());
 
         return sniffyFilter;
+    }
+
+    @Bean
+    public FilterRegistrationBean sniffyFilterRegistration(SniffyFilter sniffyFilter) {
+
+        FilterRegistrationBean filterRegistration = new FilterRegistrationBean(sniffyFilter);
+        filterRegistration.setAsyncSupported(true);
+        filterRegistration.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
+
+        filterRegistration.setEnabled(isFilterEnabled());
+
+        filterRegistration.setName("sniffyFilter");
+        filterRegistration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        filterRegistration.setMatchAfter(false);
+
+        filterRegistration.addUrlPatterns("/*");
+
+        return filterRegistration;
+
     }
 
     private boolean isMonitorJdbc() {

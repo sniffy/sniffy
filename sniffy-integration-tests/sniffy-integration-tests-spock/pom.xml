@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-integration-tests</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.0</version>
+        <version>3.1.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,6 +13,13 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
             <plugin>
                 <!-- The gmavenplus plugin is used to compile Groovy code. To learn more about this plugin,
                 visit https://github.com/groovy/GMavenPlus/wiki -->
@@ -35,7 +42,7 @@
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-core</artifactId>
-            <version>3.1.0</version>
+            <version>3.1.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>

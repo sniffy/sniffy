@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.0</version>
+        <version>3.1.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -47,6 +47,7 @@
                                     <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
                                     <includes>
                                         META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.min.js,
+                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.js,
                                         META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.map
                                     </includes>
                                 </artifactItem>
@@ -96,13 +97,13 @@
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-core</artifactId>
-            <version>3.1.0</version>
+            <version>3.1.1</version>
         </dependency>
 
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-core</artifactId>
-            <version>3.1.0</version>
+            <version>3.1.1</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -147,6 +148,11 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
             <scope>test</scope>
         </dependency>
 

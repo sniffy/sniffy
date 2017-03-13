@@ -14,10 +14,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -26,7 +23,7 @@ import java.util.Set;
 
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
-import static io.sniffy.servlet.SniffyFilter.SNIFFER_URI_PREFIX;
+import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
 
 /**
  * @see SniffyFilter
@@ -36,15 +33,16 @@ class SniffyServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
 
-    public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/";
-    public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/socket/";
-    public static final String DATASOURCE_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/datasource/";
-    public static final String PERSISTENT_REGISTRY_URI_PREFIX = SNIFFER_URI_PREFIX + "/connectionregistry/persistent/";
+    public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/";
+    public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/socket/";
+    public static final String DATASOURCE_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/datasource/";
+    public static final String PERSISTENT_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/persistent/";
 
     protected final Map<String, RequestStats> cache;
 
     protected byte[] javascript;
-    protected byte[] map;
+    protected byte[] javascriptSource;
+    protected byte[] javascriptMap;
 
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
@@ -53,8 +51,9 @@ class SniffyServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.0/dist/sniffy.min.js");
-            map = loadResource("/META-INF/resources/webjars/sniffy/3.1.0/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.1/dist/sniffy.min.js");
+            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.1/dist/sniffy.js");
+            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.1/dist/sniffy.map");
         } catch (IOException e) {
             throw new ServletException(e);
         }
@@ -71,18 +70,24 @@ class SniffyServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        String path = request.getRequestURI().substring(request.getContextPath().length());
+        // TODO: allow prefix from configuration
 
-        if (path.length() > 0) {
-            path = path.substring(1);
-        }
+        String requestURI = request.getRequestURI();
+        int ix = requestURI.indexOf(SNIFFY_URI_PREFIX);
+
+        if (ix < 0) return;
+
+        String path = requestURI.substring(ix);
 
         if (SniffyFilter.JAVASCRIPT_URI.equals(path)) {
             addCorsHeaders(response);
             serveContent(response, JAVASCRIPT_MIME_TYPE, javascript);
+        } else if (SniffyFilter.JAVASCRIPT_SOURCE_URI.equals(path)) {
+            addCorsHeaders(response);
+            serveContent(response, JAVASCRIPT_MIME_TYPE, javascriptSource);
         } else if (SniffyFilter.JAVASCRIPT_MAP_URI.equals(path)) {
             addCorsHeaders(response);
-            serveContent(response, JAVASCRIPT_MIME_TYPE, map);
+            serveContent(response, JAVASCRIPT_MIME_TYPE, javascriptMap);
         } else if (path.startsWith(SniffyFilter.REQUEST_URI_PREFIX)) {
             addCorsHeaders(response);
             byte[] requestStatsJson = getRequestStatsJson(path.substring(SniffyFilter.REQUEST_URI_PREFIX.length()));
@@ -231,6 +236,31 @@ class SniffyServlet extends HttpServlet {
                             append(socketStats.bytesUp.longValue()).
                             append("}");
                     if (statementsIt.hasNext()) {
+                        sb.append(",");
+                    }
+                }
+                sb.append("]");
+            }
+            if (null != requestStats.getExceptions() && !requestStats.getExceptions().isEmpty()) {
+                sb.append(",\"exceptions\":[");
+                Iterator<Throwable> exceptionsIt = requestStats.getExceptions().iterator();
+                while (exceptionsIt.hasNext()) {
+                    Throwable exception = exceptionsIt.next();
+
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    exception.printStackTrace(pw);
+
+                    sb.
+                            append("{").
+                            append("\"class\":").
+                            append(StringUtil.escapeJsonString(exception.getClass().getName())).
+                            append(",\"message\":").
+                            append(StringUtil.escapeJsonString(exception.getMessage())).
+                            append(",\"stackTrace\":").
+                            append(StringUtil.escapeJsonString(sw.toString())).
+                            append("}");
+                    if (exceptionsIt.hasNext()) {
                         sb.append(",");
                     }
                 }
