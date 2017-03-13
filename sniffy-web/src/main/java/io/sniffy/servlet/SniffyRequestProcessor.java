@@ -127,7 +127,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             } else {
                 ServletContext servletContext = httpServletRequest.getServletContext();
                 for (String mapping : ServletRegistrationUtil.getServletMappings(servletContext)) {
-                    if (mapping.equals(servletPath) || (mapping.endsWith(".*") && mapping.substring(0, mapping.length() - 2).equals(servletPath))) {
+                    if (mapping.equals(servletPath) || (mapping.endsWith("/*") && mapping.substring(0, mapping.length() - 2).equals(servletPath))) {
                         bestBaseURILength += servletPath.length(); // like "/petclinic/servlet" -> 18
                         if (servletPath.endsWith("/")) bestBaseURILength--; // like "/petclinic/servlet/" -> 18
                         break;

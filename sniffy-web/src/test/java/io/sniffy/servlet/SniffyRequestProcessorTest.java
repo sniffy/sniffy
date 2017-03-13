@@ -62,7 +62,7 @@ public class SniffyRequestProcessorTest {
         when(sr.getMappings()).thenReturn(Collections.singletonList("/bar/*"));
         servletRegistrations.put("ServletName", sr);
 
-        assertEquals("/bar", SniffyRequestProcessor.getBestRelativeURI(req));
+        assertEquals("", SniffyRequestProcessor.getBestRelativeURI(req));
 
     }
 
