@@ -43,6 +43,56 @@ public class SniffyRequestProcessorTest {
 
     @Test
     @Issue("issues/272")
+    public void testGetBestRelativeURIForPathMappingWithoutTrailingSlash() {
+
+        HttpServletRequest req = mock(HttpServletRequest.class);
+
+        when(req.getRequestURI()).thenReturn("/application/bar");
+        when(req.getContextPath()).thenReturn("/application");
+        when(req.getServletPath()).thenReturn("/bar");
+        when(req.getPathInfo()).thenReturn(null);
+
+        ServletContext sc = mock(ServletContext.class);
+        when(req.getServletContext()).thenReturn(sc);
+
+        Map<String,ServletRegistration> servletRegistrations = new HashMap<>();
+        when(sc.getServletRegistrations()).thenAnswer(inv -> servletRegistrations);
+
+        ServletRegistration sr = mock(ServletRegistration.class);
+        when(sr.getMappings()).thenReturn(Collections.singletonList("/bar/*"));
+        servletRegistrations.put("ServletName", sr);
+
+        assertEquals("/bar", SniffyRequestProcessor.getBestRelativeURI(req));
+
+    }
+
+    @Test
+    @Issue("issues/272")
+    public void testGetBestRelativeURIForExactMatch() {
+
+        HttpServletRequest req = mock(HttpServletRequest.class);
+
+        when(req.getRequestURI()).thenReturn("/application/bar/");
+        when(req.getContextPath()).thenReturn("/application");
+        when(req.getServletPath()).thenReturn("/bar/");
+        when(req.getPathInfo()).thenReturn(null);
+
+        ServletContext sc = mock(ServletContext.class);
+        when(req.getServletContext()).thenReturn(sc);
+
+        Map<String,ServletRegistration> servletRegistrations = new HashMap<>();
+        when(sc.getServletRegistrations()).thenAnswer(inv -> servletRegistrations);
+
+        ServletRegistration sr = mock(ServletRegistration.class);
+        when(sr.getMappings()).thenReturn(Collections.singletonList("/bar/"));
+        servletRegistrations.put("ServletName", sr);
+
+        assertEquals("/", SniffyRequestProcessor.getBestRelativeURI(req));
+
+    }
+
+    @Test
+    @Issue("issues/272")
     public void testGetBestRelativeURIForExtensionMapping() {
 
         HttpServletRequest req = mock(HttpServletRequest.class);
