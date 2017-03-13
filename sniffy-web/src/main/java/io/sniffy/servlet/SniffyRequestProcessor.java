@@ -11,12 +11,10 @@ import io.sniffy.util.ExceptionUtil;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRegistration;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
@@ -88,7 +86,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         String relativeUrl = null;
 
         try {
-            relativeUrl = getBestContextURI(httpServletRequest);
+            relativeUrl = getBestRelativeURI(httpServletRequest);
         } catch (Exception e) {
             if (null != sniffyFilter.servletContext) {
                 sniffyFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
@@ -110,13 +108,13 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
      * @param httpServletRequest
      * @return
      */
-    public static String getBestContextURI(HttpServletRequest httpServletRequest) {
+    public static String getBestRelativeURI(HttpServletRequest httpServletRequest) {
 
         String requestURI = httpServletRequest.getRequestURI();
         if (null == requestURI) return null;
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(httpServletRequest.getContextPath()); // like "/petclinic"
+        // "/petclinic" -> 10
+        int bestBaseURILength = httpServletRequest.getContextPath().length();
 
         String servletPath = httpServletRequest.getServletPath();
         if (null != servletPath) {
@@ -124,31 +122,22 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             String pathInfo = httpServletRequest.getPathInfo();
 
             if (null != pathInfo && !pathInfo.isEmpty()) {
-                sb.append(servletPath); // like "/petclinic/servlet"
+                bestBaseURILength += servletPath.length(); // like "/petclinic/servlet" -> 18
+                if (servletPath.endsWith("/")) bestBaseURILength--; // like "/petclinic/servlet/" -> 18
             } else {
-                // TODO: this API might be unavailable in older containers
                 ServletContext servletContext = httpServletRequest.getServletContext();
-                Collection<? extends ServletRegistration> servletRegistrations = servletContext.getServletRegistrations().values();
-                outer: for (ServletRegistration servletRegistration : servletRegistrations) {
-                    for (String mapping : servletRegistration.getMappings()) {
-                        if (mapping.equals(servletPath) ||
-                                (mapping.endsWith(".*") && mapping.substring(0, mapping.length() - 2).equals(servletPath))
-                                ) {
-                            sb.append(servletPath);
-                            break outer;
-                        }
+                for (String mapping : ServletRegistrationUtil.getServletMappings(servletContext)) {
+                    if (mapping.equals(servletPath) || (mapping.endsWith(".*") && mapping.substring(0, mapping.length() - 2).equals(servletPath))) {
+                        bestBaseURILength += servletPath.length(); // like "/petclinic/servlet" -> 18
+                        if (servletPath.endsWith("/")) bestBaseURILength--; // like "/petclinic/servlet/" -> 18
+                        break;
                     }
                 }
-
             }
 
         }
 
-        if (sb.charAt(sb.length() - 1) == '/') {
-            sb.deleteCharAt(sb.length() - 1);
-        }
-
-        return requestURI.substring(sb.length());
+        return requestURI.substring(bestBaseURILength);
     }
 
     public void process(FilterChain chain) throws IOException, ServletException {
