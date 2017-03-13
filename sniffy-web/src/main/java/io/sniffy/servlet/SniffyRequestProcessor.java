@@ -9,11 +9,14 @@ import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
 
 import javax.servlet.FilterChain;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRegistration;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,9 +31,9 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     private final static String SNIFFY_REQUEST_STATS_REQUEST_ATTRIBUTE_NAME =
             "io.sniffy.servlet.RequestStats";
     public final static String SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME =
-                    "io.sniffy.servlet.SniffyRequestProcessor";
+            "io.sniffy.servlet.SniffyRequestProcessor";
     public final static String SNIFFY_REQUEST_ID_REQUEST_ATTRIBUTE_NAME =
-                    "io.sniffy.servlet.SniffyRequestProcessor.requestId";
+            "io.sniffy.servlet.SniffyRequestProcessor.requestId";
 
     private final SniffyFilter sniffyFilter;
     private final HttpServletRequest httpServletRequest;
@@ -97,6 +100,16 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         this.relativeUrl = relativeUrl;
     }
 
+    /**
+     * 12.2 Specification of Mappings In the Web application deployment descriptor, the following syntax is used to define mappings:
+     * A string beginning with a ‘/’ character and ending with a ‘/*’ suffix is used for path mapping.
+     * A string beginning with a ‘*.’ prefix is used as an extension mapping.
+     * The empty string ("") is a special URL pattern that exactly maps to the application's context root, i.e., requests of the form  http://host:port/<contextroot>/. In this case the path info is ’/’ and the servlet path and context path is empty string (““).
+     * A string containing only the ’/’ character indicates the "default" servlet of the application. In this case the servlet path is the request URI minus the context path and the path info is null.
+     * All other strings are used for exact matches only
+     * @param httpServletRequest
+     * @return
+     */
     public static String getBestContextURI(HttpServletRequest httpServletRequest) {
 
         String requestURI = httpServletRequest.getRequestURI();
@@ -113,9 +126,26 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             if (null != pathInfo && !pathInfo.isEmpty()) {
                 sb.append(servletPath); // like "/petclinic/servlet"
             } else {
-                // TODO: check if it is path mapping or exact mapping
+                // TODO: this API might be unavailable in older containers
+                ServletContext servletContext = httpServletRequest.getServletContext();
+                Collection<? extends ServletRegistration> servletRegistrations = servletContext.getServletRegistrations().values();
+                outer: for (ServletRegistration servletRegistration : servletRegistrations) {
+                    for (String mapping : servletRegistration.getMappings()) {
+                        if (mapping.equals(servletPath) ||
+                                (mapping.endsWith(".*") && mapping.substring(0, mapping.length() - 2).equals(servletPath))
+                                ) {
+                            sb.append(servletPath);
+                            break outer;
+                        }
+                    }
+                }
+
             }
 
+        }
+
+        if (sb.charAt(sb.length() - 1) == '/') {
+            sb.deleteCharAt(sb.length() - 1);
         }
 
         return requestURI.substring(sb.length());
