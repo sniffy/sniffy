@@ -82,7 +82,7 @@ public class SniffyFilter implements Filter {
     protected static final String THREAD_LOCAL_DISCOVERED_ADDRESSES = "discoveredAddresses";
     protected static final String THREAD_LOCAL_DISCOVERED_DATA_SOURCES = "discoveredDataSources";
 
-    protected boolean injectHtml = false;
+    protected boolean injectHtml = true;
     protected boolean enabled = true;
     protected Pattern excludePattern = null;
 
@@ -94,8 +94,10 @@ public class SniffyFilter implements Filter {
     protected ServletContext servletContext; // TODO: log via slf4j if available
 
     public SniffyFilter() {
-        enabled = SniffyConfiguration.INSTANCE.isFilterEnabled();
-        injectHtml = SniffyConfiguration.INSTANCE.isInjectHtmlEnabled();
+        Boolean filterEnabled = SniffyConfiguration.INSTANCE.getFilterEnabled();
+        this.enabled = null == filterEnabled ? true : filterEnabled;
+        Boolean injectHtmlEnabled = SniffyConfiguration.INSTANCE.getInjectHtmlEnabled();
+        this.injectHtml = null == injectHtmlEnabled ? true : injectHtmlEnabled;
         try {
             String excludePattern = SniffyConfiguration.INSTANCE.getExcludePattern();
             if (null != excludePattern) {
@@ -110,21 +112,21 @@ public class SniffyFilter implements Filter {
 
         try {
 
-            String injectHtml = filterConfig.getInitParameter("inject-html");
-            if (null != injectHtml) {
-                if ("system".equals(injectHtml)) {
-                    this.injectHtml = SniffyConfiguration.INSTANCE.isInjectHtmlEnabledExplicitly();
+            String injectHtmlEnabled = filterConfig.getInitParameter("inject-html");
+            if (null != injectHtmlEnabled) {
+                if ("system".equals(injectHtmlEnabled)) {
+                    this.injectHtml = Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getInjectHtmlEnabled());
                 } else {
-                    this.injectHtml = Boolean.parseBoolean(injectHtml);
+                    this.injectHtml = Boolean.parseBoolean(injectHtmlEnabled);
                 }
             }
 
-            String enabled = filterConfig.getInitParameter("enabled");
-            if (null != enabled) {
-                if ("system".equals(enabled)) {
-                    this.enabled = SniffyConfiguration.INSTANCE.isFilterEnabledExplicitly();
+            String filterEnabled = filterConfig.getInitParameter("enabled");
+            if (null != filterEnabled) {
+                if ("system".equals(filterEnabled)) {
+                    this.enabled = Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getFilterEnabled());
                 } else {
-                    this.enabled = Boolean.parseBoolean(enabled);
+                    this.enabled = Boolean.parseBoolean(filterEnabled);
                 }
             }
 

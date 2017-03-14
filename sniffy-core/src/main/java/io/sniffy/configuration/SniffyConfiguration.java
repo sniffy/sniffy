@@ -9,11 +9,8 @@ public enum SniffyConfiguration {
     private volatile boolean monitorJdbc;
     private volatile boolean monitorSocket;
 
-    private volatile boolean filterEnabledExplicitly;
-    private volatile boolean injectHtmlEnabledExplicitly;
-
-    private volatile boolean filterEnabled;
-    private volatile boolean injectHtmlEnabled;
+    private volatile Boolean filterEnabled;
+    private volatile Boolean injectHtmlEnabled;
     private volatile String excludePattern;
 
     SniffyConfiguration() {
@@ -29,12 +26,10 @@ public enum SniffyConfiguration {
         ));
 
         String filterEnabled = getProperty("io.sniffy.filterEnabled", "IO_SNIFFY_FILTER_ENABLED");
-        this.filterEnabledExplicitly = Boolean.parseBoolean(filterEnabled);
-        this.filterEnabled = Boolean.parseBoolean(valueOrDefault(filterEnabled, "true"));
+        this.filterEnabled = null == filterEnabled ? null : Boolean.parseBoolean(filterEnabled);
 
-        String injectHtml = getProperty("io.sniffy.injectHtml", "IO_SNIFFY_INJECT_HTML");
-        this.injectHtmlEnabledExplicitly = Boolean.parseBoolean(injectHtml);
-        this.injectHtmlEnabled = Boolean.parseBoolean(valueOrDefault(injectHtml, "true"));
+        String injectHtmlEnabled = getProperty("io.sniffy.injectHtml", "IO_SNIFFY_INJECT_HTML");
+        this.injectHtmlEnabled = null == injectHtmlEnabled ? null : Boolean.parseBoolean(injectHtmlEnabled);
 
         excludePattern = getProperty("io.sniffy.excludePattern", "IO_SNIFFY_EXCLUDE_PATTERN", null);
     }
@@ -82,38 +77,20 @@ public enum SniffyConfiguration {
         }
     }
 
-    public boolean isFilterEnabled() {
+    public Boolean getFilterEnabled() {
         return filterEnabled;
     }
 
-    public void setFilterEnabled(boolean filterEnabled) {
+    public void setFilterEnabled(Boolean filterEnabled) {
         this.filterEnabled = filterEnabled;
     }
 
-    public boolean isFilterEnabledExplicitly() {
-        return filterEnabledExplicitly;
-    }
-
-    public void setFilterEnabledExplicitly(boolean filterEnabledExplicitly) {
-        setFilterEnabled(filterEnabledExplicitly);
-        this.filterEnabledExplicitly = filterEnabledExplicitly;
-    }
-
-    public boolean isInjectHtmlEnabled() {
+    public Boolean getInjectHtmlEnabled() {
         return injectHtmlEnabled;
     }
 
-    public void setInjectHtmlEnabled(boolean injectHtmlEnabled) {
+    public void setInjectHtmlEnabled(Boolean injectHtmlEnabled) {
         this.injectHtmlEnabled = injectHtmlEnabled;
-    }
-
-    public boolean isInjectHtmlEnabledExplicitly() {
-        return injectHtmlEnabledExplicitly;
-    }
-
-    public void setInjectHtmlEnabledExplicitly(boolean injectHtmlEnabledExplicitly) {
-        setInjectHtmlEnabled(injectHtmlEnabledExplicitly);
-        this.injectHtmlEnabledExplicitly = injectHtmlEnabledExplicitly;
     }
 
     public String getExcludePattern() {
