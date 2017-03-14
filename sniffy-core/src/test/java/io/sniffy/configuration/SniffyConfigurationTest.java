@@ -145,31 +145,31 @@ public class SniffyConfigurationTest {
         // enabled
         System.setProperty("io.sniffy.injectHtml", "true");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isInjectHtml());
+        assertTrue(sniffyConfiguration.isInjectHtmlEnabled());
 
         System.setProperty("io.sniffy.injectHtml", "TRUE");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isInjectHtml());
+        assertTrue(sniffyConfiguration.isInjectHtmlEnabled());
 
         // disabled
         System.setProperty("io.sniffy.injectHtml", "false");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertFalse(sniffyConfiguration.isInjectHtml());
+        assertFalse(sniffyConfiguration.isInjectHtmlEnabled());
 
         System.setProperty("io.sniffy.injectHtml", "");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertFalse(sniffyConfiguration.isInjectHtml());
+        assertFalse(sniffyConfiguration.isInjectHtmlEnabled());
 
         // default value
         System.getProperties().remove("io.sniffy.injectHtml");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isInjectHtml());
+        assertTrue(sniffyConfiguration.isInjectHtmlEnabled());
 
         // overriden value
         System.getProperties().remove("io.sniffy.injectHtml");
         sniffyConfiguration.loadSniffyConfiguration();
-        sniffyConfiguration.setInjectHtml(false);
-        assertFalse(sniffyConfiguration.isInjectHtml());
+        sniffyConfiguration.setInjectHtmlEnabled(false);
+        assertFalse(sniffyConfiguration.isInjectHtmlEnabled());
 
     }
 

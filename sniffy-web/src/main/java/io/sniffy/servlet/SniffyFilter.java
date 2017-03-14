@@ -24,7 +24,11 @@ import static io.sniffy.servlet.SniffyRequestProcessor.SNIFFY_REQUEST_PROCESSOR_
  * as a 'Sniffy-Sql-Queries' header in response.
  *
  * It also can inject an icon with a number of executed queries to each HTML page
- * This feature is experimental and can be enabled using inject-html filter parameter
+ * This feature is can be enabled using inject-html filter parameter
+ *
+ * All feature are enabled by default
+ *
+ * Configuration in web.xml have higher precedence over system properties and environment variables
  *
  * Example of web.xml:
  * <pre>
@@ -91,7 +95,7 @@ public class SniffyFilter implements Filter {
 
     public SniffyFilter() {
         enabled = SniffyConfiguration.INSTANCE.isFilterEnabled();
-        injectHtml = SniffyConfiguration.INSTANCE.isInjectHtml();
+        injectHtml = SniffyConfiguration.INSTANCE.isInjectHtmlEnabled();
         try {
             String excludePattern = SniffyConfiguration.INSTANCE.getExcludePattern();
             if (null != excludePattern) {
@@ -108,12 +112,20 @@ public class SniffyFilter implements Filter {
 
             String injectHtml = filterConfig.getInitParameter("inject-html");
             if (null != injectHtml) {
-                this.injectHtml = Boolean.parseBoolean(injectHtml);
+                if ("system".equals(injectHtml)) {
+                    this.injectHtml = SniffyConfiguration.INSTANCE.isInjectHtmlEnabledExplicitly();
+                } else {
+                    this.injectHtml = Boolean.parseBoolean(injectHtml);
+                }
             }
 
             String enabled = filterConfig.getInitParameter("enabled");
             if (null != enabled) {
-                this.enabled = Boolean.parseBoolean(enabled);
+                if ("system".equals(enabled)) {
+                    this.enabled = SniffyConfiguration.INSTANCE.isFilterEnabledExplicitly();
+                } else {
+                    this.enabled = Boolean.parseBoolean(enabled);
+                }
             }
 
             String excludePattern = filterConfig.getInitParameter("exclude-pattern");
