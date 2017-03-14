@@ -1,5 +1,9 @@
 == Migration from 3.0.x to 3.1.x
 
+=== Sniffy Filter
+
+Starting from version `3.1.0` injection of HTML is no longer considered experimental and enabled by default.
+
 === Maven artifacts
 
 Sniffy test support has been extracted to a separate artifacts.

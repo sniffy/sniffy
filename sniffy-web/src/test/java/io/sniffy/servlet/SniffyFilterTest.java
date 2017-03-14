@@ -18,7 +18,6 @@ import org.xml.sax.SAXException;
 import ru.yandex.qatools.allure.annotations.Issue;
 
 import javax.servlet.*;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
@@ -430,119 +429,6 @@ public class SniffyFilterTest extends BaseTest {
             assertEquals("test", e.getMessage());
         }
 
-    }
-
-    @Test
-    public void testDisabledFilterOneQuery() throws IOException, ServletException {
-
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-
-    }
-
-    @Test
-    public void testDisabledInConfigFilterOneQuery() throws IOException, ServletException {
-
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-
-        FilterConfig filterConfig = getFilterConfig();
-        when(filterConfig.getInitParameter("enabled")).thenReturn("false");
-
-        SniffyFilter filter = new SniffyFilter();
-        filter.init(filterConfig);
-
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-
-    }
-
-    @Test
-    public void testFilterEnabledByRequestParameter() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.setParameter("sniffy", "true");
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-        assertEquals("Check cookie parameter specified", "true", httpServletResponse.getCookie("sniffy").getValue());
-    }
-
-    @Test
-    public void testFilterNoCookies() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.setCookies((Cookie[]) null);
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-    }
-
-    @Test
-    public void testFilterEnabledByCookie() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.setCookies(new Cookie("sniffy", "true"));
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-    }
-
-    @Test
-    public void testFilterEnabledByHeader() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.addHeader("Sniffy-Enabled", "true");
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-    }
-
-    @Test
-    public void testFilterDisabledByHeader() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(true);
-        requestWithPathAndQueryParameter.addHeader("Sniffy-Enabled", "false");
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-    }
-
-    @Test
-    public void testFilterEnabledRequestParamOverridesCookie() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.setParameter("sniffy", "false");
-        requestWithPathAndQueryParameter.setCookies(new Cookie("sniffy", "true"));
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertFalse("Filter must be disabled", httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-        assertEquals("Cookie parameter must be replaced", "false", httpServletResponse.getCookie("sniffy").getValue());
-    }
-
-    @Test
-    public void testFilterDisabledByRequestParameter() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(true);
-        requestWithPathAndQueryParameter.setParameter("sniffy", "false");
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }
 
     @Test

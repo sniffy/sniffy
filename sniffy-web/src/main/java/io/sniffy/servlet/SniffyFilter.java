@@ -24,7 +24,11 @@ import static io.sniffy.servlet.SniffyRequestProcessor.SNIFFY_REQUEST_PROCESSOR_
  * as a 'Sniffy-Sql-Queries' header in response.
  *
  * It also can inject an icon with a number of executed queries to each HTML page
- * This feature is experimental and can be enabled using inject-html filter parameter
+ * This feature is can be enabled using inject-html filter parameter
+ *
+ * All feature are enabled by default
+ *
+ * Configuration in web.xml have higher precedence over system properties and environment variables
  *
  * Example of web.xml:
  * <pre>
@@ -78,7 +82,7 @@ public class SniffyFilter implements Filter {
     protected static final String THREAD_LOCAL_DISCOVERED_ADDRESSES = "discoveredAddresses";
     protected static final String THREAD_LOCAL_DISCOVERED_DATA_SOURCES = "discoveredDataSources";
 
-    protected boolean injectHtml = false;
+    protected boolean injectHtml = true;
     protected boolean enabled = true;
     protected Pattern excludePattern = null;
 
@@ -90,8 +94,10 @@ public class SniffyFilter implements Filter {
     protected ServletContext servletContext; // TODO: log via slf4j if available
 
     public SniffyFilter() {
-        enabled = SniffyConfiguration.INSTANCE.isFilterEnabled();
-        injectHtml = SniffyConfiguration.INSTANCE.isInjectHtml();
+        Boolean filterEnabled = SniffyConfiguration.INSTANCE.getFilterEnabled();
+        this.enabled = null == filterEnabled ? true : filterEnabled;
+        Boolean injectHtmlEnabled = SniffyConfiguration.INSTANCE.getInjectHtmlEnabled();
+        this.injectHtml = null == injectHtmlEnabled ? true : injectHtmlEnabled;
         try {
             String excludePattern = SniffyConfiguration.INSTANCE.getExcludePattern();
             if (null != excludePattern) {
@@ -106,14 +112,22 @@ public class SniffyFilter implements Filter {
 
         try {
 
-            String injectHtml = filterConfig.getInitParameter("inject-html");
-            if (null != injectHtml) {
-                this.injectHtml = Boolean.parseBoolean(injectHtml);
+            String injectHtmlEnabled = filterConfig.getInitParameter("inject-html");
+            if (null != injectHtmlEnabled) {
+                if ("system".equals(injectHtmlEnabled)) {
+                    this.injectHtml = Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getInjectHtmlEnabled());
+                } else {
+                    this.injectHtml = Boolean.parseBoolean(injectHtmlEnabled);
+                }
             }
 
-            String enabled = filterConfig.getInitParameter("enabled");
-            if (null != enabled) {
-                this.enabled = Boolean.parseBoolean(enabled);
+            String filterEnabled = filterConfig.getInitParameter("enabled");
+            if (null != filterEnabled) {
+                if ("system".equals(filterEnabled)) {
+                    this.enabled = Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getFilterEnabled());
+                } else {
+                    this.enabled = Boolean.parseBoolean(filterEnabled);
+                }
             }
 
             String excludePattern = filterConfig.getInitParameter("exclude-pattern");

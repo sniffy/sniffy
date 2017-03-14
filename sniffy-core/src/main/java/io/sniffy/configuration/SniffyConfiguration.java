@@ -9,8 +9,8 @@ public enum SniffyConfiguration {
     private volatile boolean monitorJdbc;
     private volatile boolean monitorSocket;
 
-    private volatile boolean filterEnabled;
-    private volatile boolean injectHtml;
+    private volatile Boolean filterEnabled;
+    private volatile Boolean injectHtmlEnabled;
     private volatile String excludePattern;
 
     SniffyConfiguration() {
@@ -25,18 +25,25 @@ public enum SniffyConfiguration {
                 "io.sniffy.monitorSocket", "IO_SNIFFY_MONITOR_SOCKET", "true"
         ));
 
-        filterEnabled = Boolean.parseBoolean(getProperty(
-                "io.sniffy.filterEnabled", "IO_SNIFFY_FILTER_ENABLED", "true"
-        ));
-        injectHtml = Boolean.parseBoolean(getProperty(
-                "io.sniffy.injectHtml", "IO_SNIFFY_INJECT_HTML", "true"
-        ));
+        String filterEnabled = getProperty("io.sniffy.filterEnabled", "IO_SNIFFY_FILTER_ENABLED");
+        this.filterEnabled = null == filterEnabled ? null : Boolean.parseBoolean(filterEnabled);
+
+        String injectHtmlEnabled = getProperty("io.sniffy.injectHtml", "IO_SNIFFY_INJECT_HTML");
+        this.injectHtmlEnabled = null == injectHtmlEnabled ? null : Boolean.parseBoolean(injectHtmlEnabled);
+
         excludePattern = getProperty("io.sniffy.excludePattern", "IO_SNIFFY_EXCLUDE_PATTERN", null);
     }
 
     private String getProperty(String systemPropertyName, String environmentVariableName, String defaultValue) {
+        return valueOrDefault(getProperty(systemPropertyName, environmentVariableName), defaultValue);
+    }
 
-        String value = defaultValue;
+    private String valueOrDefault(String value, String defaultValue) {
+        return null == value ? defaultValue : value;
+    }
+
+    private String getProperty(String systemPropertyName, String environmentVariableName) {
+        String value = null;
 
         String env = System.getenv(environmentVariableName);
         if (null != env) {
@@ -49,7 +56,6 @@ public enum SniffyConfiguration {
         }
 
         return value;
-
     }
 
     public boolean isMonitorJdbc() {
@@ -71,20 +77,20 @@ public enum SniffyConfiguration {
         }
     }
 
-    public boolean isFilterEnabled() {
+    public Boolean getFilterEnabled() {
         return filterEnabled;
     }
 
-    public void setFilterEnabled(boolean filterEnabled) {
+    public void setFilterEnabled(Boolean filterEnabled) {
         this.filterEnabled = filterEnabled;
     }
 
-    public boolean isInjectHtml() {
-        return injectHtml;
+    public Boolean getInjectHtmlEnabled() {
+        return injectHtmlEnabled;
     }
 
-    public void setInjectHtml(boolean injectHtml) {
-        this.injectHtml = injectHtml;
+    public void setInjectHtmlEnabled(Boolean injectHtmlEnabled) {
+        this.injectHtmlEnabled = injectHtmlEnabled;
     }
 
     public String getExcludePattern() {
