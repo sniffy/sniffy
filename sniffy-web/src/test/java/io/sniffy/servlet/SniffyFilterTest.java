@@ -590,6 +590,69 @@ public class SniffyFilterTest extends BaseTest {
 
     }
 
+    @Test
+    public void testInjectHtmlSetContentTypeUsingHeader() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setHeader("Content-Type", "text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SniffyFilter filter = new SniffyFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
+
+    }
+
+    @Test
+    public void testInjectHtmlSetCharacterEncodingUsingHeader() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Привет, мир!</body></html>";
+        final String cp1251 = "cp1251";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setHeader("Content-Type", "text/html; charset=cp1251");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SniffyFilter filter = new SniffyFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(
+                -1 != Collections.indexOfSubList(
+                        stream(httpServletResponse.getContentAsByteArray()).boxed().collect(Collectors.toList()),
+                        stream("Привет, мир!".getBytes(cp1251)).boxed().collect(Collectors.toList())
+                )
+        );
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
+
+    }
+
     public static IntStream stream(byte[] bytes) {
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         return IntStream.generate(buffer::get).limit(buffer.remaining());
