@@ -17,6 +17,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import ru.yandex.qatools.allure.annotations.Issue;
 
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -142,7 +146,7 @@ public class SniffyFilterTest extends BaseTest {
     }
 
     @Test
-    public void testFilterSniffyInjected() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjected() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
@@ -151,10 +155,7 @@ public class SniffyFilterTest extends BaseTest {
 
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
-
-        String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
 
@@ -165,7 +166,7 @@ public class SniffyFilterTest extends BaseTest {
 
     @Test
     @Issue("issues/275")
-    public void testFilterRequestForwarded() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterRequestForwarded() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         SniffyFilter filter = new SniffyFilter();
         filter.init(getFilterConfig());
@@ -182,13 +183,7 @@ public class SniffyFilterTest extends BaseTest {
 
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, outerFilterChain);
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
-
-        NodeList scripts = doc.getElementsByTagName("script");
-        assertEquals(1, scripts.getLength());
-
-        String sniffyJsSrc = scripts.item(0).getAttributes().getNamedItem("src").getNodeValue();
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
@@ -198,7 +193,7 @@ public class SniffyFilterTest extends BaseTest {
 
     @Test
     @Issue("issues/260")
-    public void testFilterRequestErrorDispatch() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterRequestErrorDispatch() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         SniffyFilter filter = new SniffyFilter();
         filter.init(getFilterConfig());
@@ -227,13 +222,8 @@ public class SniffyFilterTest extends BaseTest {
 
         assertEquals(1, Integer.parseInt(httpServletResponse.getHeader(HEADER_NUMBER_OF_QUERIES)));
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
-        NodeList scripts = doc.getElementsByTagName("script");
-        assertEquals(1, scripts.getLength());
-
-        String sniffyJsSrc = scripts.item(0).getAttributes().getNamedItem("src").getNodeValue();
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
@@ -253,8 +243,34 @@ public class SniffyFilterTest extends BaseTest {
         }).when(filterChain).doFilter(any(), any());
     }
 
+    public static class IoJS {
+
+        private SniffyJS sniffy;
+
+        public SniffyJS getSniffy() {
+            return sniffy;
+        }
+
+        public void setSniffy(SniffyJS sniffy) {
+            this.sniffy = sniffy;
+        }
+
+        public static class SniffyJS {}
+
+    }
+
+    public static class DocumentJS {
+
+        private StringBuilder content = new StringBuilder();
+
+        public void write(String content) {
+            this.content.append(content);
+        }
+
+    }
+
     @Test
-    public void testFilterSniffyInjectedRequestWithPath() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjectedRequestWithPath() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
@@ -263,10 +279,7 @@ public class SniffyFilterTest extends BaseTest {
 
         filter.doFilter(requestWithPath, httpServletResponse, filterChain);
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
-
-        String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../../" + SNIFFY_URI_PREFIX));
 
@@ -274,6 +287,34 @@ public class SniffyFilterTest extends BaseTest {
 
         assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../../" + REQUEST_URI_PREFIX));
 
+    }
+
+    protected String extractSniffyJsSrc(String contentAsString) throws ParserConfigurationException, SAXException, IOException, ScriptException {
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = documentBuilder.parse(new ByteArrayInputStream(contentAsString.getBytes()));
+
+        String sniffyJsSrc;
+
+        Node scriptTag = doc.getElementsByTagName("script").item(0);
+        if (scriptTag.hasAttributes() && null != scriptTag.getAttributes().getNamedItem("src")) {
+            sniffyJsSrc = scriptTag.getAttributes().getNamedItem("src").getNodeValue();
+        } else {
+            String scriptSource = scriptTag.getTextContent();
+            ScriptEngineManager engineManager = new ScriptEngineManager();
+            ScriptEngine engine = engineManager.getEngineByName("nashorn");
+            ScriptContext scriptContext = engine.getContext();
+            IoJS ioJS = new IoJS();
+            scriptContext.setAttribute("io", ioJS, ScriptContext.ENGINE_SCOPE);
+            DocumentJS documentJS = new DocumentJS();
+            scriptContext.setAttribute("document", documentJS, ScriptContext.ENGINE_SCOPE);
+            engine.eval(scriptSource);
+
+            assertTrue(documentJS.content.length() > 0);
+
+            Document generatedDoc = documentBuilder.parse(new ByteArrayInputStream(documentJS.content.toString().getBytes()));
+            sniffyJsSrc = generatedDoc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
+        }
+        return sniffyJsSrc;
     }
 
     @Test
@@ -300,7 +341,7 @@ public class SniffyFilterTest extends BaseTest {
     }
 
     @Test
-    public void testFilterSniffyInjectedContext() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjectedContext() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
@@ -309,11 +350,7 @@ public class SniffyFilterTest extends BaseTest {
 
         filter.doFilter(requestContext, httpServletResponse, filterChain);
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
-
-        String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
-
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith(SNIFFY_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
