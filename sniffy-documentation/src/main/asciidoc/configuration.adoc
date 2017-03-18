@@ -41,4 +41,7 @@ it will enable the sniffy for current request and will also set a `sniffy` cooki
 For stateless clients who don't maintain the cookie jar it might be more convenient to enable/disable Sniffy using `Sniffy-Enabled: true` / `Sniffy-Enabled: false` headers.
 Unlike the query parameter the HTTP header will only affect a single request.
 
+A similar header `Sniffy-Inject-Html-Enabled` can be used for hiding or showing the Sniffy Widget in the browser.
+Unlike `Sniffy-Enabled` It doesn't come with a query parameter alternative.
+
 
