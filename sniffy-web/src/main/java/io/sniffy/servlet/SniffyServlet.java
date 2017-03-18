@@ -3,7 +3,6 @@ package io.sniffy.servlet;
 import com.codahale.metrics.Timer;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.registry.ConnectionsRegistryStorage;
