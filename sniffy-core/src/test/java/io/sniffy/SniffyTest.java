@@ -1,13 +1,15 @@
 package io.sniffy;
 
+import com.codahale.metrics.Timer;
 import org.junit.Before;
 import org.junit.Test;
+import ru.yandex.qatools.allure.annotations.Features;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SniffyTest extends BaseTest {
 
@@ -47,6 +49,18 @@ public class SniffyTest extends BaseTest {
         assertEquals(2, spy.executedStatements());
         assertEquals(1, spy.getExecutedStatements().size());
         assertEquals(2, spy.getExecutedStatements().values().iterator().next().queries.get());
+    }
+
+    @Test
+    @Features("issues/292")
+    public void testGetGlobalSqlStats() throws Exception {
+        Sniffy.getGlobalSqlStats().clear();
+        executeStatements(3);
+        ConcurrentMap<String, Timer> globalSqlStats = Sniffy.getGlobalSqlStats();
+        assertEquals(1, globalSqlStats.size());
+        Map.Entry<String, Timer> entry = globalSqlStats.entrySet().iterator().next();
+        assertEquals("SELECT 1 FROM DUAL", entry.getKey());
+        assertEquals(3, entry.getValue().getCount());
     }
 
 }
