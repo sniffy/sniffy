@@ -1,0 +1,59 @@
+== J2EE Containers
+
+Integration of Sniffy with Servlet / J2EE containers is pretty straightforward - you should follow the instructions for setting up Sniffy DataSource and Filter above.
+However some containers are using complicated ClassLoader's and require some additional steps.
+
+=== Use Sniffy with WildFly
+
+If you want to use Sniffy with WildFly you need to add it as a `module`.
+
+In order to do that unzip the `sniffy-{VERSION}-jboss-module.zip` (available in maven Nexus central repository as `io.sniffy:sniffy:jar:jboss-module` artifact) archive to `modules/system/layers/base` folder.
+Edit the `modules/system/layers/base/io/sniffy/main/module.xml` file and specify a module containing your actual JDBC driver:
+```xml
+include::../../../../sniffy/src/jboss-module/module.xml[]
+```
+
+Now we can use `io.sniffy` module. At first we should change the DataSource configuration in `standalone/configuration/standalone.xml`:
+```xml
+<datasources>
+        <datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" use-java-context="true">
+            <connection-url>sniffy:jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</connection-url>
+            <driver>sniffy</driver>
+            <security>
+                <user-name>sa</user-name>
+                <password>sa</password>
+            </security>
+        </datasource>
+        <drivers>
+            <driver name="sniffy" module="io.sniffy">
+                <xa-datasource-class>io.sniffy.sql.SniffyDataSource</xa-datasource-class>
+            </driver>
+        </drivers>
+</datasources>
+```
+
+Finally we should import `io.sniffy` module to your web application in order to be able to use `SniffyFilter`.
+Edit the `jboss-deployment-structure.xml` file inside your web application and add a reference to `io.sniffy` module:
+```xml
+<jboss-deployment-structure>
+    <deployment>
+        <dependencies>
+            <module name="io.sniffy"/>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>
+```
+
+=== Use Sniffy with Tomcat
+
+If you're using datasources managed within Tomcat rather that within your web application, place `sniffy-<VERSION>.jar` to the `lib` folder
+And add `sniffy:` prefix to the Datasource configuration in `conf/server.xml` file. For example
+```xml
+<Resource name="jdbc/myoracle" auth="Container"
+    type="javax.sql.DataSource" driverClassName="io.sniffy.sql.SniffyDriver"
+    url="sniffy:jdbc:oracle:thin:@127.0.0.1:1521:mysid"
+    username="scott" password="tiger" maxTotal="20" maxIdle="10"
+    maxWaitMillis="-1"/>
+```
+
+WARNING: Make sure that in this setup you do not have sniffy jars in your web application class path (i.e. WEB-INF/lib folder)
