@@ -65,6 +65,7 @@ public class Sniffy {
 
     // TODO: call this method via Disruptor or something
     public static void logSqlTime(String sql, long elapsedTime) {
+        if (SniffyConfiguration.INSTANCE.getTopSqlCapacity() <= 0) return;
         String normalizedSql = SqlUtil.normalizeInStatement(sql);
         Timer timer = globalSqlStats.get(normalizedSql);
         if (null == timer) {
