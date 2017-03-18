@@ -5,6 +5,7 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
+import io.sniffy.sql.SqlUtil;
 import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
 import org.junit.Test;
@@ -218,7 +219,7 @@ public class SniffyServletTest {
         cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
                 new StatementMetaData(
                         "SELECT 1 FROM DUAL",
-                        StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
+                        SqlUtil.guessQueryType("SELECT 1 FROM DUAL"),
                         "",
                         Thread.currentThread().getId()
                 ), new SqlStats(301, 0, 0, 0, 1))
@@ -249,7 +250,7 @@ public class SniffyServletTest {
                         Collections.singletonMap(
                                 new StatementMetaData(
                                         "SELECT 1 FROM DUAL",
-                                        StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
+                                        SqlUtil.guessQueryType("SELECT 1 FROM DUAL"),
                                         "",
                                         Thread.currentThread().getId()
                                 ), new SqlStats(301, 200, 300, 0, 1)),
@@ -323,7 +324,7 @@ public class SniffyServletTest {
         cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
                 new StatementMetaData(
                         "SELECT \r\n\"1\" FROM 'DUAL'",
-                        StatementMetaData.guessQueryType("SELECT \r\n\"1\" FROM 'DUAL'"),
+                        SqlUtil.guessQueryType("SELECT \r\n\"1\" FROM 'DUAL'"),
                         "io.sniffy.Test.method(Test.java:99)",
                         Thread.currentThread().getId()
                 ), new SqlStats(301, 0, 0, 0, 1))

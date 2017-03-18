@@ -56,6 +56,7 @@
                                 <includes>
                                     <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru</include>
                                     <include>com.eclipsesource.minimal-json:minimal-json</include>
+                                    <include>io.dropwizard.metrics:metrics-core</include>
                                     <include>io.sniffy:*</include>
                                 </includes>
                             </artifactSet>
@@ -67,6 +68,10 @@
                                 <relocation>
                                     <pattern>com.eclipsesource</pattern>
                                     <shadedPattern>io.sniffy.shaded.com.eclipsesource</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.codahale.metrics</pattern>
+                                    <shadedPattern>io.sniffy.shaded.com.codahale.metrics</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

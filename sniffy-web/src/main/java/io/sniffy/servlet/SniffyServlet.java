@@ -1,5 +1,10 @@
 package io.sniffy.servlet;
 
+import com.codahale.metrics.Timer;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
+import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.registry.ConnectionsRegistryStorage;
 import io.sniffy.socket.SocketMetaData;
@@ -31,6 +36,8 @@ import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
 class SniffyServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
+
+    public static final String TOP_SQL_URI_PREFIX = SNIFFY_URI_PREFIX + "/topsql/";
 
     public static final String CONNECTION_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/";
     public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/socket/";
@@ -140,6 +147,50 @@ class SniffyServlet extends HttpServlet {
 
             response.setStatus(HttpServletResponse.SC_CREATED);
             response.flushBuffer();
+
+        } else if (path.equals(TOP_SQL_URI_PREFIX)) {
+
+            addCorsHeaders(response);
+
+            if ("DELETE".equalsIgnoreCase(request.getMethod())) {
+
+                Sniffy.getGlobalSqlStats().clear();
+
+                response.setStatus(HttpServletResponse.SC_CREATED);
+                response.flushBuffer();
+
+            } else {
+
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentType(JAVASCRIPT_MIME_TYPE);
+
+                JsonArray arrayJson = new JsonArray();
+
+                for (Map.Entry<String, Timer> entry : Sniffy.getGlobalSqlStats().entrySet()) {
+
+                    Timer timer = entry.getValue();
+
+                    JsonObject timerJson = new JsonObject();
+                    timerJson.add("count", timer.getCount());
+                    timerJson.add("min", timer.getSnapshot().getMin());
+                    timerJson.add("median", timer.getSnapshot().getMedian());
+                    timerJson.add("mean", timer.getSnapshot().getMean());
+                    timerJson.add("max", timer.getSnapshot().getMax());
+                    timerJson.add("p75", timer.getSnapshot().get75thPercentile());
+                    timerJson.add("p95", timer.getSnapshot().get95thPercentile());
+                    timerJson.add("p99", timer.getSnapshot().get99thPercentile());
+
+                    JsonObject objectJson = new JsonObject();
+                    objectJson.add("sql", entry.getKey());
+                    objectJson.add("timer", timerJson);
+
+                    arrayJson.add(objectJson);
+                }
+
+                arrayJson.writeTo(response.getWriter());
+
+                response.flushBuffer();
+            }
 
         }
 
