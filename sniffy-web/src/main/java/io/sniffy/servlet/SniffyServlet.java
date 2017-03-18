@@ -8,7 +8,6 @@ import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -53,10 +52,6 @@ class SniffyServlet extends HttpServlet {
         } catch (IOException e) {
             // TODO: log me maybe?
         }
-    }
-
-    @Override
-    public void init(ServletConfig config) throws ServletException {
     }
 
     private void addCorsHeaders(HttpServletResponse response) {
