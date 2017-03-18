@@ -284,10 +284,8 @@ public class SniffyFilter implements Filter {
             for (String queryParam : queryParams) {
                 if (null != queryParam) {
                     String[] split = queryParam.split("=");
-                    if (2 == split.length) {
-                        if (name.equals(split[0])) {
-                            return split[1];
-                        }
+                    if (split.length >= 1 && name.equals(split[0])) {
+                        return split.length >= 2 ? split[1] : "true";
                     }
                 }
             }
