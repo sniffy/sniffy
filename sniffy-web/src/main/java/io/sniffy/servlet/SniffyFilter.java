@@ -261,7 +261,7 @@ public class SniffyFilter implements Filter {
 
         // override by request parameter/cookie value if provided
 
-        String sniffyEnabledParam = request.getParameter(SNIFFY);
+        String sniffyEnabledParam = getQueryParam(httpServletRequest, SNIFFY);
 
         if (null != sniffyEnabledParam) {
             sniffyEnabled = Boolean.parseBoolean(sniffyEnabledParam);
@@ -275,6 +275,24 @@ public class SniffyFilter implements Filter {
 
         return sniffyEnabled;
 
+    }
+
+    private String getQueryParam(HttpServletRequest httpServletRequest, String name) {
+        String queryString = httpServletRequest.getQueryString();
+        if (null != queryString) {
+            String[] queryParams = queryString.split("&");
+            for (String queryParam : queryParams) {
+                if (null != queryParam) {
+                    String[] split = queryParam.split("=");
+                    if (2 == split.length) {
+                        if (name.equals(split[0])) {
+                            return split[1];
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private void setSessionCookie(HttpServletResponse httpServletResponse,

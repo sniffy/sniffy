@@ -132,7 +132,7 @@ public class SniffyFilterConfigurationTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
         SniffyFilter filter = new SniffyFilter();
         filter.setEnabled(false);
-        httpServletRequest.setParameter("sniffy", "true");
+        httpServletRequest = MockMvcRequestBuilders.get("/petclinic/foo/bar?baz&sniffy=true").contextPath("/petclinic").buildRequest(servletContext);
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
         assertEquals("Check cookie parameter specified", "true", httpServletResponse.getCookie("sniffy").getValue());
@@ -188,7 +188,7 @@ public class SniffyFilterConfigurationTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
         SniffyFilter filter = new SniffyFilter();
         filter.setEnabled(false);
-        httpServletRequest.setParameter("sniffy", "false");
+        httpServletRequest = MockMvcRequestBuilders.get("/petclinic/foo/bar?baz&sniffy=false").contextPath("/petclinic").buildRequest(servletContext);
         httpServletRequest.setCookies(new Cookie("sniffy", "true"));
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         assertFalse("Filter must be disabled", httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
@@ -201,7 +201,7 @@ public class SniffyFilterConfigurationTest extends BaseTest {
                 when(filterChain).doFilter(any(), any());
         SniffyFilter filter = new SniffyFilter();
         filter.setEnabled(true);
-        httpServletRequest.setParameter("sniffy", "false");
+        httpServletRequest = MockMvcRequestBuilders.get("/petclinic/foo/bar?baz&sniffy=false").contextPath("/petclinic").buildRequest(servletContext);
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }
