@@ -8,7 +8,6 @@ import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.StringUtil;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -46,16 +45,12 @@ class SniffyServlet extends HttpServlet {
 
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
-    }
-
-    @Override
-    public void init(ServletConfig config) throws ServletException {
         try {
             javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.2-SNAPSHOT/dist/sniffy.min.js");
             javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.2-SNAPSHOT/dist/sniffy.js");
             javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.2-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
-            throw new ServletException(e);
+            // TODO: log me maybe?
         }
     }
 

@@ -77,8 +77,12 @@ public class SniffyFilter implements Filter {
     public static final String JAVASCRIPT_SOURCE_URI = SNIFFY_URI_PREFIX + "/sniffy.js";
     public static final String JAVASCRIPT_MAP_URI = SNIFFY_URI_PREFIX + "/sniffy.map";
     public static final String REQUEST_URI_PREFIX = SNIFFY_URI_PREFIX + "/request/";
+
     public static final String SNIFFY = "sniffy";
-    public static final String SNIFFY_ENABLED_HEADER = "Sniffy-Enabled";
+
+    public static final String SNIFFY_ENABLED_PARAMETER = "Sniffy-Enabled";
+    public static final String INJECT_HTML_ENABLED_PARAMETER = "Sniffy-Inject-Html-Enabled";
+
     protected static final String THREAD_LOCAL_DISCOVERED_ADDRESSES = "discoveredAddresses";
     protected static final String THREAD_LOCAL_DISCOVERED_DATA_SOURCES = "discoveredDataSources";
 
@@ -190,7 +194,7 @@ public class SniffyFilter implements Filter {
         // create request decorator
         SniffyRequestProcessor sniffyRequestProcessor;
         try {
-            sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse);
+            sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse, isInjectHtmlEnabled(httpServletRequest));
             request.setAttribute(SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME, sniffyRequestProcessor);
         } catch (Exception e) {
             if (null != servletContext) servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
@@ -251,14 +255,6 @@ public class SniffyFilter implements Filter {
 
         boolean sniffyEnabled = enabled;
 
-        // override by request header
-
-        String sniffyEnabledHeader = httpServletRequest.getHeader(SNIFFY_ENABLED_HEADER);
-
-        if (null != sniffyEnabledHeader) {
-            sniffyEnabled = Boolean.parseBoolean(sniffyEnabledHeader);
-        }
-
         // override by request parameter/cookie value if provided
 
         String sniffyEnabledParam = getQueryParam(httpServletRequest, SNIFFY);
@@ -273,7 +269,29 @@ public class SniffyFilter implements Filter {
             }
         }
 
+        // override by request header
+
+        String sniffyEnabledHeader = httpServletRequest.getHeader(SNIFFY_ENABLED_PARAMETER);
+
+        if (null != sniffyEnabledHeader) {
+            sniffyEnabled = Boolean.parseBoolean(sniffyEnabledHeader);
+        }
+
         return sniffyEnabled;
+
+    }
+
+    private boolean isInjectHtmlEnabled(HttpServletRequest httpServletRequest) throws MalformedURLException {
+
+        boolean injectHtmlEnabled = injectHtml;
+
+        String injectHtmlEnabledHeader = httpServletRequest.getHeader(INJECT_HTML_ENABLED_PARAMETER);
+
+        if (null != injectHtmlEnabledHeader) {
+            injectHtmlEnabled = Boolean.parseBoolean(injectHtmlEnabledHeader);
+        }
+
+        return injectHtmlEnabled;
 
     }
 

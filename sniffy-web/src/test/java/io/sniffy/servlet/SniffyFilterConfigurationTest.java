@@ -20,7 +20,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -253,6 +255,43 @@ public class SniffyFilterConfigurationTest extends BaseTest {
         httpServletRequest = MockMvcRequestBuilders.get("/petclinic/foo/bar?baz&sniffy=false").contextPath("/petclinic").buildRequest(servletContext);
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
+    }
+
+    @Test
+    @Issue("issues/297")
+    public void testInjectHtmlDisabledByHeader() throws IOException, ServletException {
+        respondWithHtmlContent();
+        SniffyFilter filter = new SniffyFilter();
+        filter.setEnabled(true);
+        filter.setInjectHtml(false);
+        httpServletRequest.addHeader("Sniffy-Inject-Html-Enabled", "false");
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
+        assertFalse(httpServletResponse.getContentAsString().contains("<script"));
+    }
+
+    @Test
+    @Issue("issues/297")
+    public void testInjectHtmlEnabledByHeader() throws IOException, ServletException {
+        respondWithHtmlContent();
+        SniffyFilter filter = new SniffyFilter();
+        filter.setEnabled(true);
+        filter.setInjectHtml(false);
+        httpServletRequest.addHeader("Sniffy-Inject-Html-Enabled", "true");
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getContentAsString().contains("<script"));
+    }
+
+    private void respondWithHtmlContent() throws IOException, ServletException {
+        doAnswer(invocation -> {
+            executeStatement();
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.setContentType("text/html");
+            PrintWriter printWriter = response.getWriter();
+            printWriter.append("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+            return null;}
+        ).when(filterChain).doFilter(any(), any());
     }
 
 }

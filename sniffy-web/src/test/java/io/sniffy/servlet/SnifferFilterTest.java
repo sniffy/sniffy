@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.script.ScriptException;
 import javax.servlet.ServletException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -21,7 +22,7 @@ public class SnifferFilterTest extends SniffyFilterTest {
 
     @Test
     @Deprecated
-    public void testFilterSniffyInjected() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjected() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
@@ -30,10 +31,7 @@ public class SnifferFilterTest extends SniffyFilterTest {
 
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
-
-        String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
 

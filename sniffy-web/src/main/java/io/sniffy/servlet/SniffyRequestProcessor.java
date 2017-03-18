@@ -37,6 +37,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
 
+    private final boolean injectHtml;
+
     private final CurrentThreadSpy spy;
     private final String requestId;
     private final RequestStats requestStats;
@@ -60,10 +62,16 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         return elapsedTime;
     }
 
-    public SniffyRequestProcessor(SniffyFilter sniffyFilter, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    public SniffyRequestProcessor(
+            SniffyFilter sniffyFilter,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse,
+            boolean injectHtml) {
+
         this.sniffyFilter = sniffyFilter;
         this.httpServletRequest = httpServletRequest;
         this.httpServletResponse = httpServletResponse;
+        this.injectHtml = injectHtml;
 
         spy = Sniffy.spyCurrentThread();
 
@@ -244,7 +252,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         wrapper.setHeader(HEADER_REQUEST_DETAILS, sb.toString());
 
-        if (sniffyFilter.injectHtml) {
+        if (injectHtml) {
             String contentType = wrapper.getContentType();
             String characterEncoding = wrapper.getCharacterEncoding();
 
@@ -278,7 +286,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         updateRequestCache();
 
-        if (sniffyFilter.injectHtml && isHtmlPage) {
+        if (injectHtml && isHtmlPage) {
 
             String characterEncoding = wrapper.getCharacterEncoding();
             if (null == characterEncoding) {
@@ -295,25 +303,24 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
+        StringBuilder stringBuilder = new StringBuilder().
+                append("<script type=\"application/javascript\">").
+                append("if (typeof io === 'undefined' || !io.sniffy) {").
+                append("document.write('\\x3Cscript ").
+                append("id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
+                append(requestId).
+                append("\" src=\"");
         if (contextPath.startsWith("./")) {
-            return new StringBuilder().
-                    append("<script type=\"application/javascript\">").
-                    append("document.write('\\x3Cscript ").
-                    append("id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
-                    append(requestId).
-                    append("\" src=\"'+location.href+'").
+            stringBuilder.append("'+location.href+'").
                     append(contextPath.substring(1)).
-                    append(JAVASCRIPT_URI).
-                    append("\">\\x3C/script>');</script>");
+                    append(JAVASCRIPT_URI);
         } else {
-            return new StringBuilder().
-                    append("<script id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
-                    append(requestId).
-                    append("\" src=\"").
-                    append(contextPath).
-                    append(JAVASCRIPT_URI).
-                    append("\"></script>");
+            stringBuilder.append(contextPath).
+                    append(JAVASCRIPT_URI);
         }
+        stringBuilder.append("\"").
+                append(">\\x3C/script>');}</script>");
+        return stringBuilder;
     }
 
     private int maximumInjectSize;
