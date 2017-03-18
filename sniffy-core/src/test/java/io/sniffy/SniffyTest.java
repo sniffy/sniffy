@@ -11,7 +11,6 @@ import java.sql.Statement;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
 
