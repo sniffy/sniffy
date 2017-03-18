@@ -35,7 +35,7 @@ public class SqlUtil {
                         return SqlStatement.DELETE;
                     }
                 }
-                if (sql.length() > (i + 6) && sql.substring(i, i + 6).toLowerCase().equals("merge ")) {
+                if (sql.length() > (i + 6) && sql.substring(i, i + 6).equalsIgnoreCase("merge ")) {
                     return SqlStatement.MERGE;
                 }
             }
