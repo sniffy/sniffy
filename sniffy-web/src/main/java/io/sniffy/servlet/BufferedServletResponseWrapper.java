@@ -23,7 +23,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     private boolean committed;
     private long contentLength;
-    private String contentEncoding;
+    private String characterEncoding;
     private boolean corsHeadersHeaderAdded = false;
 
     private final BufferedServletResponseListener servletResponseListener;
@@ -43,7 +43,8 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             }
         }
 
-        contentEncoding = response.getCharacterEncoding();
+        contentType = response.getContentType();
+        characterEncoding = response.getCharacterEncoding();
 
         String corsHeadersHeader = response.getHeader(HEADER_CORS_HEADERS);
         if (null != corsHeadersHeader && corsHeadersHeader.contains(HEADER_NUMBER_OF_QUERIES)) {
@@ -127,17 +128,31 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
 
     @Override
     public void addHeader(String name, String value) {
-
-        String processedValue = value;
-        if (HEADER_CORS_HEADERS.equals(name)) {
-            processedValue = format("%s, %s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE, processedValue);
-            corsHeadersHeaderAdded = true;
-        }
-
+        String processedValue = addCorsHeadersIfNecessary(name, value);
         super.addHeader(name, processedValue);
-        if ("Content-Encoding".equals(name)) {
-            contentEncoding = processedValue;
-        } else if ("Content-Length".equals(name) && null != processedValue) {
+        processSpecialHeader(name, processedValue);
+    }
+
+    @Override
+    public void setHeader(String name, String value) {
+        String processedValue = addCorsHeadersIfNecessary(name, value);
+        super.setHeader(name, processedValue);
+        processSpecialHeader(name, processedValue);
+
+    }
+
+    private void processSpecialHeader(String name, String processedValue) {
+        if ("Content-Type".equals(name)) {
+            String[] splits = processedValue.split(";");
+            contentType = splits[0];
+            for (int i = 1; i < splits.length; i++) {
+                String parameter = splits[i];
+                String[] keyAndValue = parameter.split("=");
+                if (2 == keyAndValue.length && null != keyAndValue[0] && "charset".equalsIgnoreCase(keyAndValue[0].trim())) {
+                    characterEncoding = keyAndValue[1];
+                }
+            }
+        } else if ("Content-Length".equals(name)) {
             try {
                 contentLength = Long.parseLong(processedValue);
             } catch (NumberFormatException e) {
@@ -146,27 +161,13 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         }
     }
 
-    @Override
-    public void setHeader(String name, String value) {
-
+    private String addCorsHeadersIfNecessary(String name, String value) {
         String processedValue = value;
         if (HEADER_CORS_HEADERS.equals(name)) {
             processedValue = format("%s, %s, %s, %s", HEADER_NUMBER_OF_QUERIES, HEADER_REQUEST_DETAILS, HEADER_TIME_TO_FIRST_BYTE, processedValue);
             corsHeadersHeaderAdded = true;
         }
-
-        super.setHeader(name, processedValue);
-
-        if ("Content-Encoding".equals(name)) {
-            contentEncoding = processedValue;
-        } else if ("Content-Length".equals(name)) {
-            try {
-                contentLength = Long.parseLong(processedValue);
-            } catch (NumberFormatException e) {
-                // sniffy is not interested in this exception
-            }
-        }
-
+        return processedValue;
     }
 
     @Override
@@ -188,17 +189,13 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     @Override
     public void setCharacterEncoding(String charset) {
         super.setCharacterEncoding(charset);
-        this.contentEncoding = charset;
+        this.characterEncoding = charset;
     }
 
     @Override
     public void setLocale(Locale loc) {
         super.setLocale(loc);
-        contentEncoding = getCharacterEncoding();
-    }
-
-    public String getContentEncoding() {
-        return contentEncoding;
+        characterEncoding = getCharacterEncoding();
     }
 
     private String contentType;
@@ -305,7 +302,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
         } else if (null != outputStream) {
             throw new IllegalStateException("getOutputStream() method has been called on this response");
         } else {
-            writer = new BufferedPrintWriter(getBufferedServletOutputStream(), contentEncoding);
+            writer = new BufferedPrintWriter(getBufferedServletOutputStream(), characterEncoding);
             return writer;
         }
     }
