@@ -25,13 +25,13 @@ public class SqlUtil {
                 String normalized;
                 if (sql.length() > (i + 7)) {
                     normalized = sql.substring(i, i + 7).toLowerCase();
-                    if (normalized.equals("select ")) {
+                    if ("select ".equals(normalized)) {
                         return SqlStatement.SELECT;
-                    } else if (normalized.equals("insert ")) {
+                    } else if ("insert ".equals(normalized)) {
                         return SqlStatement.INSERT;
-                    } else if (normalized.equals("update ")) {
+                    } else if ("update ".equals(normalized)) {
                         return SqlStatement.UPDATE;
-                    } else if (normalized.equals("delete ")) {
+                    } else if ("delete ".equals(normalized)) {
                         return SqlStatement.DELETE;
                     }
                 }
