@@ -289,6 +289,36 @@ public class SniffyFilterTest extends BaseTest {
 
     }
 
+    @Test
+    @Issue("issues/297")
+    public void testFilterSniffyInjectedJustOnce() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
+
+        answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+
+        SniffyFilter filter = new SniffyFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(requestWithPath, httpServletResponse, filterChain);
+
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
+
+        Node scriptTag = doc.getElementsByTagName("script").item(0);
+        String scriptSource = scriptTag.getTextContent();
+        ScriptEngineManager engineManager = new ScriptEngineManager();
+        ScriptEngine engine = engineManager.getEngineByName("nashorn");
+        ScriptContext scriptContext = engine.getContext();
+        IoJS ioJS = new IoJS();
+        ioJS.setSniffy(new IoJS.SniffyJS());
+        scriptContext.setAttribute("io", ioJS, ScriptContext.ENGINE_SCOPE);
+        DocumentJS documentJS = new DocumentJS();
+        scriptContext.setAttribute("document", documentJS, ScriptContext.ENGINE_SCOPE);
+        engine.eval(scriptSource);
+
+        assertEquals(0, documentJS.content.length());
+
+    }
+
     protected String extractSniffyJsSrc(String contentAsString) throws ParserConfigurationException, SAXException, IOException, ScriptException {
         DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = documentBuilder.parse(new ByteArrayInputStream(contentAsString.getBytes()));
