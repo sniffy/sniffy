@@ -46,17 +46,17 @@ class SniffyServlet extends HttpServlet {
 
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
-    }
-
-    @Override
-    public void init(ServletConfig config) throws ServletException {
         try {
             javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.2-SNAPSHOT/dist/sniffy.min.js");
             javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.2-SNAPSHOT/dist/sniffy.js");
             javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.2-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
-            throw new ServletException(e);
+            // TODO: log me maybe?
         }
+    }
+
+    @Override
+    public void init(ServletConfig config) throws ServletException {
     }
 
     private void addCorsHeaders(HttpServletResponse response) {
