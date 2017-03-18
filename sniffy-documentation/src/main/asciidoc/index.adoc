@@ -37,6 +37,8 @@ include::setup-datasource.adoc[]
 
 include::setup-filter.adoc[]
 
+include::setup-containers.adoc[]
+
 = Configuration
 
 include::configuration.adoc[]

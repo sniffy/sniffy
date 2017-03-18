@@ -6,6 +6,7 @@
 <filter>
     <filter-name>sniffer</filter-name>
     <filter-class>io.sniffy.servlet.SniffyFilter</filter-class>
+    <async-supported>true</async-supported>
     <init-param>
         <param-name>inject-html</param-name> <1>
         <param-value>true</param-value> <!-- default: true -->
