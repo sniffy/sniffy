@@ -12,12 +12,18 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import ru.yandex.qatools.allure.annotations.Features;
+import ru.yandex.qatools.allure.annotations.Issue;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.sniffy.servlet.SniffyFilter.HEADER_NUMBER_OF_QUERIES;
 import static org.junit.Assert.*;
@@ -136,6 +142,49 @@ public class SniffyFilterConfigurationTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
         assertEquals("Check cookie parameter specified", "true", httpServletResponse.getCookie("sniffy").getValue());
+    }
+
+    @Test
+    @Issue("issues/295")
+    public void testFilterGetParameterIsNotCalled() throws IOException, ServletException {
+        doAnswer(invocation -> {executeStatement(); return null;}).
+                when(filterChain).doFilter(any(), any());
+        SniffyFilter filter = new SniffyFilter();
+        filter.setEnabled(false);
+        httpServletRequest = MockMvcRequestBuilders.get("/petclinic/foo/bar?baz&sniffy=true").contextPath("/petclinic").buildRequest(servletContext);
+
+        AtomicBoolean parametersAccessed = new AtomicBoolean(false);
+
+        HttpServletRequest request = new HttpServletRequestWrapper(httpServletRequest) {
+
+            @Override
+            public String getParameter(String name) {
+                parametersAccessed.set(true);
+                return super.getParameter(name);
+            }
+
+            @Override
+            public Map<String, String[]> getParameterMap() {
+                parametersAccessed.set(true);
+                return super.getParameterMap();
+            }
+
+            @Override
+            public Enumeration<String> getParameterNames() {
+                parametersAccessed.set(true);
+                return super.getParameterNames();
+            }
+
+            @Override
+            public String[] getParameterValues(String name) {
+                parametersAccessed.set(true);
+                return super.getParameterValues(name);
+            }
+        };
+
+        filter.doFilter(request, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
+        assertFalse(parametersAccessed.get());
     }
 
     @Test
