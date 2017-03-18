@@ -37,6 +37,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
 
+    private final boolean injectHtml;
+
     private final CurrentThreadSpy spy;
     private final String requestId;
     private final RequestStats requestStats;
@@ -60,10 +62,16 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         return elapsedTime;
     }
 
-    public SniffyRequestProcessor(SniffyFilter sniffyFilter, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    public SniffyRequestProcessor(
+            SniffyFilter sniffyFilter,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse,
+            boolean injectHtml) {
+
         this.sniffyFilter = sniffyFilter;
         this.httpServletRequest = httpServletRequest;
         this.httpServletResponse = httpServletResponse;
+        this.injectHtml = injectHtml;
 
         spy = Sniffy.spyCurrentThread();
 
@@ -244,7 +252,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         wrapper.setHeader(HEADER_REQUEST_DETAILS, sb.toString());
 
-        if (sniffyFilter.injectHtml) {
+        if (injectHtml) {
             String contentType = wrapper.getContentType();
             String characterEncoding = wrapper.getCharacterEncoding();
 
@@ -278,7 +286,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         updateRequestCache();
 
-        if (sniffyFilter.injectHtml && isHtmlPage) {
+        if (injectHtml && isHtmlPage) {
 
             String characterEncoding = wrapper.getCharacterEncoding();
             if (null == characterEncoding) {
