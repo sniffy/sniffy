@@ -1,6 +1,7 @@
 package io.sniffy;
 
 import com.codahale.metrics.Timer;
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
@@ -34,12 +35,16 @@ import static io.sniffy.util.StackTraceExtractor.*;
  */
 public class Sniffy {
 
+    public static final int TOP_SQL_CAPACITY = 1024;
+
     protected static final Queue<WeakReference<Spy>> registeredSpies =
             new ConcurrentLinkedQueue<WeakReference<Spy>>();
     protected static final ConcurrentMap<Long, WeakReference<CurrentThreadSpy>> currentThreadSpies =
             new ConcurrentHashMap<Long, WeakReference<CurrentThreadSpy>>();
-    protected static final ConcurrentMap<String, Timer> globalSqlStats =
-            new ConcurrentHashMap<String, Timer>(); // TODO: use bounded LRU cache
+    protected static final ConcurrentLinkedHashMap<String, Timer> globalSqlStats =
+            new ConcurrentLinkedHashMap.Builder<String, Timer>().
+                    maximumWeightedCapacity(TOP_SQL_CAPACITY).
+                    build();
 
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
 
