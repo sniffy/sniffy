@@ -60,12 +60,12 @@ public class Sniffy {
 
     // TODO: call this method via Disruptor or something
     public static void logSqlTime(String sql, long elapsedTime) {
-        sql = SqlUtil.normalizeInStatement(sql);
-        Timer timer = globalSqlStats.get(sql);
+        String normalizedSql = SqlUtil.normalizeInStatement(sql);
+        Timer timer = globalSqlStats.get(normalizedSql);
         if (null == timer) {
             Timer newTimer = new Timer();
             newTimer.update(elapsedTime, TimeUnit.MILLISECONDS);
-            timer = globalSqlStats.putIfAbsent(sql, newTimer);
+            timer = globalSqlStats.putIfAbsent(normalizedSql, newTimer);
         }
         if (null != timer) {
             timer.update(elapsedTime, TimeUnit.MILLISECONDS);

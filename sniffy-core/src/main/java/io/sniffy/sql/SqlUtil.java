@@ -12,7 +12,8 @@ public class SqlUtil {
     );
 
     public static String normalizeInStatement(String sql) {
-        return NORMALIZE_IN_STATEMENT_PATTERN.matcher(sql).replaceAll(" in (?)");
+        return null == sql ? null :
+                NORMALIZE_IN_STATEMENT_PATTERN.matcher(sql).replaceAll(" in (?)").intern();
     }
 
     public static SqlStatement guessQueryType(String sql) {
