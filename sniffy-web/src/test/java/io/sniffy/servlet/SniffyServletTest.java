@@ -1,10 +1,13 @@
 package io.sniffy.servlet;
 
 import com.jayway.jsonpath.JsonPath;
+import io.sniffy.BaseTest;
+import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
+import io.sniffy.sql.SqlUtil;
 import io.sniffy.sql.StatementMetaData;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,6 +16,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import ru.yandex.qatools.allure.annotations.Features;
 import ru.yandex.qatools.allure.annotations.Issue;
 
 import javax.servlet.ServletConfig;
@@ -29,7 +33,7 @@ import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static org.junit.Assert.*;
 
-public class SniffyServletTest {
+public class SniffyServletTest extends BaseTest {
 
     private static class SampleApplicationException extends Exception {
 
@@ -218,7 +222,7 @@ public class SniffyServletTest {
         cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
                 new StatementMetaData(
                         "SELECT 1 FROM DUAL",
-                        StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
+                        SqlUtil.guessQueryType("SELECT 1 FROM DUAL"),
                         "",
                         Thread.currentThread().getId()
                 ), new SqlStats(301, 0, 0, 0, 1))
@@ -249,7 +253,7 @@ public class SniffyServletTest {
                         Collections.singletonMap(
                                 new StatementMetaData(
                                         "SELECT 1 FROM DUAL",
-                                        StatementMetaData.guessQueryType("SELECT 1 FROM DUAL"),
+                                        SqlUtil.guessQueryType("SELECT 1 FROM DUAL"),
                                         "",
                                         Thread.currentThread().getId()
                                 ), new SqlStats(301, 200, 300, 0, 1)),
@@ -323,7 +327,7 @@ public class SniffyServletTest {
         cache.put("foo", new RequestStats(21, 42, Collections.singletonMap(
                 new StatementMetaData(
                         "SELECT \r\n\"1\" FROM 'DUAL'",
-                        StatementMetaData.guessQueryType("SELECT \r\n\"1\" FROM 'DUAL'"),
+                        SqlUtil.guessQueryType("SELECT \r\n\"1\" FROM 'DUAL'"),
                         "io.sniffy.Test.method(Test.java:99)",
                         Thread.currentThread().getId()
                 ), new SqlStats(301, 0, 0, 0, 1))
@@ -383,6 +387,56 @@ public class SniffyServletTest {
         sniffyServlet.service(request, response);
 
         assertFalse(response.isCommitted());
+
+    }
+
+    @Test
+    @Features("issues/292")
+    public void testGetTopSql() throws Exception {
+
+        Sniffy.getGlobalSqlStats().clear();
+
+        executeStatement();
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic/" + SniffyServlet.TOP_SQL_URI_PREFIX).
+                buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
+
+        sniffyServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/javascript", response.getContentType());
+        assertTrue(response.getContentAsByteArray().length > 0);
+
+        assertEquals(1, (int) JsonPath.read(response.getContentAsString(), "$.length()"));
+        assertEquals("SELECT 1 FROM DUAL", JsonPath.read(response.getContentAsString(), "$[0].sql"));
+        assertEquals(1, (int) JsonPath.read(response.getContentAsString(), "$[0].timer.count"));
+
+    }
+
+    @Test
+    @Features("issues/292")
+    public void testResetTopSql() throws Exception {
+
+        Sniffy.getGlobalSqlStats().clear();
+
+        executeStatement();
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                delete("/petclinic/" + SniffyServlet.TOP_SQL_URI_PREFIX).
+                buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
+
+        sniffyServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+        assertTrue(Sniffy.getGlobalSqlStats().isEmpty());
 
     }
 

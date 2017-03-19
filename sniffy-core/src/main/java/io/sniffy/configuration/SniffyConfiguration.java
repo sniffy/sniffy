@@ -9,6 +9,11 @@ public enum SniffyConfiguration {
     private volatile boolean monitorJdbc;
     private volatile boolean monitorSocket;
 
+    /**
+     * @since 3.1.2
+     */
+    private volatile int topSqlCapacity;
+
     private volatile Boolean filterEnabled;
     private volatile Boolean injectHtmlEnabled;
     private volatile String excludePattern;
@@ -24,6 +29,13 @@ public enum SniffyConfiguration {
         monitorSocket = Boolean.parseBoolean(getProperty(
                 "io.sniffy.monitorSocket", "IO_SNIFFY_MONITOR_SOCKET", "true"
         ));
+        try {
+            topSqlCapacity = Integer.parseInt(getProperty(
+                    "io.sniffy.topSqlCapacity", "IO_SNIFFY_TOP_SQL_CAPACITY", "1024"
+            ));
+        } catch (NumberFormatException e) {
+            topSqlCapacity = 0;
+        }
 
         String filterEnabled = getProperty("io.sniffy.filterEnabled", "IO_SNIFFY_FILTER_ENABLED");
         this.filterEnabled = null == filterEnabled ? null : Boolean.parseBoolean(filterEnabled);
@@ -75,6 +87,20 @@ public enum SniffyConfiguration {
         if (!this.monitorSocket) {
             this.monitorSocket = monitorSocket;
         }
+    }
+
+    /**
+     * @since 3.1.2
+     */
+    public int getTopSqlCapacity() {
+        return topSqlCapacity;
+    }
+
+    /**
+     * @since 3.1.2
+     */
+    public void setTopSqlCapacity(int topSqlCapacity) {
+        this.topSqlCapacity = topSqlCapacity;
     }
 
     public Boolean getFilterEnabled() {

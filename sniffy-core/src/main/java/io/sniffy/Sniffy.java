@@ -1,10 +1,13 @@
 package io.sniffy;
 
+import com.codahale.metrics.Timer;
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStatement;
+import io.sniffy.sql.SqlUtil;
 import io.sniffy.sql.StatementMetaData;
 
 import java.io.IOException;
@@ -13,10 +16,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.Queue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 
 import static io.sniffy.util.StackTraceExtractor.*;
 
@@ -35,10 +35,16 @@ import static io.sniffy.util.StackTraceExtractor.*;
  */
 public class Sniffy {
 
+    public static final int TOP_SQL_CAPACITY = 1024;
+
     protected static final Queue<WeakReference<Spy>> registeredSpies =
             new ConcurrentLinkedQueue<WeakReference<Spy>>();
     protected static final ConcurrentMap<Long, WeakReference<CurrentThreadSpy>> currentThreadSpies =
             new ConcurrentHashMap<Long, WeakReference<CurrentThreadSpy>>();
+    protected static final ConcurrentLinkedHashMap<String, Timer> globalSqlStats =
+            new ConcurrentLinkedHashMap.Builder<String, Timer>().
+                    maximumWeightedCapacity(SniffyConfiguration.INSTANCE.getTopSqlCapacity()).
+                    build();
 
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
 
@@ -55,6 +61,25 @@ public class Sniffy {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    // TODO: call this method via Disruptor or something
+    public static void logSqlTime(String sql, long elapsedTime) {
+        if (SniffyConfiguration.INSTANCE.getTopSqlCapacity() <= 0) return;
+        String normalizedSql = SqlUtil.normalizeInStatement(sql);
+        Timer timer = globalSqlStats.get(normalizedSql);
+        if (null == timer) {
+            Timer newTimer = new Timer();
+            newTimer.update(elapsedTime, TimeUnit.MILLISECONDS);
+            timer = globalSqlStats.putIfAbsent(normalizedSql, newTimer);
+        }
+        if (null != timer) {
+            timer.update(elapsedTime, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    public static ConcurrentMap<String, Timer> getGlobalSqlStats() {
+        return globalSqlStats;
     }
 
     protected static WeakReference<Spy> registerSpy(Spy spy) {
@@ -264,7 +289,7 @@ public class Sniffy {
         SocketStats socketStats = socketStatsAccumulator.get();
 
         // notify listeners
-        StatementMetaData statementMetaData = new StatementMetaData(sql, StatementMetaData.guessQueryType(sql), stackTrace, Thread.currentThread().getId());
+        StatementMetaData statementMetaData = new StatementMetaData(sql, SqlUtil.guessQueryType(sql), stackTrace, Thread.currentThread().getId());
         notifyListeners(
                 statementMetaData,
                 elapsedTime,
