@@ -86,10 +86,16 @@ public enum SniffyConfiguration {
         }
     }
 
+    /**
+     * @since 3.1.2
+     */
     public int getTopSqlCapacity() {
         return topSqlCapacity;
     }
 
+    /**
+     * @since 3.1.2
+     */
     public void setTopSqlCapacity(int topSqlCapacity) {
         this.topSqlCapacity = topSqlCapacity;
     }
