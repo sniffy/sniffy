@@ -52,9 +52,9 @@ class SniffyServlet extends HttpServlet {
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.2/dist/sniffy.min.js");
-            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.2/dist/sniffy.js");
-            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.2/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.3-SNAPSHOT/dist/sniffy.min.js");
+            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.3-SNAPSHOT/dist/sniffy.js");
+            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.3-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
             // TODO: log me maybe?
         }
