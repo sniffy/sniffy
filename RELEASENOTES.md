@@ -2,7 +2,21 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.1...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.2...master)
+
+## v3.1.2 - March 20th, 2017
+
+ * [Top SQL queries tab - add sorting and clear button](https://github.com/sniffy/sniffy/issues/306)
+ * [excludePattern should manage injectHtml instead of enabled](https://github.com/sniffy/sniffy/issues/304)
+ * [Backslashes are not escaped in connection registry](https://github.com/sniffy/sniffy/issues/302)
+ * [Sniffy shows response time with leading zeroes](https://github.com/sniffy/sniffy/issues/300)
+ * [Sniffy doesn't work with Angular1 ng-include directive](https://github.com/sniffy/sniffy/issues/297)
+ * [Sniffy call getParameter() and cleans the request inputStream/reader](https://github.com/sniffy/sniffy/issues/295)
+ * [Calculate Top slowest queries across all requests](https://github.com/sniffy/sniffy/issues/292)
+ * [Produce JBoss module / update documentation](https://github.com/sniffy/sniffy/issues/291)
+ * [Parse Content-Type from setHeader/addHeader methods](https://github.com/sniffy/sniffy/issues/290)
+ * [Provide a version of SniffyFilter which is disabled by default](https://github.com/sniffy/sniffy/issues/288)
+ * [IE11 - scrollbar overlaps sniffy](https://github.com/sniffy/sniffy/issues/286)
 
 ## v3.1.1 - March 14th, 2017
 
