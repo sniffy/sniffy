@@ -154,7 +154,7 @@ public class SniffyFilter implements Filter {
             }
 
             String injectHtmlExcludePattern = filterConfig.getInitParameter("inject-html-exclude-pattern");
-            if (null != excludePattern) {
+            if (null != injectHtmlExcludePattern) {
                 this.injectHtmlExcludePattern = Pattern.compile(injectHtmlExcludePattern); // TODO: can throw exception
             }
 
