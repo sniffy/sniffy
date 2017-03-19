@@ -90,8 +90,6 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
         filterRegistration.setAsyncSupported(true);
         filterRegistration.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
 
-        filterRegistration.setEnabled(isFilterEnabled());
-
         filterRegistration.setName("sniffyFilter");
         filterRegistration.setOrder(Ordered.HIGHEST_PRECEDENCE);
         filterRegistration.setMatchAfter(false);
