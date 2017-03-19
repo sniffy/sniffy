@@ -9,6 +9,9 @@ public enum SniffyConfiguration {
     private volatile boolean monitorJdbc;
     private volatile boolean monitorSocket;
 
+    /**
+     * @since 3.1.2
+     */
     private volatile int topSqlCapacity;
 
     private volatile Boolean filterEnabled;
