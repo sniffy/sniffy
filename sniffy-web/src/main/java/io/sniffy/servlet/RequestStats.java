@@ -43,16 +43,16 @@ class RequestStats {
         return timeToFirstByte;
     }
 
-    public void incTimeToFirstByte(long timeToFirstByte) {
-        this.timeToFirstByte += timeToFirstByte;
+    public void setTimeToFirstByte(long timeToFirstByte) {
+        this.timeToFirstByte = timeToFirstByte;
     }
 
     public long getElapsedTime() {
         return elapsedTime;
     }
 
-    public void incElapsedTime(long elapsedTime) {
-        this.elapsedTime += elapsedTime;
+    public void setElapsedTime(long elapsedTime) {
+        this.elapsedTime = elapsedTime;
     }
 
     public Map<StatementMetaData, SqlStats> getExecutedStatements() {
