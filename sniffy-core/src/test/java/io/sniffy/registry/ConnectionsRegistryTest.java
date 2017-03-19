@@ -1,9 +1,12 @@
 package io.sniffy.registry;
 
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonValue;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import org.junit.After;
 import org.junit.Test;
+import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -104,4 +107,32 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
         assertNotNull(persistedConnectionsRegistry);
     }
+
+    @Test
+    @Issue("issues/302")
+    public void testSerializeSpecialCharacters() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+        final String CONNECTION_URL = "jdbc:h2:c:\\work\\keycloak-3.0.0.CR1\\standalone\\data/keycloak;AUTO_SERVER=TRUE";
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus(CONNECTION_URL,"sa", OPEN);
+
+        StringWriter sw = new StringWriter();
+        ConnectionsRegistry.INSTANCE.writeTo(sw);
+
+        String persistedConnectionsRegistry = sw.getBuffer().toString();
+
+        assertNotNull(persistedConnectionsRegistry);
+
+        JsonValue connectionRegistryJson = Json.parse(persistedConnectionsRegistry);
+
+        assertEquals(
+                CONNECTION_URL,
+                connectionRegistryJson.asObject().get("dataSources").asArray().get(0).asObject().get("url").asString()
+        );
+
+
+    }
+
 }
