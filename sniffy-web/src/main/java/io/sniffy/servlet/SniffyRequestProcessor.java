@@ -53,12 +53,12 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     public long getTimeToFirstByte() {
-        if (0 == timeToFirstByte) timeToFirstByte = System.currentTimeMillis() - startMillis;
+        if (0 == timeToFirstByte) timeToFirstByte = requestStats.getTimeToFirstByte() + System.currentTimeMillis() - startMillis;
         return timeToFirstByte;
     }
 
     public long getElapsedTime() {
-        if (0 == elapsedTime) elapsedTime = System.currentTimeMillis() - startMillis;
+        if (0 == elapsedTime) elapsedTime = requestStats.getElapsedTime() + System.currentTimeMillis() - startMillis;
         return elapsedTime;
     }
 
@@ -189,8 +189,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             ExceptionUtil.throwException(t);
         } finally {
             try {
-                requestStats.incTimeToFirstByte(getTimeToFirstByte());
-                requestStats.incElapsedTime(getElapsedTime());
+                requestStats.setTimeToFirstByte(getTimeToFirstByte());
+                requestStats.setElapsedTime(getElapsedTime());
                 updateRequestCache();
                 responseWrapper.flushIfPossible();
             } catch (Exception e) {
@@ -229,7 +229,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
         wrapper.addCorsHeadersHeaderIfRequired();
         wrapper.setIntHeader(HEADER_NUMBER_OF_QUERIES, requestStats.executedStatements() + spy.executedStatements());
-        wrapper.setHeader(HEADER_TIME_TO_FIRST_BYTE, requestStats.getElapsedTime() + Long.toString(getTimeToFirstByte()));
+        wrapper.setHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
         // TODO: store startTime of first request processor somewhere
 
         StringBuilder sb = new StringBuilder();
