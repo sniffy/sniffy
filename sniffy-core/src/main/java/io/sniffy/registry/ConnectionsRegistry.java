@@ -3,6 +3,7 @@ package io.sniffy.registry;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import io.sniffy.util.StringUtil;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -229,9 +230,8 @@ public enum ConnectionsRegistry {
 
                 writer.write('{');
                 if (null != hostName) {
-                    writer.write("\"host\":\"");
-                    writer.write(hostName);
-                    writer.write("\"");
+                    writer.write("\"host\":");
+                    writer.write(StringUtil.escapeJsonString(hostName));
                 }
                 if (null != port) {
                     if (null != hostName) writer.write(',');
@@ -240,9 +240,8 @@ public enum ConnectionsRegistry {
                     writer.write("\"");
                 }
                 writer.write(',');
-                writer.write("\"status\":\"");
-                writer.write(entry.getValue().name());
-                writer.write("\"");
+                writer.write("\"status\":");
+                writer.write(StringUtil.escapeJsonString(entry.getValue().name()));
                 writer.write('}');
                 if (iterator.hasNext()) writer.write(',');
 
@@ -269,20 +268,17 @@ public enum ConnectionsRegistry {
 
                 writer.write('{');
                 if (null != url) {
-                    writer.write("\"url\":\"");
-                    writer.write(url);
-                    writer.write("\"");
+                    writer.write("\"url\":");
+                    writer.write(StringUtil.escapeJsonString(url));
                 }
                 if (null != userName) {
                     if (null != url) writer.write(',');
-                    writer.write("\"userName\":\"");
-                    writer.write(userName);
-                    writer.write("\"");
+                    writer.write("\"userName\":");
+                    writer.write(StringUtil.escapeJsonString(userName));
                 }
                 writer.write(',');
-                writer.write("\"status\":\"");
-                writer.write(entry.getValue().name());
-                writer.write("\"");
+                writer.write("\"status\":");
+                writer.write(StringUtil.escapeJsonString(entry.getValue().name()));
                 writer.write('}');
                 if (iterator.hasNext()) writer.write(',');
 
