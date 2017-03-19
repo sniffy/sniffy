@@ -54,4 +54,6 @@ Unlike the query parameter the HTTP header will only affect a single request.
 A similar header `Sniffy-Inject-Html-Enabled` can be used for hiding or showing the Sniffy Widget in the browser.
 Unlike `Sniffy-Enabled` It doesn't come with a query parameter alternative.
 
+Convenient https://chrome.google.com/webstore/detail/sniffy-chrome-extension/hmiejljajpgikfbajggcolnblbhfedjp?hl=en[Sniffy Chrome Extension] can add these headers by simply clicking on an icon in your Google Chrome browser.
+
 
