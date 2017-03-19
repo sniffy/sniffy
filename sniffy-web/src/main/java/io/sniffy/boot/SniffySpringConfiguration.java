@@ -197,7 +197,7 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
         String resolvedValue = beanFactory.resolveEmbeddedValue(attributeValue);
         Object injectHtmlObj = resolver.evaluate(resolvedValue, expressionContext);
         try {
-            value = typeConverter.convertIfNecessary(injectHtmlObj, Number.class).intValue();
+            value = typeConverter.convertIfNecessary(injectHtmlObj, Integer.class);
         } catch (TypeMismatchException e) {
             value = 0;
         }
