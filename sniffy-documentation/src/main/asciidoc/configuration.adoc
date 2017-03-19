@@ -27,14 +27,19 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |Enable servlet filter
 |true
 
+|-Dio.sniffy.excludePattern
+|IO_SNIFFY_EXCLUDE_PATTERN
+|Regexp for excluding sniffy completely from certain servlet requests
+|
+
 |-Dio.sniffy.injectHtml
 |IO_SNIFFY_INJECT_HTML
 |Inject Sniffy HTML to result HTML
 |true
 
-|-Dio.sniffy.excludePattern
-|IO_SNIFFY_EXCLUDE_PATTERN
-|Regexp for excluding sniffy from certain servlet requests
+|-Dio.sniffy.injectHtmlExcludePattern
+|IO_SNIFFY_INJECT_HTML_EXCLUDE_PATTERN
+|Regexp for excluding sniffy widget from certain servlet requests
 |
 |===
 
