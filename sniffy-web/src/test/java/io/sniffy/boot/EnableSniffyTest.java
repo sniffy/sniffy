@@ -34,7 +34,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
