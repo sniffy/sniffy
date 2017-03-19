@@ -65,13 +65,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     public SniffyRequestProcessor(
             SniffyFilter sniffyFilter,
             HttpServletRequest httpServletRequest,
-            HttpServletResponse httpServletResponse,
-            boolean injectHtml) {
+            HttpServletResponse httpServletResponse) {
 
         this.sniffyFilter = sniffyFilter;
         this.httpServletRequest = httpServletRequest;
         this.httpServletResponse = httpServletResponse;
-        this.injectHtml = injectHtml;
 
         spy = Sniffy.spyCurrentThread();
 
@@ -104,6 +102,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         }
 
         this.relativeUrl = relativeUrl;
+
+        this.injectHtml = isInjectHtmlEnabled(httpServletRequest);
     }
 
     /**
@@ -299,6 +299,40 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             htmlInjector.injectAtTheEnd(snifferWidget);
 
         }
+
+    }
+
+    private boolean isInjectHtmlEnabled(HttpServletRequest httpServletRequest) {
+
+        boolean injectHtmlEnabled = sniffyFilter.injectHtml;
+
+        String injectHtmlEnabledHeader = httpServletRequest.getHeader(INJECT_HTML_ENABLED_PARAMETER);
+
+        if (null != injectHtmlEnabledHeader) {
+            injectHtmlEnabled = Boolean.parseBoolean(injectHtmlEnabledHeader);
+        }
+
+        if (injectHtmlEnabled && null != sniffyFilter.injectHtmlExcludePattern) {
+
+            String relativeUrl = null;
+
+            try {
+                String contextPath = httpServletRequest.getContextPath(); // like "/petclinic"
+                relativeUrl = null == httpServletRequest.getRequestURI() ? null : httpServletRequest.getRequestURI().substring(contextPath.length());
+            } catch (Exception e) {
+                if (null != sniffyFilter.servletContext) {
+                    sniffyFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+                } else {
+                    e.printStackTrace();
+                }
+            }
+
+            if (null != relativeUrl && sniffyFilter.injectHtmlExcludePattern.matcher(relativeUrl).matches()) {
+                injectHtmlEnabled = false;
+            }
+        }
+
+        return injectHtmlEnabled;
 
     }
 

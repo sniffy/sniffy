@@ -86,9 +86,11 @@ public class SniffyFilter implements Filter {
     protected static final String THREAD_LOCAL_DISCOVERED_ADDRESSES = "discoveredAddresses";
     protected static final String THREAD_LOCAL_DISCOVERED_DATA_SOURCES = "discoveredDataSources";
 
-    protected boolean injectHtml = true;
     protected boolean enabled = true;
     protected Pattern excludePattern = null;
+
+    protected boolean injectHtml = true;
+    protected Pattern injectHtmlExcludePattern = null;
 
     protected final Map<String, RequestStats> cache = new ConcurrentLinkedHashMap.Builder<String, RequestStats>().
             maximumWeightedCapacity(200).
@@ -98,14 +100,26 @@ public class SniffyFilter implements Filter {
     protected ServletContext servletContext; // TODO: log via slf4j if available
 
     public SniffyFilter() {
+
         Boolean filterEnabled = SniffyConfiguration.INSTANCE.getFilterEnabled();
         this.enabled = null == filterEnabled ? true : filterEnabled;
-        Boolean injectHtmlEnabled = SniffyConfiguration.INSTANCE.getInjectHtmlEnabled();
-        this.injectHtml = null == injectHtmlEnabled ? true : injectHtmlEnabled;
+
         try {
             String excludePattern = SniffyConfiguration.INSTANCE.getExcludePattern();
             if (null != excludePattern) {
                 this.excludePattern = Pattern.compile(excludePattern);
+            }
+        } catch (PatternSyntaxException e) {
+            // TODO: log me maybe?
+        }
+
+        Boolean injectHtmlEnabled = SniffyConfiguration.INSTANCE.getInjectHtmlEnabled();
+        this.injectHtml = null == injectHtmlEnabled ? true : injectHtmlEnabled;
+
+        try {
+            String injectHtmlExcludePattern = SniffyConfiguration.INSTANCE.getInjectHtmlExcludePattern();
+            if (null != excludePattern) {
+                this.injectHtmlExcludePattern = Pattern.compile(injectHtmlExcludePattern);
             }
         } catch (PatternSyntaxException e) {
             // TODO: log me maybe?
@@ -115,15 +129,6 @@ public class SniffyFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
 
         try {
-
-            String injectHtmlEnabled = filterConfig.getInitParameter("inject-html");
-            if (null != injectHtmlEnabled) {
-                if ("system".equals(injectHtmlEnabled)) {
-                    this.injectHtml = Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getInjectHtmlEnabled());
-                } else {
-                    this.injectHtml = Boolean.parseBoolean(injectHtmlEnabled);
-                }
-            }
 
             String filterEnabled = filterConfig.getInitParameter("enabled");
             if (null != filterEnabled) {
@@ -137,6 +142,20 @@ public class SniffyFilter implements Filter {
             String excludePattern = filterConfig.getInitParameter("exclude-pattern");
             if (null != excludePattern) {
                 this.excludePattern = Pattern.compile(excludePattern); // TODO: can throw exception
+            }
+
+            String injectHtmlEnabled = filterConfig.getInitParameter("inject-html");
+            if (null != injectHtmlEnabled) {
+                if ("system".equals(injectHtmlEnabled)) {
+                    this.injectHtml = Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getInjectHtmlEnabled());
+                } else {
+                    this.injectHtml = Boolean.parseBoolean(injectHtmlEnabled);
+                }
+            }
+
+            String injectHtmlExcludePattern = filterConfig.getInitParameter("inject-html-exclude-pattern");
+            if (null != excludePattern) {
+                this.injectHtmlExcludePattern = Pattern.compile(injectHtmlExcludePattern); // TODO: can throw exception
             }
 
             String faultToleranceCurrentRequest = filterConfig.getInitParameter("fault-tolerance-current-request");
@@ -194,7 +213,7 @@ public class SniffyFilter implements Filter {
         // create request decorator
         SniffyRequestProcessor sniffyRequestProcessor;
         try {
-            sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse, isInjectHtmlEnabled(httpServletRequest));
+            sniffyRequestProcessor = new SniffyRequestProcessor(this, httpServletRequest, httpServletResponse);
             request.setAttribute(SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME, sniffyRequestProcessor);
         } catch (Exception e) {
             if (null != servletContext) servletContext.log("Exception in SniffyRequestProcessor initialization; calling original chain", e);
@@ -278,20 +297,6 @@ public class SniffyFilter implements Filter {
         }
 
         return sniffyEnabled;
-
-    }
-
-    private boolean isInjectHtmlEnabled(HttpServletRequest httpServletRequest) throws MalformedURLException {
-
-        boolean injectHtmlEnabled = injectHtml;
-
-        String injectHtmlEnabledHeader = httpServletRequest.getHeader(INJECT_HTML_ENABLED_PARAMETER);
-
-        if (null != injectHtmlEnabledHeader) {
-            injectHtmlEnabled = Boolean.parseBoolean(injectHtmlEnabledHeader);
-        }
-
-        return injectHtmlEnabled;
 
     }
 
