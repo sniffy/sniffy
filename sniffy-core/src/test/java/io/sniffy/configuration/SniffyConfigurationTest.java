@@ -1,14 +1,14 @@
 package io.sniffy.configuration;
 
+import io.sniffy.Sniffy;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.yandex.qatools.allure.annotations.Features;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SniffyConfigurationTest {
 
@@ -99,6 +99,28 @@ public class SniffyConfigurationTest {
         assertFalse(sniffyConfiguration.isMonitorSocket());
         sniffyConfiguration.setMonitorSocket(true);
         assertTrue(sniffyConfiguration.isMonitorSocket());
+
+    }
+
+    @Test
+    @Features("issues/292")
+    public void testTopSqlCapacity() {
+
+        SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
+
+        System.setProperty("io.sniffy.topSqlCapacity", "42");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals(42, sniffyConfiguration.getTopSqlCapacity());
+
+        // incorrect value
+        System.setProperty("io.sniffy.topSqlCapacity", "bla");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals(0, sniffyConfiguration.getTopSqlCapacity());
+
+        // default value
+        System.getProperties().remove("io.sniffy.topSqlCapacity");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals(Sniffy.TOP_SQL_CAPACITY, sniffyConfiguration.getTopSqlCapacity());
 
     }
 
