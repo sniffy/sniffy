@@ -34,6 +34,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
@@ -42,7 +43,9 @@ import static org.junit.Assert.*;
         injectHtml = "#{injectHtml}",
         filterEnabled = "${filterEnabled}",
         advanced = @SniffyAdvancedConfiguration(
-                topSqlCapacity = "#{topSqlCapacity}"
+                topSqlCapacity = "#{topSqlCapacity}",
+                excludePattern = "#{excludePattern}",
+                injectHtmlExcludePattern = "^/peds.html$"
         )
 )
 @ContextConfiguration(classes = EnableSniffyTest.class)
@@ -55,6 +58,11 @@ public class EnableSniffyTest {
     @Bean
     public boolean injectHtml() {
         return true;
+    }
+
+    @Bean
+    public String excludePattern() {
+        return "^/vets.html$";
     }
 
     @Bean
@@ -80,6 +88,16 @@ public class EnableSniffyTest {
     @Test
     public void testTopSqlCapacitySet() {
         assertEquals(topSqlCapacity(), ((ConcurrentLinkedHashMap) Sniffy.getGlobalSqlStats()).capacity());
+    }
+
+    @Test
+    public void testExcludePatternSet() {
+        assertEquals(excludePattern(), applicationContext.getBean(SniffyFilter.class).getExcludePattern().pattern());
+    }
+
+    @Test
+    public void testInjectHtmlExcludePatternSet() {
+        assertEquals("^/peds.html$", applicationContext.getBean(SniffyFilter.class).getInjectHtmlExcludePattern().pattern());
     }
 
     @Test

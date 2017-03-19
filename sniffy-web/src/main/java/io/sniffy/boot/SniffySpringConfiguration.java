@@ -136,8 +136,9 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
         if (null == injectHtmlExcludePattern) {
 
             try {
-                String injectHtmlExcludePattern =
-                        enableSniffy.getAnnotation("advanced").getString("injectHtmlExcludePattern");
+                String injectHtmlExcludePattern = resolveStringProperty(
+                        enableSniffy.getAnnotation("advanced").getString("injectHtmlExcludePattern")
+                );
                 if (!injectHtmlExcludePattern.isEmpty()) {
                     this.injectHtmlExcludePattern = Pattern.compile(injectHtmlExcludePattern);
                 }
@@ -160,8 +161,9 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
         if (null == excludePattern) {
 
             try {
-                String excludePattern =
-                        enableSniffy.getAnnotation("advanced").getString("excludePattern");
+                String excludePattern = resolveStringProperty(
+                        enableSniffy.getAnnotation("advanced").getString("excludePattern")
+                );
                 if (!excludePattern.isEmpty()) {
                     this.excludePattern = Pattern.compile(excludePattern);
                 }
@@ -200,6 +202,20 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
             value = typeConverter.convertIfNecessary(injectHtmlObj, Number.class).intValue();
         } catch (TypeMismatchException e) {
             value = 0;
+        }
+
+        return value;
+    }
+
+    private String resolveStringProperty(String attributeValue) {
+        String value;
+
+        String resolvedValue = beanFactory.resolveEmbeddedValue(attributeValue);
+        Object injectHtmlObj = resolver.evaluate(resolvedValue, expressionContext);
+        try {
+            value = typeConverter.convertIfNecessary(injectHtmlObj, String.class);
+        } catch (TypeMismatchException e) {
+            value = null;
         }
 
         return value;
