@@ -24,12 +24,9 @@ public @interface EnableSniffy {
     /**
      * @since 3.1.2
      */
-    String topSqlCapacity() default "1024";
-    String excludePattern() default "";
+    SniffyAdvancedConfiguration advanced() default @SniffyAdvancedConfiguration;
 
-    /**
-     * @since 3.1.2
-     */
-    String injectHtmlExcludePattern() default "";
+    @Deprecated
+    String excludePattern() default "";
 
 }

@@ -118,7 +118,7 @@ public class SniffyFilter implements Filter {
 
         try {
             String injectHtmlExcludePattern = SniffyConfiguration.INSTANCE.getInjectHtmlExcludePattern();
-            if (null != excludePattern) {
+            if (null != injectHtmlExcludePattern) {
                 this.injectHtmlExcludePattern = Pattern.compile(injectHtmlExcludePattern);
             }
         } catch (PatternSyntaxException e) {
@@ -345,6 +345,14 @@ public class SniffyFilter implements Filter {
         this.injectHtml = injectHtml;
     }
 
+    public Pattern getInjectHtmlExcludePattern() {
+        return injectHtmlExcludePattern;
+    }
+
+    public void setInjectHtmlExcludePattern(Pattern injectHtmlExcludePattern) {
+        this.injectHtmlExcludePattern = injectHtmlExcludePattern;
+    }
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -353,4 +361,11 @@ public class SniffyFilter implements Filter {
         this.enabled = enabled;
     }
 
+    public Pattern getExcludePattern() {
+        return excludePattern;
+    }
+
+    public void setExcludePattern(Pattern excludePattern) {
+        this.excludePattern = excludePattern;
+    }
 }

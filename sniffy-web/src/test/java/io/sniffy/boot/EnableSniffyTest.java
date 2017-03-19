@@ -38,7 +38,13 @@ import java.util.concurrent.Callable;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@EnableSniffy(injectHtml = "#{injectHtml}", filterEnabled = "${filterEnabled}", topSqlCapacity = "#{topSqlCapacity}")
+@EnableSniffy(
+        injectHtml = "#{injectHtml}",
+        filterEnabled = "${filterEnabled}",
+        advanced = @SniffyAdvancedConfiguration(
+                topSqlCapacity = "#{topSqlCapacity}"
+        )
+)
 @ContextConfiguration(classes = EnableSniffyTest.class)
 @PropertySource("classpath:/test.properties")
 public class EnableSniffyTest {
