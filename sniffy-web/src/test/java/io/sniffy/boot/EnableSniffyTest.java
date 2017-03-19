@@ -1,5 +1,6 @@
 package io.sniffy.boot;
 
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
@@ -37,7 +38,15 @@ import java.util.concurrent.Callable;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@EnableSniffy(injectHtml = "#{injectHtml}", filterEnabled = "${filterEnabled}")
+@EnableSniffy(
+        injectHtml = "#{injectHtml}",
+        filterEnabled = "${filterEnabled}",
+        advanced = @SniffyAdvancedConfiguration(
+                topSqlCapacity = "#{topSqlCapacity}",
+                excludePattern = "#{excludePattern}",
+                injectHtmlExcludePattern = "^/peds.html$"
+        )
+)
 @ContextConfiguration(classes = EnableSniffyTest.class)
 @PropertySource("classpath:/test.properties")
 public class EnableSniffyTest {
@@ -48,6 +57,16 @@ public class EnableSniffyTest {
     @Bean
     public boolean injectHtml() {
         return true;
+    }
+
+    @Bean
+    public String excludePattern() {
+        return "^/vets.html$";
+    }
+
+    @Bean
+    public int topSqlCapacity() {
+        return 42;
     }
 
     @Bean(name = "dataSource")
@@ -63,6 +82,21 @@ public class EnableSniffyTest {
         });
 
         return targetDataSource;
+    }
+
+    @Test
+    public void testTopSqlCapacitySet() {
+        assertEquals(topSqlCapacity(), ((ConcurrentLinkedHashMap) Sniffy.getGlobalSqlStats()).capacity());
+    }
+
+    @Test
+    public void testExcludePatternSet() {
+        assertEquals(excludePattern(), applicationContext.getBean(SniffyFilter.class).getExcludePattern().pattern());
+    }
+
+    @Test
+    public void testInjectHtmlExcludePatternSet() {
+        assertEquals("^/peds.html$", applicationContext.getBean(SniffyFilter.class).getInjectHtmlExcludePattern().pattern());
     }
 
     @Test

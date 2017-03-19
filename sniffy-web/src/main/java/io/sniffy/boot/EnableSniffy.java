@@ -20,6 +20,13 @@ public @interface EnableSniffy {
 
     String filterEnabled() default "true";
     String injectHtml() default "true";
+
+    /**
+     * @since 3.1.2
+     */
+    SniffyAdvancedConfiguration advanced() default @SniffyAdvancedConfiguration;
+
+    @Deprecated
     String excludePattern() default "";
 
 }

@@ -128,9 +128,11 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
             }
             return result;
         } finally {
+            long elapsedTime = System.currentTimeMillis() - start;
+            Sniffy.logSqlTime(sql, elapsedTime);
             if (Sniffy.hasSpies()) {
                 String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
-                lastStatementMetaData = Sniffy.executeStatement(sql, System.currentTimeMillis() - start, stackTrace, rowsUpdated);
+                lastStatementMetaData = Sniffy.executeStatement(sql, elapsedTime, stackTrace, rowsUpdated);
             } else {
                 Sniffer.executedStatementsGlobalCounter.incrementAndGet();
             }

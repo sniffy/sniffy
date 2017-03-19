@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.1</version>
+        <version>3.1.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -80,6 +80,11 @@
         <dependency>
             <groupId>com.eclipsesource.minimal-json</groupId>
             <artifactId>minimal-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

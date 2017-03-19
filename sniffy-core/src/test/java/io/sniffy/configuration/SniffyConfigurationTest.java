@@ -1,13 +1,14 @@
 package io.sniffy.configuration;
 
+import io.sniffy.Sniffy;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.yandex.qatools.allure.annotations.Features;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SniffyConfigurationTest {
 
@@ -102,6 +103,28 @@ public class SniffyConfigurationTest {
     }
 
     @Test
+    @Features("issues/292")
+    public void testTopSqlCapacity() {
+
+        SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
+
+        System.setProperty("io.sniffy.topSqlCapacity", "42");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals(42, sniffyConfiguration.getTopSqlCapacity());
+
+        // incorrect value
+        System.setProperty("io.sniffy.topSqlCapacity", "bla");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals(0, sniffyConfiguration.getTopSqlCapacity());
+
+        // default value
+        System.getProperties().remove("io.sniffy.topSqlCapacity");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals(Sniffy.TOP_SQL_CAPACITY, sniffyConfiguration.getTopSqlCapacity());
+
+    }
+
+    @Test
     public void testFilterEnabled() {
 
         SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
@@ -109,31 +132,47 @@ public class SniffyConfigurationTest {
         // enabled
         System.setProperty("io.sniffy.filterEnabled", "true");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isFilterEnabled());
+        assertTrue(sniffyConfiguration.getFilterEnabled());
 
         System.setProperty("io.sniffy.filterEnabled", "TRUE");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isFilterEnabled());
+        assertTrue(sniffyConfiguration.getFilterEnabled());
 
         // disabled
         System.setProperty("io.sniffy.filterEnabled", "false");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertFalse(sniffyConfiguration.isFilterEnabled());
+        assertFalse(sniffyConfiguration.getFilterEnabled());
 
         System.setProperty("io.sniffy.filterEnabled", "");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertFalse(sniffyConfiguration.isFilterEnabled());
+        assertFalse(sniffyConfiguration.getFilterEnabled());
 
         // default value
         System.getProperties().remove("io.sniffy.filterEnabled");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isFilterEnabled());
+        assertNull(sniffyConfiguration.getFilterEnabled());
 
         // overriden value
         System.getProperties().remove("io.sniffy.filterEnabled");
         sniffyConfiguration.loadSniffyConfiguration();
         sniffyConfiguration.setFilterEnabled(false);
-        assertFalse(sniffyConfiguration.isFilterEnabled());
+        assertFalse(sniffyConfiguration.getFilterEnabled());
+
+    }
+
+    @Test
+    public void testExcludePattern() {
+
+        SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
+
+        // enabled
+        System.setProperty("io.sniffy.excludePattern", "^/vets.html$");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals("^/vets.html$", sniffyConfiguration.getExcludePattern());
+
+        System.getProperties().remove("io.sniffy.excludePattern");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertNull(sniffyConfiguration.getExcludePattern());
 
     }
 
@@ -142,34 +181,49 @@ public class SniffyConfigurationTest {
 
         SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
 
-        // enabled
         System.setProperty("io.sniffy.injectHtml", "true");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isInjectHtml());
+        assertTrue(sniffyConfiguration.getInjectHtmlEnabled());
 
         System.setProperty("io.sniffy.injectHtml", "TRUE");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isInjectHtml());
+        assertTrue(sniffyConfiguration.getInjectHtmlEnabled());
 
         // disabled
         System.setProperty("io.sniffy.injectHtml", "false");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertFalse(sniffyConfiguration.isInjectHtml());
+        assertFalse(sniffyConfiguration.getInjectHtmlEnabled());
 
         System.setProperty("io.sniffy.injectHtml", "");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertFalse(sniffyConfiguration.isInjectHtml());
+        assertFalse(sniffyConfiguration.getInjectHtmlEnabled());
 
         // default value
         System.getProperties().remove("io.sniffy.injectHtml");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isInjectHtml());
+        assertNull(sniffyConfiguration.getInjectHtmlEnabled());
 
         // overriden value
         System.getProperties().remove("io.sniffy.injectHtml");
         sniffyConfiguration.loadSniffyConfiguration();
-        sniffyConfiguration.setInjectHtml(false);
-        assertFalse(sniffyConfiguration.isInjectHtml());
+        sniffyConfiguration.setInjectHtmlEnabled(false);
+        assertFalse(sniffyConfiguration.getInjectHtmlEnabled());
+
+    }
+
+    @Test
+    @Features("issues/304")
+    public void testInjectHtmlExcludePattern() {
+
+        SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
+
+        System.setProperty("io.sniffy.injectHtmlExcludePattern", "^/vets.html$");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals("^/vets.html$", sniffyConfiguration.getInjectHtmlExcludePattern());
+
+        System.getProperties().remove("io.sniffy.injectHtmlExcludePattern");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertNull(sniffyConfiguration.getInjectHtmlExcludePattern());
 
     }
 

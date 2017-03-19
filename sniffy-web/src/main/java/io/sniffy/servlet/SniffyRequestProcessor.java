@@ -37,6 +37,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
 
+    private final boolean injectHtml;
+
     private final CurrentThreadSpy spy;
     private final String requestId;
     private final RequestStats requestStats;
@@ -51,16 +53,20 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     }
 
     public long getTimeToFirstByte() {
-        if (0 == timeToFirstByte) timeToFirstByte = System.currentTimeMillis() - startMillis;
+        if (0 == timeToFirstByte) timeToFirstByte = requestStats.getTimeToFirstByte() + System.currentTimeMillis() - startMillis;
         return timeToFirstByte;
     }
 
     public long getElapsedTime() {
-        if (0 == elapsedTime) elapsedTime = System.currentTimeMillis() - startMillis;
+        if (0 == elapsedTime) elapsedTime = requestStats.getElapsedTime() + System.currentTimeMillis() - startMillis;
         return elapsedTime;
     }
 
-    public SniffyRequestProcessor(SniffyFilter sniffyFilter, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    public SniffyRequestProcessor(
+            SniffyFilter sniffyFilter,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse) {
+
         this.sniffyFilter = sniffyFilter;
         this.httpServletRequest = httpServletRequest;
         this.httpServletResponse = httpServletResponse;
@@ -96,6 +102,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         }
 
         this.relativeUrl = relativeUrl;
+
+        this.injectHtml = isInjectHtmlEnabled(httpServletRequest);
     }
 
     /**
@@ -181,8 +189,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             ExceptionUtil.throwException(t);
         } finally {
             try {
-                requestStats.incTimeToFirstByte(getTimeToFirstByte());
-                requestStats.incElapsedTime(getElapsedTime());
+                requestStats.setTimeToFirstByte(getTimeToFirstByte());
+                requestStats.setElapsedTime(getElapsedTime());
                 updateRequestCache();
                 responseWrapper.flushIfPossible();
             } catch (Exception e) {
@@ -221,7 +229,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     public void onBeforeCommit(BufferedServletResponseWrapper wrapper, Buffer buffer) throws IOException {
         wrapper.addCorsHeadersHeaderIfRequired();
         wrapper.setIntHeader(HEADER_NUMBER_OF_QUERIES, requestStats.executedStatements() + spy.executedStatements());
-        wrapper.setHeader(HEADER_TIME_TO_FIRST_BYTE, requestStats.getElapsedTime() + Long.toString(getTimeToFirstByte()));
+        wrapper.setHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
         // TODO: store startTime of first request processor somewhere
 
         StringBuilder sb = new StringBuilder();
@@ -244,7 +252,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         wrapper.setHeader(HEADER_REQUEST_DETAILS, sb.toString());
 
-        if (sniffyFilter.injectHtml) {
+        if (injectHtml) {
             String contentType = wrapper.getContentType();
             String characterEncoding = wrapper.getCharacterEncoding();
 
@@ -278,7 +286,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
         updateRequestCache();
 
-        if (sniffyFilter.injectHtml && isHtmlPage) {
+        if (injectHtml && isHtmlPage) {
 
             String characterEncoding = wrapper.getCharacterEncoding();
             if (null == characterEncoding) {
@@ -294,26 +302,59 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     }
 
-    protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
-        if (contextPath.startsWith("./")) {
-            return new StringBuilder().
-                    append("<script type=\"application/javascript\">").
-                    append("document.write('\\x3Cscript ").
-                    append("id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
-                    append(requestId).
-                    append("\" src=\"'+location.href+'").
-                    append(contextPath.substring(1)).
-                    append(JAVASCRIPT_URI).
-                    append("\">\\x3C/script>');</script>");
-        } else {
-            return new StringBuilder().
-                    append("<script id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
-                    append(requestId).
-                    append("\" src=\"").
-                    append(contextPath).
-                    append(JAVASCRIPT_URI).
-                    append("\"></script>");
+    private boolean isInjectHtmlEnabled(HttpServletRequest httpServletRequest) {
+
+        boolean injectHtmlEnabled = sniffyFilter.injectHtml;
+
+        String injectHtmlEnabledHeader = httpServletRequest.getHeader(INJECT_HTML_ENABLED_PARAMETER);
+
+        if (null != injectHtmlEnabledHeader) {
+            injectHtmlEnabled = Boolean.parseBoolean(injectHtmlEnabledHeader);
         }
+
+        if (injectHtmlEnabled && null != sniffyFilter.injectHtmlExcludePattern) {
+
+            String relativeUrl = null;
+
+            try {
+                String contextPath = httpServletRequest.getContextPath(); // like "/petclinic"
+                relativeUrl = null == httpServletRequest.getRequestURI() ? null : httpServletRequest.getRequestURI().substring(contextPath.length());
+            } catch (Exception e) {
+                if (null != sniffyFilter.servletContext) {
+                    sniffyFilter.servletContext.log("Exception in SniffyRequestProcessor; calling original chain", e);
+                } else {
+                    e.printStackTrace();
+                }
+            }
+
+            if (null != relativeUrl && sniffyFilter.injectHtmlExcludePattern.matcher(relativeUrl).matches()) {
+                injectHtmlEnabled = false;
+            }
+        }
+
+        return injectHtmlEnabled;
+
+    }
+
+    protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
+        StringBuilder stringBuilder = new StringBuilder().
+                append("<script type=\"application/javascript\">").
+                append("if (typeof io === 'undefined' || !io.sniffy) {").
+                append("document.write('\\x3Cscript ").
+                append("id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
+                append(requestId).
+                append("\" src=\"");
+        if (contextPath.startsWith("./")) {
+            stringBuilder.append("'+location.href+'").
+                    append(contextPath.substring(1)).
+                    append(JAVASCRIPT_URI);
+        } else {
+            stringBuilder.append(contextPath).
+                    append(JAVASCRIPT_URI);
+        }
+        stringBuilder.append("\"").
+                append(">\\x3C/script>');}</script>");
+        return stringBuilder;
     }
 
     private int maximumInjectSize;

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-integration-tests</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.1</version>
+        <version>3.1.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -37,18 +37,20 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--<dependency>
-            <groupId>net.sourceforge.htmlunit</groupId>
-            <artifactId>htmlunit</artifactId>
-            <version>2.24</version>
-            &lt;!&ndash; TODO: 2.25 is not compatible with Spring Boot &ndash;&gt;
-        </dependency>-->
 
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>htmlunit-driver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-web</artifactId>
-            <version>3.1.1</version>
+            <version>3.1.2</version>
         </dependency>
     </dependencies>
 

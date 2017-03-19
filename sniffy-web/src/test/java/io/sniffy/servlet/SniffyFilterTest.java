@@ -13,12 +13,15 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import ru.yandex.qatools.allure.annotations.Features;
 import ru.yandex.qatools.allure.annotations.Issue;
 
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import javax.servlet.*;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
@@ -143,7 +146,7 @@ public class SniffyFilterTest extends BaseTest {
     }
 
     @Test
-    public void testFilterSniffyInjected() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjected() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
@@ -152,10 +155,7 @@ public class SniffyFilterTest extends BaseTest {
 
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
-
-        String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
 
@@ -166,7 +166,7 @@ public class SniffyFilterTest extends BaseTest {
 
     @Test
     @Issue("issues/275")
-    public void testFilterRequestForwarded() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterRequestForwarded() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         SniffyFilter filter = new SniffyFilter();
         filter.init(getFilterConfig());
@@ -183,13 +183,7 @@ public class SniffyFilterTest extends BaseTest {
 
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, outerFilterChain);
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
-
-        NodeList scripts = doc.getElementsByTagName("script");
-        assertEquals(1, scripts.getLength());
-
-        String sniffyJsSrc = scripts.item(0).getAttributes().getNamedItem("src").getNodeValue();
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
@@ -199,7 +193,7 @@ public class SniffyFilterTest extends BaseTest {
 
     @Test
     @Issue("issues/260")
-    public void testFilterRequestErrorDispatch() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterRequestErrorDispatch() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         SniffyFilter filter = new SniffyFilter();
         filter.init(getFilterConfig());
@@ -228,13 +222,8 @@ public class SniffyFilterTest extends BaseTest {
 
         assertEquals(1, Integer.parseInt(httpServletResponse.getHeader(HEADER_NUMBER_OF_QUERIES)));
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
-        NodeList scripts = doc.getElementsByTagName("script");
-        assertEquals(1, scripts.getLength());
-
-        String sniffyJsSrc = scripts.item(0).getAttributes().getNamedItem("src").getNodeValue();
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
@@ -254,8 +243,55 @@ public class SniffyFilterTest extends BaseTest {
         }).when(filterChain).doFilter(any(), any());
     }
 
+    public static class IoJS {
+
+        private SniffyJS sniffy;
+
+        public SniffyJS getSniffy() {
+            return sniffy;
+        }
+
+        public void setSniffy(SniffyJS sniffy) {
+            this.sniffy = sniffy;
+        }
+
+        public static class SniffyJS {}
+
+    }
+
+    public static class DocumentJS {
+
+        private StringBuilder content = new StringBuilder();
+
+        public void write(String content) {
+            this.content.append(content);
+        }
+
+    }
+
     @Test
-    public void testFilterSniffyInjectedRequestWithPath() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjectedRequestWithPath() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
+
+        answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+
+        SniffyFilter filter = new SniffyFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(requestWithPath, httpServletResponse, filterChain);
+
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
+
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../../" + SNIFFY_URI_PREFIX));
+
+        String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
+
+        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../../" + REQUEST_URI_PREFIX));
+
+    }
+
+    @Test
+    @Issue("issues/297")
+    public void testFilterSniffyInjectedJustOnce() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
@@ -267,14 +303,48 @@ public class SniffyFilterTest extends BaseTest {
         DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
 
-        String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
+        Node scriptTag = doc.getElementsByTagName("script").item(0);
+        String scriptSource = scriptTag.getTextContent();
+        ScriptEngineManager engineManager = new ScriptEngineManager();
+        ScriptEngine engine = engineManager.getEngineByName("nashorn");
+        ScriptContext scriptContext = engine.getContext();
+        IoJS ioJS = new IoJS();
+        ioJS.setSniffy(new IoJS.SniffyJS());
+        scriptContext.setAttribute("io", ioJS, ScriptContext.ENGINE_SCOPE);
+        DocumentJS documentJS = new DocumentJS();
+        scriptContext.setAttribute("document", documentJS, ScriptContext.ENGINE_SCOPE);
+        engine.eval(scriptSource);
 
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../../" + SNIFFY_URI_PREFIX));
+        assertEquals(0, documentJS.content.length());
 
-        String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
+    }
 
-        assertTrue(requestDetailsUrl + " must be a relative path", requestDetailsUrl.startsWith("../../" + REQUEST_URI_PREFIX));
+    protected String extractSniffyJsSrc(String contentAsString) throws ParserConfigurationException, SAXException, IOException, ScriptException {
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = documentBuilder.parse(new ByteArrayInputStream(contentAsString.getBytes()));
 
+        String sniffyJsSrc;
+
+        Node scriptTag = doc.getElementsByTagName("script").item(0);
+        if (scriptTag.hasAttributes() && null != scriptTag.getAttributes().getNamedItem("src")) {
+            sniffyJsSrc = scriptTag.getAttributes().getNamedItem("src").getNodeValue();
+        } else {
+            String scriptSource = scriptTag.getTextContent();
+            ScriptEngineManager engineManager = new ScriptEngineManager();
+            ScriptEngine engine = engineManager.getEngineByName("nashorn");
+            ScriptContext scriptContext = engine.getContext();
+            IoJS ioJS = new IoJS();
+            scriptContext.setAttribute("io", ioJS, ScriptContext.ENGINE_SCOPE);
+            DocumentJS documentJS = new DocumentJS();
+            scriptContext.setAttribute("document", documentJS, ScriptContext.ENGINE_SCOPE);
+            engine.eval(scriptSource);
+
+            assertTrue(documentJS.content.length() > 0);
+
+            Document generatedDoc = documentBuilder.parse(new ByteArrayInputStream(documentJS.content.toString().getBytes()));
+            sniffyJsSrc = generatedDoc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
+        }
+        return sniffyJsSrc;
     }
 
     @Test
@@ -301,7 +371,7 @@ public class SniffyFilterTest extends BaseTest {
     }
 
     @Test
-    public void testFilterSniffyInjectedContext() throws IOException, ServletException, ParserConfigurationException, SAXException {
+    public void testFilterSniffyInjectedContext() throws IOException, ServletException, ParserConfigurationException, SAXException, ScriptException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
 
@@ -310,11 +380,7 @@ public class SniffyFilterTest extends BaseTest {
 
         filter.doFilter(requestContext, httpServletResponse, filterChain);
 
-        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = documentBuilder.parse(new ByteArrayInputStream(httpServletResponse.getContentAsString().getBytes()));
-
-        String sniffyJsSrc = doc.getElementsByTagName("script").item(0).getAttributes().getNamedItem("src").getNodeValue();
-
+        String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
         assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith(SNIFFY_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
@@ -335,6 +401,25 @@ public class SniffyFilterTest extends BaseTest {
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertFalse(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
+
+    }
+
+    @Test
+    @Features("issues/304")
+    public void testInjectHtmlExcludePattern() throws IOException, ServletException {
+
+        answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+
+        FilterConfig filterConfig = getFilterConfig();
+        when(filterConfig.getInitParameter("inject-html-exclude-pattern")).thenReturn("^/foo/ba.*$");
+
+        SniffyFilter filter = new SniffyFilter();
+        filter.init(filterConfig);
+
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertTrue(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
+        assertFalse(httpServletResponse.getContentAsString().contains("script"));
 
     }
 
@@ -430,119 +515,6 @@ public class SniffyFilterTest extends BaseTest {
             assertEquals("test", e.getMessage());
         }
 
-    }
-
-    @Test
-    public void testDisabledFilterOneQuery() throws IOException, ServletException {
-
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-
-    }
-
-    @Test
-    public void testDisabledInConfigFilterOneQuery() throws IOException, ServletException {
-
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-
-        FilterConfig filterConfig = getFilterConfig();
-        when(filterConfig.getInitParameter("enabled")).thenReturn("false");
-
-        SniffyFilter filter = new SniffyFilter();
-        filter.init(filterConfig);
-
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-
-    }
-
-    @Test
-    public void testFilterEnabledByRequestParameter() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.setParameter("sniffy", "true");
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-        assertEquals("Check cookie parameter specified", "true", httpServletResponse.getCookie("sniffy").getValue());
-    }
-
-    @Test
-    public void testFilterNoCookies() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.setCookies((Cookie[]) null);
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-    }
-
-    @Test
-    public void testFilterEnabledByCookie() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.setCookies(new Cookie("sniffy", "true"));
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-    }
-
-    @Test
-    public void testFilterEnabledByHeader() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.addHeader("Sniffy-Enabled", "true");
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-    }
-
-    @Test
-    public void testFilterDisabledByHeader() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(true);
-        requestWithPathAndQueryParameter.addHeader("Sniffy-Enabled", "false");
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-    }
-
-    @Test
-    public void testFilterEnabledRequestParamOverridesCookie() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(false);
-        requestWithPathAndQueryParameter.setParameter("sniffy", "false");
-        requestWithPathAndQueryParameter.setCookies(new Cookie("sniffy", "true"));
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertFalse("Filter must be disabled", httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
-        assertEquals("Cookie parameter must be replaced", "false", httpServletResponse.getCookie("sniffy").getValue());
-    }
-
-    @Test
-    public void testFilterDisabledByRequestParameter() throws IOException, ServletException {
-        doAnswer(invocation -> {executeStatement(); return null;}).
-                when(filterChain).doFilter(any(), any());
-        SniffyFilter filter = new SniffyFilter();
-        filter.setEnabled(true);
-        requestWithPathAndQueryParameter.setParameter("sniffy", "false");
-        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
-        assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
     }
 
     @Test
@@ -679,6 +651,69 @@ public class SniffyFilterTest extends BaseTest {
 
             response.setContentType("text/html");
             response.setCharacterEncoding(cp1251);
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SniffyFilter filter = new SniffyFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(
+                -1 != Collections.indexOfSubList(
+                        stream(httpServletResponse.getContentAsByteArray()).boxed().collect(Collectors.toList()),
+                        stream("Привет, мир!".getBytes(cp1251)).boxed().collect(Collectors.toList())
+                )
+        );
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
+
+    }
+
+    @Test
+    public void testInjectHtmlSetContentTypeUsingHeader() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Hello, World!</body></html>";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setHeader("Content-Type", "text/html");
+
+            PrintWriter printWriter = response.getWriter();
+            executeStatement();
+            printWriter.append(actualContent);
+            executeStatement();
+            printWriter.flush();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        SniffyFilter filter = new SniffyFilter();
+        filter.init(getFilterConfig());
+
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
+        assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
+
+    }
+
+    @Test
+    public void testInjectHtmlSetCharacterEncodingUsingHeader() throws IOException, ServletException {
+
+        String actualContent = "<html><head><title>Title</title></head><body>Привет, мир!</body></html>";
+        final String cp1251 = "cp1251";
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+
+            response.setHeader("Content-Type", "text/html; charset=cp1251");
 
             PrintWriter printWriter = response.getWriter();
             executeStatement();
