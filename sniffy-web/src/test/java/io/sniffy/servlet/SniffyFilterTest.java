@@ -13,8 +13,8 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import ru.yandex.qatools.allure.annotations.Features;
 import ru.yandex.qatools.allure.annotations.Issue;
 
 import javax.script.ScriptContext;
@@ -401,6 +401,25 @@ public class SniffyFilterTest extends BaseTest {
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
 
         assertFalse(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
+
+    }
+
+    @Test
+    @Features("issues/304")
+    public void testInjectHtmlExcludePattern() throws IOException, ServletException {
+
+        answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
+
+        FilterConfig filterConfig = getFilterConfig();
+        when(filterConfig.getInitParameter("inject-html-exclude-pattern")).thenReturn("^/foo/ba.*$");
+
+        SniffyFilter filter = new SniffyFilter();
+        filter.init(filterConfig);
+
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertTrue(httpServletResponse.getHeaderNames().contains(HEADER_NUMBER_OF_QUERIES));
+        assertFalse(httpServletResponse.getContentAsString().contains("script"));
 
     }
 
