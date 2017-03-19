@@ -115,3 +115,7 @@ Some methods in `io.sniffy.Spy` class are now deprecated and will be removed com
 |[line-through]#verify*(...)#
 |verify(Spy.Expectation expectation)
 |===
+
+=== Deprecated annotations
+
+[line-through]`@EnableSniffy(excludePattern="...")` has been deprecated in favor of `@EnableSniffy(advanced = @SniffyAdvancedConfiguration(excludePattern = "...",))`
