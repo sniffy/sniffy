@@ -6,7 +6,7 @@
 
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-parent</artifactId>
-    <version>3.1.2-SNAPSHOT</version>
+    <version>3.1.2</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -26,7 +26,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/
         </sonatypeOssDistMgmtSnapshotsUrl>
-        <sniffy.ui.version>3.1.2-SNAPSHOT</sniffy.ui.version>
+        <sniffy.ui.version>3.1.2</sniffy.ui.version>
         <spring.version>4.3.7.RELEASE</spring.version>
         <spring.boot.version>1.5.2.RELEASE</spring.boot.version>
     </properties>
