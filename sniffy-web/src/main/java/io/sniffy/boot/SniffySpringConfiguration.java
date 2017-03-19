@@ -176,8 +176,8 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
     private boolean resolveBooleanProperty(String attributeValue) {
         Boolean value;
 
-        attributeValue = beanFactory.resolveEmbeddedValue(attributeValue);
-        Object injectHtmlObj = resolver.evaluate(attributeValue, expressionContext);
+        String resolvedValue = beanFactory.resolveEmbeddedValue(attributeValue);
+        Object injectHtmlObj = resolver.evaluate(resolvedValue, expressionContext);
         try {
             value = typeConverter.convertIfNecessary(injectHtmlObj, Boolean.class);
         } catch (TypeMismatchException e) {
@@ -194,8 +194,8 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
     private int resolveIntProperty(String attributeValue) {
         int value;
 
-        attributeValue = beanFactory.resolveEmbeddedValue(attributeValue);
-        Object injectHtmlObj = resolver.evaluate(attributeValue, expressionContext);
+        String resolvedValue = beanFactory.resolveEmbeddedValue(attributeValue);
+        Object injectHtmlObj = resolver.evaluate(resolvedValue, expressionContext);
         try {
             value = typeConverter.convertIfNecessary(injectHtmlObj, Number.class).intValue();
         } catch (TypeMismatchException e) {
