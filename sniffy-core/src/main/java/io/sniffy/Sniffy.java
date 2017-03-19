@@ -43,7 +43,7 @@ public class Sniffy {
             new ConcurrentHashMap<Long, WeakReference<CurrentThreadSpy>>();
     protected static final ConcurrentLinkedHashMap<String, Timer> globalSqlStats =
             new ConcurrentLinkedHashMap.Builder<String, Timer>().
-                    maximumWeightedCapacity(TOP_SQL_CAPACITY).
+                    maximumWeightedCapacity(SniffyConfiguration.INSTANCE.getTopSqlCapacity()).
                     build();
 
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();

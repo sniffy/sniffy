@@ -62,6 +62,7 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
     public SniffyFilter sniffyFilter() {
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(isMonitorSocket());
+        SniffyConfiguration.INSTANCE.setTopSqlCapacity(getTopSqlCapacity());
 
         SniffyFilter sniffyFilter = new SniffyFilter();
         sniffyFilter.setEnabled(isFilterEnabled());
@@ -103,6 +104,9 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
         return monitorSocket;
     }
 
+    private int getTopSqlCapacity() {
+        return resolveIntProperty("topSqlCapacity");
+    }
 
     private boolean isInjectHtml() {
         if (null == injectHtml) {
@@ -132,6 +136,21 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
 
         if (null == value) {
             value = false;
+        }
+
+        return value;
+    }
+
+    private int resolveIntProperty(String attributeName) {
+        int value;
+
+        String injectHtmlAttribute = enableSniffy.getString(attributeName);
+        injectHtmlAttribute = beanFactory.resolveEmbeddedValue(injectHtmlAttribute);
+        Object injectHtmlObj = resolver.evaluate(injectHtmlAttribute, expressionContext);
+        try {
+            value = typeConverter.convertIfNecessary(injectHtmlObj, Number.class).intValue();
+        } catch (TypeMismatchException e) {
+            value = 0;
         }
 
         return value;
