@@ -161,11 +161,26 @@ public class SniffyConfigurationTest {
     }
 
     @Test
-    public void testInjectHtml() {
+    public void testExcludePattern() {
 
         SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
 
         // enabled
+        System.setProperty("io.sniffy.excludePattern", "^/vets.html$");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals("^/vets.html$", sniffyConfiguration.getExcludePattern());
+
+        System.getProperties().remove("io.sniffy.excludePattern");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertNull(sniffyConfiguration.getExcludePattern());
+
+    }
+
+    @Test
+    public void testInjectHtml() {
+
+        SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
+
         System.setProperty("io.sniffy.injectHtml", "true");
         sniffyConfiguration.loadSniffyConfiguration();
         assertTrue(sniffyConfiguration.getInjectHtmlEnabled());
@@ -193,6 +208,22 @@ public class SniffyConfigurationTest {
         sniffyConfiguration.loadSniffyConfiguration();
         sniffyConfiguration.setInjectHtmlEnabled(false);
         assertFalse(sniffyConfiguration.getInjectHtmlEnabled());
+
+    }
+
+    @Test
+    @Features("issues/304")
+    public void testInjectHtmlExcludePattern() {
+
+        SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
+
+        System.setProperty("io.sniffy.injectHtmlExcludePattern", "^/vets.html$");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertEquals("^/vets.html$", sniffyConfiguration.getInjectHtmlExcludePattern());
+
+        System.getProperties().remove("io.sniffy.injectHtmlExcludePattern");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertNull(sniffyConfiguration.getInjectHtmlExcludePattern());
 
     }
 

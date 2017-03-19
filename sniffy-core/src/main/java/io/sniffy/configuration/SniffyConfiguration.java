@@ -15,8 +15,13 @@ public enum SniffyConfiguration {
     private volatile int topSqlCapacity;
 
     private volatile Boolean filterEnabled;
-    private volatile Boolean injectHtmlEnabled;
     private volatile String excludePattern;
+
+    private volatile Boolean injectHtmlEnabled;
+    /**
+     * @since 3.1.2
+     */
+    private volatile String injectHtmlExcludePattern;
 
     SniffyConfiguration() {
         loadSniffyConfiguration();
@@ -39,11 +44,12 @@ public enum SniffyConfiguration {
 
         String filterEnabled = getProperty("io.sniffy.filterEnabled", "IO_SNIFFY_FILTER_ENABLED");
         this.filterEnabled = null == filterEnabled ? null : Boolean.parseBoolean(filterEnabled);
+        excludePattern = getProperty("io.sniffy.excludePattern", "IO_SNIFFY_EXCLUDE_PATTERN", null);
 
         String injectHtmlEnabled = getProperty("io.sniffy.injectHtml", "IO_SNIFFY_INJECT_HTML");
         this.injectHtmlEnabled = null == injectHtmlEnabled ? null : Boolean.parseBoolean(injectHtmlEnabled);
+        injectHtmlExcludePattern = getProperty("io.sniffy.injectHtmlExcludePattern", "IO_SNIFFY_INJECT_HTML_EXCLUDE_PATTERN", null);
 
-        excludePattern = getProperty("io.sniffy.excludePattern", "IO_SNIFFY_EXCLUDE_PATTERN", null);
     }
 
     private String getProperty(String systemPropertyName, String environmentVariableName, String defaultValue) {
@@ -111,6 +117,14 @@ public enum SniffyConfiguration {
         this.filterEnabled = filterEnabled;
     }
 
+    public String getExcludePattern() {
+        return excludePattern;
+    }
+
+    public void setExcludePattern(String excludePattern) {
+        this.excludePattern = excludePattern;
+    }
+
     public Boolean getInjectHtmlEnabled() {
         return injectHtmlEnabled;
     }
@@ -119,12 +133,18 @@ public enum SniffyConfiguration {
         this.injectHtmlEnabled = injectHtmlEnabled;
     }
 
-    public String getExcludePattern() {
-        return excludePattern;
+    /**
+     * @since 3.1.2
+     */
+    public String getInjectHtmlExcludePattern() {
+        return injectHtmlExcludePattern;
     }
 
-    public void setExcludePattern(String excludePattern) {
-        this.excludePattern = excludePattern;
+    /**
+     * @since 3.1.2
+     */
+    public void setInjectHtmlExcludePattern(String injectHtmlExcludePattern) {
+        this.injectHtmlExcludePattern = injectHtmlExcludePattern;
     }
 
 }

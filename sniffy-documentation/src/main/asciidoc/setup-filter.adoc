@@ -8,16 +8,20 @@
     <filter-class>io.sniffy.servlet.SniffyFilter</filter-class>
     <async-supported>true</async-supported>
     <init-param>
-        <param-name>inject-html</param-name> <1>
+        <param-name>enabled</param-name> <1>
         <param-value>true</param-value> <!-- default: true -->
     </init-param>
     <init-param>
-        <param-name>enabled</param-name> <2>
-        <param-value>true</param-value> <!-- default: true -->
-    </init-param>
-    <init-param>
-        <param-name>exclude-pattern</param-name> <3>
+        <param-name>exclude-pattern</param-name> <2>
         <param-value>^/vets.html$</param-value> <!-- optional -->
+    </init-param>
+    <init-param>
+        <param-name>inject-html</param-name> <3>
+        <param-value>true</param-value> <!-- default: true -->
+    </init-param>
+    <init-param>
+        <param-name>inject-html-exclude-pattern</param-name> <4>
+        <param-value>^/peds.html$</param-value> <!-- optional -->
     </init-param>
 </filter>
 <filter-mapping>
@@ -25,9 +29,10 @@
     <url-pattern>/*</url-pattern>
 </filter-mapping>
 ```
-<1> Enables injection of Sniffy toolbar to HTML. If disabled the html remains untouched. You still can get the number of executed queries from `Sniffy-Sql-Queries` HTTP header.
-<2> Allows disabling the Sniffy filter in `web.xml`
-<3> Allows excluding some of the request URL's from Sniffer filter
+<1> Allows disabling the Sniffy filter in `web.xml`
+<2> Allows excluding some of the request URL's from Sniffer filter
+<3> Enables injection of Sniffy toolbar to HTML. If disabled the html remains untouched. You still can get the number of executed queries from `Sniffy-Sql-Queries` HTTP header.
+<4> Allows excluding of Sniffy toolbar injection to some of the request URL's
 
 Apart from obvious `false` and `true` values, you can set `inject-html` and 'enabled' parameters to a `system` value.
 It will act as described in table below:

@@ -18,13 +18,15 @@ public @interface EnableSniffy {
     String monitorJdbc() default "true";
     String monitorSocket() default "true";
 
+    String filterEnabled() default "true";
+    String injectHtml() default "true";
+
     /**
      * @since 3.1.2
      */
-    String topSqlCapacity() default "1024";
+    SniffyAdvancedConfiguration advanced() default @SniffyAdvancedConfiguration;
 
-    String filterEnabled() default "true";
-    String injectHtml() default "true";
+    @Deprecated
     String excludePattern() default "";
 
 }
