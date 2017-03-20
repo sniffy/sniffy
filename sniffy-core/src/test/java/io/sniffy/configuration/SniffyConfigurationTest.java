@@ -16,7 +16,8 @@ public class SniffyConfigurationTest {
 
     @BeforeClass
     public static void backupSystemPropertiesAndEnvironmentVariables() {
-        systemProperties = new Properties(System.getProperties());
+        systemProperties = new Properties();
+        systemProperties.putAll(System.getProperties());
     }
 
     @After
