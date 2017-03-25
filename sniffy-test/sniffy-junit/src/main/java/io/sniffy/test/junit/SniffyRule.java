@@ -1,10 +1,8 @@
 package io.sniffy.test.junit;
 
 import io.sniffy.*;
-import io.sniffy.socket.NoSocketsAllowed;
-import io.sniffy.socket.SocketExpectation;
-import io.sniffy.socket.SocketExpectations;
-import io.sniffy.socket.TcpConnections;
+import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.socket.*;
 import io.sniffy.sql.NoSql;
 import io.sniffy.sql.SqlExpectation;
 import io.sniffy.sql.SqlExpectations;
@@ -49,8 +47,10 @@ public class SniffyRule implements TestRule {
             return new InvalidAnnotationsStatement(statement, e);
         }
 
-        if (!expectationList.isEmpty() || !socketExpectationList.isEmpty()) {
-            return new SnifferStatement(statement, expectationList, socketExpectationList);
+        DisableSockets disableSockets = description.getAnnotation(DisableSockets.class);
+
+        if (!expectationList.isEmpty() || !socketExpectationList.isEmpty() || null != disableSockets) {
+            return new SnifferStatement(statement, expectationList, socketExpectationList, disableSockets);
         } else {
             return statement;
         }
@@ -120,11 +120,17 @@ public class SniffyRule implements TestRule {
         private final Statement delegate;
         private final List<SqlExpectation> sqlExpectationList;
         private final List<SocketExpectation> socketExpectationList;
+        private final DisableSockets disableSockets;
 
-        public SnifferStatement(Statement delegate, List<SqlExpectation> sqlExpectationList, List<SocketExpectation> socketExpectationList) {
+        public SnifferStatement(
+                Statement delegate,
+                List<SqlExpectation> sqlExpectationList,
+                List<SocketExpectation> socketExpectationList,
+                DisableSockets disableSockets) {
             this.delegate = delegate;
             this.sqlExpectationList = sqlExpectationList;
             this.socketExpectationList = socketExpectationList;
+            this.disableSockets = disableSockets;
         }
 
         @Override
@@ -155,11 +161,22 @@ public class SniffyRule implements TestRule {
                 }
             }
 
-            spy.execute(new Executable() {
-                public void execute() throws Throwable{
-                    delegate.evaluate();
+            try {
+                if (null != disableSockets) {
+                    SnifferSocketImplFactory.install();
+                    ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, ConnectionsRegistry.ConnectionStatus.CLOSED);
                 }
-            }).close();
+
+                spy.execute(new Executable() {
+                    public void execute() throws Throwable {
+                        delegate.evaluate();
+                    }
+                }).close();
+            } finally {
+                if (null != disableSockets) {
+                    ConnectionsRegistry.INSTANCE.clear();
+                }
+            }
 
         }
 

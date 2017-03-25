@@ -3,6 +3,9 @@ package io.sniffy.test.spring;
 import io.sniffy.Sniffy;
 import io.sniffy.SniffyAssertionError;
 import io.sniffy.Spy;
+import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.socket.DisableSockets;
+import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.TcpConnections;
 import io.sniffy.sql.SqlExpectation;
@@ -23,6 +26,7 @@ import java.util.List;
 public class SniffySpringTestListener extends AbstractTestExecutionListener {
 
     private static final String SPY_ATTRIBUTE_NAME = "spy";
+    private static final String DISABLE_SOCKETS_ATTRIBUTE_NAME = "disableSockets";
 
     // In different version of spring org.springframework.test.context.TestContext is either class or interface
     // In order to keep binary compatibility with all version we should use reflection
@@ -127,6 +131,14 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
             setAttribute(testContext, SPY_ATTRIBUTE_NAME, spy);
         }
 
+        DisableSockets disableSockets = AnnotationProcessor.getAnnotationRecursive(testMethod, DisableSockets.class);
+
+        if (null != disableSockets) {
+            SnifferSocketImplFactory.install();
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, ConnectionsRegistry.ConnectionStatus.CLOSED);
+            setAttribute(testContext, DISABLE_SOCKETS_ATTRIBUTE_NAME, disableSockets);
+        }
+
     }
 
     @Override
@@ -154,6 +166,13 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
 
             }
 
+        }
+
+        Object disableSockets = getAttribute(testContext, DISABLE_SOCKETS_ATTRIBUTE_NAME);
+        removeAttribute(testContext, DISABLE_SOCKETS_ATTRIBUTE_NAME);
+
+        if (null != disableSockets) {
+            ConnectionsRegistry.INSTANCE.clear();
         }
 
     }

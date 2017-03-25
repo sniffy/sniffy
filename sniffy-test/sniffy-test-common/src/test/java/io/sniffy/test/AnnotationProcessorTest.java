@@ -4,6 +4,7 @@ import io.sniffy.Expectation;
 import io.sniffy.Expectations;
 import io.sniffy.Query;
 import io.sniffy.Threads;
+import io.sniffy.socket.DisableSockets;
 import io.sniffy.socket.NoSocketsAllowed;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.SocketExpectations;
@@ -16,10 +17,106 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @NoSocketsAllowed
 @NoSql
 public class AnnotationProcessorTest {
+
+    @DisableSockets
+    private abstract static class BaseClassWithAnnotation {
+
+    }
+
+    private abstract static class BaseClassWithoutAnnotation {
+
+    }
+
+    private static class ConcreteClassExtendsBaseClassWithAnnotation extends BaseClassWithAnnotation {
+
+        @DisableSockets
+        public static void methodWithAnnotation() {
+            assert true;
+        }
+
+        public static void methodWithoutAnnotation() {
+            assert true;
+        }
+
+    }
+
+    private static class ConcreteClassExtendsBaseClassWithoutAnnotation extends BaseClassWithoutAnnotation {
+
+        @DisableSockets
+        public static void methodWithAnnotation() {
+            assert true;
+        }
+
+        public static void methodWithoutAnnotation() {
+            assert true;
+        }
+
+    }
+
+    @DisableSockets
+    private static class ConcreteClassWithAnnotation {
+
+        @DisableSockets
+        public static void methodWithAnnotation() {
+            assert true;
+        }
+
+        public static void methodWithoutAnnotation() {
+            assert true;
+        }
+
+    }
+
+    private static class ConcreteClassWithoutAnnotation {
+
+        @DisableSockets
+        public static void methodWithAnnotation() {
+            assert true;
+        }
+
+        public static void methodWithoutAnnotation() {
+            assert true;
+        }
+
+    }
+
+    @Test
+    public void testGetAnnotationRecursive() throws NoSuchMethodException {
+
+        assertNotNull(AnnotationProcessor.getAnnotationRecursive(
+                        ConcreteClassWithoutAnnotation.class.getMethod("methodWithAnnotation"), DisableSockets.class)
+        );
+        assertNull(AnnotationProcessor.getAnnotationRecursive(
+                ConcreteClassWithoutAnnotation.class.getMethod("methodWithoutAnnotation"), DisableSockets.class)
+        );
+
+        assertNotNull(AnnotationProcessor.getAnnotationRecursive(
+                ConcreteClassWithAnnotation.class.getMethod("methodWithAnnotation"), DisableSockets.class)
+        );
+        assertNotNull(AnnotationProcessor.getAnnotationRecursive(
+                ConcreteClassWithAnnotation.class.getMethod("methodWithoutAnnotation"), DisableSockets.class)
+        );
+
+        assertNotNull(AnnotationProcessor.getAnnotationRecursive(
+                ConcreteClassExtendsBaseClassWithoutAnnotation.class.getMethod("methodWithAnnotation"), DisableSockets.class)
+        );
+        assertNull(AnnotationProcessor.getAnnotationRecursive(
+                ConcreteClassExtendsBaseClassWithoutAnnotation.class.getMethod("methodWithoutAnnotation"), DisableSockets.class)
+        );
+
+        assertNotNull(AnnotationProcessor.getAnnotationRecursive(
+                ConcreteClassExtendsBaseClassWithAnnotation.class.getMethod("methodWithAnnotation"), DisableSockets.class)
+        );
+        assertNotNull(AnnotationProcessor.getAnnotationRecursive(
+                ConcreteClassExtendsBaseClassWithAnnotation.class.getMethod("methodWithoutAnnotation"), DisableSockets.class)
+        );
+
+    }
 
     @Test
     @Expectation(threads = Threads.OTHERS, query = Query.INSERT, atLeast = 2, atMost = 5)

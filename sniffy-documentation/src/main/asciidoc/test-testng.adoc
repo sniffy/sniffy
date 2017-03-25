@@ -10,3 +10,5 @@ include::../../../../sniffy-test/sniffy-testng/src/test/java/io/sniffy/test/test
 <2> - Now just add `@SqlExpectation` annotation to define number of queries allowed for given method.
 <3> - Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
 <4> - Do not make any changes in your code - just add the `@Listeners(SniffyTestNgListener.class)` and put annotations on your test method.
+<5> - Add `@DisableSockets` annotation on your test method or test class and any attempt to open a network connection will fail
+<6> - All socket operations executed within test method annotated with `@DisableSockets` will throw a `java.net.ConnectException`
