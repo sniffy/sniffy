@@ -5,11 +5,10 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import io.sniffy.util.StringUtil;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
 import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -203,6 +202,12 @@ public enum ConnectionsRegistry {
             }
         }
 
+    }
+
+    public void writeTo(OutputStream outputStream, String charset) throws IOException {
+        OutputStreamWriter writer = new OutputStreamWriter(outputStream, charset);
+        writeTo(writer);
+        writer.flush();
     }
 
     public void writeTo(Writer writer) throws IOException {

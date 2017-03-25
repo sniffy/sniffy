@@ -1,5 +1,8 @@
 package io.sniffy.util;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+
 public class StringUtil {
 
     public final static String LINE_SEPARATOR = System.getProperty("line.separator");
@@ -57,6 +60,14 @@ public class StringUtil {
         }
         sb.append('"');
         return sb.toString();
+    }
+
+    public static String[] splitBySlashAndDecode(String connectionString) throws UnsupportedEncodingException {
+        String[] split = connectionString.split("/");
+        for (int i = 0; i < split.length; i++) {
+            split[i] = URLDecoder.decode(URLDecoder.decode(split[i], "UTF-8"));
+        }
+        return split;
     }
 
 }
