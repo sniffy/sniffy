@@ -14,6 +14,7 @@
     <modules>
         <module>sniffy-integration-tests-spock</module>
 	    <module>sniffy-integration-tests-spring-boot</module>
+	    <module>sniffy-integration-test-tomcat</module>
     </modules>
 
     <build>
