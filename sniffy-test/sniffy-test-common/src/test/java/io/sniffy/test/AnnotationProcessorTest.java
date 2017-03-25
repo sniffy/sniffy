@@ -36,11 +36,11 @@ public class AnnotationProcessorTest {
 
         @DisableSockets
         public static void methodWithAnnotation() {
-
+            assert true;
         }
 
         public static void methodWithoutAnnotation() {
-
+            assert true;
         }
 
     }
@@ -49,11 +49,11 @@ public class AnnotationProcessorTest {
 
         @DisableSockets
         public static void methodWithAnnotation() {
-
+            assert true;
         }
 
         public static void methodWithoutAnnotation() {
-
+            assert true;
         }
 
     }
@@ -63,11 +63,11 @@ public class AnnotationProcessorTest {
 
         @DisableSockets
         public static void methodWithAnnotation() {
-
+            assert true;
         }
 
         public static void methodWithoutAnnotation() {
-
+            assert true;
         }
 
     }
@@ -76,11 +76,11 @@ public class AnnotationProcessorTest {
 
         @DisableSockets
         public static void methodWithAnnotation() {
-
+            assert true;
         }
 
         public static void methodWithoutAnnotation() {
-
+            assert true;
         }
 
     }
