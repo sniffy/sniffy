@@ -20,7 +20,7 @@ public class IntegrationTestServlet extends HttpServlet {
                 "<head>\n" +
                 "    <meta charset=\"utf-8\">\n" +
                 "    <title>MyDreamApp</title>\n" +
-                /*"    <base href=\"/\">\n" +*/
+                "    <base href=\"/\">\n" +
                 "\n" +
                 "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
                 "    <link rel=\"icon\" type=\"image/x-icon\" href=\"favicon.ico\">\n" +

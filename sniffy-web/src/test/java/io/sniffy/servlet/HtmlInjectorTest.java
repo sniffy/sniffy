@@ -1,6 +1,7 @@
 package io.sniffy.servlet;
 
 import org.junit.Test;
+import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.IOException;
 
@@ -66,6 +67,16 @@ public class HtmlInjectorTest {
                 "<!DOCTYPE html><html><head><injected/><script> </script><meta http-equiv=\"X-UA-Compatible\" content=\"IE=9; IE=8; IE=7; IE=EDGE\" /><title>Title</title></head><body>Hello, World!</body></html>",
                 injectAtTheBeginning(
                         "<!DOCTYPE html><html><head><script> </script><meta http-equiv=\"X-UA-Compatible\" content=\"IE=9; IE=8; IE=7; IE=EDGE\" /><title>Title</title></head><body>Hello, World!</body></html>"
+                ));
+    }
+
+    @Test
+    @Issue("issues/321")
+    public void testInjectBeforeBaseTag() throws Exception {
+        assertEquals(
+                "<!DOCTYPE html><html><head><injected/><base href=\"/\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=9; IE=8; IE=7; IE=EDGE\" /><title>Title</title></head><body>Hello, World!</body></html>",
+                injectAtTheBeginning(
+                        "<!DOCTYPE html><html><head><base href=\"/\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=9; IE=8; IE=7; IE=EDGE\" /><title>Title</title></head><body>Hello, World!</body></html>"
                 ));
     }
 
