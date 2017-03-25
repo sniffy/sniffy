@@ -150,6 +150,9 @@ public class AnnotationProcessor {
         return AnnotationProcessor.buildSqlExpectationList(sqlExpectations, sqlExpectation, noSql);
     }
 
+    /**
+     * @since 3.1.3
+     */
     public static <T extends Annotation> T getAnnotationRecursive(Method method, Class<T> annotationClass) {
         T annotation;
 
