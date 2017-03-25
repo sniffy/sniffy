@@ -11,6 +11,7 @@ import io.sniffy.sql.SqlExpectation;
 import io.sniffy.sql.SqlExpectations;
 import io.sniffy.util.Range;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,6 +148,21 @@ public class AnnotationProcessor {
         }
 
         return AnnotationProcessor.buildSqlExpectationList(sqlExpectations, sqlExpectation, noSql);
+    }
+
+    public static <T extends Annotation> T getAnnotationRecursive(Method method, Class<T> annotationClass) {
+        T annotation;
+
+        annotation = method.getAnnotation(annotationClass);
+        if (null == annotation) {
+            for (Class<?> clazz = method.getDeclaringClass();
+                 null == annotation && !Object.class.equals(clazz);
+                 clazz = clazz.getSuperclass()) {
+                annotation = clazz.getAnnotation(annotationClass);
+            }
+        }
+
+        return annotation;
     }
 
 }
