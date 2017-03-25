@@ -26,6 +26,21 @@ public class BaseTomcatIT {
     }
 
     @Test
+    @Issue("issues/321")
+    public void testSniffyInjectedPath() {
+
+        WebDriver webDriver = new HtmlUnitDriver(true);
+
+        webDriver.navigate().to("http://127.0.0.1:8081/test/index.html");
+
+        assertFalse(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
+        webDriver.findElement(By.className("sniffy-widget-icon-container")).click();
+        assertTrue(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
+
+        webDriver.quit();
+    }
+
+    @Test
     @Issue("issues/319")
     public void testSniffyInjectedToUrlWithQueryParameters() {
 
