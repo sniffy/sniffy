@@ -103,7 +103,7 @@ public class SniffyAgent {
             } else {
 
                 String resourceName =
-                        path.startsWith("/webjars/") ? "/META-INF/resources" + path :
+                        path.startsWith("/webjars/") ? "/web/META-INF/resources" + path :
                         "/web" + ("/".equals(path) ? "/index.html" : path);
                 InputStream inputStream = SniffyAgent.class.getResourceAsStream(resourceName);
 
