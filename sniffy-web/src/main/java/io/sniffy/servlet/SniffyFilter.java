@@ -138,6 +138,7 @@ public class SniffyFilter implements Filter {
                 setMonitorSocket(true);
             }
 
+            // TODO: rename to filter-enabled for consistency
             String filterEnabled = filterConfig.getInitParameter("enabled");
             if (null != filterEnabled) {
                 if ("system".equals(filterEnabled)) {
