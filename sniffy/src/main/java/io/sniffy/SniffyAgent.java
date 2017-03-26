@@ -23,6 +23,8 @@ public class SniffyAgent {
     public static final String DATASOURCE_REGISTRY_URI_PREFIX = "/connectionregistry/datasource/";
     public static final String PERSISTENT_REGISTRY_URI_PREFIX = "/connectionregistry/persistent/";
 
+    private static HttpServer server;
+
     public static void main(String[] args) throws IOException {
         Sniffy.initialize();
         startServer(5555);
@@ -33,11 +35,15 @@ public class SniffyAgent {
         startServer(Integer.parseInt(args));
     }
 
-    private static void startServer(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+    protected static void startServer(int port) throws IOException {
+        server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", new MyHandler());
         server.setExecutor(null); // creates a default executor
         server.start();
+    }
+
+    protected static void stopServer() {
+        server.stop(1);
     }
 
     static class MyHandler implements HttpHandler {
