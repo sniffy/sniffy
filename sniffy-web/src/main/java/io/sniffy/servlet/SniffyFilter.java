@@ -134,7 +134,7 @@ public class SniffyFilter implements Filter {
 
             // Proceed only if filter config is provided and neither setEnabled() nor setMonitorSocket() methods were called
             String monitorSocket = filterConfig.getInitParameter("monitor-socket");
-            if (null == this.monitorSocket && null == monitorSocket || Boolean.parseBoolean(monitorSocket)) {
+            if (null == this.monitorSocket && (null == monitorSocket || Boolean.parseBoolean(monitorSocket))) {
                 setMonitorSocket(true);
             }
 
