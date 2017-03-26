@@ -60,6 +60,7 @@
         </tr>
         </tbody>
     </table>
+    <button id="reload">Refresh</button>
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="/webjars/jquery/1.12.4/dist/jquery.min.js"></script>
@@ -67,31 +68,19 @@
 <script src="/webjars/bootstrap/3.3.7/dist/js/bootstrap.min.js"></script>
 <script src="/webjars/bootstrap-switch/3.3.3/dist/js/bootstrap-switch.min.js"></script>
 <script>
-$(document).ready(function() {
+
+function reload() {
     $.ajax({
         url: '/connectionregistry/',
         dataType: "json"
     }).done(function (data) {
         $('#sniffy-datasource-registry').empty();
 
-        var persistentToggleButton = $('#persistent');
-
         if (true === data.persistent) {
-            persistentToggleButton.attr('checked', true);
+            $('#persistent').bootstrapSwitch('state', true, true);
+        } else {
+            $('#persistent').bootstrapSwitch('state', false, true);
         }
-
-        persistentToggleButton.bootstrapSwitch({
-            'size': 'mini',
-            'onSwitchChange': function (event, state) {
-                $.ajax({
-                    url: '/connectionregistry/persistent/',
-                    type: state ? 'POST' : 'DELETE',
-                    success: function (result) {
-                        console.log(result);
-                    }
-                });
-            }
-        });
 
         if (data.dataSources) $.each(data.dataSources, function (i, item) {
             var toggleButton;
@@ -102,7 +91,7 @@ $(document).ready(function() {
                     toggleButton = $('<input type="checkbox" data-toggle="toggle">')
                 )
             ).appendTo('#sniffy-datasource-registry');
-            if (item.status == 'OPEN') {
+            if (item.status === 'OPEN') {
                 toggleButton.attr('checked', true);
             }
             toggleButton.bootstrapSwitch({
@@ -147,6 +136,23 @@ $(document).ready(function() {
         });
 
     });
+}
+
+$(document).ready(function() {
+    $('#persistent').bootstrapSwitch({
+        'size': 'mini',
+        'onSwitchChange': function (event, state) {
+            $.ajax({
+                url: '/connectionregistry/persistent/',
+                type: state ? 'POST' : 'DELETE',
+                success: function (result) {
+                    console.log(result);
+                }
+            });
+        }
+    });
+    reload();
+    $("#reload").click(reload);
 });
 </script>
 </body>
