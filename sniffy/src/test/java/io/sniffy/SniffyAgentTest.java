@@ -5,6 +5,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
+import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.IOException;
 
@@ -23,6 +24,7 @@ public class SniffyAgentTest {
     }
 
     @Test
+    @Features("issues/327")
     public void testGetRegistry() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
@@ -30,6 +32,7 @@ public class SniffyAgentTest {
     }
 
     @Test
+    @Features("issues/327")
     public void testGetHomePage() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/", String.class);
