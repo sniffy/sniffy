@@ -108,6 +108,7 @@
                 <configuration>
                     <instructions>
                         <Main-Class>io.sniffy.SniffyUsage</Main-Class>
+                        <Premain-Class>io.sniffy.SniffyAgent</Premain-Class>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Bundle-Version>${project.version}</Bundle-Version>

@@ -51,8 +51,8 @@ public class SniffyAgent {
 
                 addCorsHeaders(httpExchange);
 
-                httpExchange.sendResponseHeaders(200, 0);
                 httpExchange.getResponseHeaders().add("Content-Type", "application/javascript");
+                httpExchange.sendResponseHeaders(200, 0);
 
                 ConnectionsRegistry.INSTANCE.writeTo(httpExchange.getResponseBody(), "UTF-8");
 
@@ -97,6 +97,8 @@ public class SniffyAgent {
                 InputStream inputStream = SniffyAgent.class.getResourceAsStream(resourceName);
 
                 if (null != inputStream) {
+
+                    httpExchange.getResponseHeaders().add("Content-Type", getMimeType(resourceName));
                     httpExchange.sendResponseHeaders(200, 0);
 
                     byte[] buff = new byte[1024];
@@ -112,6 +114,22 @@ public class SniffyAgent {
                 }
 
             }
+        }
+
+        private String getMimeType(String resourceName) {
+
+            if (resourceName.endsWith(".html")) {
+                return "text/html";
+            } else if (resourceName.endsWith(".ico")) {
+                return "image/x-icon";
+            } else if (resourceName.endsWith(".js")) {
+                return "application/javascript";
+            } else if (resourceName.endsWith(".css")) {
+                return "text/css";
+            } else {
+                return "application/octet-stream";
+            }
+
         }
 
         private void addCorsHeaders(HttpExchange httpExchange) {
