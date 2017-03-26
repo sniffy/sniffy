@@ -50,6 +50,8 @@ public class Sniffy {
 
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
 
+    private static volatile boolean initialized = false;
+
     protected Sniffy() {
     }
 
@@ -62,6 +64,8 @@ public class Sniffy {
      * Otherwise one webapp would enable it but another one would disable
      */
     public static void initialize() {
+
+        if (initialized) return;
 
         SniffyConfiguration.INSTANCE.addTopSqlCapacityListener(new PropertyChangeListener() {
 
@@ -108,6 +112,8 @@ public class Sniffy {
             });
 
         }
+
+        initialized = true;
 
     }
 

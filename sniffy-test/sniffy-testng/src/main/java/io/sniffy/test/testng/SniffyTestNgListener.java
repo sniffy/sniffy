@@ -41,6 +41,7 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
 
     static {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        Sniffy.initialize();
     }
 
     private static void fail(ITestResult testResult, String message) {

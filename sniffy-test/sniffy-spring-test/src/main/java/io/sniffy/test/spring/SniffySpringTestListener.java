@@ -42,6 +42,7 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
 
     static {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        Sniffy.initialize();
 
         Method getTestMethod = null;
         Method setAttributeMethod = null;
