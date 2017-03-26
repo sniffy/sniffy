@@ -211,7 +211,7 @@ public class SniffyFilter implements Filter {
         if (null != sniffyServlet) {
             try {
                 sniffyServlet.service(request, response);
-                if (response.isCommitted()) return;
+                if (response.isCommitted()) return; // TODO: seems like it doesn't work sometimes
             } catch (Exception e) {
                 if (null != servletContext) servletContext.log("Exception in SniffyServlet; calling original chain", e);
                 chain.doFilter(request, response);
