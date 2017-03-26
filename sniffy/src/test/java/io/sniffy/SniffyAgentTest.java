@@ -81,6 +81,25 @@ public class SniffyAgentTest {
 
     @Test
     @Features("issues/327")
+    public void testPersistent() {
+        TestRestTemplate template = new TestRestTemplate();
+
+        ResponseEntity<String> entity = template.postForEntity("http://localhost:5555/connectionregistry/persistent/", null, String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+
+        entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(true, JsonPath.read(entity.getBody(), "$.persistent"));
+
+        template.delete("http://localhost:5555/connectionregistry/persistent/");
+
+        entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(false, JsonPath.read(entity.getBody(), "$.persistent"));
+    }
+
+    @Test
+    @Features("issues/327")
     public void testGetHomePage() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/", String.class);
