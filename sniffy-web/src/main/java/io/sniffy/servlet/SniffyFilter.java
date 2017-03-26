@@ -362,28 +362,49 @@ public class SniffyFilter implements Filter {
         this.injectHtmlExcludePattern = injectHtmlExcludePattern;
     }
 
+    /**
+     * @see #isMonitorSocket()
+     * @see #isFilterEnabled()
+     */
     @Deprecated
     public boolean isEnabled() {
         return filterEnabled;
     }
 
+    /**
+     * @see #setMonitorSocket(boolean)
+     * @see #setFilterEnabled(boolean)
+     */
+    @Deprecated
     public void setEnabled(boolean enabled) {
         setFilterEnabled(enabled);
         setMonitorSocket(enabled);
     }
 
+    /**
+     * @since 3.1.3
+     */
     public boolean isFilterEnabled() {
         return filterEnabled;
     }
 
+    /**
+     * @since 3.1.3
+     */
     public void setFilterEnabled(boolean filterEnabled) {
         this.filterEnabled = filterEnabled;
     }
 
+    /**
+     * @since 3.1.3
+     */
     public boolean isMonitorSocket() {
         return SniffyConfiguration.INSTANCE.isMonitorSocket();
     }
 
+    /**
+     * @since 3.1.3
+     */
     public void setMonitorSocket(boolean monitorSocket) {
         this.monitorSocket = monitorSocket;
         SniffyConfiguration.INSTANCE.setMonitorSocket(monitorSocket);

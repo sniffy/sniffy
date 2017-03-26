@@ -3,6 +3,7 @@ package io.sniffy.test.spring;
 import io.sniffy.Sniffy;
 import io.sniffy.SniffyAssertionError;
 import io.sniffy.Spy;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.DisableSockets;
 import io.sniffy.socket.SnifferSocketImplFactory;
@@ -40,6 +41,8 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
     private static final NoSuchMethodException INITIALIZATION_EXCEPTION;
 
     static {
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+
         Method getTestMethod = null;
         Method setAttributeMethod = null;
         Method getAttributeMethod = null;
@@ -134,7 +137,6 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
         DisableSockets disableSockets = AnnotationProcessor.getAnnotationRecursive(testMethod, DisableSockets.class);
 
         if (null != disableSockets) {
-            SnifferSocketImplFactory.install();
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, ConnectionsRegistry.ConnectionStatus.CLOSED);
             setAttribute(testContext, DISABLE_SOCKETS_ATTRIBUTE_NAME, disableSockets);
         }

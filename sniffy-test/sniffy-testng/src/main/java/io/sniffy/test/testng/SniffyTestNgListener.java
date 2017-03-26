@@ -3,6 +3,7 @@ package io.sniffy.test.testng;
 import io.sniffy.Sniffy;
 import io.sniffy.SniffyAssertionError;
 import io.sniffy.Spy;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.*;
 import io.sniffy.sql.SqlExpectation;
@@ -37,6 +38,10 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
 
     private static final String SPY_ATTRIBUTE_NAME = "spy";
     private static final String DISABLE_SOCKETS_ATTRIBUTE_NAME = "disableSockets";
+
+    static {
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+    }
 
     private static void fail(ITestResult testResult, String message) {
         testResult.setStatus(ITestResult.FAILURE);
@@ -98,11 +103,6 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
         DisableSockets disableSockets = AnnotationProcessor.getAnnotationRecursive(method, DisableSockets.class);
 
         if (null != disableSockets) {
-            try {
-                SnifferSocketImplFactory.install();
-            } catch (IOException e) {
-                fail(testResult, e.getMessage());
-            }
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, ConnectionsRegistry.ConnectionStatus.CLOSED);
             testResult.setAttribute(DISABLE_SOCKETS_ATTRIBUTE_NAME, disableSockets);
         }

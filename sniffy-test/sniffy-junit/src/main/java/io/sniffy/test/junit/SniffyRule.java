@@ -1,6 +1,7 @@
 package io.sniffy.test.junit;
 
 import io.sniffy.*;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.*;
 import io.sniffy.sql.NoSql;
@@ -30,6 +31,10 @@ import java.util.List;
  * @since 3.1
  */
 public class SniffyRule implements TestRule {
+
+    static {
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+    }
 
     public Statement apply(Statement statement, Description description) {
 
@@ -163,7 +168,6 @@ public class SniffyRule implements TestRule {
 
             try {
                 if (null != disableSockets) {
-                    SnifferSocketImplFactory.install();
                     ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, ConnectionsRegistry.ConnectionStatus.CLOSED);
                 }
 
