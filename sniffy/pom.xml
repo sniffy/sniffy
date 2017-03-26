@@ -19,6 +19,32 @@
             <version>${project.parent.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>bootstrap</artifactId>
+            <version>3.3.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>html5shiv</artifactId>
+            <version>3.7.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>respond</artifactId>
+            <version>1.4.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>jquery</artifactId>
+            <version>1.12.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>bootstrap-switch</artifactId>
+            <version>3.3.3</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework</groupId>
