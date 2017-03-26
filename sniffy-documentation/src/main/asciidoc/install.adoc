@@ -1,9 +1,22 @@
+:imagesdir: ./images
+
 == Standalone setup
 
 Sniffy comes with an uber-jar which doesn't require any additional dependencies to be installed.
 Just grab the `sniffy-{sniffy-version}.jar` from our https://github.com/sniffy/sniffy/releases/latest[releases page] and add it to the classpath of your application.
 
 WARNING: If you're using an application server like Tomcat and you're defining a datasource on application server level, `sniffy-{sniffy-version}.jar` should be added to the common classloader classpath and should be *absent* in web application classpath.
+
+== Non-Servlet applications
+
+Standalone sniffy uber-jar also works with non-Servlet applications (Currently only fault tolerance testing is supported in this mode).
+Just add following parameter to your java application command line:
+`-javaagent:sniffy-<VERSION>.jar=5559`
+
+Here `5559` is the port where connectivity controls are available - just point your browser to 5559 port on your host (Say http://localhost:5559 ).
+Below is an example of connections discovered in IntelliJ Idea:
+
+image::agent-ui.png[]
 
 == Spring Boot Integration
 
