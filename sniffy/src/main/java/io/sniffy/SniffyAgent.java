@@ -130,6 +130,8 @@ public class SniffyAgent {
                 return "text/html";
             } else if (resourceName.endsWith(".ico")) {
                 return "image/x-icon";
+            } else if (resourceName.endsWith(".png")) {
+                return "image/png";
             } else if (resourceName.endsWith(".js")) {
                 return "application/javascript";
             } else if (resourceName.endsWith(".css")) {

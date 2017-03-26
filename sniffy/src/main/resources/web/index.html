@@ -19,48 +19,51 @@
     <![endif]-->
 </head>
 <body>
-    <h1>Sniffy connection status</h1>
-    <table class="table table-hover">
-        <thead>
-        <tr>
-            <th class="col-md-6">URL</th>
-            <th class="col-md-4">Username</th>
-            <th class="col-md-2">Status</th>
-        </tr>
-        </thead>
-        <tbody id="sniffy-datasource-registry">
-        </tbody>
-    </table>
-    <table class="table table-hover">
-        <thead>
-        <tr>
-            <th class="col-md-6">Host</th>
-            <th class="col-md-4">Port</th>
-            <th class="col-md-2">Status</th>
-        </tr>
-        </thead>
-        <tbody id="sniffy-socket-registry">
-        </tbody>
-    </table>
-    <table class="table table-hover">
-        <thead>
-        <tr>
-            <th class="col-md-10">Settings</th>
-            <th class="col-md-2"></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <td class="col-md-10">
-                <label for="persistent">Keep the fault tolerance settings after server restart</label>
-            </td>
-            <td class="col-md-2">
-                <input type="checkbox" data-toggle="toggle" id="persistent"/>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-    <button id="reload">Refresh</button>
+    <div class="container">
+        <h1><img src="icon32.png"/> Sniffy connection status</h1>
+        <p>Sniffy autodetects all outgoing network connections and shows them in tables below.</p>
+        <p>You can trigger <i>java.net.ConnectException</i> for any of them using switches in the right column.</p>
+        <p>If you want to test the startup of your application with no connectivity, toggle the <i>Keep the fault tolerance settings after server restart</i> switch and restart your server.</p>
+        <p>Powered by <a href="http://sniffy.io" target="_blank">Sniffy</a></p>
+        <h3>Discovered database connections</h3>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th class="col-md-6">URL</th>
+                <th class="col-md-4">Username</th>
+                <th class="col-md-2">Status</th>
+            </tr>
+            </thead>
+            <tbody id="sniffy-datasource-registry">
+            </tbody>
+        </table>
+        <h3>Discovered network connections</h3>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th class="col-md-6">Host</th>
+                <th class="col-md-4">Port</th>
+                <th class="col-md-2">Status</th>
+            </tr>
+            </thead>
+            <tbody id="sniffy-socket-registry">
+            </tbody>
+        </table>
+        <h3>Settings</h3>
+        <table class="table table-hover">
+            <tbody>
+            <tr>
+                <td class="col-md-10">
+                    <label for="persistent">Keep the fault tolerance settings after server restart</label>
+                </td>
+                <td class="col-md-2">
+                    <input type="checkbox" data-toggle="toggle" id="persistent"/>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <button class="btn btn-primary" id="reload"><span class="glyphicon glyphicon-refresh"></span> Refresh</button>
+    </div>
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="/webjars/jquery/1.12.4/dist/jquery.min.js"></script>
