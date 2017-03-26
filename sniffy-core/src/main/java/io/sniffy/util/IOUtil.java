@@ -54,8 +54,17 @@ public class IOUtil {
                     String mainClassName = System.getProperty(MAIN_CLASS_PROPERTY_NAME);
                     if (null == mainClassName) {
                         mainClassName = "SniffyApplication";
-                    } else if (mainClassName.contains(" ")) {
-                        mainClassName = mainClassName.substring(0, mainClassName.indexOf(" "));
+                    } else {
+                        if (mainClassName.contains(" ")) {
+                            mainClassName = mainClassName.substring(0, mainClassName.indexOf(" "));
+                        }
+                        // It can be a full path to executable jar file
+                        if (mainClassName.contains("/")) {
+                            mainClassName = mainClassName.substring(mainClassName.lastIndexOf("/"));
+                        }
+                        if (mainClassName.contains("\\")) {
+                            mainClassName = mainClassName.substring(mainClassName.lastIndexOf("\\"));
+                        }
                     }
 
                     sb.append(mainClassName).append('.');
