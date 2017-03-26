@@ -1,10 +1,15 @@
 package io.sniffy.configuration;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+
 /**
  * @since 3.1
  */
 public enum SniffyConfiguration {
     INSTANCE;
+
+    private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
 
     private volatile boolean monitorJdbc;
     private volatile boolean monitorSocket;
@@ -32,7 +37,7 @@ public enum SniffyConfiguration {
                 "io.sniffy.monitorJdbc", "IO_SNIFFY_MONITOR_JDBC", "true"
         ));
         monitorSocket = Boolean.parseBoolean(getProperty(
-                "io.sniffy.monitorSocket", "IO_SNIFFY_MONITOR_SOCKET", "true"
+                "io.sniffy.monitorSocket", "IO_SNIFFY_MONITOR_SOCKET", "false"
         ));
         try {
             topSqlCapacity = Integer.parseInt(getProperty(
@@ -84,16 +89,33 @@ public enum SniffyConfiguration {
         this.monitorJdbc = monitorJdbc;
     }
 
+    // monitorSocket
+
     public boolean isMonitorSocket() {
         return monitorSocket;
     }
 
     public void setMonitorSocket(boolean monitorSocket) {
-        // TODO: document why?
-        if (!this.monitorSocket) {
-            this.monitorSocket = monitorSocket;
-        }
+        boolean oldValue = this.monitorSocket;
+        this.monitorSocket = monitorSocket;
+        pcs.firePropertyChange("monitorSocket", oldValue, monitorSocket);
     }
+
+    /**
+     * @since 3.1.3
+     */
+    public void addMonitorSocketListener(PropertyChangeListener listener) {
+        this.pcs.addPropertyChangeListener("monitorSocket", listener);
+    }
+
+    /**
+     * @since 3.1.3
+     */
+    public void removeMonitorSocketListener(PropertyChangeListener listener) {
+        this.pcs.removePropertyChangeListener("monitorSocket", listener);
+    }
+
+    // top sql capacity
 
     /**
      * @since 3.1.2
@@ -106,8 +128,26 @@ public enum SniffyConfiguration {
      * @since 3.1.2
      */
     public void setTopSqlCapacity(int topSqlCapacity) {
+        int oldValue = this.topSqlCapacity;
         this.topSqlCapacity = topSqlCapacity;
+        pcs.firePropertyChange("topSqlCapacity", oldValue, topSqlCapacity);
     }
+
+    /**
+     * @since 3.1.3
+     */
+    public void addTopSqlCapacityListener(PropertyChangeListener listener) {
+        this.pcs.addPropertyChangeListener("topSqlCapacity", listener);
+    }
+
+    /**
+     * @since 3.1.3
+     */
+    public void removeTopSqlCapacityListener(PropertyChangeListener listener) {
+        this.pcs.removePropertyChangeListener("topSqlCapacity", listener);
+    }
+
+    // filter enabled
 
     public Boolean getFilterEnabled() {
         return filterEnabled;

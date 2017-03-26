@@ -69,6 +69,7 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
     @Bean
     public SniffyFilter sniffyFilter() {
 
+        SniffyConfiguration.INSTANCE.setMonitorJdbc(isMonitorJdbc());
         SniffyConfiguration.INSTANCE.setMonitorSocket(isMonitorSocket());
         SniffyConfiguration.INSTANCE.setTopSqlCapacity(getTopSqlCapacity());
 
