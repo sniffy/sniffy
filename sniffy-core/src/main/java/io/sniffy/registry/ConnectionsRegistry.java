@@ -8,7 +8,6 @@ import io.sniffy.util.StringUtil;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
 import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
