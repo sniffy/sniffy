@@ -101,6 +101,8 @@
                                     <include>com.eclipsesource.minimal-json:minimal-json</include>
                                     <include>io.dropwizard.metrics:metrics-core</include>
                                     <include>io.sniffy:*</include>
+                                    <include>org.webjars:*</include>
+                                    <include>org.webjars.bower:*</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
