@@ -2,7 +2,20 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.2...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.3...master)
+
+## v3.1.3 - March 27th, 2017
+
+ * [Firefox widget position shifted](https://github.com/sniffy/sniffy/issues/328)
+ * [Support fault-tolerance testing for non-servlet applications](https://github.com/sniffy/sniffy/issues/327)
+ * [Sniffy Chrome Extension breaks certain Angular1 apps](https://github.com/sniffy/sniffy/issues/325)
+ * [Sniffy doesn't work with base tag](https://github.com/sniffy/sniffy/issues/321)
+ * [Sniffy is injected incorrectly to pages with query parametes](https://github.com/sniffy/sniffy/issues/319)
+ * [@SniffyAdvancedConfiguration(topSqlCapacity = "...") doesn't work](https://github.com/sniffy/sniffy/issues/311)
+ * [webjar isn't added to shaded sources jar](https://github.com/sniffy/sniffy/issues/310)
+ * [Simulate network failures in unit tests](https://github.com/sniffy/sniffy/issues/242)
+ * [Disable network connectivity in unit tests](https://github.com/sniffy/sniffy/issues/224)
+ * [Incorrect SQL formatting (missing spaces)](https://github.com/sniffy/sniffy/issues/182)
 
 ## v3.1.2 - March 20th, 2017
 
