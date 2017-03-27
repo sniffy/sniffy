@@ -70,6 +70,8 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
         assertEquals(2, testSocketImplFactory.invocationCounter.intValue());
 
+        SnifferSocketImplFactory.install();
+
     }
 
     @Test

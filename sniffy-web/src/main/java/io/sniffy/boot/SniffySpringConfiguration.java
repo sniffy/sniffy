@@ -1,5 +1,6 @@
 package io.sniffy.boot;
 
+import io.sniffy.Sniffy;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.servlet.SniffyFilter;
 import io.sniffy.sql.SniffyDataSource;
@@ -69,12 +70,15 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
     @Bean
     public SniffyFilter sniffyFilter() {
 
+        SniffyConfiguration.INSTANCE.setMonitorJdbc(isMonitorJdbc());
         SniffyConfiguration.INSTANCE.setMonitorSocket(isMonitorSocket());
         SniffyConfiguration.INSTANCE.setTopSqlCapacity(getTopSqlCapacity());
 
+        Sniffy.initialize();
+
         SniffyFilter sniffyFilter = new SniffyFilter();
 
-        sniffyFilter.setEnabled(isFilterEnabled());
+        sniffyFilter.setFilterEnabled(isFilterEnabled());
         sniffyFilter.setExcludePattern(getExcludePattern());
 
         sniffyFilter.setInjectHtml(isInjectHtml());

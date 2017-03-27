@@ -23,27 +23,32 @@
             <groupId>org.webjars.bower</groupId>
             <artifactId>bootstrap</artifactId>
             <version>3.3.7</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>html5shiv</artifactId>
             <version>3.7.3</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.webjars.bower</groupId>
             <artifactId>respond</artifactId>
             <version>1.4.2</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.webjars.bower</groupId>
             <artifactId>jquery</artifactId>
             <version>1.12.4</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.webjars.bower</groupId>
             <artifactId>bootstrap-switch</artifactId>
             <version>3.3.3</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -65,6 +70,15 @@
 
     <build>
 
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>target/generated-resources</directory>
+            </resource>
+        </resources>
+
         <plugins>
 
             <plugin>
@@ -78,6 +92,25 @@
                         <goals>
                             <goal>jar-no-fork</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-resources/web</outputDirectory>
+                            <includeGroupIds>org.webjars,org.webjars.bower</includeGroupIds>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

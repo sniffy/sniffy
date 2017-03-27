@@ -10,6 +10,8 @@ import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlUtil;
 import io.sniffy.sql.StatementMetaData;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -41,12 +43,14 @@ public class Sniffy {
             new ConcurrentLinkedQueue<WeakReference<Spy>>();
     protected static final ConcurrentMap<Long, WeakReference<CurrentThreadSpy>> currentThreadSpies =
             new ConcurrentHashMap<Long, WeakReference<CurrentThreadSpy>>();
-    protected static final ConcurrentLinkedHashMap<String, Timer> globalSqlStats =
+    protected static volatile ConcurrentLinkedHashMap<String, Timer> globalSqlStats =
             new ConcurrentLinkedHashMap.Builder<String, Timer>().
                     maximumWeightedCapacity(SniffyConfiguration.INSTANCE.getTopSqlCapacity()).
                     build();
 
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
+
+    private static volatile boolean initialized = false;
 
     protected Sniffy() {
     }
@@ -55,12 +59,62 @@ public class Sniffy {
         initialize();
     }
 
+    /**
+     * If socket monitoring is already enabled it cannot be disabled afterwards
+     * Otherwise one webapp would enable it but another one would disable
+     */
     public static void initialize() {
-        try {
-            if (SniffyConfiguration.INSTANCE.isMonitorSocket()) SnifferSocketImplFactory.install();
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        if (initialized) return;
+
+        SniffyConfiguration.INSTANCE.addTopSqlCapacityListener(new PropertyChangeListener() {
+
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                ConcurrentLinkedHashMap<String, Timer> oldValues = globalSqlStats;
+                globalSqlStats =
+                        new ConcurrentLinkedHashMap.Builder<String, Timer>().
+                                maximumWeightedCapacity(SniffyConfiguration.INSTANCE.getTopSqlCapacity()).
+                                build();
+                globalSqlStats.putAll(oldValues);
+            }
+
+        });
+
+
+        if (SniffyConfiguration.INSTANCE.isMonitorSocket()) {
+
+            try {
+                SnifferSocketImplFactory.install();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+
+            SniffyConfiguration.INSTANCE.addMonitorSocketListener(new PropertyChangeListener() {
+
+                private boolean sniffySocketImplFactoryInstalled = false;
+
+                @Override
+                public synchronized void propertyChange(PropertyChangeEvent evt) {
+                    if (sniffySocketImplFactoryInstalled) return;
+                    if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        try {
+                            SnifferSocketImplFactory.install();
+                            sniffySocketImplFactoryInstalled = true;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+            });
+
         }
+
+        initialized = true;
+
     }
 
     // TODO: call this method via Disruptor or something

@@ -4,6 +4,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.registry.ConnectionsRegistryStorage;
 
@@ -26,11 +27,13 @@ public class SniffyAgent {
     private static HttpServer server;
 
     public static void main(String[] args) throws IOException {
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         Sniffy.initialize();
         startServer(5555);
     }
 
     public static void premain(String args, Instrumentation instrumentation) throws Exception {
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         Sniffy.initialize();
         startServer(Integer.parseInt(args));
     }
@@ -100,7 +103,7 @@ public class SniffyAgent {
             } else {
 
                 String resourceName =
-                        path.startsWith("/webjars/") ? "/META-INF/resources" + path :
+                        path.startsWith("/webjars/") ? "/web/META-INF/resources" + path :
                         "/web" + ("/".equals(path) ? "/index.html" : path);
                 InputStream inputStream = SniffyAgent.class.getResourceAsStream(resourceName);
 

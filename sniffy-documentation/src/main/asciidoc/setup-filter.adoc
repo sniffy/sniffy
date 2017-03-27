@@ -23,6 +23,10 @@
         <param-name>inject-html-exclude-pattern</param-name> <4>
         <param-value>^/peds.html$</param-value> <!-- optional -->
     </init-param>
+    <init-param>
+        <param-name>monitor-socket</param-name> <5>
+        <param-value>false</param-value> <!-- default: true -->
+    </init-param>
 </filter>
 <filter-mapping>
     <filter-name>sniffer</filter-name>
@@ -33,6 +37,7 @@
 <2> Allows excluding some of the request URL's from Sniffer filter
 <3> Enables injection of Sniffy toolbar to HTML. If disabled the html remains untouched. You still can get the number of executed queries from `Sniffy-Sql-Queries` HTTP header.
 <4> Allows excluding of Sniffy toolbar injection to some of the request URL's
+<5> Allows disabling socket monitoring functionality; will also disable fault tolerance testing features
 
 Apart from obvious `false` and `true` values, you can set `inject-html` and 'enabled' parameters to a `system` value.
 It will act as described in table below:
