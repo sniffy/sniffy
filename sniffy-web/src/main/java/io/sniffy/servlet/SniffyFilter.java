@@ -86,7 +86,9 @@ public class SniffyFilter implements Filter {
     protected static final String THREAD_LOCAL_DISCOVERED_ADDRESSES = "discoveredAddresses";
     protected static final String THREAD_LOCAL_DISCOVERED_DATA_SOURCES = "discoveredDataSources";
 
-    protected boolean enabled = true;
+    protected Boolean monitorSocket;
+
+    protected boolean filterEnabled = true;
     protected Pattern excludePattern = null;
 
     protected boolean injectHtml = true;
@@ -102,7 +104,7 @@ public class SniffyFilter implements Filter {
     public SniffyFilter() {
 
         Boolean filterEnabled = SniffyConfiguration.INSTANCE.getFilterEnabled();
-        this.enabled = null == filterEnabled ? true : filterEnabled;
+        this.filterEnabled = null == filterEnabled ? true : filterEnabled;
 
         try {
             String excludePattern = SniffyConfiguration.INSTANCE.getExcludePattern();
@@ -130,12 +132,19 @@ public class SniffyFilter implements Filter {
 
         try {
 
+            // Proceed only if filter config is provided and neither setEnabled() nor setMonitorSocket() methods were called
+            String monitorSocket = filterConfig.getInitParameter("monitor-socket");
+            if (null == this.monitorSocket && (null == monitorSocket || Boolean.parseBoolean(monitorSocket))) {
+                setMonitorSocket(true);
+            }
+
+            // TODO: rename to filter-enabled for consistency
             String filterEnabled = filterConfig.getInitParameter("enabled");
             if (null != filterEnabled) {
                 if ("system".equals(filterEnabled)) {
-                    this.enabled = Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getFilterEnabled());
+                    this.filterEnabled = Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getFilterEnabled());
                 } else {
-                    this.enabled = Boolean.parseBoolean(filterEnabled);
+                    this.filterEnabled = Boolean.parseBoolean(filterEnabled);
                 }
             }
 
@@ -169,7 +178,7 @@ public class SniffyFilter implements Filter {
 
         } catch (Exception e) {
             e.printStackTrace();
-            enabled = false;
+            filterEnabled = false;
         }
 
     }
@@ -202,7 +211,7 @@ public class SniffyFilter implements Filter {
         if (null != sniffyServlet) {
             try {
                 sniffyServlet.service(request, response);
-                if (response.isCommitted()) return;
+                if (response.isCommitted()) return; // TODO: seems like it doesn't work sometimes
             } catch (Exception e) {
                 if (null != servletContext) servletContext.log("Exception in SniffyServlet; calling original chain", e);
                 chain.doFilter(request, response);
@@ -272,7 +281,7 @@ public class SniffyFilter implements Filter {
 
     private boolean isSniffyFilterEnabled(ServletRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws MalformedURLException {
 
-        boolean sniffyEnabled = enabled;
+        boolean sniffyEnabled = filterEnabled;
 
         // override by request parameter/cookie value if provided
 
@@ -353,12 +362,52 @@ public class SniffyFilter implements Filter {
         this.injectHtmlExcludePattern = injectHtmlExcludePattern;
     }
 
+    /**
+     * @see #isMonitorSocket()
+     * @see #isFilterEnabled()
+     */
+    @Deprecated
     public boolean isEnabled() {
-        return enabled;
+        return filterEnabled;
     }
 
+    /**
+     * @see #setMonitorSocket(boolean)
+     * @see #setFilterEnabled(boolean)
+     */
+    @Deprecated
     public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+        setFilterEnabled(enabled);
+        setMonitorSocket(enabled);
+    }
+
+    /**
+     * @since 3.1.3
+     */
+    public boolean isFilterEnabled() {
+        return filterEnabled;
+    }
+
+    /**
+     * @since 3.1.3
+     */
+    public void setFilterEnabled(boolean filterEnabled) {
+        this.filterEnabled = filterEnabled;
+    }
+
+    /**
+     * @since 3.1.3
+     */
+    public boolean isMonitorSocket() {
+        return SniffyConfiguration.INSTANCE.isMonitorSocket();
+    }
+
+    /**
+     * @since 3.1.3
+     */
+    public void setMonitorSocket(boolean monitorSocket) {
+        this.monitorSocket = monitorSocket;
+        SniffyConfiguration.INSTANCE.setMonitorSocket(monitorSocket);
     }
 
     public Pattern getExcludePattern() {

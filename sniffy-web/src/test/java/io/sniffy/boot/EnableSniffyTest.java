@@ -65,7 +65,7 @@ public class EnableSniffyTest {
     }
 
     @Bean
-    public int topSqlCapacity() {
+    public long topSqlCapacity() {
         return 42;
     }
 

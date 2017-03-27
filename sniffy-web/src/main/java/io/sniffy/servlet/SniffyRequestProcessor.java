@@ -345,7 +345,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 append(requestId).
                 append("\" src=\"");
         if (contextPath.startsWith("./")) {
-            stringBuilder.append("'+location.href+'").
+            stringBuilder.append("'+location.href.split('?')[0]+'").
                     append(contextPath.substring(1)).
                     append(JAVASCRIPT_URI);
         } else {

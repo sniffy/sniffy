@@ -25,6 +25,12 @@ image::network-connections.png[]
 
 Sniffy will throw a `java.net.ConnectException` when your application tries to connect to address disallowed by Sniffy.
 
+=== Simulating no connectivity in unit tests
+
+```java
+include::../../../../sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit/usage/DisableConnectivityOverviewTest.java[tags=DisableSocketsOverview]
+```
+
 = Install
 
 include::install.adoc[]

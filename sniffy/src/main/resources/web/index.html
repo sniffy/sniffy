@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Sniffy connectivity status</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="/webjars/bootstrap/3.3.7/dist/css/bootstrap.min.css">
+
+    <link rel="stylesheet" href="/webjars/bootstrap-switch/3.3.3/dist/css/bootstrap3/bootstrap-switch.min.css"/>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="/webjars/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="/webjars/respond/1.4.2/dest/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body>
+    <div class="container">
+        <div>
+            <h1><img src="icon32.png"/> Sniffy connectivity status</h1>
+            <p>Sniffy autodetects all outgoing network connections and shows them in tables below.</p>
+            <p>You can trigger <i>java.net.ConnectException</i> for any of them using switches in the right column.</p>
+            <p>If you want to test the startup of your application with no connectivity, toggle the <i>Keep the fault tolerance settings after server restart</i> switch and restart your server.</p>
+            <p>Powered by <a href="http://sniffy.io" target="_blank">Sniffy</a>.</p>
+        </div>
+        <div id="datasources" style="display: none">
+            <h3>Discovered database connections</h3>
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th class="col-md-6">URL</th>
+                    <th class="col-md-4">Username</th>
+                    <th class="col-md-2">Status</th>
+                </tr>
+                </thead>
+                <tbody id="sniffy-datasource-registry">
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <h3>Discovered network connections</h3>
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th class="col-md-6">Host</th>
+                    <th class="col-md-4">Port</th>
+                    <th class="col-md-2">Status</th>
+                </tr>
+                </thead>
+                <tbody id="sniffy-socket-registry">
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <h3>Settings</h3>
+            <table class="table table-hover">
+                <tbody>
+                <tr>
+                    <td class="col-md-10">
+                        <label for="persistent">Keep the fault tolerance settings after server restart</label>
+                    </td>
+                    <td class="col-md-2">
+                        <input type="checkbox" data-toggle="toggle" id="persistent"/>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <button class="btn btn-primary" id="reload"><span class="glyphicon glyphicon-refresh"></span> Refresh</button>
+        </div>
+    </div>
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="/webjars/jquery/1.12.4/dist/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="/webjars/bootstrap/3.3.7/dist/js/bootstrap.min.js"></script>
+<script src="/webjars/bootstrap-switch/3.3.3/dist/js/bootstrap-switch.min.js"></script>
+<script>
+
+function reload() {
+    $.ajax({
+        url: '/connectionregistry/',
+        dataType: "json"
+    }).done(function (data) {
+        $('#sniffy-datasource-registry').empty();
+
+        if (true === data.persistent) {
+            $('#persistent').bootstrapSwitch('state', true, true);
+        } else {
+            $('#persistent').bootstrapSwitch('state', false, true);
+        }
+
+        if (data.dataSources) {
+            $('#datasources').show();
+            $.each(data.dataSources, function (i, item) {
+                var toggleButton;
+                $('<tr>').append(
+                    $('<td>').text(item.url),
+                    $('<td>').text(item.userName),
+                    $('<td>').append(
+                        toggleButton = $('<input type="checkbox" data-toggle="toggle">')
+                    )
+                ).appendTo('#sniffy-datasource-registry');
+                if (item.status === 'OPEN') {
+                    toggleButton.attr('checked', true);
+                }
+                toggleButton.bootstrapSwitch({
+                    'size': 'mini',
+                    'onSwitchChange': function (event, state) {
+                        $.ajax({
+                            url: '/connectionregistry/datasource/' + encodeURIComponent(encodeURIComponent(item.url)) + '/' + encodeURIComponent(encodeURIComponent(item.userName)),
+                            type: state ? 'POST' : 'DELETE',
+                            success: function (result) {
+                                console.log(result);
+                            }
+                        });
+                    }
+                });
+            });
+        } else {
+            $('#datasources').hide();
+        }
+
+        $('#sniffy-socket-registry').empty();
+        if (data.sockets) $.each(data.sockets, function (i, item) {
+            var toggleButton;
+            $('<tr>').append(
+                $('<td>').text(item.host),
+                $('<td>').text(item.port),
+                $('<td>').append(
+                    toggleButton = $('<input type="checkbox" data-toggle="toggle">')
+                )
+            ).appendTo('#sniffy-socket-registry');
+            if (item.status === 'OPEN') {
+                toggleButton.attr('checked', true);
+            }
+            toggleButton.bootstrapSwitch({
+                'size': 'mini',
+                'onSwitchChange': function (event, state) {
+                    $.ajax({
+                        url: '/connectionregistry/socket/' + encodeURIComponent(encodeURIComponent(item.host)) + '/' + encodeURIComponent(encodeURIComponent(item.port)),
+                        type: state ? 'POST' : 'DELETE',
+                        success: function (result) {
+                            console.log(result);
+                        }
+                    });
+                }
+            });
+        });
+
+    });
+}
+
+$(document).ready(function() {
+    $('#persistent').bootstrapSwitch({
+        'size': 'mini',
+        'onSwitchChange': function (event, state) {
+            $.ajax({
+                url: '/connectionregistry/persistent/',
+                type: state ? 'POST' : 'DELETE',
+                success: function (result) {
+                    console.log(result);
+                }
+            });
+        }
+    });
+    reload();
+    $("#reload").click(reload);
+});
+</script>
+</body>
+</html>

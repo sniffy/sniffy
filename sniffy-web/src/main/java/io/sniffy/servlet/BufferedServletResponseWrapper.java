@@ -262,6 +262,7 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
             notifyBeforeCommit();
             setCommitted();
         }
+        // TODO: super.flushBuffer()
     }
 
     @Override

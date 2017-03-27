@@ -3,10 +3,9 @@ package io.sniffy.test.testng;
 import io.sniffy.Sniffy;
 import io.sniffy.SniffyAssertionError;
 import io.sniffy.Spy;
-import io.sniffy.socket.NoSocketsAllowed;
-import io.sniffy.socket.SocketExpectation;
-import io.sniffy.socket.SocketExpectations;
-import io.sniffy.socket.TcpConnections;
+import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.socket.*;
 import io.sniffy.sql.SqlExpectation;
 import io.sniffy.sql.SqlQueries;
 import io.sniffy.test.AnnotationProcessor;
@@ -16,6 +15,7 @@ import org.testng.IInvokedMethod;
 import org.testng.IInvokedMethodListener;
 import org.testng.ITestResult;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -37,6 +37,12 @@ import java.util.List;
 public class SniffyTestNgListener implements IInvokedMethodListener {
 
     private static final String SPY_ATTRIBUTE_NAME = "spy";
+    private static final String DISABLE_SOCKETS_ATTRIBUTE_NAME = "disableSockets";
+
+    static {
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        Sniffy.initialize();
+    }
 
     private static void fail(ITestResult testResult, String message) {
         testResult.setStatus(ITestResult.FAILURE);
@@ -95,6 +101,13 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
             testResult.setAttribute(SPY_ATTRIBUTE_NAME, spy);
         }
 
+        DisableSockets disableSockets = AnnotationProcessor.getAnnotationRecursive(method, DisableSockets.class);
+
+        if (null != disableSockets) {
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, ConnectionsRegistry.ConnectionStatus.CLOSED);
+            testResult.setAttribute(DISABLE_SOCKETS_ATTRIBUTE_NAME, disableSockets);
+        }
+
     }
 
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
@@ -126,6 +139,13 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
 
             testResult.removeAttribute(SPY_ATTRIBUTE_NAME);
 
+        }
+
+        Object disableSockets = testResult.getAttribute(DISABLE_SOCKETS_ATTRIBUTE_NAME);
+        testResult.removeAttribute(DISABLE_SOCKETS_ATTRIBUTE_NAME);
+
+        if (null != disableSockets) {
+            ConnectionsRegistry.INSTANCE.clear();
         }
 
     }

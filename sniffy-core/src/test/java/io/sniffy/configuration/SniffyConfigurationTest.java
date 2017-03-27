@@ -86,19 +86,7 @@ public class SniffyConfigurationTest {
         // default value
         System.getProperties().remove("io.sniffy.monitorSocket");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertTrue(sniffyConfiguration.isMonitorSocket());
-
-        // overriden value - can be enabled but cannot be disabled
-        System.getProperties().remove("io.sniffy.monitorSocket");
-        sniffyConfiguration.loadSniffyConfiguration();
-        sniffyConfiguration.setMonitorSocket(false);
-        assertTrue(sniffyConfiguration.isMonitorSocket());
-
-        System.setProperty("io.sniffy.monitorSocket", "false");
-        sniffyConfiguration.loadSniffyConfiguration();
         assertFalse(sniffyConfiguration.isMonitorSocket());
-        sniffyConfiguration.setMonitorSocket(true);
-        assertTrue(sniffyConfiguration.isMonitorSocket());
 
     }
 

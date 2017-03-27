@@ -80,10 +80,17 @@ class HtmlInjector {
         }
 
         int beforeScript = sb.indexOf("<script");
+        int beforeBase = sb.indexOf("<base");
 
-        // Find last meta tag bebfore first script tag
+        int beforeScriptOrBase =
+                beforeScript >= 0 && beforeBase >= 0 ? Math.min(beforeScript, beforeBase) :
+                        beforeScript >= 0 && beforeBase < 0 ? beforeScript :
+                            beforeBase >= 0 && beforeScript < 0 ? beforeBase :
+                                    -1;
 
-        String contentBeforeScript = -1 == beforeScript ? sb.toString() : sb.substring(0, beforeScript);
+        // Find last meta tag before first script tag
+
+        String contentBeforeScript = -1 == beforeScriptOrBase ? sb.toString() : sb.substring(0, beforeScriptOrBase);
 
         int lastMetaOpeningTag = contentBeforeScript.lastIndexOf("<meta");
         int lastMetaClosingTag = contentBeforeScript.lastIndexOf("</meta");
@@ -98,14 +105,14 @@ class HtmlInjector {
 
         if (-1 != afterLastMeta) {
             i = afterLastMeta;
-        } else if (-1 != afterHead && (-1 == beforeScript || afterHead <= beforeScript)) {
+        } else if (-1 != afterHead && (-1 == beforeScriptOrBase || afterHead <= beforeScriptOrBase)) {
             i = afterHead;
-        } else if (-1 != afterHtml && (-1 == beforeScript || afterHtml <= beforeScript)) {
+        } else if (-1 != afterHtml && (-1 == beforeScriptOrBase || afterHtml <= beforeScriptOrBase)) {
             i = afterHtml;
-        } else if (-1 != afterDocType && (-1 == beforeScript || afterDocType < beforeScript)) {
+        } else if (-1 != afterDocType && (-1 == beforeScriptOrBase || afterDocType < beforeScriptOrBase)) {
             i = afterDocType;
-        } else if (-1 != beforeScript) {
-            i = beforeScript;
+        } else if (-1 != beforeScriptOrBase) {
+            i = beforeScriptOrBase;
         } else {
             i = 0;
         }

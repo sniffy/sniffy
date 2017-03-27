@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.2</version>
+        <version>3.1.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,9 +18,66 @@
             <artifactId>sniffy-web</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>bootstrap</artifactId>
+            <version>3.3.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>html5shiv</artifactId>
+            <version>3.7.3</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>respond</artifactId>
+            <version>1.4.2</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>jquery</artifactId>
+            <version>1.12.4</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>bootstrap-switch</artifactId>
+            <version>3.3.3</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>target/generated-resources</directory>
+            </resource>
+        </resources>
 
         <plugins>
 
@@ -35,6 +92,25 @@
                         <goals>
                             <goal>jar-no-fork</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-resources/web</outputDirectory>
+                            <includeGroupIds>org.webjars,org.webjars.bower</includeGroupIds>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -58,6 +134,8 @@
                                     <include>com.eclipsesource.minimal-json:minimal-json</include>
                                     <include>io.dropwizard.metrics:metrics-core</include>
                                     <include>io.sniffy:*</include>
+                                    <include>org.webjars:*</include>
+                                    <include>org.webjars.bower:*</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -108,6 +186,7 @@
                 <configuration>
                     <instructions>
                         <Main-Class>io.sniffy.SniffyUsage</Main-Class>
+                        <Premain-Class>io.sniffy.SniffyAgent</Premain-Class>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Bundle-Version>${project.version}</Bundle-Version>

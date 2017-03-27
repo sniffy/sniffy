@@ -27,12 +27,13 @@ import java.util.Set;
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
+import static io.sniffy.util.StringUtil.splitBySlashAndDecode;
 
 /**
  * @see SniffyFilter
  * @since 2.3.0
  */
-class SniffyServlet extends HttpServlet {
+public class SniffyServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
 
@@ -52,9 +53,9 @@ class SniffyServlet extends HttpServlet {
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.2/dist/sniffy.min.js");
-            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.2/dist/sniffy.js");
-            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.2/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.3/dist/sniffy.min.js");
+            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.3/dist/sniffy.js");
+            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.3/dist/sniffy.map");
         } catch (IOException e) {
             // TODO: log me maybe?
         }
@@ -193,14 +194,6 @@ class SniffyServlet extends HttpServlet {
 
         }
 
-    }
-
-    private String[] splitBySlashAndDecode(String connectionString) throws UnsupportedEncodingException {
-        String[] split = connectionString.split("/");
-        for (int i = 0; i < split.length; i++) {
-            split[i] = URLDecoder.decode(URLDecoder.decode(split[i], "UTF-8"));
-        }
-        return split;
     }
 
     // TODO: stream JSON instead; otherwise we are creating unnecessary garbage out of interned strings mostly
