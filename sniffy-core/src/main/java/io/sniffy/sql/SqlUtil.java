@@ -8,7 +8,7 @@ import static java.util.regex.Pattern.MULTILINE;
 public class SqlUtil {
 
     public static final Pattern NORMALIZE_IN_STATEMENT_PATTERN = Pattern.compile(
-            "\\sin\\s*\\((\\s*\\?\\s*,\\s*)+\\?\\s*\\)", CASE_INSENSITIVE | MULTILINE
+            "\\sin\\s*\\((\\s*\\?\\s*,\\s*)++\\?\\s*\\)", CASE_INSENSITIVE | MULTILINE
     );
 
     public static String normalizeInStatement(String sql) {
