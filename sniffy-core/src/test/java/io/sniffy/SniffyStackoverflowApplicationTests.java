@@ -1,4 +1,4 @@
-package com.example;
+package io.sniffy;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
