@@ -3,17 +3,19 @@ package io.sniffy.socket;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.util.ExceptionUtil;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.net.SocketImpl;
-import java.net.SocketImplFactory;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.net.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.sniffy.Threads.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
@@ -136,6 +138,58 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
         SnifferSocketImplFactory.install();
 
+    }
+
+    @Test
+    public void testInstallTwice() throws Exception {
+
+        SnifferSocketImplFactory.install();
+        SnifferSocketImplFactory.install();
+
+        assertNull(SnifferSocketImplFactory.previousSocketImplFactory);
+
+        SnifferSocketImplFactory.uninstall();
+    }
+
+    @Test
+    @Issue("issues/313")
+    public void testInstallTwiceDifferentClassLoaders() throws Exception {
+
+        ClassLoader classLoader = new URLClassLoader(new URL[]{
+                SnifferSocketImplFactory.class.getProtectionDomain().getCodeSource().getLocation()
+        }, ClassLoader.getSystemClassLoader().getParent());
+
+        Class<?> clazz = classLoader.loadClass(SnifferSocketImplFactory.class.getName());
+        Method installMethod = clazz.getMethod("install");
+        Method uninstallMethod = clazz.getMethod("uninstall");
+
+        try {
+            installMethod.invoke(null);
+
+            try {
+                SnifferSocketImplFactory.install();
+
+                assertNull(SnifferSocketImplFactory.previousSocketImplFactory);
+            } finally {
+                SnifferSocketImplFactory.uninstall();
+            }
+        } finally {
+            uninstallMethod.invoke(null);
+        }
+    }
+
+    @Before
+    public void resetSocketFactory() throws Exception {
+        SnifferSocketImplFactory.uninstall();
+        Field factoryField = Socket.class.getDeclaredField("factory");
+        factoryField.setAccessible(true);
+        factoryField.set(null, null);
+    }
+
+    @After
+    public void reinitializeSniffy() throws Exception {
+        resetSocketFactory();
+        Sniffy.initialize();
     }
 
 }

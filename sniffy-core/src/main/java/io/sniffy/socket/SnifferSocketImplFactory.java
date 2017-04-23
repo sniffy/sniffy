@@ -17,7 +17,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
     protected final static Constructor<? extends SocketImpl> defaultSocketImplClassConstructor =
             getDefaultSocketImplClassConstructor();
 
-    private volatile static SocketImplFactory previousSocketImplFactory;
+    protected volatile static SocketImplFactory previousSocketImplFactory;
 
     /**
      * Backups the existing {@link SocketImplFactory} and sets the {@link SnifferSocketImplFactory} as a default
@@ -31,7 +31,8 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
             Field factoryField = Socket.class.getDeclaredField("factory");
             factoryField.setAccessible(true);
             SocketImplFactory currentSocketImplFactory = (SocketImplFactory) factoryField.get(null);
-            if (null == currentSocketImplFactory || !SnifferSocketImplFactory.class.equals(currentSocketImplFactory.getClass())) {
+            if (null == currentSocketImplFactory ||
+                    !SnifferSocketImplFactory.class.getName().equals(currentSocketImplFactory.getClass().getName())) {
                 factoryField.set(null, null);
                 Socket.setSocketImplFactory(new SnifferSocketImplFactory());
                 previousSocketImplFactory = currentSocketImplFactory;
@@ -55,6 +56,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
             Field factoryField = Socket.class.getDeclaredField("factory");
             factoryField.setAccessible(true);
             factoryField.set(null, previousSocketImplFactory);
+            previousSocketImplFactory = null;
         } catch (IllegalAccessException e) {
             throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
         } catch (NoSuchFieldException e) {

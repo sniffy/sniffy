@@ -12,15 +12,18 @@ import static org.junit.Assert.*;
 
 public class SniffyConfigurationTest {
 
-    private static Properties systemProperties;
+    private static Properties systemPropertiesBackup;
 
     @BeforeClass
     public static void backupSystemPropertiesAndEnvironmentVariables() {
-        systemProperties = new Properties(System.getProperties());
+        systemPropertiesBackup = new Properties();
+        systemPropertiesBackup.putAll(System.getProperties());
     }
 
     @After
     public void restoreSystemPropertiesAndEnvironmentVariables() {
+        Properties systemProperties = new Properties();
+        systemProperties.putAll(systemPropertiesBackup);
         System.setProperties(systemProperties);
     }
 
