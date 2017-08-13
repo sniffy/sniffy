@@ -246,10 +246,10 @@ public class SniffyFilter implements Filter {
     private static void cleanThreadLocalFaultToleranceSettings() {
         if (ConnectionsRegistry.INSTANCE.isThreadLocal()) {
             ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(
-                    new ConcurrentHashMap<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus>()
+                    new ConcurrentHashMap<Map.Entry<String, Integer>, Integer>()
             );
             ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredDataSources(
-                    new ConcurrentHashMap<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus>()
+                    new ConcurrentHashMap<Map.Entry<String, String>, Integer>()
             );
         }
     }
@@ -258,20 +258,20 @@ public class SniffyFilter implements Filter {
 
         HttpSession session = request.getSession();
 
-        Map<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> discoveredAddresses =
-                (Map<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus>)
+        Map<Map.Entry<String,Integer>, Integer> discoveredAddresses =
+                (Map<Map.Entry<String,Integer>, Integer>)
                         session.getAttribute(THREAD_LOCAL_DISCOVERED_ADDRESSES);
         if (null == discoveredAddresses) {
-            discoveredAddresses = new ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus>();
+            discoveredAddresses = new ConcurrentHashMap<Map.Entry<String,Integer>, Integer>();
             session.setAttribute(THREAD_LOCAL_DISCOVERED_ADDRESSES, discoveredAddresses);
         }
         ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(discoveredAddresses);
 
-        Map<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus> discoveredDataSources =
-                (Map<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus>)
+        Map<Map.Entry<String,String>, Integer> discoveredDataSources =
+                (Map<Map.Entry<String,String>, Integer>)
                         session.getAttribute(THREAD_LOCAL_DISCOVERED_DATA_SOURCES);
         if (null == discoveredDataSources) {
-            discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus>();
+            discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, Integer>();
             session.setAttribute(THREAD_LOCAL_DISCOVERED_DATA_SOURCES, discoveredDataSources);
         }
 

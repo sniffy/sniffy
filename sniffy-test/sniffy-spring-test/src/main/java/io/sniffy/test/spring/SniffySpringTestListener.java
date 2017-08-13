@@ -138,7 +138,7 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
         DisableSockets disableSockets = AnnotationProcessor.getAnnotationRecursive(testMethod, DisableSockets.class);
 
         if (null != disableSockets) {
-            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, ConnectionsRegistry.ConnectionStatus.CLOSED);
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
             setAttribute(testContext, DISABLE_SOCKETS_ATTRIBUTE_NAME, disableSockets);
         }
 

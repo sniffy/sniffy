@@ -17,6 +17,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import static java.sql.DriverManager.getConnection;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -26,17 +27,18 @@ import static org.junit.Assert.fail;
 public class SpringUsageTest {
 
     @Test
-    @SqlExpectation(count = @Count(1)) // <2>
+    @SqlExpectation(count = @Count(max = 1))
     public void testJUnitIntegration() throws SQLException {
-        final Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa"); // <3>
-        connection.createStatement().execute("SELECT 1 FROM DUAL"); // <4>
+        final Connection connection = getConnection(
+                "sniffy:jdbc:h2:mem:", "sa", "sa");
+        connection.createStatement().execute("SELECT 1 FROM DUAL");
     }
 
     @Test
     @DisableSockets // <5>
     public void testDisableSockets() throws IOException {
         try {
-            new Socket("google.com", 22); // <6>
+            new Socket("google.com", 443); // <6>
             fail("Sniffy should have thrown ConnectException");
         } catch (ConnectException e) {
             assertNotNull(e);

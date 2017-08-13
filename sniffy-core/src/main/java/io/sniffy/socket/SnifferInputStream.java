@@ -2,6 +2,7 @@ package io.sniffy.socket;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 
 /**
  * @since 3.1
@@ -11,6 +12,8 @@ class SnifferInputStream extends InputStream {
     private final SnifferSocketImpl snifferSocket;
     private final InputStream delegate;
 
+    private int potentiallyBufferedBytes = 0;
+
     SnifferInputStream(SnifferSocketImpl snifferSocket, InputStream delegate) {
         this.snifferSocket = snifferSocket;
         this.delegate = delegate;
@@ -18,7 +21,7 @@ class SnifferInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
         try {
@@ -26,37 +29,49 @@ class SnifferInputStream extends InputStream {
             if (read != -1) bytesDown = 1;
             return read;
         } finally {
+            sleepIfRquired(bytesDown);
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+        }
+    }
+
+    private void sleepIfRquired(int bytesDown) throws ConnectException {
+        potentiallyBufferedBytes -= bytesDown;
+
+        if (potentiallyBufferedBytes < 0) { // TODO: sleep multiple times if required
+            snifferSocket.checkConnectionAllowed(true);
+            potentiallyBufferedBytes = snifferSocket.receiveBufferSize;
         }
     }
 
     @Override
     public int read(byte[] b) throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
         try {
             return bytesDown = delegate.read(b);
         } finally {
+            sleepIfRquired(bytesDown);
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
         try {
             return bytesDown = delegate.read(b, off, len);
         } finally {
+            sleepIfRquired(bytesDown);
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
 
     @Override
     public long skip(long n) throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         try {
             return delegate.skip(n);
@@ -67,7 +82,7 @@ class SnifferInputStream extends InputStream {
 
     @Override
     public int available() throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         try {
             return delegate.available();
@@ -78,7 +93,7 @@ class SnifferInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         try {
             delegate.close();
@@ -99,7 +114,7 @@ class SnifferInputStream extends InputStream {
 
     @Override
     public void reset() throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         try {
             delegate.reset();

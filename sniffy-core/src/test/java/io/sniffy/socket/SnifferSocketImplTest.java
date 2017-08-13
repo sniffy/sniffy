@@ -1,17 +1,16 @@
 package io.sniffy.socket;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.SocketImpl;
+import java.net.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
@@ -26,8 +25,14 @@ public class SnifferSocketImplTest {
 
     private SnifferSocketImpl sniffySocket;
 
+    @BeforeClass
+    public static void initSnifferSocketImplStatic() {
+        SnifferSocketImpl.defaultReceiveBufferSize = 64;
+        SnifferSocketImpl.defaultSendBufferSize = 64;
+    }
+
     @Before
-    public void createSniffySocket() {
+    public void createSniffySocket() throws Exception {
         sniffySocket = new SnifferSocketImpl(delegate);
     }
 

@@ -29,8 +29,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static org.junit.Assert.*;
 
 public class SniffyServletTest extends BaseTest {
@@ -105,8 +103,8 @@ public class SniffyServletTest extends BaseTest {
 
         request.setContextPath("/petclinic");
 
-        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 8181, OPEN);
-        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", OPEN);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 8181, 0);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 0);
 
         sniffyServlet.service(request, response);
 
@@ -142,7 +140,7 @@ public class SniffyServletTest extends BaseTest {
             Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
             assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
             assertEquals("sa", datasource.getValue());
-            assertEquals(OPEN, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource));
+            assertEquals(0, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource).intValue());
         }
 
         // delete datasource from registry
@@ -159,7 +157,52 @@ public class SniffyServletTest extends BaseTest {
             Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
             assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
             assertEquals("sa", datasource.getValue());
-            assertEquals(CLOSED, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource));
+            assertEquals(-1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource).intValue());
+        }
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+    }
+
+    @Test
+    public void testEditDatasourceRegistryAddDelay() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+        URI dataSource1URI = new URI("/petclinic/" + SniffyServlet.DATASOURCE_REGISTRY_URI_PREFIX +
+                URLEncoder.encode(URLEncoder.encode("jdbc:h2:mem:data/base", "UTF-8"), "UTF-8") + "/sa");
+
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.post(dataSource1URI).content("42").buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            sniffyServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().size());
+            Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
+            assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
+            assertEquals("sa", datasource.getValue());
+            assertEquals(42, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource).intValue());
+        }
+
+        // delete datasource from registry
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.post(dataSource1URI).content("-3").buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            sniffyServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().size());
+            Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
+            assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
+            assertEquals("sa", datasource.getValue());
+            assertEquals(-3, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource).intValue());
         }
 
         ConnectionsRegistry.INSTANCE.clear();
@@ -187,7 +230,7 @@ public class SniffyServletTest extends BaseTest {
             Map.Entry<String, Integer> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().keySet().iterator().next();
             assertEquals("2001:0db8:85a3:0000:0000:8a2e:0370:7334", datasource.getKey());
             assertEquals(1234, datasource.getValue().intValue());
-            assertEquals(OPEN, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().get(datasource));
+            assertEquals(0, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().get(datasource).intValue());
         }
 
         // delete datasource from registry
@@ -204,7 +247,7 @@ public class SniffyServletTest extends BaseTest {
             Map.Entry<String, Integer> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().keySet().iterator().next();
             assertEquals("2001:0db8:85a3:0000:0000:8a2e:0370:7334", datasource.getKey());
             assertEquals(1234, datasource.getValue().intValue());
-            assertEquals(CLOSED, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().get(datasource));
+            assertEquals(-1, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().get(datasource).intValue());
         }
 
         ConnectionsRegistry.INSTANCE.clear();

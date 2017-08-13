@@ -169,7 +169,7 @@ public class SniffyRule implements TestRule {
 
             try {
                 if (null != disableSockets) {
-                    ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, ConnectionsRegistry.ConnectionStatus.CLOSED);
+                    ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
                 }
 
                 spy.execute(new Executable() {

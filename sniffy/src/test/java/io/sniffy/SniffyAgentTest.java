@@ -45,7 +45,7 @@ public class SniffyAgentTest {
         assertTrue(entity.getStatusCode().is2xxSuccessful());
         assertEquals("google.com", JsonPath.read(entity.getBody(), "$.sockets[0].host"));
         assertEquals("443", JsonPath.read(entity.getBody(), "$.sockets[0].port"));
-        assertEquals("OPEN", JsonPath.read(entity.getBody(), "$.sockets[0].status"));
+        assertEquals((Integer) 0, JsonPath.read(entity.getBody(), "$.sockets[0].status"));
 
         template.delete("http://localhost:5555/connectionregistry/socket/google.com/443");
 
@@ -53,7 +53,7 @@ public class SniffyAgentTest {
         assertTrue(entity.getStatusCode().is2xxSuccessful());
         assertEquals("google.com", JsonPath.read(entity.getBody(), "$.sockets[0].host"));
         assertEquals("443", JsonPath.read(entity.getBody(), "$.sockets[0].port"));
-        assertEquals("CLOSED", JsonPath.read(entity.getBody(), "$.sockets[0].status"));
+        assertEquals((Integer) (-1), JsonPath.read(entity.getBody(), "$.sockets[0].status"));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class SniffyAgentTest {
         assertTrue(entity.getStatusCode().is2xxSuccessful());
         assertEquals("jdbc:data:source", JsonPath.read(entity.getBody(), "$.dataSources[0].url"));
         assertEquals("user", JsonPath.read(entity.getBody(), "$.dataSources[0].userName"));
-        assertEquals("OPEN", JsonPath.read(entity.getBody(), "$.dataSources[0].status"));
+        assertEquals((Integer) 0, JsonPath.read(entity.getBody(), "$.dataSources[0].status"));
 
         template.delete("http://localhost:5555/connectionregistry/datasource/jdbc:data:source/user");
 
@@ -76,7 +76,7 @@ public class SniffyAgentTest {
         assertTrue(entity.getStatusCode().is2xxSuccessful());
         assertEquals("jdbc:data:source", JsonPath.read(entity.getBody(), "$.dataSources[0].url"));
         assertEquals("user", JsonPath.read(entity.getBody(), "$.dataSources[0].userName"));
-        assertEquals("CLOSED", JsonPath.read(entity.getBody(), "$.dataSources[0].status"));
+        assertEquals((Integer) (-1), JsonPath.read(entity.getBody(), "$.dataSources[0].status"));
     }
 
     @Test

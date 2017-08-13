@@ -17,8 +17,6 @@ import java.net.Socket;
 import java.util.AbstractMap;
 import java.util.Map;
 
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static org.junit.Assert.*;
 
 public class ConnectionsRegistryTest extends BaseSocketTest {
@@ -34,7 +32,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        ConnectionsRegistry.INSTANCE.setSocketAddressStatus(localhost.getHostName(), echoServerRule.getBoundPort(), CLOSED);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus(localhost.getHostName(), echoServerRule.getBoundPort(), -1);
 
         Socket socket = null;
 
@@ -52,9 +50,9 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
     @Test
     public void testIsNullConnectionOpened() {
 
-        assertEquals(OPEN, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(null));
-        assertEquals(OPEN, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress((InetAddress) null, 5555)));
-        assertEquals(OPEN, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress("bad host address", 5555)));
+        assertEquals(0, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(null));
+        assertEquals(0, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress((InetAddress) null, 5555)));
+        assertEquals(0, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress("bad host address", 5555)));
 
     }
 
@@ -75,30 +73,30 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
     @Test
     public void testLoadFromReader() throws Exception {
 
-        String json = "{\"sockets\":[{\"host\":\"google.com\",\"port\":\"42\",\"status\":\"OPEN\"}]," +
-                "\"dataSources\":[{\"url\":\"jdbc:h2:mem:test\",\"userName\":\"sa\",\"status\":\"CLOSED\"}]}";
+        String json = "{\"sockets\":[{\"host\":\"google.com\",\"port\":\"42\",\"status\":0}]," +
+                "\"dataSources\":[{\"url\":\"jdbc:h2:mem:test\",\"userName\":\"sa\",\"status\":-1}]}";
 
         ConnectionsRegistry.INSTANCE.readFrom(new StringReader(json));
 
-        Map<Map.Entry<String, Integer>, ConnectionsRegistry.ConnectionStatus> discoveredAddresses =
+        Map<Map.Entry<String, Integer>, Integer> discoveredAddresses =
                 ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
 
         assertEquals(1, discoveredAddresses.size());
-        assertEquals(OPEN, discoveredAddresses.get(new AbstractMap.SimpleEntry<>("google.com", 42)));
+        assertEquals(0, discoveredAddresses.get(new AbstractMap.SimpleEntry<>("google.com", 42)).intValue());
 
-        Map<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus> discoveredDataSources =
+        Map<Map.Entry<String, String>, Integer> discoveredDataSources =
                 ConnectionsRegistry.INSTANCE.getDiscoveredDataSources();
 
         assertEquals(1, discoveredDataSources.size());
-        assertEquals(CLOSED, discoveredDataSources.get(new AbstractMap.SimpleEntry<>("jdbc:h2:mem:test", "sa")));
+        assertEquals(-1, discoveredDataSources.get(new AbstractMap.SimpleEntry<>("jdbc:h2:mem:test", "sa")).intValue());
 
     }
 
     @Test
     public void testWriteToWriter() throws Exception {
 
-        ConnectionsRegistry.INSTANCE.setDataSourceStatus("dataSource","userName", OPEN);
-        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 6666, CLOSED);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("dataSource","userName", 0);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 6666, -1);
 
         StringWriter sw = new StringWriter();
         ConnectionsRegistry.INSTANCE.writeTo(sw);
@@ -116,7 +114,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
         final String CONNECTION_URL = "jdbc:h2:c:\\work\\keycloak-3.0.0.CR1\\standalone\\data/keycloak;AUTO_SERVER=TRUE";
 
-        ConnectionsRegistry.INSTANCE.setDataSourceStatus(CONNECTION_URL,"sa", OPEN);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus(CONNECTION_URL,"sa", 0);
 
         StringWriter sw = new StringWriter();
         ConnectionsRegistry.INSTANCE.writeTo(sw);

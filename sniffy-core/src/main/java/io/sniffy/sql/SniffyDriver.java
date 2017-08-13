@@ -8,6 +8,7 @@ import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.ConnectException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.sql.*;
@@ -15,8 +16,6 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
-
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
 
 /**
  * Enable JDBC Sniffer by adding a {@code sniffy:} prefix to your JDBC URL.
@@ -70,7 +69,7 @@ public class SniffyDriver implements Driver, Constants {
     }
 
     protected static void checkConnectionAllowed(Connection connection, String url, String userName) throws SQLException {
-        if (CLOSED == ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName)) {
+        if (ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName) < 0) {
             try {
                 connection.close();
             } catch (Exception e) {
@@ -81,8 +80,24 @@ public class SniffyDriver implements Driver, Constants {
     }
 
     protected static void checkConnectionAllowed(String url, String userName) throws SQLException {
-        if (CLOSED == ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName)) {
+        checkConnectionAllowed(url, userName, false);
+    }
+
+    protected static void checkConnectionAllowed(String url, String userName, boolean sleep) throws SQLException {
+        int status = ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName);
+        if (status < 0) {
+            if (sleep && -1 != status) try {
+                Thread.sleep(-1 * status);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
             throw new SQLException(String.format("Connection to %s (%s) refused by Sniffy", url, userName));
+        } else if (sleep && status > 0) {
+            try {
+                Thread.sleep(status);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

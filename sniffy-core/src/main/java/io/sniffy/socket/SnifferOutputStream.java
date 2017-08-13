@@ -2,6 +2,7 @@ package io.sniffy.socket;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.ConnectException;
 
 /**
  * @since 3.1
@@ -11,6 +12,8 @@ class SnifferOutputStream extends OutputStream {
     private final SnifferSocketImpl snifferSocket;
     private final OutputStream delegate;
 
+    private int potentiallyBufferedBytes = 0;
+
     SnifferOutputStream(SnifferSocketImpl snifferSocket, OutputStream delegate) {
         this.snifferSocket = snifferSocket;
         this.delegate = delegate;
@@ -18,40 +21,52 @@ class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
         } finally {
+            sleepIfRquired(1);
             snifferSocket.logSocket(System.currentTimeMillis() - start, 0, 1);
+        }
+    }
+
+    private void sleepIfRquired(int bytesUp) throws ConnectException {
+        potentiallyBufferedBytes -= bytesUp;
+
+        if (potentiallyBufferedBytes < 0) { // TODO: sleep multiple times if required
+            snifferSocket.checkConnectionAllowed(true);
+            potentiallyBufferedBytes = snifferSocket.receiveBufferSize;
         }
     }
 
     @Override
     public void write(byte[] b) throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
         } finally {
+            sleepIfRquired(b.length);
             snifferSocket.logSocket(System.currentTimeMillis() - start, 0, b.length);
         }
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         try {
             delegate.write(b, off, len);
         } finally {
+            sleepIfRquired(len);
             snifferSocket.logSocket(System.currentTimeMillis() - start, 0, len);
         }
     }
 
     @Override
     public void flush() throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(true);
         long start = System.currentTimeMillis();
         try {
             delegate.flush();
@@ -62,7 +77,7 @@ class SnifferOutputStream extends OutputStream {
 
     @Override
     public void close() throws IOException {
-        snifferSocket.checkConnectionAllowed();
+        snifferSocket.checkConnectionAllowed(false);
         long start = System.currentTimeMillis();
         try {
             delegate.close();

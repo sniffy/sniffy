@@ -12,8 +12,6 @@ import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.Map;
 
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static org.junit.Assert.*;
 
 public class DataSourceRegistryTest {
@@ -32,19 +30,19 @@ public class DataSourceRegistryTest {
             assertTrue(Proxy.isProxyClass(connection.getClass()));
         }
 
-        Map<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus> discoveredDataSources =
+        Map<Map.Entry<String, String>, Integer> discoveredDataSources =
                 ConnectionsRegistry.INSTANCE.getDiscoveredDataSources();
 
         assertNotNull(discoveredDataSources);
         assertEquals(1, discoveredDataSources.size());
-        assertEquals(OPEN, discoveredDataSources.get(new AbstractMap.SimpleEntry<String, String>("jdbc:h2:mem:", "sa")));
+        assertEquals(0, discoveredDataSources.get(new AbstractMap.SimpleEntry<String, String>("jdbc:h2:mem:", "sa")).intValue());
 
     }
 
     @Test
     public void testDataSourceDisabled() throws SQLException {
 
-        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", CLOSED);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", -1);
 
         try {
             DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa");
