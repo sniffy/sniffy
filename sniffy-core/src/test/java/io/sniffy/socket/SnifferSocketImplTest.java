@@ -41,6 +41,8 @@ public class SnifferSocketImplTest {
 
         sniffySocket.sendUrgentData(1);
 
+        // TODO: insert timeout here and to similar methods?
+
         verifyPrivate(delegate).invoke("sendUrgentData",1);
         verifyNoMoreInteractions(delegate);
 
