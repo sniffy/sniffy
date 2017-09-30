@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.sql.*;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.net.InetAddress.getLoopbackAddress;
 import static org.junit.Assert.*;
@@ -70,6 +71,34 @@ public class SniffyDriverTest extends BaseTest {
         assertEquals(Thread.State.TIMED_WAITING, thread.getState());
 
         thread.join(1000);
+
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testGetMockConnectionRejectedWithDelay() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", -1000);
+
+        AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
+        Thread thread = new Thread(() -> {
+            try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
+                assertNotNull(connection);
+                assertTrue(Proxy.isProxyClass(connection.getClass()));
+            } catch (Exception e) {
+                exceptionReference.set(e);
+            }
+        });
+
+        thread.start();
+        Thread.sleep(500);
+
+        assertEquals(Thread.State.TIMED_WAITING, thread.getState());
+
+        thread.join(1000);
+
+        assertTrue(exceptionReference.get() instanceof SQLException);
 
     }
 
