@@ -1,5 +1,6 @@
 package io.sniffy.socket;
 
+import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -7,16 +8,21 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.*;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.SocketImpl;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(SocketImpl.class)
+@PrepareForTest({SocketImpl.class, SnifferSocketImpl.class})
 public class SnifferSocketImplTest {
 
     @Mock
@@ -26,13 +32,16 @@ public class SnifferSocketImplTest {
 
     @BeforeClass
     public static void initSnifferSocketImplStatic() {
+
+        spy(SnifferSocketImpl.class);
+
         SnifferSocketImpl.defaultReceiveBufferSize = 64;
         SnifferSocketImpl.defaultSendBufferSize = 64;
     }
 
     @Before
     public void createSniffySocket() throws Exception {
-        sniffySocket = new SnifferSocketImpl(delegate);
+        sniffySocket = spy(new SnifferSocketImpl(delegate));
     }
 
     @Test
@@ -243,6 +252,23 @@ public class SnifferSocketImplTest {
     public void testConnect() throws Exception {
 
         sniffySocket.connect("localhost", 123);
+
+        verifyPrivate(delegate).invoke("connect", "localhost", 123);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testConnectWithDelay() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 10);
+
+        doNothing().when(SnifferSocketImpl.class, "sleepImpl", anyInt());
+
+        sniffySocket.connect("localhost", 123);
+
+        verifyPrivate(SnifferSocketImpl.class).invoke("sleepImpl", eq(10));
 
         verifyPrivate(delegate).invoke("connect", "localhost", 123);
         verifyNoMoreInteractions(delegate);

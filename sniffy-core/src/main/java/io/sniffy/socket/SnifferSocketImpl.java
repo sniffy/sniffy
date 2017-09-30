@@ -115,24 +115,28 @@ class SnifferSocketImpl extends SocketImpl {
         checkConnectionAllowed(inetSocketAddress, true);
     }
 
-    protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress, boolean sleep) throws ConnectException {
+    protected static void checkConnectionAllowed(InetSocketAddress inetSocketAddress, boolean sleep) throws ConnectException {
         if (null != inetSocketAddress) {
             int status = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress);
             if (status < 0) {
                 if (sleep && -1 != status) try {
-                    Thread.sleep(-1 * status);
+                    sleepImpl(-1 * status);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
                 throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
             } else if (sleep && status > 0) {
                 try {
-                    Thread.sleep(status);
+                    sleepImpl(status);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
         }
+    }
+
+    private static void sleepImpl(int status) throws InterruptedException {
+        Thread.sleep(status);
     }
 
     private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
@@ -176,6 +180,7 @@ class SnifferSocketImpl extends SocketImpl {
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
+            // TODO: add delay here
             method("sendUrgentData", int.class).invoke(delegate, data);
         } catch (Exception e) {
             ExceptionUtil.processException(e);

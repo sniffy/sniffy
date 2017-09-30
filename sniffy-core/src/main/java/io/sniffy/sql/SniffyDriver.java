@@ -86,18 +86,22 @@ public class SniffyDriver implements Driver, Constants {
         int status = ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName);
         if (status < 0) {
             if (sleep && -1 != status) try {
-                Thread.sleep(-1 * status);
+                sleepImpl(-1 * status);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
             throw new SQLException(String.format("Connection to %s (%s) refused by Sniffy", url, userName));
         } else if (sleep && status > 0) {
             try {
-                Thread.sleep(status);
+                sleepImpl(status);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    private static void sleepImpl(int status) throws InterruptedException {
+        Thread.sleep(status);
     }
 
     public Connection connect(String url, Properties info) throws SQLException {
