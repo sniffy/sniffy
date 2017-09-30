@@ -109,6 +109,64 @@ public class SniffyDriverTest extends BaseTest {
     }
 
     @Test
+    @Features({"issues/219"})
+    public void testGetMockConnectionWithDelayInterrupted() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 1000);
+
+        AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
+        Thread thread = new Thread(() -> {
+            try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
+                assertNotNull(connection);
+                assertTrue(Proxy.isProxyClass(connection.getClass()));
+            } catch (Exception e) {
+                exceptionReference.set(e);
+            }
+        });
+
+        thread.start();
+        Thread.sleep(500);
+
+        assertEquals(Thread.State.TIMED_WAITING, thread.getState());
+        thread.interrupt();
+
+        thread.join(1000);
+
+        assertNull(exceptionReference.get());
+
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testGetMockConnectionRejectedWithDelayInterrupted() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", -1000);
+
+        AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
+        Thread thread = new Thread(() -> {
+            try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
+                assertNotNull(connection);
+                assertTrue(Proxy.isProxyClass(connection.getClass()));
+            } catch (Exception e) {
+                exceptionReference.set(e);
+            }
+        });
+
+        thread.start();
+        Thread.sleep(500);
+
+        assertEquals(Thread.State.TIMED_WAITING, thread.getState());
+        thread.interrupt();
+
+        thread.join(1000);
+
+        assertTrue(exceptionReference.get() instanceof SQLException);
+
+    }
+
+    @Test
     public void testGetMockConnectionMakesTcp() throws ClassNotFoundException, SQLException {
         TestDriver testDriver = TestDriver.getSpy();
 
