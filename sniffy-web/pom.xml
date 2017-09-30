@@ -69,10 +69,10 @@
                 <executions>
                     <execution>
                         <id>check-signatures</id>
-                        <phase>test</phase>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
+                        <phase>validate</phase>
                         <configuration>
                             <rules>
                                 <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
