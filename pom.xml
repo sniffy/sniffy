@@ -212,7 +212,7 @@
                     </dependencies>
                 </plugin>
 
-                <plugin>
+                <!--<plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
                     <version>2.5.1</version>
@@ -221,7 +221,7 @@
                         <useReleaseProfile>false</useReleaseProfile>
                         <arguments>-Psonatype-oss-release</arguments>
                     </configuration>
-                </plugin>
+                </plugin>-->
 
                 <plugin>
                     <!-- The gmavenplus plugin is used to compile Groovy code. To learn more about this plugin,
