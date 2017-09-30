@@ -165,6 +165,7 @@ public class SniffyServletTest extends BaseTest {
     }
 
     @Test
+    @Features({"issues/219"})
     public void testEditDatasourceRegistryAddDelay() throws Exception {
 
         ConnectionsRegistry.INSTANCE.clear();

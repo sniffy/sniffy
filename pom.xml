@@ -602,9 +602,22 @@
                         <version>0.7.8</version>
                         <executions>
                             <execution>
-                                <id>prepare-agent</id>
+                                <id>default-instrument</id>
                                 <goals>
-                                    <goal>prepare-agent</goal>
+                                    <goal>instrument</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>default-restore-instrumented-classes</id>
+                                <goals>
+                                    <goal>restore-instrumented-classes</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>default-report</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>report</goal>
                                 </goals>
                             </execution>
                         </executions>
