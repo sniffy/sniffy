@@ -24,7 +24,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareOnlyThisForTest({SniffyDriver.class, MockDriver.class})
+@PrepareOnlyThisForTest({SniffyDriver.class, MockDriver.class, TestDriver.class})
 public class SniffyDriverTest extends BaseTest {
 
     @Before
