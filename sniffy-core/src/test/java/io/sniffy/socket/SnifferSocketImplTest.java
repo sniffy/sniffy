@@ -274,6 +274,32 @@ public class SnifferSocketImplTest {
     }
 
     @Test
+    @Features({"issues/219"})
+    public void testConnectWithDelayThreadSleeps() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 1000);
+
+        Thread thread = new Thread(() -> {
+            try {
+                sniffySocket.connect("localhost", 123);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        thread.start();
+        Thread.sleep(500);
+
+        assertEquals(Thread.State.TIMED_WAITING, thread.getState());
+
+        thread.join(1000);
+
+        verifyPrivate(delegate).invoke("connect", "localhost", 123);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
     public void testConnectInetAddress() throws Exception {
 
         InetAddress inetAddress = InetAddress.getLoopbackAddress();
