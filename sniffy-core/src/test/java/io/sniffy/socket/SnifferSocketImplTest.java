@@ -11,10 +11,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.SocketImpl;
+import java.net.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
@@ -269,6 +266,27 @@ public class SnifferSocketImplTest {
         verifyPrivate(SnifferSocketImpl.class).invoke("sleepImpl", eq(10));
 
         verifyPrivate(delegate).invoke("connect", "localhost", 123);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testConnectWithDelayException() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, -10);
+
+        doNothing().when(SnifferSocketImpl.class, "sleepImpl", anyInt());
+
+        try {
+            sniffySocket.connect("localhost", 123);
+            fail();
+        } catch (ConnectException e) {
+            assertNotNull(e);
+        }
+
+        verifyPrivate(SnifferSocketImpl.class).invoke("sleepImpl", eq(10));
+
         verifyNoMoreInteractions(delegate);
 
     }
