@@ -9,15 +9,17 @@ import org.springframework.http.ResponseEntity;
 import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.IOException;
+import java.util.Collections;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class SniffyAgentTest {
 
     @BeforeClass
-    public static void startAgentServer() throws IOException {
-        SniffyAgent.startServer(5555);
+    public static void startAgentServer() throws Exception {
+        SniffyAgent.premain("5555", null);
     }
 
     @AfterClass
@@ -43,17 +45,37 @@ public class SniffyAgentTest {
 
         entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
         assertTrue(entity.getStatusCode().is2xxSuccessful());
-        assertEquals("google.com", JsonPath.read(entity.getBody(), "$.sockets[0].host"));
-        assertEquals("443", JsonPath.read(entity.getBody(), "$.sockets[0].port"));
-        assertEquals((Integer) 0, JsonPath.read(entity.getBody(), "$.sockets[0].status"));
+        assertEquals(singletonList("443"), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].port"));
+        assertEquals(singletonList(0), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].status"));
 
         template.delete("http://localhost:5555/connectionregistry/socket/google.com/443");
 
         entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
         assertTrue(entity.getStatusCode().is2xxSuccessful());
-        assertEquals("google.com", JsonPath.read(entity.getBody(), "$.sockets[0].host"));
-        assertEquals("443", JsonPath.read(entity.getBody(), "$.sockets[0].port"));
-        assertEquals((Integer) (-1), JsonPath.read(entity.getBody(), "$.sockets[0].status"));
+        assertEquals(singletonList("443"), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].port"));
+        assertEquals(singletonList(-1), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].status"));
+
+    }
+
+    @Test
+    @Features({"issues/327","issues/219"})
+    public void testSetConnectionDelay() {
+        TestRestTemplate template = new TestRestTemplate();
+
+        ResponseEntity<String> entity = template.postForEntity("http://localhost:5555/connectionregistry/socket/google.com/443", "10", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+
+        entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(singletonList("443"), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].port"));
+        assertEquals(singletonList(10), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].status"));
+
+        template.delete("http://localhost:5555/connectionregistry/socket/google.com/443");
+
+        entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(singletonList("443"), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].port"));
+        assertEquals(singletonList(-1), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].status"));
     }
 
     @Test
