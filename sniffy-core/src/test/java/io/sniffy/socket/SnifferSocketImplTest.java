@@ -6,13 +6,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.net.*;
 
 import static org.junit.Assert.*;
@@ -399,9 +397,7 @@ public class SnifferSocketImplTest {
     public void testEstimateReceiveBuffer() throws Exception {
 
         InputStream expected = new ByteArrayInputStream(new byte[]{1,2,3});
-
-        Field defaultReceiveBufferSizeField = PowerMockito.field(SnifferSocketImpl.class, "defaultReceiveBufferSize");
-        defaultReceiveBufferSizeField.set(null, null);
+        SnifferSocketImpl.defaultReceiveBufferSize = null;
 
         when(delegate, "getInputStream").thenReturn(expected);
         when(delegate, "getOption", SocketOptions.SO_RCVBUF).thenReturn(null);
