@@ -111,7 +111,7 @@ public class SniffyDriver implements Driver, Constants {
         String originUrl = extractOriginUrl(url);
         String userName = info.getProperty("user");
 
-        checkConnectionAllowed(originUrl, userName);
+        checkConnectionAllowed(originUrl, userName, true);
 
         Driver originDriver;
         try {

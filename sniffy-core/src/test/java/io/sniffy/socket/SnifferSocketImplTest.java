@@ -194,16 +194,14 @@ public class SnifferSocketImplTest {
     @Test
     public void testSupportsUrgentData() throws Exception {
 
-        boolean expected = true;
-
-        when(delegate, "supportsUrgentData").thenReturn(expected);
+        when(delegate, "supportsUrgentData").thenReturn(true);
 
         boolean actual = sniffySocket.supportsUrgentData();
 
         verifyPrivate(delegate).invoke("supportsUrgentData");
         verifyNoMoreInteractions(delegate);
 
-        assertEquals(expected, actual);
+        assertEquals(true, actual);
 
     }
 
@@ -301,7 +299,7 @@ public class SnifferSocketImplTest {
             try {
                 sniffySocket.connect("localhost", 123);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                fail(e.getMessage());
             }
         });
 
