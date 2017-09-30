@@ -49,7 +49,6 @@
                 <executions>
                     <execution>
                         <id>check-signatures</id>
-                        <phase>test</phase>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
