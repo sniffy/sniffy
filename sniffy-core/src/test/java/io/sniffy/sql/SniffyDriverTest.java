@@ -1,13 +1,12 @@
 package io.sniffy.sql;
 
-import io.sniffy.*;
+import io.sniffy.BaseTest;
+import io.sniffy.Constants;
+import io.sniffy.Sniffy;
+import io.sniffy.Spy;
 import io.sniffy.registry.ConnectionsRegistry;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareOnlyThisForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import ru.yandex.qatools.allure.annotations.Features;
 
 import java.lang.reflect.InvocationTargetException;
@@ -19,18 +18,10 @@ import java.util.Properties;
 
 import static java.net.InetAddress.getLoopbackAddress;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.powermock.api.mockito.PowerMockito.*;
 
-@RunWith(PowerMockRunner.class)
-@PrepareOnlyThisForTest({SniffyDriver.class, MockDriver.class, TestDriver.class})
 public class SniffyDriverTest extends BaseTest {
-
-    @Before
-    public void createSniffySocket() throws Exception {
-        spy(SniffyDriver.class);
-    }
 
     @Test
     public void testRegisterDriver() {
@@ -61,16 +52,23 @@ public class SniffyDriverTest extends BaseTest {
     @Features({"issues/219"})
     public void testGetMockConnectionWithDelay() throws Exception {
 
-        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 10);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 1000);
 
-        doNothing().when(SniffyDriver.class, "sleepImpl", anyInt());
+        Thread thread = new Thread(() -> {
+            try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
+                assertNotNull(connection);
+                assertTrue(Proxy.isProxyClass(connection.getClass()));
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        });
 
-        try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
-            assertNotNull(connection);
-            assertTrue(Proxy.isProxyClass(connection.getClass()));
-        }
+        thread.start();
+        Thread.sleep(500);
 
-        verifyPrivate(SniffyDriver.class).invoke("sleepImpl", eq(10));
+        assertEquals(Thread.State.TIMED_WAITING, thread.getState());
+
+        thread.join(1000);
 
     }
 
