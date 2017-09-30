@@ -171,7 +171,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.2</version>
+                <version>2.10.4</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -212,7 +212,7 @@
                     </dependencies>
                 </plugin>
 
-                <!--<plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
                     <version>2.5.1</version>
@@ -221,7 +221,7 @@
                         <useReleaseProfile>false</useReleaseProfile>
                         <arguments>-Psonatype-oss-release</arguments>
                     </configuration>
-                </plugin>-->
+                </plugin>
 
                 <plugin>
                     <!-- The gmavenplus plugin is used to compile Groovy code. To learn more about this plugin,
@@ -263,6 +263,9 @@
                                 </includes>
                                 <!-- to continue on next execution in case of failures here -->
                                 <testFailureIgnore>true</testFailureIgnore>
+                                <systemPropertyVariables>
+                                    <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
+                                </systemPropertyVariables>
                             </configuration>
                         </execution>
                         <execution>
@@ -277,6 +280,9 @@
                                 <excludes>
                                     <exclude>%regex[.*TestNg.*]</exclude>
                                 </excludes>
+                                <systemPropertyVariables>
+                                    <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
+                                </systemPropertyVariables>
                             </configuration>
                         </execution>
                     </executions>
