@@ -9,7 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.core.classloader.annotations.PrepareOnlyThisForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import ru.yandex.qatools.allure.annotations.Features;
 
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(SniffyDriver.class)
+@PrepareOnlyThisForTest({SniffyDriver.class})
 public class SniffyDriverTest extends BaseTest {
 
     @Before
