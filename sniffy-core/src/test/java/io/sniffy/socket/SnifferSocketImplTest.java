@@ -6,16 +6,19 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.net.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.ignoreStubs;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
@@ -37,6 +40,8 @@ public class SnifferSocketImplTest {
     public void createSniffySocket() throws Exception {
         spy(SnifferSocketImpl.class);
         sniffySocket = spy(new SnifferSocketImpl(delegate));
+
+        ConnectionsRegistry.INSTANCE.clear();
     }
 
     @Test
@@ -387,6 +392,29 @@ public class SnifferSocketImplTest {
 
         assertEquals(SnifferInputStream.class, actual.getClass());
         assertEquals(1, actual.read());
+
+    }
+
+    @Test
+    public void testEstimateReceiveBuffer() throws Exception {
+
+        InputStream expected = new ByteArrayInputStream(new byte[]{1,2,3});
+
+        Field defaultReceiveBufferSizeField = PowerMockito.field(SnifferSocketImpl.class, "defaultReceiveBufferSize");
+        defaultReceiveBufferSizeField.set(null, null);
+
+        when(delegate, "getInputStream").thenReturn(expected);
+        when(delegate, "getOption", SocketOptions.SO_RCVBUF).thenReturn(null);
+
+        InputStream actual = sniffySocket.getInputStream();
+
+        verifyPrivate(delegate).invoke("getInputStream");
+        verifyNoMoreInteractions(ignoreStubs(delegate));
+
+        assertEquals(SnifferInputStream.class, actual.getClass());
+        assertEquals(1, actual.read());
+
+        assertEquals((Integer) 0, SnifferSocketImpl.defaultReceiveBufferSize);
 
     }
 
