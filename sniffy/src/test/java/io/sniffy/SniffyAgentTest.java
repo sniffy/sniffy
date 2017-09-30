@@ -5,6 +5,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import ru.yandex.qatools.allure.annotations.Features;
 
@@ -126,6 +127,32 @@ public class SniffyAgentTest {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/", String.class);
         assertTrue(entity.getStatusCode().is2xxSuccessful());
+    }
+
+    @Test
+    @Features("issues/327")
+    public void testGetFavicon() {
+        TestRestTemplate template = new TestRestTemplate();
+        ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/favicon.ico", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(MediaType.parseMediaType("image/x-icon"), entity.getHeaders().getContentType());
+    }
+
+    @Test
+    @Features("issues/327")
+    public void testGetIcon() {
+        TestRestTemplate template = new TestRestTemplate();
+        ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/icon32.png", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(MediaType.IMAGE_PNG, entity.getHeaders().getContentType());
+    }
+
+    @Test
+    @Features("issues/327")
+    public void testGetMissingResource() {
+        TestRestTemplate template = new TestRestTemplate();
+        ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/missing/resource", String.class);
+        assertTrue(entity.getStatusCode().is4xxClientError());
     }
 
 }
