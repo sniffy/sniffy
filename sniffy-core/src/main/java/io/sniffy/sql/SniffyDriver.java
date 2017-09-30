@@ -8,7 +8,6 @@ import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.net.ConnectException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.sql.*;
