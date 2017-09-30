@@ -1,9 +1,6 @@
 package io.sniffy.sql;
 
-import io.sniffy.BaseTest;
-import io.sniffy.Constants;
-import io.sniffy.Sniffy;
-import io.sniffy.Spy;
+import io.sniffy.*;
 import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +24,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareOnlyThisForTest({SniffyDriver.class})
+@PrepareOnlyThisForTest({SniffyDriver.class, MockDriver.class})
 public class SniffyDriverTest extends BaseTest {
 
     @Before
