@@ -5,6 +5,7 @@ import io.sniffy.Constants;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.registry.ConnectionsRegistry;
+import org.junit.After;
 import org.junit.Test;
 import org.mockito.Mockito;
 import ru.yandex.qatools.allure.annotations.Features;
@@ -24,6 +25,11 @@ import static org.mockito.Mockito.doAnswer;
 
 // Do not use PowerMock with SniffyDriver - it causes StackOverflowError on some reason
 public class SniffyDriverTest extends BaseTest {
+
+    @After
+    public void resetConnectionsRegistry() {
+        ConnectionsRegistry.INSTANCE.clear();
+    }
 
     @Test
     public void testRegisterDriver() {
