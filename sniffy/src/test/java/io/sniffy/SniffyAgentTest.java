@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.IOException;
-import java.util.Collections;
 
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
