@@ -133,7 +133,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 bestBaseURILength += servletPath.length(); // like "/petclinic/servlet" -> 18
                 if (servletPath.endsWith("/")) bestBaseURILength--; // like "/petclinic/servlet/" -> 18
             } else {
-                ServletContext servletContext = httpServletRequest.getServletContext();
+                ServletContext servletContext = httpServletRequest.getServletContext(); // TODO: available in servlet api 3.0+ only
                 for (String mapping : ServletRegistrationUtil.getServletMappings(servletContext)) {
                     if (mapping.equals(servletPath) || (mapping.endsWith("/*") && mapping.substring(0, mapping.length() - 2).equals(servletPath))) {
                         bestBaseURILength += servletPath.length(); // like "/petclinic/servlet" -> 18
@@ -193,6 +193,15 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 requestStats.setElapsedTime(getElapsedTime());
                 updateRequestCache();
                 responseWrapper.flushIfPossible();
+                if (null != sniffyFilter.influxDbReporter) {
+                    sniffyFilter.influxDbReporter.report(
+                            httpServletRequest,
+                            httpServletResponse,
+                            requestId,
+                            spy,
+                            requestStats
+                    );
+                }
             } catch (Exception e) {
                 if (null != sniffyFilter.servletContext) {
                     sniffyFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);

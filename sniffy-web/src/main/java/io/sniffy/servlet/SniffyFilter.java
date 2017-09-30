@@ -4,6 +4,7 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.Constants;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.reporter.InfluxDbReporter;
 
 import javax.servlet.*;
 import javax.servlet.http.Cookie;
@@ -101,6 +102,13 @@ public class SniffyFilter implements Filter {
     protected SniffyServlet sniffyServlet = new SniffyServlet(cache);
     protected ServletContext servletContext; // TODO: log via slf4j if available
 
+    private String influxDbUrl;
+    private String influxDbUsername;
+    private String influxDbPassword;
+    private String influxDbDatabase;
+
+    protected InfluxDbReporter influxDbReporter;
+
     public SniffyFilter() {
 
         Boolean filterEnabled = SniffyConfiguration.INSTANCE.getFilterEnabled();
@@ -172,6 +180,25 @@ public class SniffyFilter implements Filter {
                 ConnectionsRegistry.INSTANCE.setThreadLocal(Boolean.parseBoolean(faultToleranceCurrentRequest));
             }
 
+            String influxDbUrl = filterConfig.getInitParameter("influxdb-url");
+            if (null != influxDbUrl) {
+                this.influxDbUrl = influxDbUrl;
+            }
+            String influxDbUsername = filterConfig.getInitParameter("influxdb-username");
+            if (null != influxDbUsername) {
+                this.influxDbUsername = influxDbUsername;
+            }
+            String influxDbPassword = filterConfig.getInitParameter("influxdb-password");
+            if (null != influxDbPassword) {
+                this.influxDbPassword = influxDbPassword;
+            }
+            String influxDbDatabase = filterConfig.getInitParameter("influxdb-database");
+            if (null != influxDbDatabase) {
+                this.influxDbDatabase = influxDbDatabase;
+            }
+
+            createInfluxDbReporter();
+
             sniffyServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
 
             servletContext = filterConfig.getServletContext();
@@ -181,6 +208,14 @@ public class SniffyFilter implements Filter {
             filterEnabled = false;
         }
 
+    }
+
+    // TODO: make some generic method which would be called from spring boot and servlet init method
+    public void createInfluxDbReporter() {
+        if (null != this.influxDbUrl && !"".equals(this.influxDbUrl) && null != this.influxDbDatabase && !"".equals(this.influxDbDatabase)) {
+            influxDbReporter = new InfluxDbReporter(this.influxDbUrl, this.influxDbDatabase, this.influxDbUsername, this.influxDbPassword);
+            influxDbReporter.init();
+        }
     }
 
     public void doFilter(final ServletRequest request, ServletResponse response, final FilterChain chain)
@@ -416,5 +451,37 @@ public class SniffyFilter implements Filter {
 
     public void setExcludePattern(Pattern excludePattern) {
         this.excludePattern = excludePattern;
+    }
+
+    public String getInfluxDbUrl() {
+        return influxDbUrl;
+    }
+
+    public void setInfluxDbUrl(String influxDbUrl) {
+        this.influxDbUrl = influxDbUrl;
+    }
+
+    public String getInfluxDbUsername() {
+        return influxDbUsername;
+    }
+
+    public void setInfluxDbUsername(String influxDbUsername) {
+        this.influxDbUsername = influxDbUsername;
+    }
+
+    public String getInfluxDbPassword() {
+        return influxDbPassword;
+    }
+
+    public void setInfluxDbPassword(String influxDbPassword) {
+        this.influxDbPassword = influxDbPassword;
+    }
+
+    public String getInfluxDbDatabase() {
+        return influxDbDatabase;
+    }
+
+    public void setInfluxDbDatabase(String influxDbDatabase) {
+        this.influxDbDatabase = influxDbDatabase;
     }
 }

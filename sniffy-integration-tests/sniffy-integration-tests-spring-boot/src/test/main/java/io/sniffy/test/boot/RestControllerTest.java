@@ -35,7 +35,7 @@ public class RestControllerTest {
 
     @Test
     public void ouchTest() throws IOException {
-        ClientHttpResponse response = restTemplate.execute("/ouch", HttpMethod.GET, request -> request.getHeaders().setAccept(Collections.singletonList(MediaType.TEXT_HTML)), v -> v);
+        ClientHttpResponse response = restTemplate.execute("/ouch/foo", HttpMethod.GET, request -> request.getHeaders().setAccept(Collections.singletonList(MediaType.TEXT_HTML)), v -> v);
         assertNotNull(response);
         List<String> sniffySqlQueriesHeaders = response.getHeaders().get("Sniffy-Sql-Queries");
         assertEquals(1, sniffySqlQueriesHeaders.size());

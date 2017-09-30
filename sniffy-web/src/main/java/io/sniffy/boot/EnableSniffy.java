@@ -26,6 +26,8 @@ public @interface EnableSniffy {
      */
     SniffyAdvancedConfiguration advanced() default @SniffyAdvancedConfiguration;
 
+    SniffyMonitoringConfiguration monitoring() default @SniffyMonitoringConfiguration;
+
     @Deprecated
     String excludePattern() default "";
 

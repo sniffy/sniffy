@@ -84,6 +84,13 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
         sniffyFilter.setInjectHtml(isInjectHtml());
         sniffyFilter.setInjectHtmlExcludePattern(getInjectHtmlExcludePattern());
 
+        sniffyFilter.setInfluxDbUrl(getInfluxDbUrl());
+        sniffyFilter.setInfluxDbDatabase(getInfluxDbDatabase());
+        sniffyFilter.setInfluxDbUsername(getInfluxDbUsername());
+        sniffyFilter.setInfluxDbPassword(getInfluxDbPassword());
+
+        sniffyFilter.createInfluxDbReporter();
+
         return sniffyFilter;
     }
 
@@ -102,6 +109,30 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
 
         return filterRegistration;
 
+    }
+
+    private String getInfluxDbUrl() {
+        return resolveStringProperty(
+                enableSniffy.getAnnotation("monitoring").getString("influxDbUrl")
+        );
+    }
+
+    private String getInfluxDbDatabase() {
+        return resolveStringProperty(
+                enableSniffy.getAnnotation("monitoring").getString("influxDbDatabase")
+        );
+    }
+
+    private String getInfluxDbUsername() {
+        return resolveStringProperty(
+                enableSniffy.getAnnotation("monitoring").getString("influxDbUsername")
+        );
+    }
+
+    private String getInfluxDbPassword() {
+        return resolveStringProperty(
+                enableSniffy.getAnnotation("monitoring").getString("influxDbPassword")
+        );
     }
 
     private boolean isMonitorJdbc() {

@@ -13,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @see SniffyFilter
  * @since 2.3.0
  */
-class RequestStats {
+public class RequestStats {
 
     private long timeToFirstByte;
     private long elapsedTime;

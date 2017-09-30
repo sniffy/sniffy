@@ -136,6 +136,11 @@
                                     <include>io.sniffy:*</include>
                                     <include>org.webjars:*</include>
                                     <include>org.webjars.bower:*</include>
+                                    <include>org.influxdb:*</include>
+                                    <include>com.squareup.retrofit2:*</include>
+                                    <include>com.squareup.moshi:*</include>
+                                    <include>com.squareup.okhttp3:*</include>
+                                    <include>com.squareup.okio:*</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -150,6 +155,26 @@
                                 <relocation>
                                     <pattern>com.codahale.metrics</pattern>
                                     <shadedPattern>io.sniffy.shaded.com.codahale.metrics</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.influxdb</pattern>
+                                    <shadedPattern>io.sniffy.shaded.org.influxdb</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.squareup.moshi</pattern>
+                                    <shadedPattern>io.sniffy.shaded.com.squareup.moshi</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>okhttp3</pattern>
+                                    <shadedPattern>io.sniffy.shaded.okhttp3</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>okio</pattern>
+                                    <shadedPattern>io.sniffy.shaded.okio</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>retrofit2</pattern>
+                                    <shadedPattern>io.sniffy.shaded.retrofit2</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
