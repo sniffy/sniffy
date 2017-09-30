@@ -11,7 +11,7 @@ addons:
 jdk:
   - oraclejdk8
 script:
-  - mvn clean test package jacoco:report coveralls:report sonar:sonar -U
+  - mvn clean package jacoco:report coveralls:report sonar:sonar -U
 cache:
   directories:
     - '$HOME/.m2/repository'
