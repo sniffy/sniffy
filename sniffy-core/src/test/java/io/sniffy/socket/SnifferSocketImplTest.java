@@ -32,15 +32,13 @@ public class SnifferSocketImplTest {
 
     @BeforeClass
     public static void initSnifferSocketImplStatic() {
-
-        spy(SnifferSocketImpl.class);
-
         SnifferSocketImpl.defaultReceiveBufferSize = 64;
         SnifferSocketImpl.defaultSendBufferSize = 64;
     }
 
     @Before
     public void createSniffySocket() throws Exception {
+        spy(SnifferSocketImpl.class);
         sniffySocket = spy(new SnifferSocketImpl(delegate));
     }
 
