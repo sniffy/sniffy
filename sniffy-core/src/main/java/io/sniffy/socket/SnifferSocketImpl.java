@@ -5,7 +5,6 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionFieldCopier;
 
-import javax.swing.plaf.synth.SynthRadioButtonUI;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
