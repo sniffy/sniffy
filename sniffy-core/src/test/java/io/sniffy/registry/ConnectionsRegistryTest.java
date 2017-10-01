@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static java.lang.Integer.valueOf;
 import static org.junit.Assert.*;
 
 public class ConnectionsRegistryTest extends BaseSocketTest {
@@ -59,21 +58,12 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
         try {
             ConnectionsRegistry.INSTANCE.setThreadLocal(true);
 
-            ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(
-                    new HashMap<Map.Entry<String, Integer>, Integer>() {{
-                        put(new AbstractMap.SimpleEntry<>(localhost.getHostName(), echoServerRule.getBoundPort()), -1);
-                    }}
-            );
+            HashMap<Map.Entry<String, Integer>, Integer> expected = new HashMap<>();
+            expected.put(new AbstractMap.SimpleEntry<>(localhost.getHostName(), echoServerRule.getBoundPort()), -1);
+            ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(expected);
 
-            Map<Map.Entry<String, Integer>, Integer> discoveredAddresses = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
-            assertNotNull(discoveredAddresses);
-            assertEquals(1, discoveredAddresses.size());
-            assertTrue(discoveredAddresses.containsKey(
-                    new AbstractMap.SimpleEntry<>(localhost.getHostName(), echoServerRule.getBoundPort())
-            ));
-            assertEquals(valueOf(-1), discoveredAddresses.get(
-                    new AbstractMap.SimpleEntry<>(localhost.getHostName(), echoServerRule.getBoundPort())
-            ));
+            Map<Map.Entry<String, Integer>, Integer> actual = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
+            assertEquals(expected, actual);
 
             Socket socket = null;
 
