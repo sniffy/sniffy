@@ -13,6 +13,8 @@ import ru.yandex.qatools.allure.annotations.Features;
 import java.io.*;
 import java.net.*;
 
+import static java.net.SocketOptions.SO_RCVBUF;
+import static java.net.SocketOptions.SO_SNDBUF;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
@@ -400,7 +402,7 @@ public class SnifferSocketImplTest {
         SnifferSocketImpl.defaultReceiveBufferSize = null;
 
         when(delegate, "getInputStream").thenReturn(expected);
-        when(delegate, "getOption", SocketOptions.SO_RCVBUF).thenReturn(null);
+        when(delegate, "getOption", SO_RCVBUF).thenReturn(null);
 
         InputStream actual = sniffySocket.getInputStream();
 
@@ -421,7 +423,7 @@ public class SnifferSocketImplTest {
         SnifferSocketImpl.defaultReceiveBufferSize = null;
 
         when(delegate, "getInputStream").thenReturn(expected);
-        when(delegate, "getOption", SocketOptions.SO_RCVBUF).thenThrow(new SocketException());
+        when(delegate, "getOption", SO_RCVBUF).thenThrow(new SocketException());
 
         InputStream actual = sniffySocket.getInputStream();
 
@@ -569,6 +571,30 @@ public class SnifferSocketImplTest {
 
         assertEquals(expected, actual);
 
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testSetReceiveBufferSize() throws Exception {
+        int backup = sniffySocket.receiveBufferSize;
+        try {
+            sniffySocket.setOption(SO_RCVBUF, 5);
+            assertEquals(5, sniffySocket.receiveBufferSize);
+        } finally {
+            sniffySocket.receiveBufferSize = backup;
+        }
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testSetSendBufferSize() throws Exception {
+        int backup = sniffySocket.sendBufferSize;
+        try {
+            sniffySocket.setOption(SO_SNDBUF, 9);
+            assertEquals(9, sniffySocket.sendBufferSize);
+        } finally {
+            sniffySocket.sendBufferSize = backup;
+        }
     }
 
 }
