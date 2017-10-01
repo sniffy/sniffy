@@ -33,7 +33,7 @@ class SnifferOutputStream extends OutputStream {
 
     private void sleepIfRequired(int bytesUp) throws ConnectException {
 
-        if (0 == snifferSocket.receiveBufferSize) {
+        if (0 == snifferSocket.sendBufferSize) {
             snifferSocket.checkConnectionAllowed(1);
         } else {
 
