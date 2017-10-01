@@ -463,7 +463,7 @@ public class SnifferSocketImplTest {
         SnifferSocketImpl.defaultSendBufferSize = null;
 
         when(delegate, "getOutputStream").thenReturn(expected);
-        when(delegate, "getOption", SocketOptions.SO_SNDBUF).thenReturn(null);
+        when(delegate, "getOption", SO_SNDBUF).thenReturn(null);
 
         OutputStream actual = sniffySocket.getOutputStream();
 
@@ -486,7 +486,7 @@ public class SnifferSocketImplTest {
         SnifferSocketImpl.defaultSendBufferSize = null;
 
         when(delegate, "getOutputStream").thenReturn(expected);
-        when(delegate, "getOption", SocketOptions.SO_SNDBUF).thenThrow(new SocketException());
+        when(delegate, "getOption", SO_SNDBUF).thenThrow(new SocketException());
 
         OutputStream actual = sniffySocket.getOutputStream();
 
