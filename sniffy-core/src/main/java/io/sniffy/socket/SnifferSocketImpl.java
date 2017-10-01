@@ -486,8 +486,22 @@ class SnifferSocketImpl extends SocketImpl {
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            // TODO get buffer
             delegate.setOption(optID, value);
+
+            if (SocketOptions.SO_RCVBUF == optID) {
+                try {
+                    receiveBufferSize = ((Number) value).intValue();
+                } catch (Exception e) {
+                    // TODO: log me maybe
+                }
+            } else if (SocketOptions.SO_SNDBUF == optID) {
+                try {
+                    sendBufferSize = ((Number) value).intValue();
+                } catch (Exception e) {
+                    // TODO: log me maybe
+                }
+            }
+
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();
