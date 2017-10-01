@@ -457,6 +457,54 @@ public class SnifferSocketImplTest {
     }
 
     @Test
+    public void testEstimateSendBufferNoSndBufOption() throws Exception {
+
+        ByteArrayOutputStream expected = new ByteArrayOutputStream();
+        SnifferSocketImpl.defaultSendBufferSize = null;
+
+        when(delegate, "getOutputStream").thenReturn(expected);
+        when(delegate, "getOption", SocketOptions.SO_SNDBUF).thenReturn(null);
+
+        OutputStream actual = sniffySocket.getOutputStream();
+
+        verifyPrivate(delegate).invoke("getOutputStream");
+        verifyNoMoreInteractions(ignoreStubs(delegate));
+
+        assertEquals(SnifferOutputStream.class, actual.getClass());
+        actual.write(3);
+
+        assertEquals(3, (int) expected.toByteArray()[0]);
+
+        assertEquals((Integer) 0, SnifferSocketImpl.defaultSendBufferSize);
+        // TODO: check how would delay work with the buffer size of 0
+
+    }
+
+    @Test
+    public void testEstimateSendBufferSndBufOptionThrowsException() throws Exception {
+
+        ByteArrayOutputStream expected = new ByteArrayOutputStream();
+        SnifferSocketImpl.defaultSendBufferSize = null;
+
+        when(delegate, "getOutputStream").thenReturn(expected);
+        when(delegate, "getOption", SocketOptions.SO_SNDBUF).thenThrow(new SocketException());
+
+        OutputStream actual = sniffySocket.getOutputStream();
+
+        verifyPrivate(delegate).invoke("getOutputStream");
+        verifyNoMoreInteractions(ignoreStubs(delegate));
+
+        assertEquals(SnifferOutputStream.class, actual.getClass());
+        actual.write(3);
+
+        assertEquals(3, (int) expected.toByteArray()[0]);
+
+        assertEquals((Integer) 0, SnifferSocketImpl.defaultSendBufferSize);
+        // TODO: check how would delay work with the buffer size of 0
+
+    }
+
+    @Test
     public void testAvailable() throws Exception {
 
         int expected = 1;
