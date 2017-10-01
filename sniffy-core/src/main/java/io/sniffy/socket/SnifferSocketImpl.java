@@ -107,27 +107,27 @@ class SnifferSocketImpl extends SocketImpl {
         checkConnectionAllowed(0);
     }
 
-    protected void checkConnectionAllowed(int sleep) throws ConnectException {
-        checkConnectionAllowed(address, sleep);
+    protected void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
+        checkConnectionAllowed(address, numberOfSleepCycles);
     }
 
     protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
         checkConnectionAllowed(inetSocketAddress, 1);
     }
 
-    protected static void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int sleep) throws ConnectException {
+    protected static void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
         if (null != inetSocketAddress) {
             int status = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress);
             if (status < 0) {
-                if (sleep > 0 && -1 != status) try {
-                    sleepImpl(-1 * status * sleep);
+                if (numberOfSleepCycles > 0 && -1 != status) try {
+                    sleepImpl(-1 * status * numberOfSleepCycles);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
                 throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
-            } else if (sleep > 0 && status > 0) {
+            } else if (numberOfSleepCycles > 0 && status > 0) {
                 try {
-                    sleepImpl(status * sleep);
+                    sleepImpl(status * numberOfSleepCycles);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
