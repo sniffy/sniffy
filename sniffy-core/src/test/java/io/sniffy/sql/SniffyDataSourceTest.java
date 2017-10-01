@@ -9,7 +9,6 @@ import io.sniffy.socket.TcpConnections;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import javax.sql.DataSource;
