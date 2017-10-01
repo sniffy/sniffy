@@ -26,6 +26,10 @@ public class SniffyAgent {
 
     private static HttpServer server;
 
+    public static void main(String[] args) throws Exception {
+        premain("5555", null);
+    }
+
     public static void premain(String args, Instrumentation instrumentation) throws Exception {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         Sniffy.initialize();
