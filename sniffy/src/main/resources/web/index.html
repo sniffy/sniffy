@@ -32,9 +32,10 @@
             <table class="table table-hover">
                 <thead>
                 <tr>
-                    <th class="col-md-6">URL</th>
+                    <th class="col-md-4">URL</th>
                     <th class="col-md-4">Username</th>
                     <th class="col-md-2">Status</th>
+                    <th class="col-md-2">Delay</th>
                 </tr>
                 </thead>
                 <tbody id="sniffy-datasource-registry">
@@ -46,9 +47,10 @@
             <table class="table table-hover">
                 <thead>
                 <tr>
-                    <th class="col-md-6">Host</th>
+                    <th class="col-md-4">Host</th>
                     <th class="col-md-4">Port</th>
                     <th class="col-md-2">Status</th>
+                    <th class="col-md-2">Delay</th>
                 </tr>
                 </thead>
                 <tbody id="sniffy-socket-registry">
@@ -96,23 +98,42 @@ function reload() {
         if (data.dataSources) {
             $('#datasources').show();
             $.each(data.dataSources, function (i, item) {
-                var toggleButton;
+                var toggleButton, delayInput;
                 $('<tr>').append(
                     $('<td>').text(item.url),
                     $('<td>').text(item.userName),
                     $('<td>').append(
                         toggleButton = $('<input type="checkbox" data-toggle="toggle">')
+                    ),
+                    $('<td>').append(
+                        delayInput = $('<input type="text" class="form-control input-sm">')
                     )
                 ).appendTo('#sniffy-datasource-registry');
-                if (item.status === 'OPEN') {
+                if (item.status >= 0) {
                     toggleButton.attr('checked', true);
                 }
+                delayInput.val(item.status >= 0 ? item.status : -1 == item.status ? 0 : -1 * item.status);
+                delayInput.change(function() {
+                    $.ajax({
+                            url: '/connectionregistry/datasource/' + encodeURIComponent(encodeURIComponent(item.url)) + '/' + encodeURIComponent(encodeURIComponent(item.userName)),
+                            type: 'POST',
+                            data: '' + (toggleButton[0].checked ? delayInput.val() : delayInput.val() == '0' ? -1 : -1 * delayInput.val()),
+                            contentType: "application/json; charset=utf-8",
+                            dataType   : "json",
+                            success: function(result) {
+                                console.log(result);
+                            }
+                        });
+                });
                 toggleButton.bootstrapSwitch({
                     'size': 'mini',
                     'onSwitchChange': function (event, state) {
                         $.ajax({
                             url: '/connectionregistry/datasource/' + encodeURIComponent(encodeURIComponent(item.url)) + '/' + encodeURIComponent(encodeURIComponent(item.userName)),
-                            type: state ? 'POST' : 'DELETE',
+                            type: 'POST',
+                            data: '' + (state ? delayInput.val() : delayInput.val() == '0' ? -1 : -1 * delayInput.val()),
+                            contentType: "application/json; charset=utf-8",
+                            dataType   : "json",
                             success: function (result) {
                                 console.log(result);
                             }
@@ -126,23 +147,42 @@ function reload() {
 
         $('#sniffy-socket-registry').empty();
         if (data.sockets) $.each(data.sockets, function (i, item) {
-            var toggleButton;
+            var toggleButton, delayInput;
             $('<tr>').append(
                 $('<td>').text(item.host),
                 $('<td>').text(item.port),
                 $('<td>').append(
                     toggleButton = $('<input type="checkbox" data-toggle="toggle">')
+                ),
+                $('<td>').append(
+                    delayInput = $('<input type="text" class="form-control input-sm">')
                 )
             ).appendTo('#sniffy-socket-registry');
-            if (item.status === 'OPEN') {
+            if (item.status >= 0) {
                 toggleButton.attr('checked', true);
             }
+            delayInput.val(item.status >= 0 ? item.status : -1 == item.status ? 0 : -1 * item.status);
+            delayInput.change(function() {
+                $.ajax({
+                    url: '/connectionregistry/socket/' + encodeURIComponent(encodeURIComponent(item.host)) + '/' + encodeURIComponent(encodeURIComponent(item.port)),
+                        type: 'POST',
+                        data: '' + (toggleButton[0].checked ? delayInput.val() : delayInput.val() == '0' ? -1 : -1 * delayInput.val()),
+                        contentType: "application/json; charset=utf-8",
+                        dataType   : "json",
+                        success: function(result) {
+                            console.log(result);
+                        }
+                    });
+            });
             toggleButton.bootstrapSwitch({
                 'size': 'mini',
                 'onSwitchChange': function (event, state) {
                     $.ajax({
                         url: '/connectionregistry/socket/' + encodeURIComponent(encodeURIComponent(item.host)) + '/' + encodeURIComponent(encodeURIComponent(item.port)),
-                        type: state ? 'POST' : 'DELETE',
+                        type: 'POST',
+                        data: '' + (state ? delayInput.val() : delayInput.val() == '0' ? -1 : -1 * delayInput.val()),
+                        contentType: "application/json; charset=utf-8",
+                        dataType   : "json",
                         success: function (result) {
                             console.log(result);
                         }

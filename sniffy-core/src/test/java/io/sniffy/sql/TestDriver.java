@@ -29,6 +29,9 @@ public class TestDriver implements Driver {
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
+
+        if (null == url || !acceptsURL(url)) return null;
+
         return DriverManager.getConnection(getTargetUrl(url), info);
     }
 

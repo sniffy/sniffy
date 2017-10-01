@@ -21,7 +21,11 @@ class SniffyInvocationHandler<T> implements InvocationHandler {
     }
 
     protected void checkConnectionAllowed() throws SQLException {
-        SniffyDriver.checkConnectionAllowed(url, userName);
+        checkConnectionAllowed(false);
+    }
+
+    protected void checkConnectionAllowed(boolean sleep) throws SQLException {
+        SniffyDriver.checkConnectionAllowed(url, userName, sleep);
     }
 
     @Override

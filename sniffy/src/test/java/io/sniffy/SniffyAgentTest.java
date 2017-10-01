@@ -5,19 +5,21 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.IOException;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class SniffyAgentTest {
 
     @BeforeClass
-    public static void startAgentServer() throws IOException {
-        SniffyAgent.startServer(5555);
+    public static void startAgentServer() throws Exception {
+        SniffyAgent.premain("5555", null);
     }
 
     @AfterClass
@@ -43,17 +45,37 @@ public class SniffyAgentTest {
 
         entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
         assertTrue(entity.getStatusCode().is2xxSuccessful());
-        assertEquals("google.com", JsonPath.read(entity.getBody(), "$.sockets[0].host"));
-        assertEquals("443", JsonPath.read(entity.getBody(), "$.sockets[0].port"));
-        assertEquals("OPEN", JsonPath.read(entity.getBody(), "$.sockets[0].status"));
+        assertEquals(singletonList("443"), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].port"));
+        assertEquals(singletonList(0), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].status"));
 
         template.delete("http://localhost:5555/connectionregistry/socket/google.com/443");
 
         entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
         assertTrue(entity.getStatusCode().is2xxSuccessful());
-        assertEquals("google.com", JsonPath.read(entity.getBody(), "$.sockets[0].host"));
-        assertEquals("443", JsonPath.read(entity.getBody(), "$.sockets[0].port"));
-        assertEquals("CLOSED", JsonPath.read(entity.getBody(), "$.sockets[0].status"));
+        assertEquals(singletonList("443"), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].port"));
+        assertEquals(singletonList(-1), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].status"));
+
+    }
+
+    @Test
+    @Features({"issues/327","issues/219"})
+    public void testSetConnectionDelay() {
+        TestRestTemplate template = new TestRestTemplate();
+
+        ResponseEntity<String> entity = template.postForEntity("http://localhost:5555/connectionregistry/socket/google.com/443", "10", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+
+        entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(singletonList("443"), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].port"));
+        assertEquals(singletonList(10), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].status"));
+
+        template.delete("http://localhost:5555/connectionregistry/socket/google.com/443");
+
+        entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(singletonList("443"), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].port"));
+        assertEquals(singletonList(-1), JsonPath.read(entity.getBody(), "$.sockets[?(@.host == 'google.com')].status"));
     }
 
     @Test
@@ -68,7 +90,7 @@ public class SniffyAgentTest {
         assertTrue(entity.getStatusCode().is2xxSuccessful());
         assertEquals("jdbc:data:source", JsonPath.read(entity.getBody(), "$.dataSources[0].url"));
         assertEquals("user", JsonPath.read(entity.getBody(), "$.dataSources[0].userName"));
-        assertEquals("OPEN", JsonPath.read(entity.getBody(), "$.dataSources[0].status"));
+        assertEquals((Integer) 0, JsonPath.read(entity.getBody(), "$.dataSources[0].status"));
 
         template.delete("http://localhost:5555/connectionregistry/datasource/jdbc:data:source/user");
 
@@ -76,7 +98,7 @@ public class SniffyAgentTest {
         assertTrue(entity.getStatusCode().is2xxSuccessful());
         assertEquals("jdbc:data:source", JsonPath.read(entity.getBody(), "$.dataSources[0].url"));
         assertEquals("user", JsonPath.read(entity.getBody(), "$.dataSources[0].userName"));
-        assertEquals("CLOSED", JsonPath.read(entity.getBody(), "$.dataSources[0].status"));
+        assertEquals((Integer) (-1), JsonPath.read(entity.getBody(), "$.dataSources[0].status"));
     }
 
     @Test
@@ -104,6 +126,32 @@ public class SniffyAgentTest {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/", String.class);
         assertTrue(entity.getStatusCode().is2xxSuccessful());
+    }
+
+    @Test
+    @Features("issues/327")
+    public void testGetFavicon() {
+        TestRestTemplate template = new TestRestTemplate();
+        ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/favicon.ico", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(MediaType.parseMediaType("image/x-icon"), entity.getHeaders().getContentType());
+    }
+
+    @Test
+    @Features("issues/327")
+    public void testGetIcon() {
+        TestRestTemplate template = new TestRestTemplate();
+        ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/icon32.png", String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertEquals(MediaType.IMAGE_PNG, entity.getHeaders().getContentType());
+    }
+
+    @Test
+    @Features("issues/327")
+    public void testGetMissingResource() {
+        TestRestTemplate template = new TestRestTemplate();
+        ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/missing/resource", String.class);
+        assertTrue(entity.getStatusCode().is4xxClientError());
     }
 
 }

@@ -33,6 +33,9 @@
                     <includes>
                         <include>**/*Spec.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

@@ -4,8 +4,11 @@ import io.sniffy.BaseTest;
 import io.sniffy.Constants;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
+import io.sniffy.registry.ConnectionsRegistry;
+import org.junit.After;
 import org.junit.Test;
 import org.mockito.Mockito;
+import ru.yandex.qatools.allure.annotations.Features;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
@@ -13,13 +16,20 @@ import java.net.InetSocketAddress;
 import java.sql.*;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.net.InetAddress.getLoopbackAddress;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 
+// Do not use PowerMock with SniffyDriver - it causes StackOverflowError on some reason
 public class SniffyDriverTest extends BaseTest {
+
+    @After
+    public void resetConnectionsRegistry() {
+        ConnectionsRegistry.INSTANCE.clear();
+    }
 
     @Test
     public void testRegisterDriver() {
@@ -44,6 +54,116 @@ public class SniffyDriverTest extends BaseTest {
             assertNotNull(connection);
             assertTrue(Proxy.isProxyClass(connection.getClass()));
         }
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testGetMockConnectionWithDelay() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 1000);
+
+        Thread thread = new Thread(() -> {
+            try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
+                assertNotNull(connection);
+                assertTrue(Proxy.isProxyClass(connection.getClass()));
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        });
+
+        thread.start();
+        Thread.sleep(500);
+
+        assertEquals(Thread.State.TIMED_WAITING, thread.getState());
+
+        thread.join(1000);
+
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testGetMockConnectionRejectedWithDelay() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", -1000);
+
+        AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
+        Thread thread = new Thread(() -> {
+            try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
+                assertNotNull(connection);
+                assertTrue(Proxy.isProxyClass(connection.getClass()));
+            } catch (Exception e) {
+                exceptionReference.set(e);
+            }
+        });
+
+        thread.start();
+        Thread.sleep(500);
+
+        assertEquals(Thread.State.TIMED_WAITING, thread.getState());
+
+        thread.join(1000);
+
+        assertTrue(exceptionReference.get() instanceof SQLException);
+
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testGetMockConnectionWithDelayInterrupted() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 1000);
+
+        AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
+        Thread thread = new Thread(() -> {
+            try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
+                assertNotNull(connection);
+                assertTrue(Proxy.isProxyClass(connection.getClass()));
+            } catch (Exception e) {
+                exceptionReference.set(e);
+            }
+        });
+
+        thread.start();
+        Thread.sleep(500);
+
+        assertEquals(Thread.State.TIMED_WAITING, thread.getState());
+        thread.interrupt();
+
+        thread.join(1000);
+
+        assertNull(exceptionReference.get());
+
+    }
+
+    @Test
+    @Features({"issues/219"})
+    public void testGetMockConnectionRejectedWithDelayInterrupted() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", -1000);
+
+        AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
+        Thread thread = new Thread(() -> {
+            try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
+                assertNotNull(connection);
+                assertTrue(Proxy.isProxyClass(connection.getClass()));
+            } catch (Exception e) {
+                exceptionReference.set(e);
+            }
+        });
+
+        thread.start();
+        Thread.sleep(500);
+
+        assertEquals(Thread.State.TIMED_WAITING, thread.getState());
+        thread.interrupt();
+
+        thread.join(1000);
+
+        assertTrue(exceptionReference.get() instanceof SQLException);
+
     }
 
     @Test

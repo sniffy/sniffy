@@ -4,12 +4,15 @@ import io.sniffy.BaseTest;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
+import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.TcpConnections;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
 import javax.sql.DataSource;
+import javax.sql.PooledConnection;
 import javax.sql.XADataSource;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
@@ -17,9 +20,11 @@ import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
 
 public class SniffyDataSourceTest extends BaseTest {
 
@@ -84,7 +89,7 @@ public class SniffyDataSourceTest extends BaseTest {
 
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
-        Mockito.when(targetDataSource.getConnection()).then(invocation -> {
+        when(targetDataSource.getConnection()).then(invocation -> {
             Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
@@ -110,7 +115,7 @@ public class SniffyDataSourceTest extends BaseTest {
 
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
-        Mockito.when(targetDataSource.getConnection(anyString(), anyString())).then(invocation -> {
+        when(targetDataSource.getConnection(anyString(), anyString())).then(invocation -> {
             Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
@@ -136,7 +141,7 @@ public class SniffyDataSourceTest extends BaseTest {
 
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
-        Mockito.when(targetDataSource.getXAConnection()).then(invocation -> {
+        when(targetDataSource.getXAConnection()).then(invocation -> {
             Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
@@ -162,7 +167,7 @@ public class SniffyDataSourceTest extends BaseTest {
 
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
-        Mockito.when(targetDataSource.getXAConnection(anyString(), anyString())).then(invocation -> {
+        when(targetDataSource.getXAConnection(anyString(), anyString())).then(invocation -> {
             Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
@@ -188,7 +193,7 @@ public class SniffyDataSourceTest extends BaseTest {
 
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
-        Mockito.when(targetDataSource.getXAConnection()).then(invocation -> {
+        when(targetDataSource.getXAConnection()).then(invocation -> {
             Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });
@@ -208,13 +213,51 @@ public class SniffyDataSourceTest extends BaseTest {
     }
 
     @Test
+    public void testGetPooledConnectionClosedIfRejected() throws Exception {
+        JdbcDataSource h2DataSource = new JdbcDataSource();
+        h2DataSource.setURL("jdbc:h2:mem:");
+
+        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
+
+        AtomicReference<Connection> targetConnectionReference = new AtomicReference<>();
+
+        when(targetDataSource.getPooledConnection()).thenAnswer((Answer<PooledConnection>) invocation -> {
+            PooledConnection pc = Mockito.spy((PooledConnection) invocation.callRealMethod());
+            when(pc.getConnection()).thenAnswer((Answer<Connection>) invocation1 -> {
+                Connection c = (Connection) invocation1.callRealMethod();
+                targetConnectionReference.set(c);
+                return c;
+            });
+            return pc;
+        });
+
+        SniffyDataSource sniffyDataSource = new SniffyDataSource(targetDataSource);
+
+        PooledConnection sniffyPooledConnection = sniffyDataSource.getPooledConnection();
+
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "", -1);
+
+        try {
+            sniffyPooledConnection.getConnection();
+            fail();
+        } catch (SQLException e) {
+            assertNotNull(e);
+        } finally {
+            ConnectionsRegistry.INSTANCE.clear();
+        }
+
+        assertTrue(targetConnectionReference.get().isClosed());
+
+    }
+
+    @Test
     public void testGetPooledConnectionWithCredentialsWithSocketOperation() throws Exception {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
         JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
 
-        Mockito.when(targetDataSource.getXAConnection(anyString(), anyString())).then(invocation -> {
+        when(targetDataSource.getXAConnection(anyString(), anyString())).then(invocation -> {
             Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
             return invocation.callRealMethod();
         });

@@ -9,7 +9,7 @@ WARNING: If you're using an application server like Tomcat and you're defining a
 
 == Non-Servlet applications
 
-Standalone sniffy uber-jar also works with non-Servlet applications (Currently only fault tolerance testing is supported in this mode).
+Standalone sniffy uber-jar also works with non-Servlet applications (Currently only fault tolerance testing and TCP delay are supported in this mode).
 Just add following parameter to your java application command line:
 `-javaagent:sniffy-<VERSION>.jar=5559`
 

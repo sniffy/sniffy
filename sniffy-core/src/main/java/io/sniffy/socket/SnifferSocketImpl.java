@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
-
 /**
  * @since 3.1
  */
@@ -46,8 +44,53 @@ class SnifferSocketImpl extends SocketImpl {
 
     private final int id = counter.getAndIncrement();
 
+    protected static volatile Integer defaultReceiveBufferSize;
+    protected int receiveBufferSize;
+
+    protected static volatile Integer defaultSendBufferSize;
+    protected int sendBufferSize;
+
     protected SnifferSocketImpl(SocketImpl delegate) {
         this.delegate = delegate;
+    }
+
+    private void estimateReceiveBuffer() {
+        if (null == defaultReceiveBufferSize) {
+            synchronized (SnifferSocketImpl.class) {
+                if (null == defaultReceiveBufferSize) {
+                    try {
+                        Object o = delegate.getOption(SocketOptions.SO_RCVBUF);
+                        if (o instanceof Integer) {
+                            defaultReceiveBufferSize = (Integer) o;
+                        } else {
+                            defaultReceiveBufferSize = 0;
+                        }
+                    } catch (SocketException e) {
+                        defaultReceiveBufferSize = 0;
+                    }
+                }
+            }
+        }
+        receiveBufferSize = defaultReceiveBufferSize;
+    }
+    private void estimateSendBuffer() {
+        if (null == defaultSendBufferSize) {
+            synchronized (SnifferSocketImpl.class) {
+                if (null == defaultSendBufferSize) {
+                    try {
+                        Object o = delegate.getOption(SocketOptions.SO_SNDBUF);
+                        if (o instanceof Integer) {
+                            defaultSendBufferSize = (Integer) o;
+                        } else {
+                            defaultSendBufferSize = 0;
+                        }
+                    } catch (SocketException e) {
+                        defaultSendBufferSize = 0;
+                    }
+                }
+            }
+        }
+        sendBufferSize = defaultSendBufferSize;
     }
 
     protected void logSocket(long millis) {
@@ -61,13 +104,39 @@ class SnifferSocketImpl extends SocketImpl {
     }
 
     protected void checkConnectionAllowed() throws ConnectException {
-        checkConnectionAllowed(address);
+        checkConnectionAllowed(0);
+    }
+
+    protected void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
+        checkConnectionAllowed(address, numberOfSleepCycles);
     }
 
     protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
-        if (null != inetSocketAddress && CLOSED == ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress)) {
-            throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
+        checkConnectionAllowed(inetSocketAddress, 1);
+    }
+
+    protected static void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+        if (null != inetSocketAddress) {
+            int status = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress);
+            if (status < 0) {
+                if (numberOfSleepCycles > 0 && -1 != status) try {
+                    sleepImpl(-1 * status * numberOfSleepCycles);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
+            } else if (numberOfSleepCycles > 0 && status > 0) {
+                try {
+                    sleepImpl(status * numberOfSleepCycles);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
+    }
+
+    private static void sleepImpl(int status) throws InterruptedException {
+        Thread.sleep(status);
     }
 
     private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
@@ -111,6 +180,7 @@ class SnifferSocketImpl extends SocketImpl {
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
+            checkConnectionAllowed(1);
             method("sendUrgentData", int.class).invoke(delegate, data);
         } catch (Exception e) {
             ExceptionUtil.processException(e);
@@ -351,6 +421,7 @@ class SnifferSocketImpl extends SocketImpl {
 
     @Override
     protected InputStream getInputStream() throws IOException {
+        estimateReceiveBuffer();
         checkConnectionAllowed();
         copyToDelegate();
         long start = System.currentTimeMillis();
@@ -366,6 +437,7 @@ class SnifferSocketImpl extends SocketImpl {
 
     @Override
     protected OutputStream getOutputStream() throws IOException {
+        estimateSendBuffer();
         checkConnectionAllowed();
         copyToDelegate();
         long start = System.currentTimeMillis();
@@ -415,6 +487,21 @@ class SnifferSocketImpl extends SocketImpl {
         long start = System.currentTimeMillis();
         try {
             delegate.setOption(optID, value);
+
+            if (SocketOptions.SO_RCVBUF == optID) {
+                try {
+                    receiveBufferSize = ((Number) value).intValue();
+                } catch (Exception e) {
+                    // TODO: log me maybe
+                }
+            } else if (SocketOptions.SO_SNDBUF == optID) {
+                try {
+                    sendBufferSize = ((Number) value).intValue();
+                } catch (Exception e) {
+                    // TODO: log me maybe
+                }
+            }
+
         } finally {
             logSocket(System.currentTimeMillis() - start);
             copyFromDelegate();

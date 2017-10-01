@@ -24,6 +24,7 @@ Discover all outgoing network connections from your server and disable them righ
 image::network-connections.png[]
 
 Sniffy will throw a `java.net.ConnectException` when your application tries to connect to address disallowed by Sniffy.
+It's also possible to specify a fixed delay for all sent and received TCP packets.
 
 === Simulating no connectivity in unit tests
 
