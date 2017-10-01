@@ -15,8 +15,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.AbstractMap;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static java.lang.Integer.valueOf;
 import static org.junit.Assert.*;
 
 public class ConnectionsRegistryTest extends BaseSocketTest {
@@ -43,6 +46,68 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
             assertNotNull(e);
         } finally {
             if (null != socket) socket.close();
+        }
+
+    }
+
+    @Test
+    public void testThreadLocalConnectionClosed() throws Exception {
+
+        SnifferSocketImplFactory.uninstall();
+        SnifferSocketImplFactory.install();
+
+        try {
+            ConnectionsRegistry.INSTANCE.setThreadLocal(true);
+
+            ConnectionsRegistry.INSTANCE.setThreadLocalDiscoveredAddresses(
+                    new HashMap<Map.Entry<String, Integer>, Integer>() {{
+                        put(new AbstractMap.SimpleEntry<>(localhost.getHostName(), echoServerRule.getBoundPort()), -1);
+                    }}
+            );
+
+            Map<Map.Entry<String, Integer>, Integer> discoveredAddresses = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
+            assertNotNull(discoveredAddresses);
+            assertEquals(1, discoveredAddresses.size());
+            assertTrue(discoveredAddresses.containsKey(
+                    new AbstractMap.SimpleEntry<>(localhost.getHostName(), echoServerRule.getBoundPort())
+            ));
+            assertEquals(valueOf(-1), discoveredAddresses.get(
+                    new AbstractMap.SimpleEntry<>(localhost.getHostName(), echoServerRule.getBoundPort())
+            ));
+
+            Socket socket = null;
+
+            try {
+                socket = new Socket(localhost, echoServerRule.getBoundPort());
+                fail("Should have failed since this connection is forbidden by sniffy");
+            } catch (ConnectException e) {
+                assertNotNull(e);
+            } finally {
+                if (null != socket) socket.close();
+            }
+
+            AtomicReference<Socket> socketReference = new AtomicReference<>();
+
+            Thread t = new Thread(() -> {
+                try {
+                    socketReference.set(new Socket(localhost, echoServerRule.getBoundPort()));
+                } catch (Exception e) {
+                    fail(e.getMessage());
+                }
+            });
+
+            t.start();
+            t.join(1000);
+
+            socket = socketReference.get();
+
+            assertNotNull(socket);
+            assertTrue(socket.isConnected());
+            socket.close();
+
+        } finally {
+            ConnectionsRegistry.INSTANCE.clear();
+            ConnectionsRegistry.INSTANCE.setThreadLocal(false);
         }
 
     }
