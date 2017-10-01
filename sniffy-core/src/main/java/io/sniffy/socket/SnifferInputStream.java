@@ -29,12 +29,12 @@ class SnifferInputStream extends InputStream {
             if (read != -1) bytesDown = 1;
             return read;
         } finally {
-            sleepIfRquired(bytesDown);
+            sleepIfRequired(bytesDown);
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
 
-    private void sleepIfRquired(int bytesDown) throws ConnectException {
+    private void sleepIfRequired(int bytesDown) throws ConnectException {
         potentiallyBufferedBytes -= bytesDown;
 
         if (potentiallyBufferedBytes < 0) { // TODO: sleep multiple times if required
@@ -51,7 +51,7 @@ class SnifferInputStream extends InputStream {
         try {
             return bytesDown = delegate.read(b);
         } finally {
-            sleepIfRquired(bytesDown);
+            sleepIfRequired(bytesDown);
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
@@ -64,7 +64,7 @@ class SnifferInputStream extends InputStream {
         try {
             return bytesDown = delegate.read(b, off, len);
         } finally {
-            sleepIfRquired(bytesDown);
+            sleepIfRequired(bytesDown);
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
