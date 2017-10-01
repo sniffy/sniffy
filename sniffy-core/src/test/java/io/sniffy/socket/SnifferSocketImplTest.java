@@ -411,7 +411,6 @@ public class SnifferSocketImplTest {
         assertEquals(1, actual.read());
 
         assertEquals((Integer) 0, SnifferSocketImpl.defaultReceiveBufferSize);
-        // TODO: check how would delay work with the buffer size of 0
 
     }
 
@@ -433,7 +432,6 @@ public class SnifferSocketImplTest {
         assertEquals(1, actual.read());
 
         assertEquals((Integer) 0, SnifferSocketImpl.defaultReceiveBufferSize);
-        // TODO: check how would delay work with the buffer size of 0
 
     }
 
@@ -476,7 +474,6 @@ public class SnifferSocketImplTest {
         assertEquals(3, (int) expected.toByteArray()[0]);
 
         assertEquals((Integer) 0, SnifferSocketImpl.defaultSendBufferSize);
-        // TODO: check how would delay work with the buffer size of 0
 
     }
 
@@ -500,7 +497,6 @@ public class SnifferSocketImplTest {
         assertEquals(3, (int) expected.toByteArray()[0]);
 
         assertEquals((Integer) 0, SnifferSocketImpl.defaultSendBufferSize);
-        // TODO: check how would delay work with the buffer size of 0
 
     }
 

@@ -12,7 +12,7 @@ class SnifferOutputStream extends OutputStream {
     private final SnifferSocketImpl snifferSocket;
     private final OutputStream delegate;
 
-    private int potentiallyBufferedBytes = 0;
+    private int potentiallyBufferedBytes = 0; // TODO: move to SnifferSocketImpl
 
     SnifferOutputStream(SnifferSocketImpl snifferSocket, OutputStream delegate) {
         this.snifferSocket = snifferSocket;
@@ -21,7 +21,7 @@ class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        snifferSocket.checkConnectionAllowed(false);
+        snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
@@ -32,17 +32,26 @@ class SnifferOutputStream extends OutputStream {
     }
 
     private void sleepIfRequired(int bytesUp) throws ConnectException {
-        potentiallyBufferedBytes -= bytesUp;
 
-        if (potentiallyBufferedBytes < 0) { // TODO: sleep multiple times if required
-            snifferSocket.checkConnectionAllowed(true);
-            potentiallyBufferedBytes = snifferSocket.receiveBufferSize;
+        if (0 == snifferSocket.receiveBufferSize) {
+            snifferSocket.checkConnectionAllowed(1);
+        } else {
+
+            potentiallyBufferedBytes -= bytesUp;
+
+            if (potentiallyBufferedBytes < 0) {
+                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedBytes) / snifferSocket.sendBufferSize;
+                snifferSocket.checkConnectionAllowed(estimatedNumberOfTcpPackets);
+                potentiallyBufferedBytes = snifferSocket.sendBufferSize;
+            }
+
         }
+
     }
 
     @Override
     public void write(byte[] b) throws IOException {
-        snifferSocket.checkConnectionAllowed(false);
+        snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
@@ -54,7 +63,7 @@ class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        snifferSocket.checkConnectionAllowed(false);
+        snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
             delegate.write(b, off, len);
@@ -66,7 +75,7 @@ class SnifferOutputStream extends OutputStream {
 
     @Override
     public void flush() throws IOException {
-        snifferSocket.checkConnectionAllowed(true);
+        snifferSocket.checkConnectionAllowed(1);
         long start = System.currentTimeMillis();
         try {
             delegate.flush();
@@ -77,7 +86,7 @@ class SnifferOutputStream extends OutputStream {
 
     @Override
     public void close() throws IOException {
-        snifferSocket.checkConnectionAllowed(false);
+        snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
             delegate.close();

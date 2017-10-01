@@ -104,30 +104,30 @@ class SnifferSocketImpl extends SocketImpl {
     }
 
     protected void checkConnectionAllowed() throws ConnectException {
-        checkConnectionAllowed(true);
+        checkConnectionAllowed(0);
     }
 
-    protected void checkConnectionAllowed(boolean sleep) throws ConnectException {
+    protected void checkConnectionAllowed(int sleep) throws ConnectException {
         checkConnectionAllowed(address, sleep);
     }
 
     protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
-        checkConnectionAllowed(inetSocketAddress, true);
+        checkConnectionAllowed(inetSocketAddress, 1);
     }
 
-    protected static void checkConnectionAllowed(InetSocketAddress inetSocketAddress, boolean sleep) throws ConnectException {
+    protected static void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int sleep) throws ConnectException {
         if (null != inetSocketAddress) {
             int status = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress);
             if (status < 0) {
-                if (sleep && -1 != status) try {
-                    sleepImpl(-1 * status);
+                if (sleep > 0 && -1 != status) try {
+                    sleepImpl(-1 * status * sleep);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
                 throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
-            } else if (sleep && status > 0) {
+            } else if (sleep > 0 && status > 0) {
                 try {
-                    sleepImpl(status);
+                    sleepImpl(status * sleep);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -180,7 +180,7 @@ class SnifferSocketImpl extends SocketImpl {
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            // TODO: add delay here
+            checkConnectionAllowed(1);
             method("sendUrgentData", int.class).invoke(delegate, data);
         } catch (Exception e) {
             ExceptionUtil.processException(e);
@@ -486,6 +486,7 @@ class SnifferSocketImpl extends SocketImpl {
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
+            // TODO get buffer
             delegate.setOption(optID, value);
         } finally {
             logSocket(System.currentTimeMillis() - start);
