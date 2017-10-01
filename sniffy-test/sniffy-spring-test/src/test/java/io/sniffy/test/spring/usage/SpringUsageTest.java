@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import static java.sql.DriverManager.getConnection;
