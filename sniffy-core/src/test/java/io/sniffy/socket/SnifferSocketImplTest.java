@@ -394,7 +394,7 @@ public class SnifferSocketImplTest {
     }
 
     @Test
-    public void testEstimateReceiveBuffer() throws Exception {
+    public void testEstimateReceiveBufferNoRcvBufOption() throws Exception {
 
         InputStream expected = new ByteArrayInputStream(new byte[]{1,2,3});
         SnifferSocketImpl.defaultReceiveBufferSize = null;
@@ -411,6 +411,29 @@ public class SnifferSocketImplTest {
         assertEquals(1, actual.read());
 
         assertEquals((Integer) 0, SnifferSocketImpl.defaultReceiveBufferSize);
+        // TODO: check how would delay work with the buffer size of 0
+
+    }
+
+    @Test
+    public void testEstimateReceiveBufferRcvBufOptionThrowsException() throws Exception {
+
+        InputStream expected = new ByteArrayInputStream(new byte[]{1,2,3});
+        SnifferSocketImpl.defaultReceiveBufferSize = null;
+
+        when(delegate, "getInputStream").thenReturn(expected);
+        when(delegate, "getOption", SocketOptions.SO_RCVBUF).thenThrow(new SocketException());
+
+        InputStream actual = sniffySocket.getInputStream();
+
+        verifyPrivate(delegate).invoke("getInputStream");
+        verifyNoMoreInteractions(ignoreStubs(delegate));
+
+        assertEquals(SnifferInputStream.class, actual.getClass());
+        assertEquals(1, actual.read());
+
+        assertEquals((Integer) 0, SnifferSocketImpl.defaultReceiveBufferSize);
+        // TODO: check how would delay work with the buffer size of 0
 
     }
 
