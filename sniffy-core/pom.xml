@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.3</version>
+        <version>3.1.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -49,10 +49,10 @@
                 <executions>
                     <execution>
                         <id>check-signatures</id>
-                        <phase>test</phase>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
+                        <phase>verify</phase>
                         <configuration>
                             <rules>
                                 <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
@@ -85,6 +85,12 @@
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
             <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

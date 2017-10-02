@@ -13,50 +13,43 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
-
 /**
  * @since 3.1
  */
 public enum ConnectionsRegistry {
     INSTANCE;
 
-    public enum ConnectionStatus {
-        OPEN,
-        CLOSED
-    }
-
-    private final Map<Map.Entry<String,Integer>, ConnectionStatus> discoveredAddresses = new ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionStatus>();
-    private final Map<Map.Entry<String,String>, ConnectionStatus> discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, ConnectionStatus>();
+    private final Map<Map.Entry<String,Integer>, Integer> discoveredAddresses = new ConcurrentHashMap<Map.Entry<String,Integer>, Integer>();
+    private final Map<Map.Entry<String,String>, Integer> discoveredDataSources = new ConcurrentHashMap<Map.Entry<String,String>, Integer>();
 
     private volatile boolean persistRegistry = false;
 
-    private final ThreadLocal<Map<Map.Entry<String,Integer>, ConnectionStatus>> threadLocalDiscoveredAddresses =
-            new ThreadLocal<Map<Map.Entry<String,Integer>, ConnectionStatus>>() {
+    private final ThreadLocal<Map<Map.Entry<String,Integer>, Integer>> threadLocalDiscoveredAddresses =
+            new ThreadLocal<Map<Map.Entry<String,Integer>, Integer>>() {
 
                 @Override
-                protected Map<Map.Entry<String, Integer>, ConnectionStatus> initialValue() {
-                    return new ConcurrentHashMap<Map.Entry<String,Integer>, ConnectionStatus>();
+                protected Map<Map.Entry<String, Integer>, Integer> initialValue() {
+                    return new ConcurrentHashMap<Map.Entry<String,Integer>, Integer>();
                 }
 
             };
 
-    private final ThreadLocal<Map<Map.Entry<String,String>, ConnectionStatus>> threadLocalDiscoveredDataSources =
-            new ThreadLocal<Map<Map.Entry<String,String>, ConnectionStatus>>() {
+    private final ThreadLocal<Map<Map.Entry<String,String>, Integer>> threadLocalDiscoveredDataSources =
+            new ThreadLocal<Map<Map.Entry<String,String>, Integer>>() {
 
                 @Override
-                protected Map<Map.Entry<String, String>, ConnectionStatus> initialValue() {
-                    return new ConcurrentHashMap<Map.Entry<String,String>, ConnectionStatus>();
+                protected Map<Map.Entry<String, String>, Integer> initialValue() {
+                    return new ConcurrentHashMap<Map.Entry<String,String>, Integer>();
                 }
             };
 
     private volatile boolean threadLocal = false;
 
-    public void setThreadLocalDiscoveredAddresses(Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses) {
+    public void setThreadLocalDiscoveredAddresses(Map<Map.Entry<String, Integer>, Integer> discoveredAddresses) {
         threadLocalDiscoveredAddresses.set(discoveredAddresses);
     }
 
-    public void setThreadLocalDiscoveredDataSources(Map<Map.Entry<String,String>, ConnectionStatus> discoveredDataSources) {
+    public void setThreadLocalDiscoveredDataSources(Map<Map.Entry<String,String>, Integer> discoveredDataSources) {
         threadLocalDiscoveredDataSources.set(discoveredDataSources);
     }
 
@@ -68,62 +61,62 @@ public enum ConnectionsRegistry {
         }
     }
 
-    public ConnectionStatus resolveDataSourceStatus(String url, String userName) {
+    public Integer resolveDataSourceStatus(String url, String userName) {
 
-        Map<Map.Entry<String, String>, ConnectionStatus> discoveredDataSources = getDiscoveredDataSources();
+        Map<Map.Entry<String, String>, Integer> discoveredDataSources = getDiscoveredDataSources();
 
-        for (Map.Entry<Map.Entry<String, String>, ConnectionStatus> entry : discoveredDataSources.entrySet()) {
+        for (Map.Entry<Map.Entry<String, String>, Integer> entry : discoveredDataSources.entrySet()) {
 
             if ((null == url || url.equals(entry.getKey().getKey())) &&
                     (null == userName || userName.equals(entry.getKey().getValue())) &&
-                    OPEN != entry.getValue()) {
+                    0 != entry.getValue()) {
                 return entry.getValue();
             }
 
         }
 
-        setDataSourceStatus(url, userName, OPEN);
+        setDataSourceStatus(url, userName, 0);
 
-        return OPEN;
+        return 0;
 
     }
 
-    public ConnectionStatus resolveSocketAddressStatus(InetSocketAddress inetSocketAddress) {
+    public int resolveSocketAddressStatus(InetSocketAddress inetSocketAddress) {
 
         if (null == inetSocketAddress || null == inetSocketAddress.getAddress()) {
-            return OPEN;
+            return 0;
         }
 
-        Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
+        Map<Map.Entry<String, Integer>, Integer> discoveredAddresses = getDiscoveredAddresses();
 
         InetAddress inetAddress = inetSocketAddress.getAddress();
 
-        for (Map.Entry<Map.Entry<String,Integer>, ConnectionStatus> entry : discoveredAddresses.entrySet()) {
+        for (Map.Entry<Map.Entry<String,Integer>, Integer> entry : discoveredAddresses.entrySet()) {
 
             String hostName = entry.getKey().getKey();
             Integer port = entry.getKey().getValue();
 
             if ((null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress())) &&
                     (null == port || port == inetSocketAddress.getPort()) &&
-                    OPEN != entry.getValue()) {
+                    0 != entry.getValue()) {
                 return entry.getValue();
             }
 
         }
 
-        setSocketAddressStatus(inetSocketAddress.getHostName(), inetSocketAddress.getPort(), OPEN);
+        setSocketAddressStatus(inetSocketAddress.getHostName(), inetSocketAddress.getPort(), 0);
 
-        return OPEN;
+        return 0;
 
     }
 
-    public Map<Map.Entry<String, Integer>, ConnectionStatus> getDiscoveredAddresses() {
+    public Map<Map.Entry<String, Integer>, Integer> getDiscoveredAddresses() {
         return threadLocal ? threadLocalDiscoveredAddresses.get() : this.discoveredAddresses;
     }
 
-    public void setSocketAddressStatus(String hostName, Integer port, ConnectionStatus connectionStatus) {
+    public void setSocketAddressStatus(String hostName, Integer port, Integer connectionStatus) {
 
-        Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
+        Map<Map.Entry<String, Integer>, Integer> discoveredAddresses = getDiscoveredAddresses();
 
         discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
         if (persistRegistry) {
@@ -135,13 +128,13 @@ public enum ConnectionsRegistry {
         }
     }
 
-    public Map<Map.Entry<String, String>, ConnectionStatus> getDiscoveredDataSources() {
+    public Map<Map.Entry<String, String>, Integer> getDiscoveredDataSources() {
         return threadLocal ? threadLocalDiscoveredDataSources.get() : this.discoveredDataSources;
     }
 
-    public void setDataSourceStatus(String url, String userName, ConnectionStatus status) {
+    public void setDataSourceStatus(String url, String userName, Integer status) {
 
-        Map<Map.Entry<String, String>, ConnectionStatus> discoveredDataSources = getDiscoveredDataSources();
+        Map<Map.Entry<String, String>, Integer> discoveredDataSources = getDiscoveredDataSources();
 
         discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(url, userName), status);
         if (persistRegistry) {
@@ -185,7 +178,7 @@ public enum ConnectionsRegistry {
                 JsonObject socket = sockets.get(i).asObject();
                 String hostName = socket.get("host").asString();
                 int port = Integer.parseInt(socket.get("port").asString());
-                ConnectionStatus connectionStatus = ConnectionStatus.valueOf(socket.get("status").asString());
+                Integer connectionStatus = socket.get("status").asInt();
                 discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
             }
         }
@@ -196,7 +189,7 @@ public enum ConnectionsRegistry {
                 JsonObject dataSource = dataSources.get(i).asObject();
                 String url = dataSource.get("url").asString();
                 String userName = dataSource.get("userName").asString();
-                ConnectionStatus connectionStatus = ConnectionStatus.valueOf(dataSource.get("status").asString());
+                Integer connectionStatus = dataSource.get("status").asInt();
                 discoveredDataSources.put(new AbstractMap.SimpleEntry<String, String>(url, userName), connectionStatus);
             }
         }
@@ -211,8 +204,8 @@ public enum ConnectionsRegistry {
 
     public void writeTo(Writer writer) throws IOException {
 
-        Map<Map.Entry<String, Integer>, ConnectionStatus> discoveredAddresses = getDiscoveredAddresses();
-        Map<Map.Entry<String, String>, ConnectionStatus> discoveredDataSources = getDiscoveredDataSources();
+        Map<Map.Entry<String, Integer>, Integer> discoveredAddresses = getDiscoveredAddresses();
+        Map<Map.Entry<String, String>, Integer> discoveredDataSources = getDiscoveredDataSources();
 
         writer.write("{");
 
@@ -223,11 +216,11 @@ public enum ConnectionsRegistry {
 
             writer.write(",\"sockets\":[");
 
-            Iterator<Map.Entry<Map.Entry<String, Integer>, ConnectionStatus>> iterator =
+            Iterator<Map.Entry<Map.Entry<String, Integer>, Integer>> iterator =
                     discoveredAddresses.entrySet().iterator();
 
             while (iterator.hasNext()) {
-                Map.Entry<Map.Entry<String,Integer>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
+                Map.Entry<Map.Entry<String,Integer>, Integer> entry = iterator.next();
 
                 String hostName = entry.getKey().getKey();
                 Integer port = entry.getKey().getValue();
@@ -245,7 +238,7 @@ public enum ConnectionsRegistry {
                 }
                 writer.write(',');
                 writer.write("\"status\":");
-                writer.write(StringUtil.escapeJsonString(entry.getValue().name()));
+                writer.write(entry.getValue().toString());
                 writer.write('}');
                 if (iterator.hasNext()) writer.write(',');
 
@@ -261,11 +254,11 @@ public enum ConnectionsRegistry {
 
             writer.write(",\"dataSources\":[");
 
-            Iterator<Map.Entry<Map.Entry<String, String>, ConnectionsRegistry.ConnectionStatus>> iterator =
+            Iterator<Map.Entry<Map.Entry<String, String>, Integer>> iterator =
                     discoveredDataSources.entrySet().iterator();
 
             while (iterator.hasNext()) {
-                Map.Entry<Map.Entry<String,String>, ConnectionsRegistry.ConnectionStatus> entry = iterator.next();
+                Map.Entry<Map.Entry<String,String>, Integer> entry = iterator.next();
 
                 String url = entry.getKey().getKey();
                 String userName = entry.getKey().getValue();
@@ -282,7 +275,7 @@ public enum ConnectionsRegistry {
                 }
                 writer.write(',');
                 writer.write("\"status\":");
-                writer.write(StringUtil.escapeJsonString(entry.getValue().name()));
+                writer.write(entry.getValue().toString());
                 writer.write('}');
                 if (iterator.hasNext()) writer.write(',');
 

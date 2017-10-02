@@ -104,7 +104,7 @@ public class SniffyTestNgListener implements IInvokedMethodListener {
         DisableSockets disableSockets = AnnotationProcessor.getAnnotationRecursive(method, DisableSockets.class);
 
         if (null != disableSockets) {
-            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, ConnectionsRegistry.ConnectionStatus.CLOSED);
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
             testResult.setAttribute(DISABLE_SOCKETS_ATTRIBUTE_NAME, disableSockets);
         }
 

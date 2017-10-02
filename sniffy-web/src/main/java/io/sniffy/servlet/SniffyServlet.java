@@ -24,8 +24,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.CLOSED;
-import static io.sniffy.registry.ConnectionsRegistry.ConnectionStatus.OPEN;
 import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
 import static io.sniffy.util.StringUtil.splitBySlashAndDecode;
 
@@ -53,9 +51,9 @@ public class SniffyServlet extends HttpServlet {
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.3/dist/sniffy.min.js");
-            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.3/dist/sniffy.js");
-            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.3/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.4/dist/sniffy.min.js");
+            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.4/dist/sniffy.js");
+            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.4/dist/sniffy.map");
         } catch (IOException e) {
             // TODO: log me maybe?
         }
@@ -119,11 +117,15 @@ public class SniffyServlet extends HttpServlet {
 
             addCorsHeaders(response);
 
-            ConnectionsRegistry.ConnectionStatus status = null;
+            Integer status = null;
             if ("POST".equalsIgnoreCase(request.getMethod())) {
-                status = OPEN;
+                try {
+                    status = Integer.parseInt(request.getReader().readLine());
+                } catch (Exception e) {
+                    status = 0;
+                }
             } else if ("DELETE".equalsIgnoreCase(request.getMethod())) {
-                status = CLOSED;
+                status = -1;
             }
 
             if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
@@ -136,7 +138,7 @@ public class SniffyServlet extends HttpServlet {
                 ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
             } else if (path.startsWith(PERSISTENT_REGISTRY_URI_PREFIX)) {
 
-                if (OPEN == status) {
+                if (null != status && status >= 0) {
                     ConnectionsRegistry.INSTANCE.setPersistRegistry(true);
                     ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry(ConnectionsRegistry.INSTANCE);
                 } else {

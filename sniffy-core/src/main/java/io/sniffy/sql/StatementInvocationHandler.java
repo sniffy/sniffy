@@ -108,6 +108,7 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
         int rowsUpdated = 0;
         try {
             Sniffy.enterJdbcMethod();
+            checkConnectionAllowed(true);
             Object result = invokeTargetImpl(method, args);
             if (isUpdateQuery) {
                 if (result instanceof Number) {
