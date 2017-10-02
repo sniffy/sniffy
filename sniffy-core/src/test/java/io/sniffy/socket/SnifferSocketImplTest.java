@@ -633,7 +633,10 @@ public class SnifferSocketImplTest {
         // TCP Delay
         inputStream.read(); // read 1 byte; 9 in cache
 
-        verifyPrivate(SnifferSocketImpl.class, times(4)).invoke("sleepImpl", eq(10));
+        // TCP Delay
+        outputStream.write(0); // write 1 byte; 9 in cache
+
+        verifyPrivate(SnifferSocketImpl.class, times(5)).invoke("sleepImpl", eq(10));
 
         verifyPrivate(delegate).invoke("connect", "localhost", 123);
         verifyPrivate(delegate).invoke("getInputStream");
