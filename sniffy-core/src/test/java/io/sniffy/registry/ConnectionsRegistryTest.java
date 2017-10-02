@@ -10,10 +10,7 @@ import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.net.*;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,7 +90,27 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
             assertNotNull(socket);
             assertTrue(socket.isConnected());
-            socket.close();
+
+            // Close socket in a separate thread cause closing it from current is prohibited by Sniffy
+
+            try {
+                socket.close();
+                fail("Should have thrown Exception");
+            } catch (SocketException e) {
+                assertNotNull(e);
+            }
+
+            t = new Thread(() -> {
+                try {
+                    socketReference.get().close();
+                } catch (Exception e) {
+                    fail(e.getMessage());
+                }
+            });
+
+            t.start();
+            t.join(1000);
+
 
         } finally {
             ConnectionsRegistry.INSTANCE.clear();
