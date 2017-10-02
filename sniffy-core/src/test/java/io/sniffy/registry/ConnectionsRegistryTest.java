@@ -10,10 +10,7 @@ import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.net.*;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,13 +75,17 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
             AtomicReference<Socket> socketReference = new AtomicReference<>();
 
+            AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
             Thread t = new Thread(() -> {
                 try {
                     socketReference.set(new Socket(localhost, echoServerRule.getBoundPort()));
                 } catch (Exception e) {
-                    fail(e.getMessage());
+                    exceptionReference.set(e);
                 }
             });
+
+            assertNull(exceptionReference.get());
 
             t.start();
             t.join(1000);
@@ -93,7 +94,29 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
             assertNotNull(socket);
             assertTrue(socket.isConnected());
-            socket.close();
+
+            // Close socket in a separate thread cause closing it from current is prohibited by Sniffy
+
+            try {
+                socket.close();
+                fail("Should have thrown Exception");
+            } catch (SocketException e) {
+                assertNotNull(e);
+            }
+
+            t = new Thread(() -> {
+                try {
+                    socketReference.get().close();
+                } catch (Exception e) {
+                    exceptionReference.set(e);
+                }
+            });
+
+            assertNull(exceptionReference.get());
+
+            t.start();
+            t.join(1000);
+
 
         } finally {
             ConnectionsRegistry.INSTANCE.clear();

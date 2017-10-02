@@ -12,13 +12,14 @@ import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.net.SocketOptions.SO_RCVBUF;
 import static java.net.SocketOptions.SO_SNDBUF;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.times;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
@@ -300,13 +301,17 @@ public class SnifferSocketImplTest {
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 1000);
 
+        AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
         Thread thread = new Thread(() -> {
             try {
                 sniffySocket.connect("localhost", 123);
             } catch (IOException e) {
-                fail(e.getMessage());
+                exceptionReference.set(e);
             }
         });
+
+        assertNull(exceptionReference.get());
 
         thread.start();
         Thread.sleep(500);
@@ -595,6 +600,52 @@ public class SnifferSocketImplTest {
         } finally {
             sniffySocket.sendBufferSize = backup;
         }
+    }
+
+    @Test
+    @Features("issues/340")
+    public void testTcpDelayHeuristics() throws Exception {
+
+        verifyNoMoreInteractions(delegate);
+
+        when(delegate, "getInputStream").thenReturn(mock(InputStream.class));
+        when(delegate, "getOutputStream").thenReturn(mock(OutputStream.class));
+
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 10);
+
+        doNothing().when(SnifferSocketImpl.class, "sleepImpl", anyInt());
+
+        // TCP Delay
+        sniffySocket.connect("localhost", 123);
+
+        sniffySocket.setOption(SO_SNDBUF, 10);
+        sniffySocket.setOption(SO_RCVBUF, 10);
+
+        InputStream inputStream = sniffySocket.getInputStream();
+        OutputStream outputStream = sniffySocket.getOutputStream();
+
+        // TCP Delay
+        inputStream.read(); // read 1 byte; 9 in cache
+        inputStream.read(); // read 1 byte; 8 in cache
+
+        // TCP Delay
+        outputStream.write(0); // write 1 byte; 9 in cache
+        outputStream.write(0); // write 1 byte; 8 in cache
+
+        // TCP Delay
+        inputStream.read(); // read 1 byte; 9 in cache
+
+        // TCP Delay
+        outputStream.write(0); // write 1 byte; 9 in cache
+
+        verifyPrivate(SnifferSocketImpl.class, times(5)).invoke("sleepImpl", eq(10));
+
+        verifyPrivate(delegate).invoke("connect", "localhost", 123);
+        verifyPrivate(delegate).invoke("getInputStream");
+        verifyPrivate(delegate).invoke("getOutputStream");
+        verifyPrivate(delegate, times(2)).invoke("setOption", anyInt(), anyObject());
+        verifyNoMoreInteractions(delegate);
+
     }
 
 }
