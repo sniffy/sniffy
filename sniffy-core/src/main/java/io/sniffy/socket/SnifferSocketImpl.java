@@ -474,6 +474,7 @@ class SnifferSocketImpl extends SocketImpl {
     @Override
     protected void close() throws IOException {
         copyToDelegate();
+        checkConnectionAllowed(1);
         long start = System.currentTimeMillis();
         try {
             method("close").invoke(delegate);

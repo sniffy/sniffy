@@ -46,6 +46,8 @@ class SnifferInputStream extends InputStream {
      * will reset the number of buffered (i.e. which can be read without delay) bytes to 0 effectively adding a guaranteed
      * delay to any subsequent {@link SnifferInputStream#read()} request
      *
+     * TODO: consider if {@link java.net.SocketInputStream#available()} method can be of any use here
+     *
      * @param bytesDown number of bytes received from socket
      * @throws ConnectException on underlying socket exception
      */
