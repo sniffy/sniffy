@@ -62,14 +62,18 @@ public class SniffyDriverTest extends BaseTest {
 
         ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 1000);
 
+        AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
         Thread thread = new Thread(() -> {
             try (Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa")) {
                 assertNotNull(connection);
                 assertTrue(Proxy.isProxyClass(connection.getClass()));
             } catch (Exception e) {
-                fail(e.getMessage());
+                exceptionReference.set(e);
             }
         });
+
+        assertNull(exceptionReference.get());
 
         thread.start();
         Thread.sleep(500);

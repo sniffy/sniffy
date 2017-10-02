@@ -75,13 +75,17 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
             AtomicReference<Socket> socketReference = new AtomicReference<>();
 
+            AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
             Thread t = new Thread(() -> {
                 try {
                     socketReference.set(new Socket(localhost, echoServerRule.getBoundPort()));
                 } catch (Exception e) {
-                    fail(e.getMessage());
+                    exceptionReference.set(e);
                 }
             });
+
+            assertNull(exceptionReference.get());
 
             t.start();
             t.join(1000);
@@ -104,9 +108,11 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 try {
                     socketReference.get().close();
                 } catch (Exception e) {
-                    fail(e.getMessage());
+                    exceptionReference.set(e);
                 }
             });
+
+            assertNull(exceptionReference.get());
 
             t.start();
             t.join(1000);

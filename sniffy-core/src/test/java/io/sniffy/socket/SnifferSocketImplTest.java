@@ -12,6 +12,7 @@ import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.net.SocketOptions.SO_RCVBUF;
 import static java.net.SocketOptions.SO_SNDBUF;
@@ -300,13 +301,17 @@ public class SnifferSocketImplTest {
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 1000);
 
+        AtomicReference<Exception> exceptionReference = new AtomicReference<>();
+
         Thread thread = new Thread(() -> {
             try {
                 sniffySocket.connect("localhost", 123);
             } catch (IOException e) {
-                fail(e.getMessage());
+                exceptionReference.set(e);
             }
         });
+
+        assertNull(exceptionReference.get());
 
         thread.start();
         Thread.sleep(500);
