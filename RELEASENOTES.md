@@ -2,7 +2,13 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.3...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.4...master)
+
+## v3.1.4 - Oct 2nd, 2017
+
+ * [Incorrect SQL formatting (missing spaces)](https://github.com/sniffy/sniffy/issues/182)
+ * [Ability to simulate timeouts](https://github.com/sniffy/sniffy/issues/219)
+ * [StackOverflowError when executing queries with large IN() clause](https://github.com/sniffy/sniffy/issues/331)
 
 ## v3.1.3 - March 27th, 2017
 
