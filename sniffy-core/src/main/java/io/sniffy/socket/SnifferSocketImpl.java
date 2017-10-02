@@ -45,10 +45,10 @@ class SnifferSocketImpl extends SocketImpl {
     private final int id = counter.getAndIncrement();
 
     protected static volatile Integer defaultReceiveBufferSize;
-    protected int receiveBufferSize;
+    protected int receiveBufferSize = -1;
 
     protected static volatile Integer defaultSendBufferSize;
-    protected int sendBufferSize;
+    protected int sendBufferSize = -1;
 
     protected volatile int potentiallyBufferedInputBytes = 0;
     protected volatile int potentiallyBufferedOutputBytes = 0;
@@ -61,42 +61,46 @@ class SnifferSocketImpl extends SocketImpl {
     }
 
     private void estimateReceiveBuffer() {
-        if (null == defaultReceiveBufferSize) {
-            synchronized (SnifferSocketImpl.class) {
-                if (null == defaultReceiveBufferSize) {
-                    try {
-                        Object o = delegate.getOption(SocketOptions.SO_RCVBUF);
-                        if (o instanceof Integer) {
-                            defaultReceiveBufferSize = (Integer) o;
-                        } else {
+        if (-1 == receiveBufferSize) {
+            if (null == defaultReceiveBufferSize) {
+                synchronized (SnifferSocketImpl.class) {
+                    if (null == defaultReceiveBufferSize) {
+                        try {
+                            Object o = delegate.getOption(SocketOptions.SO_RCVBUF);
+                            if (o instanceof Integer) {
+                                defaultReceiveBufferSize = (Integer) o;
+                            } else {
+                                defaultReceiveBufferSize = 0;
+                            }
+                        } catch (SocketException e) {
                             defaultReceiveBufferSize = 0;
                         }
-                    } catch (SocketException e) {
-                        defaultReceiveBufferSize = 0;
                     }
                 }
             }
+            receiveBufferSize = defaultReceiveBufferSize;
         }
-        receiveBufferSize = defaultReceiveBufferSize;
     }
     private void estimateSendBuffer() {
-        if (null == defaultSendBufferSize) {
-            synchronized (SnifferSocketImpl.class) {
-                if (null == defaultSendBufferSize) {
-                    try {
-                        Object o = delegate.getOption(SocketOptions.SO_SNDBUF);
-                        if (o instanceof Integer) {
-                            defaultSendBufferSize = (Integer) o;
-                        } else {
+        if (-1 == sendBufferSize) {
+            if (null == defaultSendBufferSize) {
+                synchronized (SnifferSocketImpl.class) {
+                    if (null == defaultSendBufferSize) {
+                        try {
+                            Object o = delegate.getOption(SocketOptions.SO_SNDBUF);
+                            if (o instanceof Integer) {
+                                defaultSendBufferSize = (Integer) o;
+                            } else {
+                                defaultSendBufferSize = 0;
+                            }
+                        } catch (SocketException e) {
                             defaultSendBufferSize = 0;
                         }
-                    } catch (SocketException e) {
-                        defaultSendBufferSize = 0;
                     }
                 }
             }
+            sendBufferSize = defaultSendBufferSize;
         }
-        sendBufferSize = defaultSendBufferSize;
     }
 
     protected void logSocket(long millis) {

@@ -606,6 +606,8 @@ public class SnifferSocketImplTest {
     @Features("issues/340")
     public void testTcpDelayHeuristics() throws Exception {
 
+        verifyNoMoreInteractions(delegate);
+
         when(delegate, "getInputStream").thenReturn(mock(InputStream.class));
         when(delegate, "getOutputStream").thenReturn(mock(OutputStream.class));
 
