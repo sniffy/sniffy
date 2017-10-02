@@ -52,7 +52,7 @@ public class SnifferOutputStreamTest {
 
     @Test
     @Features("issues/219")
-    public void testWriteByteArrayThreeTcpPackets() throws IOException {
+    public void testWriteByteArrayFourTcpPackets() throws IOException {
 
         int backup = snifferSocket.sendBufferSize;
         try {
@@ -75,7 +75,7 @@ public class SnifferOutputStreamTest {
             verify(snifferSocket, times(2)).checkConnectionAllowed(eq(0));
 
             verify(snifferSocket).checkConnectionAllowed(eq(1));
-            verify(snifferSocket).checkConnectionAllowed(eq(2));
+            verify(snifferSocket).checkConnectionAllowed(eq(3));
 
             verify(snifferSocket).logSocket(anyInt(), eq(0), eq(THREE_BYTES_CHUNK.length));
             verify(snifferSocket).logSocket(anyInt(), eq(0), eq(ELEVEN_BYTES_CHUNK.length));

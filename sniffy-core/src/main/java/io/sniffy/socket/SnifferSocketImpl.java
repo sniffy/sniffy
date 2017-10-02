@@ -50,6 +50,12 @@ class SnifferSocketImpl extends SocketImpl {
     protected static volatile Integer defaultSendBufferSize;
     protected int sendBufferSize;
 
+    protected volatile int potentiallyBufferedInputBytes = 0;
+    protected volatile int potentiallyBufferedOutputBytes = 0;
+
+    protected volatile long lastReadThreadId;
+    protected volatile long lastWriteThreadId;
+
     protected SnifferSocketImpl(SocketImpl delegate) {
         this.delegate = delegate;
     }
@@ -135,8 +141,8 @@ class SnifferSocketImpl extends SocketImpl {
         }
     }
 
-    private static void sleepImpl(int status) throws InterruptedException {
-        Thread.sleep(status);
+    private static void sleepImpl(int millis) throws InterruptedException {
+        Thread.sleep(millis);
     }
 
     private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
