@@ -63,10 +63,10 @@ class SnifferInputStream extends InputStream {
             snifferSocket.checkConnectionAllowed(1);
         } else {
 
-            snifferSocket.potentiallyBufferedInputBytes -= bytesDown;
+            int potentiallyBufferedInputBytes = snifferSocket.potentiallyBufferedInputBytes -= bytesDown;
 
-            if (snifferSocket.potentiallyBufferedInputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * snifferSocket.potentiallyBufferedInputBytes) / snifferSocket.receiveBufferSize;
+            if (potentiallyBufferedInputBytes < 0) {
+                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / snifferSocket.receiveBufferSize;
                 snifferSocket.checkConnectionAllowed(estimatedNumberOfTcpPackets);
                 snifferSocket.potentiallyBufferedInputBytes = snifferSocket.receiveBufferSize;
             }

@@ -54,16 +54,14 @@ class SnifferOutputStream extends OutputStream {
             snifferSocket.potentiallyBufferedInputBytes = 0;
         }
 
-        snifferSocket.potentiallyBufferedOutputBytes = 0;
-
         if (0 == snifferSocket.sendBufferSize) {
             snifferSocket.checkConnectionAllowed(1);
         } else {
 
-            snifferSocket.potentiallyBufferedOutputBytes -= bytesUp;
+            int potentiallyBufferedOutputBytes = snifferSocket.potentiallyBufferedOutputBytes -= bytesUp;
 
-            if (snifferSocket.potentiallyBufferedOutputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * snifferSocket.potentiallyBufferedOutputBytes) / snifferSocket.sendBufferSize;
+            if (potentiallyBufferedOutputBytes < 0) {
+                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / snifferSocket.sendBufferSize;
                 snifferSocket.checkConnectionAllowed(estimatedNumberOfTcpPackets);
                 snifferSocket.potentiallyBufferedOutputBytes = snifferSocket.sendBufferSize;
             }
