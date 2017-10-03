@@ -1,0 +1,10 @@
+Sniffy uses heuristics to add delay for TCP connections.
+
+Say we have specified a delay of _D_ milliseconds and have the _R_ receive buffer and _S_ send buffer
+
+- Establishing connection adds _D_ milliseconds delay
+- Sending _N_ bytes where _(n - 1) * S < N < n * S_ adds _n * D_ milliseconds delay
+- Receiving _N_ bytes where _(n - 1) * R < N < n * R_ adds _n * D_ milliseconds delay
+- Sending anything in the same thread as reading will trigger a delay on subsequent receive and vice versa
+- Calling sendUrgentData(int) method alls _D_ milliseconds delay
+- Closing connection adds _D_ milliseconds delay

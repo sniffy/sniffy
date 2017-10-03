@@ -2,7 +2,12 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.4...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.5...master)
+
+## v3.1.5 - Oct 3rd, 2017
+
+ * [Add latency when user switched from reading to writing and vice-verca](https://github.com/sniffy/sniffy/issues/340)
+ * [UI glitch: No new line characters in long SQL queries](https://github.com/sniffy/sniffy/issues/339)
 
 ## v3.1.4 - Oct 2nd, 2017
 
