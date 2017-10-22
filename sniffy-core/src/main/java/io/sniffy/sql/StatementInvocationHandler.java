@@ -117,13 +117,13 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
                 if (result instanceof int[]) {
                     int[] updatedRows = (int[]) result;
                     for (int i : updatedRows) {
-                        if (-1 != i) rowsUpdated += i;
+                        if (i > 0) rowsUpdated += i;
                     }
                 }
                 if (result instanceof long[]) {
                     long[] updatedRows = (long[]) result;
                     for (long i : updatedRows) {
-                        if (-1 != i) rowsUpdated += i;
+                        if (i > 0) rowsUpdated += i;
                     }
                 }
             }
