@@ -52,6 +52,35 @@ public class PreparedStatementInvocationHandlerTest extends BaseTest {
     }
 
     @Test
+    @Issue("issues/337")
+    public void testExecuteLongBatchSuccessNoInfo() throws SQLException, IOException {
+
+        PreparedStatement target = mock(PreparedStatement.class);
+        when(target.executeLargeBatch()).thenReturn(new long[]{Statement.SUCCESS_NO_INFO, Statement.EXECUTE_FAILED});
+
+        PreparedStatement sniffyPreparedStatement = (PreparedStatement) Proxy.newProxyInstance(
+                PreparedStatementInvocationHandlerTest.class.getClassLoader(),
+                new Class[]{PreparedStatement.class},
+                new PreparedStatementInvocationHandler(target, null, "jdbc:test:connection:url", "sa", "UPDATE TAB SET FOO = ?")
+        );
+
+        try (CurrentThreadSpy spy = Sniffy.spyCurrentThread()) {
+
+            sniffyPreparedStatement.executeLargeBatch();
+
+            List<SqlStats> sqlStatsList = new ArrayList<>(spy.getExecutedStatements().values());
+            assertEquals(1, sqlStatsList.size());
+
+            SqlStats sqlStats = sqlStatsList.get(0);
+
+            assertEquals(1, sqlStats.queries.intValue());
+            assertEquals(0, sqlStats.rows.intValue());
+
+        }
+
+    }
+
+    @Test
     public void testExecuteBatch() throws Exception {
         try (Connection connection = openConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PREPARED_STATEMENT)) {
