@@ -7,6 +7,9 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
+/**
+ * @since 3.1.6
+ */
 public class SharedConnectionDataSource implements DataSource {
 
     private final DataSource targetDataSource;

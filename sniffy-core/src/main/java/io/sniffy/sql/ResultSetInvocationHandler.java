@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.ResultSet;
 
+// TODO: create a dedicated handler for RowSet
 class ResultSetInvocationHandler<T extends ResultSet> extends SniffyInvocationHandler<T> {
 
     private final StatementMetaData statementMetaData;
@@ -21,7 +22,6 @@ class ResultSetInvocationHandler<T extends ResultSet> extends SniffyInvocationHa
         checkConnectionAllowed();
 
         // TODO: consider using fetch size for exact calculations
-        // TODO: getStatement should return statement proxy
         if ("next".equals(methodName) || "previous".equals(methodName) ||
                 "first".equals(methodName) || "last".equals(methodName) ||
                 "absolute".equals(methodName) || "relative".equals(methodName)) {

@@ -9,6 +9,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * @since 3.1.6
+ */
 public class SharedConnectionInvocationHandler extends JdbcInvocationHandler<Connection> {
 
     private final Set<String> IGNORED_METHOD_NAMES = new HashSet<String>(Arrays.asList(

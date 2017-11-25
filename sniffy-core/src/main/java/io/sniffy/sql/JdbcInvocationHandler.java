@@ -8,6 +8,9 @@ import java.sql.*;
 
 import static java.lang.Boolean.FALSE;
 
+/**
+ * @since 3.1.6
+ */
 public class JdbcInvocationHandler<T extends Wrapper> implements InvocationHandler {
 
     public static final String GET_CONNECTION_METHOD = "getConnection";
