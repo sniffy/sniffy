@@ -90,13 +90,14 @@ class StatementInvocationHandler<T extends Statement> extends SniffyInvocationHa
 
     protected Object proxyResultSet(Object result) {
         if (result instanceof ResultSet) {
-            result = Proxy.newProxyInstance(
+            return Proxy.newProxyInstance(
                     ResultSetInvocationHandler.class.getClassLoader(),
                     new Class[]{ResultSet.class},
                     new ResultSetInvocationHandler<ResultSet>((ResultSet) result, connectionProxy, url, userName, lastStatementMetaData)
             );
+        } else {
+            return result;
         }
-        return result;
     }
 
     protected Object invokeTargetAndRecord(Method method, Object[] args, String sql, boolean isUpdateQuery) throws Throwable {

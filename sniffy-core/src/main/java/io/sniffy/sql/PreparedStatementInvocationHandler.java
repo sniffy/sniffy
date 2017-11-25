@@ -1,10 +1,8 @@
 package io.sniffy.sql;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 
 class PreparedStatementInvocationHandler<T extends PreparedStatement> extends StatementInvocationHandler<T> {
 
