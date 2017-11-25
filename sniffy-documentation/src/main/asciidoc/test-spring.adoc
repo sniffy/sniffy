@@ -12,3 +12,15 @@ include::../../../../sniffy-test/sniffy-spring-test/src/test/java/io/sniffy/test
 <4> - Do not make any changes in your code - just add the `@TestExecutionListeners(SniffySpringTestListener.class)` and put annotations on your test method.
 <5> - Add `@DisableSockets` annotation on your test method or test class and any attempt to open a network connection will fail
 <6> - All socket operations executed within test method annotated with `@DisableSockets` will throw a `java.net.ConnectException`
+
+=== Troubleshooting
+
+1. Spring test context is no longer loaded when I add `@TestExecutionListeners(SniffySpringTestListener.class)`
+
+The reason is that by default Spring does not merge the test execution listeners.
+Using this configuration you're removing the predefined listeners which initialize the context.
+Change the _mergeMode_ parameter to _MERGE_WITH_DEFAULTS_ as shown below:
+
+```java
+@TestExecutionListeners(value = SniffySpringTestListener.class, mergeMode = MERGE_WITH_DEFAULTS)
+```

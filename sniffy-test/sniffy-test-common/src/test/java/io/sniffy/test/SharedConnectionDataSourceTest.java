@@ -1,5 +1,6 @@
-package io.sniffy.scd;
+package io.sniffy.test;
 
+import io.sniffy.test.SharedConnectionDataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
 import org.junit.Test;

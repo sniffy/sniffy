@@ -1,11 +1,9 @@
-package io.sniffy.scd;
+package io.sniffy.test;
 
 import io.sniffy.sql.JdbcInvocationHandler;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 

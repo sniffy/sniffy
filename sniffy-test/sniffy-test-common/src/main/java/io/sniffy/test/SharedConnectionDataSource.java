@@ -1,4 +1,4 @@
-package io.sniffy.scd;
+package io.sniffy.test;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
@@ -26,9 +26,14 @@ public class SharedConnectionDataSource implements DataSource {
 
     public synchronized void setCurrentThreadAsMaster() {
         masterConnectionThread = Thread.currentThread();
-        masterConnection = lastConnectionThreadLocal.get();
-        if (null != masterConnection) {
-            masterConnection.markAsMaster();
+        SharedConnection lastConnection = lastConnectionThreadLocal.get();
+        try {
+            if (null != lastConnection && !lastConnection.getDelegate().isClosed()) {
+                this.masterConnection = lastConnection;
+                this.masterConnection.markAsMaster();
+            }
+        } catch (SQLException e) {
+            // TODO: log me maybe ??
         }
     }
 
