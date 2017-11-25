@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutionException;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
 public class SharedConnectionDataSourceTest {
@@ -39,10 +40,10 @@ public class SharedConnectionDataSourceTest {
 
         sharedConnectionDataSource.setCurrentThreadAsMaster();
 
-        try {
-            Connection masterConnection = sharedConnectionDataSource.getConnection();
-            Connection slaveConnection = newSingleThreadExecutor().submit((Callable<Connection>) sharedConnectionDataSource::getConnection).get();
-
+        try (Connection masterConnection = sharedConnectionDataSource.getConnection();
+             Connection slaveConnection = newSingleThreadExecutor().submit(
+                     (Callable<Connection>) sharedConnectionDataSource::getConnection).get()
+        ) {
             assertEquals(masterConnection, slaveConnection);
         } finally {
             sharedConnectionDataSource.resetMasterConnection();
@@ -53,6 +54,29 @@ public class SharedConnectionDataSourceTest {
             Connection slaveConnection = newSingleThreadExecutor().submit((Callable<Connection>) sharedConnectionDataSource::getConnection).get();
 
             assertNotEquals(masterConnection, slaveConnection);
+        }
+
+    }
+
+    @Test
+    public void testSlaveConnectionCloseIgnored() throws SQLException, ExecutionException, InterruptedException {
+
+        SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource);
+
+        sharedConnectionDataSource.setCurrentThreadAsMaster();
+
+        try (Connection masterConnection = sharedConnectionDataSource.getConnection();
+             Connection slaveConnection = newSingleThreadExecutor().submit(
+                     (Callable<Connection>) sharedConnectionDataSource::getConnection).get()
+        ) {
+            assertEquals(masterConnection, slaveConnection);
+
+            slaveConnection.close();
+
+            assertFalse(slaveConnection.isClosed());
+
+        } finally {
+            sharedConnectionDataSource.resetMasterConnection();
         }
 
     }

@@ -12,13 +12,13 @@ import java.util.logging.Logger;
  */
 public class SharedConnectionDataSource implements DataSource {
 
-    private final ThreadLocal<Connection> lastConnectionThreadLocal = new ThreadLocal<Connection>();
+    private final ThreadLocal<SharedConnection> lastConnectionThreadLocal = new ThreadLocal<SharedConnection>();
 
     private final DataSource targetDataSource;
 
     private Thread masterConnectionThread;
 
-    private Connection masterConnection;
+    private SharedConnection masterConnection;
 
     public SharedConnectionDataSource(DataSource targetDataSource) {
         this.targetDataSource = targetDataSource;
@@ -27,11 +27,18 @@ public class SharedConnectionDataSource implements DataSource {
     public synchronized void setCurrentThreadAsMaster() {
         masterConnectionThread = Thread.currentThread();
         masterConnection = lastConnectionThreadLocal.get();
+        if (null != masterConnection) {
+            masterConnection.markAsMaster();
+        }
     }
 
-    public synchronized void resetMasterConnection() {
+    public synchronized void resetMasterConnection() throws InterruptedException {
         masterConnectionThread = null;
-        masterConnection = null;
+
+        if (null != masterConnection) {
+            masterConnection.waitForAllSlavesToFinish();
+            masterConnection = null;
+        }
     }
 
     @Override
@@ -44,29 +51,30 @@ public class SharedConnectionDataSource implements DataSource {
 
         if (null == masterConnectionThread) {
             // Shared connection mode not started yet
-            return obtainConnection(username, password);
+            return obtainConnection(username, password).createProxy();
         } else if (null == masterConnection) {
             if (Thread.currentThread() == masterConnectionThread) {
                 // Obtaining master connection
                 masterConnection = obtainConnection(username, password);
-                return SharedConnectionInvocationHandler.proxy(masterConnection, true);
+                return masterConnection.createMasterProxy();
             } else {
                 // No master connection yet; returning target connection
-                return obtainConnection(username, password);
+                return obtainConnection(username, password).createProxy();
             }
         } else {
             // Returning shared connection
-            return SharedConnectionInvocationHandler.proxy(masterConnection, false);
+            return masterConnection.createSlaveProxy();
         }
 
     }
 
-    private Connection obtainConnection(String username, String password) throws SQLException {
+    private SharedConnection obtainConnection(String username, String password) throws SQLException {
         Connection targetConnection = (null == username && null == password) ?
                 targetDataSource.getConnection() :
                 targetDataSource.getConnection(username, password);
-        lastConnectionThreadLocal.set(targetConnection);
-        return targetConnection;
+        SharedConnection sharedConnection = new SharedConnection(targetConnection);
+        lastConnectionThreadLocal.set(sharedConnection);
+        return sharedConnection;
     }
 
     @Override
