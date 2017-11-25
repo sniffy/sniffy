@@ -2,19 +2,21 @@ package io.sniffy.sql;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-class PreparedStatementInvocationHandler extends StatementInvocationHandler {
+class PreparedStatementInvocationHandler<T extends PreparedStatement> extends StatementInvocationHandler<T> {
 
     private final String sql;
 
-    PreparedStatementInvocationHandler(Object delegate, Object sniffyConnectionProxy, String url, String userName, String sql) {
+    PreparedStatementInvocationHandler(T delegate, Connection sniffyConnectionProxy, String url, String userName, String sql) {
         super(delegate, sniffyConnectionProxy, url, userName);
         this.sql = sql;
     }
 
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invokeImpl(T proxy, String methodName, Method method, Object[] args) throws Throwable {
 
         checkConnectionAllowed();
 
@@ -38,24 +40,13 @@ class PreparedStatementInvocationHandler extends StatementInvocationHandler {
             case EXECUTE_SQL:
                 result =  invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : sql, false);
                 break;
-            case GET_CONNECTION:
-                result = sniffyConnectionProxy;
-                break;
             case OTHER:
             default:
                 result = invokeTarget(method, args);
                 break;
         }
 
-        if (result instanceof ResultSet) {
-            return Proxy.newProxyInstance(
-                    ResultSetInvocationHandler.class.getClassLoader(),
-                    new Class[]{ResultSet.class},
-                    new ResultSetInvocationHandler(result, url, userName, lastStatementMetaData)
-            );
-        }
-
-        return result;
+        return proxyResultSet(result);
 
     }
 

@@ -2,20 +2,18 @@ package io.sniffy.sql;
 
 import io.sniffy.Sniffy;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Wrapper;
 
-class SniffyInvocationHandler<T> implements InvocationHandler {
-
-    protected final T delegate;
+class SniffyInvocationHandler<T extends Wrapper> extends JdbcInvocationHandler<T> {
 
     protected final String url;
     protected final String userName;
 
-    SniffyInvocationHandler(T delegate, String url, String userName) {
-        this.delegate = delegate;
+    SniffyInvocationHandler(Connection connectionProxy, T delegate, String url, String userName) {
+        super(connectionProxy, delegate);
         this.url = url;
         this.userName = userName;
     }
@@ -28,11 +26,6 @@ class SniffyInvocationHandler<T> implements InvocationHandler {
         SniffyDriver.checkConnectionAllowed(url, userName, sleep);
     }
 
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        return invokeTarget(method, args);
-    }
-
     protected Object invokeTarget(Method method, Object[] args) throws Throwable {
         long start = System.currentTimeMillis();
         try {
@@ -43,11 +36,4 @@ class SniffyInvocationHandler<T> implements InvocationHandler {
         }
     }
 
-    protected Object invokeTargetImpl(Method method, Object[] args) throws Throwable {
-        try {
-            return method.invoke(delegate, args);
-        } catch (InvocationTargetException e) {
-            throw e.getTargetException();
-        }
-    }
 }
