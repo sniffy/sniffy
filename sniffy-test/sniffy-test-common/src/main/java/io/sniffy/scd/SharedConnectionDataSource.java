@@ -12,6 +12,8 @@ import java.util.logging.Logger;
  */
 public class SharedConnectionDataSource implements DataSource {
 
+    private final ThreadLocal<Connection> lastConnectionThreadLocal = new ThreadLocal<Connection>();
+
     private final DataSource targetDataSource;
 
     private Thread masterConnectionThread;
@@ -24,6 +26,7 @@ public class SharedConnectionDataSource implements DataSource {
 
     public synchronized void setCurrentThreadAsMaster() {
         masterConnectionThread = Thread.currentThread();
+        masterConnection = lastConnectionThreadLocal.get();
     }
 
     public synchronized void resetMasterConnection() {
@@ -41,26 +44,29 @@ public class SharedConnectionDataSource implements DataSource {
 
         if (null == masterConnectionThread) {
             // Shared connection mode not started yet
-            return (null == username && null == password) ?
-                    targetDataSource.getConnection() :
-                    targetDataSource.getConnection(username, password);
+            return obtainConnection(username, password);
         } else if (null == masterConnection) {
             if (Thread.currentThread() == masterConnectionThread) {
                 // Obtaining master connection
-                return SharedConnectionInvocationHandler.proxy(
-                        masterConnection = (null == username && null == password) ?
-                                targetDataSource.getConnection() :
-                                targetDataSource.getConnection(username, password)
-                        , true);
+                masterConnection = obtainConnection(username, password);
+                return SharedConnectionInvocationHandler.proxy(masterConnection, true);
             } else {
                 // No master connection yet; returning target connection
-                return targetDataSource.getConnection(username, password);
+                return obtainConnection(username, password);
             }
         } else {
             // Returning shared connection
             return SharedConnectionInvocationHandler.proxy(masterConnection, false);
         }
 
+    }
+
+    private Connection obtainConnection(String username, String password) throws SQLException {
+        Connection targetConnection = (null == username && null == password) ?
+                targetDataSource.getConnection() :
+                targetDataSource.getConnection(username, password);
+        lastConnectionThreadLocal.set(targetConnection);
+        return targetConnection;
     }
 
     @Override
