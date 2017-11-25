@@ -11,7 +11,7 @@ import java.util.Set;
 
 public class SharedConnectionInvocationHandler extends JdbcInvocationHandler<Connection> {
 
-    private final Set<String> IGNORED_METHOD_NAMES = new HashSet<>(Arrays.asList(
+    private final Set<String> IGNORED_METHOD_NAMES = new HashSet<String>(Arrays.asList(
             "setAutoCommit", "commit", "rollback", "close", "setReadOnly", "setTransactionIsolation",
             "setTypeMap", "setHoldability", "setSavepoint", "releaseSavepoint", "abort", "setNetworkTimeout"
     ));
