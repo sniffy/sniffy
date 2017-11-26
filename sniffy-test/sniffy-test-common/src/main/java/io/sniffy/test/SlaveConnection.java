@@ -19,15 +19,11 @@ public class SlaveConnection extends JdbcInvocationHandler<Connection> {
             "setTypeMap", "setHoldability", "setSavepoint", "releaseSavepoint", "abort", "setNetworkTimeout"
     ));
 
-    @SuppressWarnings("unused")
-    private final SharedConnection master;
-
     private volatile boolean closed;
     private final Semaphore closeSemaphore = new Semaphore(1);
 
     public SlaveConnection(SharedConnection master) {
         super(null, master.getDelegate());
-        this.master = master;
         closeSemaphore.acquireUninterruptibly();
         master.addSlaveConnection(this);
     }
