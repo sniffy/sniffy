@@ -1,25 +1,34 @@
 package io.sniffy.test;
 
-import io.sniffy.test.SharedConnectionDataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.sql.DataSource;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SharedConnectionDataSourceTest {
 
     private DataSource targetDataSource;
+
+    @Mock
+    private DataSource mockDataSouce;
 
     @Before
     public void setupTargetDataSource() {
@@ -97,6 +106,43 @@ public class SharedConnectionDataSourceTest {
         } finally {
             sharedConnectionDataSource.resetMasterConnection();
         }
+
+    }
+
+    @Test
+    public void testGetLogWriterCallsTarget() throws SQLException {
+
+        SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
+
+        PrintWriter printWriter = new PrintWriter(new ByteArrayOutputStream());
+
+        when(mockDataSouce.getLogWriter()).thenReturn(printWriter);
+
+        assertEquals(printWriter, sharedConnectionDataSource.getLogWriter());
+
+        verify(mockDataSouce).getLogWriter();
+        verifyNoMoreInteractions(mockDataSouce);
+
+    }
+
+    @Test
+    public void testSetLogWriterCallsTarget() throws SQLException {
+
+        SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
+
+        AtomicReference<PrintWriter> captured = new AtomicReference<>();
+
+        doAnswer(invocation -> {
+            captured.set(invocation.getArgumentAt(0, PrintWriter.class)); return null;
+        }).when(mockDataSouce).setLogWriter(any(PrintWriter.class));
+
+        PrintWriter printWriter = new PrintWriter(new ByteArrayOutputStream());
+        sharedConnectionDataSource.setLogWriter(printWriter);
+
+        assertEquals(printWriter, captured.get());
+
+        verify(mockDataSouce).setLogWriter(any(PrintWriter.class));
+        verifyNoMoreInteractions(mockDataSouce);
 
     }
 
