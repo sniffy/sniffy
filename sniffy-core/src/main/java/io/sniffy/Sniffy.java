@@ -59,6 +59,28 @@ public class Sniffy {
         initialize();
     }
 
+    public enum SniffyMode {
+        DISABLED(false, false),
+        ENABLED(true, true),
+        ENABLED_NO_STACKTRACE(true, false);
+
+        private final boolean enabled;
+        private final boolean captureStackTraces;
+
+        SniffyMode(boolean enabled, boolean captureStackTraces) {
+            this.enabled = enabled;
+            this.captureStackTraces = captureStackTraces;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public boolean isCaptureStackTraces() {
+            return captureStackTraces;
+        }
+    }
+
     /**
      * If socket monitoring is already enabled it cannot be disabled afterwards
      * Otherwise one webapp would enable it but another one would disable
@@ -233,6 +255,13 @@ public class Sniffy {
     }
 
     public static boolean hasSpies() {
+        return getSniffyMode().isEnabled();
+    }
+
+    /**
+     * @since 3.1.6
+     */
+    public static SniffyMode getSniffyMode() {
         if (!registeredSpies.isEmpty()) {
             Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
             while (iterator.hasNext()) {
@@ -241,7 +270,7 @@ public class Sniffy {
                 if (null == spy) {
                     iterator.remove();
                 } else {
-                    return true;
+                    return SniffyMode.ENABLED;
                 }
             }
         }
@@ -254,14 +283,18 @@ public class Sniffy {
             if (null == spy) {
                 currentThreadSpies.remove(threadId);
             } else {
-                return true;
+                return spy.captureStackTraces ? SniffyMode.ENABLED : SniffyMode.ENABLED_NO_STACKTRACE;
             }
         }
 
-        return false;
+        return SniffyMode.DISABLED;
     }
 
     public static void logSocket(int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
+        logSocket(connectionId, address, elapsedTime, bytesDown, bytesUp, true);
+    }
+
+    public static void logSocket(int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp, boolean captureStackTraces) {
 
         // do not track JDBC socket operations
         SocketStats socketStats = socketStatsAccumulator.get();
@@ -269,7 +302,7 @@ public class Sniffy {
             socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
         } else {
             // build stackTrace
-            String stackTrace = printStackTrace(getTraceTillPackage("java.net"));
+            String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
 
             // increment counters
             SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
@@ -289,7 +322,10 @@ public class Sniffy {
     }
 
     public static void exitJdbcMethod(Method method, long elapsedTime, Method implMethod) {
-        if (Sniffy.hasSpies()) {
+
+        SniffyMode sniffyMode = Sniffy.getSniffyMode();
+
+        if (sniffyMode.isEnabled()) {
             // get accumulated socket stats
             SocketStats socketStats = socketStatsAccumulator.get();
 
@@ -297,13 +333,15 @@ public class Sniffy {
 
                 if (socketStats.bytesDown.longValue() > 0 || socketStats.bytesUp.longValue() > 0) {
                     String stackTrace = null;
-                    try {
-                        stackTrace = printStackTrace(null == implMethod ?
-                                getTraceForProxiedMethod(method) :
-                                getTraceForImplementingMethod(method, implMethod)
-                        );
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                    if (sniffyMode.isCaptureStackTraces()) {
+                        try {
+                            stackTrace = printStackTrace(null == implMethod ?
+                                    getTraceForProxiedMethod(method) :
+                                    getTraceForImplementingMethod(method, implMethod)
+                            );
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
                     }
                     StatementMetaData statementMetaData = new StatementMetaData(
                             method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()",
@@ -322,6 +360,7 @@ public class Sniffy {
 
             }
         }
+
         socketStatsAccumulator.remove();
     }
 
@@ -366,11 +405,19 @@ public class Sniffy {
     }
 
     /**
-     * @return a new {@link Spy} instance for currenth thread only
+     * @return a new {@link Spy} instance for current thread only
      * @since 3.1
      */
-    public static CurrentThreadSpy  spyCurrentThread() {
-        return new CurrentThreadSpy();
+    public static CurrentThreadSpy spyCurrentThread() {
+        return spyCurrentThread(true);
+    }
+
+    /**
+     * @return a new {@link Spy} instance for current thread only
+     * @since 3.1
+     */
+    public static CurrentThreadSpy  spyCurrentThread(boolean captureStackTraces) {
+        return new CurrentThreadSpy(captureStackTraces);
     }
 
     /**
