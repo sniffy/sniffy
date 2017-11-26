@@ -15,6 +15,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
@@ -142,6 +143,40 @@ public class SharedConnectionDataSourceTest {
         assertEquals(printWriter, captured.get());
 
         verify(mockDataSouce).setLogWriter(any(PrintWriter.class));
+        verifyNoMoreInteractions(mockDataSouce);
+
+    }
+
+    @Test
+    public void testGetLoginTimeoutCallsTarget() throws SQLException {
+
+        SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
+
+        when(mockDataSouce.getLoginTimeout()).thenReturn(42);
+
+        assertEquals(42, sharedConnectionDataSource.getLoginTimeout());
+
+        verify(mockDataSouce).getLoginTimeout();
+        verifyNoMoreInteractions(mockDataSouce);
+
+    }
+
+    @Test
+    public void testSetLoginTimeoutCallsTarget() throws SQLException {
+
+        SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
+
+        AtomicInteger captured = new AtomicInteger();
+
+        doAnswer(invocation -> {
+            captured.set(invocation.getArgumentAt(0, Integer.class)); return null;
+        }).when(mockDataSouce).setLoginTimeout(anyInt());
+
+        sharedConnectionDataSource.setLoginTimeout(42);
+
+        assertEquals(42, captured.get());
+
+        verify(mockDataSouce).setLoginTimeout(anyInt());
         verifyNoMoreInteractions(mockDataSouce);
 
     }
