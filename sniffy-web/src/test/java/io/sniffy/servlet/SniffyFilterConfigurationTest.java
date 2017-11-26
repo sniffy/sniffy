@@ -1,5 +1,6 @@
 package io.sniffy.servlet;
 
+import com.jayway.jsonpath.JsonPath;
 import io.sniffy.BaseTest;
 import io.sniffy.configuration.SniffyConfiguration;
 import org.junit.Before;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.sniffy.servlet.SniffyFilter.HEADER_NUMBER_OF_QUERIES;
+import static io.sniffy.servlet.SniffyFilter.HEADER_REQUEST_DETAILS;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -281,6 +283,83 @@ public class SniffyFilterConfigurationTest extends BaseTest {
         filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentAsString().contains("<script"));
+    }
+
+    @Test
+    @Issue("issues/253")
+    public void testDisabledInjectHtmlDisablesStackTraces() throws IOException, ServletException {
+        respondWithHtmlContent();
+        SniffyFilter filter = new SniffyFilter();
+        filter.setEnabled(true);
+        filter.setInjectHtml(false);
+
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
+
+        String requestDetailsAsString = getRequestDetailsAsString(filter, httpServletRequest, httpServletResponse);
+
+        String stackTrace = JsonPath.read(requestDetailsAsString, "$.executedQueries[0].stackTrace");
+
+        assertEquals("", stackTrace);
+
+
+    }
+
+    @Test
+    @Issue("issues/253")
+    public void testInjectHtmlEnablesStackTraces() throws IOException, ServletException {
+        respondWithHtmlContent();
+        SniffyFilter filter = new SniffyFilter();
+        filter.setEnabled(true);
+        filter.setInjectHtml(false);
+
+        httpServletRequest.addHeader("Sniffy-Inject-Html-Enabled", "true");
+        filter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        assertTrue(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
+
+        String requestDetailsAsString = getRequestDetailsAsString(filter, httpServletRequest, httpServletResponse);
+
+        String stackTrace = JsonPath.read(requestDetailsAsString, "$.executedQueries[0].stackTrace");
+
+        assertNotNull(stackTrace);
+        assertTrue(stackTrace.startsWith("java.sql.Statement.execute"));
+
+    }
+
+    private String getRequestDetailsAsString(SniffyFilter filter,
+                                             MockHttpServletRequest mockHttpServletRequest,
+                                             MockHttpServletResponse mockHttpServletResponse
+    ) throws IOException, ServletException {
+        String requestDetailsUrl = mockHttpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
+        assertNotNull(requestDetailsUrl); // ../sniffy/3.1.6/request/ce547354-37f3-45cc-9eb2-73d8aaf164a0
+        requestDetailsUrl = absolutizeUrl(mockHttpServletRequest.getRequestURI(), requestDetailsUrl);
+        assertNotNull(requestDetailsUrl);
+
+        HttpServletRequest sniffyDetailsRequest =
+                MockMvcRequestBuilders.get(requestDetailsUrl).contextPath("/petclinic").buildRequest(servletContext);
+        MockHttpServletResponse sniffyDetailsResponse = new MockHttpServletResponse();
+
+        filter.doFilter(sniffyDetailsRequest, sniffyDetailsResponse, filterChain);
+
+        String requestDetailsAsString = sniffyDetailsResponse.getContentAsString();
+
+        assertNotNull(requestDetailsAsString);
+        return requestDetailsAsString;
+    }
+
+    private String absolutizeUrl(String base, String relative) {
+
+        base = base.substring(0, base.lastIndexOf('/'));
+
+        while (relative.startsWith("../")) {
+            relative = relative.substring(3);
+            base = base.substring(0, base.lastIndexOf('/'));
+        }
+
+        base = base + "/" + relative;
+
+        return base;
+
     }
 
     private void respondWithHtmlContent() throws IOException, ServletException {
