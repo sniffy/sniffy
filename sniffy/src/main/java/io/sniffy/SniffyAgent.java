@@ -148,6 +148,7 @@ public class SniffyAgent {
         }
 
         private void addCorsHeaders(HttpExchange httpExchange) {
+            // TODO: do we need CORS headers (or at least some of them like Sniffy-Inject-Html-Enabled) in agent?
             Headers headers = httpExchange.getResponseHeaders();
             headers.add("Access-Control-Allow-Origin", "*");
             headers.add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
