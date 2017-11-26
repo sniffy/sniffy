@@ -160,20 +160,20 @@ public class SniffyAgentTest {
     public void testCorsHeaders() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
-        HttpHeaders response = entity.getHeaders();
+        HttpHeaders headers = entity.getHeaders();
 
-        assertEquals("*", response.get("Access-Control-Allow-Origin").get(0));
+        assertEquals("*", headers.get("Access-Control-Allow-Origin").get(0));
 
-        assertTrue(response.get("Access-Control-Allow-Methods").get(0).contains("GET"));
-        assertTrue(response.get("Access-Control-Allow-Methods").get(0).contains("POST"));
-        assertTrue(response.get("Access-Control-Allow-Methods").get(0).contains("PUT"));
-        assertTrue(response.get("Access-Control-Allow-Methods").get(0).contains("DELETE"));
+        assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("GET"));
+        assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("POST"));
+        assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("PUT"));
+        assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("DELETE"));
 
-        assertTrue(response.get("Access-Control-Allow-Headers").get(0).contains("Sniffy-Inject-Html-Enabled"));
-        assertTrue(response.get("Access-Control-Allow-Headers").get(0).contains("X-Requested-With"));
-        assertTrue(response.get("Access-Control-Allow-Headers").get(0).contains("Content-Type"));
+        assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("Sniffy-Inject-Html-Enabled"));
+        assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("X-Requested-With"));
+        assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("Content-Type"));
 
-        assertEquals("true", response.get("Access-Control-Allow-Credentials").get(0));
+        assertEquals("true", headers.get("Access-Control-Allow-Credentials").get(0));
     }
 
 }
