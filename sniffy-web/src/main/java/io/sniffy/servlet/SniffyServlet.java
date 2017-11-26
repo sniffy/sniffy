@@ -61,7 +61,7 @@ public class SniffyServlet extends HttpServlet {
     private void addCorsHeaders(HttpServletResponse response) {
         response.addHeader("Access-Control-Allow-Origin", "*");
         response.addHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
-        response.addHeader("Access-Control-Allow-Headers", "X-Requested-With,Content-Type");
+        response.addHeader("Access-Control-Allow-Headers", "Sniffy-Inject-Html-Enabled,X-Requested-With,Content-Type");
         response.addHeader("Access-Control-Max-Age", "86400");
         response.addHeader("Access-Control-Allow-Credentials", "true");
     }

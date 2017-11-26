@@ -484,4 +484,32 @@ public class SniffyServletTest extends BaseTest {
 
     }
 
+    @Test
+    @Issue("issues/334")
+    public void testCorsHeaders() throws Exception {
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic/" + SniffyFilter.JAVASCRIPT_URI).
+                buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
+
+        sniffyServlet.service(request, response);
+
+        assertEquals("*", response.getHeader("Access-Control-Allow-Origin"));
+
+        assertTrue(response.getHeader("Access-Control-Allow-Methods").contains("GET"));
+        assertTrue(response.getHeader("Access-Control-Allow-Methods").contains("POST"));
+        assertTrue(response.getHeader("Access-Control-Allow-Methods").contains("PUT"));
+        assertTrue(response.getHeader("Access-Control-Allow-Methods").contains("DELETE"));
+
+        assertTrue(response.getHeader("Access-Control-Allow-Headers").contains("Sniffy-Inject-Html-Enabled"));
+        assertTrue(response.getHeader("Access-Control-Allow-Headers").contains("X-Requested-With"));
+        assertTrue(response.getHeader("Access-Control-Allow-Headers").contains("Content-Type"));
+
+        assertEquals("true", response.getHeader("Access-Control-Allow-Credentials"));
+
+    }
+
 }
