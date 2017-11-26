@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -75,6 +76,23 @@ public class SharedConnectionDataSourceTest {
             slaveConnection.close();
 
             assertFalse(slaveConnection.isClosed());
+
+        } finally {
+            sharedConnectionDataSource.resetMasterConnection();
+        }
+
+    }
+
+    @Test
+    public void testStatementGetConnectionReturnsProxy() throws SQLException, InterruptedException {
+
+        SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource);
+        sharedConnectionDataSource.setCurrentThreadAsMaster();
+
+        try (Connection masterConnection = sharedConnectionDataSource.getConnection();
+             PreparedStatement preparedStatement = masterConnection.prepareStatement("SELECT 1 FROM DUAL")) {
+
+            assertEquals(masterConnection, preparedStatement.getConnection());
 
         } finally {
             sharedConnectionDataSource.resetMasterConnection();
