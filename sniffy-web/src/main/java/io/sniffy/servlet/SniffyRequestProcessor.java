@@ -71,7 +71,11 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         this.httpServletRequest = httpServletRequest;
         this.httpServletResponse = httpServletResponse;
 
-        spy = Sniffy.spyCurrentThread();
+        // Capture stack traces only if injectHtml is enabled globally or by header explicitly
+        spy = Sniffy.spyCurrentThread(
+                sniffyFilter.injectHtml ||
+                Boolean.parseBoolean(httpServletRequest.getHeader(INJECT_HTML_ENABLED_PARAMETER))
+        );
 
         Object requestIdAttribute = httpServletRequest.getAttribute(SNIFFY_REQUEST_ID_REQUEST_ATTRIBUTE_NAME);
         if (requestIdAttribute instanceof String) {

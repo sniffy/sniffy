@@ -126,10 +126,12 @@ class StatementInvocationHandler<T extends Statement> extends SniffyInvocationHa
             }
             return result;
         } finally {
+            // TODO: reuse exitJdbcMethod() instead
             long elapsedTime = System.currentTimeMillis() - start;
             Sniffy.logSqlTime(sql, elapsedTime);
-            if (Sniffy.hasSpies()) {
-                String stackTrace = printStackTrace(getTraceForProxiedMethod(method));
+            Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
+            if (sniffyMode.isEnabled()) {
+                String stackTrace = sniffyMode.isCaptureStackTraces() ? printStackTrace(getTraceForProxiedMethod(method)) : null;
                 lastStatementMetaData = Sniffy.executeStatement(sql, elapsedTime, stackTrace, rowsUpdated);
             } else {
                 Sniffer.executedStatementsGlobalCounter.incrementAndGet();

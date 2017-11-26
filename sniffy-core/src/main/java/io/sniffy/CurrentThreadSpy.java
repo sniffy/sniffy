@@ -15,7 +15,10 @@ import java.util.Map;
  */
 public class CurrentThreadSpy extends BaseSpy<CurrentThreadSpy> implements Closeable {
 
-    public CurrentThreadSpy() {
+    protected final boolean captureStackTraces;
+
+    public CurrentThreadSpy(boolean captureStackTraces) {
+        this.captureStackTraces = captureStackTraces;
         Sniffy.registerCurrentThreadSpy(this);
     }
 
