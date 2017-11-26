@@ -151,7 +151,7 @@ public class SniffyAgent {
             Headers headers = httpExchange.getResponseHeaders();
             headers.add("Access-Control-Allow-Origin", "*");
             headers.add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
-            headers.add("Access-Control-Allow-Headers", "X-Requested-With,Content-Type");
+            headers.add("Access-Control-Allow-Headers", "Sniffy-Inject-Html-Enabled,X-Requested-With,Content-Type");
             headers.add("Access-Control-Max-Age", "86400");
             headers.add("Access-Control-Allow-Credentials", "true");
         }
