@@ -6,28 +6,36 @@ import io.sniffy.Spy;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.DisableSockets;
-import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.TcpConnections;
 import io.sniffy.sql.SqlExpectation;
 import io.sniffy.sql.SqlQueries;
 import io.sniffy.test.AnnotationProcessor;
+import io.sniffy.test.SharedConnectionDataSource;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.Range;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @since 3.1
  */
 public class SniffySpringTestListener extends AbstractTestExecutionListener {
 
+    /** Logger used by this class. Available to subclasses. */
+    protected final Log logger = LogFactory.getLog(getClass());
+
     private static final String SPY_ATTRIBUTE_NAME = "spy";
     private static final String DISABLE_SOCKETS_ATTRIBUTE_NAME = "disableSockets";
+    private static final String SHARED_CONNECTION_DATASOURCES_ATTRIBUTE_NAME = "sharedConnectionDataSources";
 
     // In different version of spring org.springframework.test.context.TestContext is either class or interface
     // In order to keep binary compatibility with all version we should use reflection
@@ -53,6 +61,7 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
         NoSuchMethodException initializationException = null;
 
         try {
+            // TODO: do we have reflection because of old spring compatibility?
             getTestMethod = TestContext.class.getMethod("getTestMethod");
             setAttributeMethod = TestContext.class.getMethod("setAttribute", String.class, Object.class);
             getAttributeMethod = TestContext.class.getMethod("getAttribute", String.class);
@@ -142,10 +151,35 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
             setAttribute(testContext, DISABLE_SOCKETS_ATTRIBUTE_NAME, disableSockets);
         }
 
+        SharedConnection sharedConnection = AnnotationProcessor.getAnnotationRecursive(testMethod, SharedConnection.class);
+
+        if (null != sharedConnection) {
+            Map<String, SharedConnectionDataSource> sharedConnectionDataSources =
+                    testContext.getApplicationContext().getBeansOfType(SharedConnectionDataSource.class);
+            if (null == sharedConnectionDataSources) {
+                logger.warn("Unable to start a shared connection session cause no instances of SharedConnectionDataSource found");
+            } else {
+                for (SharedConnectionDataSource sharedConnectionDataSource : sharedConnectionDataSources.values()) {
+                    sharedConnectionDataSource.setCurrentThreadAsMaster();
+                }
+                setAttribute(testContext, SHARED_CONNECTION_DATASOURCES_ATTRIBUTE_NAME, sharedConnectionDataSources.values());
+            }
+        }
+
     }
 
     @Override
     public void afterTestMethod(TestContext testContext) throws Exception {
+
+        Object sharedConnectionDataSourcesAttribute = getAttribute(testContext, SHARED_CONNECTION_DATASOURCES_ATTRIBUTE_NAME);
+        if (null != sharedConnectionDataSourcesAttribute && sharedConnectionDataSourcesAttribute instanceof Collection) {
+            @SuppressWarnings("unchecked") Collection<SharedConnectionDataSource> sharedConnectionDataSources =
+                    (Collection<SharedConnectionDataSource>) sharedConnectionDataSourcesAttribute;
+            for (SharedConnectionDataSource sharedConnectionDataSource : sharedConnectionDataSources) {
+                sharedConnectionDataSource.resetMasterConnection();
+            }
+            removeAttribute(testContext, SHARED_CONNECTION_DATASOURCES_ATTRIBUTE_NAME);
+        }
 
         Object spyAttribute = getAttribute(testContext, SPY_ATTRIBUTE_NAME);
         removeAttribute(testContext, SPY_ATTRIBUTE_NAME);

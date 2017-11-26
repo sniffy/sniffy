@@ -5,7 +5,9 @@ import io.sniffy.Sniffy;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,17 +17,14 @@ import static io.sniffy.util.StackTraceExtractor.printStackTrace;
 /**
  * @since 3.1
  */
-class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
+class StatementInvocationHandler<T extends Statement> extends SniffyInvocationHandler<T> {
 
     private Map<String, Integer> batchedSql;
 
-    final Object sniffyConnectionProxy;
-
     StatementMetaData lastStatementMetaData;
 
-    StatementInvocationHandler(Object delegate, Object sniffyConnectionProxy, String url, String userName) {
-        super(delegate, url, userName);
-        this.sniffyConnectionProxy = sniffyConnectionProxy;
+    StatementInvocationHandler(T delegate, Connection connectionProxy, String url, String userName) {
+        super(connectionProxy, delegate, url, userName);
     }
 
     protected enum StatementMethodType {
@@ -34,7 +33,6 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
         ADD_BATCH,
         CLEAR_BATCH,
         EXECUTE_BATCH,
-        GET_CONNECTION,
         OTHER;
 
         static StatementMethodType parse(String methodName) {
@@ -48,8 +46,6 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
                 return CLEAR_BATCH;
             } else if ("executeBatch".equals(methodName) || "executeLargeBatch".equals(methodName)) {
                 return EXECUTE_BATCH;
-            } else if ("getConnection".equals(methodName)) {
-                return GET_CONNECTION;
             } else {
                 return OTHER;
             }
@@ -57,14 +53,14 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
     }
 
     // TODO: wrap complex parameters and results like streams and blobs
-    // TODO: support methods fro Object class such as equals here as well as in other invocation handlers
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    // TODO: support methods for Object class such as equals here as well as in other invocation handlers
+    public Object invokeImpl(T proxy, String methodName, Method method, Object[] args) throws Throwable {
 
         checkConnectionAllowed();
 
         Object result;
 
-        switch (StatementMethodType.parse(method.getName())) {
+        switch (StatementMethodType.parse(methodName)) {
             case ADD_BATCH:
                 addBatch(String.class.cast(args[0]));
                 result = invokeTarget(method, args);
@@ -82,25 +78,26 @@ class StatementInvocationHandler extends SniffyInvocationHandler<Object> {
             case EXECUTE_SQL:
                 result = invokeTargetAndRecord(method, args, null != args && args.length > 0 ? String.class.cast(args[0]) : null, false);
                 break;
-            case GET_CONNECTION:
-                result = sniffyConnectionProxy;
-                break;
             case OTHER:
             default:
                 result = invokeTarget(method, args);
                 break;
         }
 
+        return proxyResultSet(result);
+
+    }
+
+    protected Object proxyResultSet(Object result) {
         if (result instanceof ResultSet) {
             return Proxy.newProxyInstance(
                     ResultSetInvocationHandler.class.getClassLoader(),
                     new Class[]{ResultSet.class},
-                    new ResultSetInvocationHandler(result, url, userName, lastStatementMetaData)
+                    new ResultSetInvocationHandler<ResultSet>((ResultSet) result, connectionProxy, url, userName, lastStatementMetaData)
             );
+        } else {
+            return result;
         }
-
-        return result;
-
     }
 
     protected Object invokeTargetAndRecord(Method method, Object[] args, String sql, boolean isUpdateQuery) throws Throwable {
