@@ -19,6 +19,7 @@ public class SlaveConnection extends JdbcInvocationHandler<Connection> {
             "setTypeMap", "setHoldability", "setSavepoint", "releaseSavepoint", "abort", "setNetworkTimeout"
     ));
 
+    @SuppressWarnings("unused")
     private final SharedConnection master;
 
     private volatile boolean closed;

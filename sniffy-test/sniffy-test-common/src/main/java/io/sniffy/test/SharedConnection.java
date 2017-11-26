@@ -14,6 +14,7 @@ public class SharedConnection extends JdbcInvocationHandler<Connection> {
 
     private Set<SlaveConnection> slaveConnections = new HashSet<SlaveConnection>();
 
+    @SuppressWarnings("unused")
     private boolean master;
 
     public SharedConnection(Connection delegate) {

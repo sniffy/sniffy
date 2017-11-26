@@ -6,7 +6,6 @@ import io.sniffy.Spy;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.DisableSockets;
-import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.TcpConnections;
 import io.sniffy.sql.SqlExpectation;
@@ -15,6 +14,8 @@ import io.sniffy.test.AnnotationProcessor;
 import io.sniffy.test.SharedConnectionDataSource;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.Range;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
 
@@ -23,12 +24,14 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @since 3.1
  */
 public class SniffySpringTestListener extends AbstractTestExecutionListener {
+
+    /** Logger used by this class. Available to subclasses. */
+    protected final Log logger = LogFactory.getLog(getClass());
 
     private static final String SPY_ATTRIBUTE_NAME = "spy";
     private static final String DISABLE_SOCKETS_ATTRIBUTE_NAME = "disableSockets";
@@ -154,7 +157,7 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
             Map<String, SharedConnectionDataSource> sharedConnectionDataSources =
                     testContext.getApplicationContext().getBeansOfType(SharedConnectionDataSource.class);
             if (null == sharedConnectionDataSources) {
-                // TODO: print warning
+                logger.warn("Unable to start a shared connection session cause no instances of SharedConnectionDataSource found");
             } else {
                 for (SharedConnectionDataSource sharedConnectionDataSource : sharedConnectionDataSources.values()) {
                     sharedConnectionDataSource.setCurrentThreadAsMaster();
