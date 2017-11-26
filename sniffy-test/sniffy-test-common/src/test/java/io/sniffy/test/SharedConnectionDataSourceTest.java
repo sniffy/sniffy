@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import ru.yandex.qatools.allure.annotations.Features;
 
 import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
@@ -17,6 +18,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.junit.Assert.*;
@@ -39,6 +41,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
+    @Features("issue/344")
     public void testSameConnectionReturnedForAllThreads() throws SQLException, ExecutionException, InterruptedException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource);
@@ -71,6 +74,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
+    @Features("issue/344")
     public void testSlaveConnectionCloseIgnored() throws SQLException, ExecutionException, InterruptedException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource);
@@ -94,6 +98,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
+    @Features("issue/344")
     public void testStatementGetConnectionReturnsProxy() throws SQLException, InterruptedException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource);
@@ -111,6 +116,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
+    @Features("issue/344")
     public void testGetLogWriterCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -127,6 +133,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
+    @Features("issue/344")
     public void testSetLogWriterCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -148,6 +155,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
+    @Features("issue/344")
     public void testGetLoginTimeoutCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -162,6 +170,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
+    @Features("issue/344")
     public void testSetLoginTimeoutCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -177,6 +186,64 @@ public class SharedConnectionDataSourceTest {
         assertEquals(42, captured.get());
 
         verify(mockDataSouce).setLoginTimeout(anyInt());
+        verifyNoMoreInteractions(mockDataSouce);
+
+    }
+
+    @Test
+    @Features("issue/344")
+    public void testGetParentLoggerCallsTarget() throws SQLException {
+
+        SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
+
+        Logger parentLoggerMock = mock(Logger.class);
+
+        when(mockDataSouce.getParentLogger()).thenReturn(parentLoggerMock);
+
+        assertEquals(parentLoggerMock, sharedConnectionDataSource.getParentLogger());
+
+        verify(mockDataSouce).getParentLogger();
+        verifyNoMoreInteractions(mockDataSouce);
+
+    }
+
+    @Test
+    @Features("issue/344")
+    public void testUnwrapCallsTarget() throws SQLException {
+
+        SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
+
+        AtomicReference<Class> capturedArg = new AtomicReference<>();
+        DataSource result = mock(SharedConnectionDataSource.class);
+
+        doAnswer(invocation -> {
+            capturedArg.set(invocation.getArgumentAt(0, Class.class)); return result;
+        }).when(mockDataSouce).unwrap(eq(SharedConnectionDataSource.class));
+
+        assertEquals(result, sharedConnectionDataSource.unwrap(SharedConnectionDataSource.class));
+        assertEquals(SharedConnectionDataSource.class, capturedArg.get());
+
+        verify(mockDataSouce).unwrap(eq(SharedConnectionDataSource.class));
+        verifyNoMoreInteractions(mockDataSouce);
+
+    }
+
+    @Test
+    @Features("issue/344")
+    public void testIsWrapperForCallsTarget() throws SQLException {
+
+        SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
+
+        AtomicReference<Class> capturedArg = new AtomicReference<>();
+
+        doAnswer(invocation -> {
+            capturedArg.set(invocation.getArgumentAt(0, Class.class)); return true;
+        }).when(mockDataSouce).isWrapperFor(eq(SharedConnectionDataSource.class));
+
+        assertEquals(true, sharedConnectionDataSource.isWrapperFor(SharedConnectionDataSource.class));
+        assertEquals(SharedConnectionDataSource.class, capturedArg.get());
+
+        verify(mockDataSouce).isWrapperFor(eq(SharedConnectionDataSource.class));
         verifyNoMoreInteractions(mockDataSouce);
 
     }

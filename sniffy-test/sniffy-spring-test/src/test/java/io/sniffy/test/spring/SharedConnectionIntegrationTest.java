@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import ru.yandex.qatools.allure.annotations.Features;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -26,6 +27,7 @@ public class SharedConnectionIntegrationTest {
 
     @Test
     @SharedConnection
+    @Features("issue/344")
     public void testSharedConnection() throws SQLException, ExecutionException, InterruptedException {
 
         try (Connection connection = dataSource.getConnection();
