@@ -20,6 +20,7 @@ import org.springframework.test.context.support.AbstractTestExecutionListener;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -168,9 +169,9 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
     public void afterTestMethod(TestContext testContext) throws Exception {
 
         Object sharedConnectionDataSourcesAttribute = getAttribute(testContext, SHARED_CONNECTION_DATASOURCES_ATTRIBUTE_NAME);
-        if (null != sharedConnectionDataSourcesAttribute && sharedConnectionDataSourcesAttribute instanceof Set) {
-            Set<SharedConnectionDataSource> sharedConnectionDataSources =
-                    (Set<SharedConnectionDataSource>) sharedConnectionDataSourcesAttribute;
+        if (null != sharedConnectionDataSourcesAttribute && sharedConnectionDataSourcesAttribute instanceof Collection) {
+            @SuppressWarnings("unchecked") Collection<SharedConnectionDataSource> sharedConnectionDataSources =
+                    (Collection<SharedConnectionDataSource>) sharedConnectionDataSourcesAttribute;
             for (SharedConnectionDataSource sharedConnectionDataSource : sharedConnectionDataSources) {
                 sharedConnectionDataSource.resetMasterConnection();
             }
