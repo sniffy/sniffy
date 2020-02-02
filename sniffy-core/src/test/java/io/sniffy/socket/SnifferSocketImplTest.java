@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import ru.yandex.qatools.allure.annotations.Features;
+import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.*;
 import java.net.*;
@@ -52,7 +53,7 @@ public class SnifferSocketImplTest {
 
         // TODO: insert timeout here and to similar methods?
 
-        verifyPrivate(delegate).invoke("sendUrgentData",1);
+        verifyPrivate(delegate).invoke("sendUrgentData", 1);
         verifyNoMoreInteractions(delegate);
 
     }
@@ -70,7 +71,7 @@ public class SnifferSocketImplTest {
             assertEquals(expected, actual);
         }
 
-        verifyPrivate(delegate).invoke("sendUrgentData",1);
+        verifyPrivate(delegate).invoke("sendUrgentData", 1);
         verifyNoMoreInteractions(delegate);
 
     }
@@ -88,7 +89,7 @@ public class SnifferSocketImplTest {
             assertEquals(expected, actual);
         }
 
-        verifyPrivate(delegate).invoke("sendUrgentData",1);
+        verifyPrivate(delegate).invoke("sendUrgentData", 1);
         verifyNoMoreInteractions(delegate);
 
     }
@@ -386,7 +387,7 @@ public class SnifferSocketImplTest {
     @Test
     public void testGetInputStream() throws Exception {
 
-        InputStream expected = new ByteArrayInputStream(new byte[]{1,2,3});
+        InputStream expected = new ByteArrayInputStream(new byte[]{1, 2, 3});
 
         when(delegate, "getInputStream").thenReturn(expected);
 
@@ -403,7 +404,7 @@ public class SnifferSocketImplTest {
     @Test
     public void testEstimateReceiveBufferNoRcvBufOption() throws Exception {
 
-        InputStream expected = new ByteArrayInputStream(new byte[]{1,2,3});
+        InputStream expected = new ByteArrayInputStream(new byte[]{1, 2, 3});
         SnifferSocketImpl.defaultReceiveBufferSize = null;
 
         when(delegate, "getInputStream").thenReturn(expected);
@@ -424,7 +425,7 @@ public class SnifferSocketImplTest {
     @Test
     public void testEstimateReceiveBufferRcvBufOptionThrowsException() throws Exception {
 
-        InputStream expected = new ByteArrayInputStream(new byte[]{1,2,3});
+        InputStream expected = new ByteArrayInputStream(new byte[]{1, 2, 3});
         SnifferSocketImpl.defaultReceiveBufferSize = null;
 
         when(delegate, "getInputStream").thenReturn(expected);
@@ -648,4 +649,38 @@ public class SnifferSocketImplTest {
 
     }
 
+    @Issue("issues/317")
+    @Test
+    public void testSetConnectionStatus() throws Exception {
+
+        sniffySocket.connect("google.com", 443);
+
+        sniffySocket.setConnectionStatus(-1);
+
+        try {
+            sniffySocket.connect("google.com", 443);
+            fail();
+        } catch (Exception e) {
+            assertNotNull(e);
+        }
+
+    }
+
+
+    @Issue("issues/317")
+    @Test
+    public void testCheckConnectionAllowed() throws Exception {
+
+        sniffySocket.connect("google.com", 443);
+
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("google.com", 443, -1);
+
+        try {
+            sniffySocket.connect("google.com", 443);
+            fail();
+        } catch (Exception e) {
+            assertNotNull(e);
+        }
+
+    }
 }
