@@ -20,4 +20,4 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Maven
-      run: mvn -B package jacoco:report coveralls:report sonar:sonar -U --file pom.xml
+      run: mvn -B package --file pom.xml
