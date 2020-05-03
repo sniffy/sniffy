@@ -22,3 +22,5 @@ jobs:
     - name: Build with Maven
       run: mvn -B clean package jacoco:report --file pom.xml -U
     - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
