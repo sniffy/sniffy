@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -34,7 +35,7 @@ public class SnifferOutputStreamTest {
             sos.write(b);
         }
 
-        verify(snifferSocket, times(4)).logSocket(anyInt(), eq(0), eq(1));
+        verify(snifferSocket, times(4)).logSocket(anyLong(), eq(0), eq(1));
 
     }
 
@@ -46,7 +47,7 @@ public class SnifferOutputStreamTest {
 
         sos.write(DATA);
 
-        verify(snifferSocket).logSocket(anyInt(), eq(0), eq(DATA.length));
+        verify(snifferSocket).logSocket(anyLong(), eq(0), eq(DATA.length));
 
     }
 
@@ -77,8 +78,8 @@ public class SnifferOutputStreamTest {
             verify(snifferSocket).checkConnectionAllowed(eq(1));
             verify(snifferSocket).checkConnectionAllowed(eq(2));
 
-            verify(snifferSocket).logSocket(anyInt(), eq(0), eq(THREE_BYTES_CHUNK.length));
-            verify(snifferSocket).logSocket(anyInt(), eq(0), eq(ELEVEN_BYTES_CHUNK.length));
+            verify(snifferSocket).logSocket(anyLong(), eq(0), eq(THREE_BYTES_CHUNK.length));
+            verify(snifferSocket).logSocket(anyLong(), eq(0), eq(ELEVEN_BYTES_CHUNK.length));
 
             verifyNoMoreInteractions(snifferSocket);
 
@@ -98,7 +99,7 @@ public class SnifferOutputStreamTest {
 
         sos.write(DATA, 1, 2);
 
-        verify(snifferSocket).logSocket(anyInt(), eq(0), eq(2));
+        verify(snifferSocket).logSocket(anyLong(), eq(0), eq(2));
 
     }
 
@@ -110,7 +111,7 @@ public class SnifferOutputStreamTest {
 
         sos.flush();
 
-        verify(snifferSocket).logSocket(anyInt());
+        verify(snifferSocket).logSocket(anyLong());
 
     }
 
@@ -122,7 +123,7 @@ public class SnifferOutputStreamTest {
 
         sos.close();
 
-        verify(snifferSocket).logSocket(anyInt());
+        verify(snifferSocket).logSocket(anyLong());
 
     }
 
