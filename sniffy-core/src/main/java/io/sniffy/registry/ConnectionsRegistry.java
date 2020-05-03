@@ -25,8 +25,8 @@ public enum ConnectionsRegistry implements Runnable {
     private final Map<Map.Entry<String, String>, Integer> discoveredDataSources = new ConcurrentHashMap<Map.Entry<String, String>, Integer>();
 
     // visible for testing
-    protected final Map<Map.Entry<String, Integer>, Collection<WeakReference<SniffySocket>>> sniffySocketImpls =
-            new ConcurrentHashMap<Map.Entry<String, Integer>, Collection<WeakReference<SniffySocket>>>();
+    protected final Map<Map.Entry<String, Integer>, Collection<Reference<SniffySocket>>> sniffySocketImpls =
+            new ConcurrentHashMap<Map.Entry<String, Integer>, Collection<Reference<SniffySocket>>>();
 
     private volatile boolean persistRegistry = false;
 
@@ -106,12 +106,12 @@ public enum ConnectionsRegistry implements Runnable {
         if (null != sniffySocket && !threadLocal) {
             {
                 AbstractMap.SimpleEntry<String, Integer> hostNamePortPair = new AbstractMap.SimpleEntry<String, Integer>(inetAddress.getHostName(), inetSocketAddress.getPort());
-                Collection<WeakReference<SniffySocket>> sniffySockets = sniffySocketImpls.get(hostNamePortPair);
+                Collection<Reference<SniffySocket>> sniffySockets = sniffySocketImpls.get(hostNamePortPair);
                 if (null == sniffySockets) {
                     synchronized (sniffySocketImpls) {
                         sniffySockets = sniffySocketImpls.get(hostNamePortPair);
                         if (null == sniffySockets) {
-                            sniffySockets = Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<SniffySocket>, Boolean>());
+                            sniffySockets = Collections.newSetFromMap(new ConcurrentHashMap<Reference<SniffySocket>, Boolean>());
                             sniffySocketImpls.put(hostNamePortPair, sniffySockets);
                         }
                     }
@@ -120,12 +120,12 @@ public enum ConnectionsRegistry implements Runnable {
             }
             {
                 AbstractMap.SimpleEntry<String, Integer> hostAddressPortPair = new AbstractMap.SimpleEntry<String, Integer>(inetAddress.getHostAddress(), inetSocketAddress.getPort());
-                Collection<WeakReference<SniffySocket>> sniffySockets = sniffySocketImpls.get(hostAddressPortPair);
+                Collection<Reference<SniffySocket>> sniffySockets = sniffySocketImpls.get(hostAddressPortPair);
                 if (null == sniffySockets) {
                     synchronized (sniffySocketImpls) {
                         sniffySockets = sniffySocketImpls.get(hostAddressPortPair);
                         if (null == sniffySockets) {
-                            sniffySockets = Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<SniffySocket>, Boolean>());
+                            sniffySockets = Collections.newSetFromMap(new ConcurrentHashMap<Reference<SniffySocket>, Boolean>());
                             sniffySocketImpls.put(hostAddressPortPair, sniffySockets);
                         }
                     }
@@ -175,9 +175,9 @@ public enum ConnectionsRegistry implements Runnable {
             }
         }
 
-        Collection<WeakReference<SniffySocket>> sniffySockets = sniffySocketImpls.get(new AbstractMap.SimpleEntry<String, Integer>(hostName, port));
+        Collection<Reference<SniffySocket>> sniffySockets = sniffySocketImpls.get(new AbstractMap.SimpleEntry<String, Integer>(hostName, port));
         if (null != sniffySockets) {
-            for (WeakReference<SniffySocket> sniffySocketWeakReference : sniffySockets) {
+            for (Reference<SniffySocket> sniffySocketWeakReference : sniffySockets) {
                 SniffySocket sniffySocket = sniffySocketWeakReference.get();
                 if (null != sniffySocket) {
                     sniffySocket.setConnectionStatus(connectionStatus);
@@ -362,25 +362,23 @@ public enum ConnectionsRegistry implements Runnable {
                     InetSocketAddress inetSocketAddress = sniffySocket.getInetSocketAddress();
 
                     {
-                        Collection<WeakReference<SniffySocket>> sniffySockets = sniffySocketImpls.get(
+                        Collection<Reference<SniffySocket>> sniffySockets = sniffySocketImpls.get(
                                 new AbstractMap.SimpleEntry<String, Integer>(
                                         inetSocketAddress.getAddress().getHostName(), inetSocketAddress.getPort()
                                 )
                         );
                         if (null != sniffySockets) {
-                            //noinspection SuspiciousMethodCalls
                             sniffySockets.remove(reference);
                         }
                     }
 
                     {
-                        Collection<WeakReference<SniffySocket>> sniffySockets = sniffySocketImpls.get(
+                        Collection<Reference<SniffySocket>> sniffySockets = sniffySocketImpls.get(
                                 new AbstractMap.SimpleEntry<String, Integer>(
                                         inetSocketAddress.getAddress().getHostAddress(), inetSocketAddress.getPort()
                                 )
                         );
                         if (null != sniffySockets) {
-                            //noinspection SuspiciousMethodCalls
                             sniffySockets.remove(reference);
                         }
                     }
