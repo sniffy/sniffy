@@ -27,8 +27,8 @@
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/
         </sonatypeOssDistMgmtSnapshotsUrl>
         <sniffy.ui.version>3.1.6-SNAPSHOT</sniffy.ui.version>
-        <spring.version>4.3.7.RELEASE</spring.version>
-        <spring.boot.version>1.5.2.RELEASE</spring.boot.version>
+        <spring.version>4.3.27.RELEASE</spring.version>
+        <spring.boot.version>1.5.22.RELEASE</spring.boot.version>
         <jacoco.version>0.8.5</jacoco.version>
     </properties>
 
