@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import ru.yandex.qatools.allure.annotations.Features;
+import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.IOException;
 
@@ -157,6 +158,7 @@ public class SniffyAgentTest {
 
     @Test
     @Features("issues/334")
+    @Issue("issues/357")
     public void testCorsHeaders() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
@@ -169,6 +171,7 @@ public class SniffyAgentTest {
         assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("PUT"));
         assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("DELETE"));
 
+        assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("Sniffy-Enabled"));
         assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("Sniffy-Inject-Html-Enabled"));
         assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("X-Requested-With"));
         assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("Content-Type"));
