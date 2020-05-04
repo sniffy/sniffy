@@ -2,6 +2,7 @@ package io.sniffy.socket;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -37,8 +38,8 @@ public class SnifferInputStreamTest {
             baos.write(read);
         }
 
-        verify(snifferSocket, times(4)).logSocket(anyInt(), eq(1), eq(0));
-        verify(snifferSocket).logSocket(anyInt(), eq(0), eq(0));
+        verify(snifferSocket, times(4)).logSocket(anyLong(), eq(1), eq(0));
+        verify(snifferSocket).logSocket(anyLong(), eq(0), eq(0));
 
     }
 
@@ -54,8 +55,8 @@ public class SnifferInputStreamTest {
 
         assertEquals(0, sis.available());
 
-        verify(snifferSocket).logSocket(anyInt(), eq(4), eq(0));
-        verify(snifferSocket).logSocket(anyInt());
+        verify(snifferSocket).logSocket(anyLong(), eq(4), eq(0));
+        verify(snifferSocket).logSocket(anyLong());
     }
 
     @Test
@@ -73,8 +74,8 @@ public class SnifferInputStreamTest {
 
         assertEquals(2, sis.available());
 
-        verify(snifferSocket).logSocket(anyInt(), eq(2), eq(0));
-        verify(snifferSocket).logSocket(anyInt());
+        verify(snifferSocket).logSocket(anyLong(), eq(2), eq(0));
+        verify(snifferSocket).logSocket(anyLong());
     }
 
     @Test
@@ -91,8 +92,8 @@ public class SnifferInputStreamTest {
 
         assertEquals(0, sis.available());
 
-        verify(snifferSocket, times(2)).logSocket(anyInt()); // skip() and available() calls
-        verify(snifferSocket).logSocket(anyInt(), eq(3), eq(0));
+        verify(snifferSocket, times(2)).logSocket(anyLong()); // skip() and available() calls
+        verify(snifferSocket).logSocket(anyLong(), eq(3), eq(0));
     }
 
     @Test
@@ -102,7 +103,7 @@ public class SnifferInputStreamTest {
         SnifferInputStream sis = new SnifferInputStream(snifferSocket, bais);
 
         sis.close();
-        verify(snifferSocket).logSocket(anyInt());
+        verify(snifferSocket).logSocket(anyLong());
 
     }
 
@@ -115,7 +116,7 @@ public class SnifferInputStreamTest {
         sis.mark(1);
 
         verify(inputStream).mark(eq(1));
-        verify(snifferSocket).logSocket(anyInt());
+        verify(snifferSocket).logSocket(anyLong());
     }
 
     @Test
@@ -126,7 +127,7 @@ public class SnifferInputStreamTest {
 
         sis.reset();
 
-        verify(snifferSocket).logSocket(anyInt());
+        verify(snifferSocket).logSocket(anyLong());
     }
 
 
@@ -141,7 +142,7 @@ public class SnifferInputStreamTest {
 
         assertEquals(true, sis.markSupported());
 
-        verify(snifferSocket).logSocket(anyInt());
+        verify(snifferSocket).logSocket(anyLong());
     }
 
 }

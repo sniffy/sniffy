@@ -19,10 +19,11 @@ import java.sql.SQLException;
 import static java.sql.DriverManager.getConnection;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = SpringUsageTest.class)
-@TestExecutionListeners(SniffySpringTestListener.class) // <1>
+@TestExecutionListeners(value = SniffySpringTestListener.class, mergeMode = MERGE_WITH_DEFAULTS) // <1>
 public class SpringUsageTest {
 
     @Test

@@ -80,7 +80,7 @@ public class SniffyFilterTest extends BaseTest {
         when(filterConfig.getInitParameter("fault-tolerance-current-request")).thenReturn(Boolean.toString(faultToleranceCurrentRequest));
         ServletContext servletContext = mock(ServletContext.class);
         when(filterConfig.getServletContext()).thenReturn(servletContext);
-        when(servletContext.getContextPath()).thenReturn("/petclinic");
+        lenient().when(servletContext.getContextPath()).thenReturn("/petclinic");
         return filterConfig;
     }
 

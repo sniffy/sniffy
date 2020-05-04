@@ -54,6 +54,8 @@ include::configuration.adoc[]
 
 include::test-api.adoc[]
 
+include::test-shared-connection.adoc[]
+
 include::test-junit.adoc[]
 
 include::test-spring.adoc[]
