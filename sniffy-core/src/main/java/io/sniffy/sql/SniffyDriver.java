@@ -68,7 +68,7 @@ public class SniffyDriver implements Driver, Constants {
     }
 
     protected static void checkConnectionAllowed(Connection connection, String url, String userName) throws SQLException {
-        if (ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName) < 0) {
+        if (resolveDataSourceStatus(url, userName) < 0) {
             try {
                 connection.close();
             } catch (Exception e) {
@@ -78,12 +78,16 @@ public class SniffyDriver implements Driver, Constants {
         }
     }
 
+    private static Integer resolveDataSourceStatus(String url, String userName) {
+        return ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName);
+    }
+
     protected static void checkConnectionAllowed(String url, String userName) throws SQLException {
         checkConnectionAllowed(url, userName, false);
     }
 
     protected static void checkConnectionAllowed(String url, String userName, boolean sleep) throws SQLException {
-        int status = ConnectionsRegistry.INSTANCE.resolveDataSourceStatus(url, userName);
+        int status = resolveDataSourceStatus(url, userName);
         if (status < 0) {
             if (sleep && -1 != status) try {
                 sleepImpl(-1 * status);

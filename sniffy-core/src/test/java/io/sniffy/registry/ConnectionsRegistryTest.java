@@ -4,16 +4,19 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonValue;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SnifferSocketImplFactory;
+import io.sniffy.socket.SniffySocket;
 import org.junit.After;
 import org.junit.Test;
 import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.lang.ref.Reference;
 import java.net.*;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
@@ -85,10 +88,10 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 }
             });
 
-            assertNull(exceptionReference.get());
-
             t.start();
             t.join(1000);
+
+            assertNull(exceptionReference.get());
 
             socket = socketReference.get();
 
@@ -112,11 +115,10 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 }
             });
 
-            assertNull(exceptionReference.get());
-
             t.start();
             t.join(1000);
 
+            assertNull(exceptionReference.get());
 
         } finally {
             ConnectionsRegistry.INSTANCE.clear();
@@ -128,9 +130,9 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
     @Test
     public void testIsNullConnectionOpened() {
 
-        assertEquals(0, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(null));
-        assertEquals(0, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress((InetAddress) null, 5555)));
-        assertEquals(0, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress("bad host address", 5555)));
+        assertEquals(0, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(null, null));
+        assertEquals(0, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress((InetAddress) null, 5555), null));
+        assertEquals(0, ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress("bad host address", 5555), null));
 
     }
 
@@ -173,7 +175,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
     @Test
     public void testWriteToWriter() throws Exception {
 
-        ConnectionsRegistry.INSTANCE.setDataSourceStatus("dataSource","userName", 0);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("dataSource", "userName", 0);
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 6666, -1);
 
         StringWriter sw = new StringWriter();
@@ -192,7 +194,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
         final String CONNECTION_URL = "jdbc:h2:c:\\work\\keycloak-3.0.0.CR1\\standalone\\data/keycloak;AUTO_SERVER=TRUE";
 
-        ConnectionsRegistry.INSTANCE.setDataSourceStatus(CONNECTION_URL,"sa", 0);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus(CONNECTION_URL, "sa", 0);
 
         StringWriter sw = new StringWriter();
         ConnectionsRegistry.INSTANCE.writeTo(sw);
@@ -210,5 +212,73 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
 
     }
+
+    @Test
+    @Issue("issues/317")
+    public void testResolveSocketAddressStatus() throws Exception {
+
+        final AtomicInteger lastConnectionStatus = new AtomicInteger();
+
+        {
+            SniffySocket sniffySocket = new SniffySocket() {
+                @Override
+                public InetSocketAddress getInetSocketAddress() {
+                    return null;
+                }
+
+                @Override
+                public void setConnectionStatus(Integer connectionStatus) {
+                    lastConnectionStatus.set(connectionStatus);
+                }
+            };
+
+            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 1}), 5555), sniffySocket);
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, -42);
+        }
+
+        assertEquals(-42, lastConnectionStatus.get());
+
+    }
+
+
+    @Test
+    @Issue("issues/317")
+    public void testWeakReferenceQueue() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.sniffySocketImpls.clear();
+
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 1}), 5555);
+
+        final AtomicInteger lastConnectionStatus = new AtomicInteger();
+
+        {
+            SniffySocket sniffySocket = new SniffySocket() {
+                @Override
+                public InetSocketAddress getInetSocketAddress() {
+                    return inetSocketAddress;
+                }
+
+                @Override
+                public void setConnectionStatus(Integer connectionStatus) {
+                    lastConnectionStatus.set(connectionStatus);
+                }
+            };
+
+            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, sniffySocket);
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, -42);
+        }
+
+        assertEquals(-42, lastConnectionStatus.get());
+
+        ConnectionsRegistry.INSTANCE.sniffySocketImpls.forEach((kve, sniffySocketReferences) -> sniffySocketReferences.forEach(Reference::enqueue));
+
+        Thread.sleep(1000);
+
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, 200);
+
+        assertEquals(-42, lastConnectionStatus.get());
+
+    }
+
 
 }

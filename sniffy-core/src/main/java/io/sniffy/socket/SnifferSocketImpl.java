@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 3.1
  */
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-class SnifferSocketImpl extends SocketImpl {
+class SnifferSocketImpl extends SocketImpl implements SniffySocket {
 
     private final static ReflectionFieldCopier socketCopier =
             new ReflectionFieldCopier(SocketImpl.class, "socket");
@@ -56,8 +56,15 @@ class SnifferSocketImpl extends SocketImpl {
     protected volatile long lastReadThreadId;
     protected volatile long lastWriteThreadId;
 
+    private volatile Integer connectionStatus;
+
     protected SnifferSocketImpl(SocketImpl delegate) {
         this.delegate = delegate;
+    }
+
+    @Override
+    public void setConnectionStatus(Integer connectionStatus) {
+        this.connectionStatus = connectionStatus;
     }
 
     private void estimateReceiveBuffer() {
@@ -81,6 +88,7 @@ class SnifferSocketImpl extends SocketImpl {
             receiveBufferSize = defaultReceiveBufferSize;
         }
     }
+
     private void estimateSendBuffer() {
         if (-1 == sendBufferSize) {
             if (null == defaultSendBufferSize) {
@@ -126,19 +134,21 @@ class SnifferSocketImpl extends SocketImpl {
         checkConnectionAllowed(inetSocketAddress, 1);
     }
 
-    protected static void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+    protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
         if (null != inetSocketAddress) {
-            int status = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress);
-            if (status < 0) {
-                if (numberOfSleepCycles > 0 && -1 != status) try {
-                    sleepImpl(-1 * status * numberOfSleepCycles);
+            if (null == this.connectionStatus || ConnectionsRegistry.INSTANCE.isThreadLocal()) {
+                this.connectionStatus = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, this);
+            }
+            if (connectionStatus < 0) {
+                if (numberOfSleepCycles > 0 && -1 != connectionStatus) try {
+                    sleepImpl(-1 * connectionStatus * numberOfSleepCycles);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
                 throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
-            } else if (numberOfSleepCycles > 0 && status > 0) {
+            } else if (numberOfSleepCycles > 0 && connectionStatus > 0) {
                 try {
-                    sleepImpl(status * numberOfSleepCycles);
+                    sleepImpl(connectionStatus * numberOfSleepCycles);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -531,4 +541,10 @@ class SnifferSocketImpl extends SocketImpl {
             copyFromDelegate();
         }
     }
+
+    @Override
+    public InetSocketAddress getInetSocketAddress() {
+        return this.address;
+    }
+
 }
