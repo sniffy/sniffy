@@ -19,6 +19,24 @@
             <version>${project.parent.version}</version>
         </dependency>
 
+        <!-- begin javadoc dependencies -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- end javadoc dependencies -->
+
         <dependency>
             <groupId>org.webjars.bower</groupId>
             <artifactId>bootstrap</artifactId>
@@ -154,7 +172,7 @@
                 </executions>
             </plugin>
 
-            <!--<plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <executions>
@@ -174,7 +192,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>-->
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.felix</groupId>
