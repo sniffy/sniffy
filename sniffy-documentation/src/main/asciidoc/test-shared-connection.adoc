@@ -1,0 +1,46 @@
+== Shared connection
+
+In some test scenarios you might want to execute all SQL commands in a single connection even though your code under test obtains multiple connections.
+The major use case is starting a transaction in the beginning of your test and rolling it back at the end.
+Using shared connection will force you application to use this particular transaction and connection even if you work will multiple threads/transactions/connections.
+
+`SharedConnectionDataSource` is a wrapper around any other `DataSource` with two additional methods:
+```java
+public SharedConnectionDataSource(DataSource targetDataSource);
+
+public synchronized void setCurrentThreadAsMaster();
+
+public synchronized void resetMasterConnection() throws InterruptedException;
+```
+
+Call `setCurrentThreadAsMaster()` method when you want to switch your DataSource to a shared connection mode.
+After you call this method, all new connections obtained from this DataSourcce will actually reuse the same underlying connection
+
+Call `resetMasterConnection()` when your test is finished and you want to return the data source to the ordinary state.
+
+=== Master and slave connections
+
+In `SharedConnectionDataSource` there's one `master` connection and multiple `slave` connections.
+All operations affecting the connection (such as close, commit, rollback, e.t.c.) are suppressed in slave connections, i.e. they do nothing.
+
+This how master connection is determined:
+- If there is an active connection obtained in the same thread as one calling `setCurrentThreadAsMaster()`, this connection is marked as master
+- Otherwise the first connection obtained  in the same thread as one calling `setCurrentThreadAsMaster()` will be marked as master
+
+
+=== Example
+
+```java
+include::../../../../sniffy-test/sniffy-test-common/src/test/java/io/sniffy/test/SharedConnectionDataSourceTest.java[tags=sharedConnectionDataSourceUsage]
+```
+<1> Create a `SharedConnectionDataSource` wrapper by passing an underlying DataSource to the constructor
+<2> Mark current Thread as `master` - first connection obtained from this thread will be considered `master`
+<3> Get the master connection from the pool
+<4> Get the slave connection from the pool. It is slave cause called from another thread and master connection is already determined
+<5> Assert that connections are actually the same
+<6> Release the master connection. This call will for all slave connetions to finish (until `close()` method is called) and unmark current thread and connection as master
+
+=== Caveats
+
+Although all API calls which might affect the shared connection in slave connections, it is still possible to interfere with other connections.
+For example any DDL calls (like CREATE TABLE) commit the transaction implicitly.

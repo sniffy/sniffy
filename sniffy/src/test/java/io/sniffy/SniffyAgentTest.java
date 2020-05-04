@@ -5,6 +5,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import ru.yandex.qatools.allure.annotations.Features;
@@ -152,6 +153,27 @@ public class SniffyAgentTest {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/missing/resource", String.class);
         assertTrue(entity.getStatusCode().is4xxClientError());
+    }
+
+    @Test
+    @Features("issues/334")
+    public void testCorsHeaders() {
+        TestRestTemplate template = new TestRestTemplate();
+        ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
+        HttpHeaders headers = entity.getHeaders();
+
+        assertEquals("*", headers.get("Access-Control-Allow-Origin").get(0));
+
+        assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("GET"));
+        assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("POST"));
+        assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("PUT"));
+        assertTrue(headers.get("Access-Control-Allow-Methods").get(0).contains("DELETE"));
+
+        assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("Sniffy-Inject-Html-Enabled"));
+        assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("X-Requested-With"));
+        assertTrue(headers.get("Access-Control-Allow-Headers").get(0).contains("Content-Type"));
+
+        assertEquals("true", headers.get("Access-Control-Allow-Credentials").get(0));
     }
 
 }

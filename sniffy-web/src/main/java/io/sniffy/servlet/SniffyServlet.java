@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.net.URLDecoder;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Map;
@@ -51,9 +50,9 @@ public class SniffyServlet extends HttpServlet {
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.5/dist/sniffy.min.js");
-            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.5/dist/sniffy.js");
-            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.5/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.6-SNAPSHOT/dist/sniffy.min.js");
+            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.6-SNAPSHOT/dist/sniffy.js");
+            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.6-SNAPSHOT/dist/sniffy.map");
         } catch (IOException e) {
             // TODO: log me maybe?
         }
@@ -62,7 +61,7 @@ public class SniffyServlet extends HttpServlet {
     private void addCorsHeaders(HttpServletResponse response) {
         response.addHeader("Access-Control-Allow-Origin", "*");
         response.addHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
-        response.addHeader("Access-Control-Allow-Headers", "X-Requested-With,Content-Type");
+        response.addHeader("Access-Control-Allow-Headers", "Sniffy-Inject-Html-Enabled,X-Requested-With,Content-Type");
         response.addHeader("Access-Control-Max-Age", "86400");
         response.addHeader("Access-Control-Allow-Credentials", "true");
     }
