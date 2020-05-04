@@ -152,7 +152,7 @@ public class SnifferSocketImplTest {
     @Test
     public void testGetFileDescriptor() throws Exception {
 
-        FileDescriptor expected = mock(FileDescriptor.class);
+        FileDescriptor expected = new FileDescriptor();
 
         when(delegate, "getFileDescriptor").thenReturn(expected);
 

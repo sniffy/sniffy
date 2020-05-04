@@ -19,7 +19,6 @@
             <plugin>
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctor-maven-plugin</artifactId>
-                <version>1.5.3</version>
                 <executions>
                     <execution>
                         <id>output-html</id>
@@ -42,12 +41,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.0.0</version>
                 <configuration>
                     <descriptors>
                         <descriptor>src/assembly/bin.xml</descriptor>
                     </descriptors>
-                    <finalName>sniffy-documentation-${pom.version}</finalName>
+                    <finalName>sniffy-documentation-${project.version}</finalName>
                 </configuration>
                 <executions>
                     <execution>

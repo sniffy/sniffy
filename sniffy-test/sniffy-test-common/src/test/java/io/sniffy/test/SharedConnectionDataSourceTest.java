@@ -160,7 +160,7 @@ public class SharedConnectionDataSourceTest {
         AtomicReference<PrintWriter> captured = new AtomicReference<>();
 
         doAnswer(invocation -> {
-            captured.set(invocation.getArgumentAt(0, PrintWriter.class)); return null;
+            captured.set(invocation.getArgument(0, PrintWriter.class)); return null;
         }).when(mockDataSouce).setLogWriter(any(PrintWriter.class));
 
         PrintWriter printWriter = new PrintWriter(new ByteArrayOutputStream());
@@ -197,7 +197,7 @@ public class SharedConnectionDataSourceTest {
         AtomicInteger captured = new AtomicInteger();
 
         doAnswer(invocation -> {
-            captured.set(invocation.getArgumentAt(0, Integer.class)); return null;
+            captured.set(invocation.getArgument(0, Integer.class)); return null;
         }).when(mockDataSouce).setLoginTimeout(anyInt());
 
         sharedConnectionDataSource.setLoginTimeout(42);
@@ -236,7 +236,7 @@ public class SharedConnectionDataSourceTest {
         DataSource result = mock(SharedConnectionDataSource.class);
 
         doAnswer(invocation -> {
-            capturedArg.set(invocation.getArgumentAt(0, Class.class)); return result;
+            capturedArg.set(invocation.getArgument(0, Class.class)); return result;
         }).when(mockDataSouce).unwrap(eq(SharedConnectionDataSource.class));
 
         assertEquals(result, sharedConnectionDataSource.unwrap(SharedConnectionDataSource.class));
@@ -256,7 +256,7 @@ public class SharedConnectionDataSourceTest {
         AtomicReference<Class> capturedArg = new AtomicReference<>();
 
         doAnswer(invocation -> {
-            capturedArg.set(invocation.getArgumentAt(0, Class.class)); return true;
+            capturedArg.set(invocation.getArgument(0, Class.class)); return true;
         }).when(mockDataSouce).isWrapperFor(eq(SharedConnectionDataSource.class));
 
         assertEquals(true, sharedConnectionDataSource.isWrapperFor(SharedConnectionDataSource.class));
