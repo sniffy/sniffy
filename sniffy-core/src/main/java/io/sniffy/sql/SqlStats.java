@@ -10,6 +10,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SqlStats extends SocketStats {
 
     public final AtomicInteger rows = new AtomicInteger();
+
+    /**
+     * Number of queries (or batches) executed
+     */
     public final AtomicInteger queries = new AtomicInteger();
 
     public SqlStats(SqlStats that) {

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-test</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.5</version>
+        <version>3.1.6-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -16,7 +16,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
                 <executions>
                     <execution>
                         <goals>
@@ -32,12 +31,12 @@
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-core</artifactId>
-            <version>3.1.5</version>
+            <version>3.1.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-core</artifactId>
-            <version>3.1.5</version>
+            <version>3.1.6-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>

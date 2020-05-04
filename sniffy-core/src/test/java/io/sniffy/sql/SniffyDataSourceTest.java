@@ -49,19 +49,30 @@ public class SniffyDataSourceTest extends BaseTest {
         assertTrue(wrap.isWrapperFor(JdbcDataSource.class));
         assertNotNull(wrap.unwrap(JdbcDataSource.class));
 
-        try {
-            assertFalse(wrap.isWrapperFor(Test.class));
-            fail();
-        } catch (Exception e) {
-            assertNotNull(e);
+        {
+            Exception exception = null;
+            Boolean isWrapper = null;
+            try {
+                isWrapper = wrap.isWrapperFor(Test.class);
+            } catch (Exception e) {
+                exception = e;
+            }
+
+            assertTrue(null != exception || !isWrapper);
         }
 
-        try {
-            assertNull(wrap.unwrap(Test.class));
-            fail();
-        } catch (Exception e) {
-            assertNotNull(e);
+        {
+            Exception exception = null;
+            Object unwrapped = wrap;
+            try {
+                unwrapped = wrap.unwrap(Test.class);
+            } catch (Exception e) {
+                exception = e;
+            }
+
+            assertTrue(null != exception || null == unwrapped);
         }
+
     }
 
     @Test

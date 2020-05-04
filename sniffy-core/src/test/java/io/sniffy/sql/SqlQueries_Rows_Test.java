@@ -6,6 +6,12 @@ import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import org.junit.Test;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+import static org.junit.Assert.assertTrue;
+
 public class SqlQueries_Rows_Test extends BaseTest {
 
     @Test
@@ -65,6 +71,26 @@ public class SqlQueries_Rows_Test extends BaseTest {
             executeStatement();
             executeStatement();
             executeStatement();
+        }
+    }
+
+    @Test
+    public void testResultSetMethods() throws Exception {
+        executeStatements(10, Query.INSERT);
+
+        try (Connection connection = openConnection();
+             Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+             @SuppressWarnings("unused") Spy $= Sniffy.expect(SqlQueries.exactRows(6))) {
+
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM PUBLIC.PROJECT");
+
+            assertTrue(resultSet.first());
+            assertTrue(resultSet.next());
+            assertTrue(resultSet.relative(1));
+            assertTrue(resultSet.absolute(4));
+            assertTrue(resultSet.last());
+            assertTrue(resultSet.previous());
+
         }
     }
 

@@ -3,25 +3,25 @@ package io.sniffy.sql;
 import io.sniffy.Sniffy;
 
 import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.ResultSet;
 
-class ResultSetInvocationHandler extends SniffyInvocationHandler<Object> {
+// TODO: create a dedicated handler for RowSet
+class ResultSetInvocationHandler<T extends ResultSet> extends SniffyInvocationHandler<T> {
 
     private final StatementMetaData statementMetaData;
 
-    ResultSetInvocationHandler(Object delegate, String url, String userName, StatementMetaData statementMetaData) {
-        super(delegate, url, userName);
+    ResultSetInvocationHandler(T delegate, Connection connectionProxy, String url, String userName, StatementMetaData statementMetaData) {
+        super(connectionProxy, delegate, url, userName);
         this.statementMetaData = statementMetaData;
     }
 
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invokeImpl(T proxy, String methodName, Method method, Object[] args) throws Throwable {
 
         checkConnectionAllowed();
 
-        String methodName = method.getName();
-
         // TODO: consider using fetch size for exact calculations
-        // TODO: getStatement should return statement proxy
         if ("next".equals(methodName) || "previous".equals(methodName) ||
                 "first".equals(methodName) || "last".equals(methodName) ||
                 "absolute".equals(methodName) || "relative".equals(methodName)) {
