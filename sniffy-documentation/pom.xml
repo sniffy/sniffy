@@ -45,7 +45,7 @@
                     <descriptors>
                         <descriptor>src/assembly/bin.xml</descriptor>
                     </descriptors>
-                    <finalName>sniffy-documentation-${pom.version}</finalName>
+                    <finalName>sniffy-documentation-${project.version}</finalName>
                 </configuration>
                 <executions>
                     <execution>
