@@ -18,6 +18,7 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import ru.yandex.qatools.allure.annotations.Features;
 import ru.yandex.qatools.allure.annotations.Issue;
+import ru.yandex.qatools.allure.annotations.Issues;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletResponse;
@@ -485,7 +486,7 @@ public class SniffyServletTest extends BaseTest {
     }
 
     @Test
-    @Issue("issues/334")
+    @Issues({@Issue("issues/334"), @Issue("issues/357")})
     public void testCorsHeaders() throws Exception {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -504,6 +505,7 @@ public class SniffyServletTest extends BaseTest {
         assertTrue(response.getHeader("Access-Control-Allow-Methods").contains("PUT"));
         assertTrue(response.getHeader("Access-Control-Allow-Methods").contains("DELETE"));
 
+        assertTrue(response.getHeader("Access-Control-Allow-Headers").contains("Sniffy-Enabled"));
         assertTrue(response.getHeader("Access-Control-Allow-Headers").contains("Sniffy-Inject-Html-Enabled"));
         assertTrue(response.getHeader("Access-Control-Allow-Headers").contains("X-Requested-With"));
         assertTrue(response.getHeader("Access-Control-Allow-Headers").contains("Content-Type"));
