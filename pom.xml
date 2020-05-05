@@ -509,9 +509,9 @@
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>htmlunit-driver</artifactId>
-                <version>2.24</version>
+                <version>2.40.0</version>
                 <scope>test</scope>
-                <exclusions>
+                <!--<exclusions>
                     <exclusion>
                         <groupId>commons-codec</groupId>
                         <artifactId>commons-codec</artifactId>
@@ -520,19 +520,20 @@
                         <groupId>net.sourceforge.htmlunit</groupId>
                         <artifactId>htmlunit</artifactId>
                     </exclusion>
-                </exclusions>
+                </exclusions>-->
                 <!-- TODO: 2.25 is not compatible with Spring Boot -->
             </dependency>
             <dependency>
                 <groupId>net.sourceforge.htmlunit</groupId>
                 <artifactId>htmlunit</artifactId>
-                <version>2.24</version>
-                <exclusions>
+                <version>2.40.0</version>
+                <scope>test</scope>
+                <!--<exclusions>
                     <exclusion>
                         <groupId>org.apache.httpcomponents</groupId>
                         <artifactId>httpclient</artifactId>
                     </exclusion>
-                </exclusions>
+                </exclusions>-->
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -634,6 +635,40 @@
                 <artifactId>hamcrest-library</artifactId>
                 <version>2.2</version>
                 <scope>test</scope>
+            </dependency>
+
+
+            <!-- Use unique transitive downstream dependencies  -->
+
+            <dependency>
+                <groupId>org.objenesis</groupId>
+                <artifactId>objenesis</artifactId>
+                <version>3.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.10.10</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.10.10</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-core</artifactId>
+                <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-beans</artifactId>
+                <version>${spring.version}</version>
             </dependency>
 
         </dependencies>
