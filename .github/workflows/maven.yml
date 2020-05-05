@@ -16,6 +16,8 @@ jobs:
       uses: crazy-max/ghaction-import-gpg@v1
       with:
         git_gpgsign: true
+        git_committer_name: bedrin
+        git_committer_email: dmitry.bedrin@gmail.com
       env:
         SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         PASSPHRASE: ${{ secrets.PASSPHRASE }}
@@ -41,6 +43,8 @@ jobs:
       uses: crazy-max/ghaction-import-gpg@v1
       with:
         git_gpgsign: true
+        git_committer_name: bedrin
+        git_committer_email: dmitry.bedrin@gmail.com
       env:
         SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         PASSPHRASE: ${{ secrets.PASSPHRASE }}
