@@ -162,6 +162,25 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.graalvm.js</groupId>
+            <artifactId>js</artifactId>
+            <version>20.2.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.js</groupId>
+            <artifactId>js-scriptengine</artifactId>
+            <version>20.2.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!--<dependency>
+            <groupId>org.graalvm</groupId>
+            <artifactId>graal-sdk</artifactId>
+            <version>1.0.0-rc2</version>
+            <scope>test</scope>
+        </dependency>-->
+
     </dependencies>
 
 </project>
