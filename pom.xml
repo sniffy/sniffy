@@ -166,7 +166,7 @@
                         <phase>verify</phase>
                         <configuration>
                             <rules>
-                                <DependencyConvergence />
+                                <!--<DependencyConvergence />-->
                                 <ReactorModuleConvergence />
                                 <requireMavenVersion>
                                     <version>(,2.1.0),(2.1.0,2.2.0),(2.2.0,)</version>
@@ -460,10 +460,22 @@
                 <optional>true</optional>
             </dependency>
             <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-core</artifactId>
+                <version>${spring.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot</artifactId>
                 <version>${spring.boot.version}</version>
                 <optional>true</optional>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.springframework</groupId>
+                        <artifactId>spring-core</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -503,7 +515,9 @@
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>htmlunit-driver</artifactId>
-                <version>2.24</version>
+                <version>2.44.0</version>
+                <classifier>jar-with-dependencies</classifier>
+                <type>jar</type>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -521,13 +535,26 @@
                 <groupId>net.sourceforge.htmlunit</groupId>
                 <artifactId>htmlunit</artifactId>
                 <version>2.37.0</version>
-                <exclusions>
+                <!--<exclusions>
                     <exclusion>
                         <groupId>org.apache.httpcomponents</groupId>
                         <artifactId>httpclient</artifactId>
                     </exclusion>
-                </exclusions>
+                </exclusions>-->
             </dependency>
+            <dependency>
+                <groupId>org.w3c.css</groupId>
+                <artifactId>sac</artifactId>
+                <version>1.3</version>
+                <scope>test</scope>
+            </dependency>
+            <!--<dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.11</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>-->
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
@@ -603,6 +630,18 @@
                         <groupId>org.hamcrest</groupId>
                         <artifactId>hamcrest-library</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.objenesis</groupId>
+                        <artifactId>objenesis</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy-agent</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -622,6 +661,21 @@
                         <artifactId>mockito-core</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.objenesis</groupId>
+                <artifactId>objenesis</artifactId>
+                <version>3.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.9.10</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.9.10</version>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>

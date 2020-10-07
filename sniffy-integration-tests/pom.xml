@@ -26,6 +26,40 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>animal-sniffer-enforcer-rule</artifactId>
+                        <version>1.15</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>verify</phase>
+                        <configuration combine.self="override">
+                            <rules>
+                                <DependencyConvergence />
+                                <ReactorModuleConvergence />
+                                <requireMavenVersion>
+                                    <version>(,2.1.0),(2.1.0,2.2.0),(2.2.0,)</version>
+                                    <message>Maven 2.1.0 and 2.2.0 produce incorrect GPG signatures and checksums
+                                        respectively.
+                                    </message>
+                                </requireMavenVersion>
+                            </rules>
+                            <fail>false</fail> <!-- no need to fail for integration tests -->
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
