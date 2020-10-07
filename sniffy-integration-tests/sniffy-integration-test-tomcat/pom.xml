@@ -13,10 +13,6 @@
 
     <artifactId>sniffy-integration-test-tomcat</artifactId>
 
-    <properties>
-        <tomcat.version>8.5.12</tomcat.version>
-    </properties>
-
     <build>
         <plugins>
             <plugin>
@@ -100,6 +96,13 @@
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-web</artifactId>
             <version>3.1.6-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.agent</artifactId>
+            <version>${jacoco.version}</version>
+            <classifier>runtime</classifier>
         </dependency>
 
         <dependency>
