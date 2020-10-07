@@ -164,14 +164,14 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
         if (null == reflectionFieldCopiers) {
             synchronized (SnifferSocketImpl.class) {
                 if (null == reflectionFieldCopiers) {
-                    List<ReflectionFieldCopier> reflectionFieldCopiersList = new ArrayList<ReflectionFieldCopier>(6);
+                    List<ReflectionFieldCopier> reflectionFieldCopiersList = new ArrayList<ReflectionFieldCopier>(4); // 4 available on modern Java
                     if (socketCopier.isAvailable()) reflectionFieldCopiersList.add(socketCopier);
                     if (serverSocketCopier.isAvailable()) reflectionFieldCopiersList.add(serverSocketCopier);
                     if (fdCopier.isAvailable()) reflectionFieldCopiersList.add(fdCopier);
                     if (addressCopier.isAvailable()) reflectionFieldCopiersList.add(addressCopier);
                     if (portCopier.isAvailable()) reflectionFieldCopiersList.add(portCopier);
                     if (localportCopier.isAvailable()) reflectionFieldCopiersList.add(localportCopier);
-                    reflectionFieldCopiers = reflectionFieldCopiersList.toArray(new ReflectionFieldCopier[6]);
+                    reflectionFieldCopiers = reflectionFieldCopiersList.toArray(new ReflectionFieldCopier[0]);
                 }
             }
         }
