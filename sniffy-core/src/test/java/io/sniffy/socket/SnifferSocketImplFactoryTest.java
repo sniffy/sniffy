@@ -6,6 +6,7 @@ import io.sniffy.util.ExceptionUtil;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.net.SocketImpl;
 import java.net.SocketImplFactory;
@@ -23,29 +24,36 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
         @Override
         public SocketImpl createSocketImpl() {
+
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+
+            boolean serverSocket = false;
+
+            if (null != stackTrace) {
+                for (StackTraceElement ste : stackTrace) {
+                    if (ste.getClassName().startsWith("java.net.ServerSocket")) {
+                        serverSocket = true;
+                    }
+                }
+            }
+
             try {
-                return SnifferSocketImplFactory.defaultSocketImplClassConstructor.newInstance();
+                if (null != SnifferSocketImplFactory.defaultSocketImplClassConstructor) {
+                    return SnifferSocketImplFactory.defaultSocketImplClassConstructor.newInstance();
+                }
+                if (null != SnifferSocketImplFactory.defaultSocketImplFactoryMethod) {
+                    return (SocketImpl) SnifferSocketImplFactory.defaultSocketImplFactoryMethod.invoke(null, serverSocket);
+                }
+                return null;
             } catch (Exception e) {
                 ExceptionUtil.throwException(e);
                 return null;
             } finally {
-
-                StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-
-                boolean serverSocket = false;
-
-                if (null != stackTrace) {
-                    for (StackTraceElement ste : stackTrace) {
-                        if (ste.getClassName().startsWith("java.net.ServerSocket")) {
-                            serverSocket = true;
-                        }
-                    }
-                }
-
                 if (!serverSocket) {
                     invocationCounter.incrementAndGet();
                 }
             }
+
         }
 
     }

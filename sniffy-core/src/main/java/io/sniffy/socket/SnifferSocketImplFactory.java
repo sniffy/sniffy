@@ -5,6 +5,8 @@ import io.sniffy.util.ExceptionUtil;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketImpl;
 import java.net.SocketImplFactory;
@@ -14,8 +16,13 @@ import java.net.SocketImplFactory;
  */
 public class SnifferSocketImplFactory implements SocketImplFactory {
 
+    // @VisibleForTesting
     protected final static Constructor<? extends SocketImpl> defaultSocketImplClassConstructor =
             getDefaultSocketImplClassConstructor();
+
+    // @VisibleForTesting
+    protected final static Method defaultSocketImplFactoryMethod =
+            getDefaultSocketImplFactoryMethod();
 
     private volatile static SocketImplFactory previousSocketImplFactory;
 
@@ -64,7 +71,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
     @Override
     public SocketImpl createSocketImpl() {
-        return isServerSocket() ? newSocketImpl() : new SnifferSocketImpl(newSocketImpl());
+        return isServerSocket() ? newSocketImpl(true) : new SnifferSocketImpl(newSocketImpl(false));
     }
 
     private static boolean isServerSocket() {
@@ -79,22 +86,36 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         return false;
     }
 
-    private static SocketImpl newSocketImpl() {
+    private static SocketImpl newSocketImpl(boolean serverSocket) {
 
         if (null != previousSocketImplFactory) {
             return previousSocketImplFactory.createSocketImpl();
-        } else {
+        }
+
+        if (null != defaultSocketImplClassConstructor) {
             try {
-                return null == defaultSocketImplClassConstructor ? null :
-                        defaultSocketImplClassConstructor.newInstance();
+                return defaultSocketImplClassConstructor.newInstance();
             } catch (Exception e) {
                 ExceptionUtil.throwException(e);
                 return null;
             }
         }
 
-    }
+        if (null != defaultSocketImplFactoryMethod) {
+            try {
+                return (SocketImpl) defaultSocketImplFactoryMethod.invoke(null, serverSocket);
+            } catch (IllegalAccessException e) {
+                ExceptionUtil.throwException(e);
+                return null;
+            } catch (InvocationTargetException e) {
+                ExceptionUtil.throwException(e);
+                return null;
+            }
+        }
 
+        return null;
+
+    }
 
     @SuppressWarnings("unchecked")
     private static Class<? extends SocketImpl> getDefaultSocketImplClass() throws ClassNotFoundException {
@@ -112,6 +133,23 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         }
         constructor.setAccessible(true);
         return constructor;
+    }
+
+    private static Class<?> getSocketImplClass() throws ClassNotFoundException {
+        return Class.forName("java.net.SocketImpl");
+    }
+
+    private static Method getDefaultSocketImplFactoryMethod() {
+        Method factoryMethod;
+        try {
+            factoryMethod = getSocketImplClass().getDeclaredMethod("createPlatformSocketImpl", Boolean.TYPE);
+        } catch (NoSuchMethodException e) {
+            return null;
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+        factoryMethod.setAccessible(true);
+        return factoryMethod;
     }
 
 }

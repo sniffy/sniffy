@@ -41,6 +41,7 @@
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>htmlunit-driver</artifactId>
+            <classifier>jar-with-dependencies</classifier>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.htmlunit</groupId>

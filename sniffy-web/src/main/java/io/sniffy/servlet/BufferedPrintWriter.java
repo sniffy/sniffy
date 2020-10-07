@@ -7,9 +7,12 @@ import java.io.UnsupportedEncodingException;
 
 class BufferedPrintWriter extends PrintWriter {
 
+    private final BufferedServletOutputStream bufferedServletOutputStream;
+
     BufferedPrintWriter(BufferedServletOutputStream bufferedServletOutputStream, String characterEncoding) throws UnsupportedEncodingException {
         super(null == characterEncoding ? new OutputStreamWriter(bufferedServletOutputStream) :
                 new OutputStreamWriter(bufferedServletOutputStream, characterEncoding));
+        this.bufferedServletOutputStream = bufferedServletOutputStream;
     }
 
     void flushIfOpen() throws IOException {
@@ -18,4 +21,13 @@ class BufferedPrintWriter extends PrintWriter {
         }
     }
 
+    @Override
+    public void close() {
+        try {
+            bufferedServletOutputStream.setExplicitFlushDisabled(true);
+            super.close();
+        } finally {
+            bufferedServletOutputStream.setExplicitFlushDisabled(false);
+        }
+    }
 }

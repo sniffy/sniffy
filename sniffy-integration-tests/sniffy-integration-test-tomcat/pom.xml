@@ -58,6 +58,7 @@
                     <port>8081</port>
                     <path>/test</path>
                     <fork>true</fork>
+                    <useTestClasspath>true</useTestClasspath>
                 </configuration>
                 <executions>
                     <execution>
@@ -107,10 +108,22 @@
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>htmlunit-driver</artifactId>
+            <classifier>jar-with-dependencies</classifier>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.htmlunit</groupId>
             <artifactId>htmlunit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--<dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>-->
+        <dependency>
+            <groupId>org.w3c.css</groupId>
+            <artifactId>sac</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>

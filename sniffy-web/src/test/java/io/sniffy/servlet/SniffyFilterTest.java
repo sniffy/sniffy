@@ -2,6 +2,8 @@ package io.sniffy.servlet;
 
 import io.sniffy.BaseTest;
 import io.sniffy.registry.ConnectionsRegistry;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,9 +19,6 @@ import org.xml.sax.SAXException;
 import ru.yandex.qatools.allure.annotations.Features;
 import ru.yandex.qatools.allure.annotations.Issue;
 
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -45,7 +44,8 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class SniffyFilterTest extends BaseTest {
 
-    private static class ApplicationSpecificException extends RuntimeException {}
+    private static class ApplicationSpecificException extends RuntimeException {
+    }
 
     @Mock
     protected FilterChain filterChain;
@@ -245,17 +245,10 @@ public class SniffyFilterTest extends BaseTest {
 
     public static class IoJS {
 
-        private SniffyJS sniffy;
+        public SniffyJS sniffy;
 
-        public SniffyJS getSniffy() {
-            return sniffy;
+        public static class SniffyJS {
         }
-
-        public void setSniffy(SniffyJS sniffy) {
-            this.sniffy = sniffy;
-        }
-
-        public static class SniffyJS {}
 
     }
 
@@ -305,15 +298,19 @@ public class SniffyFilterTest extends BaseTest {
 
         Node scriptTag = doc.getElementsByTagName("script").item(0);
         String scriptSource = scriptTag.getTextContent();
-        ScriptEngineManager engineManager = new ScriptEngineManager();
-        ScriptEngine engine = engineManager.getEngineByName("nashorn");
-        ScriptContext scriptContext = engine.getContext();
+
+        Context jsContext = Context.
+                newBuilder("js").
+                allowAllAccess(true).
+                build();
+        Value bindings = jsContext.getBindings("js");
         IoJS ioJS = new IoJS();
-        ioJS.setSniffy(new IoJS.SniffyJS());
-        scriptContext.setAttribute("io", ioJS, ScriptContext.ENGINE_SCOPE);
+        ioJS.sniffy = new IoJS.SniffyJS();
+        bindings.putMember("io", ioJS);
         DocumentJS documentJS = new DocumentJS();
-        scriptContext.setAttribute("document", documentJS, ScriptContext.ENGINE_SCOPE);
-        engine.eval(scriptSource);
+        bindings.putMember("document", jsContext.asValue(documentJS));
+        jsContext.eval("js", scriptSource);
+
 
         assertEquals(0, documentJS.content.length());
 
@@ -330,14 +327,17 @@ public class SniffyFilterTest extends BaseTest {
             sniffyJsSrc = scriptTag.getAttributes().getNamedItem("src").getNodeValue();
         } else {
             String scriptSource = scriptTag.getTextContent();
-            ScriptEngineManager engineManager = new ScriptEngineManager();
-            ScriptEngine engine = engineManager.getEngineByName("nashorn");
-            ScriptContext scriptContext = engine.getContext();
+
+            Context jsContext = Context.
+                    newBuilder("js").
+                    allowAllAccess(true).
+                    build();
+            Value bindings = jsContext.getBindings("js");
             IoJS ioJS = new IoJS();
-            scriptContext.setAttribute("io", ioJS, ScriptContext.ENGINE_SCOPE);
+            bindings.putMember("io", ioJS);
             DocumentJS documentJS = new DocumentJS();
-            scriptContext.setAttribute("document", documentJS, ScriptContext.ENGINE_SCOPE);
-            engine.eval(scriptSource);
+            bindings.putMember("document", jsContext.asValue(documentJS));
+            jsContext.eval("js", scriptSource);
 
             assertTrue(documentJS.content.length() > 0);
 
@@ -488,7 +488,10 @@ public class SniffyFilterTest extends BaseTest {
     @Test
     public void testFilterOneQuery() throws IOException, ServletException {
 
-        doAnswer(invocation -> {executeStatement(); return null;}).
+        doAnswer(invocation -> {
+            executeStatement();
+            return null;
+        }).
                 when(filterChain).doFilter(any(), any());
 
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
@@ -504,7 +507,9 @@ public class SniffyFilterTest extends BaseTest {
         SniffyFilter filter = new SniffyFilter();
         filter.init(filterConfig);
 
-        doAnswer(invocation -> {throw new RuntimeException("test");}).
+        doAnswer(invocation -> {
+            throw new RuntimeException("test");
+        }).
                 when(filterChain).doFilter(any(), any());
 
         try {
@@ -589,7 +594,7 @@ public class SniffyFilterTest extends BaseTest {
             PrintWriter printWriter = response.getWriter();
 
             StringBuilder sb = new StringBuilder();
-            for (int i = 0 ; i < 1024; i++) {
+            for (int i = 0; i < 1024; i++) {
                 sb.append("<sometag>abcdef</sometag>");
             }
 
@@ -1100,7 +1105,7 @@ public class SniffyFilterTest extends BaseTest {
             // response will be flushed here
             outputStream.write(new byte[50 * 1024]);
             executeStatement();
-            assertEquals(200*1024, response.getBufferSize());
+            assertEquals(200 * 1024, response.getBufferSize());
             return null;
         }).when(filterChain).doFilter(any(), any());
 
