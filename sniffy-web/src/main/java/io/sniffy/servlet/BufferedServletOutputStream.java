@@ -20,6 +20,8 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     private boolean lastChunk;
 
+    private boolean explicitFlushDisabled;
+
     public void setLastChunk() {
         this.lastChunk = true;
     }
@@ -31,12 +33,18 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     public void flushIfOpen() throws IOException {
         if (!closed) {
-            flush();
+            flushImpl();
         }
     }
 
     @Override
     public void flush() throws IOException {
+        if (!explicitFlushDisabled) {
+            flushImpl();
+        }
+    }
+
+    private void flushImpl() throws IOException {
 
         if (!flushed) {
             responseWrapper.notifyBeforeCommit(buffer);
@@ -60,7 +68,7 @@ class BufferedServletOutputStream extends ServletOutputStream {
     public void close() throws IOException {
         if (!closed) {
             setLastChunk();
-            flush();
+            flushImpl();
             target.close();
             closed = true;
         }
@@ -101,7 +109,7 @@ class BufferedServletOutputStream extends ServletOutputStream {
 
     private void flushIfOverflow(int newBytes) throws IOException {
         if (buffer.size() + newBytes > maximumBufferSize) {
-            flush(); // TODO: do not flush the whole buffer but only say the first half
+            flushImpl(); // TODO: do not flush the whole buffer but only say the first half
         }
     }
 
@@ -129,6 +137,10 @@ class BufferedServletOutputStream extends ServletOutputStream {
     @Override
     public void setWriteListener(WriteListener writeListener) {
         target.setWriteListener(writeListener);
+    }
+
+    protected void setExplicitFlushDisabled(boolean explicitFlushDisabled) {
+        this.explicitFlushDisabled = explicitFlushDisabled;
     }
 
 }
