@@ -35,11 +35,12 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
         java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16-ea]
+        os: [ubuntu-18.04, windows-2019, macos-10.15]
     name: Java ${{ matrix.java }} build
     steps:
     - uses: actions/checkout@v2
@@ -59,5 +60,11 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: ${{ matrix.java }}
+    - name: Cache Maven packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/maven.yml') }}
+        restore-keys: ${{ runner.os }}-maven
     - name: Build with Maven
       run: mvn -B clean verify --file pom.xml -U -P ci
