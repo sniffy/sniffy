@@ -1,14 +1,10 @@
 Sniffy
 ============
 
-[![Quality Gate](https://sonarqube.com/api/badges/gate?key=io.sniffy:sniffy-parent)](https://sonarqube.com/dashboard?id=io.sniffy%3Asniffy-parent)
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/ec48f442755f4df5b62bf3bcba3a2246)](https://www.codacy.com/app/sniffy/sniffy)
-[![CI Status](https://travis-ci.org/sniffy/sniffy.svg?branch=master)](https://travis-ci.org/sniffy/sniffy)
-[![Coverage Status](https://coveralls.io/repos/sniffy/sniffy/badge.png?branch=master)](https://coveralls.io/r/sniffy/sniffy?branch=master)
+![Java CI](https://github.com/sniffy/sniffy/workflows/Java%20CI/badge.svg)
+[![codecov](https://codecov.io/gh/sniffy/sniffy/branch/develop/graph/badge.svg)](https://codecov.io/gh/sniffy/sniffy)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy)
-[![Download](https://api.bintray.com/packages/sniffy/sniffy/sniffy/images/download.svg) ](https://bintray.com/sniffy/sniffy/sniffy/_latestVersion)
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://badges.mit-license.org)
-[![Donate](https://img.shields.io/badge/donate-❤-ff2244.svg)](https://www.paypal.me/sniffyio?locale.x=en_US&country.x=RU)
 
 Sniffy is a Java profiler which shows the results directly in your browser.
 It also brings profiling to your unit (or rather component) tests and allows you to disable certain outgoing connections for fault-tolerance testing.
