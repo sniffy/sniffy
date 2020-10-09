@@ -17,14 +17,14 @@ public class SocketStats {
 
     public SocketStats(long elapsedTime, long bytesDown, long bytesUp) {
         this.elapsedTime.set(elapsedTime);
-        this.bytesDown.set(bytesDown);
-        this.bytesUp.set(bytesUp);
+        this.bytesDown.set(Math.max(bytesDown, 0));
+        this.bytesUp.set(Math.max(bytesUp, 0));
     }
 
     public void accumulate(long elapsedTime, int bytesDown, int bytesUp) {
         this.elapsedTime.addAndGet(elapsedTime);
-        this.bytesDown.addAndGet(bytesDown);
-        this.bytesUp.addAndGet(bytesUp);
+        this.bytesDown.addAndGet(Math.max(bytesDown, 0));
+        this.bytesUp.addAndGet(Math.max(bytesUp, 0));
     }
 
     public void accumulate(SocketStats that) {

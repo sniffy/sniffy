@@ -81,7 +81,8 @@ class SnifferInputStream extends InputStream {
         long start = System.currentTimeMillis();
         int bytesDown = 0;
         try {
-            return bytesDown = delegate.read(b);
+            bytesDown = delegate.read(b);
+            return bytesDown;
         } finally {
             sleepIfRequired(bytesDown);
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
@@ -94,7 +95,8 @@ class SnifferInputStream extends InputStream {
         long start = System.currentTimeMillis();
         int bytesDown = 0;
         try {
-            return bytesDown = delegate.read(b, off, len);
+            bytesDown = delegate.read(b, off, len);
+            return bytesDown;
         } finally {
             sleepIfRequired(bytesDown);
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
