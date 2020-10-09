@@ -27,7 +27,6 @@ class SnifferInputStream extends InputStream {
         int bytesDown = 0;
         try {
             int read = delegate.read();
-            System.out.println(Thread.currentThread().getName() + " received '" + read + "' byte"); System.out.flush();
             if (read != -1) bytesDown = 1;
             return read;
         } finally {
@@ -83,7 +82,6 @@ class SnifferInputStream extends InputStream {
         int bytesDown = 0;
         try {
             bytesDown = delegate.read(b);
-            System.out.println(Thread.currentThread().getName() + " received " + bytesDown + " bytes"); System.out.flush();
             return bytesDown;
         } finally {
             sleepIfRequired(bytesDown);
@@ -98,7 +96,6 @@ class SnifferInputStream extends InputStream {
         int bytesDown = 0;
         try {
             bytesDown = delegate.read(b, off, len);
-            System.out.println(Thread.currentThread().getName() + " received " + bytesDown + " bytes"); System.out.flush();
             return bytesDown;
         } finally {
             sleepIfRequired(bytesDown);
