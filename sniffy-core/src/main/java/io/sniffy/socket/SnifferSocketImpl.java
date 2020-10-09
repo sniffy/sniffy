@@ -117,7 +117,7 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
 
     protected void logSocket(long millis, int bytesDown, int bytesUp) {
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
-        if (sniffyMode.isEnabled() && null != address && (millis >= 0 || bytesDown > 0 || bytesUp > 0)) {
+        if (sniffyMode.isEnabled() && null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
             Sniffy.logSocket(id, address, millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
         }
     }
