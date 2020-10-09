@@ -11,10 +11,10 @@ import java.net.Socket;
 import java.net.SocketImpl;
 import java.net.SocketImplFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.sniffy.Threads.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
@@ -92,9 +92,19 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
             performSocketOperation();
 
-            Thread thread = new Thread(this::performSocketOperation);
+            AtomicReference<Throwable> throwableHolder = new AtomicReference<>();
+
+            Thread thread = new Thread(() -> {
+                try {
+                    performSocketOperation();
+                } catch (Throwable e) {
+                    throwableHolder.set(e);
+                }
+            });
             thread.start();
             thread.join();
+
+            assertNull(throwableHolder.get());
 
             // Current thread socket operations
 
