@@ -47,12 +47,14 @@ public class SniffyServlet extends HttpServlet {
     protected byte[] javascriptSource;
     protected byte[] javascriptMap;
 
+    private final static String SNIFFY_UI_VERSION = "3.1.7";
+
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/3.1.6-SNAPSHOT/dist/sniffy.min.js");
-            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/3.1.6-SNAPSHOT/dist/sniffy.js");
-            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/3.1.6-SNAPSHOT/dist/sniffy.map");
+            javascript = loadResource("/META-INF/resources/webjars/sniffy/" + SNIFFY_UI_VERSION + "/dist/sniffy.min.js");
+            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/" + SNIFFY_UI_VERSION + "/dist/sniffy.js");
+            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/" + SNIFFY_UI_VERSION + "/dist/sniffy.map");
         } catch (IOException e) {
             // TODO: log me maybe?
         }
