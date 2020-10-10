@@ -55,7 +55,7 @@ jobs:
           echo "name:        ${{ steps.import_gpg.outputs.name }}"
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
       - name: Publish to the Maven Central Repository
-        run: mvn -P sonatype,release -B deploy
+        run: mvn -P sonatype,ci -B deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
@@ -64,6 +64,6 @@ jobs:
         with:
           java-version: 1.8
       - name: Publish to GitHub Packages
-        run: mvn -P github,release -B deploy
+        run: mvn -P github,ci -B deploy
         env:
           GITHUB_TOKEN: ${{ github.token }}
