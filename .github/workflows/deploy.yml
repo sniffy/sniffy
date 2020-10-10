@@ -32,6 +32,7 @@ jobs:
       run: mvn -B clean package --file pom.xml -U -P ci
   deploy:
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - uses: actions/checkout@v2
       - name: Set up Java for publishing to Maven Central Repository
