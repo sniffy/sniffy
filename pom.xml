@@ -799,8 +799,8 @@
             <distributionManagement>
                 <repository>
                     <id>github</id>
-                    <name>GitHub kerb4j Apache Maven Packages</name>
-                    <url>https://maven.pkg.github.com/bedrin/kerb4j</url>
+                    <name>GitHub Sniffy Apache Maven Packages</name>
+                    <url>https://maven.pkg.github.com/sniffy/sniffy</url>
                 </repository>
             </distributionManagement>
         </profile>
