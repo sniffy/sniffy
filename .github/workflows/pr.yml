@@ -2,9 +2,15 @@ name: Check Pull Request
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - master
+      - release/*
+      - hotfix/*
   pull_request:
-    branches-ignore: 
+    branches-ignore:
       - tag/*
+      -
 jobs:
   test:
     runs-on: ${{ matrix.os }}
