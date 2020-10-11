@@ -2,7 +2,18 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.5...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.6...master)
+
+## v3.1.6 - Oct 11th, 2020
+
+ * [Sniffy sometimes reports one byte less than was actually sent or received](https://github.com/sniffy/sniffy/issues/340)
+ * [Support new JDKs up to 16](https://github.com/sniffy/sniffy/issues/365)
+ * [Fix CORS requests when using chrome extension](https://github.com/sniffy/sniffy/issues/357)
+ * [@SharedConnection to test multi-threaded code working with database](https://github.com/sniffy/sniffy/issues/344)
+ * [Request header field Sniffy-Inject-Html-Enabled is not allowed by Access-Control-Allow-Headers in preflight response](https://github.com/sniffy/sniffy/issues/334)
+ * [SnifferSocket check for allowed connection is not efficient](https://github.com/sniffy/sniffy/issues/317)
+ * [Stop capturing multiple stack traces for network operations](https://github.com/sniffy/sniffy/issues/253)
+ * [Sniffy UI: method should be always in upper case; add response code](https://github.com/sniffy/sniffy/issues/239)
 
 ## v3.1.5 - Oct 3rd, 2017
 
