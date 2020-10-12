@@ -20,4 +20,9 @@ public @interface SniffyAdvancedConfiguration {
      */
     String injectHtmlExcludePattern() default "";
 
+    /**
+     * @since 3.1.7
+     */
+    String monitorNio() default "true";
+
 }

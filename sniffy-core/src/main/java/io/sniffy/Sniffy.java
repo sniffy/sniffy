@@ -3,6 +3,7 @@ package io.sniffy;
 import com.codahale.metrics.Timer;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.nio.SniffySelectorProvider;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
@@ -103,7 +104,6 @@ public class Sniffy {
 
         });
 
-
         if (SniffyConfiguration.INSTANCE.isMonitorSocket()) {
 
             try {
@@ -125,6 +125,37 @@ public class Sniffy {
                         try {
                             SnifferSocketImplFactory.install();
                             sniffySocketImplFactoryInstalled = true;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+            });
+
+        }
+
+        if (SniffyConfiguration.INSTANCE.isMonitorNio()) {
+
+            try {
+                SniffySelectorProvider.install();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+
+            SniffyConfiguration.INSTANCE.addMonitorNioListener(new PropertyChangeListener() {
+
+                private boolean sniffySelectorProviderInstalled = false;
+
+                @Override
+                public synchronized void propertyChange(PropertyChangeEvent evt) {
+                    if (sniffySelectorProviderInstalled) return;
+                    if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        try {
+                            SniffySelectorProvider.install();
+                            sniffySelectorProviderInstalled = true;
                         } catch (IOException e) {
                             e.printStackTrace();
                         }

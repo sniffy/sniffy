@@ -32,6 +32,7 @@ public class SniffyAgent {
 
     public static void premain(String args, Instrumentation instrumentation) throws Exception {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        SniffyConfiguration.INSTANCE.setMonitorNio(true);
         Sniffy.initialize();
         startServer(Integer.parseInt(args));
     }

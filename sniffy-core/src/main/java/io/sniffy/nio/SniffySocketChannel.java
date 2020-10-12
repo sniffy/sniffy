@@ -5,7 +5,10 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionFieldCopier;
+import sun.nio.ch.SelChImpl;
+import sun.nio.ch.SelectionKeyImpl;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.*;
@@ -19,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SniffySocketChannel extends SocketChannel implements SniffySocket {
+public class SniffySocketChannel extends SocketChannel implements SelChImpl, SniffySocket {
 
     private final static ReflectionFieldCopier providerCopier =
             new ReflectionFieldCopier(AbstractSelectableChannel.class, "provider");
@@ -42,6 +45,7 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket {
     private static volatile ReflectionFieldCopier[] reflectionFieldCopiers;
 
     private final SocketChannel delegate;
+    private final SelChImpl selChImplDelegate;
 
     private volatile Integer connectionStatus;
 
@@ -64,6 +68,11 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket {
     protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
         super(provider);
         this.delegate = delegate;
+        if (delegate instanceof SelChImpl) {
+            this.selChImplDelegate = (SelChImpl) delegate;
+        } else {
+            this.selChImplDelegate = null;
+        }
     }
 
     @Override
@@ -74,7 +83,7 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket {
     @Override
     public InetSocketAddress getInetSocketAddress() {
         try {
-            return (InetSocketAddress) delegate.getRemoteAddress();
+            return (InetSocketAddress) getRemoteAddress();
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -184,11 +193,11 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket {
                 synchronized (SniffySocketChannel.class) {
                     if (null == defaultSendBufferSize) {
                         try {
-                            defaultReceiveBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF);
+                            defaultSendBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF);
                         } catch (SocketException e) {
-                            defaultReceiveBufferSize = 0;
+                            defaultSendBufferSize = 0;
                         } catch (IOException e) {
-                            defaultReceiveBufferSize = 0;
+                            defaultSendBufferSize = 0;
                         }
                     }
                 }
@@ -290,7 +299,7 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket {
         copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            checkConnectionAllowed(1);
+            checkConnectionAllowed((InetSocketAddress) remote, 1);
             return delegate.connect(remote);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
@@ -387,6 +396,46 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket {
     public Set<SocketOption<?>> supportedOptions() {
         return delegate.supportedOptions();
     }
+
+    @Override
+    public FileDescriptor getFD() {
+        return selChImplDelegate.getFD();
+    }
+
+    @Override
+    public int getFDVal() {
+        return selChImplDelegate.getFDVal();
+    }
+
+    @Override
+    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski) {
+        return selChImplDelegate.translateAndUpdateReadyOps(ops, ski);
+    }
+
+    @Override
+    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski) {
+        return selChImplDelegate.translateAndSetReadyOps(ops, ski);
+    }
+
+    @Override
+    public int translateInterestOps(int ops) {
+        return selChImplDelegate.translateInterestOps(ops);
+    }
+
+    @Override
+    public void kill() throws IOException {
+        selChImplDelegate.kill();
+    }
+
+    /*@Override
+    public void park(int event, long nanos) throws IOException {
+        selChImplDelegate.park(event, nanos);
+    }
+
+    @Override
+    public void park(int event) throws IOException {
+        selChImplDelegate.park(event);
+    }*/
 
     private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
         if (null == reflectionFieldCopiers) {

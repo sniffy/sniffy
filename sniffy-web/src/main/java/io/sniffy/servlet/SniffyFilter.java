@@ -87,6 +87,7 @@ public class SniffyFilter implements Filter {
     protected static final String THREAD_LOCAL_DISCOVERED_DATA_SOURCES = "discoveredDataSources";
 
     protected Boolean monitorSocket;
+    protected Boolean monitorNio;
 
     protected boolean filterEnabled = true;
     protected Pattern excludePattern = null;
@@ -136,6 +137,11 @@ public class SniffyFilter implements Filter {
             String monitorSocket = filterConfig.getInitParameter("monitor-socket");
             if (null == this.monitorSocket && (null == monitorSocket || Boolean.parseBoolean(monitorSocket))) {
                 setMonitorSocket(true);
+            }
+
+            String monitorNio = filterConfig.getInitParameter("monitor-nio");
+            if (null == this.monitorNio && (null == monitorNio || Boolean.parseBoolean(monitorNio))) {
+                setMonitorNio(true);
             }
 
             // TODO: rename to filter-enabled for consistency
@@ -379,6 +385,7 @@ public class SniffyFilter implements Filter {
     public void setEnabled(boolean enabled) {
         setFilterEnabled(enabled);
         setMonitorSocket(enabled);
+        setMonitorNio(enabled);
     }
 
     /**
@@ -408,6 +415,21 @@ public class SniffyFilter implements Filter {
     public void setMonitorSocket(boolean monitorSocket) {
         this.monitorSocket = monitorSocket;
         SniffyConfiguration.INSTANCE.setMonitorSocket(monitorSocket);
+    }
+
+    /**
+     * @since 3.1.7
+     */
+    public boolean isMonitorNio() {
+        return SniffyConfiguration.INSTANCE.isMonitorNio();
+    }
+
+    /**
+     * @since 3.1.7
+     */
+    public void setMonitorNio(boolean monitorNio) {
+        this.monitorNio = monitorNio;
+        SniffyConfiguration.INSTANCE.setMonitorNio(monitorNio);
     }
 
     public Pattern getExcludePattern() {

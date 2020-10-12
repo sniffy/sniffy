@@ -17,7 +17,7 @@ public class SniffySelectorProvider extends SelectorProvider {
         this.delegate = delegate;
     }
 
-    public static void install() {
+    public static void install() throws IOException {
         SelectorProvider delegate = SelectorProvider.provider();
         try {
             Class<?> holderClass = Class.forName("java.nio.channels.spi.SelectorProvider$Holder");
@@ -32,11 +32,11 @@ public class SniffySelectorProvider extends SelectorProvider {
             instanceField.set(null, new SniffySelectorProvider(delegate));
 
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            throw new IOException("Failed to initialize SniffySelectorProvider", e);
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            throw new IOException("Failed to initialize SniffySelectorProvider", e);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            throw new IOException("Failed to initialize SniffySelectorProvider", e);
         }
     }
 
