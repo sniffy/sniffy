@@ -427,7 +427,7 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
         selChImplDelegate.kill();
     }
 
-    /*@Override
+    @Override
     public void park(int event, long nanos) throws IOException {
         selChImplDelegate.park(event, nanos);
     }
@@ -435,7 +435,7 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
     @Override
     public void park(int event) throws IOException {
         selChImplDelegate.park(event);
-    }*/
+    }
 
     private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
         if (null == reflectionFieldCopiers) {

@@ -95,6 +95,7 @@ public class SniffySelectorProvider extends SelectorProvider {
         return delegate.inheritedChannel();
     }
 
+    // TODO: make this code Java 15+ only
     /*@Override
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         return new SniffySocketChannel(this, delegate.openSocketChannel(family));
