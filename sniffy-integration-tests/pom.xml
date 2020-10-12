@@ -12,6 +12,7 @@
     <artifactId>sniffy-integration-tests</artifactId>
     <packaging>pom</packaging>
     <modules>
+        <module>sniffy-integration-tests-kotest</module>
         <module>sniffy-integration-tests-spock</module>
 	    <module>sniffy-integration-tests-spring-boot</module>
 	    <module>sniffy-integration-test-tomcat</module>
