@@ -436,7 +436,7 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
     //@Override
     public int translateInterestOps(int ops) {
         try {
-            return (int) method(SelChImpl.class, "translateInterestOps", Integer.TYPE).invoke(delegate, ops);
+            return (Integer) method(SelChImpl.class, "translateInterestOps", Integer.TYPE).invoke(delegate, ops);
         } catch (NoSuchMethodException e) {
             throw ExceptionUtil.processException(e);
         } catch (IllegalAccessException e) {
