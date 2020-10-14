@@ -712,8 +712,8 @@
                             </compilerArgs>
                             <source>1.9</source>
                             <target>1.9</target>
-                            <testSource>1.8</testSource>
-                            <testTarget>1.8</testTarget>
+                            <testSource>1.9</testSource>
+                            <testTarget>1.9</testTarget>
                         </configuration>
                     </plugin>
                 </plugins>
