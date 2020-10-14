@@ -291,7 +291,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
         long start = System.currentTimeMillis();
 
-        Future<Integer> integerFuture = delegate.read(dst);
+        final Future<Integer> integerFuture = delegate.read(dst);
 
         return new Future<Integer>() {
 
@@ -364,16 +364,6 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     public SocketAddress getLocalAddress() throws IOException {
         return delegate.getLocalAddress();
     }
-
-    /*@Override
-    public <A> void read(ByteBuffer dst, A attachment, CompletionHandler<Integer, ? super A> handler) {
-        delegate.read(dst, attachment, handler);
-    }
-
-    @Override
-    public <A> void write(ByteBuffer src, A attachment, CompletionHandler<Integer, ? super A> handler) {
-        delegate.write(src, attachment, handler);
-    }*/
 
     @Override
     public void close() throws IOException {
