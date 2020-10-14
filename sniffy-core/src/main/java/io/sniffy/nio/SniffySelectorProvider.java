@@ -23,6 +23,39 @@ public class SniffySelectorProvider extends SelectorProvider {
     public static void install() throws IOException {
         SelectorProvider delegate = SelectorProvider.provider();
         try {
+            initializeUsingHolderSubClass(delegate);
+        } catch (IOException ex) {
+            try {
+                Class<?> clazz = Class.forName("java.nio.channels.spi.SelectorProvider");
+
+                Field lockField = clazz.getDeclaredField("lock");
+                lockField.setAccessible(true);
+
+                Object lock = lockField.get(null);
+
+                Field instanceField = clazz.getDeclaredField("provider");
+                instanceField.setAccessible(true);
+
+                Field modifiersField = getModifiersField();
+                modifiersField.setAccessible(true);
+                modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+                synchronized (lock) {
+                    instanceField.set(null, new SniffySelectorProvider(delegate));
+                }
+
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to initialize SniffySelectorProvider", e);
+            } catch (NoSuchFieldException e) {
+                throw new IOException("Failed to initialize SniffySelectorProvider", e);
+            } catch (IllegalAccessException e) {
+                throw new IOException("Failed to initialize SniffySelectorProvider", e);
+            }
+        }
+    }
+
+    private static void initializeUsingHolderSubClass(SelectorProvider delegate) throws IOException {
+        try {
             Class<?> holderClass = Class.forName("java.nio.channels.spi.SelectorProvider$Holder");
 
             Field instanceField = holderClass.getDeclaredField("INSTANCE");
