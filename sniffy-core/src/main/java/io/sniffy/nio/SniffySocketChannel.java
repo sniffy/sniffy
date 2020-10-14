@@ -10,6 +10,7 @@ import sun.nio.ch.SelectionKeyImpl;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.ByteBuffer;
@@ -427,14 +428,32 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
         selChImplDelegate.kill();
     }
 
-    @Override
+    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    //@Override
     public void park(int event, long nanos) throws IOException {
-        selChImplDelegate.park(event, nanos);
+        try {
+            method(SelChImpl.class, "park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
+        } catch (IllegalAccessException e) {
+            ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwException(e);
+        } catch (NoSuchMethodException e) {
+            ExceptionUtil.throwException(e);
+        }
     }
 
-    @Override
+    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    //@Override
     public void park(int event) throws IOException {
-        selChImplDelegate.park(event);
+        try {
+            method(SelChImpl.class, "park", Integer.TYPE).invoke(selChImplDelegate, event);
+        } catch (IllegalAccessException e) {
+            ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.throwException(e);
+        } catch (NoSuchMethodException e) {
+            ExceptionUtil.throwException(e);
+        }
     }
 
     private static ReflectionFieldCopier[] getReflectionFieldCopiers() {

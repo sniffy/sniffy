@@ -1,7 +1,10 @@
 package io.sniffy.nio;
 
+import io.sniffy.util.ExceptionUtil;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.ProtocolFamily;
@@ -95,15 +98,41 @@ public class SniffySelectorProvider extends SelectorProvider {
         return delegate.inheritedChannel();
     }
 
-    // TODO: make this code Java 15+ only
-    /*@Override
+    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    //@Override
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
-        return new SniffySocketChannel(this, delegate.openSocketChannel(family));
+        try {
+            return new SniffySocketChannel(
+                    this,
+                    (SocketChannel) method(SelectorProvider.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
+            );
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        }
     }
 
-    @Override
+    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    //@Override
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
-        return delegate.openServerSocketChannel(family);
-    }*/
+        try {
+            return (ServerSocketChannel) method(SelectorProvider.class, "openServerSocketChannel", ProtocolFamily.class).invoke(delegate, family);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        }
+    }
+
+    private static Method method(Class<?> clazz, String methodName, Class<?>... argumentTypes) throws NoSuchMethodException {
+        Method method = clazz.getDeclaredMethod(methodName, argumentTypes);
+        method.setAccessible(true);
+        return method;
+    }
 
 }

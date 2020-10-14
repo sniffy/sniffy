@@ -447,7 +447,7 @@ public class Sniffy {
      * @return a new {@link Spy} instance for current thread only
      * @since 3.1
      */
-    public static CurrentThreadSpy  spyCurrentThread(boolean captureStackTraces) {
+    public static CurrentThreadSpy spyCurrentThread(boolean captureStackTraces) {
         return new CurrentThreadSpy(captureStackTraces);
     }
 
