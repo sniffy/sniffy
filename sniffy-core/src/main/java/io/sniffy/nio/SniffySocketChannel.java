@@ -418,9 +418,32 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
         return selChImplDelegate.translateAndSetReadyOps(ops, ski);
     }
 
-    @Override
+    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
+    //@Override
+    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
+        try {
+            method(SelChImpl.class, "translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(delegate, ops, sk);
+        } catch (NoSuchMethodException e) {
+            ExceptionUtil.processException(e);
+        } catch (IllegalAccessException e) {
+            ExceptionUtil.processException(e);
+        } catch (InvocationTargetException e) {
+            ExceptionUtil.processException(e);
+        }
+    }
+
+    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    //@Override
     public int translateInterestOps(int ops) {
-        return selChImplDelegate.translateInterestOps(ops);
+        try {
+            return (int) method(SelChImpl.class, "translateInterestOps", Integer.TYPE).invoke(delegate, ops);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        }
     }
 
     @Override
