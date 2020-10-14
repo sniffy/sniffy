@@ -149,6 +149,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                     if (null == defaultReceiveBufferSize) {
                         try {
                             defaultReceiveBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF);
+                            if (null == defaultReceiveBufferSize) defaultReceiveBufferSize = 0;
                         } catch (SocketException e) {
                             defaultReceiveBufferSize = 0;
                         } catch (IOException e) {
@@ -167,11 +168,12 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                 synchronized (SniffySocketChannel.class) {
                     if (null == defaultSendBufferSize) {
                         try {
-                            defaultReceiveBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF);
+                            defaultSendBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF);
+                            if (null == defaultSendBufferSize) defaultSendBufferSize = 0;
                         } catch (SocketException e) {
-                            defaultReceiveBufferSize = 0;
+                            defaultSendBufferSize = 0;
                         } catch (IOException e) {
-                            defaultReceiveBufferSize = 0;
+                            defaultSendBufferSize = 0;
                         }
                     }
                 }
@@ -352,7 +354,56 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
     @Override
     public Future<Integer> write(ByteBuffer src) {
-        return delegate.write(src);
+        estimateSendBuffer();
+
+        final long start = System.currentTimeMillis();
+
+        final Future<Integer> integerFuture = delegate.write(src);
+
+        return new Future<Integer>() {
+
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return integerFuture.cancel(mayInterruptIfRunning);
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return integerFuture.isCancelled();
+            }
+
+            @Override
+            public boolean isDone() {
+                return integerFuture.isDone();
+            }
+
+            @Override
+            public Integer get() throws InterruptedException, ExecutionException {
+                Integer bytesUp = integerFuture.get();
+                try {
+                    checkConnectionAllowed(0);
+                    sleepIfRequiredForWrite(bytesUp);
+                } catch (ConnectException e) {
+                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                }
+                logSocket(System.currentTimeMillis() - start, 0, bytesUp);
+                return bytesUp;
+            }
+
+            @Override
+            public Integer get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                Integer bytesUp = integerFuture.get(timeout, unit);
+                try {
+                    checkConnectionAllowed(0);
+                    sleepIfRequiredForWrite(bytesUp);
+                } catch (ConnectException e) {
+                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                }
+                logSocket(System.currentTimeMillis() - start, 0, bytesUp);
+                return bytesUp;
+            }
+
+        };
     }
 
     @Override
