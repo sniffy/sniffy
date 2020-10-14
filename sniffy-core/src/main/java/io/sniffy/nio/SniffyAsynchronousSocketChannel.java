@@ -289,7 +289,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     public Future<Integer> read(ByteBuffer dst)  {
         estimateReceiveBuffer();
 
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
 
         final Future<Integer> integerFuture = delegate.read(dst);
 
