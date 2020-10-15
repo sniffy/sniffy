@@ -76,7 +76,6 @@
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>
-                                <checkTestClasses>false</checkTestClasses>
                             </rules>
                             <fail>true</fail>
                         </configuration>
