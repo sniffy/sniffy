@@ -5,7 +5,6 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionFieldCopier;
-import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
 
@@ -24,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@IgnoreJRERequirement
+// TODO: SelChImpl is available in java 1.7+ only - make sure it is safe
 public class SniffySocketChannel extends SocketChannel implements SelChImpl, SniffySocket {
 
     private final static ReflectionFieldCopier providerCopier =

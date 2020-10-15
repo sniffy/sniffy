@@ -74,6 +74,20 @@
                                         <artifactId>java16</artifactId>
                                         <version>1.1</version>
                                     </signature>
+                                    <ignores>
+                                        <ignore>io.sniffy.nio.SniffySocketChannel</ignore>
+                                        <ignore>io.sniffy.nio.SniffyAsynchronousSocketChannel</ignore>
+                                        <ignore>io.sniffy.nio.SniffyAsynchronousChannelProvider</ignore>
+                                    </ignores>
+                                    <checkTestClasses>false</checkTestClasses>
+                                </checkSignatureRule>
+                                <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
+                                    <signature>
+                                        <groupId>org.codehaus.mojo.signature</groupId>
+                                        <artifactId>java17</artifactId>
+                                        <version>1.0</version>
+                                    </signature>
+                                    <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>
                                 <checkTestClasses>false</checkTestClasses>
                             </rules>

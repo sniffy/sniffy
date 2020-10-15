@@ -1,7 +1,6 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
-import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -13,6 +12,7 @@ import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
+// TODO: one of the methods here is available only on Java 1.7+ make sure it is safe
 public class SniffySelectorProvider extends SelectorProvider {
 
     private final SelectorProvider delegate;
@@ -121,7 +121,6 @@ public class SniffySelectorProvider extends SelectorProvider {
     }
 
     // TODO: move to ReflectionUtils
-    @IgnoreJRERequirement
     private static Field getModifiersField() throws NoSuchFieldException {
         try {
             return Field.class.getDeclaredField("modifiers");
@@ -147,6 +146,7 @@ public class SniffySelectorProvider extends SelectorProvider {
         return delegate.openDatagramChannel();
     }
 
+    // TODO: this code is available in Java 7+ only
     @Override
     public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
         return delegate.openDatagramChannel(family);
