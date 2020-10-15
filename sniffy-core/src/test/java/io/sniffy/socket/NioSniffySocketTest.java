@@ -31,6 +31,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
+        SniffySelectorProvider.uninstall();
         SniffySelectorProvider.install();
 
         try (Spy<?> s = Sniffy.spy()) {

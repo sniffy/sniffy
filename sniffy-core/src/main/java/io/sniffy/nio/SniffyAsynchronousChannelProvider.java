@@ -22,6 +22,11 @@ public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvid
 
     public static void install() {
         AsynchronousChannelProvider delegate = AsynchronousChannelProvider.provider();
+
+        if (null != delegate && SniffyAsynchronousChannelProvider.class.equals(delegate.getClass())) {
+            return;
+        }
+
         try {
             Class<?> holderClass = Class.forName("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder");
 
@@ -41,6 +46,31 @@ public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvid
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void uninstall() {
+
+        // TODO: save default to static field and restore here
+
+        /*try {
+            Class<?> holderClass = Class.forName("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder");
+
+            Field instanceField = holderClass.getDeclaredField("provider");
+            instanceField.setAccessible(true);
+
+            Field modifiersField = getModifiersField();
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+            instanceField.set(null, delegate);
+
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }*/
     }
 
     private static Field getModifiersField() throws NoSuchFieldException {

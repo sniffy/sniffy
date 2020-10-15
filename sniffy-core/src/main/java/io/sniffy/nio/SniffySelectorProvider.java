@@ -22,8 +22,13 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     public static void install() throws IOException {
         SelectorProvider delegate = SelectorProvider.provider();
+
+        if (null != delegate && SniffySelectorProvider.class.equals(delegate.getClass())) {
+            return;
+        }
+
         try {
-            initializeUsingHolderSubClass(delegate);
+            initializeUsingHolderSubClass(new SniffySelectorProvider(delegate));
         } catch (IOException ex) {
             try {
                 Class<?> clazz = Class.forName("java.nio.channels.spi.SelectorProvider");
@@ -54,7 +59,45 @@ public class SniffySelectorProvider extends SelectorProvider {
         }
     }
 
-    private static void initializeUsingHolderSubClass(SelectorProvider delegate) throws IOException {
+    public static void uninstall() throws IOException {
+
+        // TODO: save default to static field and restore here
+
+        /*SelectorProvider delegate = SelectorProvider.provider();
+        try {
+            initializeUsingHolderSubClass(delegate);
+        } catch (IOException ex) {
+            try {
+                Class<?> clazz = Class.forName("java.nio.channels.spi.SelectorProvider");
+
+                Field lockField = clazz.getDeclaredField("lock");
+                lockField.setAccessible(true);
+
+                Object lock = lockField.get(null);
+
+                Field instanceField = clazz.getDeclaredField("provider");
+                instanceField.setAccessible(true);
+
+                Field modifiersField = getModifiersField();
+                modifiersField.setAccessible(true);
+                modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+                synchronized (lock) {
+                    instanceField.set(null, delegate);
+                }
+
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to initialize SniffySelectorProvider", e);
+            } catch (NoSuchFieldException e) {
+                throw new IOException("Failed to initialize SniffySelectorProvider", e);
+            } catch (IllegalAccessException e) {
+                throw new IOException("Failed to initialize SniffySelectorProvider", e);
+            }
+        }*/
+
+    }
+
+    private static void initializeUsingHolderSubClass(SelectorProvider provider) throws IOException {
         try {
             Class<?> holderClass = Class.forName("java.nio.channels.spi.SelectorProvider$Holder");
 
@@ -65,7 +108,7 @@ public class SniffySelectorProvider extends SelectorProvider {
             modifiersField.setAccessible(true);
             modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
 
-            instanceField.set(null, new SniffySelectorProvider(delegate));
+            instanceField.set(null, provider);
 
         } catch (ClassNotFoundException e) {
             throw new IOException("Failed to initialize SniffySelectorProvider", e);
@@ -76,6 +119,7 @@ public class SniffySelectorProvider extends SelectorProvider {
         }
     }
 
+    // TODO: move to ReflectionUtils
     private static Field getModifiersField() throws NoSuchFieldException {
         try {
             return Field.class.getDeclaredField("modifiers");
