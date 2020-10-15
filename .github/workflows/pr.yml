@@ -14,7 +14,7 @@ on:
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
-    name: Test with coverage on JDK 8 / Linux
+    name: Coverage JDK 8, Linux
     steps:
       - uses: actions/checkout@v2
       - name: Import GPG key
@@ -64,7 +64,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, windows-2019, macos-10.15]
-    name: Test compatibility (Java 6,7), ${{ matrix.os }}
+    name: Compatibility JDK 6 and JDK 7, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 8
@@ -72,7 +72,7 @@ jobs:
         with:
           java-version: 8
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci -DskipTests=true -Dgpg.skip=true
+        run: mvn -B clean install --file pom.xml -U -P ci -DskipTests=true '-Dgpg.skip=true'
       - name: Set up JDK 7
         uses: actions/setup-java@v1
         with:
