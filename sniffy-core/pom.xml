@@ -145,7 +145,7 @@
                         <executions>
                             <execution>
                                 <id>copy-and-rename-file</id>
-                                <phase>process-classes</phase>
+                                <phase>compile</phase>
                                 <goals>
                                     <goal>rename</goal>
                                 </goals>

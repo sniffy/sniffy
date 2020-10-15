@@ -3,6 +3,7 @@ package io.sniffy.socket;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.nio.SniffySelectorProvider;
+import io.sniffy.nio.SniffySelectorProviderBootstrap;
 import io.sniffy.util.ExceptionUtil;
 import org.junit.Test;
 
@@ -30,6 +31,8 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
+
+        SniffySelectorProviderBootstrap.initialize();
 
         SniffySelectorProvider.uninstall();
         SniffySelectorProvider.install();
