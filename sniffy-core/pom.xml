@@ -113,7 +113,7 @@
             <id>java-legacy</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
-                <jdk>(,1.7]</jdk>
+                <jdk>[1.6,1.8)</jdk>
             </activation>
             <build>
                 <plugins>
