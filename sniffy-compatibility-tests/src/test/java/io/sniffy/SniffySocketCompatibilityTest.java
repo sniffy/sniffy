@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
 public class SniffySocketCompatibilityTest {
 
     @Test
-    public void testInstallUninstallBlockSocket() throws Exception {
+    public void testBlockHttpUrlConnection() throws Exception {
         try {
             SnifferSocketImplFactory.install();
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus("google.com", 443, -1);

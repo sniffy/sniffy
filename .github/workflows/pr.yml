@@ -10,61 +10,60 @@ on:
   pull_request:
     branches-ignore:
       - tag/*
-      -
 jobs:
-#  test-coverage:
-#    runs-on: ubuntu-latest
-#    name: Coverage JDK 8, Linux
-#    steps:
-#      - uses: actions/checkout@v2
-#      - name: Import GPG key
-#        id: import_gpg
-#        uses: crazy-max/ghaction-import-gpg@v3
-#        with:
-#          gpg-private-key: ${{ secrets.SIGNING_KEY }}
-#          passphrase: ${{ secrets.PASSPHRASE }}
-#      - name: GPG user IDs
-#        run: |
-#          echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
-#          echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
-#          echo "name:        ${{ steps.import_gpg.outputs.name }}"
-#          echo "email:       ${{ steps.import_gpg.outputs.email }}"
-#      - name: Set up JDK 8
-#        uses: actions/setup-java@v1
-#        with:
-#          java-version: 8
-#      - name: Build with Maven
-#        run: mvn -B clean verify jacoco:report --file pom.xml -U -P ci
-#      - uses: codecov/codecov-action@v1
-#        with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
-#  test-matrix:
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16-ea]
-#        os: [ubuntu-18.04, windows-2019, macos-10.15]
-#    name:  Test JDK ${{ matrix.java }}, ${{ matrix.os }}
-#    steps:
-#    - uses: actions/checkout@v2
-#    - name: Set up JDK ${{ matrix.java }}
-#      uses: actions/setup-java@v1
-#      with:
-#        java-version: ${{ matrix.java }}
-#    - name: Cache Maven packages
-#      uses: actions/cache@v2
-#      with:
-#        path: ~/.m2/repository
-#        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
-#        restore-keys: ${{ runner.os }}-maven
-#    - name: Build with Maven
-#      run: mvn -B clean package --file pom.xml -U -P ci
+  test-coverage:
+    runs-on: ubuntu-latest
+    name: Coverage JDK 8, Linux
+    steps:
+      - uses: actions/checkout@v2
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.SIGNING_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+      - name: GPG user IDs
+        run: |
+          echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
+          echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
+          echo "name:        ${{ steps.import_gpg.outputs.name }}"
+          echo "email:       ${{ steps.import_gpg.outputs.email }}"
+      - name: Set up JDK 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+      - name: Build with Maven
+        run: mvn -B clean verify jacoco:report --file pom.xml -U -P ci
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+  test-matrix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16-ea]
+        os: [ubuntu-18.04, windows-2019, macos-10.15]
+    name:  Test JDK ${{ matrix.java }}, ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK ${{ matrix.java }}
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+    - name: Cache Maven packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
+        restore-keys: ${{ runner.os }}-maven
+    - name: Build with Maven
+      run: mvn -B clean package --file pom.xml -U -P ci
   compatibility-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-18.04, windows-2019, macos-10.15]
-    name: Compatibility JDK 6 and JDK 7, ${{ matrix.os }}
+    name: Legacy JDK, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 8
@@ -85,12 +84,14 @@ jobs:
       - name: Run compatibility tests using Maven 3.2.5 and Java 7
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml test
         shell: bash
+      # No Java 6 on MacOS
       - name: Set up JDK 6
         uses: actions/setup-java@v1
         with:
           java-version: 6
-        if: matrix.os != 'macOS-10.14'
+        if: matrix.os != 'macOS-10.15'
+      # No Java 6 on MacOS
       - name: Run compatibility tests using Maven 3.2.5 and Java 6
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml test
         shell: bash
-        if: matrix.os != 'macOS-10.14'
+        if: matrix.os != 'macOS-10.15'
