@@ -14,6 +14,7 @@ on:
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
+    name: Test with coverage on JDK 11 / Linux
     steps:
       - uses: actions/checkout@v2
       - name: Import GPG key
