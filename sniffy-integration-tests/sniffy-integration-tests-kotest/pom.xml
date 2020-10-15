@@ -71,12 +71,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.kotest</groupId>
-            <artifactId>kotest-assertions-ktor</artifactId>
-            <version>4.2.6</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.ktor</groupId>
             <artifactId>ktor-client-apache</artifactId>
             <version>${ktor.version}</version>
