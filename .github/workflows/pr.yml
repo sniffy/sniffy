@@ -14,7 +14,7 @@ on:
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
-    name: Test with coverage on JDK 11 / Linux
+    name: Test with coverage on JDK 8 / Linux
     steps:
       - uses: actions/checkout@v2
       - name: Import GPG key
@@ -29,34 +29,41 @@ jobs:
           echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
           echo "name:        ${{ steps.import_gpg.outputs.name }}"
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
-      - name: Set up JDK 11
+      - name: Set up JDK 8
         uses: actions/setup-java@v1
         with:
           java-version: 8
       - name: Build with Maven
-        run: mvn -X -B clean verify jacoco:report --file pom.xml -U -P ci
+        run: mvn -B clean verify jacoco:report --file pom.xml -U -P ci
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-  test-matrix:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        # test against latest update of each major Java version, as well as specific updates of LTS versions:
-        java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16-ea]
-        os: [ubuntu-18.04, windows-2019, macos-10.15]
-    name:  Test JDK ${{ matrix.java }}, ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK ${{ matrix.java }}
-      uses: actions/setup-java@v1
-      with:
-        java-version: ${{ matrix.java }}
-    - name: Cache Maven packages
-      uses: actions/cache@v2
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
-        restore-keys: ${{ runner.os }}-maven
-    - name: Build with Maven
-      run: mvn -B clean package --file pom.xml -U -P ci
+      - name: Set up JDK 6
+        uses: actions/setup-java@v1
+        with:
+          java-version: 6
+      - name: Set up Maven 3.2.5
+        run: mkdir /opt && cd /opt && wget -O- https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/ | tar -xzv
+      - name: Run compatibility tests using Maven 3.2.4
+        run: /opt/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml -X clean install
+#  test-matrix:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16-ea]
+#        os: [ubuntu-18.04, windows-2019, macos-10.15]
+#    name:  Test JDK ${{ matrix.java }}, ${{ matrix.os }}
+#    steps:
+#    - uses: actions/checkout@v2
+#    - name: Set up JDK ${{ matrix.java }}
+#      uses: actions/setup-java@v1
+#      with:
+#        java-version: ${{ matrix.java }}
+#    - name: Cache Maven packages
+#      uses: actions/cache@v2
+#      with:
+#        path: ~/.m2/repository
+#        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
+#        restore-keys: ${{ runner.os }}-maven
+#    - name: Build with Maven
+#      run: mvn -B clean package --file pom.xml -U -P ci
