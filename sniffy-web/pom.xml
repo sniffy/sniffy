@@ -83,7 +83,7 @@
                                         <ignore>java.net.StandardSocketOptions</ignore>
                                         <ignore>java.nio.channels.NetworkChannel</ignore>
                                         <ignore>java.nio.channels.AsynchronousChannelGroup</ignore>
-                                        <ignore>sun.misc.unsafe</ignore>
+                                        <ignore>sun.misc.Unsafe</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>
@@ -95,7 +95,7 @@
                                     </signature>
                                     <ignores>
                                         <ignore>sun.nio.ch.SelChImpl</ignore>
-                                        <ignore>sun.misc.unsafe</ignore>
+                                        <ignore>sun.misc.Unsafe</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>
