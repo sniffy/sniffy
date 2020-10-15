@@ -28,7 +28,7 @@ public class SniffySelectorProviderBootstrap {
 
         if (getVersion() >= 9) return;
 
-        InputStream is = SniffySelectorProvider.class.getClassLoader().getResourceAsStream("sun/nio/ch/PublicSelChImpl.clazz");
+        InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("sun/nio/ch/PublicSelChImpl.clazz");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         int i = 0;
