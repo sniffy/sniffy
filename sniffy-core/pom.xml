@@ -110,7 +110,7 @@
 
     <profiles>
         <profile>
-            <id>java-8-plus</id>
+            <id>java-legacy</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <jdk>(,1.7]</jdk>
@@ -140,7 +140,7 @@
             </build>
         </profile>
         <profile>
-            <id>java-8-plus</id>
+            <id>ide</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <property>
