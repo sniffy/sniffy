@@ -5,6 +5,7 @@ import sun.misc.Unsafe;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.security.ProtectionDomain;
 
 public class SniffySelectorProviderBootstrap {
 
@@ -48,7 +49,7 @@ public class SniffySelectorProviderBootstrap {
                 0,
                 baos.size(),
                 null,
-                Class.forName("sun.nio.ch.SelChImpl").getProtectionDomain()
+                new ProtectionDomain(null, null)
         );
 
     }
