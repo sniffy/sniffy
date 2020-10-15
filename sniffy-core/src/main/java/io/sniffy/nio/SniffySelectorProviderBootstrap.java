@@ -51,9 +51,11 @@ public class SniffySelectorProviderBootstrap {
                 baos.toByteArray(),
                 0,
                 baos.size(),
-                Class.forName("sun.nio.ch.SelChImpl").getClassLoader(),
-                Class.forName("sun.nio.ch.SelChImpl").getProtectionDomain()
+                null,
+                null
         );
+
+        Class.forName("sun.nio.ch.PublicSelChImpl");
 
     }
 
