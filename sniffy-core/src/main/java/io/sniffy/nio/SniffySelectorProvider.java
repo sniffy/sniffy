@@ -151,6 +151,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     // TODO: this code is available in Java 7+ only
     // TODO: does it even work on Java 1.6 ? Remove NIO support from NIO 1.6 probably?
     //@Override
+    @IgnoreJRERequirement
     public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
         return delegate.openDatagramChannel(family);
     }
