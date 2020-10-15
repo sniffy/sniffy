@@ -167,7 +167,20 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public SocketChannel openSocketChannel() throws IOException {
-        return new SniffySocketChannel(this, delegate.openSocketChannel());
+        return isPipeSocketChannel() ? delegate.openSocketChannel() : new SniffySocketChannel(this, delegate.openSocketChannel());
+    }
+
+    // TODO: add if Windows check
+    private static boolean isPipeSocketChannel() {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        if (null != stackTrace) {
+            for (StackTraceElement ste : stackTrace) {
+                if (ste.getClassName().startsWith("sun.nio.ch.Pipe")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -179,10 +192,12 @@ public class SniffySelectorProvider extends SelectorProvider {
     //@Override
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return new SniffySocketChannel(
-                    this,
-                    (SocketChannel) method(SelectorProvider.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
-            );
+            return isPipeSocketChannel() ?
+                    (SocketChannel) method(SelectorProvider.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family) :
+                    new SniffySocketChannel(
+                            this,
+                            (SocketChannel) method(SelectorProvider.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
+                    );
         } catch (NoSuchMethodException e) {
             throw ExceptionUtil.processException(e);
         } catch (IllegalAccessException e) {
