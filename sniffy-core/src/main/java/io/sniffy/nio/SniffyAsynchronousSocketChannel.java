@@ -4,6 +4,7 @@ import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
+import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
 import java.net.*;
@@ -20,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+// TODO: this functionality is available in java 1.7+ only - make sure it is safe
+@IgnoreJRERequirement
 public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel implements SniffySocket {
 
     private final AsynchronousSocketChannel delegate;
