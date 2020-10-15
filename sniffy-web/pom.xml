@@ -71,13 +71,14 @@
                                 <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
                                     <signature>
                                         <groupId>org.codehaus.mojo.signature</groupId>
-                                        <artifactId>java16</artifactId>
-                                        <version>1.1</version>
+                                        <artifactId>java16-sun</artifactId>
+                                        <version>1.10</version>
                                     </signature>
                                     <ignores>
-                                        <ignore>io.sniffy.nio.SniffySocketChannel</ignore>
-                                        <ignore>io.sniffy.nio.SniffyAsynchronousSocketChannel</ignore>
-                                        <ignore>io.sniffy.nio.SniffyAsynchronousChannelProvider</ignore>
+                                        <ignore>java.nio.channels.AsynchronousSocketChannel</ignore>
+                                        <ignore>java.nio.channels.spi.AsynchronousChannelProvider</ignore>
+                                        <ignore>java.nio.channels.AsynchronousSocketChannel</ignore>
+                                        <ignore>java.nio.channels.AsynchronousServerSocketChannel</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>
@@ -87,6 +88,9 @@
                                         <artifactId>java17</artifactId>
                                         <version>1.0</version>
                                     </signature>
+                                    <ignores>
+                                        <ignore>sun.nio.ch.SelChImpl</ignore>
+                                    </ignores>
                                     <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>
                                 <checkTestClasses>false</checkTestClasses>
