@@ -52,11 +52,7 @@ public class SniffySelectorProviderBootstrap {
                 0,
                 baos.size(),
                 Class.forName("sun.nio.ch.SelChImpl").getClassLoader(),
-                new ProtectionDomain(
-                        new CodeSource(
-                                SniffySelectorProviderBootstrap.class.getClassLoader().getResource("sun/nio/ch/PublicSelChImpl.clazz"),
-                                new Certificate[] {}
-                        ), new Permissions())
+                Class.forName("sun.nio.ch.SelChImpl").getProtectionDomain()
         );
 
     }
