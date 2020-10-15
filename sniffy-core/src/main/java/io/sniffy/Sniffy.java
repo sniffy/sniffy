@@ -4,6 +4,7 @@ import com.codahale.metrics.Timer;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.nio.SniffySelectorProvider;
+import io.sniffy.nio.SniffySelectorProviderBootstrap;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
@@ -138,6 +139,7 @@ public class Sniffy {
         if (SniffyConfiguration.INSTANCE.isMonitorNio()) {
 
             try {
+                SniffySelectorProviderBootstrap.initialize();
                 SniffySelectorProvider.install();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -154,6 +156,7 @@ public class Sniffy {
                     if (sniffySelectorProviderInstalled) return;
                     if (Boolean.TRUE.equals(evt.getNewValue())) {
                         try {
+                            SniffySelectorProviderBootstrap.initialize();
                             SniffySelectorProvider.install();
                             sniffySelectorProviderInstalled = true;
                         } catch (IOException e) {

@@ -4,6 +4,7 @@ import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.nio.SniffyAsynchronousChannelProvider;
 import io.sniffy.nio.SniffySelectorProvider;
+import io.sniffy.nio.SniffySelectorProviderBootstrap;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -25,6 +26,7 @@ public class Nio2SniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
+        SniffySelectorProviderBootstrap.initialize();
         SniffySelectorProvider.install();
         SniffyAsynchronousChannelProvider.install();
 

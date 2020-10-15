@@ -14,12 +14,14 @@ import io.sniffy.SniffyAssertionError
 import io.sniffy.Spy
 import io.sniffy.Threads
 import io.sniffy.nio.SniffySelectorProvider
+import io.sniffy.nio.SniffySelectorProviderBootstrap
 import io.sniffy.socket.TcpConnections
 
 class NoSocketExtension(val threads: Threads = Threads.ANY) : TestCaseExtension {
 
     init {
         Sniffy.initialize()
+        SniffySelectorProviderBootstrap.initialize()
         SniffySelectorProvider.install()
     }
 
