@@ -34,7 +34,7 @@ jobs:
         with:
           java-version: 8
       - name: Build with Maven
-        run: mvn -B clean verify jacoco:report --file pom.xml -U -P ci
+        run: mvn -B clean verify jacoco:report install --file pom.xml -U -P ci
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
