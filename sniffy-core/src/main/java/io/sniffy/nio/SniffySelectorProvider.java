@@ -149,7 +149,8 @@ public class SniffySelectorProvider extends SelectorProvider {
     }
 
     // TODO: this code is available in Java 7+ only
-    @Override
+    // TODO: does it even work on Java 1.6 ? Remove NIO support from NIO 1.6 probably?
+    //@Override
     public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
         return delegate.openDatagramChannel(family);
     }
@@ -193,6 +194,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     }
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // TODO: does it even work on Java 1.6 ? Remove NIO support from NIO 1.6 probably?
     //@Override
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         try {
@@ -212,6 +214,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     }
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // TODO: does it even work on Java 1.6 ? Remove NIO support from NIO 1.6 probably?
     //@Override
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
         try {

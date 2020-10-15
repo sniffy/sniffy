@@ -5,6 +5,7 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionFieldCopier;
+import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
 
@@ -170,6 +171,7 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
 
     }
 
+    @IgnoreJRERequirement
     private void estimateReceiveBuffer() {
         if (-1 == receiveBufferSize) {
             if (null == defaultReceiveBufferSize) {
@@ -189,6 +191,7 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
         }
     }
 
+    @IgnoreJRERequirement
     private void estimateSendBuffer() {
         if (-1 == sendBufferSize) {
             if (null == defaultSendBufferSize) {
@@ -258,24 +261,28 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
     }
 
     @Override
+    @IgnoreJRERequirement
     public SocketChannel bind(SocketAddress local) throws IOException {
         delegate.bind(local);
         return this;
     }
 
     @Override
+    @IgnoreJRERequirement
     public <T> SocketChannel setOption(SocketOption<T> name, T value) throws IOException {
         delegate.setOption(name, value);
         return this;
     }
 
     @Override
+    @IgnoreJRERequirement
     public SocketChannel shutdownInput() throws IOException {
          delegate.shutdownInput();
          return this;
     }
 
     @Override
+    @IgnoreJRERequirement
     public SocketChannel shutdownOutput() throws IOException {
         delegate.shutdownOutput();
         return this;
@@ -317,6 +324,7 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
     }
 
     @Override
+    @IgnoreJRERequirement
     public SocketAddress getRemoteAddress() throws IOException {
         return delegate.getRemoteAddress();
     }
@@ -361,6 +369,7 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
     }
 
     @Override
+    @IgnoreJRERequirement
     public SocketAddress getLocalAddress() throws IOException {
         return delegate.getLocalAddress();
     }
@@ -391,11 +400,13 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
 
     // TODO: it wouldn't work before Java 1.7 - shall we drop NIO support in Java 1.6 at all?
     @Override
+    @IgnoreJRERequirement
     public <T> T getOption(SocketOption<T> name) throws IOException {
         return delegate.getOption(name);
     }
 
     @Override
+    @IgnoreJRERequirement
     public Set<SocketOption<?>> supportedOptions() {
         return delegate.supportedOptions();
     }
