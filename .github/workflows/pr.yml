@@ -44,8 +44,8 @@ jobs:
           java-version: 6
       - name: Set up Maven 3.2.5
         run: cd /opt && wget -O- https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz | tar -xzv && export M2_HOME=/opt/apache-maven-3.2.5 && export MAVEN_HOME=/opt/apache-maven-3.2.5 && export PATH=${M2_HOME}/bin:${PATH}
-      - name: Run compatibility tests using Maven 3.2.4
-        run: /opt/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml -X clean install
+      - name: Run compatibility tests using Maven 3.2.5
+        run: export MAVEN_SKIP_RC=true && export M2_HOME=/opt/apache-maven-3.2.5 && /opt/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml -X clean install
 #  test-matrix:
 #    runs-on: ${{ matrix.os }}
 #    strategy:
