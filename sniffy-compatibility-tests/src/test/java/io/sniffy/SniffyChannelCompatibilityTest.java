@@ -2,25 +2,24 @@ package io.sniffy;
 
 import io.sniffy.nio.SniffySelectorProvider;
 import io.sniffy.registry.ConnectionsRegistry;
-import io.sniffy.socket.EchoServerRule;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.*;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-import static io.sniffy.Threads.*;
-import static io.sniffy.Threads.OTHERS;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class SniffyChannelCompatibilityTest {
 
-    protected final static byte[] RESPONSE = new byte[]{9,8,7,6,5,4,3,2};
+    protected final static byte[] RESPONSE = new byte[]{9, 8, 7, 6, 5, 4, 3, 2};
     protected final static byte[] REQUEST = new byte[]{1, 2, 3, 4};
 
     protected static InetAddress localhost;
