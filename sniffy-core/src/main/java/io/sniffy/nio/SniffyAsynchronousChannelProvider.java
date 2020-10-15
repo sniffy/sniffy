@@ -1,5 +1,7 @@
 package io.sniffy.nio;
 
+import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -74,6 +76,7 @@ public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvid
         }*/
     }
 
+    @IgnoreJRERequirement
     private static Field getModifiersField() throws NoSuchFieldException {
         try {
             return Field.class.getDeclaredField("modifiers");

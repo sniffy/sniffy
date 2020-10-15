@@ -389,6 +389,7 @@ public class SniffySocketChannel extends SocketChannel implements SelChImpl, Sni
         }
     }
 
+    // TODO: it wouldn't work before Java 1.7 - shall we drop NIO support in Java 1.6 at all?
     @Override
     public <T> T getOption(SocketOption<T> name) throws IOException {
         return delegate.getOption(name);

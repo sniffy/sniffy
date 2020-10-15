@@ -1,6 +1,7 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
+import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -121,6 +122,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     }
 
     // TODO: move to ReflectionUtils
+    @IgnoreJRERequirement
     private static Field getModifiersField() throws NoSuchFieldException {
         try {
             return Field.class.getDeclaredField("modifiers");
