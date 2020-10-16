@@ -1,7 +1,6 @@
 package io.sniffy;
 
-import io.sniffy.nio.SniffySelectorProvider;
-import io.sniffy.nio.SniffySelectorProviderBootstrap;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import org.junit.BeforeClass;
@@ -37,8 +36,8 @@ public class SniffyChannelCompatibilityTest {
     public void testBlockSocketChannel() throws Exception {
 
         try {
-            SniffySelectorProviderBootstrap.initialize();
-            SniffySelectorProvider.install();
+            SniffyConfiguration.INSTANCE.setMonitorNio(true);
+            Sniffy.initialize();
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus(localhost.getHostName(), echoServerRule.getBoundPort(), -1);
 
             SocketChannel client = SocketChannel.open(new InetSocketAddress(localhost, echoServerRule.getBoundPort()));
