@@ -143,7 +143,7 @@ public class SniffySelectorProvider extends SelectorProvider {
                         return field;
                     }
                 }
-            } catch (ReflectiveOperationException ex) {
+            } catch (Exception ex) {
                 e.addSuppressed(ex);
             }
             throw e;
