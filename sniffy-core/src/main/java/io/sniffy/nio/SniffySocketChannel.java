@@ -9,9 +9,11 @@ import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SocketChannelDelegate;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.nio.channels.NetworkChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
@@ -254,14 +256,30 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @Override
     @IgnoreJRERequirement
     public SocketChannel bind(SocketAddress local) throws IOException {
-        delegate.bind(local);
+        try {
+            method(NetworkChannel.class, "bind", SocketAddress.class).invoke(delegate, local);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        }
         return this;
     }
 
     @Override
     @IgnoreJRERequirement
     public <T> SocketChannel setOption(SocketOption<T> name, T value) throws IOException {
-        delegate.setOption(name, value);
+        try {
+            method(NetworkChannel.class, "setOption", SocketOption.class, Object.class).invoke(delegate, name, value);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        }
         return this;
     }
 
@@ -362,7 +380,15 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @Override
     @IgnoreJRERequirement
     public SocketAddress getLocalAddress() throws IOException {
-        return delegate.getLocalAddress();
+        try {
+            return (SocketAddress) method(NetworkChannel.class, "getLocalAddress").invoke(delegate);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        }
     }
 
     @Override
@@ -393,13 +419,29 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @Override
     @IgnoreJRERequirement
     public <T> T getOption(SocketOption<T> name) throws IOException {
-        return delegate.getOption(name);
+        try {
+            return (T) method(NetworkChannel.class, "getOption", SocketOption.class).invoke(delegate, name);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        }
     }
 
     @Override
     @IgnoreJRERequirement
     public Set<SocketOption<?>> supportedOptions() {
-        return delegate.supportedOptions();
+        try {
+            return (Set<SocketOption<?>>) method(NetworkChannel.class, "supportedOptions").invoke(delegate);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        }
     }
 
     // Modern SelChImpl
