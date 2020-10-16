@@ -12,6 +12,9 @@ public class SniffyCompatSelectorProviderModule {
                 version = version.substring(0, dot);
             }
         }
+        if (version.contains("-")) {
+            version = version.substring(version.indexOf("-"));
+        }
         return Integer.parseInt(version);
     }
 

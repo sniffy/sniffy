@@ -114,6 +114,33 @@ public class SniffySelectorProviderBootstrap {
                 Class.forName("java.nio.channels.NetworkChannel");
             }
 
+            {
+                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/net/ProtocolFamily.class");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                int i = 0;
+                while ((i = is.read()) != -1) {
+                    baos.write(i);
+                }
+
+                is.close();
+
+                Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                f.setAccessible(true);
+                Unsafe unsafe = (Unsafe) f.get(null);
+
+                unsafe.defineClass(
+                        "java.net.ProtocolFamily",
+                        baos.toByteArray(),
+                        0,
+                        baos.size(),
+                        null,
+                        null
+                );
+
+                Class.forName("java.net.ProtocolFamily");
+            }
+
         }
 
     }
