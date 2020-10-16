@@ -6,17 +6,13 @@ import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionFieldCopier;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
-import sun.nio.ch.PublicSelChImpl;
-import sun.nio.ch.SelChImpl;
-import sun.nio.ch.SelectionKeyImpl;
+import sun.nio.ch.SocketChannelDelegate;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -26,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // TODO: SelChImpl is available in java 1.7+ only - make sure it is safe
-public class SniffySocketChannel extends SocketChannel implements PublicSelChImpl, SniffySocket {
+public class SniffySocketChannel extends SocketChannelDelegate implements SniffySocket {
 
     private final static ReflectionFieldCopier providerCopier =
             new ReflectionFieldCopier(AbstractSelectableChannel.class, "provider");
@@ -49,7 +45,6 @@ public class SniffySocketChannel extends SocketChannel implements PublicSelChImp
     private static volatile ReflectionFieldCopier[] reflectionFieldCopiers;
 
     private final SocketChannel delegate;
-    private final SelChImpl selChImplDelegate;
 
     private volatile Integer connectionStatus;
 
@@ -70,13 +65,8 @@ public class SniffySocketChannel extends SocketChannel implements PublicSelChImp
     protected volatile long lastWriteThreadId;
 
     protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
-        super(provider);
+        super(provider, delegate);
         this.delegate = delegate;
-        if (delegate instanceof SelChImpl) {
-            this.selChImplDelegate = (SelChImpl) delegate;
-        } else {
-            this.selChImplDelegate = null;
-        }
     }
 
     @Override
@@ -96,15 +86,15 @@ public class SniffySocketChannel extends SocketChannel implements PublicSelChImp
 
     /**
      * Adds a delay as defined for current {@link SnifferSocketImpl} in {@link ConnectionsRegistry#discoveredDataSources}
-     *
+     * <p>
      * Delay is added for each <b>N</b> bytes received where <b>N</b> is the value of {@link SocketOptions#SO_RCVBUF}
-     *
+     * <p>
      * If application reads <b>M</b> bytes where (k-1) * N &lt; M  &lt; k * N exactly <b>k</b> delays will be added
-     *
+     * <p>
      * A call to {@link SnifferOutputStream} obtained from the same {@link SnifferSocketImpl} and made from the same thread
      * will reset the number of buffered (i.e. which can be read without delay) bytes to 0 effectively adding a guaranteed
      * delay to any subsequent {@link SnifferInputStream#read()} request
-     *
+     * <p>
      * TODO: consider if {@link java.net.SocketInputStream#available()} method can be of any use here
      *
      * @param bytesDown number of bytes received from socket
@@ -136,11 +126,11 @@ public class SniffySocketChannel extends SocketChannel implements PublicSelChImp
 
     /**
      * Adds a delay as defined for current {@link SnifferSocketImpl} in {@link ConnectionsRegistry#discoveredDataSources}
-     *
+     * <p>
      * Delay is added for each <b>N</b> bytes sent where <b>N</b> is the value of {@link SocketOptions#SO_SNDBUF}
-     *
+     * <p>
      * If application writes <b>M</b> bytes where (k-1) * N &lt; M  &lt; k * N exactly <b>k</b> delays will be added
-     *
+     * <p>
      * A call to {@link SnifferInputStream} obtained from the same {@link SnifferSocketImpl} and made from the same thread
      * will reset the number of buffered (i.e. which can be written without delay) bytes to 0 effectively adding a guaranteed
      * delay to any subsequent {@link SnifferOutputStream#write(int)} request
@@ -278,8 +268,8 @@ public class SniffySocketChannel extends SocketChannel implements PublicSelChImp
     @Override
     @IgnoreJRERequirement
     public SocketChannel shutdownInput() throws IOException {
-         delegate.shutdownInput();
-         return this;
+        delegate.shutdownInput();
+        return this;
     }
 
     @Override
@@ -412,40 +402,9 @@ public class SniffySocketChannel extends SocketChannel implements PublicSelChImp
         return delegate.supportedOptions();
     }
 
-    @Override
-    public FileDescriptor getFD() {
-        return selChImplDelegate.getFD();
-    }
+    // Modern SelChImpl
 
-    @Override
-    public int getFDVal() {
-        return selChImplDelegate.getFDVal();
-    }
-
-    @Override
-    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski) {
-        return selChImplDelegate.translateAndUpdateReadyOps(ops, ski);
-    }
-
-    @Override
-    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski) {
-        return selChImplDelegate.translateAndSetReadyOps(ops, ski);
-    }
-
-    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
-    //@Override
-    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
-        try {
-            method(SelChImpl.class, "translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(delegate, ops, sk);
-        } catch (NoSuchMethodException e) {
-            ExceptionUtil.processException(e);
-        } catch (IllegalAccessException e) {
-            ExceptionUtil.processException(e);
-        } catch (InvocationTargetException e) {
-            ExceptionUtil.processException(e);
-        }
-    }
-
+/*
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
     public int translateInterestOps(int ops) {
@@ -458,11 +417,6 @@ public class SniffySocketChannel extends SocketChannel implements PublicSelChImp
         } catch (InvocationTargetException e) {
             throw ExceptionUtil.processException(e);
         }
-    }
-
-    @Override
-    public void kill() throws IOException {
-        selChImplDelegate.kill();
     }
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
@@ -492,6 +446,7 @@ public class SniffySocketChannel extends SocketChannel implements PublicSelChImp
             ExceptionUtil.throwException(e);
         }
     }
+*/
 
     private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
         if (null == reflectionFieldCopiers) {

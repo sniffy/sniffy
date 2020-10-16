@@ -5,10 +5,6 @@ import sun.misc.Unsafe;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.security.CodeSource;
-import java.security.Permissions;
-import java.security.ProtectionDomain;
-import java.security.cert.Certificate;
 
 public class SniffySelectorProviderBootstrap {
 
@@ -16,12 +12,15 @@ public class SniffySelectorProviderBootstrap {
 
     private static int getVersion() {
         String version = System.getProperty("java.version");
-        if(version.startsWith("1.")) {
+        if (version.startsWith("1.")) {
             version = version.substring(2, 3);
         } else {
             int dot = version.indexOf(".");
-            if(dot != -1) { version = version.substring(0, dot); }
-        } return Integer.parseInt(version);
+            if (dot != -1) {
+                version = version.substring(0, dot);
+            }
+        }
+        return Integer.parseInt(version);
     }
 
     public static void loadPublicSelChImplInBootstrapClassLoader() throws Exception {
@@ -30,9 +29,9 @@ public class SniffySelectorProviderBootstrap {
 
         publicSelChImplLoadedInBootstrapClassLoader = true;
 
-        if (getVersion() >= 9) return;
+        //if (getVersion() >= 9) return;
 
-        InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("sun/nio/ch/PublicSelChImpl.clazz");
+        InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("sun/nio/ch/SocketChannelDelegate.clazz");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         int i = 0;
@@ -47,7 +46,7 @@ public class SniffySelectorProviderBootstrap {
         Unsafe unsafe = (Unsafe) f.get(null);
 
         unsafe.defineClass(
-                "sun.nio.ch.PublicSelChImpl",
+                "sun.nio.ch.SocketChannelDelegate",
                 baos.toByteArray(),
                 0,
                 baos.size(),
@@ -55,7 +54,7 @@ public class SniffySelectorProviderBootstrap {
                 null
         );
 
-        Class.forName("sun.nio.ch.PublicSelChImpl");
+        Class.forName("sun.nio.ch.SocketChannelDelegate");
 
     }
 

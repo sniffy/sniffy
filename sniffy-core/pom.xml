@@ -150,8 +150,8 @@
                                     <goal>rename</goal>
                                 </goals>
                                 <configuration>
-                                    <sourceFile>${project.build.directory}/classes/sun/nio/ch/PublicSelChImpl.class</sourceFile>
-                                    <destinationFile>${project.build.directory}/classes/sun/nio/ch/PublicSelChImpl.clazz</destinationFile>
+                                    <sourceFile>${project.build.directory}/classes/sun/nio/ch/SocketChannelDelegate.class</sourceFile>
+                                    <destinationFile>${project.build.directory}/classes/sun/nio/ch/SocketChannelDelegate.clazz</destinationFile>
                                 </configuration>
                             </execution>
                         </executions>
