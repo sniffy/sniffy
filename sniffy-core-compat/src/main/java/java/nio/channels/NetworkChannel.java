@@ -1,10 +1,11 @@
 package java.nio.channels;
 
-import java.net.SocketOption;
-import java.net.SocketAddress;
-import java.util.Set;
 import java.io.IOException;
+import java.net.SocketAddress;
+import java.net.SocketOption;
+import java.util.Set;
 
+@Deprecated
 public interface NetworkChannel extends Channel {
 
     NetworkChannel bind(SocketAddress local) throws IOException;
