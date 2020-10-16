@@ -9,16 +9,31 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>sniffy-core-compat</artifactId>
+    <artifactId>sniffy-module-nio</artifactId>
 
-    <name>Sniffy Core Legacy Java Compatibility</name>
+    <name>Sniffy NIO Module</name>
     <url>http://sniffy.io/</url>
-    <description>Sniffy Core classes and utilities</description>
+    <description>Sniffy NIO Module</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-core</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <profiles>
 
@@ -36,8 +51,7 @@
                         <version>3.8.1</version>
                         <configuration>
                             <compilerArgs>
-                                <arg>--add-opens=java.base/sun.nio.ch=ALL-UNNAMED</arg>
-                                <arg>--patch-module=java.base=${basedir}/src/main/java</arg>
+                                <arg>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED</arg>
                             </compilerArgs>
                             <source>1.9</source>
                             <target>1.9</target>

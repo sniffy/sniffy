@@ -3,8 +3,6 @@ package io.sniffy;
 import com.codahale.metrics.Timer;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
-import io.sniffy.nio.SniffySelectorProvider;
-import io.sniffy.nio.SniffySelectorProviderBootstrap;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
@@ -16,6 +14,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
@@ -137,14 +136,7 @@ public class Sniffy {
         }
 
         if (SniffyConfiguration.INSTANCE.isMonitorNio()) {
-
-            try {
-                SniffySelectorProviderBootstrap.initialize();
-                SniffySelectorProvider.install();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+            loadNioModule();
         } else {
 
             SniffyConfiguration.INSTANCE.addMonitorNioListener(new PropertyChangeListener() {
@@ -155,13 +147,8 @@ public class Sniffy {
                 public synchronized void propertyChange(PropertyChangeEvent evt) {
                     if (sniffySelectorProviderInstalled) return;
                     if (Boolean.TRUE.equals(evt.getNewValue())) {
-                        try {
-                            SniffySelectorProviderBootstrap.initialize();
-                            SniffySelectorProvider.install();
-                            sniffySelectorProviderInstalled = true;
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        loadNioModule();
+                        sniffySelectorProviderInstalled = true;
                     }
                 }
 
@@ -171,6 +158,34 @@ public class Sniffy {
 
         initialized = true;
 
+    }
+
+    private static volatile boolean nioModuleLoaded = false;
+
+    // TODO: do something more clever and extensible
+    private static void loadNioModule() {
+        if (!nioModuleLoaded) {
+            synchronized (Sniffy.class) {
+                if (!nioModuleLoaded) {
+
+                    try {
+                        Class.forName("io.sniffy.nio.SniffySelectorProviderModule").getMethod("initialize").invoke(null);
+                        Class.forName("io.sniffy.nio.compat.SniffyCompatSelectorProviderModule").getMethod("initialize").invoke(null);;
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchMethodException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                    nioModuleLoaded = true;
+
+                }
+            }
+        }
     }
 
     // TODO: call this method via Disruptor or something

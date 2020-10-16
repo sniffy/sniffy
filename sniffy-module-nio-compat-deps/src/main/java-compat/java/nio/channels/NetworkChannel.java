@@ -5,7 +5,6 @@ import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.util.Set;
 
-@Deprecated
 public interface NetworkChannel extends Channel {
 
     NetworkChannel bind(SocketAddress local) throws IOException;

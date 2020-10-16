@@ -1,4 +1,4 @@
-package io.sniffy.nio;
+package io.sniffy.nio.compat;
 
 import sun.misc.Unsafe;
 
@@ -32,7 +32,7 @@ public class SniffySelectorProviderBootstrap {
         //if (getVersion() >= 9) return;
 
         {
-            InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("sun/nio/ch/SocketChannelDelegate.clazz");
+            InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/SocketChannelDelegate.class");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
             int i = 0;
@@ -61,7 +61,7 @@ public class SniffySelectorProviderBootstrap {
         if (getVersion() < 7) {
 
             {
-                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("java/net/SocketOption.clazz");
+                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/net/SocketOption.class");
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
                 int i = 0;
@@ -88,7 +88,7 @@ public class SniffySelectorProviderBootstrap {
             }
 
             {
-                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("java/nio/channels/NetworkChannel.clazz");
+                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/nio/channels/NetworkChannel.class");
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
                 int i = 0;

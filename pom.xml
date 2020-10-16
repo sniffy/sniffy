@@ -10,8 +10,10 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>sniffy-core-compat</module>
         <module>sniffy-core</module>
+        <module>sniffy-module-nio</module>
+        <module>sniffy-module-nio-compat-deps</module>
+        <module>sniffy-module-nio-compat</module>
         <module>sniffy-web</module>
         <module>sniffy</module>
         <module>sniffy-test</module>

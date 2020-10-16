@@ -6,8 +6,10 @@ import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionFieldCopier;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
-import sun.nio.ch.SocketChannelDelegate;
+import sun.nio.ch.SelChImpl;
+import sun.nio.ch.SelectionKeyImpl;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -22,8 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO: SelChImpl is available in java 1.7+ only - make sure it is safe
-public class SniffySocketChannel extends SocketChannelDelegate implements SniffySocket {
+public class SniffySocketChannel extends SocketChannel implements SniffySocket, SelChImpl {
 
     private final static ReflectionFieldCopier providerCopier =
             new ReflectionFieldCopier(AbstractSelectableChannel.class, "provider");
@@ -31,13 +32,17 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
             new ReflectionFieldCopier(AbstractSelectableChannel.class, "keys");
     private final static ReflectionFieldCopier keyCountCopier =
             new ReflectionFieldCopier(AbstractSelectableChannel.class, "keyCount");
+    // TODO: this is final !
     private final static ReflectionFieldCopier keyLockCopier =
             new ReflectionFieldCopier(AbstractSelectableChannel.class, "keyLock");
+    // TODO: this is final !
     private final static ReflectionFieldCopier regLockCopier =
             new ReflectionFieldCopier(AbstractSelectableChannel.class, "regLock");
+    // TODO: this was blocking in Java 6
     private final static ReflectionFieldCopier nonBlockingCopier =
             new ReflectionFieldCopier(AbstractSelectableChannel.class, "nonBlocking");
 
+    // TODO: this is final
     private final static ReflectionFieldCopier closeLockCopier =
             new ReflectionFieldCopier(AbstractInterruptibleChannel.class, "closeLock");
     private final static ReflectionFieldCopier closedCopier =
@@ -46,6 +51,7 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     private static volatile ReflectionFieldCopier[] reflectionFieldCopiers;
 
     private final SocketChannel delegate;
+    private final SelChImpl selChImplDelegate;
 
     private volatile Integer connectionStatus;
 
@@ -66,8 +72,9 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     protected volatile long lastWriteThreadId;
 
     protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
-        super(provider, delegate);
+        super(provider);
         this.delegate = delegate;
+        this.selChImplDelegate = (SelChImpl) delegate;
     }
 
     @Override
@@ -101,6 +108,7 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
      * @param bytesDown number of bytes received from socket
      * @throws ConnectException on underlying socket exception
      */
+    // TODO: use heuristics based on popular defaults for TCP window sizes
     private void sleepIfRequired(int bytesDown) throws ConnectException {
 
         lastReadThreadId = Thread.currentThread().getId();
@@ -139,6 +147,7 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
      * @param bytesUp number of bytes sent to socket
      * @throws ConnectException on underlying socket exception
      */
+    // TODO: use heuristics based on popular defaults for TCP window sizes
     private void sleepIfRequiredForWrite(int bytesUp) throws ConnectException {
 
         lastWriteThreadId = Thread.currentThread().getId();
@@ -163,6 +172,7 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
 
     }
 
+    // TODO: use heuristics based on popular defaults for TCP window sizes
     @IgnoreJRERequirement
     private void estimateReceiveBuffer() {
         if (-1 == receiveBufferSize) {
@@ -183,6 +193,7 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
         }
     }
 
+    // TODO: use heuristics based on popular defaults for TCP window sizes
     @IgnoreJRERequirement
     private void estimateSendBuffer() {
         if (-1 == sendBufferSize) {
@@ -255,35 +266,14 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @Override
     @IgnoreJRERequirement
     public SocketChannel bind(SocketAddress local) throws IOException {
-        try {
-            method(Class.forName("java.nio.channels.NetworkChannel"), "bind", SocketAddress.class).invoke(delegate, local);
-        } catch (NoSuchMethodException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (IllegalAccessException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (InvocationTargetException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (ClassNotFoundException e) {
-            throw ExceptionUtil.processException(e);
-        }
+        delegate.bind(local);
         return this;
     }
 
     @Override
     @IgnoreJRERequirement
     public <T> SocketChannel setOption(SocketOption<T> name, T value) throws IOException {
-        try {
-            method(Class.forName("java.nio.channels.NetworkChannel"), "setOption", SocketOption.class, Object.class).invoke(delegate, name, value);
-        } catch (NoSuchMethodException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (IllegalAccessException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (InvocationTargetException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (ClassNotFoundException e) {
-            throw ExceptionUtil.processException(e);
-        }
-        return this;
+        return delegate.setOption(name, value);
     }
 
     @Override
@@ -383,17 +373,7 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @Override
     @IgnoreJRERequirement
     public SocketAddress getLocalAddress() throws IOException {
-        try {
-            return (SocketAddress) method(Class.forName("java.nio.channels.NetworkChannel"), "getLocalAddress").invoke(delegate);
-        } catch (NoSuchMethodException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (IllegalAccessException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (InvocationTargetException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (ClassNotFoundException e) {
-            throw ExceptionUtil.processException(e);
-        }
+        return delegate.getLocalAddress();
     }
 
     @Override
@@ -424,38 +404,56 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @Override
     @IgnoreJRERequirement
     public <T> T getOption(SocketOption<T> name) throws IOException {
-        try {
-            return (T) method(Class.forName("java.nio.channels.NetworkChannel"), "getOption", SocketOption.class).invoke(delegate, name);
-        } catch (NoSuchMethodException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (IllegalAccessException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (InvocationTargetException e) {
-            throw ExceptionUtil.processException(e);
-        } catch (ClassNotFoundException e) {
-            throw ExceptionUtil.processException(e);
-        }
+        return delegate.getOption(name);
     }
 
     @Override
     @IgnoreJRERequirement
     public Set<SocketOption<?>> supportedOptions() {
+        return delegate.supportedOptions();
+    }
+
+    // Modern SelChImpl
+
+    @Override
+    public FileDescriptor getFD() {
+        return selChImplDelegate.getFD();
+    }
+
+    @Override
+    public int getFDVal() {
+        return selChImplDelegate.getFDVal();
+    }
+
+    @Override
+    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski) {
+        return selChImplDelegate.translateAndUpdateReadyOps(ops, ski);
+    }
+
+    @Override
+    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski) {
+        return selChImplDelegate.translateAndSetReadyOps(ops, ski);
+    }
+
+    @Override
+    public void kill() throws IOException {
+        selChImplDelegate.kill();
+    }
+
+    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
+    // @Override
+    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            return (Set<SocketOption<?>>) method(Class.forName("java.nio.channels.NetworkChannel"), "supportedOptions").invoke(delegate);
+            method(SelChImpl.class, "translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(delegate, ops, sk);
         } catch (NoSuchMethodException e) {
             throw ExceptionUtil.processException(e);
         } catch (IllegalAccessException e) {
             throw ExceptionUtil.processException(e);
         } catch (InvocationTargetException e) {
             throw ExceptionUtil.processException(e);
-        } catch (ClassNotFoundException e) {
-            throw ExceptionUtil.processException(e);
         }
     }
 
-    // Modern SelChImpl
-
-/*
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
     public int translateInterestOps(int ops) {
@@ -497,7 +495,6 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
             ExceptionUtil.throwException(e);
         }
     }
-*/
 
     private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
         if (null == reflectionFieldCopiers) {

@@ -1,27 +1,20 @@
-package io.sniffy.socket;
+package io.sniffy.nio;
 
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
-import io.sniffy.nio.SniffySelectorProvider;
-import io.sniffy.nio.SniffySelectorProviderBootstrap;
-import io.sniffy.util.ExceptionUtil;
+import io.sniffy.socket.BaseSocketTest;
+import io.sniffy.socket.SnifferSocketImplFactory;
+import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketImpl;
-import java.net.SocketImplFactory;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.sniffy.Threads.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class NioSniffySocketTest extends BaseSocketTest {
 
@@ -32,7 +25,6 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        SniffySelectorProviderBootstrap.initialize();
 
         SniffySelectorProvider.uninstall();
         SniffySelectorProvider.install();
@@ -50,8 +42,8 @@ public class NioSniffySocketTest extends BaseSocketTest {
             assertEquals(1, (long) s.getSocketOperations(CURRENT, null, true).entrySet().size());
 
             s.getSocketOperations(CURRENT, null, true).values().stream().findAny().ifPresent((socketStats) -> {
-                assertEquals(REQUEST.length, socketStats.bytesUp.intValue());
-                assertEquals(RESPONSE.length, socketStats.bytesDown.intValue());
+                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
             });
 
             // Other threads socket operations
@@ -59,8 +51,8 @@ public class NioSniffySocketTest extends BaseSocketTest {
             assertEquals(1, s.getSocketOperations(OTHERS, null, true).entrySet().stream().count());
 
             s.getSocketOperations(OTHERS, null, true).values().stream().findAny().ifPresent((socketStats) -> {
-                assertEquals(REQUEST.length, socketStats.bytesUp.intValue());
-                assertEquals(RESPONSE.length, socketStats.bytesDown.intValue());
+                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
             });
 
             // Any threads socket operations
@@ -68,8 +60,8 @@ public class NioSniffySocketTest extends BaseSocketTest {
             assertEquals(2, s.getSocketOperations(ANY, null, true).entrySet().stream().count());
 
             s.getSocketOperations(OTHERS, null, true).values().stream().forEach((socketStats) -> {
-                assertEquals(REQUEST.length, socketStats.bytesUp.intValue());
-                assertEquals(RESPONSE.length, socketStats.bytesDown.intValue());
+                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
             });
 
         }
@@ -80,10 +72,10 @@ public class NioSniffySocketTest extends BaseSocketTest {
     protected void performSocketOperation() {
 
         try {
-            SocketChannel client = SocketChannel.open(new InetSocketAddress(localhost, echoServerRule.getBoundPort()));
+            SocketChannel client = SocketChannel.open(new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()));
 
-            ByteBuffer requestBuffer = ByteBuffer.wrap(REQUEST);
-            ByteBuffer responseBuffer = ByteBuffer.allocate(RESPONSE.length);
+            ByteBuffer requestBuffer = ByteBuffer.wrap(BaseSocketTest.REQUEST);
+            ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
 
             client.write(requestBuffer);
             requestBuffer.clear();
@@ -93,8 +85,8 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
             echoServerRule.joinThreads();
 
-            assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
-            assertArrayEquals(RESPONSE, responseBuffer.array());
+            Assert.assertArrayEquals(BaseSocketTest.REQUEST, echoServerRule.pollReceivedData());
+            Assert.assertArrayEquals(BaseSocketTest.RESPONSE, responseBuffer.array());
         } catch (IOException e) {
             fail(e.getMessage());
         }

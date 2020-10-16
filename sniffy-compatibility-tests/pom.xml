@@ -46,6 +46,18 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-module-nio</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-module-nio-compat</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 

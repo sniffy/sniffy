@@ -7,9 +7,6 @@ import java.lang.reflect.Method;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
-
-@Deprecated
 public abstract class SocketChannelDelegate extends SocketChannel implements SelChImpl {
 
     private final SelChImpl delegate;
@@ -54,7 +51,6 @@ public abstract class SocketChannelDelegate extends SocketChannel implements Sel
         }
         PARK_NANOS_METHOD = parkNanosMethod;
     }
-
 
 
     public SocketChannelDelegate(SelectorProvider provider, Object delegate) {

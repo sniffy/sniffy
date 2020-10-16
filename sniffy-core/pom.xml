@@ -91,12 +91,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-core-compat</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
             <artifactId>concurrentlinkedhashmap-lru</artifactId>
         </dependency>
@@ -109,43 +103,11 @@
             <artifactId>metrics-core</artifactId>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-jdbc</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-
-    <profiles>
-
-        <profile>
-            <id>jdk9plus</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <jdk>[1.9,)</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
-                        <configuration>
-                            <compilerArgs>
-                                <arg>--add-opens=java.base/sun.nio.ch=ALL-UNNAMED</arg>
-                            </compilerArgs>
-                            <source>1.9</source>
-                            <target>1.9</target>
-                            <testSource>1.9</testSource>
-                            <testTarget>1.9</testTarget>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-    </profiles>
 
 </project>

@@ -4,5 +4,8 @@ target
 
 *.iml
 
+jacoco.exec
+**/jacoco.exec
+
 dependency-reduced-pom.xml
 **/dependency-reduced-pom.xml

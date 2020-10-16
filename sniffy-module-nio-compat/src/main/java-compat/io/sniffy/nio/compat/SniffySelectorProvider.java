@@ -1,12 +1,9 @@
-package io.sniffy.nio;
+package io.sniffy.nio.compat;
 
 import io.sniffy.util.ExceptionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
-import sun.misc.Unsafe;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -16,7 +13,6 @@ import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
-// TODO: one of the methods here is available only on Java 1.7+ make sure it is safe
 public class SniffySelectorProvider extends SelectorProvider {
 
     private final SelectorProvider delegate;
@@ -24,9 +20,6 @@ public class SniffySelectorProvider extends SelectorProvider {
     public SniffySelectorProvider(SelectorProvider delegate) {
         this.delegate = delegate;
     }
-
-
-
 
     public static synchronized void install() throws IOException {
 
@@ -106,6 +99,7 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     }
 
+    // TODO: move this stuff to ReflectionUtils or something
     private static void initializeUsingHolderSubClass(SelectorProvider provider) throws IOException {
         try {
             Class<?> holderClass = Class.forName("java.nio.channels.spi.SelectorProvider$Holder");
