@@ -20,8 +20,8 @@ public class SniffyCompatSelectorProviderModule {
         if (getVersion() >= 9) return; // TODO: change to 8
 
         try {
-            SniffySelectorProviderBootstrap.initialize();
-            SniffySelectorProvider.install();
+            Class.forName("io.sniffy.nio.compat.SniffySelectorProviderBootstrap").getMethod("initialize").invoke(null);
+            Class.forName("io.sniffy.nio.compat.SniffySelectorProvider").getMethod("install").invoke(null);
         } catch (Exception e) {
             e.printStackTrace();
         }
