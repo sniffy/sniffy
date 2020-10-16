@@ -31,30 +31,90 @@ public class SniffySelectorProviderBootstrap {
 
         //if (getVersion() >= 9) return;
 
-        InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("sun/nio/ch/SocketChannelDelegate.clazz");
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        {
+            InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("sun/nio/ch/SocketChannelDelegate.clazz");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        int i = 0;
-        while ((i = is.read()) != -1) {
-            baos.write(i);
+            int i = 0;
+            while ((i = is.read()) != -1) {
+                baos.write(i);
+            }
+
+            is.close();
+
+            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            Unsafe unsafe = (Unsafe) f.get(null);
+
+            unsafe.defineClass(
+                    "sun.nio.ch.SocketChannelDelegate",
+                    baos.toByteArray(),
+                    0,
+                    baos.size(),
+                    null,
+                    null
+            );
+
+            Class.forName("sun.nio.ch.SocketChannelDelegate");
         }
 
-        is.close();
+        if (getVersion() < 7) {
 
-        Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        Unsafe unsafe = (Unsafe) f.get(null);
+            {
+                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("java/net/SocketOption.clazz");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        unsafe.defineClass(
-                "sun.nio.ch.SocketChannelDelegate",
-                baos.toByteArray(),
-                0,
-                baos.size(),
-                null,
-                null
-        );
+                int i = 0;
+                while ((i = is.read()) != -1) {
+                    baos.write(i);
+                }
 
-        Class.forName("sun.nio.ch.SocketChannelDelegate");
+                is.close();
+
+                Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                f.setAccessible(true);
+                Unsafe unsafe = (Unsafe) f.get(null);
+
+                unsafe.defineClass(
+                        "java.net.SocketOption",
+                        baos.toByteArray(),
+                        0,
+                        baos.size(),
+                        null,
+                        null
+                );
+
+                Class.forName("java.net.SocketOption");
+            }
+
+            {
+                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("java/nio/channels/NetworkChannel.clazz");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                int i = 0;
+                while ((i = is.read()) != -1) {
+                    baos.write(i);
+                }
+
+                is.close();
+
+                Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                f.setAccessible(true);
+                Unsafe unsafe = (Unsafe) f.get(null);
+
+                unsafe.defineClass(
+                        "java.nio.channels.NetworkChannel",
+                        baos.toByteArray(),
+                        0,
+                        baos.size(),
+                        null,
+                        null
+                );
+
+                Class.forName("java.nio.channels.NetworkChannel");
+            }
+
+        }
 
     }
 

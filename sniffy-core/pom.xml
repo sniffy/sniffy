@@ -146,7 +146,7 @@
                         <version>1.0.1</version>
                         <executions>
                             <execution>
-                                <id>copy-and-rename-file</id>
+                                <id>copy-and-rename-file-1</id>
                                 <phase>compile</phase>
                                 <goals>
                                     <goal>rename</goal>
@@ -154,6 +154,28 @@
                                 <configuration>
                                     <sourceFile>${project.build.directory}/classes/sun/nio/ch/SocketChannelDelegate.class</sourceFile>
                                     <destinationFile>${project.build.directory}/classes/sun/nio/ch/SocketChannelDelegate.clazz</destinationFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-and-rename-file-2</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>rename</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceFile>${project.build.directory}/classes/java/net/SocketOption.class</sourceFile>
+                                    <destinationFile>${project.build.directory}/classes/java/net/SocketOption.clazz</destinationFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-and-rename-file-3</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>rename</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceFile>${project.build.directory}/classes/java/nio/channels/NetworkChannel.class</sourceFile>
+                                    <destinationFile>${project.build.directory}/classes/java/nio/channels/NetworkChannel.clazz</destinationFile>
                                 </configuration>
                             </execution>
                         </executions>
