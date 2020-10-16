@@ -13,7 +13,7 @@ public class SniffyCompatSelectorProviderModule {
             }
         }
         if (version.contains("-")) {
-            version = version.substring(version.indexOf("-"));
+            version = version.substring(0, version.indexOf("-"));
         }
         return Integer.parseInt(version);
     }
