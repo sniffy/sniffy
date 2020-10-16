@@ -13,7 +13,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.NetworkChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
@@ -257,12 +256,14 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @IgnoreJRERequirement
     public SocketChannel bind(SocketAddress local) throws IOException {
         try {
-            method(NetworkChannel.class, "bind", SocketAddress.class).invoke(delegate, local);
+            method(Class.forName("java.nio.channels.NetworkChannel"), "bind", SocketAddress.class).invoke(delegate, local);
         } catch (NoSuchMethodException e) {
             throw ExceptionUtil.processException(e);
         } catch (IllegalAccessException e) {
             throw ExceptionUtil.processException(e);
         } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (ClassNotFoundException e) {
             throw ExceptionUtil.processException(e);
         }
         return this;
@@ -272,12 +273,14 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @IgnoreJRERequirement
     public <T> SocketChannel setOption(SocketOption<T> name, T value) throws IOException {
         try {
-            method(NetworkChannel.class, "setOption", SocketOption.class, Object.class).invoke(delegate, name, value);
+            method(Class.forName("java.nio.channels.NetworkChannel"), "setOption", SocketOption.class, Object.class).invoke(delegate, name, value);
         } catch (NoSuchMethodException e) {
             throw ExceptionUtil.processException(e);
         } catch (IllegalAccessException e) {
             throw ExceptionUtil.processException(e);
         } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (ClassNotFoundException e) {
             throw ExceptionUtil.processException(e);
         }
         return this;
@@ -381,12 +384,14 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @IgnoreJRERequirement
     public SocketAddress getLocalAddress() throws IOException {
         try {
-            return (SocketAddress) method(NetworkChannel.class, "getLocalAddress").invoke(delegate);
+            return (SocketAddress) method(Class.forName("java.nio.channels.NetworkChannel"), "getLocalAddress").invoke(delegate);
         } catch (NoSuchMethodException e) {
             throw ExceptionUtil.processException(e);
         } catch (IllegalAccessException e) {
             throw ExceptionUtil.processException(e);
         } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (ClassNotFoundException e) {
             throw ExceptionUtil.processException(e);
         }
     }
@@ -420,12 +425,14 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @IgnoreJRERequirement
     public <T> T getOption(SocketOption<T> name) throws IOException {
         try {
-            return (T) method(NetworkChannel.class, "getOption", SocketOption.class).invoke(delegate, name);
+            return (T) method(Class.forName("java.nio.channels.NetworkChannel"), "getOption", SocketOption.class).invoke(delegate, name);
         } catch (NoSuchMethodException e) {
             throw ExceptionUtil.processException(e);
         } catch (IllegalAccessException e) {
             throw ExceptionUtil.processException(e);
         } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (ClassNotFoundException e) {
             throw ExceptionUtil.processException(e);
         }
     }
@@ -434,12 +441,14 @@ public class SniffySocketChannel extends SocketChannelDelegate implements Sniffy
     @IgnoreJRERequirement
     public Set<SocketOption<?>> supportedOptions() {
         try {
-            return (Set<SocketOption<?>>) method(NetworkChannel.class, "supportedOptions").invoke(delegate);
+            return (Set<SocketOption<?>>) method(Class.forName("java.nio.channels.NetworkChannel"), "supportedOptions").invoke(delegate);
         } catch (NoSuchMethodException e) {
             throw ExceptionUtil.processException(e);
         } catch (IllegalAccessException e) {
             throw ExceptionUtil.processException(e);
         } catch (InvocationTargetException e) {
+            throw ExceptionUtil.processException(e);
+        } catch (ClassNotFoundException e) {
             throw ExceptionUtil.processException(e);
         }
     }
