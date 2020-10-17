@@ -1,0 +1,42 @@
+package io.sniffy.util;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+public class ReflectionCopier<T> {
+
+    private final ReflectionFieldCopier[] reflectionFieldCopiers;
+
+    public ReflectionCopier(Class<? extends T> clazz, String ignoreFieldName) {
+        this(clazz, Collections.singleton(ignoreFieldName));
+    }
+
+    public ReflectionCopier(Class<? extends T> clazz, Set<String> ignoreFieldNames) {
+
+        List<ReflectionFieldCopier> reflectionFieldCopiers = new ArrayList<>();
+
+        for (Class<?> superClass = clazz; null != superClass && !superClass.equals(Object.class); superClass = superClass.getSuperclass()) {
+            for (Field declaredField : superClass.getDeclaredFields()) {
+                if (null == ignoreFieldNames || !ignoreFieldNames.contains(declaredField.getName())) {
+                    if (!declaredField.isSynthetic() && !Modifier.isStatic(declaredField.getModifiers())) {
+                        reflectionFieldCopiers.add(new ReflectionFieldCopier(superClass, declaredField.getName()));
+                    }
+                }
+            }
+        }
+
+        this.reflectionFieldCopiers = reflectionFieldCopiers.toArray(new ReflectionFieldCopier[reflectionFieldCopiers.size()]);
+
+    }
+
+    public void copy(T from, T to) {
+        for (ReflectionFieldCopier reflectionFieldCopier : reflectionFieldCopiers) {
+            reflectionFieldCopier.copy(from, to);
+        }
+    }
+
+}
