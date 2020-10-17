@@ -78,7 +78,7 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public Pipe openPipe() throws IOException {
-        return delegate.openPipe();
+        return new SniffyPipe(this, delegate.openPipe());
     }
 
     @Override
