@@ -108,7 +108,8 @@ public class ReflectionUtil {
     public static <R, T, P1> R invokeMethod(
             Class<T> clazz, T instance,
             String methodName,
-            Class<P1> argument1Type, P1 argument1
+            Class<P1> argument1Type, P1 argument1,
+            @SuppressWarnings("unused") Class<R> returnClass
     ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = method(clazz, methodName, argument1Type);
         return (R) method.invoke(instance, argument1);
@@ -119,7 +120,8 @@ public class ReflectionUtil {
             Class<T> clazz, T instance,
             String methodName,
             Class<P1> argument1Type, P1 argument1,
-            Class<P2> argument2Type, P2 argument2
+            Class<P2> argument2Type, P2 argument2,
+            @SuppressWarnings("unused") Class<R> returnClass
     ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = method(clazz, methodName, argument1Type, argument2Type);
         return (R) method.invoke(instance, argument1, argument2);

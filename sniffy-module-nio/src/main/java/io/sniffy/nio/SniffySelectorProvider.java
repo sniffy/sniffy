@@ -12,6 +12,9 @@ import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
+import static io.sniffy.util.ExceptionUtil.processException;
+import static io.sniffy.util.ReflectionUtil.invokeMethod;
+
 public class SniffySelectorProvider extends SelectorProvider {
 
     private static volatile SelectorProvider previousSelectorProvider;
@@ -111,13 +114,19 @@ public class SniffySelectorProvider extends SelectorProvider {
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         try {
             return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
-                    ReflectionUtil.invokeMethod(SelectorProvider.class, delegate, "openSocketChannel", ProtocolFamily.class, family) :
+                    invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
+                            ProtocolFamily.class, family,
+                            SocketChannel.class
+                    ) :
                     new SniffySocketChannel(
                             this,
-                            ReflectionUtil.invokeMethod(SelectorProvider.class, delegate, "openSocketChannel", ProtocolFamily.class, family)
+                            invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
+                                    ProtocolFamily.class, family,
+                                    SocketChannel.class
+                            )
                     );
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            throw processException(e);
         }
     }
 
@@ -126,9 +135,12 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings("unused")
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return ReflectionUtil.invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel", ProtocolFamily.class, family);
+            return invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
+                    ProtocolFamily.class, family,
+                    ServerSocketChannel.class
+            );
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            throw processException(e);
         }
     }
 
