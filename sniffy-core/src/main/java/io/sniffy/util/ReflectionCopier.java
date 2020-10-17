@@ -17,7 +17,7 @@ public class ReflectionCopier<T> {
 
     public ReflectionCopier(Class<? extends T> clazz, Set<String> ignoreFieldNames) {
 
-        List<ReflectionFieldCopier> reflectionFieldCopiers = new ArrayList<>();
+        List<ReflectionFieldCopier> reflectionFieldCopiers = new ArrayList<ReflectionFieldCopier>();
 
         for (Class<?> superClass = clazz; null != superClass && !superClass.equals(Object.class); superClass = superClass.getSuperclass()) {
             for (Field declaredField : superClass.getDeclaredFields()) {
