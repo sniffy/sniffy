@@ -1,6 +1,5 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.OSUtil;
 import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
@@ -84,7 +83,7 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public AbstractSelector openSelector() throws IOException {
-        return delegate.openSelector();
+        return new SniffySelector(this, delegate.openSelector());
     }
 
     @Override

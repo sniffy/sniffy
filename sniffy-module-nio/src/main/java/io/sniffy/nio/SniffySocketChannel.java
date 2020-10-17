@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SniffySocketChannel extends SocketChannel implements SniffySocket, SelChImpl {
 
+    // TODO: do we really want to copy provider variable
     private final static ReflectionFieldCopier providerCopier =
             new ReflectionFieldCopier(AbstractSelectableChannel.class, "provider");
     private final static ReflectionFieldCopier keysCopier =

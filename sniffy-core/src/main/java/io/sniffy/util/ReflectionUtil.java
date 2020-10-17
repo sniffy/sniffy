@@ -105,6 +105,16 @@ public class ReflectionUtil {
     }
 
     @SuppressWarnings("unchecked")
+    public static <R, T> R invokeMethod(
+            Class<T> clazz, T instance,
+            String methodName,
+            @SuppressWarnings("unused") Class<R> returnClass
+    ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method method = method(clazz, methodName);
+        return (R) method.invoke(instance);
+    }
+
+    @SuppressWarnings("unchecked")
     public static <R, T, P1> R invokeMethod(
             Class<T> clazz, T instance,
             String methodName,
@@ -125,6 +135,19 @@ public class ReflectionUtil {
     ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = method(clazz, methodName, argument1Type, argument2Type);
         return (R) method.invoke(instance, argument1, argument2);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <R, T, P1, P2, P3> R invokeMethod(
+            Class<T> clazz, T instance,
+            String methodName,
+            Class<P1> argument1Type, P1 argument1,
+            Class<P2> argument2Type, P2 argument2,
+            Class<P3> argument3Type, P3 argument3,
+            @SuppressWarnings("unused") Class<R> returnClass
+    ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method method = method(clazz, methodName, argument1Type, argument2Type, argument3Type);
+        return (R) method.invoke(instance, argument1, argument2, argument3);
     }
 
     public static Method method(Class<?> clazz, String methodName, Class<?>... argumentTypes) throws NoSuchMethodException {
