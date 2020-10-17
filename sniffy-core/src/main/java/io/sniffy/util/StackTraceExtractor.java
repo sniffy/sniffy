@@ -122,4 +122,14 @@ public class StackTraceExtractor {
                 baseTraceElement.getLineNumber());
     }
 
+    public static boolean hasClassInStackTrace(String className) {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement ste : stackTrace) {
+            if (ste.getClassName().startsWith(className)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
