@@ -67,18 +67,20 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public DatagramChannel openDatagramChannel() throws IOException {
-        return delegate.openDatagramChannel();
+        return new SniffyDatagramChannelAdapter(this, delegate.openDatagramChannel());
     }
 
     // Available in Java 1.7+ only
     @Override
     @IgnoreJRERequirement
     public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
-        return delegate.openDatagramChannel(family);
+        return new SniffyDatagramChannelAdapter(this, delegate.openDatagramChannel(family));
     }
 
     @Override
     public Pipe openPipe() throws IOException {
+        new Exception().printStackTrace();
+        System.err.println("has openSelector method in trace: " + StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.SniffySelectorProvider", "openSelector"));
         return OSUtil.isWindows() && StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.SniffySelectorProvider", "openSelector") ?
                 delegate.openPipe() :
                 new SniffyPipe(this, delegate.openPipe());
