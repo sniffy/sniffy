@@ -1,5 +1,6 @@
 package io.sniffy.nio;
 
+import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.OSUtil;
 import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
@@ -106,7 +107,16 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public Channel inheritedChannel() throws IOException {
-        return delegate.inheritedChannel();
+        Channel channel = delegate.inheritedChannel();
+        if (channel instanceof SocketChannel) {
+            return new SniffySocketChannel(this, (SocketChannel) channel);
+        } else if (channel instanceof ServerSocketChannel) {
+            return new SniffyServerSocketChannel(this, (ServerSocketChannel) channel);
+        } else if (channel instanceof DatagramChannel) {
+            return channel; // TODO: return SniffyDatagramChannel
+        } else {
+            return channel;
+        }
     }
 
     // Note: this method was absent in earlier JDKs (15-) so we cannot use @Override annotation
