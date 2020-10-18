@@ -90,7 +90,7 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
-        return delegate.openServerSocketChannel();
+        return new SniffyServerSocketChannel(this, delegate.openServerSocketChannel());
     }
 
     /**
