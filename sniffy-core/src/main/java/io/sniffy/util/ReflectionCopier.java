@@ -12,7 +12,7 @@ public class ReflectionCopier<T> {
     private final ReflectionFieldCopier[] reflectionFieldCopiers;
 
     public ReflectionCopier(Class<? extends T> clazz) {
-        this(clazz, Collections.emptySet());
+        this(clazz, Collections.<String>emptySet());
     }
 
     public ReflectionCopier(Class<? extends T> clazz, String ignoreFieldName) {
