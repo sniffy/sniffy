@@ -285,7 +285,7 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffySocket 
             if (address instanceof InetSocketAddress) {
                 checkConnectionAllowed(this.address = (InetSocketAddress) address);
             }
-            super.connect(address, port);
+            super.connect(address, timeout);
         } finally {
             logSocket(System.currentTimeMillis() - start);
         }

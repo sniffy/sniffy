@@ -41,7 +41,7 @@ public class SnifferSocketImplTest {
     @Before
     public void createSniffySocket() throws Exception {
         spy(SnifferSocketImpl.class);
-        sniffySocket = spy(new SnifferSocketImpl(delegate));
+        sniffySocket = new SnifferSocketImpl(delegate);
 
         ConnectionsRegistry.INSTANCE.clear();
     }
