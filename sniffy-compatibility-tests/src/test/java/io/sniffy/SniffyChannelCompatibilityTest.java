@@ -1,7 +1,6 @@
 package io.sniffy;
 
 import io.sniffy.configuration.SniffyConfiguration;
-import io.sniffy.nio.SniffySelectorProvider;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import org.junit.BeforeClass;
@@ -57,52 +56,47 @@ public class SniffyChannelCompatibilityTest {
     }
 
     @Test
-    public void testPipe() {
+    public void testPipe() throws Exception {
 
-        try {
-            SniffySelectorProvider.uninstall();
-            SniffySelectorProvider.install();
+        SniffyConfiguration.INSTANCE.setMonitorNio(true);
+        Sniffy.initialize();
 
-            Pipe pipe = Pipe.open();
+        Pipe pipe = Pipe.open();
 
-            final Pipe.SourceChannel source = pipe.source();
-            final Pipe.SinkChannel sink = pipe.sink();
+        final Pipe.SourceChannel source = pipe.source();
+        final Pipe.SinkChannel sink = pipe.sink();
 
-            final ByteBuffer targetBuffer = ByteBuffer.allocate(5);
-            final AtomicReference<Exception> exceptionHolder = new AtomicReference<Exception>();
+        final ByteBuffer targetBuffer = ByteBuffer.allocate(5);
+        final AtomicReference<Exception> exceptionHolder = new AtomicReference<Exception>();
 
-            Thread sourceThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        source.read(targetBuffer);
-                    } catch (IOException e) {
-                        exceptionHolder.set(e);
-                    }
+        Thread sourceThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    source.read(targetBuffer);
+                } catch (IOException e) {
+                    exceptionHolder.set(e);
                 }
-            });
+            }
+        });
 
-            Thread sinkThread  = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        sink.write(ByteBuffer.wrap(new byte[]{1,2,3,5,8}));
-                    } catch (IOException e) {
-                        exceptionHolder.set(e);
-                    }
+        Thread sinkThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    sink.write(ByteBuffer.wrap(new byte[]{1, 2, 3, 5, 8}));
+                } catch (IOException e) {
+                    exceptionHolder.set(e);
                 }
-            });
+            }
+        });
 
-            sourceThread.start();
-            sinkThread.start();
-            sourceThread.join();
-            sinkThread.join();
+        sourceThread.start();
+        sinkThread.start();
+        sourceThread.join();
+        sinkThread.join();
 
-            assertArrayEquals(new byte[]{1,2,3,5,8}, targetBuffer.array());
-
-        } catch (Exception e) {
-            SniffySelectorProvider.uninstall();
-        }
+        assertArrayEquals(new byte[]{1, 2, 3, 5, 8}, targetBuffer.array());
 
     }
 
