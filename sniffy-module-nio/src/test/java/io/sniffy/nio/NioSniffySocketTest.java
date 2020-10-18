@@ -10,11 +10,12 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.Pipe;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.sniffy.Threads.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class NioSniffySocketTest extends BaseSocketTest {
 
@@ -24,7 +25,6 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
-
 
         SniffySelectorProvider.uninstall();
         SniffySelectorProvider.install();
@@ -90,6 +90,57 @@ public class NioSniffySocketTest extends BaseSocketTest {
         } catch (IOException e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testPipe() {
+
+        try {
+            SniffySelectorProvider.uninstall();
+            SniffySelectorProvider.install();
+
+            Pipe pipe = Pipe.open();
+
+            Pipe.SourceChannel source = pipe.source();
+            Pipe.SinkChannel sink = pipe.sink();
+
+            final ByteBuffer targetBuffer = ByteBuffer.allocate(5);
+            final AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
+
+            Thread sourceThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        source.read(targetBuffer);
+                    } catch (IOException e) {
+                        exceptionHolder.set(e);
+                    }
+                }
+            });
+
+            Thread sinkThread  = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        sink.write(ByteBuffer.wrap(new byte[]{1,2,3,5,8}));
+                    } catch (IOException e) {
+                        exceptionHolder.set(e);
+                    }
+                }
+            });
+
+            sourceThread.start();
+            sinkThread.start();
+            sourceThread.join();
+            sinkThread.join();
+
+            assertArrayEquals(new byte[]{1,2,3,5,8}, targetBuffer.array());
+
+        } catch (Exception e) {
+            SniffySelectorProvider.uninstall();
+        }
+
+
     }
 
 }

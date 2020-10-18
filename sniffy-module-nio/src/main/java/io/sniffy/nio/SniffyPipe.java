@@ -31,7 +31,7 @@ public class SniffyPipe extends Pipe {
 
     @Override
     public SinkChannel sink() {
-        return null;
+        return new SniffySinkChannel(selectorProvider, delegate.sink());
     }
 
     @SuppressWarnings("RedundantThrows")
