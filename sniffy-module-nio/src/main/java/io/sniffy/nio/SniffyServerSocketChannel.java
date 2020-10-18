@@ -1,7 +1,9 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.OSUtil;
 import io.sniffy.util.ReflectionCopier;
+import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -78,7 +80,9 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     public SocketChannel accept() throws IOException {
         try {
             copyToDelegate();
-            return new SniffySocketChannelAdapter(provider(), delegate.accept());
+            return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
+                delegate.accept() :
+                new SniffySocketChannelAdapter(provider(), delegate.accept());
         } finally {
             copyFromDelegate();
         }
