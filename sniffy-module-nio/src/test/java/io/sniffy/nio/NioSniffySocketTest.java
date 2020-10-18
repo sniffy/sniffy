@@ -140,7 +140,6 @@ public class NioSniffySocketTest extends BaseSocketTest {
             SniffySelectorProvider.uninstall();
         }
 
-
     }
 
 }
