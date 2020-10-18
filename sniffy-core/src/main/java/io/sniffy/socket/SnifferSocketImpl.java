@@ -347,7 +347,7 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
             if (address instanceof InetSocketAddress) {
                 checkConnectionAllowed(this.address = (InetSocketAddress) address);
             }
-            invokeMethod(SocketImpl.class, delegate, "connect", SocketAddress.class, address, Integer.TYPE, port, Void.TYPE);
+            invokeMethod(SocketImpl.class, delegate, "connect", SocketAddress.class, address, Integer.TYPE, timeout, Void.TYPE);
         } catch (Exception e) {
             ExceptionUtil.processException(e);
         } finally {
