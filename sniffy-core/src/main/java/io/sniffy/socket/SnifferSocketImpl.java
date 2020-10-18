@@ -405,6 +405,7 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffySocket 
 
     // New methods in Java 9
 
+    /*
     @Override
     protected <T> void setOption(java.net.SocketOption<T> name, T value) throws IOException {
         long start = System.currentTimeMillis();
@@ -434,4 +435,6 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffySocket 
             logSocket(System.currentTimeMillis() - start);
         }
     }
+    */
+
 }

@@ -327,6 +327,9 @@ class SniffySocketImplAdapter extends SocketImpl {
 
     // New methods in Java 9
 
+    // TODO: methods below are commented out because Java 6 doesn't have SocketOption class
+    /*
+
     // @Override - available in Java 9+ only
     @SuppressWarnings("Since15")
     @IgnoreJRERequirement
@@ -370,4 +373,7 @@ class SniffySocketImplAdapter extends SocketImpl {
             copyFromDelegate();
         }
     }
+
+    */
+
 }
