@@ -30,7 +30,7 @@
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-module-nio-compat-deps</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
