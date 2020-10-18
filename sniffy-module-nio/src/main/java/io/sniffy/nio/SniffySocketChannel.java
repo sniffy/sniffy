@@ -4,29 +4,19 @@ import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionCopier;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
-import sun.nio.ch.SelChImpl;
-import sun.nio.ch.SelectionKeyImpl;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.*;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-
-public class SniffySocketChannel extends SocketChannel implements SniffySocket, SelChImpl {
-
-    private static final ReflectionCopier<SocketChannel> socketChannelFieldsCopier = new ReflectionCopier<SocketChannel>(SocketChannel.class, "provider");
-
-    private final SocketChannel delegate;
-    private final SelChImpl selChImplDelegate;
+public class SniffySocketChannel extends SniffySocketChannelAdapter implements SniffySocket {
 
     private volatile Integer connectionStatus;
 
@@ -47,9 +37,7 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket, 
     protected volatile long lastWriteThreadId;
 
     protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
-        super(provider);
-        this.delegate = delegate;
-        this.selChImplDelegate = (SelChImpl) delegate;
+        super(provider, delegate);
     }
 
     @Override
@@ -209,127 +197,13 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket, 
     }
 
     @Override
-    @IgnoreJRERequirement
-    public SocketChannel bind(SocketAddress local) throws IOException {
-        try {
-            copyToDelegate();
-            delegate.bind(local);
-            return this;
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    @IgnoreJRERequirement
-    public <T> SocketChannel setOption(SocketOption<T> name, T value) throws IOException {
-        try {
-            copyToDelegate();
-            delegate.setOption(name, value);
-            return this;
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    @IgnoreJRERequirement
-    public SocketChannel shutdownInput() throws IOException {
-        try {
-            copyToDelegate();
-            delegate.shutdownInput();
-            return this;
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    @IgnoreJRERequirement
-    public SocketChannel shutdownOutput() throws IOException {
-        try {
-            copyToDelegate();
-            delegate.shutdownOutput();
-            return this;
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public Socket socket() {
-        try {
-            copyToDelegate();
-            return delegate.socket(); // TODO: should we wrap it with SniffySocket ??
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public boolean isConnected() {
-        try {
-            copyToDelegate();
-            return delegate.isConnected();
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public boolean isConnectionPending() {
-        try {
-            copyToDelegate();
-            return delegate.isConnectionPending();
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public boolean connect(SocketAddress remote) throws IOException {
-        copyToDelegate();
-        long start = System.currentTimeMillis();
-        try {
-            checkConnectionAllowed((InetSocketAddress) remote, 1);
-            return delegate.connect(remote);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public boolean finishConnect() throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.finishConnect();
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    @IgnoreJRERequirement
-    public SocketAddress getRemoteAddress() throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.getRemoteAddress();
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
     public int read(ByteBuffer dst) throws IOException {
         estimateReceiveBuffer();
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
         try {
-            return bytesDown = delegate.read(dst);
+            return bytesDown = super.read(dst);
         } finally {
             sleepIfRequired(bytesDown);
             logSocket(System.currentTimeMillis() - start, bytesDown, 0);
@@ -338,7 +212,7 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket, 
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        return delegate.read(dsts, offset, length); // TODO: handle properly
+        return super.read(dsts, offset, length); // TODO: handle properly
     }
 
     @Override
@@ -348,7 +222,7 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket, 
         long start = System.currentTimeMillis();
         int length = 0;
         try {
-            length = delegate.write(src);
+            length = super.write(src);
             return length;
         } finally {
             sleepIfRequiredForWrite(length);
@@ -358,182 +232,7 @@ public class SniffySocketChannel extends SocketChannel implements SniffySocket, 
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        return delegate.write(srcs, offset, length); // TODO: handle properly
-    }
-
-    @Override
-    @IgnoreJRERequirement
-    public SocketAddress getLocalAddress() throws IOException {
-        copyToDelegate();
-        try {
-            return delegate.getLocalAddress();
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public void implCloseSelectableChannel() {
-        copyToDelegate();
-        try {
-            invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public void implConfigureBlocking(boolean block) {
-        copyToDelegate();
-        try {
-            invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    @IgnoreJRERequirement
-    public <T> T getOption(SocketOption<T> name) throws IOException {
-        copyToDelegate();
-        try {
-            return delegate.getOption(name);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    @IgnoreJRERequirement
-    public Set<SocketOption<?>> supportedOptions() {
-        copyToDelegate();
-        try {
-            return delegate.supportedOptions();
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    // Modern SelChImpl
-
-    @Override
-    public FileDescriptor getFD() {
-        copyToDelegate();
-        try {
-            return selChImplDelegate.getFD();
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public int getFDVal() {
-        copyToDelegate();
-        try {
-            return selChImplDelegate.getFDVal();
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski) {
-        copyToDelegate();
-        try {
-            return selChImplDelegate.translateAndUpdateReadyOps(ops, ski);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski) {
-        copyToDelegate();
-        try {
-            return selChImplDelegate.translateAndSetReadyOps(ops, ski);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    @Override
-    public void kill() throws IOException {
-        copyToDelegate();
-        try {
-            selChImplDelegate.kill();
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
-    // @Override
-    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
-        try {
-            copyToDelegate();
-            invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
-    //@Override
-    public int translateInterestOps(int ops) {
-        try {
-            copyToDelegate();
-            return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
-    //@Override
-    public void park(int event, long nanos) throws IOException {
-        try {
-            copyToDelegate();
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
-    //@Override
-    public void park(int event) throws IOException {
-        try {
-            copyToDelegate();
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    private void copyToDelegate() {
-        socketChannelFieldsCopier.copy(this, delegate);
-    }
-
-    private void copyFromDelegate() {
-        socketChannelFieldsCopier.copy(delegate, this);
+        return super.write(srcs, offset, length); // TODO: handle properly
     }
 
 }
