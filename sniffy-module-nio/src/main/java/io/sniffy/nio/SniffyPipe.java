@@ -1,20 +1,16 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionFieldCopier;
+import io.sniffy.util.ReflectionCopier;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
+import java.nio.channels.Pipe;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.ArrayList;
-import java.util.List;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
@@ -38,30 +34,21 @@ public class SniffyPipe extends Pipe {
         return null;
     }
 
+    @SuppressWarnings("RedundantThrows")
     public static class SniffySourceChannel extends SourceChannel implements SelChImpl {
 
         private final SourceChannel delegate;
         private final SelChImpl selChImplDelegate;
 
-        private final static ReflectionFieldCopier keysCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "keys");
-        private final static ReflectionFieldCopier keyCountCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "keyCount");
-        private final static ReflectionFieldCopier keyLockCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "keyLock");
-        private final static ReflectionFieldCopier regLockCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "regLock");
-        private final static ReflectionFieldCopier nonBlockingCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "nonBlocking");
-        private final static ReflectionFieldCopier blockingCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "blocking");
+        private static final ReflectionCopier<SourceChannel> sourceChannelFieldsCopier = new ReflectionCopier<SourceChannel>(SourceChannel.class, "provider");
 
-        private final static ReflectionFieldCopier closeLockCopier =
-                new ReflectionFieldCopier(AbstractInterruptibleChannel.class, "closeLock");
-        private final static ReflectionFieldCopier closedCopier =
-                new ReflectionFieldCopier(AbstractInterruptibleChannel.class, "closed");
+        private void copyToDelegate() {
+            sourceChannelFieldsCopier.copy(this, delegate);
+        }
 
-        private static volatile ReflectionFieldCopier[] reflectionFieldCopiers;
+        private void copyFromDelegate() {
+            sourceChannelFieldsCopier.copy(delegate, this);
+        }
 
         public SniffySourceChannel(SelectorProvider provider, SourceChannel delegate) {
             super(provider);
@@ -75,7 +62,7 @@ public class SniffyPipe extends Pipe {
             try {
                 invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
             } catch (Exception e) {
-                ExceptionUtil.processException(e);
+                throw ExceptionUtil.processException(e);
             } finally {
                 copyFromDelegate();
             }
@@ -87,7 +74,7 @@ public class SniffyPipe extends Pipe {
             try {
                 invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Void.class);
             } catch (Exception e) {
-                ExceptionUtil.processException(e);
+                throw ExceptionUtil.processException(e);
             } finally {
                 copyFromDelegate();
             }
@@ -227,64 +214,23 @@ public class SniffyPipe extends Pipe {
             }
         }
 
-        private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
-            if (null == reflectionFieldCopiers) {
-                synchronized (SniffySocketChannel.class) {
-                    if (null == reflectionFieldCopiers) {
-                        List<ReflectionFieldCopier> reflectionFieldCopiersList = new ArrayList<ReflectionFieldCopier>(8); // 4 available on modern Java
-                        if (keysCopier.isAvailable()) reflectionFieldCopiersList.add(keysCopier);
-                        if (keyCountCopier.isAvailable()) reflectionFieldCopiersList.add(keyCountCopier);
-                        if (keyLockCopier.isAvailable()) reflectionFieldCopiersList.add(keyLockCopier);
-                        if (regLockCopier.isAvailable()) reflectionFieldCopiersList.add(regLockCopier);
-                        if (nonBlockingCopier.isAvailable()) reflectionFieldCopiersList.add(nonBlockingCopier);
-                        if (blockingCopier.isAvailable()) reflectionFieldCopiersList.add(blockingCopier);
-                        if (closeLockCopier.isAvailable()) reflectionFieldCopiersList.add(closeLockCopier);
-                        if (closedCopier.isAvailable()) reflectionFieldCopiersList.add(closedCopier);
-                        reflectionFieldCopiers = reflectionFieldCopiersList.toArray(new ReflectionFieldCopier[0]);
-                    }
-                }
-            }
-            return reflectionFieldCopiers;
-        }
-
-        private void copyToDelegate() {
-            for (ReflectionFieldCopier reflectionFieldCopier : getReflectionFieldCopiers()) {
-                reflectionFieldCopier.copy(this, delegate);
-            }
-        }
-
-        private void copyFromDelegate() {
-            for (ReflectionFieldCopier reflectionFieldCopier : getReflectionFieldCopiers()) {
-                reflectionFieldCopier.copy(delegate, this);
-            }
-        }
-
     }
 
+    @SuppressWarnings("RedundantThrows")
     public static class SniffySinkChannel extends SinkChannel implements SelChImpl {
 
         private final SinkChannel delegate;
         private final SelChImpl selChImplDelegate;
 
-        private final static ReflectionFieldCopier keysCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "keys");
-        private final static ReflectionFieldCopier keyCountCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "keyCount");
-        private final static ReflectionFieldCopier keyLockCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "keyLock");
-        private final static ReflectionFieldCopier regLockCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "regLock");
-        private final static ReflectionFieldCopier nonBlockingCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "nonBlocking");
-        private final static ReflectionFieldCopier blockingCopier =
-                new ReflectionFieldCopier(AbstractSelectableChannel.class, "blocking");
+        private static final ReflectionCopier<SinkChannel> sinkChannelFieldsCopier = new ReflectionCopier<SinkChannel>(SinkChannel.class, "provider");
 
-        private final static ReflectionFieldCopier closeLockCopier =
-                new ReflectionFieldCopier(AbstractInterruptibleChannel.class, "closeLock");
-        private final static ReflectionFieldCopier closedCopier =
-                new ReflectionFieldCopier(AbstractInterruptibleChannel.class, "closed");
+        private void copyToDelegate() {
+            sinkChannelFieldsCopier.copy(this, delegate);
+        }
 
-        private static volatile ReflectionFieldCopier[] reflectionFieldCopiers;
+        private void copyFromDelegate() {
+            sinkChannelFieldsCopier.copy(delegate, this);
+        }
 
         public SniffySinkChannel(SelectorProvider provider, SinkChannel delegate) {
             super(provider);
@@ -298,7 +244,7 @@ public class SniffyPipe extends Pipe {
             try {
                 invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
             } catch (Exception e) {
-                ExceptionUtil.processException(e);
+                throw ExceptionUtil.processException(e);
             } finally {
                 copyFromDelegate();
             }
@@ -310,7 +256,7 @@ public class SniffyPipe extends Pipe {
             try {
                 invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Void.class);
             } catch (Exception e) {
-                ExceptionUtil.processException(e);
+                throw ExceptionUtil.processException(e);
             } finally {
                 copyFromDelegate();
             }
@@ -447,38 +393,6 @@ public class SniffyPipe extends Pipe {
                 throw ExceptionUtil.throwException(e);
             } finally {
                 copyFromDelegate();
-            }
-        }
-
-        private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
-            if (null == reflectionFieldCopiers) {
-                synchronized (SniffySocketChannel.class) {
-                    if (null == reflectionFieldCopiers) {
-                        List<ReflectionFieldCopier> reflectionFieldCopiersList = new ArrayList<ReflectionFieldCopier>(8); // 4 available on modern Java
-                        if (keysCopier.isAvailable()) reflectionFieldCopiersList.add(keysCopier);
-                        if (keyCountCopier.isAvailable()) reflectionFieldCopiersList.add(keyCountCopier);
-                        if (keyLockCopier.isAvailable()) reflectionFieldCopiersList.add(keyLockCopier);
-                        if (regLockCopier.isAvailable()) reflectionFieldCopiersList.add(regLockCopier);
-                        if (nonBlockingCopier.isAvailable()) reflectionFieldCopiersList.add(nonBlockingCopier);
-                        if (blockingCopier.isAvailable()) reflectionFieldCopiersList.add(blockingCopier);
-                        if (closeLockCopier.isAvailable()) reflectionFieldCopiersList.add(closeLockCopier);
-                        if (closedCopier.isAvailable()) reflectionFieldCopiersList.add(closedCopier);
-                        reflectionFieldCopiers = reflectionFieldCopiersList.toArray(new ReflectionFieldCopier[0]);
-                    }
-                }
-            }
-            return reflectionFieldCopiers;
-        }
-
-        private void copyToDelegate() {
-            for (ReflectionFieldCopier reflectionFieldCopier : getReflectionFieldCopiers()) {
-                reflectionFieldCopier.copy(this, delegate);
-            }
-        }
-
-        private void copyFromDelegate() {
-            for (ReflectionFieldCopier reflectionFieldCopier : getReflectionFieldCopiers()) {
-                reflectionFieldCopier.copy(delegate, this);
             }
         }
 
