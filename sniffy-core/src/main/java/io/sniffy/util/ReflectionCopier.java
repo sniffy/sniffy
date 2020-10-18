@@ -11,6 +11,10 @@ public class ReflectionCopier<T> {
 
     private final ReflectionFieldCopier[] reflectionFieldCopiers;
 
+    public ReflectionCopier(Class<? extends T> clazz) {
+        this(clazz, Collections.emptySet());
+    }
+
     public ReflectionCopier(Class<? extends T> clazz, String ignoreFieldName) {
         this(clazz, Collections.singleton(ignoreFieldName));
     }
@@ -29,7 +33,7 @@ public class ReflectionCopier<T> {
             }
         }
 
-        this.reflectionFieldCopiers = reflectionFieldCopiers.toArray(new ReflectionFieldCopier[reflectionFieldCopiers.size()]);
+        this.reflectionFieldCopiers = reflectionFieldCopiers.toArray(new ReflectionFieldCopier[0]);
 
     }
 
