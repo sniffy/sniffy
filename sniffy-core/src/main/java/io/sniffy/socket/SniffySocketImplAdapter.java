@@ -327,7 +327,8 @@ class SniffySocketImplAdapter extends SocketImpl {
 
     // New methods in Java 9
 
-    @Override
+    // @Override - available in Java 9+ only
+    @SuppressWarnings("Since15")
     @IgnoreJRERequirement
     protected <T> void setOption(java.net.SocketOption<T> name, T value) throws IOException {
         try {
@@ -340,7 +341,8 @@ class SniffySocketImplAdapter extends SocketImpl {
         }
     }
 
-    @Override
+    // @Override - available in Java 9+ only
+    @SuppressWarnings("Since15")
     @IgnoreJRERequirement
     protected <T> T getOption(java.net.SocketOption<T> name) throws IOException {
         try {
@@ -354,7 +356,8 @@ class SniffySocketImplAdapter extends SocketImpl {
         }
     }
 
-    @Override
+    // @Override - available in Java 9+ only
+    @SuppressWarnings("Since15")
     @IgnoreJRERequirement
     protected Set<java.net.SocketOption<?>> supportedOptions() {
         try {
