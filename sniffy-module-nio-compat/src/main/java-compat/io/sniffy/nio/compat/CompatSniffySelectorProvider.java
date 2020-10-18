@@ -13,11 +13,11 @@ import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
-public class SniffySelectorProvider extends SelectorProvider {
+public class CompatSniffySelectorProvider extends SelectorProvider {
 
     private final SelectorProvider delegate;
 
-    public SniffySelectorProvider(SelectorProvider delegate) {
+    public CompatSniffySelectorProvider(SelectorProvider delegate) {
         this.delegate = delegate;
     }
 
@@ -25,12 +25,12 @@ public class SniffySelectorProvider extends SelectorProvider {
 
         SelectorProvider delegate = SelectorProvider.provider();
 
-        if (null != delegate && SniffySelectorProvider.class.equals(delegate.getClass())) {
+        if (null != delegate && CompatSniffySelectorProvider.class.equals(delegate.getClass())) {
             return;
         }
 
         try {
-            initializeUsingHolderSubClass(new SniffySelectorProvider(delegate));
+            initializeUsingHolderSubClass(new CompatSniffySelectorProvider(delegate));
         } catch (IOException ex) {
             try {
                 Class<?> clazz = Class.forName("java.nio.channels.spi.SelectorProvider");
@@ -48,7 +48,7 @@ public class SniffySelectorProvider extends SelectorProvider {
                 modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
 
                 synchronized (lock) {
-                    instanceField.set(null, new SniffySelectorProvider(delegate));
+                    instanceField.set(null, new CompatSniffySelectorProvider(delegate));
                 }
 
             } catch (ClassNotFoundException e) {
@@ -174,7 +174,7 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public SocketChannel openSocketChannel() throws IOException {
-        return isPipeSocketChannel() ? delegate.openSocketChannel() : new SniffySocketChannel(this, delegate.openSocketChannel());
+        return isPipeSocketChannel() ? delegate.openSocketChannel() : new CompatSniffySocketChannel(this, delegate.openSocketChannel());
     }
 
     // TODO: add if Windows check
@@ -202,7 +202,7 @@ public class SniffySelectorProvider extends SelectorProvider {
         try {
             return isPipeSocketChannel() ?
                     (SocketChannel) method(SelectorProvider.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family) :
-                    new SniffySocketChannel(
+                    new CompatSniffySocketChannel(
                             this,
                             (SocketChannel) method(SelectorProvider.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
                     );

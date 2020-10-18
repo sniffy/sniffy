@@ -146,7 +146,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     private void estimateReceiveBuffer() {
         if (-1 == receiveBufferSize) {
             if (null == defaultReceiveBufferSize) {
-                synchronized (SniffySocketChannel.class) {
+                synchronized (CompatSniffySocketChannel.class) {
                     if (null == defaultReceiveBufferSize) {
                         try {
                             defaultReceiveBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF);
@@ -166,7 +166,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     private void estimateSendBuffer() {
         if (-1 == sendBufferSize) {
             if (null == defaultSendBufferSize) {
-                synchronized (SniffySocketChannel.class) {
+                synchronized (CompatSniffySocketChannel.class) {
                     if (null == defaultSendBufferSize) {
                         try {
                             defaultSendBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF);

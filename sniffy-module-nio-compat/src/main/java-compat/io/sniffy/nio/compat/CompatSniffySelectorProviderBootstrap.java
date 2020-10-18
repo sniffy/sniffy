@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 
-public class SniffySelectorProviderBootstrap {
+public class CompatSniffySelectorProviderBootstrap {
 
     private static boolean publicSelChImplLoadedInBootstrapClassLoader = false;
 
@@ -32,7 +32,7 @@ public class SniffySelectorProviderBootstrap {
         //if (getVersion() >= 9) return;
 
         {
-            InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/SocketChannelDelegate.class");
+            InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/SocketChannelDelegate.class");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
             int i = 0;
@@ -61,7 +61,7 @@ public class SniffySelectorProviderBootstrap {
         if (getVersion() < 7) {
 
             {
-                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/net/SocketOption.class");
+                InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/net/SocketOption.class");
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
                 int i = 0;
@@ -88,7 +88,7 @@ public class SniffySelectorProviderBootstrap {
             }
 
             {
-                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/nio/channels/NetworkChannel.class");
+                InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/nio/channels/NetworkChannel.class");
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
                 int i = 0;
@@ -115,7 +115,7 @@ public class SniffySelectorProviderBootstrap {
             }
 
             {
-                InputStream is = SniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/net/ProtocolFamily.class");
+                InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/net/ProtocolFamily.class");
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
                 int i = 0;
