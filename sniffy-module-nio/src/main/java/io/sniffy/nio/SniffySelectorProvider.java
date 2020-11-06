@@ -1,6 +1,5 @@
 package io.sniffy.nio;
 
-import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.OSUtil;
 import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;

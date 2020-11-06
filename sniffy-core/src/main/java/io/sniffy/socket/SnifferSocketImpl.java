@@ -8,13 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @since 3.1
  */
-class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffySocket {
+class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetworkConnection {
 
     private InetSocketAddress address;
 

@@ -2,7 +2,7 @@ package io.sniffy.nio.compat;
 
 import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
-import io.sniffy.socket.SniffySocket;
+import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -21,7 +21,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // TODO: this functionality is available in java 1.7+ only - make sure it is safe
-public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel implements SniffySocket {
+public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel implements SniffyNetworkConnection {
 
     private final AsynchronousSocketChannel delegate;
 

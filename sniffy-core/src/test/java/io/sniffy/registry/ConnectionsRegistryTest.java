@@ -4,7 +4,7 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonValue;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SnifferSocketImplFactory;
-import io.sniffy.socket.SniffySocket;
+import io.sniffy.socket.SniffyNetworkConnection;
 import org.junit.After;
 import org.junit.Test;
 import ru.yandex.qatools.allure.annotations.Issue;
@@ -220,7 +220,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
         final AtomicInteger lastConnectionStatus = new AtomicInteger();
 
         {
-            SniffySocket sniffySocket = new SniffySocket() {
+            SniffyNetworkConnection sniffyNetworkConnection = new SniffyNetworkConnection() {
                 @Override
                 public InetSocketAddress getInetSocketAddress() {
                     return null;
@@ -232,7 +232,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 }
             };
 
-            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 1}), 5555), sniffySocket);
+            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 1}), 5555), sniffyNetworkConnection);
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, -42);
         }
 
@@ -252,7 +252,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
         final AtomicInteger lastConnectionStatus = new AtomicInteger();
 
         {
-            SniffySocket sniffySocket = new SniffySocket() {
+            SniffyNetworkConnection sniffyNetworkConnection = new SniffyNetworkConnection() {
                 @Override
                 public InetSocketAddress getInetSocketAddress() {
                     return inetSocketAddress;
@@ -264,7 +264,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 }
             };
 
-            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, sniffySocket);
+            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, sniffyNetworkConnection);
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, -42);
         }
 

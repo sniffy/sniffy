@@ -2,7 +2,7 @@ package io.sniffy.socket;
 
 import java.net.InetSocketAddress;
 
-public interface SniffySocket {
+public interface SniffyNetworkConnection {
 
     InetSocketAddress getInetSocketAddress();
 

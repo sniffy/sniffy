@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 // TODO: this functionality is available in java 1.7+ only - make sure it is safe
+// TODO: integrate with Sniffy; currently it is not used
 public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvider {
 
     private final AsynchronousChannelProvider delegate;

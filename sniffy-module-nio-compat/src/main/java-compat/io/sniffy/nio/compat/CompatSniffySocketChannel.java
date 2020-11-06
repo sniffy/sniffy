@@ -2,7 +2,7 @@ package io.sniffy.nio.compat;
 
 import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
-import io.sniffy.socket.SniffySocket;
+import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.util.ExceptionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
@@ -13,7 +13,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter implements SniffySocket {
+public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter implements SniffyNetworkConnection {
 
     private volatile Integer connectionStatus;
 
