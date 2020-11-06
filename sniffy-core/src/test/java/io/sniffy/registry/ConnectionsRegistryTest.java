@@ -230,6 +230,97 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 public void setConnectionStatus(Integer connectionStatus) {
                     lastConnectionStatus.set(connectionStatus);
                 }
+
+                // TODO: do something with non implemented bethod below
+                @Override
+                public int getPotentiallyBufferedInputBytes() {
+                    return 0;
+                }
+
+                @Override
+                public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) {
+
+                }
+
+                @Override
+                public int getPotentiallyBufferedOutputBytes() {
+                    return 0;
+                }
+
+                @Override
+                public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) {
+
+                }
+
+                @Override
+                public long getLastReadThreadId() {
+                    return 0;
+                }
+
+                @Override
+                public void setLastReadThreadId(long lastReadThreadId) {
+
+                }
+
+                @Override
+                public long getLastWriteThreadId() {
+                    return 0;
+                }
+
+                @Override
+                public void setLastWriteThreadId(long lastWriteThreadId) {
+
+                }
+
+                @Override
+                public int getReceiveBufferSize() {
+                    return 0;
+                }
+
+                @Override
+                public void setReceiveBufferSize(int receiveBufferSize) {
+
+                }
+
+                @Override
+                public int getSendBufferSize() {
+                    return 0;
+                }
+
+                @Override
+                public void setSendBufferSize(int sendBufferSize) {
+
+                }
+
+                @Override
+                public void logSocket(long millis) {
+
+                }
+
+                @Override
+                public void logSocket(long millis, int bytesDown, int bytesUp) {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed() throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
+                }
             };
 
             ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 1}), 5555), sniffyNetworkConnection);
@@ -261,6 +352,97 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 @Override
                 public void setConnectionStatus(Integer connectionStatus) {
                     lastConnectionStatus.set(connectionStatus);
+                }
+
+                // TODO: do something with non implemented bethod below
+                @Override
+                public int getPotentiallyBufferedInputBytes() {
+                    return 0;
+                }
+
+                @Override
+                public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) {
+
+                }
+
+                @Override
+                public int getPotentiallyBufferedOutputBytes() {
+                    return 0;
+                }
+
+                @Override
+                public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) {
+
+                }
+
+                @Override
+                public long getLastReadThreadId() {
+                    return 0;
+                }
+
+                @Override
+                public void setLastReadThreadId(long lastReadThreadId) {
+
+                }
+
+                @Override
+                public long getLastWriteThreadId() {
+                    return 0;
+                }
+
+                @Override
+                public void setLastWriteThreadId(long lastWriteThreadId) {
+
+                }
+
+                @Override
+                public int getReceiveBufferSize() {
+                    return 0;
+                }
+
+                @Override
+                public void setReceiveBufferSize(int receiveBufferSize) {
+
+                }
+
+                @Override
+                public int getSendBufferSize() {
+                    return 0;
+                }
+
+                @Override
+                public void setSendBufferSize(int sendBufferSize) {
+
+                }
+
+                @Override
+                public void logSocket(long millis) {
+
+                }
+
+                @Override
+                public void logSocket(long millis, int bytesDown, int bytesUp) {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed() throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
                 }
             };
 

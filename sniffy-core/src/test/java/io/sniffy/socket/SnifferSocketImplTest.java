@@ -582,24 +582,24 @@ public class SnifferSocketImplTest {
     @Test
     @Features({"issues/219"})
     public void testSetReceiveBufferSize() throws Exception {
-        int backup = sniffySocket.receiveBufferSize;
+        int backup = sniffySocket.getReceiveBufferSize();
         try {
             sniffySocket.setOption(SO_RCVBUF, 5);
-            assertEquals(5, sniffySocket.receiveBufferSize);
+            assertEquals(5, sniffySocket.getReceiveBufferSize());
         } finally {
-            sniffySocket.receiveBufferSize = backup;
+            sniffySocket.setReceiveBufferSize(backup);
         }
     }
 
     @Test
     @Features({"issues/219"})
     public void testSetSendBufferSize() throws Exception {
-        int backup = sniffySocket.sendBufferSize;
+        int backup = sniffySocket.getSendBufferSize();
         try {
             sniffySocket.setOption(SO_SNDBUF, 9);
-            assertEquals(9, sniffySocket.sendBufferSize);
+            assertEquals(9, sniffySocket.getSendBufferSize());
         } finally {
-            sniffySocket.sendBufferSize = backup;
+            sniffySocket.setSendBufferSize(backup);
         }
     }
 

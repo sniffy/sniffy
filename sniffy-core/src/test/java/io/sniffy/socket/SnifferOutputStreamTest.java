@@ -2,7 +2,9 @@ package io.sniffy.socket;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import ru.yandex.qatools.allure.annotations.Features;
 
@@ -11,10 +13,9 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.*;
+import static org.mockito.internal.verification.VerificationModeFactory.noInteractions;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -55,39 +56,40 @@ public class SnifferOutputStreamTest {
     @Features("issues/219")
     public void testWriteByteArrayThreeTcpPackets() throws IOException {
 
-        int backup = snifferSocket.sendBufferSize;
-        try {
+        when(snifferSocket.getSendBufferSize()).thenReturn(5);
 
-            snifferSocket.sendBufferSize = 5;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        SnifferOutputStream sos = new SnifferOutputStream(snifferSocket, baos);
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            SnifferOutputStream sos = new SnifferOutputStream(snifferSocket, baos);
+        byte[] THREE_BYTES_CHUNK = {1, 2, 3};
+        byte[] ELEVEN_BYTES_CHUNK = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
 
-            byte[] THREE_BYTES_CHUNK = {1, 2, 3};
-            byte[] ELEVEN_BYTES_CHUNK = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+        byte[] ALL_DATA = new byte[THREE_BYTES_CHUNK.length + ELEVEN_BYTES_CHUNK.length];
+        System.arraycopy(THREE_BYTES_CHUNK, 0, ALL_DATA, 0, THREE_BYTES_CHUNK.length);
+        System.arraycopy(ELEVEN_BYTES_CHUNK, 0, ALL_DATA, THREE_BYTES_CHUNK.length, ELEVEN_BYTES_CHUNK.length);
 
-            byte[] ALL_DATA = new byte[THREE_BYTES_CHUNK.length + ELEVEN_BYTES_CHUNK.length];
-            System.arraycopy(THREE_BYTES_CHUNK, 0, ALL_DATA, 0, THREE_BYTES_CHUNK.length);
-            System.arraycopy(ELEVEN_BYTES_CHUNK, 0, ALL_DATA, THREE_BYTES_CHUNK.length, ELEVEN_BYTES_CHUNK.length);
+        sos.write(THREE_BYTES_CHUNK);
 
-            sos.write(THREE_BYTES_CHUNK);
-            sos.write(ELEVEN_BYTES_CHUNK);
+        when(snifferSocket.getPotentiallyBufferedOutputBytes()).thenReturn(3);
 
-            verify(snifferSocket, times(2)).checkConnectionAllowed(eq(0));
+        sos.write(ELEVEN_BYTES_CHUNK);
 
-            verify(snifferSocket).checkConnectionAllowed(eq(1));
-            verify(snifferSocket).checkConnectionAllowed(eq(2));
+        verify(snifferSocket, times(2)).checkConnectionAllowed(eq(0));
 
-            verify(snifferSocket).logSocket(anyLong(), eq(0), eq(THREE_BYTES_CHUNK.length));
-            verify(snifferSocket).logSocket(anyLong(), eq(0), eq(ELEVEN_BYTES_CHUNK.length));
+        InOrder inOrder = Mockito.inOrder(snifferSocket);
 
-            verifyNoMoreInteractions(snifferSocket);
+        inOrder.verify(snifferSocket).checkConnectionAllowed(eq(0));
+        inOrder.verify(snifferSocket).checkConnectionAllowed(eq(1));
+        inOrder.verify(snifferSocket).logSocket(anyLong(), eq(0), eq(THREE_BYTES_CHUNK.length));
 
-            assertArrayEquals(ALL_DATA, baos.toByteArray());
+        inOrder.verify(snifferSocket).checkConnectionAllowed(eq(0));
+        inOrder.verify(snifferSocket).checkConnectionAllowed(eq(2));
+        inOrder.verify(snifferSocket).logSocket(anyLong(), eq(0), eq(ELEVEN_BYTES_CHUNK.length));
 
-        } finally {
-            snifferSocket.sendBufferSize = backup;
-        }
+        inOrder.verify(snifferSocket, times(0)).checkConnectionAllowed(anyInt());
+        inOrder.verify(snifferSocket, times(0)).logSocket(anyLong(), anyInt(), anyInt());
+
+        assertArrayEquals(ALL_DATA, baos.toByteArray());
 
     }
 

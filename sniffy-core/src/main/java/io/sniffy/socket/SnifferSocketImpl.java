@@ -22,16 +22,16 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
     private final int id = counter.getAndIncrement();
 
     protected static volatile Integer defaultReceiveBufferSize;
-    protected int receiveBufferSize = -1;
-
     protected static volatile Integer defaultSendBufferSize;
-    protected int sendBufferSize = -1;
 
-    protected volatile int potentiallyBufferedInputBytes = 0;
-    protected volatile int potentiallyBufferedOutputBytes = 0;
+    private int receiveBufferSize = -1;
+    private int sendBufferSize = -1;
 
-    protected volatile long lastReadThreadId;
-    protected volatile long lastWriteThreadId;
+    private volatile int potentiallyBufferedInputBytes = 0;
+    private volatile int potentiallyBufferedOutputBytes = 0;
+
+    private volatile long lastReadThreadId;
+    private volatile long lastWriteThreadId;
 
     private volatile Integer connectionStatus;
 
@@ -50,7 +50,7 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
     }
 
     private void estimateReceiveBuffer() {
-        if (-1 == receiveBufferSize) {
+        if (-1 == getReceiveBufferSize()) {
             if (null == defaultReceiveBufferSize) {
                 synchronized (SnifferSocketImpl.class) {
                     if (null == defaultReceiveBufferSize) {
@@ -67,12 +67,12 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
                     }
                 }
             }
-            receiveBufferSize = defaultReceiveBufferSize;
+            setReceiveBufferSize(defaultReceiveBufferSize);
         }
     }
 
     private void estimateSendBuffer() {
-        if (-1 == sendBufferSize) {
+        if (-1 == getSendBufferSize()) {
             if (null == defaultSendBufferSize) {
                 synchronized (SnifferSocketImpl.class) {
                     if (null == defaultSendBufferSize) {
@@ -89,34 +89,35 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
                     }
                 }
             }
-            sendBufferSize = defaultSendBufferSize;
+            setSendBufferSize(defaultSendBufferSize);
         }
     }
 
-    protected void logSocket(long millis) {
+    public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
-    protected void logSocket(long millis, int bytesDown, int bytesUp) {
+    public void logSocket(long millis, int bytesDown, int bytesUp) {
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
         if (sniffyMode.isEnabled() && null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
             Sniffy.logSocket(id, address, millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
         }
     }
 
-    protected void checkConnectionAllowed() throws ConnectException {
+    public void checkConnectionAllowed() throws ConnectException {
         checkConnectionAllowed(0);
     }
 
-    protected void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
+    public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
         checkConnectionAllowed(address, numberOfSleepCycles);
     }
 
-    protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
+    public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
         checkConnectionAllowed(inetSocketAddress, 1);
     }
 
-    protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+    // TODO: inverse this check; otherwise it is too slow
+    public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
         if (null != inetSocketAddress) {
             if (null == this.connectionStatus || ConnectionsRegistry.INSTANCE.isThreadLocal()) {
                 this.connectionStatus = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, this);
@@ -294,7 +295,7 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
     protected void bind(InetAddress host, int port) throws IOException {
         long start = System.currentTimeMillis();
         try {
-            super.bind(host, port);
+            super.bind(host, port); // TODO: should we check connectivity enabled here as well ?
         } finally {
             logSocket(System.currentTimeMillis() - start);
         }
@@ -375,13 +376,13 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
 
             if (SocketOptions.SO_RCVBUF == optID) {
                 try {
-                    receiveBufferSize = ((Number) value).intValue();
+                    setReceiveBufferSize(((Number) value).intValue());
                 } catch (Exception e) {
                     // TODO: log me maybe
                 }
             } else if (SocketOptions.SO_SNDBUF == optID) {
                 try {
-                    sendBufferSize = ((Number) value).intValue();
+                    setSendBufferSize(((Number) value).intValue());
                 } catch (Exception e) {
                     // TODO: log me maybe
                 }
@@ -400,6 +401,54 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
         } finally {
             logSocket(System.currentTimeMillis() - start);
         }
+    }
+
+    public int getPotentiallyBufferedInputBytes() {
+        return potentiallyBufferedInputBytes;
+    }
+
+    public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) {
+        this.potentiallyBufferedInputBytes = potentiallyBufferedInputBytes;
+    }
+
+    public int getPotentiallyBufferedOutputBytes() {
+        return potentiallyBufferedOutputBytes;
+    }
+
+    public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) {
+        this.potentiallyBufferedOutputBytes = potentiallyBufferedOutputBytes;
+    }
+
+    public long getLastReadThreadId() {
+        return lastReadThreadId;
+    }
+
+    public void setLastReadThreadId(long lastReadThreadId) {
+        this.lastReadThreadId = lastReadThreadId;
+    }
+
+    public long getLastWriteThreadId() {
+        return lastWriteThreadId;
+    }
+
+    public void setLastWriteThreadId(long lastWriteThreadId) {
+        this.lastWriteThreadId = lastWriteThreadId;
+    }
+
+    public int getReceiveBufferSize() {
+        return receiveBufferSize;
+    }
+
+    public void setReceiveBufferSize(int receiveBufferSize) {
+        this.receiveBufferSize = receiveBufferSize;
+    }
+
+    public int getSendBufferSize() {
+        return sendBufferSize;
+    }
+
+    public void setSendBufferSize(int sendBufferSize) {
+        this.sendBufferSize = sendBufferSize;
     }
 
     // New methods in Java 9

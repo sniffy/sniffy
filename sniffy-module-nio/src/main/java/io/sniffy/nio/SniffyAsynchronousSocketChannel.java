@@ -25,23 +25,23 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
     private final AsynchronousSocketChannel delegate;
 
-    private volatile Integer connectionStatus;
-
     private final static AtomicInteger counter = new AtomicInteger();
 
-    private final int id = counter.getAndIncrement();
+    private final int id = counter.getAndIncrement(); // TODO: check if ids are clashing
 
     protected static volatile Integer defaultReceiveBufferSize;
-    protected int receiveBufferSize = -1;
-
     protected static volatile Integer defaultSendBufferSize;
-    protected int sendBufferSize = -1;
 
-    protected volatile int potentiallyBufferedInputBytes = 0;
-    protected volatile int potentiallyBufferedOutputBytes = 0;
+    private int receiveBufferSize = -1;
+    private int sendBufferSize = -1;
 
-    protected volatile long lastReadThreadId;
-    protected volatile long lastWriteThreadId;
+    private volatile int potentiallyBufferedInputBytes = 0;
+    private volatile int potentiallyBufferedOutputBytes = 0;
+
+    private volatile long lastReadThreadId;
+    private volatile long lastWriteThreadId;
+
+    private volatile Integer connectionStatus;
 
     public SniffyAsynchronousSocketChannel(AsynchronousChannelProvider provider, AsynchronousSocketChannel delegate) {
         super(provider);
@@ -187,30 +187,30 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
         Thread.sleep(millis);
     }
 
-    protected void logSocket(long millis) {
+    public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
-    protected void logSocket(long millis, int bytesDown, int bytesUp) {
+    public void logSocket(long millis, int bytesDown, int bytesUp) {
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
         if (sniffyMode.isEnabled() && null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
             Sniffy.logSocket(id, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
         }
     }
 
-    protected void checkConnectionAllowed() throws ConnectException {
+    public void checkConnectionAllowed() throws ConnectException {
         checkConnectionAllowed(0);
     }
 
-    protected void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
+    public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
         checkConnectionAllowed(getInetSocketAddress(), numberOfSleepCycles);
     }
 
-    protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
+    public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
         checkConnectionAllowed(inetSocketAddress, 1);
     }
 
-    protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+    public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
         if (null != inetSocketAddress) {
             if (null == this.connectionStatus || ConnectionsRegistry.INSTANCE.isThreadLocal()) {
                 this.connectionStatus = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, this);
@@ -436,4 +436,68 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     public Set<SocketOption<?>> supportedOptions() {
         return delegate.supportedOptions();
     }
+
+    //
+
+
+    @Override
+    public int getReceiveBufferSize() {
+        return receiveBufferSize;
+    }
+
+    @Override
+    public void setReceiveBufferSize(int receiveBufferSize) {
+        this.receiveBufferSize = receiveBufferSize;
+    }
+
+    @Override
+    public int getSendBufferSize() {
+        return sendBufferSize;
+    }
+
+    @Override
+    public void setSendBufferSize(int sendBufferSize) {
+        this.sendBufferSize = sendBufferSize;
+    }
+
+    @Override
+    public int getPotentiallyBufferedInputBytes() {
+        return potentiallyBufferedInputBytes;
+    }
+
+    @Override
+    public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) {
+        this.potentiallyBufferedInputBytes = potentiallyBufferedInputBytes;
+    }
+
+    @Override
+    public int getPotentiallyBufferedOutputBytes() {
+        return potentiallyBufferedOutputBytes;
+    }
+
+    @Override
+    public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) {
+        this.potentiallyBufferedOutputBytes = potentiallyBufferedOutputBytes;
+    }
+
+    @Override
+    public long getLastReadThreadId() {
+        return lastReadThreadId;
+    }
+
+    @Override
+    public void setLastReadThreadId(long lastReadThreadId) {
+        this.lastReadThreadId = lastReadThreadId;
+    }
+
+    @Override
+    public long getLastWriteThreadId() {
+        return lastWriteThreadId;
+    }
+
+    @Override
+    public void setLastWriteThreadId(long lastWriteThreadId) {
+        this.lastWriteThreadId = lastWriteThreadId;
+    }
+
 }
