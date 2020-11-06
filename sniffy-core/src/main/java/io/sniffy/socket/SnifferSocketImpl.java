@@ -404,6 +404,7 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffySocket 
     }
 
     // New methods in Java 9
+    // TODO: use multi-release jars to handle it
 
     /*
     @Override
