@@ -10,6 +10,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -45,16 +47,49 @@ public class SniffySelector extends AbstractSelector {
         }
     }
 
+    private SelectionKey wrapSelectionKey(SelectionKey delegate) {
+        return new SniffySelectionKey(delegate, this);
+    }
+
+    private Set<SelectionKey> wrapSelectionKeys(Set<SelectionKey> delegates) {
+        if (null == delegates) {
+            return null;
+        } else if (delegates.isEmpty()) {
+            return Collections.<SelectionKey>emptySet();
+        } else {
+            Set<SelectionKey> sniffySelectionKeys = new HashSet<SelectionKey>(delegates.size());
+            for (SelectionKey delegate : delegates) {
+                sniffySelectionKeys.add(wrapSelectionKey(delegate));
+            }
+            return sniffySelectionKeys;
+        }
+    }
+
+    private class SelectionKeyConsumerWrapper implements Consumer<SelectionKey> {
+
+        private final Consumer<SelectionKey> delegate;
+
+        public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void accept(SelectionKey selectionKey) {
+            delegate.accept(wrapSelectionKey(selectionKey));
+        }
+
+    }
+
     @Override
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att) {
         try {
             copyToDelegate();
-            return ReflectionUtil.invokeMethod(AbstractSelector.class, delegate, "register",
+            return wrapSelectionKey(ReflectionUtil.invokeMethod(AbstractSelector.class, delegate, "register",
                     AbstractSelectableChannel.class, ch,
                     Integer.TYPE, ops,
                     Object.class, att,
                     SelectionKey.class
-            );
+            ));
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -66,7 +101,7 @@ public class SniffySelector extends AbstractSelector {
     public Set<SelectionKey> keys() {
         try {
             copyToDelegate();
-            return delegate.keys();
+            return wrapSelectionKeys(delegate.keys());
         } finally {
             copyFromDelegate();
         }
@@ -76,7 +111,7 @@ public class SniffySelector extends AbstractSelector {
     public Set<SelectionKey> selectedKeys() {
         try {
             copyToDelegate();
-            return delegate.selectedKeys();
+            return wrapSelectionKeys(delegate.selectedKeys());
         } finally {
             copyToDelegate();
         }
@@ -129,7 +164,7 @@ public class SniffySelector extends AbstractSelector {
         try {
             copyToDelegate();
             return ReflectionUtil.invokeMethod(Selector.class, delegate, "select",
-                    Consumer.class, action,
+                    Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Long.TYPE, timeout,
                     Integer.TYPE
             );
@@ -146,7 +181,7 @@ public class SniffySelector extends AbstractSelector {
         try {
             copyToDelegate();
             return ReflectionUtil.invokeMethod(Selector.class, delegate, "select",
-                    Consumer.class, action,
+                    Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Integer.TYPE
             );
         } catch (Exception e) {
@@ -162,7 +197,7 @@ public class SniffySelector extends AbstractSelector {
         try {
             copyToDelegate();
             return ReflectionUtil.invokeMethod(Selector.class, delegate, "selectNow",
-                    Consumer.class, action,
+                    Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Integer.TYPE
             );
         } catch (Exception e) {

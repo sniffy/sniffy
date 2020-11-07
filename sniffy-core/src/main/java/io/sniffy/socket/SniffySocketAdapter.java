@@ -181,7 +181,7 @@ public class SniffySocketAdapter extends Socket {
 
     @Override
     public void shutdownOutput() throws IOException {
-        delegate.shutdownOutput();
+        delegate.shutdownOutput(); // TODO: validate connection allowed here
     }
 
     @Override

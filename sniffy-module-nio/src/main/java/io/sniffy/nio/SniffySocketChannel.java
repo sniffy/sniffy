@@ -210,6 +210,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        checkConnectionAllowed(0);
         return super.read(dsts, offset, length); // TODO: handle properly
     }
 
@@ -230,6 +231,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        checkConnectionAllowed(0);
         return super.write(srcs, offset, length); // TODO: handle properly
     }
 

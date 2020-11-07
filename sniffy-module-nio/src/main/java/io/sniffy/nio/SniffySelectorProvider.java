@@ -78,8 +78,6 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public Pipe openPipe() throws IOException {
-        new Exception().printStackTrace();
-        System.err.println("has openSelector method in trace: " + StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.SniffySelectorProvider", "openSelector"));
         return OSUtil.isWindows() && StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.SniffySelectorProvider", "openSelector") ?
                 delegate.openPipe() :
                 new SniffyPipe(this, delegate.openPipe());
