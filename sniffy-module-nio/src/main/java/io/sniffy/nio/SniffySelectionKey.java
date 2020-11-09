@@ -5,14 +5,9 @@ import io.sniffy.util.*;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.spi.AbstractSelector;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
 
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
@@ -36,18 +31,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
 
-    private static Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache = new ConcurrentHashMap<SelectionKey, SniffySelectionKey>(); // TODO: fix memory leak
-
-    public static SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
-        SniffySelectionKey sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
-        if (null == sniffySelectionKey) {
-            sniffySelectionKey = new SniffySelectionKey(delegate, sniffySelector, sniffyChannel);
-            sniffySelectionKeyCache.put(delegate, sniffySelectionKey); // TODO: make thread safe
-        }
-        return sniffySelectionKey;
-    }
-
-    private SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
+    protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
         this.delegate = delegate;
 
         if (null != delegate) {
