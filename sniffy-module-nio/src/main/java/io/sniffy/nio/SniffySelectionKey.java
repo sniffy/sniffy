@@ -1,15 +1,18 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.ObjectWrapper;
-import io.sniffy.util.ReflectionUtil;
+import io.sniffy.util.*;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.spi.AbstractSelector;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import static io.sniffy.util.ReflectionUtil.invokeMethod;
+import static io.sniffy.util.ReflectionUtil.setField;
 
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
@@ -46,77 +49,22 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     static {
 
-        try {
-            // TODO: attachmentUpdater was removed in Java 14
-            AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater = ReflectionUtil.getField(SelectionKey.class, null, "attachmentUpdater");
-            AtomicReferenceFieldUpdater<SelectionKey, Object> attachmentFieldUpdater = new AttachmentFieldUpdater(defaultFieldUpdater);
-            ReflectionUtil.setField(SelectionKey.class, null, "attachmentUpdater", attachmentFieldUpdater);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+        if (JVMUtil.getVersion() < 14) {
+
+            try {
+                AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater = ReflectionUtil.getField(SelectionKey.class, null, "attachmentUpdater");
+                AtomicReferenceFieldUpdater<SelectionKey, Object> attachmentFieldUpdater = new ObjectWrapperFieldUpdater<SelectionKey, Object>(defaultFieldUpdater);
+                ReflectionUtil.setField(SelectionKey.class, null, "attachmentUpdater", attachmentFieldUpdater);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         }
 
     }
 
     public SelectionKey getDelegate() {
         return delegate;
-    }
-
-    private static class AttachmentFieldUpdater extends AtomicReferenceFieldUpdater<SelectionKey, Object> {
-
-        private final AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater;
-
-        public AttachmentFieldUpdater(AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater) {
-            this.defaultFieldUpdater = defaultFieldUpdater;
-        }
-
-        private SelectionKey getDelegate(SelectionKey obj) {
-
-            if (obj instanceof SniffySelectionKey) {
-                return ((SniffySelectionKey) obj).getDelegate();
-            }
-
-            return obj;
-
-        }
-
-        @Override
-        public boolean compareAndSet(@SuppressWarnings("NullableProblems") SelectionKey obj, Object expect, Object update) {
-            defaultFieldUpdater.compareAndSet(obj, expect, update);
-            return defaultFieldUpdater.compareAndSet(getDelegate(obj), expect, update);
-        }
-
-        @Override
-        public boolean weakCompareAndSet(@SuppressWarnings("NullableProblems") SelectionKey obj, Object expect, Object update) {
-            defaultFieldUpdater.weakCompareAndSet(obj, expect, update);
-            return defaultFieldUpdater.weakCompareAndSet(getDelegate(obj), expect, update);
-        }
-
-        @Override
-        public void set(@SuppressWarnings("NullableProblems") SelectionKey obj, Object newValue) {
-            defaultFieldUpdater.set(obj, newValue);
-            defaultFieldUpdater.set(getDelegate(obj), newValue);
-        }
-
-        @Override
-        public void lazySet(@SuppressWarnings("NullableProblems") SelectionKey obj, Object newValue) {
-            defaultFieldUpdater.lazySet(obj, newValue);
-            defaultFieldUpdater.lazySet(getDelegate(obj), newValue);
-        }
-
-        @Override
-        public Object get(@SuppressWarnings("NullableProblems") SelectionKey obj) {
-            defaultFieldUpdater.get(obj);
-            return defaultFieldUpdater.get(getDelegate(obj));
-        }
-
-        @Override
-        public Object getAndSet(@SuppressWarnings("NullableProblems") SelectionKey obj, Object newValue) {
-            defaultFieldUpdater.getAndSet(obj, newValue);
-            return defaultFieldUpdater.getAndSet(getDelegate(obj), newValue);
-        }
-
     }
 
     @Override
@@ -155,11 +103,6 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         return delegate.readyOps();
     }
 
-    /*@Override
-    public String toString() {
-        return "SniffySelectionKey << " + delegate.toString();
-    }*/
-
     @Override
     public String toString() {
         return "SniffySelectionKey{" +
@@ -182,14 +125,24 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         return Objects.hash(delegate);
     }
 
-    // Looks like these methods are available on Windows only (or on Java 11+)
+    // No @Override annotation here because this method is available in Java 11+ only
     //@Override
-    /*public int interestOpsOr(int ops) {
-        return delegate.interestOpsOr(ops);
+    public int interestOpsOr(int ops) {
+        try {
+            return invokeMethod(SelectionKey.class, delegate, "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
+        } catch (Exception e) {
+            throw ExceptionUtil.processException(e);
+        }
     }
 
+    // No @Override annotation here because this method is available in Java 11+ only
     //@Override
     public int interestOpsAnd(int ops) {
-        return delegate.interestOpsAnd(ops);
-    }*/
+        try {
+            return invokeMethod(SelectionKey.class, delegate, "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
+        } catch (Exception e) {
+            throw ExceptionUtil.processException(e);
+        }
+    }
+
 }

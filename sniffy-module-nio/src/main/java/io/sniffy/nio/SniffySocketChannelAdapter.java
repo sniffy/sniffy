@@ -151,7 +151,9 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (delegateRegLock) {
                 invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block);
+                if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
+                    setField(AbstractSelectableChannel.class, delegate, "blocking", block);
+                }
             }
 
         } catch (Exception e) {
