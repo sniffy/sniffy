@@ -1,5 +1,6 @@
 package io.sniffy.nio;
 
+import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.ReflectionUtil;
 
 import java.nio.channels.SelectableChannel;
@@ -10,11 +11,16 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class SniffySelectionKey extends SelectionKey {
+public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
     private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
+
+    @Override
+    public SelectionKey delegate() {
+        return delegate;
+    }
 
     private static Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache = new ConcurrentHashMap<SelectionKey, SniffySelectionKey>(); // TODO: fix memory leak
 

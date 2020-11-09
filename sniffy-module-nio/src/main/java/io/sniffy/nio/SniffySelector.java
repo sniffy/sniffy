@@ -1,8 +1,6 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionCopier;
-import io.sniffy.util.ReflectionUtil;
+import io.sniffy.util.*;
 
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
@@ -42,85 +40,25 @@ public class SniffySelector extends AbstractSelector {
         }
     }
 
-    private SelectionKey wrapSelectionKey(SelectionKey delegate, SelectableChannel ch) {
+    private SniffySelectionKey wrapSelectionKey(SelectionKey delegate, SelectableChannel ch) {
         return SniffySelectionKey.wrap(delegate, this, ch);
     }
 
-    private Set<SelectionKey> wrapSelectionKeys(Set<SelectionKey> delegates) {
-        return wrapSelectionKeys(delegates, null);
-    }
-
-    private Set<SelectionKey> wrapSelectionKeys(final Set<SelectionKey> delegates, final AbstractSelectableChannel ch) {
+    private Set<SelectionKey> wrapSelectionKeys(final Set<SelectionKey> delegates) {
         if (null == delegates) {
             return null;
         } else if (delegates.isEmpty()) {
             return Collections.<SelectionKey>emptySet();
         } else {
-            Set<SelectionKey> sniffySelectionKeys = new HashSet<SelectionKey>(delegates.size()) {
-
-                // TODO: should we override removeAll and others (?)
-                // TODO: should we override iterator and its remve and others (?)
-
-                // TODO: wrap in runtime instead of copying selection keys
+            return new SetWrapper<SniffySelectionKey, SelectionKey>(delegates, new WrapperFactory<SelectionKey, SniffySelectionKey>() {
 
                 @Override
-                public Iterator<SelectionKey> iterator() {
-                    final Iterator<SelectionKey> delegate = delegates.iterator();
-                    final Iterator<SelectionKey> parent = super.iterator();
-                    return new Iterator<SelectionKey>() {
-                        @Override
-                        public boolean hasNext() {
-                            delegate.hasNext();
-                            return parent.hasNext();
-                        }
-
-
-                        @Override
-                        public SelectionKey next() {
-                            delegate.next();
-                            return parent.next();
-                        }
-
-                        @Override
-                        public void remove() {
-                            delegate.remove();
-                            parent.remove();
-                        }
-                    };
+                public SniffySelectionKey wrap(SelectionKey delegate) {
+                    //noinspection SuspiciousMethodCalls
+                    return wrapSelectionKey(delegate, channelToSniffyChannelMap.get(delegate.channel()));
                 }
 
-                @Override
-                public void clear() {
-                    delegates.clear();
-                    super.clear();
-                }
-
-                @Override
-                public boolean removeAll(Collection<?> c) {
-                    for (Object o : c) {
-                        if (o instanceof SniffySelectionKey) {
-                            delegates.remove(((SniffySelectionKey) o).getDelegate());
-                        }
-                    }
-                    return super.removeAll(c);
-                }
-
-                @Override
-                public boolean remove(Object o) {
-                    boolean remove = super.remove(o);
-                    if (remove) {
-                        if (o instanceof SniffySelectionKey) {
-                            delegates.remove(((SniffySelectionKey) o).getDelegate());
-                        }
-                    }
-                    return remove;
-                }
-
-            };
-            for (SelectionKey delegate : delegates) {
-                sniffySelectionKeys.add(wrapSelectionKey(delegate, ch == null ? channelToSniffyChannelMap.get(delegate.channel()) : ch));
-            }
-            return sniffySelectionKeys;
+            });
         }
     }
 
@@ -216,8 +154,8 @@ public class SniffySelector extends AbstractSelector {
                 //noinspection TryWithIdenticalCatches
                 try {
 
-                    Object keyLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, sniffyChannel, "keyLock");
-                    Object delegateKeyLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "keyLock");
+                    Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyLock");
+                    Object delegateKeyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keyLock");
 
                     //noinspection SynchronizationOnLocalVariableOrMethodParameter
                     synchronized (delegateKeyLock) {
@@ -280,6 +218,7 @@ public class SniffySelector extends AbstractSelector {
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
+    @SuppressWarnings("RedundantThrows")
     public int select(Consumer<SelectionKey> action, long timeout) throws IOException {
         try {
             return invokeMethod(Selector.class, delegate, "select",
@@ -296,6 +235,7 @@ public class SniffySelector extends AbstractSelector {
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
+    @SuppressWarnings("RedundantThrows")
     public int select(Consumer<SelectionKey> action) throws IOException {
         try {
             return invokeMethod(Selector.class, delegate, "select",
@@ -311,6 +251,7 @@ public class SniffySelector extends AbstractSelector {
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
+    @SuppressWarnings("RedundantThrows")
     public int selectNow(Consumer<SelectionKey> action) throws IOException {
         try {
             return invokeMethod(Selector.class, delegate, "selectNow",
