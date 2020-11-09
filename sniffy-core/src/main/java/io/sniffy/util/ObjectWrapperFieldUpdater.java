@@ -12,7 +12,7 @@ public class ObjectWrapperFieldUpdater<C, O> extends AtomicReferenceFieldUpdater
 
     @SuppressWarnings("unchecked")
     private C getWrappedObject(C wrapper) {
-        return ((ObjectWrapper<C>) wrapper).delegate();
+        return ((ObjectWrapper<C>) wrapper).getDelegate();
     }
 
     @Override

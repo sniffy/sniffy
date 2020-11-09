@@ -16,14 +16,25 @@ import static io.sniffy.util.ReflectionUtil.setField;
 
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
+    static {
+
+        if (JVMUtil.getVersion() < 14) {
+
+            try {
+                AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater = ReflectionUtil.getField(SelectionKey.class, null, "attachmentUpdater");
+                AtomicReferenceFieldUpdater<SelectionKey, Object> attachmentFieldUpdater = new ObjectWrapperFieldUpdater<SelectionKey, Object>(defaultFieldUpdater);
+                ReflectionUtil.setField(SelectionKey.class, null, "attachmentUpdater", attachmentFieldUpdater);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
+    }
+
     private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
-
-    @Override
-    public SelectionKey delegate() {
-        return delegate;
-    }
 
     private static Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache = new ConcurrentHashMap<SelectionKey, SniffySelectionKey>(); // TODO: fix memory leak
 
@@ -47,29 +58,14 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         this.sniffyChannel = sniffyChannel;
     }
 
-    static {
-
-        if (JVMUtil.getVersion() < 14) {
-
-            try {
-                AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater = ReflectionUtil.getField(SelectionKey.class, null, "attachmentUpdater");
-                AtomicReferenceFieldUpdater<SelectionKey, Object> attachmentFieldUpdater = new ObjectWrapperFieldUpdater<SelectionKey, Object>(defaultFieldUpdater);
-                ReflectionUtil.setField(SelectionKey.class, null, "attachmentUpdater", attachmentFieldUpdater);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-
-    }
-
+    @Override
     public SelectionKey getDelegate() {
         return delegate;
     }
 
     @Override
     public SelectableChannel channel() {
-        return null == sniffyChannel ? delegate.channel() : sniffyChannel; // TODO: we shouldn't have nulls here
+        return sniffyChannel;
     }
 
     @Override
@@ -101,28 +97,6 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     @Override
     public int readyOps() {
         return delegate.readyOps();
-    }
-
-    @Override
-    public String toString() {
-        return "SniffySelectionKey{" +
-                "delegate=" + delegate +
-                ", sniffySelector=" + sniffySelector +
-                ", sniffyChannel=" + sniffyChannel +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SniffySelectionKey that = (SniffySelectionKey) o;
-        return delegate.equals(that.delegate);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(delegate);
     }
 
     // No @Override annotation here because this method is available in Java 11+ only
