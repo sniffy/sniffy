@@ -5,12 +5,14 @@ import io.sniffy.util.ReflectionCopier;
 import io.sniffy.util.ReflectionUtil;
 
 import java.io.IOException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class SniffySelector extends AbstractSelector {
@@ -45,7 +47,7 @@ public class SniffySelector extends AbstractSelector {
         }
     }
 
-    private SelectionKey wrapSelectionKey(SelectionKey delegate, AbstractSelectableChannel ch) {
+    private SelectionKey wrapSelectionKey(SelectionKey delegate, SelectableChannel ch) {
         return new SniffySelectionKey(delegate, this, ch);
     }
 
@@ -122,7 +124,7 @@ public class SniffySelector extends AbstractSelector {
 
             };
             for (SelectionKey delegate : delegates) {
-                sniffySelectionKeys.add(wrapSelectionKey(delegate, ch));
+                sniffySelectionKeys.add(wrapSelectionKey(delegate, ch == null ? channelToSniffyChannelMap.get(delegate.channel()) : ch));
             }
             return sniffySelectionKeys;
         }
@@ -149,6 +151,8 @@ public class SniffySelector extends AbstractSelector {
 
     }
 
+    private Map<SelectableChannel, SelectableChannel> channelToSniffyChannelMap = new ConcurrentHashMap<SelectableChannel, SelectableChannel>();
+
     @Override
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att) {
         try {
@@ -159,8 +163,10 @@ public class SniffySelector extends AbstractSelector {
             if (ch instanceof SniffySocketChannelAdapter) {
                 ((SniffySocketChannelAdapter) ch).copyToDelegate();
                 chDelegate = ((SniffySocketChannelAdapter) ch).delegate;
+                channelToSniffyChannelMap.put(chDelegate, ch);
             } else if (ch instanceof SniffyServerSocketChannel) {
-                ch = ((SniffyServerSocketChannel) ch).delegate;
+                chDelegate = ((SniffyServerSocketChannel) ch).delegate;
+                channelToSniffyChannelMap.put(chDelegate, ch);
             }
 
             SelectionKey selectionKeyDelegate = ReflectionUtil.invokeMethod(AbstractSelector.class, delegate, "register",
@@ -170,10 +176,10 @@ public class SniffySelector extends AbstractSelector {
                     SelectionKey.class
             );
 
-            Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, ch, "keyLock");
+            Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, chDelegate, "keyLock");
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (keyLock) {
-                ReflectionUtil.invokeMethod(AbstractSelectableChannel.class, ch, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
+                ReflectionUtil.invokeMethod(AbstractSelectableChannel.class, chDelegate, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
             }
 
             return wrapSelectionKey(selectionKeyDelegate, ch);
@@ -214,8 +220,21 @@ public class SniffySelector extends AbstractSelector {
     public int selectNow() throws IOException {
         try {
             copyToDelegate();
-            return delegate.selectNow();
+            return delegate.selectNow(); // TODO: this method invokes AbstractSelector.deRegister() which causes split-brain
+            // TODO: process deregister queue
+
+
         } finally {
+
+            for (Map.Entry<SelectableChannel, SelectableChannel> entry : channelToSniffyChannelMap.entrySet()) {
+                SelectableChannel delegateChannel = entry.getKey();
+                SelectableChannel sniffyChannel = entry.getValue();
+
+                if (sniffyChannel instanceof SniffySocketChannelAdapter) {
+                    ((SniffySocketChannelAdapter) sniffyChannel).copyFromDelegate(this);
+                }
+            }
+
             copyFromDelegate();
         }
     }

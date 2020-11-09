@@ -14,12 +14,14 @@ public class SniffySelectionKey extends SelectionKey {
 
     private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
-    private final AbstractSelectableChannel sniffyChannel;
+    private final SelectableChannel sniffyChannel;
 
-    public SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, AbstractSelectableChannel sniffyChannel) {
+    public SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
         this.delegate = delegate;
         //ReflectionUtil.setField(SelectionKey.class, this, "attachment", delegate.attachment());
-        attach(delegate.attachment());
+        if (null != delegate) {
+            attach(delegate.attachment());
+        }
         this.sniffySelector = sniffySelector;
         this.sniffyChannel = sniffyChannel;
     }
