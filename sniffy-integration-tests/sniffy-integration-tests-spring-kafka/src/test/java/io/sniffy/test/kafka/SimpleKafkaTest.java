@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringRunner.class)
-@EmbeddedKafka(partitions = 1/*, topics = { "testTopic" }*/)
+@EmbeddedKafka(partitions = 1, topics = { "testTopic" })
 public class SimpleKafkaTest {
 
     private static final String TEST_TOPIC = "testTopic";
@@ -34,8 +34,7 @@ public class SimpleKafkaTest {
     @Autowired
     EmbeddedKafkaBroker embeddedKafkaBroker;
 
-    @Rule
-    public final SniffyRule sniffy = new SniffyRule();
+    @Rule public final SniffyRule sniffy = new SniffyRule();
 
     @Test
     public void testReceivingKafkaEvents() {

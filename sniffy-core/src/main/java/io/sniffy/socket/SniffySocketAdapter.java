@@ -10,7 +10,8 @@ public class SniffySocketAdapter extends Socket {
 
     private final Socket delegate;
 
-    public SniffySocketAdapter(Socket delegate) {
+    public SniffySocketAdapter(Socket delegate) throws SocketException {
+        super((SocketImpl) null);
         this.delegate = delegate;
     }
 

@@ -356,11 +356,13 @@ public class SniffySocketChannelAdapter extends SocketChannel implements SelChIm
         }
     }
 
-    private void copyToDelegate() {
+    // TODO: think about thread safety - shall we make everything synschronized and made more stable but less performant ?
+    protected void copyToDelegate() {
         socketChannelFieldsCopier.copy(this, delegate);
     }
 
-    private void copyFromDelegate() {
+    // TODO: think about thread safety
+    protected void copyFromDelegate() {
         socketChannelFieldsCopier.copy(delegate, this);
     }
 

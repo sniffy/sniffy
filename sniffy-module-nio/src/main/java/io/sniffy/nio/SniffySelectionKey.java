@@ -6,18 +6,22 @@ import io.sniffy.util.ReflectionUtil;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.spi.AbstractSelectableChannel;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class SniffySelectionKey extends SelectionKey {
 
     private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
+    private final AbstractSelectableChannel sniffyChannel;
 
-    public SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector) {
+    public SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, AbstractSelectableChannel sniffyChannel) {
         this.delegate = delegate;
         //ReflectionUtil.setField(SelectionKey.class, this, "attachment", delegate.attachment());
         attach(delegate.attachment());
         this.sniffySelector = sniffySelector;
+        this.sniffyChannel = sniffyChannel;
     }
 
     static {
@@ -96,7 +100,7 @@ public class SniffySelectionKey extends SelectionKey {
 
     @Override
     public SelectableChannel channel() {
-        return delegate.channel();
+        return null == sniffyChannel ? delegate.channel() : sniffyChannel; // TODO: we shouldn't have nulls here
     }
 
     @Override
@@ -129,4 +133,42 @@ public class SniffySelectionKey extends SelectionKey {
     public int readyOps() {
         return delegate.readyOps();
     }
+
+    /*@Override
+    public String toString() {
+        return "SniffySelectionKey << " + delegate.toString();
+    }*/
+
+    @Override
+    public String toString() {
+        return "SniffySelectionKey{" +
+                "delegate=" + delegate +
+                ", sniffySelector=" + sniffySelector +
+                ", sniffyChannel=" + sniffyChannel +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SniffySelectionKey that = (SniffySelectionKey) o;
+        return delegate.equals(that.delegate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(delegate);
+    }
+
+    // Looks like these methods are available on Windows only (or on Java 11+)
+    //@Override
+    /*public int interestOpsOr(int ops) {
+        return delegate.interestOpsOr(ops);
+    }
+
+    //@Override
+    public int interestOpsAnd(int ops) {
+        return delegate.interestOpsAnd(ops);
+    }*/
 }

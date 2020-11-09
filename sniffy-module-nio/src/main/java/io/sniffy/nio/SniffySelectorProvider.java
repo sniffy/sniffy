@@ -90,7 +90,9 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
-        return new SniffyServerSocketChannel(this, delegate.openServerSocketChannel());
+        return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
+                delegate.openServerSocketChannel() :
+                new SniffyServerSocketChannel(this, delegate.openServerSocketChannel());
     }
 
     /**
