@@ -1,7 +1,6 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -11,13 +10,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
@@ -225,39 +220,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
             invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
-        }
-    }
-
-    protected void updateSelectionKeysFromDelegate(SniffySelector selector) {
-
-        //noinspection TryWithIdenticalCatches
-        try {
-
-            Object keyLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, this, "keyLock");
-            Object delegateKeyLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "keyLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateKeyLock) {
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (keyLock) {
-
-                    SelectionKey[] delegateKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keys");
-                    List<SelectionKey> sniffyKeys = new ArrayList<SelectionKey>(delegateKeys.length);
-                    for (SelectionKey delegateKey : delegateKeys) {
-                        sniffyKeys.add(null == delegateKey ? null : SniffySelectionKey.wrap(delegateKey, selector, this));
-                    }
-                    ReflectionUtil.setField(AbstractSelectableChannel.class, this, "keys", sniffyKeys.toArray(new SelectionKey[0]), "keyLock");
-
-                    ReflectionUtil.setField(AbstractInterruptibleChannel.class, delegate, "keyCount"
-                            , ReflectionUtil.getField(AbstractInterruptibleChannel.class, this, "keyCount"));
-
-                }
-            }
-
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
         }
     }
 
