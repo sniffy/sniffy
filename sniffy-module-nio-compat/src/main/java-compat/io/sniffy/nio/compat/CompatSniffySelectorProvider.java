@@ -1,6 +1,10 @@
 package io.sniffy.nio.compat;
 
+import io.sniffy.nio.SniffyPipe;
+import io.sniffy.nio.SniffySelector;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.OSUtil;
+import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
@@ -160,11 +164,14 @@ public class CompatSniffySelectorProvider extends SelectorProvider {
     @Override
     public Pipe openPipe() throws IOException {
         return delegate.openPipe();
+        /*return OSUtil.isWindows() && StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.SniffySelectorProvider", "openSelector") ?
+                delegate.openPipe() :
+                new CompatSniffyPipe(this, delegate.openPipe());*/
     }
 
     @Override
     public AbstractSelector openSelector() throws IOException {
-        return delegate.openSelector();
+        return new SniffySelector(this, delegate.openSelector()); // TODO: make CompatSniffySelector
     }
 
     @Override

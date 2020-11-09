@@ -20,7 +20,7 @@ public class SniffyCompatSelectorProviderModule {
 
     public static void initialize() {
 
-        if (getVersion() >= 9) return; // TODO: change to 8
+        if (getVersion() >= 8) return; // TODO: change to 8
 
         try {
             Class.forName("io.sniffy.nio.compat.CompatSniffySelectorProviderBootstrap").getMethod("initialize").invoke(null);

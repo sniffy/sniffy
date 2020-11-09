@@ -2,10 +2,7 @@ package io.sniffy.util;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ReflectionCopier<T> {
 
@@ -15,8 +12,8 @@ public class ReflectionCopier<T> {
         this(clazz, Collections.<String>emptySet());
     }
 
-    public ReflectionCopier(Class<? extends T> clazz, String ignoreFieldName) {
-        this(clazz, Collections.singleton(ignoreFieldName));
+    public ReflectionCopier(Class<? extends T> clazz, String... ignoreFieldName) {
+        this(clazz, new HashSet<String>(Arrays.asList(ignoreFieldName)));
     }
 
     public ReflectionCopier(Class<? extends T> clazz, Set<String> ignoreFieldNames) {

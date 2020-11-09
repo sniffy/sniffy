@@ -25,7 +25,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     private static final ReflectionCopier<ServerSocketChannel> socketChannelFieldsCopier = new ReflectionCopier<ServerSocketChannel>(ServerSocketChannel.class, "provider");
 
-    private final ServerSocketChannel delegate;
+    protected final ServerSocketChannel delegate;
     private final SelChImpl selChImplDelegate;
 
     public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) {
@@ -82,7 +82,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
             copyToDelegate();
             return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
                 delegate.accept() :
-                new SniffySocketChannelAdapter(provider(), delegate.accept());
+                new SniffySocketChannelAdapter(provider(), delegate.accept()); // TODO: distinguish it from real client socket channels
         } finally {
             copyFromDelegate();
         }

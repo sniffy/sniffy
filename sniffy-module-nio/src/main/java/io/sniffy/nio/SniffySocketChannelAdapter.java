@@ -2,6 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionCopier;
+import io.sniffy.util.ReflectionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -11,16 +12,19 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 public class SniffySocketChannelAdapter extends SocketChannel implements SelChImpl {
 
-    private static final ReflectionCopier<SocketChannel> socketChannelFieldsCopier = new ReflectionCopier<SocketChannel>(SocketChannel.class, "provider");
+    private static final ReflectionCopier<SocketChannel> socketChannelFieldsCopier = new ReflectionCopier<SocketChannel>(SocketChannel.class, "provider", "keys");
 
     protected final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
@@ -356,12 +360,51 @@ public class SniffySocketChannelAdapter extends SocketChannel implements SelChIm
         }
     }
 
-    private void copyToDelegate() {
+    // TODO: think about thread safety - shall we make everything synschronized and made more stable but less performant ?
+    protected void copyToDelegate() {
         socketChannelFieldsCopier.copy(this, delegate);
     }
 
-    private void copyFromDelegate() {
+    // TODO: think about thread safety
+    protected void copyFromDelegate() {
         socketChannelFieldsCopier.copy(delegate, this);
+    }
+
+    // TODO: think about thread safety - shall we make everything synschronized and made more stable but less performant ?
+    protected void copyToDelegate(SniffySelector selector) {
+        socketChannelFieldsCopier.copy(this, delegate);
+
+        //SelectionKey[] keys;
+        try {
+            SelectionKey[] keys = ReflectionUtil.getField(AbstractSelectableChannel.class, this, "keys");
+            List<SelectionKey> delegateKeys = new ArrayList<SelectionKey>(keys.length);
+            for (SelectionKey key : keys) {
+                delegateKeys.add(key instanceof SniffySelectionKey ? ((SniffySelectionKey) key).getDelegate() : key);
+            }
+            ReflectionUtil.setField(AbstractSelectableChannel.class, delegate, "keys", delegateKeys.toArray(), "keyLock");
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // TODO: think about thread safety
+    protected void copyFromDelegate(SniffySelector selector) {
+        socketChannelFieldsCopier.copy(delegate, this);
+
+        try {
+            SelectionKey[] delegateKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keys");
+            List<SelectionKey> sniffyKeys = new ArrayList<SelectionKey>(delegateKeys.length);
+            for (SelectionKey delegateKey : delegateKeys) {
+                sniffyKeys.add(null == delegateKey ? null : SniffySelectionKey.wrap(delegateKey, selector, this));
+            }
+            ReflectionUtil.setField(AbstractSelectableChannel.class, this, "keys", sniffyKeys.toArray(new SelectionKey[0]), "keyLock");
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
     }
 
 }
