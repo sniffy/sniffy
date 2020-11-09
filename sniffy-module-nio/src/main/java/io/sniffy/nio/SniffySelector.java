@@ -53,7 +53,7 @@ public class SniffySelector extends AbstractSelector {
         return wrapSelectionKeys(delegates, null);
     }
 
-    private Set<SelectionKey> wrapSelectionKeys(Set<SelectionKey> delegates, AbstractSelectableChannel ch) {
+    private Set<SelectionKey> wrapSelectionKeys(final Set<SelectionKey> delegates, final AbstractSelectableChannel ch) {
         if (null == delegates) {
             return null;
         } else if (delegates.isEmpty()) {
@@ -68,8 +68,8 @@ public class SniffySelector extends AbstractSelector {
 
                 @Override
                 public Iterator<SelectionKey> iterator() {
-                    Iterator<SelectionKey> delegate = delegates.iterator();
-                    Iterator<SelectionKey> parent = super.iterator();
+                    final Iterator<SelectionKey> delegate = delegates.iterator();
+                    final Iterator<SelectionKey> parent = super.iterator();
                     return new Iterator<SelectionKey>() {
                         @Override
                         public boolean hasNext() {
