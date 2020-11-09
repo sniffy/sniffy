@@ -48,7 +48,7 @@ public class SniffySelector extends AbstractSelector {
     }
 
     private SelectionKey wrapSelectionKey(SelectionKey delegate, SelectableChannel ch) {
-        return new SniffySelectionKey(delegate, this, ch);
+        return SniffySelectionKey.wrap(delegate, this, ch);
     }
 
     private Set<SelectionKey> wrapSelectionKeys(Set<SelectionKey> delegates) {
@@ -151,7 +151,7 @@ public class SniffySelector extends AbstractSelector {
 
     }
 
-    private Map<SelectableChannel, SelectableChannel> channelToSniffyChannelMap = new ConcurrentHashMap<SelectableChannel, SelectableChannel>();
+    private Map<SelectableChannel, SelectableChannel> channelToSniffyChannelMap = new ConcurrentHashMap<SelectableChannel, SelectableChannel>();  // TODO: fix memory leak
 
     @Override
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att) {

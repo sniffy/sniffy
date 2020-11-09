@@ -397,7 +397,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements SelChIm
             SelectionKey[] delegateKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keys");
             List<SelectionKey> sniffyKeys = new ArrayList<SelectionKey>(delegateKeys.length);
             for (SelectionKey delegateKey : delegateKeys) {
-                sniffyKeys.add(null == delegateKey ? null : new SniffySelectionKey(delegateKey, selector, this));
+                sniffyKeys.add(null == delegateKey ? null : SniffySelectionKey.wrap(delegateKey, selector, this));
             }
             ReflectionUtil.setField(AbstractSelectableChannel.class, this, "keys", sniffyKeys.toArray(new SelectionKey[0]), "keyLock");
         } catch (IllegalAccessException e) {

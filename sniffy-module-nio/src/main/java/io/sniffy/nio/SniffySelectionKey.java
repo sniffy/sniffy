@@ -1,13 +1,13 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.ReflectionCopier;
 import io.sniffy.util.ReflectionUtil;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.spi.AbstractSelectableChannel;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class SniffySelectionKey extends SelectionKey {
@@ -16,12 +16,24 @@ public class SniffySelectionKey extends SelectionKey {
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
 
-    public SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
+    private static Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache = new ConcurrentHashMap<SelectionKey, SniffySelectionKey>(); // TODO: fix memory leak
+
+    public static SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
+        SniffySelectionKey sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
+        if (null == sniffySelectionKey) {
+            sniffySelectionKey = new SniffySelectionKey(delegate, sniffySelector, sniffyChannel);
+            sniffySelectionKeyCache.put(delegate, sniffySelectionKey); // TODO: make thread safe
+        }
+        return sniffySelectionKey;
+    }
+
+    private SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
         this.delegate = delegate;
-        //ReflectionUtil.setField(SelectionKey.class, this, "attachment", delegate.attachment());
+
         if (null != delegate) {
             attach(delegate.attachment());
         }
+
         this.sniffySelector = sniffySelector;
         this.sniffyChannel = sniffyChannel;
     }
@@ -29,8 +41,9 @@ public class SniffySelectionKey extends SelectionKey {
     static {
 
         try {
-            AtomicReferenceFieldUpdater<SelectionKey,Object> defaultFieldUpdater = ReflectionUtil.getField(SelectionKey.class, null, "attachmentUpdater");
-            AtomicReferenceFieldUpdater<SelectionKey,Object> attachmentFieldUpdater = new AttachmentFieldUpdater(defaultFieldUpdater);
+            // TODO: attachmentUpdater was removed in Java 14
+            AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater = ReflectionUtil.getField(SelectionKey.class, null, "attachmentUpdater");
+            AtomicReferenceFieldUpdater<SelectionKey, Object> attachmentFieldUpdater = new AttachmentFieldUpdater(defaultFieldUpdater);
             ReflectionUtil.setField(SelectionKey.class, null, "attachmentUpdater", attachmentFieldUpdater);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -44,9 +57,9 @@ public class SniffySelectionKey extends SelectionKey {
         return delegate;
     }
 
-    private static class AttachmentFieldUpdater extends AtomicReferenceFieldUpdater<SelectionKey,Object> {
+    private static class AttachmentFieldUpdater extends AtomicReferenceFieldUpdater<SelectionKey, Object> {
 
-        private final AtomicReferenceFieldUpdater<SelectionKey,Object> defaultFieldUpdater;
+        private final AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater;
 
         public AttachmentFieldUpdater(AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater) {
             this.defaultFieldUpdater = defaultFieldUpdater;
