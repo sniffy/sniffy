@@ -3,13 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>sniffy-integration-tests</artifactId>
+        <artifactId>sniffy-test</artifactId>
         <groupId>io.sniffy</groupId>
         <version>3.1.7-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>sniffy-integration-tests-kotest</artifactId>
+    <artifactId>sniffy-kotest</artifactId>
 
     <properties>
         <kotlin.version>1.4.10</kotlin.version>
@@ -19,6 +19,7 @@
 
     <build>
 
+        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
         <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
 
         <plugins>
@@ -28,6 +29,12 @@
                 <version>${kotlin.version}</version>
                 <executions>
                     <execution>
+                        <id>compile</id>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>test-compile</id>
                         <goals>
                             <goal>test-compile</goal>
@@ -35,7 +42,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <jvmTarget>1.8</jvmTarget>
+                    <jvmTarget>1.6</jvmTarget>
                     <args>
                         <arg>-Xcoroutines=enable</arg>
                     </args>
@@ -50,18 +57,25 @@
     </build>
 
     <dependencies>
+
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-test-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
             <version>${kotlin.version}</version>
-            <scope>test</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.kotest</groupId>
             <artifactId>kotest-runner-junit5-jvm</artifactId>
             <version>${kotest.version}</version>
-            <scope>test</scope>
+            <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>io.ktor</groupId>
             <artifactId>ktor-client-apache</artifactId>
@@ -78,13 +92,6 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>4.0.2</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-test-common</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

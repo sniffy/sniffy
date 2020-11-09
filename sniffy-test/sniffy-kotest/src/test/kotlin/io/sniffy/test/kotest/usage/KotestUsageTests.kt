@@ -18,54 +18,9 @@ import io.kotest.matchers.types.instanceOf
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
 import io.ktor.client.request.*
-import io.sniffy.Sniffy
 import io.sniffy.SniffyAssertionError
-import io.sniffy.Spy
-import io.sniffy.Threads
-import io.sniffy.configuration.SniffyConfiguration
-import io.sniffy.registry.ConnectionsRegistry
-import io.sniffy.socket.TcpConnections
 
-
-class NoSocketExtension(val threads: Threads = Threads.ANY) : TestCaseExtension {
-
-    init {
-        SniffyConfiguration.INSTANCE.isMonitorNio = true
-        Sniffy.initialize()
-    }
-
-    override suspend fun intercept(testCase: TestCase, execute: suspend (TestCase) -> TestResult): TestResult {
-        val spy = Sniffy.spy<Spy<*>>()
-        val testResult = execute.invoke(testCase)
-        try {
-            spy.verify(TcpConnections.none().threads(threads))
-        } catch (e: SniffyAssertionError) {
-            return testResult.copy(status = TestStatus.Failure, error = e)
-        }
-        return testResult
-    }
-
-}
-
-class DisableSocketsExtension : TestCaseExtension {
-
-    init {
-        SniffyConfiguration.INSTANCE.isMonitorNio = true
-        Sniffy.initialize()
-    }
-
-    override suspend fun intercept(testCase: TestCase, execute: suspend (TestCase) -> TestResult): TestResult {
-        try {
-            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1)
-            return execute.invoke(testCase)
-        } finally {
-            ConnectionsRegistry.INSTANCE.clear()
-        }
-    }
-
-}
-
-class ExpectExceptionExtension : TestCaseExtension {
+class ExpectSniffyAssertionExceptionExtension : TestCaseExtension {
 
     override suspend fun intercept(testCase: TestCase, execute: suspend (TestCase) -> TestResult): TestResult {
         val testResult = execute(testCase)
@@ -82,7 +37,7 @@ class KotestUsageTests : StringSpec({
 
     @Suppress("BlockingMethodInNonBlockingContext")
     "Ktor HTTP Client should be intercepted by Sniffy".config(
-            extensions = listOf(ExpectExceptionExtension(), NoSocketExtension(Threads.ANY))) {
+            extensions = listOf(ExpectSniffyAssertionExceptionExtension(), NoSocketsAllowedExtension())) {
 
         val client = HttpClient(Apache)
 
@@ -124,7 +79,7 @@ class KotestUsageTests : StringSpec({
             val hazelcastClient = HazelcastClient.newHazelcastFailoverClient(failoverConfig)
             hazelcastClient.getMap<Any, Any>("my-distributed-map").get("key") shouldBe "value"
             fail("Should have been refused by Sniffy")
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             e shouldNotBe null
         } finally {
             hzInstance.shutdown()
