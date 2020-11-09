@@ -1,6 +1,7 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.ReflectionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -11,11 +12,13 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
+import static io.sniffy.util.ReflectionUtil.setField;
 
 public class SniffySocketChannelAdapter extends SocketChannel implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
 
@@ -125,7 +128,15 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @Override
     public void implCloseSelectableChannel() {
         try {
-            invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
+
+            Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
+
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (delegateCloseLock) {
+                setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
+                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
+            }
+
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -134,7 +145,15 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @Override
     public void implConfigureBlocking(boolean block) {
         try {
-            invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
+
+            Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
+
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (delegateRegLock) {
+                invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
+                setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block);
+            }
+
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }

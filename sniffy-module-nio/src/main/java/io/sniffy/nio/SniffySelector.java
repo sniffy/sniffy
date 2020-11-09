@@ -20,6 +20,8 @@ public class SniffySelector extends AbstractSelector {
 
     private final AbstractSelector delegate;
 
+    private Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap = new ConcurrentHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();  // TODO: fix memory leak
+
     private static final ReflectionCopier<AbstractSelector> abstractSelectorFieldsCopier = new ReflectionCopier<AbstractSelector>(AbstractSelector.class, "provider");
 
     private void copyToDelegate() {
@@ -152,8 +154,6 @@ public class SniffySelector extends AbstractSelector {
         }
 
     }
-
-    private Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap = new ConcurrentHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();  // TODO: fix memory leak
 
     /**
      * This method adds a selection key to provided AbstractSelectableChannel, hence we're doing the same here manually
