@@ -7,6 +7,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.errors.TimeoutException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,9 +23,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @EmbeddedKafka(partitions = 1, topics = { "testTopic" })
@@ -45,7 +49,7 @@ public class SimpleKafkaTest {
 
         ConsumerRecord<Integer, String> singleRecord = KafkaTestUtils.getSingleRecord(consumer, TEST_TOPIC);
         assertNotNull(singleRecord);
-        assertEquals(new Integer(123), singleRecord.key());
+        assertEquals(Integer.valueOf(123), singleRecord.key());
         assertEquals("my-test-value", singleRecord.value());
 
         consumer.close();
@@ -53,19 +57,20 @@ public class SimpleKafkaTest {
     }
 
     @Test
-    //@DisableSockets
-    public void testDisabledKafkaProducer() {
-        Consumer<Integer, String> consumer = configureConsumer();
+    @DisableSockets
+    public void testDisabledKafkaProducer() throws Exception {
         Producer<Integer, String> producer = configureProducer();
 
-        producer.send(new ProducerRecord<>(TEST_TOPIC, 123, "my-test-value"));
+        Future<RecordMetadata> recordMetadataFuture = producer.send(new ProducerRecord<>(TEST_TOPIC, 123, "my-test-value"));
 
-        ConsumerRecord<Integer, String> singleRecord = KafkaTestUtils.getSingleRecord(consumer, TEST_TOPIC);
-        assertNotNull(singleRecord);
-        assertEquals(new Integer(123), singleRecord.key());
-        assertEquals("my-test-value", singleRecord.value());
+        try {
+            recordMetadataFuture.get(3000, TimeUnit.MILLISECONDS);
+            fail("Should have thrown timeout exception");
+        } catch (ExecutionException e) {
+            assertNotNull(e);
+            assertTrue(e.getCause() instanceof TimeoutException);
+        }
 
-        consumer.close();
         producer.close();
     }
 
@@ -80,6 +85,10 @@ public class SimpleKafkaTest {
 
     private Producer<Integer, String> configureProducer() {
         Map<String, Object> producerProps = new HashMap<>(KafkaTestUtils.producerProps(embeddedKafkaBroker));
+        producerProps.put("linger.ms", "50");
+        producerProps.put("max.block.ms", "2500");
+        producerProps.put("request.timeout.ms", "2000");
+        producerProps.put("delivery.timeout.ms", "2250");
         return new DefaultKafkaProducerFactory<Integer, String>(producerProps).createProducer();
     }
 }
