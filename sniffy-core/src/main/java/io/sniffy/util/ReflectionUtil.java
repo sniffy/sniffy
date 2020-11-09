@@ -84,6 +84,70 @@ public class ReflectionUtil {
 
     }
 
+    public static <T, V> V getField(String className, T instance, String fieldName) throws IllegalAccessException, NoSuchFieldException, ClassNotFoundException {
+        return getField(className, instance, fieldName, null);
+    }
+
+    public static <T, V> V getField(String className, T instance, String fieldName, String lockFieldName) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        //noinspection unchecked
+        return getField((Class<T>) Class.forName(className), instance, fieldName, lockFieldName);
+    }
+
+    public static <T, V> V getField(Class<T> clazz, T instance, String fieldName) throws NoSuchFieldException, IllegalAccessException {
+        return getField(clazz, instance, fieldName, null);
+    }
+
+    public static <T, V> V getField(Class<T> clazz, T instance, String fieldName, String lockFieldName) throws NoSuchFieldException, IllegalAccessException {
+
+        Field instanceField = clazz.getDeclaredField(fieldName);
+
+        if (!instanceField.isAccessible()) {
+            instanceField.setAccessible(true);
+        }
+
+        Field modifiersField = getModifiersField();
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+        if (null != lockFieldName) {
+
+            Field lockField = clazz.getDeclaredField(lockFieldName);
+
+            if (!lockField.isAccessible()) {
+                lockField.setAccessible(true);
+            }
+
+            Object lockObject = lockField.get(instance);
+
+            if (lockObject instanceof Lock) {
+
+                Lock lock = (Lock) lockObject;
+
+                try {
+                    lock.lock();
+                    //noinspection unchecked
+                    return (V) instanceField.get(instance);
+                } finally {
+                    lock.unlock();
+                }
+
+            } else {
+
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (lockObject) {
+                    //noinspection unchecked
+                    return (V) instanceField.get(instance);
+                }
+
+            }
+
+        } else {
+            //noinspection unchecked
+            return (V) instanceField.get(instance);
+        }
+
+    }
+
     private static Field getModifiersField() throws NoSuchFieldException {
         try {
             return Field.class.getDeclaredField("modifiers");

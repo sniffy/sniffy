@@ -10,7 +10,8 @@ public class SniffySocketAdapter extends Socket {
 
     private final Socket delegate;
 
-    public SniffySocketAdapter(Socket delegate) {
+    public SniffySocketAdapter(Socket delegate) throws SocketException {
+        super((SocketImpl) null);
         this.delegate = delegate;
     }
 
@@ -181,7 +182,7 @@ public class SniffySocketAdapter extends Socket {
 
     @Override
     public void shutdownOutput() throws IOException {
-        delegate.shutdownOutput();
+        delegate.shutdownOutput(); // TODO: validate connection allowed here
     }
 
     @Override

@@ -34,7 +34,7 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     private volatile Integer connectionStatus;
 
-    public SniffySocket(Socket delegate, SocketChannel socketChannel) {
+    public SniffySocket(Socket delegate, SocketChannel socketChannel) throws SocketException {
         super(delegate);
         this.socketChannel = socketChannel;
     }
