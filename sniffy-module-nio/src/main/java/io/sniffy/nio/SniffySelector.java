@@ -153,6 +153,9 @@ public class SniffySelector extends AbstractSelector {
 
     private Map<SelectableChannel, SelectableChannel> channelToSniffyChannelMap = new ConcurrentHashMap<SelectableChannel, SelectableChannel>();  // TODO: fix memory leak
 
+    /**
+     * This method adds a selection key to provided AbstractSelectableChannel, hence we're doing the same here manually
+     */
     @Override
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att) {
         try {
@@ -161,8 +164,7 @@ public class SniffySelector extends AbstractSelector {
             AbstractSelectableChannel chDelegate = ch;
 
             if (ch instanceof SniffySocketChannelAdapter) {
-                ((SniffySocketChannelAdapter) ch).copyToDelegate();
-                chDelegate = ((SniffySocketChannelAdapter) ch).delegate;
+                chDelegate = ((SniffySocketChannelAdapter) ch).delegate; // TODO: extract delegateschannel interface
                 channelToSniffyChannelMap.put(chDelegate, ch);
             } else if (ch instanceof SniffyServerSocketChannel) {
                 chDelegate = ((SniffyServerSocketChannel) ch).delegate;
@@ -189,9 +191,6 @@ public class SniffySelector extends AbstractSelector {
             throw ExceptionUtil.processException(e);
         } finally {
             copyFromDelegate();
-            if (ch instanceof SniffySocketChannelAdapter) {
-                ((SniffySocketChannelAdapter) ch).copyFromDelegate(); // TODO: wrap selection keys
-            }
         }
     }
 
@@ -216,6 +215,10 @@ public class SniffySelector extends AbstractSelector {
         }
     }
 
+    /**
+     * This methods processes de-register queue (filled-in using selectionKey.cancel() method)
+     * As a result it modifies the cancelledKeys field and also removes selectionKeys from associated channels
+     */
     @Override
     public int selectNow() throws IOException {
         try {
@@ -231,7 +234,7 @@ public class SniffySelector extends AbstractSelector {
                 SelectableChannel sniffyChannel = entry.getValue();
 
                 if (sniffyChannel instanceof SniffySocketChannelAdapter) {
-                    ((SniffySocketChannelAdapter) sniffyChannel).copyFromDelegate(this);
+                    ((SniffySocketChannelAdapter) sniffyChannel).updateSelectionKeysFromDelegate(this);
                 }
             }
 
@@ -239,6 +242,10 @@ public class SniffySelector extends AbstractSelector {
         }
     }
 
+    /**
+     * This methods processes de-register queue (filled-in using selectionKey.cancel() method)
+     * As a result it modifies the cancelledKeys field and also removes selectionKeys from associated channels
+     */
     @Override
     public int select(long timeout) throws IOException {
         try {
@@ -249,6 +256,10 @@ public class SniffySelector extends AbstractSelector {
         }
     }
 
+    /**
+     * This methods processes de-register queue (filled-in using selectionKey.cancel() method)
+     * As a result it modifies the cancelledKeys field and also removes selectionKeys from associated channels
+     */
     @Override
     public int select() throws IOException {
         try {

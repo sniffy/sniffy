@@ -12,13 +12,12 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.sniffy.Sniffy.CONNECTION_ID_SEQUENCE;
 
 public class SniffySocketChannel extends SniffySocketChannelAdapter implements SniffyNetworkConnection {
 
-    private final static AtomicInteger counter = new AtomicInteger();
-
-    private final int id = counter.getAndIncrement(); // TODO: does it clash with ids from blocking IO ?
+    private final int connectionId = CONNECTION_ID_SEQUENCE.getAndIncrement();
 
     protected static volatile Integer defaultReceiveBufferSize;
     protected static volatile Integer defaultSendBufferSize;
@@ -53,7 +52,6 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
 
-    // TODO: use heuristics based on popular defaults for TCP window sizes
     private void sleepIfRequired(int bytesDown) throws ConnectException {
 
         lastReadThreadId = Thread.currentThread().getId();
@@ -78,7 +76,6 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     }
 
-    // TODO: use heuristics based on popular defaults for TCP window sizes
     private void sleepIfRequiredForWrite(int bytesUp) throws ConnectException {
 
         lastWriteThreadId = Thread.currentThread().getId();
@@ -103,7 +100,6 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     }
 
-    // TODO: use heuristics based on popular defaults for TCP window sizes
     @IgnoreJRERequirement
     private void estimateReceiveBuffer() {
         if (-1 == receiveBufferSize) {
@@ -111,7 +107,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                 synchronized (SniffySocketChannel.class) {
                     if (null == defaultReceiveBufferSize) {
                         try {
-                            defaultReceiveBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF);
+                            defaultReceiveBufferSize = super.getOption(StandardSocketOptions.SO_RCVBUF);
                         } catch (SocketException e) {
                             defaultReceiveBufferSize = 0;
                         } catch (IOException e) {
@@ -124,7 +120,6 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         }
     }
 
-    // TODO: use heuristics based on popular defaults for TCP window sizes
     @IgnoreJRERequirement
     private void estimateSendBuffer() {
         if (-1 == sendBufferSize) {
@@ -132,7 +127,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                 synchronized (SniffySocketChannel.class) {
                     if (null == defaultSendBufferSize) {
                         try {
-                            defaultSendBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF);
+                            defaultSendBufferSize = super.getOption(StandardSocketOptions.SO_SNDBUF);
                         } catch (SocketException e) {
                             defaultSendBufferSize = 0;
                         } catch (IOException e) {
@@ -152,7 +147,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     public void logSocket(long millis, int bytesDown, int bytesUp) {
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
         if (sniffyMode.isEnabled() && null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
-            Sniffy.logSocket(id, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
+            Sniffy.logSocket(connectionId, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
         }
     }
 
@@ -210,8 +205,20 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        estimateReceiveBuffer();
         checkConnectionAllowed(0);
-        return super.read(dsts, offset, length); // TODO: handle properly
+        long start = System.currentTimeMillis();
+        long bytesDown = 0;
+        try {
+            bytesDown = super.read(dsts, offset, length);
+            return bytesDown;
+        } finally {
+            while (bytesDown > Integer.MAX_VALUE) {
+                sleepIfRequiredForWrite(Integer.MAX_VALUE);
+                logSocket(System.currentTimeMillis() - start, Integer.MAX_VALUE, 0);
+                bytesDown -= Integer.MAX_VALUE;
+            }
+        }
     }
 
     @Override
@@ -231,14 +238,28 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        estimateSendBuffer();
         checkConnectionAllowed(0);
-        return super.write(srcs, offset, length); // TODO: handle properly
+        long start = System.currentTimeMillis();
+        long bytesUp = 0;
+        try {
+            bytesUp = super.write(srcs, offset, length);
+            return bytesUp;
+        } finally {
+            while (bytesUp > Integer.MAX_VALUE) {
+                sleepIfRequiredForWrite(Integer.MAX_VALUE);
+                logSocket(System.currentTimeMillis() - start, 0, Integer.MAX_VALUE);
+                bytesUp -= Integer.MAX_VALUE;
+            }
+            sleepIfRequiredForWrite((int) bytesUp);
+            logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
+        }
     }
 
     @Override
     public Socket socket() {
         try {
-            return new SniffySocket(super.socket(), this);
+            return new SniffySocket(super.socket(), this, connectionId);
         } catch (SocketException e) {
             e.printStackTrace();
             return super.socket();

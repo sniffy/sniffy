@@ -1,7 +1,6 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionCopier;
 import io.sniffy.util.ReflectionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
@@ -14,6 +13,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
@@ -22,11 +22,9 @@ import java.util.Set;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
-public class SniffySocketChannelAdapter extends SocketChannel implements SelChImpl {
+public class SniffySocketChannelAdapter extends SocketChannel implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
 
-    private static final ReflectionCopier<SocketChannel> socketChannelFieldsCopier = new ReflectionCopier<SocketChannel>(SocketChannel.class, "provider", "keys");
-
-    protected final SocketChannel delegate;
+    private final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
 
     protected SniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
@@ -35,287 +33,166 @@ public class SniffySocketChannelAdapter extends SocketChannel implements SelChIm
         this.selChImplDelegate = (SelChImpl) delegate;
     }
 
+    @Override
+    public SocketChannel getDelegate() {
+        return delegate;
+    }
+
     @SuppressWarnings("Since15")
     @Override
     @IgnoreJRERequirement
     public SocketChannel bind(SocketAddress local) throws IOException {
-        try {
-            copyToDelegate();
-            delegate.bind(local);
-            return this;
-        } finally {
-            copyFromDelegate();
-        }
+        delegate.bind(local);
+        return this;
     }
 
     @SuppressWarnings("Since15")
     @Override
     @IgnoreJRERequirement
     public <T> SocketChannel setOption(java.net.SocketOption<T> name, T value) throws IOException {
-        try {
-            copyToDelegate();
-            delegate.setOption(name, value);
-            return this;
-        } finally {
-            copyFromDelegate();
-        }
+        delegate.setOption(name, value);
+        return this;
     }
 
     @SuppressWarnings("Since15")
     @Override
     @IgnoreJRERequirement
     public SocketChannel shutdownInput() throws IOException {
-        try {
-            copyToDelegate();
-            delegate.shutdownInput();
-            return this;
-        } finally {
-            copyFromDelegate();
-        }
+        delegate.shutdownInput();
+        return this;
     }
 
     @SuppressWarnings("Since15")
     @Override
     @IgnoreJRERequirement
     public SocketChannel shutdownOutput() throws IOException {
-        try {
-            copyToDelegate();
-            delegate.shutdownOutput();
-            return this;
-        } finally {
-            copyFromDelegate();
-        }
+        delegate.shutdownOutput();
+        return this;
     }
 
     @Override
     public Socket socket() {
-        try {
-            copyToDelegate();
-            return delegate.socket(); // TODO: should we wrap it with SniffySocket ??
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.socket();
     }
 
     @Override
     public boolean isConnected() {
-        try {
-            copyToDelegate();
-            return delegate.isConnected();
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.isConnected();
     }
 
     @Override
     public boolean isConnectionPending() {
-        try {
-            copyToDelegate();
-            return delegate.isConnectionPending();
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.isConnectionPending();
     }
 
-    @SuppressWarnings("RedundantThrows")
     @Override
     public boolean connect(SocketAddress remote) throws IOException {
-        copyToDelegate();
-        try {
-            return delegate.connect(remote);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.connect(remote);
     }
 
     @Override
     public boolean finishConnect() throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.finishConnect();
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.finishConnect();
     }
 
     @SuppressWarnings("Since15")
     @Override
     @IgnoreJRERequirement
     public SocketAddress getRemoteAddress() throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.getRemoteAddress();
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.getRemoteAddress();
     }
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.read(dst);
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.read(dst);
     }
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.read(dsts, offset, length);
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.read(dsts, offset, length);
     }
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.write(src);
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.write(src);
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.write(srcs, offset, length);
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.write(srcs, offset, length);
     }
 
     @Override
     public SocketAddress getLocalAddress() throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.getLocalAddress();
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.getLocalAddress();
     }
 
     @Override
     public void implCloseSelectableChannel() {
         try {
-            copyToDelegate();
             invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @Override
     public void implConfigureBlocking(boolean block) {
         try {
-            copyToDelegate();
             invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @Override
     @IgnoreJRERequirement
-    @SuppressWarnings({"RedundantThrows", "Since15"})
+    @SuppressWarnings({"Since15"})
     public <T> T getOption(java.net.SocketOption<T> name) throws IOException {
-        try {
-            copyToDelegate();
-            return delegate.getOption(name);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.getOption(name);
     }
 
     @SuppressWarnings("Since15")
     @Override
     @IgnoreJRERequirement
     public Set<java.net.SocketOption<?>> supportedOptions() {
-        try {
-            copyToDelegate();
-            return delegate.supportedOptions();
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.supportedOptions();
     }
 
     // Modern SelChImpl
 
     @Override
     public FileDescriptor getFD() {
-        try {
-            copyToDelegate();
-            return selChImplDelegate.getFD();
-        } finally {
-            copyFromDelegate();
-        }
+        return selChImplDelegate.getFD();
     }
 
     @Override
     public int getFDVal() {
-        try {
-            copyToDelegate();
-            return selChImplDelegate.getFDVal();
-        } finally {
-            copyFromDelegate();
-        }
+        return selChImplDelegate.getFDVal();
     }
 
     @Override
     public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski) {
-        try {
-            copyToDelegate();
-            return selChImplDelegate.translateAndUpdateReadyOps(ops, ski);
-        } finally {
-            copyFromDelegate();
-        }
+        return selChImplDelegate.translateAndUpdateReadyOps(ops, ski);
     }
 
     @Override
     public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski) {
-        try {
-            copyToDelegate();
-            return selChImplDelegate.translateAndSetReadyOps(ops, ski);
-        } finally {
-            copyFromDelegate();
-        }
+        return selChImplDelegate.translateAndSetReadyOps(ops, ski);
     }
 
     @Override
     public void kill() throws IOException {
-        try {
-            copyToDelegate();
-            selChImplDelegate.kill();
-        } finally {
-            copyFromDelegate();
-        }
+        selChImplDelegate.kill();
     }
 
     // Note: this method is absent in newer JDKs so we cannot use @Override annotation
     // @Override
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            copyToDelegate();
             invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
@@ -323,12 +200,9 @@ public class SniffySocketChannelAdapter extends SocketChannel implements SelChIm
     //@Override
     public int translateInterestOps(int ops) {
         try {
-            copyToDelegate();
             return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
@@ -337,12 +211,9 @@ public class SniffySocketChannelAdapter extends SocketChannel implements SelChIm
     @SuppressWarnings("RedundantThrows")
     public void park(int event, long nanos) throws IOException {
         try {
-            copyToDelegate();
             invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
@@ -351,55 +222,38 @@ public class SniffySocketChannelAdapter extends SocketChannel implements SelChIm
     @SuppressWarnings("RedundantThrows")
     public void park(int event) throws IOException {
         try {
-            copyToDelegate();
             invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
-    // TODO: think about thread safety - shall we make everything synschronized and made more stable but less performant ?
-    protected void copyToDelegate() {
-        socketChannelFieldsCopier.copy(this, delegate);
-    }
+    protected void updateSelectionKeysFromDelegate(SniffySelector selector) {
 
-    // TODO: think about thread safety
-    protected void copyFromDelegate() {
-        socketChannelFieldsCopier.copy(delegate, this);
-    }
-
-    // TODO: think about thread safety - shall we make everything synschronized and made more stable but less performant ?
-    protected void copyToDelegate(SniffySelector selector) {
-        socketChannelFieldsCopier.copy(this, delegate);
-
-        //SelectionKey[] keys;
+        //noinspection TryWithIdenticalCatches
         try {
-            SelectionKey[] keys = ReflectionUtil.getField(AbstractSelectableChannel.class, this, "keys");
-            List<SelectionKey> delegateKeys = new ArrayList<SelectionKey>(keys.length);
-            for (SelectionKey key : keys) {
-                delegateKeys.add(key instanceof SniffySelectionKey ? ((SniffySelectionKey) key).getDelegate() : key);
-            }
-            ReflectionUtil.setField(AbstractSelectableChannel.class, delegate, "keys", delegateKeys.toArray(), "keyLock");
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        }
-    }
 
-    // TODO: think about thread safety
-    protected void copyFromDelegate(SniffySelector selector) {
-        socketChannelFieldsCopier.copy(delegate, this);
+            Object keyLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, this, "keyLock");
+            Object delegateKeyLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "keyLock");
 
-        try {
-            SelectionKey[] delegateKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keys");
-            List<SelectionKey> sniffyKeys = new ArrayList<SelectionKey>(delegateKeys.length);
-            for (SelectionKey delegateKey : delegateKeys) {
-                sniffyKeys.add(null == delegateKey ? null : SniffySelectionKey.wrap(delegateKey, selector, this));
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (delegateKeyLock) {
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (keyLock) {
+
+                    SelectionKey[] delegateKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keys");
+                    List<SelectionKey> sniffyKeys = new ArrayList<SelectionKey>(delegateKeys.length);
+                    for (SelectionKey delegateKey : delegateKeys) {
+                        sniffyKeys.add(null == delegateKey ? null : SniffySelectionKey.wrap(delegateKey, selector, this));
+                    }
+                    ReflectionUtil.setField(AbstractSelectableChannel.class, this, "keys", sniffyKeys.toArray(new SelectionKey[0]), "keyLock");
+
+                    ReflectionUtil.setField(AbstractInterruptibleChannel.class, delegate, "keyCount"
+                            , ReflectionUtil.getField(AbstractInterruptibleChannel.class, this, "keyCount"));
+
+                }
             }
-            ReflectionUtil.setField(AbstractSelectableChannel.class, this, "keys", sniffyKeys.toArray(new SelectionKey[0]), "keyLock");
+
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (NoSuchFieldException e) {

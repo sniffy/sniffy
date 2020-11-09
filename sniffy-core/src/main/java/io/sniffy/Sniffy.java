@@ -20,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.sniffy.util.StackTraceExtractor.*;
 
@@ -50,6 +51,8 @@ public class Sniffy {
                     build();
 
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
+
+    public final static AtomicInteger CONNECTION_ID_SEQUENCE = new AtomicInteger();
 
     private static volatile boolean initialized = false;
 

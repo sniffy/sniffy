@@ -18,7 +18,7 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     private final static AtomicInteger counter = new AtomicInteger();
 
-    private final int id = counter.getAndIncrement();
+    private final int id;
 
     protected static volatile Integer defaultReceiveBufferSize;
     protected static volatile Integer defaultSendBufferSize;
@@ -34,9 +34,10 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     private volatile Integer connectionStatus;
 
-    public SniffySocket(Socket delegate, SocketChannel socketChannel) throws SocketException {
+    public SniffySocket(Socket delegate, SocketChannel socketChannel, int connectionId) throws SocketException {
         super(delegate);
         this.socketChannel = socketChannel;
+        this.id = connectionId;
     }
 
     @Override

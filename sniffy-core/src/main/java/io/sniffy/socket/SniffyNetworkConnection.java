@@ -1,7 +1,5 @@
 package io.sniffy.socket;
 
-import io.sniffy.Sniffy;
-
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 
