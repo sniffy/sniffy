@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
@@ -169,8 +168,8 @@ public class SniffySelector extends AbstractSelector {
                             }
                             ReflectionUtil.setField(AbstractSelectableChannel.class, sniffyChannel, "keys", sniffyKeys.toArray(new SelectionKey[0]));
 
-                            ReflectionUtil.setField(AbstractInterruptibleChannel.class, delegate, "keyCount"
-                                    , ReflectionUtil.getField(AbstractInterruptibleChannel.class, sniffyChannel, "keyCount"));
+                            ReflectionUtil.setField(AbstractSelectableChannel.class, delegate, "keyCount"
+                                    , ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount"));
 
                         }
                     }

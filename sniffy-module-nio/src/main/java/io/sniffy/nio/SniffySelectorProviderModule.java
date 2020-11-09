@@ -20,7 +20,7 @@ public class SniffySelectorProviderModule {
 
     public static void initialize() {
 
-        if (getVersion() <= 7) return; // TODO: change to 7
+        if (getVersion() <= 7) return;
 
         try {
             SniffySelectorProvider.install();

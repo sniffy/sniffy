@@ -88,6 +88,10 @@ public class SniffySelectorProvider extends SelectorProvider {
         return new SniffySelector(this, delegate.openSelector());
     }
 
+    /**
+     * @return a Sniffy Wrapper around SocketChannel unless we're on Windows and SocketChannel is created for Pipe
+     * @throws IOException on underlying IOException
+     */
     @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
         return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
@@ -114,7 +118,7 @@ public class SniffySelectorProvider extends SelectorProvider {
         } else if (channel instanceof ServerSocketChannel) {
             return new SniffyServerSocketChannel(this, (ServerSocketChannel) channel);
         } else if (channel instanceof DatagramChannel) {
-            return channel; // TODO: return SniffyDatagramChannel
+            return new SniffyDatagramChannelAdapter(this, (DatagramChannel) channel);
         } else {
             return channel;
         }
@@ -122,7 +126,7 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     // Note: this method was absent in earlier JDKs (15-) so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "RedundantThrows"})
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         try {
             return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
@@ -144,7 +148,7 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     // Note: this method was absent in earlier JDKs (15-) so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "RedundantThrows"})
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
         try {
             return invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
