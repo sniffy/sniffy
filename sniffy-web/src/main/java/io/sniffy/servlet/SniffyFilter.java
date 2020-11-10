@@ -71,7 +71,8 @@ public class SniffyFilter implements Filter {
                     "." +
                     Constants.MINOR_VERSION +
                     "." +
-                    Constants.PATCH_VERSION;
+                    Constants.PATCH_VERSION
+                    + "-SNAPSHOT"; // TODO: avoid changing it each it
 
     public static final String JAVASCRIPT_URI = SNIFFY_URI_PREFIX + "/sniffy.min.js";
     public static final String JAVASCRIPT_SOURCE_URI = SNIFFY_URI_PREFIX + "/sniffy.js";
