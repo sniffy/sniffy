@@ -51,7 +51,7 @@
                 <version>1.4.10.2</version>
                 <executions>
                     <execution>
-                        <phase>pre-site</phase>
+                        <phase>process-sources</phase>
                         <goals>
                             <goal>javadocJar</goal>
                         </goals>
