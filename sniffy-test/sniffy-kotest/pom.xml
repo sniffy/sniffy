@@ -43,10 +43,20 @@
                 </executions>
                 <configuration>
                     <jvmTarget>1.6</jvmTarget>
-                    <args>
-                        <arg>-Xcoroutines=enable</arg>
-                    </args>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jetbrains.dokka</groupId>
+                <artifactId>dokka-maven-plugin</artifactId>
+                <version>0.10.1</version>
+                <executions>
+                    <execution>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
