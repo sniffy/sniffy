@@ -179,10 +179,12 @@ public class SniffySelector extends AbstractSelector {
                         Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyLock");
                         Object delegateKeyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keyLock");
 
+                        // We're always obtaining monitor of wrapper (SniffySelector) first in order to aboud dead locks
+
                         //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                        synchronized (delegateKeyLock) {
+                        synchronized (keyLock) {
                             //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                            synchronized (keyLock) {
+                            synchronized (delegateKeyLock) {
 
                                 SelectionKey[] delegateKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keys");
                                 List<SelectionKey> sniffyKeys = new ArrayList<SelectionKey>(delegateKeys.length);
@@ -192,7 +194,7 @@ public class SniffySelector extends AbstractSelector {
                                 ReflectionUtil.setField(AbstractSelectableChannel.class, sniffyChannel, "keys", sniffyKeys.toArray(new SelectionKey[0]));
 
                                 ReflectionUtil.setField(AbstractSelectableChannel.class, delegate, "keyCount"
-                                        , ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount"));
+                                        ,ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount"));
 
                             }
                         }
