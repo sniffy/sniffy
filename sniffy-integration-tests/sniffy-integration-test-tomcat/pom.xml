@@ -57,6 +57,7 @@
                     <port>8081</port>
                     <path>/test</path>
                     <fork>true</fork>
+                    <useSeparateTomcatClassLoader>true</useSeparateTomcatClassLoader>
                     <useTestClasspath>true</useTestClasspath>
                 </configuration>
                 <executions>
