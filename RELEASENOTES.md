@@ -2,7 +2,12 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.7...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.8...master)
+
+## v3.1.8 - Nov 11th, 2020
+
+ * [Deadlock with Sniffy NIO](https://github.com/sniffy/sniffy/issues/387)
+ * [No request method and response code shown for main non-AJAX request](https://github.com/sniffy/sniffy/issues/388)
 
 ## v3.1.7 - Nov 10th, 2020
 
