@@ -17,8 +17,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/
-        </sonatypeOssDistMgmtSnapshotsUrl>
+        <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
     </properties>
 
     <build>
@@ -38,13 +37,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>animal-sniffer-enforcer-rule</artifactId>
-                        <version>1.15</version>
-                    </dependency>
-                </dependencies>
                 <executions>
                     <execution>
                         <id>check-signatures</id>
@@ -57,9 +49,35 @@
                                 <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
                                     <signature>
                                         <groupId>org.codehaus.mojo.signature</groupId>
-                                        <artifactId>java16</artifactId>
+                                        <artifactId>java16-sun</artifactId>
+                                        <version>1.10</version>
+                                    </signature>
+                                    <ignores>
+                                        <ignore>java.nio.channels.AsynchronousSocketChannel</ignore>
+                                        <ignore>java.nio.channels.spi.AsynchronousChannelProvider</ignore>
+                                        <ignore>java.nio.channels.AsynchronousSocketChannel</ignore>
+                                        <ignore>java.nio.channels.AsynchronousServerSocketChannel</ignore>
+                                        <ignore>java.net.SocketOption</ignore>
+                                        <ignore>java.net.StandardSocketOptions</ignore>
+                                        <ignore>java.nio.channels.NetworkChannel</ignore>
+                                        <ignore>java.nio.channels.AsynchronousChannelGroup</ignore>
+                                        <ignore>sun.misc.Unsafe</ignore>
+                                        <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
+                                    </ignores>
+                                    <checkTestClasses>false</checkTestClasses>
+                                </checkSignatureRule>
+                                <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
+                                    <signature>
+                                        <groupId>org.codehaus.mojo.signature</groupId>
+                                        <artifactId>java17</artifactId>
                                         <version>1.0</version>
                                     </signature>
+                                    <ignores>
+                                        <ignore>sun.nio.ch.SelChImpl</ignore>
+                                        <ignore>sun.misc.Unsafe</ignore>
+                                        <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
+                                    </ignores>
+                                    <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>
                             </rules>
                             <fail>true</fail>
@@ -85,7 +103,6 @@
             <artifactId>metrics-core</artifactId>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-jdbc</artifactId>

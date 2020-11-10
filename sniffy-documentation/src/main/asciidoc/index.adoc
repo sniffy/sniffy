@@ -58,6 +58,8 @@ include::test-shared-connection.adoc[]
 
 include::test-junit.adoc[]
 
+include::test-kotest.adoc[]
+
 include::test-spring.adoc[]
 
 include::test-testng.adoc[]

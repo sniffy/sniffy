@@ -2,64 +2,38 @@ package io.sniffy.socket;
 
 import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
-import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionFieldCopier;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @since 3.1
  */
-@SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-class SnifferSocketImpl extends SocketImpl implements SniffySocket {
-
-    private final static ReflectionFieldCopier socketCopier =
-            new ReflectionFieldCopier(SocketImpl.class, "socket");
-    private final static ReflectionFieldCopier serverSocketCopier =
-            new ReflectionFieldCopier(SocketImpl.class, "serverSocket");
-    private final static ReflectionFieldCopier fdCopier =
-            new ReflectionFieldCopier(SocketImpl.class, "fd");
-    private final static ReflectionFieldCopier addressCopier =
-            new ReflectionFieldCopier(SocketImpl.class, "address");
-    private final static ReflectionFieldCopier portCopier =
-            new ReflectionFieldCopier(SocketImpl.class, "port");
-    private final static ReflectionFieldCopier localportCopier =
-            new ReflectionFieldCopier(SocketImpl.class, "localport");
-
-    private static volatile ReflectionFieldCopier[] reflectionFieldCopiers;
-
-    private final SocketImpl delegate;
+class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetworkConnection {
 
     private InetSocketAddress address;
 
-    private final static AtomicInteger counter = new AtomicInteger();
-
-    private final int id = counter.getAndIncrement();
+    private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
     protected static volatile Integer defaultReceiveBufferSize;
-    protected int receiveBufferSize = -1;
-
     protected static volatile Integer defaultSendBufferSize;
-    protected int sendBufferSize = -1;
 
-    protected volatile int potentiallyBufferedInputBytes = 0;
-    protected volatile int potentiallyBufferedOutputBytes = 0;
+    private int receiveBufferSize = -1;
+    private int sendBufferSize = -1;
 
-    protected volatile long lastReadThreadId;
-    protected volatile long lastWriteThreadId;
+    private volatile int potentiallyBufferedInputBytes = 0;
+    private volatile int potentiallyBufferedOutputBytes = 0;
+
+    private volatile long lastReadThreadId;
+    private volatile long lastWriteThreadId;
 
     private volatile Integer connectionStatus;
 
     protected SnifferSocketImpl(SocketImpl delegate) {
-        this.delegate = delegate;
+        super(delegate);
     }
 
     @Override
@@ -67,8 +41,13 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
         this.connectionStatus = connectionStatus;
     }
 
+    @Override
+    public InetSocketAddress getInetSocketAddress() {
+        return this.address;
+    }
+
     private void estimateReceiveBuffer() {
-        if (-1 == receiveBufferSize) {
+        if (-1 == getReceiveBufferSize()) {
             if (null == defaultReceiveBufferSize) {
                 synchronized (SnifferSocketImpl.class) {
                     if (null == defaultReceiveBufferSize) {
@@ -85,12 +64,12 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
                     }
                 }
             }
-            receiveBufferSize = defaultReceiveBufferSize;
+            setReceiveBufferSize(defaultReceiveBufferSize);
         }
     }
 
     private void estimateSendBuffer() {
-        if (-1 == sendBufferSize) {
+        if (-1 == getSendBufferSize()) {
             if (null == defaultSendBufferSize) {
                 synchronized (SnifferSocketImpl.class) {
                     if (null == defaultSendBufferSize) {
@@ -107,34 +86,35 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
                     }
                 }
             }
-            sendBufferSize = defaultSendBufferSize;
+            setSendBufferSize(defaultSendBufferSize);
         }
     }
 
-    protected void logSocket(long millis) {
+    public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
-    protected void logSocket(long millis, int bytesDown, int bytesUp) {
+    public void logSocket(long millis, int bytesDown, int bytesUp) {
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
         if (sniffyMode.isEnabled() && null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
             Sniffy.logSocket(id, address, millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
         }
     }
 
-    protected void checkConnectionAllowed() throws ConnectException {
+    public void checkConnectionAllowed() throws ConnectException {
         checkConnectionAllowed(0);
     }
 
-    protected void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
+    public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
         checkConnectionAllowed(address, numberOfSleepCycles);
     }
 
-    protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
+    public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
         checkConnectionAllowed(inetSocketAddress, 1);
     }
 
-    protected void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+    // TODO: inverse this check; otherwise it is too slow
+    public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
         if (null != inetSocketAddress) {
             if (null == this.connectionStatus || ConnectionsRegistry.INSTANCE.isThreadLocal()) {
                 this.connectionStatus = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, this);
@@ -160,164 +140,94 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
         Thread.sleep(millis);
     }
 
-    private static ReflectionFieldCopier[] getReflectionFieldCopiers() {
-        if (null == reflectionFieldCopiers) {
-            synchronized (SnifferSocketImpl.class) {
-                if (null == reflectionFieldCopiers) {
-                    List<ReflectionFieldCopier> reflectionFieldCopiersList = new ArrayList<ReflectionFieldCopier>(4); // 4 available on modern Java
-                    if (socketCopier.isAvailable()) reflectionFieldCopiersList.add(socketCopier);
-                    if (serverSocketCopier.isAvailable()) reflectionFieldCopiersList.add(serverSocketCopier);
-                    if (fdCopier.isAvailable()) reflectionFieldCopiersList.add(fdCopier);
-                    if (addressCopier.isAvailable()) reflectionFieldCopiersList.add(addressCopier);
-                    if (portCopier.isAvailable()) reflectionFieldCopiersList.add(portCopier);
-                    if (localportCopier.isAvailable()) reflectionFieldCopiersList.add(localportCopier);
-                    reflectionFieldCopiers = reflectionFieldCopiersList.toArray(new ReflectionFieldCopier[0]);
-                }
-            }
-        }
-        return reflectionFieldCopiers;
-    }
-
-    private void copyToDelegate() {
-        for (ReflectionFieldCopier reflectionFieldCopier : getReflectionFieldCopiers()) {
-            reflectionFieldCopier.copy(this, delegate);
-        }
-    }
-
-    private void copyFromDelegate() {
-        for (ReflectionFieldCopier reflectionFieldCopier : getReflectionFieldCopiers()) {
-            reflectionFieldCopier.copy(delegate, this);
-        }
-    }
-
-    private static Method method(String methodName, Class<?>... argumentTypes) throws NoSuchMethodException {
-        Method method = SocketImpl.class.getDeclaredMethod(methodName, argumentTypes);
-        method.setAccessible(true);
-        return method;
-    }
-
     @Override
     protected void sendUrgentData(int data) throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
             checkConnectionAllowed(1);
-            method("sendUrgentData", int.class).invoke(delegate, data);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.sendUrgentData(data);
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void shutdownInput() throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            method("shutdownInput").invoke(delegate);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.shutdownInput();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void shutdownOutput() throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            method("shutdownOutput").invoke(delegate);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.shutdownOutput();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected FileDescriptor getFileDescriptor() {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            return (FileDescriptor) method("getFileDescriptor").invoke(delegate);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            return super.getFileDescriptor();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected InetAddress getInetAddress() {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            return (InetAddress) method("getInetAddress").invoke(delegate);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            return super.getInetAddress();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected int getPort() {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            return (Integer) method("getPort").invoke(delegate);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            return super.getPort();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected boolean supportsUrgentData() {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            return (Boolean) method("supportsUrgentData").invoke(delegate);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            return super.supportsUrgentData();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected int getLocalPort() {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            return (Integer) method("getLocalPort").invoke(delegate);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            return super.getLocalPort();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     public String toString() {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            return delegate.toString();
+            return super.toString();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
@@ -325,179 +235,131 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
 
     @Override
     protected void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            method("setPerformancePreferences", int.class, int.class, int.class).invoke(delegate, connectionTime, latency, bandwidth);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.setPerformancePreferences(connectionTime, latency, bandwidth);
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void create(boolean stream) throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            method("create", boolean.class).invoke(delegate, stream);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.create(stream);
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void connect(String host, int port) throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
             checkConnectionAllowed(this.address = new InetSocketAddress(host, port));
-            method("connect", String.class, int.class).invoke(delegate, host, port);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.connect(host, port);
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void connect(InetAddress address, int port) throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
             checkConnectionAllowed(this.address = new InetSocketAddress(address, port));
-            method("connect", InetAddress.class, int.class).invoke(delegate, address, port);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.connect(address, port);
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void connect(SocketAddress address, int timeout) throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
             if (address instanceof InetSocketAddress) {
                 checkConnectionAllowed(this.address = (InetSocketAddress) address);
             }
-            method("connect", SocketAddress.class, int.class).invoke(delegate, address, timeout);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.connect(address, timeout);
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void bind(InetAddress host, int port) throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            method("bind", InetAddress.class, int.class).invoke(delegate, host, port);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.bind(host, port); // TODO: should we check connectivity enabled here as well ?
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void listen(int backlog) throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            method("listen", int.class).invoke(delegate, backlog);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.listen(backlog);
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void accept(SocketImpl s) throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            method("accept", SocketImpl.class).invoke(delegate, s);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.accept(s);
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected InputStream getInputStream() throws IOException {
+        long start = System.currentTimeMillis();
         estimateReceiveBuffer();
         checkConnectionAllowed();
-        copyToDelegate();
-        long start = System.currentTimeMillis();
         try {
-            return new SnifferInputStream(this, (InputStream) method("getInputStream").invoke(delegate));
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            return new SnifferInputStream(this, super.getInputStream());
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected OutputStream getOutputStream() throws IOException {
+        long start = System.currentTimeMillis();
         estimateSendBuffer();
         checkConnectionAllowed();
-        copyToDelegate();
-        long start = System.currentTimeMillis();
         try {
-            return new SnifferOutputStream(this, (OutputStream) method("getOutputStream").invoke(delegate));
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            return new SnifferOutputStream(this, super.getOutputStream());
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected int available() throws IOException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            return (Integer) method("available").invoke(delegate);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            return super.available();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     protected void close() throws IOException {
-        copyToDelegate();
         checkConnectionAllowed(1);
         long start = System.currentTimeMillis();
         try {
-            method("close").invoke(delegate);
-        } catch (Exception e) {
-            ExceptionUtil.processException(e);
+            super.close();
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
@@ -505,20 +367,19 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
 
     @Override
     public void setOption(int optID, Object value) throws SocketException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            delegate.setOption(optID, value);
+            super.setOption(optID, value);
 
             if (SocketOptions.SO_RCVBUF == optID) {
                 try {
-                    receiveBufferSize = ((Number) value).intValue();
+                    setReceiveBufferSize(((Number) value).intValue());
                 } catch (Exception e) {
                     // TODO: log me maybe
                 }
             } else if (SocketOptions.SO_SNDBUF == optID) {
                 try {
-                    sendBufferSize = ((Number) value).intValue();
+                    setSendBufferSize(((Number) value).intValue());
                 } catch (Exception e) {
                     // TODO: log me maybe
                 }
@@ -526,25 +387,100 @@ class SnifferSocketImpl extends SocketImpl implements SniffySocket {
 
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
         }
     }
 
     @Override
     public Object getOption(int optID) throws SocketException {
-        copyToDelegate();
         long start = System.currentTimeMillis();
         try {
-            return delegate.getOption(optID);
+            return super.getOption(optID);
         } finally {
             logSocket(System.currentTimeMillis() - start);
-            copyFromDelegate();
+        }
+    }
+
+    public int getPotentiallyBufferedInputBytes() {
+        return potentiallyBufferedInputBytes;
+    }
+
+    public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) {
+        this.potentiallyBufferedInputBytes = potentiallyBufferedInputBytes;
+    }
+
+    public int getPotentiallyBufferedOutputBytes() {
+        return potentiallyBufferedOutputBytes;
+    }
+
+    public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) {
+        this.potentiallyBufferedOutputBytes = potentiallyBufferedOutputBytes;
+    }
+
+    public long getLastReadThreadId() {
+        return lastReadThreadId;
+    }
+
+    public void setLastReadThreadId(long lastReadThreadId) {
+        this.lastReadThreadId = lastReadThreadId;
+    }
+
+    public long getLastWriteThreadId() {
+        return lastWriteThreadId;
+    }
+
+    public void setLastWriteThreadId(long lastWriteThreadId) {
+        this.lastWriteThreadId = lastWriteThreadId;
+    }
+
+    public int getReceiveBufferSize() {
+        return receiveBufferSize;
+    }
+
+    public void setReceiveBufferSize(int receiveBufferSize) {
+        this.receiveBufferSize = receiveBufferSize;
+    }
+
+    public int getSendBufferSize() {
+        return sendBufferSize;
+    }
+
+    public void setSendBufferSize(int sendBufferSize) {
+        this.sendBufferSize = sendBufferSize;
+    }
+
+    // New methods in Java 9
+    // TODO: use multi-release jars to handle it
+
+    /*
+    @Override
+    protected <T> void setOption(java.net.SocketOption<T> name, T value) throws IOException {
+        long start = System.currentTimeMillis();
+        try {
+            super.setOption(name, value);
+        } finally {
+            logSocket(System.currentTimeMillis() - start);
         }
     }
 
     @Override
-    public InetSocketAddress getInetSocketAddress() {
-        return this.address;
+    protected <T> T getOption(java.net.SocketOption<T> name) throws IOException {
+        long start = System.currentTimeMillis();
+        try {
+            return super.getOption(name);
+        } finally {
+            logSocket(System.currentTimeMillis() - start);
+        }
     }
+
+    @Override
+    protected Set<java.net.SocketOption<?>> supportedOptions() {
+        long start = System.currentTimeMillis();
+        try {
+            return super.supportedOptions();
+        } finally {
+            logSocket(System.currentTimeMillis() - start);
+        }
+    }
+    */
 
 }

@@ -5,42 +5,62 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 
 .Table Configuration properties
 |===
-|System Property |Environment Variable |Description |Default Value
+|System Property |Environment Variable |Sniffy Agent parameter |Description |Default Value
 
 |-Dio.sniffy.monitorJdbc
 |IO_SNIFFY_MONITOR_JDBC
+|N/A
 |Monitor JDBC
 |true
 
 |-Dio.sniffy.monitorSocket
 |IO_SNIFFY_MONITOR_SOCKET
+|N/A
 |Monitor socket connections
+|false (enabled implicitly by Sniffy javaagent or SniffyFiler)
+
+|-Dio.sniffy.monitorNio
+|IO_SNIFFY_MONITOR_NIO
+|monitorNio
+|Monitor NIO socket connections
 |false (enabled implicitly by Sniffy javaagent or SniffyFiler)
 
 |-Dio.sniffy.topSqlCapacity
 |IO_SNIFFY_TOP_SQL_CAPACITY
+|N/A
 |Maximum number of top SQL queries to store
 |1024
 
 |-Dio.sniffy.filterEnabled
 |IO_SNIFFY_FILTER_ENABLED
+|N/A
 |Enable servlet filter
 |true
 
 |-Dio.sniffy.excludePattern
 |IO_SNIFFY_EXCLUDE_PATTERN
+|N/A
 |Regexp for excluding sniffy completely from certain servlet requests
 |
 
 |-Dio.sniffy.injectHtml
 |IO_SNIFFY_INJECT_HTML
+|N/A
 |Inject Sniffy HTML to result HTML
 |true
 
 |-Dio.sniffy.injectHtmlExcludePattern
 |IO_SNIFFY_INJECT_HTML_EXCLUDE_PATTERN
+|N/A
 |Regexp for excluding sniffy widget from certain servlet requests
 |
+
+|N/A
+|N/A
+|sniffyPort
+|HTTP port Sniffy Agent is listening on
+|5555
+
 |===
 
 Sniffy filter can also be enabled or disabled using HTTP query parameters and/or HTTP headers.

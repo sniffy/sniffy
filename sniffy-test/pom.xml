@@ -13,6 +13,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>sniffy-junit</module>
+        <module>sniffy-kotest</module>
         <module>sniffy-test-common</module>
         <module>sniffy-testng</module>
         <module>sniffy-spring-test</module>

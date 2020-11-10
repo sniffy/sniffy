@@ -12,10 +12,10 @@ import java.net.SocketOptions;
  */
 class SnifferInputStream extends InputStream {
 
-    private final SnifferSocketImpl snifferSocket;
+    private final SniffyNetworkConnection snifferSocket;
     private final InputStream delegate;
 
-    SnifferInputStream(SnifferSocketImpl snifferSocket, InputStream delegate) {
+    SnifferInputStream(SniffyNetworkConnection snifferSocket, InputStream delegate) {
         this.snifferSocket = snifferSocket;
         this.delegate = delegate;
     }
@@ -53,22 +53,23 @@ class SnifferInputStream extends InputStream {
      */
     private void sleepIfRequired(int bytesDown) throws ConnectException {
 
-        snifferSocket.lastReadThreadId = Thread.currentThread().getId();
+        snifferSocket.setLastReadThreadId(Thread.currentThread().getId());
 
-        if (snifferSocket.lastReadThreadId == snifferSocket.lastWriteThreadId) {
-            snifferSocket.potentiallyBufferedOutputBytes = 0;
+        if (snifferSocket.getLastReadThreadId() == snifferSocket.getLastWriteThreadId()) {
+            snifferSocket.setPotentiallyBufferedOutputBytes(0);
         }
 
-        if (0 == snifferSocket.receiveBufferSize) {
+        if (0 == snifferSocket.getReceiveBufferSize()) {
             snifferSocket.checkConnectionAllowed(1);
         } else {
 
-            int potentiallyBufferedInputBytes = snifferSocket.potentiallyBufferedInputBytes -= bytesDown;
+            int potentiallyBufferedInputBytes = snifferSocket.getPotentiallyBufferedInputBytes() - bytesDown;
+            snifferSocket.setPotentiallyBufferedInputBytes(potentiallyBufferedInputBytes);
 
             if (potentiallyBufferedInputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / snifferSocket.receiveBufferSize;
+                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / snifferSocket.getReceiveBufferSize();
                 snifferSocket.checkConnectionAllowed(estimatedNumberOfTcpPackets);
-                snifferSocket.potentiallyBufferedInputBytes = snifferSocket.receiveBufferSize;
+                snifferSocket.setPotentiallyBufferedInputBytes(snifferSocket.getReceiveBufferSize());
             }
 
         }

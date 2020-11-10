@@ -1,7 +1,7 @@
 Sniffy
 ============
 
-![Java CI](https://github.com/sniffy/sniffy/workflows/Java%20CI/badge.svg)
+![Java CI](https://github.com/sniffy/sniffy/workflows/Build%20and%20deploy/badge.svg)
 [![codecov](https://codecov.io/gh/sniffy/sniffy/branch/develop/graph/badge.svg)](https://codecov.io/gh/sniffy/sniffy)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy)
 [![HitCount](http://hits.dwyl.com/sniffy/sniffy.svg)](http://hits.dwyl.com/sniffy/sniffy)

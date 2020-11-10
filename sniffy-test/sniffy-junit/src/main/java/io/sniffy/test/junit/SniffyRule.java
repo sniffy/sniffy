@@ -34,6 +34,7 @@ public class SniffyRule implements TestRule {
 
     static {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        SniffyConfiguration.INSTANCE.setMonitorNio(true);
         Sniffy.initialize();
     }
 

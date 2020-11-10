@@ -48,8 +48,9 @@ public class ExceptionUtil {
         return (Class<Throwable>)Class.forName(className);
     }
 
-    public static void throwException(Throwable e) {
+    public static RuntimeException throwException(Throwable e) {
         ExceptionUtil.<RuntimeException>throwAny(e);
+        return new RuntimeException(e);
     }
 
     @SuppressWarnings("unchecked")

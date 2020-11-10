@@ -14,11 +14,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.sniffy.util.StackTraceExtractor.*;
 
@@ -49,6 +51,8 @@ public class Sniffy {
                     build();
 
     private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
+
+    public final static AtomicInteger CONNECTION_ID_SEQUENCE = new AtomicInteger();
 
     private static volatile boolean initialized = false;
 
@@ -103,7 +107,6 @@ public class Sniffy {
 
         });
 
-
         if (SniffyConfiguration.INSTANCE.isMonitorSocket()) {
 
             try {
@@ -135,8 +138,57 @@ public class Sniffy {
 
         }
 
+        if (SniffyConfiguration.INSTANCE.isMonitorNio()) {
+            loadNioModule();
+        } else {
+
+            SniffyConfiguration.INSTANCE.addMonitorNioListener(new PropertyChangeListener() {
+
+                private boolean sniffySelectorProviderInstalled = false;
+
+                @Override
+                public synchronized void propertyChange(PropertyChangeEvent evt) {
+                    if (sniffySelectorProviderInstalled) return;
+                    if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        loadNioModule();
+                        sniffySelectorProviderInstalled = true;
+                    }
+                }
+
+            });
+
+        }
+
         initialized = true;
 
+    }
+
+    private static volatile boolean nioModuleLoaded = false;
+
+    // TODO: do something more clever and extensible
+    private static void loadNioModule() {
+        if (!nioModuleLoaded) {
+            synchronized (Sniffy.class) {
+                if (!nioModuleLoaded) {
+
+                    try {
+                        Class.forName("io.sniffy.nio.SniffySelectorProviderModule").getMethod("initialize").invoke(null);
+                        Class.forName("io.sniffy.nio.compat.SniffyCompatSelectorProviderModule").getMethod("initialize").invoke(null);;
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchMethodException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                    nioModuleLoaded = true;
+
+                }
+            }
+        }
     }
 
     // TODO: call this method via Disruptor or something
@@ -416,7 +468,7 @@ public class Sniffy {
      * @return a new {@link Spy} instance for current thread only
      * @since 3.1
      */
-    public static CurrentThreadSpy  spyCurrentThread(boolean captureStackTraces) {
+    public static CurrentThreadSpy spyCurrentThread(boolean captureStackTraces) {
         return new CurrentThreadSpy(captureStackTraces);
     }
 

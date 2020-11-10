@@ -13,6 +13,7 @@ public enum SniffyConfiguration {
 
     private volatile boolean monitorJdbc;
     private volatile boolean monitorSocket;
+    private volatile boolean monitorNio;
 
     /**
      * @since 3.1.2
@@ -38,6 +39,9 @@ public enum SniffyConfiguration {
         ));
         monitorSocket = Boolean.parseBoolean(getProperty(
                 "io.sniffy.monitorSocket", "IO_SNIFFY_MONITOR_SOCKET", "false"
+        ));
+        monitorNio = Boolean.parseBoolean(getProperty(
+                "io.sniffy.monitorNio", "IO_SNIFFY_MONITOR_NIO", "false"
         ));
         try {
             topSqlCapacity = Integer.parseInt(getProperty(
@@ -101,6 +105,16 @@ public enum SniffyConfiguration {
         pcs.firePropertyChange("monitorSocket", oldValue, monitorSocket);
     }
 
+    public boolean isMonitorNio() {
+        return monitorNio;
+    }
+
+    public void setMonitorNio(boolean monitorNio) {
+        boolean oldValue = this.monitorNio;
+        this.monitorNio = monitorNio;
+        pcs.firePropertyChange("monitorNio", oldValue, monitorNio);
+    }
+
     /**
      * @since 3.1.3
      */
@@ -113,6 +127,20 @@ public enum SniffyConfiguration {
      */
     public void removeMonitorSocketListener(PropertyChangeListener listener) {
         this.pcs.removePropertyChangeListener("monitorSocket", listener);
+    }
+
+    /**
+     * @since 3.1.7
+     */
+    public void addMonitorNioListener(PropertyChangeListener listener) {
+        this.pcs.addPropertyChangeListener("monitorNio", listener);
+    }
+
+    /**
+     * @since 3.1.7
+     */
+    public void removeMonitorNioListener(PropertyChangeListener listener) {
+        this.pcs.removePropertyChangeListener("monitorNio", listener);
     }
 
     // top sql capacity

@@ -91,6 +91,36 @@ public class SniffyConfigurationTest {
     }
 
     @Test
+    public void testMonitorNio() {
+
+        SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
+
+        // enabled
+        System.setProperty("io.sniffy.monitorNio", "true");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertTrue(sniffyConfiguration.isMonitorNio());
+
+        System.setProperty("io.sniffy.monitorNio", "TRUE");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertTrue(sniffyConfiguration.isMonitorNio());
+
+        // disabled
+        System.setProperty("io.sniffy.monitorNio", "false");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertFalse(sniffyConfiguration.isMonitorNio());
+
+        System.setProperty("io.sniffy.monitorNio", "");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertFalse(sniffyConfiguration.isMonitorNio());
+
+        // default value
+        System.getProperties().remove("io.sniffy.monitorNio");
+        sniffyConfiguration.loadSniffyConfiguration();
+        assertFalse(sniffyConfiguration.isMonitorNio());
+
+    }
+
+    @Test
     @Features("issues/292")
     public void testTopSqlCapacity() {
 

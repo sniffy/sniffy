@@ -43,6 +43,7 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
 
     private Boolean monitorJdbc;
     private Boolean monitorSocket;
+    private Boolean monitorNio;
 
     private Integer topSqlCapacity;
 
@@ -72,6 +73,7 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
 
         SniffyConfiguration.INSTANCE.setMonitorJdbc(isMonitorJdbc());
         SniffyConfiguration.INSTANCE.setMonitorSocket(isMonitorSocket());
+        SniffyConfiguration.INSTANCE.setMonitorNio(isMonitorNio());
         SniffyConfiguration.INSTANCE.setTopSqlCapacity(getTopSqlCapacity());
 
         Sniffy.initialize();
@@ -116,6 +118,13 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
             monitorSocket = resolveBooleanProperty(enableSniffy.getString("monitorSocket"));
         }
         return monitorSocket;
+    }
+
+    private boolean isMonitorNio() {
+        if (null == monitorNio) {
+            monitorNio = resolveBooleanProperty(enableSniffy.getAnnotation("advanced").getString("monitorNio"));
+        }
+        return monitorNio;
     }
 
     private int getTopSqlCapacity() {

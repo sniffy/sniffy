@@ -4,7 +4,7 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonValue;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SnifferSocketImplFactory;
-import io.sniffy.socket.SniffySocket;
+import io.sniffy.socket.SniffyNetworkConnection;
 import org.junit.After;
 import org.junit.Test;
 import ru.yandex.qatools.allure.annotations.Issue;
@@ -220,7 +220,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
         final AtomicInteger lastConnectionStatus = new AtomicInteger();
 
         {
-            SniffySocket sniffySocket = new SniffySocket() {
+            SniffyNetworkConnection sniffyNetworkConnection = new SniffyNetworkConnection() {
                 @Override
                 public InetSocketAddress getInetSocketAddress() {
                     return null;
@@ -230,9 +230,100 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 public void setConnectionStatus(Integer connectionStatus) {
                     lastConnectionStatus.set(connectionStatus);
                 }
+
+                // TODO: do something with non implemented bethod below
+                @Override
+                public int getPotentiallyBufferedInputBytes() {
+                    return 0;
+                }
+
+                @Override
+                public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) {
+
+                }
+
+                @Override
+                public int getPotentiallyBufferedOutputBytes() {
+                    return 0;
+                }
+
+                @Override
+                public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) {
+
+                }
+
+                @Override
+                public long getLastReadThreadId() {
+                    return 0;
+                }
+
+                @Override
+                public void setLastReadThreadId(long lastReadThreadId) {
+
+                }
+
+                @Override
+                public long getLastWriteThreadId() {
+                    return 0;
+                }
+
+                @Override
+                public void setLastWriteThreadId(long lastWriteThreadId) {
+
+                }
+
+                @Override
+                public int getReceiveBufferSize() {
+                    return 0;
+                }
+
+                @Override
+                public void setReceiveBufferSize(int receiveBufferSize) {
+
+                }
+
+                @Override
+                public int getSendBufferSize() {
+                    return 0;
+                }
+
+                @Override
+                public void setSendBufferSize(int sendBufferSize) {
+
+                }
+
+                @Override
+                public void logSocket(long millis) {
+
+                }
+
+                @Override
+                public void logSocket(long millis, int bytesDown, int bytesUp) {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed() throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
+                }
             };
 
-            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 1}), 5555), sniffySocket);
+            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(new InetSocketAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 1}), 5555), sniffyNetworkConnection);
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, -42);
         }
 
@@ -252,7 +343,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
         final AtomicInteger lastConnectionStatus = new AtomicInteger();
 
         {
-            SniffySocket sniffySocket = new SniffySocket() {
+            SniffyNetworkConnection sniffyNetworkConnection = new SniffyNetworkConnection() {
                 @Override
                 public InetSocketAddress getInetSocketAddress() {
                     return inetSocketAddress;
@@ -262,9 +353,100 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 public void setConnectionStatus(Integer connectionStatus) {
                     lastConnectionStatus.set(connectionStatus);
                 }
+
+                // TODO: do something with non implemented bethod below
+                @Override
+                public int getPotentiallyBufferedInputBytes() {
+                    return 0;
+                }
+
+                @Override
+                public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) {
+
+                }
+
+                @Override
+                public int getPotentiallyBufferedOutputBytes() {
+                    return 0;
+                }
+
+                @Override
+                public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) {
+
+                }
+
+                @Override
+                public long getLastReadThreadId() {
+                    return 0;
+                }
+
+                @Override
+                public void setLastReadThreadId(long lastReadThreadId) {
+
+                }
+
+                @Override
+                public long getLastWriteThreadId() {
+                    return 0;
+                }
+
+                @Override
+                public void setLastWriteThreadId(long lastWriteThreadId) {
+
+                }
+
+                @Override
+                public int getReceiveBufferSize() {
+                    return 0;
+                }
+
+                @Override
+                public void setReceiveBufferSize(int receiveBufferSize) {
+
+                }
+
+                @Override
+                public int getSendBufferSize() {
+                    return 0;
+                }
+
+                @Override
+                public void setSendBufferSize(int sendBufferSize) {
+
+                }
+
+                @Override
+                public void logSocket(long millis) {
+
+                }
+
+                @Override
+                public void logSocket(long millis, int bytesDown, int bytesUp) {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed() throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
+
+                }
+
+                @Override
+                public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
+                }
             };
 
-            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, sniffySocket);
+            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, sniffyNetworkConnection);
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, -42);
         }
 
