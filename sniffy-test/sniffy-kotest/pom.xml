@@ -48,12 +48,12 @@
             <plugin>
                 <groupId>org.jetbrains.dokka</groupId>
                 <artifactId>dokka-maven-plugin</artifactId>
-                <version>0.10.1</version>
+                <version>1.4.10.2</version>
                 <executions>
                     <execution>
                         <phase>pre-site</phase>
                         <goals>
-                            <goal>javadoc</goal>
+                            <goal>javadocJar</goal>
                         </goals>
                     </execution>
                 </executions>
