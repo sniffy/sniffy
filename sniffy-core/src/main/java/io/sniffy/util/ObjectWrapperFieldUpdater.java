@@ -13,38 +13,63 @@ public class ObjectWrapperFieldUpdater<C, O> extends AtomicReferenceFieldUpdater
         this.defaultFieldUpdater = defaultFieldUpdater;
     }
 
+    private boolean isWrappedObject(C wrapper) {
+        return wrapper instanceof ObjectWrapper;
+    }
     @SuppressWarnings("unchecked")
     private C getWrappedObject(C wrapper) {
         return ((ObjectWrapper<C>) wrapper).getDelegate();
     }
 
     @Override
+    public O getAndSet(C obj, O newValue) {
+        if (isWrappedObject(obj)) {
+            defaultFieldUpdater.getAndSet(obj, newValue);
+            return defaultFieldUpdater.getAndSet(getWrappedObject(obj), newValue);
+        } else {
+            return defaultFieldUpdater.getAndSet(obj, newValue);
+        }
+    }
+
+    @Override
     public boolean compareAndSet(C obj, O expect, O update) {
-        defaultFieldUpdater.compareAndSet(obj, expect, update);
-        return defaultFieldUpdater.compareAndSet(getWrappedObject(obj), expect, update);
+        if (isWrappedObject(obj)) {
+            defaultFieldUpdater.compareAndSet(obj, expect, update);
+            return defaultFieldUpdater.compareAndSet(getWrappedObject(obj), expect, update);
+        } else {
+            return defaultFieldUpdater.compareAndSet(obj, expect, update);
+        }
     }
 
     @Override
     public boolean weakCompareAndSet(C obj, O expect, O update) {
-        defaultFieldUpdater.weakCompareAndSet(obj, expect, update);
-        return defaultFieldUpdater.weakCompareAndSet(getWrappedObject(obj), expect, update);
+        if (isWrappedObject(obj)) {
+            defaultFieldUpdater.weakCompareAndSet(obj, expect, update);
+            return defaultFieldUpdater.weakCompareAndSet(getWrappedObject(obj), expect, update);
+        } else {
+            return defaultFieldUpdater.weakCompareAndSet(obj, expect, update);
+        }
     }
 
     @Override
     public void set(C obj, O newValue) {
         defaultFieldUpdater.set(obj, newValue);
-        defaultFieldUpdater.set(getWrappedObject(obj), newValue);
+        if (isWrappedObject(obj)) defaultFieldUpdater.set(getWrappedObject(obj), newValue);
     }
 
     @Override
     public void lazySet(C obj, O newValue) {
         defaultFieldUpdater.lazySet(obj, newValue);
-        defaultFieldUpdater.lazySet(getWrappedObject(obj), newValue);
+        if (isWrappedObject(obj)) defaultFieldUpdater.lazySet(getWrappedObject(obj), newValue);
     }
 
     @Override
     public O get(C obj) {
-        defaultFieldUpdater.get(obj);
-        return defaultFieldUpdater.get(getWrappedObject(obj));
+        if (isWrappedObject(obj)) {
+            defaultFieldUpdater.get(obj);
+            return defaultFieldUpdater.get(getWrappedObject(obj));
+        } else {
+            return defaultFieldUpdater.get(obj);
+        }
     }
 }
