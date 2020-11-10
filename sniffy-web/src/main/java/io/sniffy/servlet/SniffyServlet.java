@@ -47,7 +47,7 @@ public class SniffyServlet extends HttpServlet {
     protected byte[] javascriptSource;
     protected byte[] javascriptMap;
 
-    private final static String SNIFFY_UI_VERSION = "3.1.8-SNAPSHOT"; // TODO: avoid changing it each time
+    private final static String SNIFFY_UI_VERSION = "3.1.8"; // TODO: avoid changing it each time
 
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
