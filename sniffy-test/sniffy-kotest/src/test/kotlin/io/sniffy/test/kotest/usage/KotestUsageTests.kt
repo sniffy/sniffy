@@ -36,8 +36,10 @@ class ExpectSniffyAssertionExceptionExtension : TestCaseExtension {
 class KotestUsageTests : StringSpec({
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    "Ktor HTTP Client should be intercepted by Sniffy".config(
-            extensions = listOf(ExpectSniffyAssertionExceptionExtension(), NoSocketsAllowedExtension())) {
+    "Ktor HTTP Client should be intercepted by Sniffy".config(extensions = listOf( // <1>
+            ExpectSniffyAssertionExceptionExtension(),
+            NoSocketsAllowedExtension() // <2>
+    )) {
 
         val client = HttpClient(Apache)
 
@@ -46,7 +48,7 @@ class KotestUsageTests : StringSpec({
     }
 
     "Hazelcast client should be intercepted by Sniffy".config(
-            extensions = listOf(DisableSocketsExtension())) {
+            extensions = listOf(DisableSocketsExtension())) {// <3>
 
         val serverConfig: Config = Config("my-hazelcast").apply {
             networkConfig = NetworkConfig().apply {

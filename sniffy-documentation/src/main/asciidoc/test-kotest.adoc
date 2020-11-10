@@ -1,0 +1,11 @@
+== Integration with Kotest
+
+Sniffy comes with a https://kotest.io/[Kotest] `TestCaseExtension`s for quick integration with test framework.
+Just add `DisableSocketsExtension` to simulate network isolation in your tests or `SniffyExtension` to assert number of executed queries and/or opened connections
+
+```kotlin
+include::../../../../sniffy-test/sniffy-kotest/src/test/kotlin/io/sniffy/test/kotest/usage/KotestUsageTests.kt[]
+```
+<1> - Integrate Sniffy to your test by adding appropriate extensions
+<2> - `NoSocketsAllowedExtension` would fail your test if it accesses network
+<3> - `DisableSocketsExtension` can be used for simulating network isolation for your code

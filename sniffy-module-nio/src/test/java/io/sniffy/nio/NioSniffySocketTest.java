@@ -36,101 +36,106 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SniffySelectorProvider.uninstall();
         SniffySelectorProvider.install();
 
-        ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
+        try {
+            ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
 
-        Selector selector = Selector.open();
+            Selector selector = Selector.open();
 
-        SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.configureBlocking(false);
+            SocketChannel socketChannel = SocketChannel.open();
+            socketChannel.configureBlocking(false);
 
-        socketChannel.connect(new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()));
+            socketChannel.connect(new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()));
 
-        socketChannel.register(selector, SelectionKey.OP_CONNECT);
+            socketChannel.register(selector, SelectionKey.OP_CONNECT);
 
-        selectorLoop:
-        while (true) {
-            // Wait for an event one of the registered channels
-            selector.select();
+            selectorLoop:
+            while (true) {
+                // Wait for an event one of the registered channels
+                selector.select();
 
-            // Iterate over the set of keys for which events are available
-            Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
-            while (selectedKeys.hasNext()) {
-                SelectionKey key = selectedKeys.next();
-                selectedKeys.remove();
+                // Iterate over the set of keys for which events are available
+                Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
+                while (selectedKeys.hasNext()) {
+                    SelectionKey key = selectedKeys.next();
+                    selectedKeys.remove();
 
-                if (!key.isValid()) {
-                    continue;
-                }
-
-                // Check what event is available and deal with it
-                if (key.isConnectable()) {
-                    SocketChannel channel = (SocketChannel) key.channel();
-
-                    // Finish the connection. If the connection operation failed
-                    // this will raise an IOException.
-                    try {
-                        channel.finishConnect();
-                    } catch (IOException e) {
-                        // Cancel the channel's registration with our selector
-                        e.printStackTrace();
-                        key.cancel();
-                        break selectorLoop;
+                    if (!key.isValid()) {
+                        continue;
                     }
 
-                    // Register an interest in writing on this channel
-                    //key.interestOps(SelectionKey.OP_WRITE);
-                    key.interestOps(0);
-                    channel.register(selector, SelectionKey.OP_WRITE);
-                } else if (key.isReadable()) {
+                    // Check what event is available and deal with it
+                    if (key.isConnectable()) {
+                        SocketChannel channel = (SocketChannel) key.channel();
 
-                    SocketChannel channel = (SocketChannel) key.channel();
+                        // Finish the connection. If the connection operation failed
+                        // this will raise an IOException.
+                        try {
+                            channel.finishConnect();
+                        } catch (IOException e) {
+                            // Cancel the channel's registration with our selector
+                            e.printStackTrace();
+                            key.cancel();
+                            break selectorLoop;
+                        }
 
-                    // Attempt to read off the channel
-                    int numRead;
-                    try {
-                        numRead = channel.read(responseBuffer);
-                    } catch (IOException e) {
-                        // The remote forcibly closed the connection, cancel
-                        // the selection key and close the channel.
-                        key.cancel();
-                        channel.close();
-                        break selectorLoop;
+                        // Register an interest in writing on this channel
+                        //key.interestOps(SelectionKey.OP_WRITE);
+                        key.interestOps(0);
+                        channel.register(selector, SelectionKey.OP_WRITE);
+                    } else if (key.isReadable()) {
+
+                        SocketChannel channel = (SocketChannel) key.channel();
+
+                        // Attempt to read off the channel
+                        int numRead;
+                        try {
+                            numRead = channel.read(responseBuffer);
+                        } catch (IOException e) {
+                            // The remote forcibly closed the connection, cancel
+                            // the selection key and close the channel.
+                            key.cancel();
+                            channel.close();
+                            break selectorLoop;
+                        }
+
+                        if (!responseBuffer.hasRemaining()) {
+                            // Entire response consumed
+                            key.channel().close();
+                            key.cancel();
+                            break selectorLoop;
+                        }
+
+                        if (numRead == -1) {
+                            // Remote entity shut the socket down cleanly. Do the
+                            // same from our end and cancel the channel.
+                            key.channel().close();
+                            key.cancel();
+                            break selectorLoop;
+                        }
+
+                    } else if (key.isWritable()) {
+                        SocketChannel channel = (SocketChannel) key.channel();
+
+                        ByteBuffer requestBuffer = ByteBuffer.wrap(BaseSocketTest.REQUEST);
+
+                        while (requestBuffer.remaining() > 0) {
+                            channel.write(requestBuffer);
+                        }
+
+                        key.interestOps(0);
+                        channel.register(selector, SelectionKey.OP_READ);
+
                     }
-
-                    if (!responseBuffer.hasRemaining()) {
-                        // Entire response consumed
-                        key.channel().close();
-                        key.cancel();
-                        break selectorLoop;
-                    }
-
-                    if (numRead == -1) {
-                        // Remote entity shut the socket down cleanly. Do the
-                        // same from our end and cancel the channel.
-                        key.channel().close();
-                        key.cancel();
-                        break selectorLoop;
-                    }
-
-                } else if (key.isWritable()) {
-                    SocketChannel channel = (SocketChannel) key.channel();
-
-                    ByteBuffer requestBuffer = ByteBuffer.wrap(BaseSocketTest.REQUEST);
-
-                    while (requestBuffer.remaining() > 0) {
-                        channel.write(requestBuffer);
-                    }
-
-                    key.interestOps(0);
-                    channel.register(selector, SelectionKey.OP_READ);
 
                 }
 
             }
 
+            Assert.assertArrayEquals(BaseSocketTest.RESPONSE, responseBuffer.array());
+        } finally {
+            SnifferSocketImplFactory.uninstall();
+            SniffySelectorProvider.uninstall();
         }
-
-        Assert.assertArrayEquals(BaseSocketTest.RESPONSE, responseBuffer.array());
 
     }
 
@@ -143,41 +148,46 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SniffySelectorProvider.uninstall();
         SniffySelectorProvider.install();
 
-        try (Spy<?> s = Sniffy.spy()) {
+        try {
+            try (Spy<?> s = Sniffy.spy()) {
 
-            performSocketOperation();
+                performSocketOperation();
 
-            Thread thread = new Thread(this::performSocketOperation);
-            thread.start();
-            thread.join();
+                Thread thread = new Thread(this::performSocketOperation);
+                thread.start();
+                thread.join();
 
-            // Current thread socket operations
+                // Current thread socket operations
 
-            assertEquals(1, (long) s.getSocketOperations(CURRENT, null, true).entrySet().size());
+                assertEquals(1, (long) s.getSocketOperations(CURRENT, null, true).entrySet().size());
 
-            s.getSocketOperations(CURRENT, null, true).values().stream().findAny().ifPresent((socketStats) -> {
-                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
-                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
-            });
+                s.getSocketOperations(CURRENT, null, true).values().stream().findAny().ifPresent((socketStats) -> {
+                    Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                    Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
+                });
 
-            // Other threads socket operations
+                // Other threads socket operations
 
-            assertEquals(1, s.getSocketOperations(OTHERS, null, true).entrySet().stream().count());
+                assertEquals(1, s.getSocketOperations(OTHERS, null, true).entrySet().stream().count());
 
-            s.getSocketOperations(OTHERS, null, true).values().stream().findAny().ifPresent((socketStats) -> {
-                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
-                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
-            });
+                s.getSocketOperations(OTHERS, null, true).values().stream().findAny().ifPresent((socketStats) -> {
+                    Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                    Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
+                });
 
-            // Any threads socket operations
+                // Any threads socket operations
 
-            assertEquals(2, s.getSocketOperations(ANY, null, true).entrySet().stream().count());
+                assertEquals(2, s.getSocketOperations(ANY, null, true).entrySet().stream().count());
 
-            s.getSocketOperations(OTHERS, null, true).values().stream().forEach((socketStats) -> {
-                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
-                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
-            });
+                s.getSocketOperations(OTHERS, null, true).values().stream().forEach((socketStats) -> {
+                    Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                    Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
+                });
 
+            }
+        } finally {
+            SnifferSocketImplFactory.uninstall();
+            SniffySelectorProvider.uninstall();
         }
 
     }
@@ -251,6 +261,8 @@ public class NioSniffySocketTest extends BaseSocketTest {
             assertArrayEquals(new byte[]{1, 2, 3, 5, 8}, targetBuffer.array());
 
         } catch (Exception e) {
+            SniffySelectorProvider.uninstall();
+        } finally {
             SniffySelectorProvider.uninstall();
         }
 

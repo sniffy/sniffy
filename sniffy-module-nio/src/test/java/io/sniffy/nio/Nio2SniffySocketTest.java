@@ -19,7 +19,6 @@ import static org.junit.Assert.fail;
 
 public class Nio2SniffySocketTest extends BaseSocketTest {
 
-
     @Test
     public void testInstall() throws Exception {
 
@@ -29,41 +28,47 @@ public class Nio2SniffySocketTest extends BaseSocketTest {
         SniffySelectorProvider.install();
         SniffyAsynchronousChannelProvider.install();
 
-        try (Spy<?> s = Sniffy.spy()) {
+        try {
+            try (Spy<?> s = Sniffy.spy()) {
 
-            performSocketOperation();
+                performSocketOperation();
 
-            Thread thread = new Thread(this::performSocketOperation);
-            thread.start();
-            thread.join();
+                Thread thread = new Thread(this::performSocketOperation);
+                thread.start();
+                thread.join();
 
-            // Current thread socket operations
+                // Current thread socket operations
 
-            assertEquals(1, (long) s.getSocketOperations(CURRENT, null, true).entrySet().size());
+                assertEquals(1, (long) s.getSocketOperations(CURRENT, null, true).entrySet().size());
 
-            s.getSocketOperations(CURRENT, null, true).values().stream().findAny().ifPresent((socketStats) -> {
-                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
-                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
-            });
+                s.getSocketOperations(CURRENT, null, true).values().stream().findAny().ifPresent((socketStats) -> {
+                    Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                    Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
+                });
 
-            // Other threads socket operations
+                // Other threads socket operations
 
-            assertEquals(1, s.getSocketOperations(OTHERS, null, true).entrySet().stream().count());
+                assertEquals(1, s.getSocketOperations(OTHERS, null, true).entrySet().stream().count());
 
-            s.getSocketOperations(OTHERS, null, true).values().stream().findAny().ifPresent((socketStats) -> {
-                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
-                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
-            });
+                s.getSocketOperations(OTHERS, null, true).values().stream().findAny().ifPresent((socketStats) -> {
+                    Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                    Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
+                });
 
-            // Any threads socket operations
+                // Any threads socket operations
 
-            assertEquals(2, s.getSocketOperations(ANY, null, true).entrySet().stream().count());
+                assertEquals(2, s.getSocketOperations(ANY, null, true).entrySet().stream().count());
 
-            s.getSocketOperations(OTHERS, null, true).values().stream().forEach((socketStats) -> {
-                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
-                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
-            });
+                s.getSocketOperations(OTHERS, null, true).values().stream().forEach((socketStats) -> {
+                    Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                    Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
+                });
 
+            }
+        } finally {
+            SniffyAsynchronousChannelProvider.uninstall();
+            SniffySelectorProvider.uninstall();
+            SnifferSocketImplFactory.uninstall();
         }
 
     }

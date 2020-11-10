@@ -18,6 +18,8 @@ Below is an example of connections discovered in IntelliJ Idea:
 
 image::agent-ui.png[]
 
+Advanced syntax takes comma separated parameters: `-javaagent:sniffy-<VERSION>.jar=sniffyPort=5559,monitorNio=true`
+
 == Spring Boot Integration
 
 If you're using Spring Boot, add the dependency below to your project in order to use Sniffy.

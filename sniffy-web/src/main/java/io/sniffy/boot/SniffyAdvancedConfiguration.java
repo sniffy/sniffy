@@ -23,6 +23,6 @@ public @interface SniffyAdvancedConfiguration {
     /**
      * @since 3.1.7
      */
-    String monitorNio() default "true";
+    String monitorNio() default "false";
 
 }
