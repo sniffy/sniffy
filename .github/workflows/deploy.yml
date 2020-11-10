@@ -36,13 +36,7 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Java for publishing to Maven Central Repository
-        uses: actions/setup-java@v1
-        with:
-          java-version: 1.8
-          server-id: sonatype-nexus-snapshots
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
+
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v3
@@ -55,11 +49,7 @@ jobs:
           echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
           echo "name:        ${{ steps.import_gpg.outputs.name }}"
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
-      - name: Publish to the Maven Central Repository
-        run: mvn -P sonatype,ci -B deploy
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+
       - name: Set up Java for publishing to GitHub Packages
         uses: actions/setup-java@v1
         with:
@@ -68,3 +58,16 @@ jobs:
         run: mvn -P github,ci -B clean deploy
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Set up Java for publishing to Maven Central Repository
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+          server-id: sonatype-nexus-snapshots
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+      - name: Publish to the Maven Central Repository
+        run: mvn -P sonatype,ci -B deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
