@@ -1,8 +1,8 @@
 Sniffy
 ============
 
-![Java CI](https://github.com/sniffy/sniffy/workflows/Build%20and%20deploy/badge.svg)
-[![codecov](https://codecov.io/gh/sniffy/sniffy/branch/develop/graph/badge.svg)](https://codecov.io/gh/sniffy/sniffy)
+[![Build Status](https://github.com/sniffy/sniffy/workflows/Build%20and%20deploy/badge.svg)](https://github.com/sniffy/sniffy/actions?query=workflow%3A%22Build+and+deploy%22)
+[![Code Coverage](https://codecov.io/gh/sniffy/sniffy/branch/develop/graph/badge.svg)](https://codecov.io/gh/sniffy/sniffy)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.sniffy/sniffy)
 [![HitCount](http://hits.dwyl.com/sniffy/sniffy.svg)](http://hits.dwyl.com/sniffy/sniffy)
 
@@ -12,13 +12,13 @@ It also brings profiling to your unit (or rather component) tests and allows you
 
 ![RecordedDemo](http://sniffy.io/demo.gif)
 
-Live Demo - [http://demo.sniffy.io/](http://demo.sniffy.io/owners.html?lastName=)
+Live Demo - [https://demo.sniffy.io/](https://demo.sniffy.io/owners.html?lastName=)
 
-Documentation - [http://sniffy.io/docs/latest/](http://sniffy.io/docs/latest/)
+Documentation - [https://www.sniffy.io/docs/latest/](https://www.sniffy.io/docs/latest/)
 
 Support
 ============
-Ask questions on stackoverflow with tag [sniffy](http://stackoverflow.com/questions/tagged/sniffy)
+Ask questions on stackoverflow with tag [sniffy](https://stackoverflow.com/questions/tagged/sniffy)
 
 Contribute
 ============
