@@ -6,7 +6,7 @@
 
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-parent</artifactId>
-    <version>3.1.7-SNAPSHOT</version>
+    <version>3.1.7</version>
     <packaging>pom</packaging>
 
     <modules>

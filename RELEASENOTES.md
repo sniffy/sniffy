@@ -2,7 +2,12 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.6...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.7...master)
+
+## v3.1.7 - Nov 10th, 2020
+
+ * [Support NIO & NIO2](https://github.com/sniffy/sniffy/issues/346)
+ * [Support Kotest framework](https://github.com/sniffy/sniffy/issues/384)
 
 ## v3.1.6 - Oct 11th, 2020
 
