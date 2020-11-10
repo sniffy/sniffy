@@ -276,7 +276,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                     characterEncoding = Charset.defaultCharset().name();
                 }
 
-                String snifferHeader = generateHeaderHtml(contextRelativePath, requestId).toString();
+                String snifferHeader = generateHeaderHtml(contextRelativePath, requestId, httpServletRequest.getMethod(), httpServletResponse.getStatus()).toString();
 
                 HtmlInjector htmlInjector = new HtmlInjector(buffer, characterEncoding);
                 htmlInjector.injectAtTheBeginning(snifferHeader);
@@ -340,13 +340,17 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
 
     }
 
-    protected StringBuilder generateHeaderHtml(String contextPath, String requestId) {
+    protected StringBuilder generateHeaderHtml(String contextPath, String requestId, String requestMethod, int responseCode) {
         StringBuilder stringBuilder = new StringBuilder().
                 append("<script type=\"application/javascript\">").
                 append("if (typeof io === 'undefined' || !io.sniffy) {").
                 append("document.write('\\x3Cscript ").
                 append("id=\"sniffy-header\" type=\"application/javascript\" data-request-id=\"").
                 append(requestId).
+                append("\" data-request-method=\"").
+                append(requestMethod).
+                append("\" data-response-code=\"").
+                append(responseCode).
                 append("\" src=\"");
         if (contextPath.startsWith("./")) {
             stringBuilder.append("'+location.href.split('?')[0]+'").
@@ -366,7 +370,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
     protected int maximumInjectSize(String contextPath) {
         if (maximumInjectSize == 0) {
             maximumInjectSize = maximumFooterSize() +
-                    generateHeaderHtml(contextPath, UUID.randomUUID().toString()).length();
+                    generateHeaderHtml(contextPath, UUID.randomUUID().toString(), httpServletRequest.getMethod(), 999).length();
         }
         return maximumInjectSize;
     }
