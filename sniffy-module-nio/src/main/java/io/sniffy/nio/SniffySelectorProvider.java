@@ -14,6 +14,9 @@ import java.nio.channels.spi.SelectorProvider;
 import static io.sniffy.util.ExceptionUtil.processException;
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
+/**
+ * @since 3.1.7
+ */
 public class SniffySelectorProvider extends SelectorProvider {
 
     private static volatile SelectorProvider previousSelectorProvider;

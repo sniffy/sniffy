@@ -15,6 +15,9 @@ import java.nio.channels.spi.SelectorProvider;
 
 import static io.sniffy.Sniffy.CONNECTION_ID_SEQUENCE;
 
+/**
+ * @since 3.1.7
+ */
 public class SniffySocketChannel extends SniffySocketChannelAdapter implements SniffyNetworkConnection {
 
     private final int connectionId = CONNECTION_ID_SEQUENCE.getAndIncrement();

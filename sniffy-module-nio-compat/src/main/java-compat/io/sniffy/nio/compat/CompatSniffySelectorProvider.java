@@ -17,6 +17,9 @@ import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
+/**
+ * @since 3.1.7
+ */
 public class CompatSniffySelectorProvider extends SelectorProvider {
 
     private final SelectorProvider delegate;

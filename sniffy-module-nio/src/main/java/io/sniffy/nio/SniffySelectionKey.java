@@ -9,6 +9,9 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
+/**
+ * @since 3.1.7
+ */
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
     static {

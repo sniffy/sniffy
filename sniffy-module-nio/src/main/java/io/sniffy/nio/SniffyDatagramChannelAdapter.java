@@ -22,6 +22,9 @@ import java.util.Set;
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 import static io.sniffy.util.ReflectionUtil.setField;
 
+/**
+ * @since 3.1.7
+ */
 public class SniffyDatagramChannelAdapter extends DatagramChannel implements SelChImpl {
 
     private final DatagramChannel delegate;

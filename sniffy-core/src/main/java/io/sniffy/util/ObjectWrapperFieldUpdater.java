@@ -2,6 +2,9 @@ package io.sniffy.util;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+/**
+ * @since 3.1.7
+ */
 public class ObjectWrapperFieldUpdater<C, O> extends AtomicReferenceFieldUpdater<C, O> {
 
     private final AtomicReferenceFieldUpdater<C, O> defaultFieldUpdater;

@@ -20,6 +20,9 @@ import java.util.Set;
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 import static io.sniffy.util.ReflectionUtil.setField;
 
+/**
+ * @since 3.1.7
+ */
 public class SniffySocketChannelAdapter extends SocketChannel implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
 
     private final SocketChannel delegate;

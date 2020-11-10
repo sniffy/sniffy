@@ -6,6 +6,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 
+/**
+ * @since 3.1.7
+ */
 public class CompatSniffySelectorProviderBootstrap {
 
     private static boolean publicSelChImplLoadedInBootstrapClassLoader = false;

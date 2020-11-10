@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @since 3.1
@@ -17,9 +16,7 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
 
     private InetSocketAddress address;
 
-    private final static AtomicInteger counter = new AtomicInteger();
-
-    private final int id = counter.getAndIncrement();
+    private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
     protected static volatile Integer defaultReceiveBufferSize;
     protected static volatile Integer defaultSendBufferSize;

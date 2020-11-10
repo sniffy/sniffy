@@ -4,6 +4,9 @@ import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Set;
 
+/**
+ * @since 3.1.7
+ */
 public class SetWrapper<W extends E, E> extends AbstractSet<E> implements Set<E> {
 
     private final Set<E> delegateSet;

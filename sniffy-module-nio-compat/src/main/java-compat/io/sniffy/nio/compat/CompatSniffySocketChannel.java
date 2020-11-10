@@ -14,11 +14,12 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * @since 3.1.7
+ */
 public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter implements SniffyNetworkConnection {
 
-    private final static AtomicInteger counter = new AtomicInteger();
-
-    private final int id = counter.getAndIncrement(); // TODO: does it clash with ids from blocking IO ?
+    private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
     protected static volatile Integer defaultReceiveBufferSize;
     protected static volatile Integer defaultSendBufferSize;

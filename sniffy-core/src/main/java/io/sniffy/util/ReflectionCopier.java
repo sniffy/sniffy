@@ -4,6 +4,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+/**
+ * @since 3.1.7
+ */
 public class ReflectionCopier<T> {
 
     private final ReflectionFieldCopier[] reflectionFieldCopiers;

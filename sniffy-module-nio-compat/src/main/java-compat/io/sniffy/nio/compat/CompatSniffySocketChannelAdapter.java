@@ -16,6 +16,9 @@ import java.util.Set;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
+/**
+ * @since 3.1.7
+ */
 public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate {
 
     private static final ReflectionCopier<SocketChannel> socketChannelFieldsCopier = new ReflectionCopier<SocketChannel>(SocketChannel.class, "provider");

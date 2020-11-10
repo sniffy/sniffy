@@ -122,6 +122,9 @@ public class StackTraceExtractor {
                 baseTraceElement.getLineNumber());
     }
 
+    /**
+     * @since 3.1.7
+     */
     public static boolean hasClassInStackTrace(String className) {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         for (StackTraceElement ste : stackTrace) {
@@ -132,6 +135,9 @@ public class StackTraceExtractor {
         return false;
     }
 
+    /**
+     * @since 3.1.7
+     */
     public static boolean hasClassAndMethodInStackTrace(String className, String methodName) {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         for (StackTraceElement ste : stackTrace) {

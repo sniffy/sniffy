@@ -3,6 +3,9 @@ package io.sniffy.socket;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 
+/**
+ * @since 3.1.7
+ */
 public interface SniffyNetworkConnection {
 
     InetSocketAddress getInetSocketAddress();

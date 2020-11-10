@@ -17,6 +17,9 @@ import java.nio.channels.spi.SelectorProvider;
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 import static io.sniffy.util.ReflectionUtil.setField;
 
+/**
+ * @since 3.1.7
+ */
 public class SniffyPipe extends Pipe {
 
     private final SelectorProvider selectorProvider;

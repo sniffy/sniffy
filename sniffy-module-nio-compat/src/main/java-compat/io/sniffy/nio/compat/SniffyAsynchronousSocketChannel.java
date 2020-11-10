@@ -21,13 +21,14 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // TODO: this functionality is available in java 1.7+ only - make sure it is safe
+/**
+ * @since 3.1.7
+ */
 public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel implements SniffyNetworkConnection {
 
     private final AsynchronousSocketChannel delegate;
 
-    private final static AtomicInteger counter = new AtomicInteger();
-
-    private final int id = counter.getAndIncrement(); // TODO: check if ids are clashing
+    private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
     protected static volatile Integer defaultReceiveBufferSize;
     protected static volatile Integer defaultSendBufferSize;
