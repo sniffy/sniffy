@@ -2,7 +2,6 @@ package io.sniffy.socket;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -13,7 +12,6 @@ import java.io.InputStream;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
@@ -21,7 +19,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 @RunWith(MockitoJUnitRunner.class)
 public class SnifferInputStreamTest {
 
-    private static final byte[] DATA = new byte[]{1,2,3,4};
+    private static final byte[] DATA = new byte[]{1, 2, 3, 4};
 
     @Mock
     private SnifferSocketImpl snifferSocket;
@@ -88,7 +86,7 @@ public class SnifferInputStreamTest {
 
         byte[] buff = new byte[4];
         assertEquals(3, sis.read(buff));
-        assertArrayEquals(new byte[]{2,3,4,0}, buff);
+        assertArrayEquals(new byte[]{2, 3, 4, 0}, buff);
 
         assertEquals(0, sis.available());
 
@@ -129,7 +127,6 @@ public class SnifferInputStreamTest {
 
         verify(snifferSocket).logSocket(anyLong());
     }
-
 
 
     @Test
