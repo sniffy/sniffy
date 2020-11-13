@@ -90,13 +90,12 @@
             <scope>test</scope>
         </dependency>
 
-        <!--<dependency>
-            <groupId>org.jacoco</groupId>
-            <artifactId>org.jacoco.agent</artifactId>
-            <classifier>runtime</classifier>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.1</version>
             <scope>test</scope>
-            <version>${jacoco.version}</version>
-        </dependency>-->
+        </dependency>
     </dependencies>
 
     <build>
