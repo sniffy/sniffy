@@ -6,8 +6,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import ru.yandex.qatools.allure.annotations.Features;
 import ru.yandex.qatools.allure.annotations.Issue;
 
@@ -18,17 +17,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.net.SocketOptions.SO_RCVBUF;
 import static java.net.SocketOptions.SO_SNDBUF;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.ignoreStubs;
-import static org.mockito.Mockito.times;
-import static org.powermock.api.mockito.PowerMockito.*;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.notNull;
+import static org.mockito.Mockito.*;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SocketImpl.class, SnifferSocketImpl.class})
+@RunWith(MockitoJUnitRunner.class)
 public class SnifferSocketImplTest {
 
     @Mock
-    private SocketImpl delegate;
+    private PublicSocketImpl delegate;
+
+    @Mock
+    private Sleep sleep;
 
     private SnifferSocketImpl sniffySocket;
 
@@ -40,8 +41,7 @@ public class SnifferSocketImplTest {
 
     @Before
     public void createSniffySocket() throws Exception {
-        spy(SnifferSocketImpl.class);
-        sniffySocket = new SnifferSocketImpl(delegate);
+        sniffySocket = new SnifferSocketImpl(delegate, sleep);
 
         ConnectionsRegistry.INSTANCE.clear();
     }
@@ -53,7 +53,7 @@ public class SnifferSocketImplTest {
 
         // TODO: insert timeout here and to similar methods?
 
-        verifyPrivate(delegate).invoke("sendUrgentData", 1);
+        verify(delegate).sendUrgentData(1);
         verifyNoMoreInteractions(delegate);
 
     }
@@ -62,7 +62,7 @@ public class SnifferSocketImplTest {
     public void testSendUrgentDataThrowsIOException() throws Exception {
 
         IOException expected = new IOException();
-        when(delegate, "sendUrgentData", anyInt()).thenThrow(expected);
+        doThrow(expected).when(delegate).sendUrgentData(anyInt());
 
         try {
             sniffySocket.sendUrgentData(1);
@@ -71,7 +71,7 @@ public class SnifferSocketImplTest {
             assertEquals(expected, actual);
         }
 
-        verifyPrivate(delegate).invoke("sendUrgentData", 1);
+        verify(delegate).sendUrgentData(1);
         verifyNoMoreInteractions(delegate);
 
     }
@@ -80,7 +80,7 @@ public class SnifferSocketImplTest {
     public void testSendUrgentDataThrowsRuntimeException() throws Exception {
 
         RuntimeException expected = new RuntimeException();
-        when(delegate, "sendUrgentData", anyInt()).thenThrow(expected);
+        doThrow(expected).when(delegate).sendUrgentData(anyInt());
 
         try {
             sniffySocket.sendUrgentData(1);
@@ -89,7 +89,7 @@ public class SnifferSocketImplTest {
             assertEquals(expected, actual);
         }
 
-        verifyPrivate(delegate).invoke("sendUrgentData", 1);
+        verify(delegate).sendUrgentData(1);
         verifyNoMoreInteractions(delegate);
 
     }
@@ -99,7 +99,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.shutdownInput();
 
-        verifyPrivate(delegate).invoke("shutdownInput");
+        verify(delegate).shutdownInput();
         verifyNoMoreInteractions(delegate);
 
     }
@@ -108,7 +108,7 @@ public class SnifferSocketImplTest {
     public void testShutdownInputThrowsIOException() throws Exception {
 
         IOException expected = new IOException();
-        when(delegate, "shutdownInput").thenThrow(expected);
+        doThrow(expected).when(delegate).shutdownInput();
 
         try {
             sniffySocket.shutdownInput();
@@ -117,7 +117,7 @@ public class SnifferSocketImplTest {
             assertEquals(expected, actual);
         }
 
-        verifyPrivate(delegate).invoke("shutdownInput");
+        verify(delegate).shutdownInput();
         verifyNoMoreInteractions(delegate);
 
     }
@@ -126,7 +126,7 @@ public class SnifferSocketImplTest {
     public void testShutdownInputThrowsRuntimeException() throws Exception {
 
         RuntimeException expected = new RuntimeException();
-        when(delegate, "shutdownInput").thenThrow(expected);
+        doThrow(expected).when(delegate).shutdownInput();
 
         try {
             sniffySocket.shutdownInput();
@@ -135,7 +135,7 @@ public class SnifferSocketImplTest {
             assertEquals(expected, actual);
         }
 
-        verifyPrivate(delegate).invoke("shutdownInput");
+        verify(delegate).shutdownInput();
         verifyNoMoreInteractions(delegate);
 
     }
@@ -145,7 +145,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.shutdownOutput();
 
-        verifyPrivate(delegate).invoke("shutdownOutput");
+        verify(delegate).shutdownOutput();
         verifyNoMoreInteractions(delegate);
 
     }
@@ -155,11 +155,11 @@ public class SnifferSocketImplTest {
 
         FileDescriptor expected = new FileDescriptor();
 
-        when(delegate, "getFileDescriptor").thenReturn(expected);
+        when(delegate.getFileDescriptor()).thenReturn(expected);
 
         FileDescriptor actual = sniffySocket.getFileDescriptor();
 
-        verifyPrivate(delegate).invoke("getFileDescriptor");
+        verify(delegate).getFileDescriptor();
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);
@@ -171,11 +171,11 @@ public class SnifferSocketImplTest {
 
         InetAddress expected = mock(InetAddress.class);
 
-        when(delegate, "getInetAddress").thenReturn(expected);
+        when(delegate.getInetAddress()).thenReturn(expected);
 
         InetAddress actual = sniffySocket.getInetAddress();
 
-        verifyPrivate(delegate).invoke("getInetAddress");
+        verify(delegate).getInetAddress();
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);
@@ -187,11 +187,11 @@ public class SnifferSocketImplTest {
 
         int expected = 1;
 
-        when(delegate, "getPort").thenReturn(expected);
+        when(delegate.getPort()).thenReturn(expected);
 
         int actual = sniffySocket.getPort();
 
-        verifyPrivate(delegate).invoke("getPort");
+        verify(delegate).getPort();
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);
@@ -201,14 +201,14 @@ public class SnifferSocketImplTest {
     @Test
     public void testSupportsUrgentData() throws Exception {
 
-        when(delegate, "supportsUrgentData").thenReturn(true);
+        when(delegate.supportsUrgentData()).thenReturn(true);
 
         boolean actual = sniffySocket.supportsUrgentData();
 
-        verifyPrivate(delegate).invoke("supportsUrgentData");
+        verify(delegate).supportsUrgentData();
         verifyNoMoreInteractions(delegate);
 
-        assertEquals(true, actual);
+        assertTrue(actual);
 
     }
 
@@ -217,11 +217,11 @@ public class SnifferSocketImplTest {
 
         int expected = 42;
 
-        when(delegate, "getLocalPort").thenReturn(expected);
+        when(delegate.getLocalPort()).thenReturn(expected);
 
         int actual = sniffySocket.getLocalPort();
 
-        verifyPrivate(delegate).invoke("getLocalPort");
+        verify(delegate).getLocalPort();
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);
@@ -233,7 +233,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.setPerformancePreferences(1, 2, 3);
 
-        verifyPrivate(delegate).invoke("setPerformancePreferences", 1, 2, 3);
+        verify(delegate).setPerformancePreferences(eq(1), eq(2), eq(3));
         verifyNoMoreInteractions(delegate);
 
     }
@@ -243,7 +243,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.create(true);
 
-        verifyPrivate(delegate).invoke("create", true);
+        verify(delegate).create(eq(true));
         verifyNoMoreInteractions(delegate);
 
     }
@@ -253,7 +253,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.connect("localhost", 123);
 
-        verifyPrivate(delegate).invoke("connect", "localhost", 123);
+        verify(delegate).connect(eq("localhost"), eq(123));
         verifyNoMoreInteractions(delegate);
 
     }
@@ -264,13 +264,13 @@ public class SnifferSocketImplTest {
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 10);
 
-        doNothing().when(SnifferSocketImpl.class, "sleepImpl", anyInt());
+        doNothing().when(sleep).doSleep(anyInt());
 
         sniffySocket.connect("localhost", 123);
 
-        verifyPrivate(SnifferSocketImpl.class).invoke("sleepImpl", eq(10));
+        verify(sleep).doSleep(eq(10));
+        verify(delegate).connect(eq("localhost"), eq(123));
 
-        verifyPrivate(delegate).invoke("connect", "localhost", 123);
         verifyNoMoreInteractions(delegate);
 
     }
@@ -281,7 +281,7 @@ public class SnifferSocketImplTest {
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, -10);
 
-        doNothing().when(SnifferSocketImpl.class, "sleepImpl", anyInt());
+        doNothing().when(sleep).doSleep(anyInt());
 
         try {
             sniffySocket.connect("localhost", 123);
@@ -290,7 +290,7 @@ public class SnifferSocketImplTest {
             assertNotNull(e);
         }
 
-        verifyPrivate(SnifferSocketImpl.class).invoke("sleepImpl", eq(10));
+        verify(sleep).doSleep(eq(10));
 
         verifyNoMoreInteractions(delegate);
 
@@ -301,6 +301,8 @@ public class SnifferSocketImplTest {
     public void testConnectWithDelayThreadSleeps() throws Exception {
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 1000);
+
+        doCallRealMethod().when(sleep).doSleep(anyInt());
 
         AtomicReference<Exception> exceptionReference = new AtomicReference<>();
 
@@ -321,7 +323,7 @@ public class SnifferSocketImplTest {
 
         thread.join(1000);
 
-        verifyPrivate(delegate).invoke("connect", "localhost", 123);
+        verify(delegate).connect(eq("localhost"), eq(123));
         verifyNoMoreInteractions(delegate);
 
     }
@@ -333,7 +335,8 @@ public class SnifferSocketImplTest {
 
         sniffySocket.connect(inetAddress, 123);
 
-        verifyPrivate(delegate).invoke("connect", inetAddress, 123);
+        verify(delegate).connect(eq(inetAddress), eq(123));
+
         verifyNoMoreInteractions(delegate);
 
     }
@@ -345,7 +348,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.connect(socketAddress, 123);
 
-        verifyPrivate(delegate).invoke("connect", socketAddress, 123);
+        verify(delegate).connect(eq(socketAddress), eq(123));
         verifyNoMoreInteractions(delegate);
 
     }
@@ -357,7 +360,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.bind(inetAddress, 123);
 
-        verifyPrivate(delegate).invoke("bind", inetAddress, 123);
+        verify(delegate).bind(eq(inetAddress), eq(123));
         verifyNoMoreInteractions(delegate);
 
     }
@@ -367,7 +370,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.listen(123);
 
-        verifyPrivate(delegate).invoke("listen", 123);
+        verify(delegate).listen(eq(123));
         verifyNoMoreInteractions(delegate);
 
     }
@@ -379,7 +382,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.accept(socketImpl);
 
-        verifyPrivate(delegate).invoke("accept", socketImpl);
+        verify(delegate).accept(eq(socketImpl));
         verifyNoMoreInteractions(delegate);
 
     }
@@ -389,11 +392,11 @@ public class SnifferSocketImplTest {
 
         InputStream expected = new ByteArrayInputStream(new byte[]{1, 2, 3});
 
-        when(delegate, "getInputStream").thenReturn(expected);
+        when(delegate.getInputStream()).thenReturn(expected);
 
         InputStream actual = sniffySocket.getInputStream();
 
-        verifyPrivate(delegate).invoke("getInputStream");
+        verify(delegate).getInputStream();
         verifyNoMoreInteractions(delegate);
 
         assertEquals(SnifferInputStream.class, actual.getClass());
@@ -407,12 +410,12 @@ public class SnifferSocketImplTest {
         InputStream expected = new ByteArrayInputStream(new byte[]{1, 2, 3});
         SnifferSocketImpl.defaultReceiveBufferSize = null;
 
-        when(delegate, "getInputStream").thenReturn(expected);
-        when(delegate, "getOption", SO_RCVBUF).thenReturn(null);
+        when(delegate.getInputStream()).thenReturn(expected);
+        when(delegate.getOption(SO_RCVBUF)).thenReturn(null);
 
         InputStream actual = sniffySocket.getInputStream();
 
-        verifyPrivate(delegate).invoke("getInputStream");
+        verify(delegate).getInputStream();
         verifyNoMoreInteractions(ignoreStubs(delegate));
 
         assertEquals(SnifferInputStream.class, actual.getClass());
@@ -428,12 +431,12 @@ public class SnifferSocketImplTest {
         InputStream expected = new ByteArrayInputStream(new byte[]{1, 2, 3});
         SnifferSocketImpl.defaultReceiveBufferSize = null;
 
-        when(delegate, "getInputStream").thenReturn(expected);
-        when(delegate, "getOption", SO_RCVBUF).thenThrow(new SocketException());
+        when(delegate.getInputStream()).thenReturn(expected);
+        when(delegate.getOption(SO_RCVBUF)).thenThrow(new SocketException());
 
         InputStream actual = sniffySocket.getInputStream();
 
-        verifyPrivate(delegate).invoke("getInputStream");
+        verify(delegate).getInputStream();
         verifyNoMoreInteractions(ignoreStubs(delegate));
 
         assertEquals(SnifferInputStream.class, actual.getClass());
@@ -448,11 +451,11 @@ public class SnifferSocketImplTest {
 
         ByteArrayOutputStream expected = new ByteArrayOutputStream();
 
-        when(delegate, "getOutputStream").thenReturn(expected);
+        when(delegate.getOutputStream()).thenReturn(expected);
 
         OutputStream actual = sniffySocket.getOutputStream();
 
-        verifyPrivate(delegate).invoke("getOutputStream");
+        verify(delegate).getOutputStream();
         verifyNoMoreInteractions(delegate);
 
         assertEquals(SnifferOutputStream.class, actual.getClass());
@@ -468,12 +471,12 @@ public class SnifferSocketImplTest {
         ByteArrayOutputStream expected = new ByteArrayOutputStream();
         SnifferSocketImpl.defaultSendBufferSize = null;
 
-        when(delegate, "getOutputStream").thenReturn(expected);
-        when(delegate, "getOption", SO_SNDBUF).thenReturn(null);
+        when(delegate.getOutputStream()).thenReturn(expected);
+        when(delegate.getOption(SO_SNDBUF)).thenReturn(null);
 
         OutputStream actual = sniffySocket.getOutputStream();
 
-        verifyPrivate(delegate).invoke("getOutputStream");
+        verify(delegate).getOutputStream();
         verifyNoMoreInteractions(ignoreStubs(delegate));
 
         assertEquals(SnifferOutputStream.class, actual.getClass());
@@ -491,12 +494,12 @@ public class SnifferSocketImplTest {
         ByteArrayOutputStream expected = new ByteArrayOutputStream();
         SnifferSocketImpl.defaultSendBufferSize = null;
 
-        when(delegate, "getOutputStream").thenReturn(expected);
-        when(delegate, "getOption", SO_SNDBUF).thenThrow(new SocketException());
+        when(delegate.getOutputStream()).thenReturn(expected);
+        when(delegate.getOption(SO_SNDBUF)).thenThrow(new SocketException());
 
         OutputStream actual = sniffySocket.getOutputStream();
 
-        verifyPrivate(delegate).invoke("getOutputStream");
+        verify(delegate).getOutputStream();
         verifyNoMoreInteractions(ignoreStubs(delegate));
 
         assertEquals(SnifferOutputStream.class, actual.getClass());
@@ -513,11 +516,11 @@ public class SnifferSocketImplTest {
 
         int expected = 1;
 
-        when(delegate, "available").thenReturn(expected);
+        when(delegate.available()).thenReturn(expected);
 
         int actual = sniffySocket.available();
 
-        verifyPrivate(delegate).invoke("available");
+        verify(delegate).available();
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);
@@ -529,7 +532,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.close();
 
-        verifyPrivate(delegate).invoke("close");
+        verify(delegate).close();
         verifyNoMoreInteractions(delegate);
 
     }
@@ -542,7 +545,7 @@ public class SnifferSocketImplTest {
 
         sniffySocket.setOption(optId, option);
 
-        verifyPrivate(delegate).invoke("setOption", optId, option);
+        verify(delegate).setOption(eq(optId), eq(option));
         verifyNoMoreInteractions(delegate);
 
     }
@@ -553,11 +556,11 @@ public class SnifferSocketImplTest {
 
         Object expected = new Object();
 
-        when(delegate, "getOption", 1).thenReturn(expected);
+        when(delegate.getOption(eq(1))).thenReturn(expected);
 
         Object actual = sniffySocket.getOption(1);
 
-        verifyPrivate(delegate).invoke("getOption", 1);
+        verify(delegate).getOption(eq(1));
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);
@@ -569,7 +572,7 @@ public class SnifferSocketImplTest {
 
         String expected = "expected";
 
-        when(delegate, "toString").thenReturn(expected);
+        when(delegate.toString()).thenReturn(expected);
 
         String actual = sniffySocket.toString();
 
@@ -609,12 +612,12 @@ public class SnifferSocketImplTest {
 
         verifyNoMoreInteractions(delegate);
 
-        when(delegate, "getInputStream").thenReturn(mock(InputStream.class));
-        when(delegate, "getOutputStream").thenReturn(mock(OutputStream.class));
+        when(delegate.getInputStream()).thenReturn(mock(InputStream.class));
+        when(delegate.getOutputStream()).thenReturn(mock(OutputStream.class));
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 10);
 
-        doNothing().when(SnifferSocketImpl.class, "sleepImpl", anyInt());
+        doNothing().when(sleep).doSleep(anyInt());
 
         // TCP Delay
         sniffySocket.connect("localhost", 123);
@@ -639,12 +642,12 @@ public class SnifferSocketImplTest {
         // TCP Delay
         outputStream.write(0); // write 1 byte; 9 in cache
 
-        verifyPrivate(SnifferSocketImpl.class, times(5)).invoke("sleepImpl", eq(10));
+        verify(sleep, times(5)).doSleep(eq(10));
 
-        verifyPrivate(delegate).invoke("connect", "localhost", 123);
-        verifyPrivate(delegate).invoke("getInputStream");
-        verifyPrivate(delegate).invoke("getOutputStream");
-        verifyPrivate(delegate, times(2)).invoke("setOption", anyInt(), anyObject());
+        verify(delegate).connect(eq("localhost"), eq(123));
+        verify(delegate).getInputStream();
+        verify(delegate).getOutputStream();
+        verify(delegate, times(2)).setOption(anyInt(), notNull());
         verifyNoMoreInteractions(delegate);
 
     }
@@ -683,4 +686,5 @@ public class SnifferSocketImplTest {
         }
 
     }
+
 }
