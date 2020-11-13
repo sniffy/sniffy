@@ -35,7 +35,7 @@
         <kotlin.version>1.4.10</kotlin.version>
         <kotest.version>4.3.0</kotest.version>
         <jacoco.version>0.8.6</jacoco.version>
-        <argLine></argLine>
+        <argLine> </argLine>
     </properties>
 
     <scm>
@@ -321,9 +321,6 @@
                                 </includes>
                                 <!-- to continue on next execution in case of failures here -->
                                 <testFailureIgnore>true</testFailureIgnore>
-                                <systemPropertyVariables>
-                                    <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
-                                </systemPropertyVariables>
                                 <argLine>@{argLine} </argLine>
                             </configuration>
                         </execution>
@@ -339,9 +336,6 @@
                                 <excludes>
                                     <exclude>%regex[.*TestNg.*]</exclude>
                                 </excludes>
-                                <systemPropertyVariables>
-                                    <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
-                                </systemPropertyVariables>
                                 <argLine>@{argLine} </argLine>
                             </configuration>
                         </execution>
