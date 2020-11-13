@@ -37,6 +37,7 @@
                     <systemPropertyVariables>
                         <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
                     </systemPropertyVariables>
+                    <argLine>@{argLine} </argLine>
                 </configuration>
             </plugin>
         </plugins>
