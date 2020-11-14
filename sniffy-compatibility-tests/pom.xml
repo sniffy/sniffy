@@ -24,6 +24,12 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <inclNoLocationClasses>true</inclNoLocationClasses>
+                            <includes>
+                                <include>io.sniffy.*</include>
+                            </includes>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
