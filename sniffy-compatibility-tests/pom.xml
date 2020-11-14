@@ -27,7 +27,7 @@
                         <configuration>
                             <inclNoLocationClasses>true</inclNoLocationClasses>
                             <includes>
-                                <include>io.sniffy.*</include>
+                                <include>io/sniffy/**/*.class</include>
                             </includes>
                         </configuration>
                     </execution>
