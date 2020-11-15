@@ -111,6 +111,9 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <inclNoLocationClasses>true</inclNoLocationClasses>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
