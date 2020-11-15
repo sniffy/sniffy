@@ -23,7 +23,6 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 
-// Do not use PowerMock with SniffyDriver - it causes StackOverflowError on some reason
 public class SniffyDriverTest extends BaseTest {
 
     @After
