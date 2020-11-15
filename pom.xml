@@ -113,6 +113,9 @@
                         </goals>
                         <configuration>
                             <inclNoLocationClasses>true</inclNoLocationClasses>
+                            <includes>
+                                <include>io/sniffy/**/*.class</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>
