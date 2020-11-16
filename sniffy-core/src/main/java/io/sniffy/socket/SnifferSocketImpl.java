@@ -14,6 +14,8 @@ import java.net.*;
  */
 class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetworkConnection {
 
+    private final Sleep sleep;
+
     private InetSocketAddress address;
 
     private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
@@ -32,8 +34,13 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
 
     private volatile Integer connectionStatus;
 
-    protected SnifferSocketImpl(SocketImpl delegate) {
+    protected SnifferSocketImpl(SocketImpl delegate, Sleep sleep) {
         super(delegate);
+        this.sleep = sleep;
+    }
+
+    protected SnifferSocketImpl(SocketImpl delegate) {
+        this(delegate, new Sleep());
     }
 
     @Override
@@ -136,8 +143,8 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
         }
     }
 
-    private static void sleepImpl(int millis) throws InterruptedException {
-        Thread.sleep(millis);
+    private void sleepImpl(int millis) throws InterruptedException {
+        sleep.doSleep(millis);
     }
 
     @Override

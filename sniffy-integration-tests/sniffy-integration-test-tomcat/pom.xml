@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-integration-tests</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.8-SNAPSHOT</version>
+        <version>3.1.9-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -57,7 +57,6 @@
                     <port>8081</port>
                     <path>/test</path>
                     <fork>true</fork>
-                    <useSeparateTomcatClassLoader>true</useSeparateTomcatClassLoader>
                     <useTestClasspath>true</useTestClasspath>
                 </configuration>
                 <executions>
@@ -96,13 +95,6 @@
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-web</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jacoco</groupId>
-            <artifactId>org.jacoco.agent</artifactId>
-            <version>${jacoco.version}</version>
-            <classifier>runtime</classifier>
         </dependency>
 
         <dependency>

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-test</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.8-SNAPSHOT</version>
+        <version>3.1.9-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -35,6 +35,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>compile</scope>
             <optional>true</optional>
         </dependency>
     </dependencies>
