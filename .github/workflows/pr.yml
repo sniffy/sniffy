@@ -69,6 +69,10 @@ jobs:
       with:
         name: code-coverage-artifact
         path: ./**/jacoco-*.exec
+    - uses: actions/upload-artifact@v2
+      with:
+        name: code-coverage-report-${{ matrix.java }}-${{ matrix.os }}
+        path: sniffy-module-nio/target/site/jacoco
   upload-coverage:
     runs-on: ubuntu-20.04
     name: Upload merged coverage

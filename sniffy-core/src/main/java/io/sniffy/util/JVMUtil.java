@@ -21,4 +21,8 @@ public class JVMUtil {
         return Integer.parseInt(version);
     }
 
+    public static void main(String[] args) {
+        System.out.println(getVersion());
+    }
+
 }
