@@ -67,6 +67,13 @@ jobs:
       with:
         name: code-coverage-artifact
         path: ./**/jacoco-*.exec
+  upload-coverage:
+    runs-on: ubuntu-latest
+    name: Upload merged coverage
+    needs: ['test-matrix']
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
