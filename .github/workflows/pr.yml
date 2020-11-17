@@ -83,7 +83,7 @@ jobs:
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: './**/jacoco-merged.exec'
+        file: target/jacoco-merged.exec
   compatibility-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
