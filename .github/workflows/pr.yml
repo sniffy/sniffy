@@ -79,7 +79,7 @@ jobs:
       with:
         java-version: 8
     - name: Merge JaCoCo reports
-      run: mvn verify
+      run: mvn -f maven-merge-coverage.xml verify
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
