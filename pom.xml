@@ -111,6 +111,9 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <destFile>${project.build.directory}/jacoco-${jacoco.classifier}.exec</destFile>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
