@@ -12,7 +12,7 @@ on:
       - tag/*
 jobs:
   test-coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Coverage JDK 8, Linux
     steps:
       - uses: actions/checkout@v2
@@ -43,7 +43,7 @@ jobs:
     strategy:
       matrix:
         java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16-ea]
-        os: [ubuntu-18.04, windows-2019, macos-10.15]
+        os: [ubuntu-20.04, windows-2019, macos-10.15]
     name:  Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -68,21 +68,27 @@ jobs:
         name: code-coverage-artifact
         path: ./**/jacoco-*.exec
   upload-coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Upload merged coverage
     needs: ['test-matrix']
     steps:
     - uses: actions/checkout@v2
     - uses: actions/download-artifact@v2
+    - name: Set up JDK ${{ matrix.java }}
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+    - name: Merge JaCoCo reports
+      run: mvn -f maven-merge-coverage.xml verify
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: 'jacoco-*.exec'
+        files: './**/jacoco-merged.exec'
   compatibility-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, windows-2019, macos-10.15]
+        os: [ubuntu-20.04, windows-2019, macos-10.15]
     name: Legacy JDK, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -130,7 +136,7 @@ jobs:
         if: matrix.os != 'macOS-10.15'
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     strategy:
       fail-fast: false
