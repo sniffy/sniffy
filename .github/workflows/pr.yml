@@ -42,8 +42,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        java: [ 9, 10, 11, 12, 13, 14, 15, 16-ea]
-        os: [ubuntu-20.04, windows-2019, macos-10.15]
+#        java: [ 9, 10, 11, 12, 13, 14, 15, 16-ea]
+#        os: [ubuntu-20.04, windows-2019, macos-10.15]
+        java: [15]
+        os: [ubuntu-20.04]
     name:  Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
