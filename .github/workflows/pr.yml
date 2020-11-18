@@ -34,18 +34,17 @@ jobs:
           java-version: 8
       - name: Build with Maven
         run: mvn -B clean verify jacoco:report --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Djacoco.classifier=main
-#      - uses: codecov/codecov-action@v1
-#        with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
-#          files: 'jacoco-*.exec'
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: 'jacoco-*.exec'
+# run with nio-compat and nio-java14+ modes and merge coverage
   test-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-#        java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16-ea]
-#        os: [ubuntu-20.04, windows-2019, macos-10.15]
-        java: [15]
-        os: [ubuntu-20.04]
+        java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16-ea]
+        os: [ubuntu-20.04, windows-2019, macos-10.15]
     name:  Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -65,32 +64,7 @@ jobs:
     - name: Build with Maven
       run: mvn -B clean package jacoco:report --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3' '-Djacoco.classifier=${{ matrix.java }}-${{ matrix.os }}'
       if: matrix.os == 'windows-2019'
-    - uses: actions/upload-artifact@v2
-      with:
-        name: code-coverage-artifact
-        path: ./**/jacoco-*.exec
-    - uses: actions/upload-artifact@v2
-      with:
-        name: code-coverage-report-${{ matrix.java }}-${{ matrix.os }}
-        path: sniffy-module-nio/target/site/jacoco
-  upload-coverage:
-    runs-on: ubuntu-20.04
-    name: Upload merged coverage
-    needs: ['test-matrix']
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/download-artifact@v2
-    - name: Set up JDK ${{ matrix.java }}
-      uses: actions/setup-java@v1
-      with:
-        java-version: 8
-    - name: Merge JaCoCo reports
-      run: mvn -f maven-merge-coverage.xml verify
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: target/jacoco-merged.exec
-        verbose: true
+
   compatibility-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -127,9 +101,6 @@ jobs:
       - name: Run compatibility tests using Maven 3.2.5 and Java 7
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml test
         shell: bash
-#      - uses: codecov/codecov-action@v1
-#        with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
       # No Java 6 on MacOS
       - name: Set up JDK 6
         uses: actions/setup-java@v1
