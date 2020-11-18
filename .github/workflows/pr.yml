@@ -58,10 +58,10 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
         restore-keys: ${{ runner.os }}-maven
     - name: Build with Maven
-      run: mvn -B test --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3
+      run: mvn -B package --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3
       if: matrix.os != 'windows-2019'
     - name: Build with Maven
-      run: mvn -B test --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3'
+      run: mvn -B package --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3'
       if: matrix.os == 'windows-2019'
 
   compatibility-matrix:
