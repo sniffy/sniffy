@@ -9,7 +9,10 @@ public class SniffyCompatSelectorProviderModule {
 
     public static void initialize() {
 
-        if (JVMUtil.getVersion() >= 8) return; // TODO: change to 8
+        if (JVMUtil.getVersion() >= 9) return;
+
+        if (JVMUtil.getVersion() == 8 && !Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
+
 
         try {
             Class.forName("io.sniffy.nio.compat.CompatSniffySelectorProviderBootstrap").getMethod("initialize").invoke(null);
