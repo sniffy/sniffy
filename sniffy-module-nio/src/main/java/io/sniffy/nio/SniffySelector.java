@@ -160,7 +160,7 @@ public class SniffySelector extends AbstractSelector {
      */
     private void updateSelectionKeysFromDelegate() {
 
-        if (JVMUtil.getVersion() < 14) {
+        if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
             return; // Before Java 14 is updating attachment in delegate from SniffySelectionKey
         }
 
