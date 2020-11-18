@@ -42,7 +42,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-#        java: [ 9, 10, 11, 12, 13, 14, 15, 16-ea]
+#        java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16-ea]
 #        os: [ubuntu-20.04, windows-2019, macos-10.15]
         java: [15]
         os: [ubuntu-20.04]
@@ -90,6 +90,7 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: target/jacoco-merged.exec
+        verbose: true
   compatibility-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -126,9 +127,9 @@ jobs:
       - name: Run compatibility tests using Maven 3.2.5 and Java 7
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml test
         shell: bash
-      - uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+#      - uses: codecov/codecov-action@v1
+#        with:
+#          token: ${{ secrets.CODECOV_TOKEN }}
       # No Java 6 on MacOS
       - name: Set up JDK 6
         uses: actions/setup-java@v1
