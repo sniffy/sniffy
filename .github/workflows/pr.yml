@@ -33,11 +33,10 @@ jobs:
         with:
           java-version: 8
       - name: Build with Maven
-        run: mvn -B clean verify jacoco:report --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Djacoco.classifier=main
+        run: mvn -B verify --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: 'jacoco-*.exec'
 # run with nio-compat and nio-java14+ modes and merge coverage
   test-matrix:
     runs-on: ${{ matrix.os }}
@@ -59,10 +58,10 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
         restore-keys: ${{ runner.os }}-maven
     - name: Build with Maven
-      run: mvn -B clean package jacoco:report --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Djacoco.classifier=${{ matrix.java }}-${{ matrix.os }}
+      run: mvn -B test --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3
       if: matrix.os != 'windows-2019'
     - name: Build with Maven
-      run: mvn -B clean package jacoco:report --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3' '-Djacoco.classifier=${{ matrix.java }}-${{ matrix.os }}'
+      run: mvn -B test --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3'
       if: matrix.os == 'windows-2019'
 
   compatibility-matrix:

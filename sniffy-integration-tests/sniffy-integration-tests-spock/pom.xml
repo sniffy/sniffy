@@ -34,7 +34,6 @@
                     <includes>
                         <include>**/*Spec.java</include>
                     </includes>
-                    <argLine>@{argLine} </argLine>
                 </configuration>
             </plugin>
         </plugins>
