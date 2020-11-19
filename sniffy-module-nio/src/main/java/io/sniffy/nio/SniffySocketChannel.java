@@ -22,6 +22,10 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     private final int connectionId = CONNECTION_ID_SEQUENCE.getAndIncrement();
 
+    private volatile Integer connectionStatus;
+
+    // fields related to injecting latency fault
+
     protected static volatile Integer defaultReceiveBufferSize;
     protected static volatile Integer defaultSendBufferSize;
 
@@ -33,8 +37,6 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     private volatile long lastReadThreadId;
     private volatile long lastWriteThreadId;
-
-    private volatile Integer connectionStatus;
 
     protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
         super(provider, delegate);
@@ -148,9 +150,11 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
     public void logSocket(long millis, int bytesDown, int bytesUp) {
-        Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
-        if (sniffyMode.isEnabled() && null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
-            Sniffy.logSocket(connectionId, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
+        if (null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
+            Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
+            if (sniffyMode.isEnabled()) {
+                Sniffy.logSocket(connectionId, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces()); // TODO: stack trace here should be calculated till another package
+            }
         }
     }
 
