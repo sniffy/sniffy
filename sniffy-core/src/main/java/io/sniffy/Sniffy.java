@@ -307,7 +307,7 @@ public class Sniffy {
     }
 
     public static boolean hasSpies() {
-        return getSniffyMode().isEnabled();
+        return getSniffyMode().isEnabled(); // TODO: check for thread local spies as well
     }
 
     /**
