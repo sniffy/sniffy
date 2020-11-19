@@ -19,5 +19,24 @@
         <module>sniffy-spring-test</module>
     </modules>
 
+    <dependencies>
+        <!-- moving dependencies here from sniffy-test-common - fix  https://github.com/jacoco/jacoco/issues/974 -->
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-module-nio</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-module-nio-compat</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
 
 </project>
