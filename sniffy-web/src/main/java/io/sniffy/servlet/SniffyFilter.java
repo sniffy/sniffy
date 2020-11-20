@@ -178,6 +178,8 @@ public class SniffyFilter implements Filter {
                 ConnectionsRegistry.INSTANCE.setThreadLocal(Boolean.parseBoolean(faultToleranceCurrentRequest));
             }
 
+            // TODO: support other configuration parameters
+
             sniffyServlet.init(new FilterServletConfigAdapter(filterConfig, "sniffy"));
 
             servletContext = filterConfig.getServletContext();
@@ -288,6 +290,8 @@ public class SniffyFilter implements Filter {
     private boolean isSniffyFilterEnabled(ServletRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws MalformedURLException {
 
         boolean sniffyEnabled = filterEnabled;
+
+        // TODO: allow disabling override via query params and or headers
 
         // override by request parameter/cookie value if provided
 
