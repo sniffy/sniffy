@@ -1,6 +1,7 @@
 package io.sniffy.nio.compat;
 
 import io.sniffy.Sniffy;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySocket;
