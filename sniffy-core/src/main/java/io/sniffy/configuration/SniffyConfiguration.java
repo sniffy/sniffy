@@ -13,6 +13,10 @@ public enum SniffyConfiguration {
 
     private volatile boolean monitorJdbc;
     private volatile boolean monitorSocket;
+
+    /**
+     * @since 3.1.7
+     */
     private volatile boolean monitorNio;
 
     /**
@@ -24,10 +28,31 @@ public enum SniffyConfiguration {
     private volatile String excludePattern;
 
     private volatile Boolean injectHtmlEnabled;
+
     /**
      * @since 3.1.2
      */
     private volatile String injectHtmlExcludePattern;
+
+    // TODO: modify configuration below from @EnableSniffy annotation
+
+    /**
+     * @since 3.1.9
+     */
+    private volatile Boolean jdbcCaptureEnabled;
+    /**
+     * @since 3.1.9
+     */
+    private volatile Boolean jdbcFaultInjectionEnabled;
+
+    /**
+     * @since 3.1.9
+     */
+    private volatile Boolean socketCaptureEnabled;
+    /**
+     * @since 3.1.9
+     */
+    private volatile Boolean socketFaultInjectionEnabled;
 
     SniffyConfiguration() {
         loadSniffyConfiguration();
@@ -58,6 +83,17 @@ public enum SniffyConfiguration {
         String injectHtmlEnabled = getProperty("io.sniffy.injectHtml", "IO_SNIFFY_INJECT_HTML");
         this.injectHtmlEnabled = null == injectHtmlEnabled ? null : Boolean.parseBoolean(injectHtmlEnabled);
         injectHtmlExcludePattern = getProperty("io.sniffy.injectHtmlExcludePattern", "IO_SNIFFY_INJECT_HTML_EXCLUDE_PATTERN", null);
+
+        // TODO: update documentation and tests for new properties below
+        String jdbcCaptureEnabled = getProperty("io.sniffy.jdbcCaptureEnabled", "IO_SNIFFY_JDBC_CAPTURE_ENABLED");
+        this.jdbcCaptureEnabled = null == jdbcCaptureEnabled || Boolean.parseBoolean(jdbcCaptureEnabled);
+        String jdbcFaultInjectionEnabled = getProperty("io.sniffy.jdbcFaultInjectionEnabled", "IO_SNIFFY_JDBC_FAULT_INJECTION_ENABLED");
+        this.jdbcFaultInjectionEnabled = null == jdbcFaultInjectionEnabled || Boolean.parseBoolean(jdbcFaultInjectionEnabled);
+
+        String socketCaptureEnabled = getProperty("io.sniffy.socketCaptureEnabled", "IO_SNIFFY_SOCKET_CAPTURE_ENABLED");
+        this.socketCaptureEnabled = null == socketCaptureEnabled || Boolean.parseBoolean(socketCaptureEnabled);
+        String socketFaultInjectionEnabled = getProperty("io.sniffy.socketFaultInjectionEnabled", "IO_SNIFFY_SOCKET_FAULT_INJECTION_ENABLED");
+        this.socketFaultInjectionEnabled = null == socketFaultInjectionEnabled || Boolean.parseBoolean(socketFaultInjectionEnabled);
 
     }
 
@@ -213,6 +249,62 @@ public enum SniffyConfiguration {
      */
     public void setInjectHtmlExcludePattern(String injectHtmlExcludePattern) {
         this.injectHtmlExcludePattern = injectHtmlExcludePattern;
+    }
+
+    /**
+     * @since 3.1.9
+     */
+    public Boolean getJdbcCaptureEnabled() {
+        return jdbcCaptureEnabled;
+    }
+
+    /**
+     * @since 3.1.9
+     */
+    public void setJdbcCaptureEnabled(Boolean jdbcCaptureEnabled) {
+        this.jdbcCaptureEnabled = jdbcCaptureEnabled;
+    }
+
+    /**
+     * @since 3.1.9
+     */
+    public Boolean getJdbcFaultInjectionEnabled() {
+        return jdbcFaultInjectionEnabled;
+    }
+
+    /**
+     * @since 3.1.9
+     */
+    public void setJdbcFaultInjectionEnabled(Boolean jdbcFaultInjectionEnabled) {
+        this.jdbcFaultInjectionEnabled = jdbcFaultInjectionEnabled;
+    }
+
+    /**
+     * @since 3.1.9
+     */
+    public Boolean getSocketCaptureEnabled() {
+        return socketCaptureEnabled;
+    }
+
+    /**
+     * @since 3.1.9
+     */
+    public void setSocketCaptureEnabled(Boolean socketCaptureEnabled) {
+        this.socketCaptureEnabled = socketCaptureEnabled;
+    }
+
+    /**
+     * @since 3.1.9
+     */
+    public Boolean getSocketFaultInjectionEnabled() {
+        return socketFaultInjectionEnabled;
+    }
+
+    /**
+     * @since 3.1.9
+     */
+    public void setSocketFaultInjectionEnabled(Boolean socketFaultInjectionEnabled) {
+        this.socketFaultInjectionEnabled = socketFaultInjectionEnabled;
     }
 
 }

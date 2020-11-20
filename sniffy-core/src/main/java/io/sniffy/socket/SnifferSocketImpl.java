@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffy;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import java.io.FileDescriptor;
@@ -104,6 +105,9 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
     }
 
     public void logSocket(long millis, int bytesDown, int bytesUp) {
+
+        if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
+
         if (null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
             Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
             if (sniffyMode.isEnabled()) {
@@ -124,8 +128,10 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
         checkConnectionAllowed(inetSocketAddress, 1);
     }
 
-    // TODO: inverse this check; otherwise it is too slow
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
+        if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
+
         if (null != inetSocketAddress) {
             if (null == this.connectionStatus || ConnectionsRegistry.INSTANCE.isThreadLocal()) {
                 this.connectionStatus = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, this);

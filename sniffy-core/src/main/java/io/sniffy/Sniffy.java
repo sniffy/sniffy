@@ -307,13 +307,16 @@ public class Sniffy {
     }
 
     public static boolean hasSpies() {
-        return getSniffyMode().isEnabled(); // TODO: check for thread local spies as well
+        return getSniffyMode().isEnabled();
     }
 
     /**
      * @since 3.1.6
      */
     public static SniffyMode getSniffyMode() {
+
+        // TODO: add volatile hasNonThreadLocalSpies field to speedup
+
         if (!registeredSpies.isEmpty()) {
             Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
             while (iterator.hasNext()) {
