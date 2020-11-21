@@ -1,6 +1,7 @@
 package io.sniffy.nio;
 
 import io.sniffy.Sniffy;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySocket;
@@ -22,6 +23,10 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     private final int connectionId = CONNECTION_ID_SEQUENCE.getAndIncrement();
 
+    private volatile Integer connectionStatus;
+
+    // fields related to injecting latency fault
+
     protected static volatile Integer defaultReceiveBufferSize;
     protected static volatile Integer defaultSendBufferSize;
 
@@ -33,8 +38,6 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     private volatile long lastReadThreadId;
     private volatile long lastWriteThreadId;
-
-    private volatile Integer connectionStatus;
 
     protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
         super(provider, delegate);
@@ -148,9 +151,14 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
     public void logSocket(long millis, int bytesDown, int bytesUp) {
-        Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
-        if (sniffyMode.isEnabled() && null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
-            Sniffy.logSocket(connectionId, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
+
+        if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
+
+        if (null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
+            Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
+            if (sniffyMode.isEnabled()) {
+                Sniffy.logSocket(connectionId, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces()); // TODO: stack trace here should be calculated till another package
+            }
         }
     }
 
@@ -167,6 +175,9 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
+        if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
+
         if (null != inetSocketAddress) {
             if (null == this.connectionStatus || ConnectionsRegistry.INSTANCE.isThreadLocal()) {
                 this.connectionStatus = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, this);

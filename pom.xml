@@ -35,7 +35,6 @@
         <kotlin.version>1.4.10</kotlin.version>
         <kotest.version>4.3.0</kotest.version>
         <jacoco.version>0.8.6</jacoco.version>
-        <argLine> </argLine>
     </properties>
 
     <scm>
@@ -111,12 +110,15 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <append>true</append>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
                         <phase>prepare-package</phase>
                         <goals>
-                            <goal>report</goal>
+                            <goal>report-aggregate</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -304,7 +306,6 @@
                         <runOrder>alphabetical</runOrder>
                         <!-- skip the default execution, we have separate for Ng and for JUnit -->
                         <skip>true</skip>
-                        <argLine>@{argLine} </argLine>
                     </configuration>
                     <executions>
                         <execution>
@@ -321,7 +322,6 @@
                                 </includes>
                                 <!-- to continue on next execution in case of failures here -->
                                 <testFailureIgnore>true</testFailureIgnore>
-                                <argLine>@{argLine} </argLine>
                             </configuration>
                         </execution>
                         <execution>
@@ -336,7 +336,40 @@
                                 <excludes>
                                     <exclude>%regex[.*TestNg.*]</exclude>
                                 </excludes>
-                                <argLine>@{argLine} </argLine>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>JUnit-execution-java14-compatibility</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <configuration>
+                                <skip>false</skip>
+                                <systemPropertyVariables>
+                                    <io.sniffy.forceJava14Compatibility>true</io.sniffy.forceJava14Compatibility>
+                                </systemPropertyVariables>
+                                <testNGArtifactName>dev:null</testNGArtifactName>
+                                <excludes>
+                                    <exclude>%regex[.*TestNg.*]</exclude>
+                                </excludes>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>JUnit-execution-java7-compatibility</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <configuration>
+                                <skip>false</skip>
+                                <systemPropertyVariables>
+                                    <io.sniffy.forceJava7Compatibility>true</io.sniffy.forceJava7Compatibility>
+                                </systemPropertyVariables>
+                                <testNGArtifactName>dev:null</testNGArtifactName>
+                                <excludes>
+                                    <exclude>%regex[.*TestNg.*]</exclude>
+                                </excludes>
                             </configuration>
                         </execution>
                     </executions>

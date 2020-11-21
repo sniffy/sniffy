@@ -1,9 +1,6 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
-import io.sniffy.util.SetWrapper;
-import io.sniffy.util.WrapperFactory;
+import io.sniffy.util.*;
 
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
@@ -162,6 +159,10 @@ public class SniffySelector extends AbstractSelector {
      * select method can remove cancelled selection keys from delegate so we need to update them in sniffy channels as well
      */
     private void updateSelectionKeysFromDelegate() {
+
+        if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
+            return; // Before Java 14 is updating attachment in delegate from SniffySelectionKey
+        }
 
         Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap;
         synchronized (this.channelToSniffyChannelMap) {

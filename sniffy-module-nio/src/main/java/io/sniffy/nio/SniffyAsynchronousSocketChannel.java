@@ -1,6 +1,7 @@
 package io.sniffy.nio;
 
 import io.sniffy.Sniffy;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.util.ExceptionUtil;
@@ -192,6 +193,9 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     }
 
     public void logSocket(long millis, int bytesDown, int bytesUp) {
+
+        if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
+
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
         if (sniffyMode.isEnabled() && null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
             Sniffy.logSocket(id, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
@@ -211,6 +215,9 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     }
 
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
+        if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
+
         if (null != inetSocketAddress) {
             if (null == this.connectionStatus || ConnectionsRegistry.INSTANCE.isThreadLocal()) {
                 this.connectionStatus = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, this);

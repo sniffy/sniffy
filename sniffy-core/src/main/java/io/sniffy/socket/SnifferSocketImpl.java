@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffy;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import java.io.FileDescriptor;
@@ -20,6 +21,10 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
 
     private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
+    private volatile Integer connectionStatus;
+
+    // fields related to injecting latency fault
+
     protected static volatile Integer defaultReceiveBufferSize;
     protected static volatile Integer defaultSendBufferSize;
 
@@ -31,8 +36,6 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
 
     private volatile long lastReadThreadId;
     private volatile long lastWriteThreadId;
-
-    private volatile Integer connectionStatus;
 
     protected SnifferSocketImpl(SocketImpl delegate, Sleep sleep) {
         super(delegate);
@@ -102,9 +105,14 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
     }
 
     public void logSocket(long millis, int bytesDown, int bytesUp) {
-        Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
-        if (sniffyMode.isEnabled() && null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
-            Sniffy.logSocket(id, address, millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
+
+        if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
+
+        if (null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
+            Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
+            if (sniffyMode.isEnabled()) {
+                Sniffy.logSocket(id, address, millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
+            }
         }
     }
 
@@ -120,8 +128,10 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
         checkConnectionAllowed(inetSocketAddress, 1);
     }
 
-    // TODO: inverse this check; otherwise it is too slow
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
+        if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
+
         if (null != inetSocketAddress) {
             if (null == this.connectionStatus || ConnectionsRegistry.INSTANCE.isThreadLocal()) {
                 this.connectionStatus = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, this);
@@ -154,7 +164,7 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
             checkConnectionAllowed(1);
             super.sendUrgentData(data);
         } finally {
-            logSocket(System.currentTimeMillis() - start);
+            logSocket(System.currentTimeMillis() - start, 0, 1);
         }
     }
 
