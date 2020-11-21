@@ -41,10 +41,35 @@ public class Sniffy {
 
     public static final int TOP_SQL_CAPACITY = 1024;
 
+    /**
+     * Indicates if Sniffy potentially has global (non thread-local) spies registered
+     * Once set to true it is never reseted to false
+     *
+     * Used for (premature) optimization only
+     *
+     * @since 3.1.9
+     */
+    private static volatile boolean hasGlobalSpies = false;
+
+    /**
+     * Indicates if Sniffy potentially has thread-local spies registered
+     * Once set to true it is never reseted to false
+     *
+     * Used for (premature) optimization only
+     *
+     * @since 3.1.9
+     */
+    private static volatile boolean hasThreadLocalSpies = false;
+
+    //@VisibleForTesting
     protected static final Queue<WeakReference<Spy>> registeredSpies =
             new ConcurrentLinkedQueue<WeakReference<Spy>>();
+    //@VisibleForTesting
     protected static final ConcurrentMap<Long, WeakReference<CurrentThreadSpy>> currentThreadSpies =
             new ConcurrentHashMap<Long, WeakReference<CurrentThreadSpy>>();
+
+
+    // TODO: add globalSocketStats
     protected static volatile ConcurrentLinkedHashMap<String, Timer> globalSqlStats =
             new ConcurrentLinkedHashMap.Builder<String, Timer>().
                     maximumWeightedCapacity(SniffyConfiguration.INSTANCE.getTopSqlCapacity()).
@@ -211,12 +236,14 @@ public class Sniffy {
     }
 
     protected static WeakReference<Spy> registerSpy(Spy spy) {
+        hasGlobalSpies = true;
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
         registeredSpies.add(spyReference);
         return spyReference;
     }
 
     protected static WeakReference<CurrentThreadSpy> registerCurrentThreadSpy(CurrentThreadSpy spy) {
+        hasThreadLocalSpies = true;
         WeakReference<CurrentThreadSpy> spyReference = new WeakReference<CurrentThreadSpy>(spy);
         currentThreadSpies.put(Thread.currentThread().getId(), spyReference);
         return spyReference;
@@ -231,77 +258,93 @@ public class Sniffy {
     }
 
     private static void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
-        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-        while (iterator.hasNext()) {
-            WeakReference<Spy> spyReference = iterator.next();
-            Spy spy = spyReference.get();
-            if (null == spy) {
-                iterator.remove();
-            } else {
-                spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
+
+        if (hasGlobalSpies) {
+            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+            while (iterator.hasNext()) {
+                WeakReference<Spy> spyReference = iterator.next();
+                Spy spy = spyReference.get();
+                if (null == spy) {
+                    iterator.remove();
+                } else {
+                    spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
+                }
             }
         }
 
-        Long threadId = Thread.currentThread().getId();
+        if (hasThreadLocalSpies) {
+            Long threadId = Thread.currentThread().getId();
 
-        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-        if (null != spyReference) {
-            CurrentThreadSpy spy = spyReference.get();
-            if (null == spy) {
-                currentThreadSpies.remove(threadId);
-            } else {
-                spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
+            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+            if (null != spyReference) {
+                CurrentThreadSpy spy = spyReference.get();
+                if (null == spy) {
+                    currentThreadSpies.remove(threadId);
+                } else {
+                    spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
+                }
             }
         }
 
     }
 
     private static void notifyListeners(StatementMetaData statementMetaData) {
-        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-        while (iterator.hasNext()) {
-            WeakReference<Spy> spyReference = iterator.next();
-            Spy spy = spyReference.get();
-            if (null == spy) {
-                iterator.remove();
-            } else {
-                spy.addReturnedRow(statementMetaData);
+
+        if (hasGlobalSpies) {
+            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+            while (iterator.hasNext()) {
+                WeakReference<Spy> spyReference = iterator.next();
+                Spy spy = spyReference.get();
+                if (null == spy) {
+                    iterator.remove();
+                } else {
+                    spy.addReturnedRow(statementMetaData);
+                }
             }
         }
 
-        Long threadId = Thread.currentThread().getId();
+        if (hasThreadLocalSpies) {
+            Long threadId = Thread.currentThread().getId();
 
-        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-        if (null != spyReference) {
-            CurrentThreadSpy spy = spyReference.get();
-            if (null == spy) {
-                currentThreadSpies.remove(threadId);
-            } else {
-                spy.addReturnedRow(statementMetaData);
+            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+            if (null != spyReference) {
+                CurrentThreadSpy spy = spyReference.get();
+                if (null == spy) {
+                    currentThreadSpies.remove(threadId);
+                } else {
+                    spy.addReturnedRow(statementMetaData);
+                }
             }
         }
+
     }
 
     private static void notifyListeners(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
-        Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-        while (iterator.hasNext()) {
-            WeakReference<Spy> spyReference = iterator.next();
-            Spy spy = spyReference.get();
-            if (null == spy) {
-                iterator.remove();
-            } else {
-                spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
+
+        if (hasGlobalSpies) {
+            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+            while (iterator.hasNext()) {
+                WeakReference<Spy> spyReference = iterator.next();
+                Spy spy = spyReference.get();
+                if (null == spy) {
+                    iterator.remove();
+                } else {
+                    spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
+                }
             }
         }
 
-        Long threadId = Thread.currentThread().getId();
+        if (hasThreadLocalSpies) {
+            Long threadId = Thread.currentThread().getId();
 
-        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-        if (null != spyReference) {
-            CurrentThreadSpy spy = spyReference.get();
-            if (null == spy) {
-                currentThreadSpies.remove(threadId);
-            } else {
-                spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
+            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+            if (null != spyReference) {
+                CurrentThreadSpy spy = spyReference.get();
+                if (null == spy) {
+                    currentThreadSpies.remove(threadId);
+                } else {
+                    spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
+                }
             }
         }
     }
@@ -315,30 +358,32 @@ public class Sniffy {
      */
     public static SniffyMode getSniffyMode() {
 
-        // TODO: add volatile hasNonThreadLocalSpies field to speedup
-
-        if (!registeredSpies.isEmpty()) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    return SniffyMode.ENABLED;
+        if (hasGlobalSpies) {
+            if (!registeredSpies.isEmpty()) {
+                Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+                while (iterator.hasNext()) {
+                    WeakReference<Spy> spyReference = iterator.next();
+                    Spy spy = spyReference.get();
+                    if (null == spy) {
+                        iterator.remove();
+                    } else {
+                        return SniffyMode.ENABLED;
+                    }
                 }
             }
         }
 
-        Long threadId = Thread.currentThread().getId();
+        if (hasThreadLocalSpies) {
+            Long threadId = Thread.currentThread().getId();
 
-        WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-        if (null != spyReference) {
-            CurrentThreadSpy spy = spyReference.get();
-            if (null == spy) {
-                currentThreadSpies.remove(threadId);
-            } else {
-                return spy.captureStackTraces ? SniffyMode.ENABLED : SniffyMode.ENABLED_NO_STACKTRACE;
+            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+            if (null != spyReference) {
+                CurrentThreadSpy spy = spyReference.get();
+                if (null == spy) {
+                    currentThreadSpies.remove(threadId);
+                } else {
+                    return spy.captureStackTraces ? SniffyMode.ENABLED : SniffyMode.ENABLED_NO_STACKTRACE;
+                }
             }
         }
 

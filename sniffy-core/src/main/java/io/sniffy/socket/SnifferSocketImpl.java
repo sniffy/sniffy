@@ -164,7 +164,7 @@ class SnifferSocketImpl extends SniffySocketImplAdapter implements SniffyNetwork
             checkConnectionAllowed(1);
             super.sendUrgentData(data);
         } finally {
-            logSocket(System.currentTimeMillis() - start);
+            logSocket(System.currentTimeMillis() - start, 0, 1);
         }
     }
 
