@@ -17,15 +17,15 @@ import java.util.Set;
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
- * @since 3.1.7
+ * @since 3.1.9
  */
-class SniffySocketImplAdapter extends SocketImpl {
+class CompatSniffySocketImplAdapter extends SocketImpl {
 
     private static final ReflectionCopier<SocketImpl> socketChannelFieldsCopier = new ReflectionCopier<SocketImpl>(SocketImpl.class);
 
     protected final SocketImpl delegate;
 
-    protected SniffySocketImplAdapter(SocketImpl delegate) {
+    protected CompatSniffySocketImplAdapter(SocketImpl delegate) {
         this.delegate = delegate;
     }
 
@@ -324,6 +324,8 @@ class SniffySocketImplAdapter extends SocketImpl {
             copyFromDelegate();
         }
     }
+
+
 
     // New methods in Java 9
 
