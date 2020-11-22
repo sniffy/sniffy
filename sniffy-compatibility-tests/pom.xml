@@ -7,6 +7,7 @@
     <artifactId>sniffy-compatibility-tests</artifactId>
     <groupId>io.sniffy</groupId>
     <version>3.1.9-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
     <modules>
         <module>sniffy-compatibility-tests-io</module>
