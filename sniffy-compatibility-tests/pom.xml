@@ -8,6 +8,11 @@
     <groupId>io.sniffy</groupId>
     <version>3.1.9-SNAPSHOT</version>
 
+    <modules>
+        <module>sniffy-compatibility-tests-io</module>
+        <module>sniffy-compatibility-tests-nio</module>
+    </modules>
+
     <build>
         <plugins>
             <plugin>
