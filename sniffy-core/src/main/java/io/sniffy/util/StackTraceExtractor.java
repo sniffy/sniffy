@@ -81,6 +81,7 @@ public class StackTraceExtractor {
                     !traceElementClassName.startsWith("sun") &&
                     !"io.sniffy.Sniffy".equals(traceElementClassName) &&
                     !"io.sniffy.socket.SnifferSocketImpl".equals(traceElementClassName) &&
+                    !"io.sniffy.socket.CompatSnifferSocketImpl".equals(traceElementClassName) &&
                     !"io.sniffy.socket.SnifferInputStream".equals(traceElementClassName) &&
                     !"io.sniffy.socket.SnifferOutputStream".equals(traceElementClassName) &&
                     !"io.sniffy.util.StackTraceExtractor".equals(traceElementClassName)
