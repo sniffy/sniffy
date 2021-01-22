@@ -57,7 +57,26 @@ public class ReflectionUtil {
 
             if (JVMUtil.getVersion() >= 16) {
                 long fieldOffset = UNSAFE.staticFieldOffset(instanceField);
-                UNSAFE.putObject(instance, fieldOffset, value); // TODO: acquire lock
+                // TODO: acquire lock
+                // TODO: use putvolatile if required
+                if (instanceField.getType() == Boolean.TYPE && value instanceof Boolean) {
+                    UNSAFE.putBoolean(instance, fieldOffset, (Boolean) value);
+                } else if (instanceField.getType() == Integer.TYPE && value instanceof Number) {
+                    UNSAFE.putInt(instance, fieldOffset, ((Number) value).intValue());
+                } else if (instanceField.getType() == Long.TYPE && value instanceof Number) {
+                    UNSAFE.putLong(instance, fieldOffset, ((Number) value).longValue());
+                } else if (instanceField.getType() == Short.TYPE && value instanceof Number) {
+                    UNSAFE.putShort(instance, fieldOffset, ((Number) value).shortValue());
+                } else if (instanceField.getType() == Byte.TYPE && value instanceof Number) {
+                    UNSAFE.putByte(instance, fieldOffset, ((Number) value).byteValue());
+                } else if (instanceField.getType() == Double.TYPE && value instanceof Number) {
+                    UNSAFE.putDouble(instance, fieldOffset, ((Number) value).doubleValue());
+                } else if (instanceField.getType() == Float.TYPE && value instanceof Number) {
+                    UNSAFE.putFloat(instance, fieldOffset, ((Number) value).floatValue());
+                } else if (instanceField.getType() == Character.TYPE && value instanceof Character) {
+                    UNSAFE.putChar(instance, fieldOffset, (Character) value);
+                }
+                UNSAFE.putObject(instance, fieldOffset, value);
                 return true;
             }
 
@@ -133,8 +152,30 @@ public class ReflectionUtil {
 
         if (JVMUtil.getVersion() >= 16) {
             long fieldOffset = UNSAFE.staticFieldOffset(instanceField);
+
+            // TODO: acquire lock
+            // TODO: use getvolatile if required
+            if (instanceField.getType() == Boolean.TYPE) {
+                UNSAFE.getBoolean(instance, fieldOffset);
+            } else if (instanceField.getType() == Integer.TYPE) {
+                UNSAFE.getInt(instance, fieldOffset);
+            } else if (instanceField.getType() == Long.TYPE) {
+                UNSAFE.getLong(instance, fieldOffset);
+            } else if (instanceField.getType() == Short.TYPE) {
+                UNSAFE.getShort(instance, fieldOffset);
+            } else if (instanceField.getType() == Byte.TYPE) {
+                UNSAFE.getByte(instance, fieldOffset);
+            } else if (instanceField.getType() == Double.TYPE) {
+                UNSAFE.getDouble(instance, fieldOffset);
+            } else if (instanceField.getType() == Float.TYPE) {
+                UNSAFE.getFloat(instance, fieldOffset);
+            } else if (instanceField.getType() == Character.TYPE) {
+                UNSAFE.getChar(instance, fieldOffset);
+            }
+
             //noinspection unchecked
-            return (V) UNSAFE.getObject(instance, fieldOffset); // TODO: acquire lock
+            return (V) UNSAFE.getObject(instance, fieldOffset);
+
         }
 
         if (!instanceField.isAccessible()) {

@@ -31,9 +31,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
     @Test
     public void testConnectionClosed() throws Exception {
 
-        SnifferSocketImplFactory.install();
-
-        /*SnifferSocketImplFactory.uninstall();
+        SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus(localhost.getHostName(), echoServerRule.getBoundPort(), -1);
@@ -47,10 +45,10 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
             assertNotNull(e);
         } finally {
             if (null != socket) socket.close();
-        }*/
+        }
 
     }
-/*
+
     @Test
     public void testThreadLocalConnectionClosed() throws Exception {
 
@@ -462,7 +460,6 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
         assertEquals(-42, lastConnectionStatus.get());
 
-    }*/
-
+    }
 
 }
