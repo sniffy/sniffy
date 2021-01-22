@@ -337,6 +337,7 @@
                                 <excludes>
                                     <exclude>%regex[.*TestNg.*]</exclude>
                                 </excludes>
+                                <forkCount>0</forkCount>
                             </configuration>
                         </execution>
                         <execution>
