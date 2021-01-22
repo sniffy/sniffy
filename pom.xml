@@ -33,7 +33,7 @@
         <spring.boot.version>1.5.22.RELEASE</spring.boot.version>
         <kotlin.version>1.4.10</kotlin.version>
         <kotest.version>4.3.0</kotest.version>
-        <jacoco.version>0.8.6</jacoco.version>
+        <jacoco.version>0.8.7-SNAPSHOT</jacoco.version>
     </properties>
 
     <scm>
@@ -337,7 +337,6 @@
                                 <excludes>
                                     <exclude>%regex[.*TestNg.*]</exclude>
                                 </excludes>
-                                <forkCount>0</forkCount>
                             </configuration>
                         </execution>
                         <execution>

@@ -48,7 +48,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
         }
 
     }
-
+/*
     @Test
     public void testThreadLocalConnectionClosed() throws Exception {
 
@@ -460,7 +460,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
         assertEquals(-42, lastConnectionStatus.get());
 
-    }
+    }*/
 
 
 }
