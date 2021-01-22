@@ -23,13 +23,15 @@ import static org.junit.Assert.*;
 
 public class ConnectionsRegistryTest extends BaseSocketTest {
 
-    /*@After
+    @After
     public void clearConnectionRules() {
         ConnectionsRegistry.INSTANCE.clear();
-    }*/
+    }
 
     @Test
     public void testConnectionClosed() throws Exception {
+
+        SnifferSocketImplFactory.uninstall();
 
         /*SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
