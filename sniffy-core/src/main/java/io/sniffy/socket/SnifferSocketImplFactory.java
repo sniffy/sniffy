@@ -2,6 +2,7 @@ package io.sniffy.socket;
 
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.JVMUtil;
+import io.sniffy.util.ReflectionUtil;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -34,13 +35,14 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
      * @since 3.1
      */
     public static void install() throws IOException {
-        
+
         try {
-            Field factoryField = Socket.class.getDeclaredField("factory");
-            factoryField.setAccessible(true);
-            SocketImplFactory currentSocketImplFactory = (SocketImplFactory) factoryField.get(null);
+
+            SocketImplFactory currentSocketImplFactory = ReflectionUtil.getField(Socket.class, null, "factory");
             if (null == currentSocketImplFactory || !SnifferSocketImplFactory.class.equals(currentSocketImplFactory.getClass())) {
-                factoryField.set(null, null);
+                if (!ReflectionUtil.setField(Socket.class, null, "factory", null)) {
+                    throw new IOException("Failed to uninstall SnifferSocketImplFactory");
+                }
                 Socket.setSocketImplFactory(new SnifferSocketImplFactory());
                 previousSocketImplFactory = currentSocketImplFactory;
             }
@@ -59,14 +61,8 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
      * @since 3.1
      */
     public static void uninstall() throws IOException {
-        try {
-            Field factoryField = Socket.class.getDeclaredField("factory");
-            factoryField.setAccessible(true);
-            factoryField.set(null, previousSocketImplFactory);
-        } catch (IllegalAccessException e) {
-            throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
-        } catch (NoSuchFieldException e) {
-            throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
+        if (!ReflectionUtil.setField(Socket.class, null, "factory", previousSocketImplFactory)) {
+            throw new IOException("Failed to uninstall SnifferSocketImplFactory");
         }
     }
 
