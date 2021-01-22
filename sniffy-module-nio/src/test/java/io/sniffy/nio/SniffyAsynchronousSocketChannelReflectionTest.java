@@ -1,10 +1,10 @@
-package io.sniffy.socket;
+package io.sniffy.nio;
 
 import org.junit.Test;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.SocketImpl;
+import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -12,7 +12,7 @@ import java.util.Set;
 
 import static org.junit.Assert.fail;
 
-public class SnifferSocketImplReflectionTest {
+public class SniffyAsynchronousSocketChannelReflectionTest {
 
     private static Collection<Method> getDeclaredMethods(Class<?> clazz) {
         Set<Method> declaredMethods = new HashSet<>(Arrays.asList(clazz.getDeclaredMethods()));
@@ -26,14 +26,12 @@ public class SnifferSocketImplReflectionTest {
     @Test
     public void testAllMethodsDelegated() {
 
-        Class<? extends SocketImpl> sniffySocketImplClass = (new SnifferSocketImplFactory().createSocketImpl()).getClass();
-
-        Arrays.stream(SocketImpl.class.getDeclaredMethods())
+        Arrays.stream(AsynchronousSocketChannel.class.getDeclaredMethods())
                 .filter(m -> !Modifier.isFinal(m.getModifiers()))
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
                 .filter(m -> Modifier.isPublic(m.getModifiers()) || Modifier.isProtected(m.getModifiers()))
                 .forEach(m -> {
-                    if (getDeclaredMethods(sniffySocketImplClass).stream().noneMatch(w ->
+                    if (getDeclaredMethods(SniffyAsynchronousSocketChannel.class).stream().noneMatch(w ->
                             m.getName().equals(w.getName()) &&
                                     Arrays.equals(m.getParameterTypes(), w.getParameterTypes())
                     )) {
