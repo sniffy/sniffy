@@ -130,7 +130,9 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         } catch (ClassNotFoundException e) {
             return null;
         }
-        constructor.setAccessible(true);
+
+        ReflectionUtil.setAccessible(constructor);
+
         return constructor;
     }
 
@@ -147,7 +149,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         } catch (ClassNotFoundException e) {
             return null;
         }
-        factoryMethod.setAccessible(true);
+        ReflectionUtil.setAccessible(factoryMethod);
         return factoryMethod;
     }
 
