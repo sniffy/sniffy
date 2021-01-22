@@ -1,5 +1,7 @@
 package io.sniffy.util;
 
+import sun.misc.Unsafe;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,6 +32,13 @@ public class ReflectionUtil {
         //noinspection TryWithIdenticalCatches
         try {
             Field instanceField = clazz.getDeclaredField(fieldName);
+
+            if (JVMUtil.getVersion() >= 16) {
+                Unsafe unsafe = Unsafe.getUnsafe();
+                long fieldOffset = unsafe.staticFieldOffset(instanceField);
+                unsafe.putObject(instance, fieldOffset, value); // TODO: acquire lock
+                return true;
+            }
 
             if (!instanceField.isAccessible()) {
                 instanceField.setAccessible(true);
@@ -100,6 +109,13 @@ public class ReflectionUtil {
     public static <T, V> V getField(Class<T> clazz, T instance, String fieldName, String lockFieldName) throws NoSuchFieldException, IllegalAccessException {
 
         Field instanceField = clazz.getDeclaredField(fieldName);
+
+        if (JVMUtil.getVersion() >= 16) {
+            Unsafe unsafe = Unsafe.getUnsafe();
+            long fieldOffset = unsafe.staticFieldOffset(instanceField);
+            //noinspection unchecked
+            return (V) unsafe.getObject(instance, fieldOffset); // TODO: acquire lock
+        }
 
         if (!instanceField.isAccessible()) {
             instanceField.setAccessible(true);
