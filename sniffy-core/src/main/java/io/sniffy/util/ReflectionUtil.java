@@ -2,13 +2,21 @@ package io.sniffy.util;
 
 import sun.misc.Unsafe;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.concurrent.locks.Lock;
 
 public class ReflectionUtil {
+
+    public static boolean setAccessible(AccessibleObject ao) {
+
+        if (JVMUtil.getVersion() >= 16) {
+            return setField(AccessibleObject.class, ao, "override", true);
+        }
+
+        ao.setAccessible(true);
+        return true;
+
+    }
 
     public static <T, V> boolean setField(String className, T instance, String fieldName, V value) {
         return setField(className, instance, fieldName, value, null);
