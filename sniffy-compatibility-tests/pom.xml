@@ -7,6 +7,16 @@
     <artifactId>sniffy-compatibility-tests</artifactId>
     <groupId>io.sniffy</groupId>
     <version>3.1.9-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <jacoco.version>0.8.6</jacoco.version>
+    </properties>
+
+    <modules>
+        <module>sniffy-compatibility-tests-io</module>
+        <module>sniffy-compatibility-tests-nio</module>
+    </modules>
 
     <build>
         <plugins>
@@ -29,6 +39,28 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <append>true</append>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -39,23 +71,22 @@
             <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- do not use test scope in order to calculate coverage - fix  https://github.com/jacoco/jacoco/issues/974 -->
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-core</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-module-nio</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-module-nio-compat</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

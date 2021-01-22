@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.JVMUtil;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -71,7 +72,9 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
     @Override
     public SocketImpl createSocketImpl() {
-        return isServerSocket() ? newSocketImpl(true) : new SnifferSocketImpl(newSocketImpl(false));
+        return isServerSocket() ? newSocketImpl(true) :
+                JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
+                        new CompatSnifferSocketImpl(newSocketImpl(false));
     }
 
     private static boolean isServerSocket() {
