@@ -7,6 +7,20 @@ import java.util.concurrent.locks.Lock;
 
 public class ReflectionUtil {
 
+    private final static Unsafe UNSAFE;
+
+    static {
+        Unsafe unsafe = null;
+        try {
+            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            unsafe = (Unsafe) f.get(null);
+        } catch (Exception e) {
+            // TODO: what do we do with drunken sailor?
+        }
+        UNSAFE = unsafe;
+    }
+
     public static boolean setAccessible(AccessibleObject ao) {
 
         if (JVMUtil.getVersion() >= 16) {
@@ -42,9 +56,8 @@ public class ReflectionUtil {
             Field instanceField = clazz.getDeclaredField(fieldName);
 
             if (JVMUtil.getVersion() >= 16) {
-                Unsafe unsafe = Unsafe.getUnsafe();
-                long fieldOffset = unsafe.staticFieldOffset(instanceField);
-                unsafe.putObject(instance, fieldOffset, value); // TODO: acquire lock
+                long fieldOffset = UNSAFE.staticFieldOffset(instanceField);
+                UNSAFE.putObject(instance, fieldOffset, value); // TODO: acquire lock
                 return true;
             }
 
@@ -119,10 +132,9 @@ public class ReflectionUtil {
         Field instanceField = clazz.getDeclaredField(fieldName);
 
         if (JVMUtil.getVersion() >= 16) {
-            Unsafe unsafe = Unsafe.getUnsafe();
-            long fieldOffset = unsafe.staticFieldOffset(instanceField);
+            long fieldOffset = UNSAFE.staticFieldOffset(instanceField);
             //noinspection unchecked
-            return (V) unsafe.getObject(instance, fieldOffset); // TODO: acquire lock
+            return (V) UNSAFE.getObject(instance, fieldOffset); // TODO: acquire lock
         }
 
         if (!instanceField.isAccessible()) {
