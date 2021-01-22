@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <jacoco.version>0.8.7-SNAPSHOT</jacoco.version>
+        <jacoco.version>0.8.6</jacoco.version>
     </properties>
 
     <modules>
