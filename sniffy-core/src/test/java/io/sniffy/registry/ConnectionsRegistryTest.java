@@ -31,7 +31,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
     @Test
     public void testConnectionClosed() throws Exception {
 
-        SnifferSocketImplFactory.uninstall();
+        SnifferSocketImplFactory.install();
 
         /*SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
