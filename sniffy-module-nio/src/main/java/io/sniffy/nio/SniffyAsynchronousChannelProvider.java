@@ -1,5 +1,6 @@
 package io.sniffy.nio;
 
+import io.sniffy.util.ReflectionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
@@ -38,10 +39,12 @@ public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvid
             Class<?> holderClass = Class.forName("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder");
 
             Field instanceField = holderClass.getDeclaredField("provider");
-            instanceField.setAccessible(true);
+            //instanceField.setAccessible(true);
+            ReflectionUtil.setAccessible(instanceField);
 
             Field modifiersField = getModifiersField();
-            modifiersField.setAccessible(true);
+            //modifiersField.setAccessible(true);
+            ReflectionUtil.setAccessible(modifiersField);
             modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
 
             instanceField.set(null, new SniffyAsynchronousChannelProvider(delegate));
@@ -87,7 +90,8 @@ public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvid
         } catch (NoSuchFieldException e) {
             try {
                 Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-                getDeclaredFields0.setAccessible(true);
+                //getDeclaredFields0.setAccessible(true);
+                ReflectionUtil.setAccessible(getDeclaredFields0);
                 Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
                 for (Field field : fields) {
                     if ("modifiers".equals(field.getName())) {

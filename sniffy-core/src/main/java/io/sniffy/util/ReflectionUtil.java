@@ -7,7 +7,7 @@ import java.util.concurrent.locks.Lock;
 
 public class ReflectionUtil {
 
-    private final static Unsafe UNSAFE;
+    public final static Unsafe UNSAFE;
 
     static {
         Unsafe unsafe = null;
@@ -24,7 +24,11 @@ public class ReflectionUtil {
     public static boolean setAccessible(AccessibleObject ao) {
 
         if (JVMUtil.getVersion() >= 16) {
-            return setField(AccessibleObject.class, ao, "override", true);
+            UNSAFE.putBoolean(ao, 12, true);
+            if (ao.isAccessible()) {
+                return true;
+            }
+            return false;
         }
 
         ao.setAccessible(true);
@@ -55,8 +59,8 @@ public class ReflectionUtil {
         try {
             Field instanceField = clazz.getDeclaredField(fieldName);
 
-            if (JVMUtil.getVersion() >= 16) {
-                long fieldOffset = UNSAFE.staticFieldOffset(instanceField);
+            /*if (JVMUtil.getVersion() >= 16) {
+                long fieldOffset = null == instance ? UNSAFE.staticFieldOffset(instanceField) : UNSAFE.objectFieldOffset(instanceField);
                 // TODO: acquire lock
                 // TODO: use putvolatile if required
                 if (instanceField.getType() == Boolean.TYPE && value instanceof Boolean) {
@@ -76,16 +80,19 @@ public class ReflectionUtil {
                 } else if (instanceField.getType() == Character.TYPE && value instanceof Character) {
                     UNSAFE.putChar(instance, fieldOffset, (Character) value);
                 }
-                UNSAFE.putObject(instance, fieldOffset, value);
+                UNSAFE.putObject(instance == null ? UNSAFE.staticFieldBase(instanceField) : instance, fieldOffset, value);
                 return true;
-            }
+            }*/
 
             if (!instanceField.isAccessible()) {
-                instanceField.setAccessible(true);
+                //instanceField.setAccessible(true);
+                setAccessible(instanceField);
             }
 
             Field modifiersField = getModifiersField();
-            modifiersField.setAccessible(true);
+            //modifiersField.setAccessible(true);
+            setAccessible(modifiersField);
+
             modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
 
             if (null != lockFieldName) {
@@ -93,7 +100,8 @@ public class ReflectionUtil {
                 Field lockField = clazz.getDeclaredField(lockFieldName);
 
                 if (!lockField.isAccessible()) {
-                    lockField.setAccessible(true);
+                    //lockField.setAccessible(true);
+                    setAccessible(lockField);
                 }
 
                 Object lockObject = lockField.get(instance);
@@ -143,15 +151,16 @@ public class ReflectionUtil {
     }
 
     public static <T, V> V getField(Class<T> clazz, T instance, String fieldName) throws NoSuchFieldException, IllegalAccessException {
-        return getField(clazz, instance, fieldName, null);
+        Object field = getField(clazz, instance, fieldName, null);
+        return (V) field;
     }
 
     public static <T, V> V getField(Class<T> clazz, T instance, String fieldName, String lockFieldName) throws NoSuchFieldException, IllegalAccessException {
 
         Field instanceField = clazz.getDeclaredField(fieldName);
 
-        if (JVMUtil.getVersion() >= 16) {
-            long fieldOffset = UNSAFE.staticFieldOffset(instanceField);
+        /*if (JVMUtil.getVersion() >= 16) {
+            long fieldOffset = null == instance ? UNSAFE.staticFieldOffset(instanceField) : UNSAFE.objectFieldOffset(instanceField);
 
             // TODO: acquire lock
             // TODO: use getvolatile if required
@@ -174,16 +183,18 @@ public class ReflectionUtil {
             }
 
             //noinspection unchecked
-            return (V) UNSAFE.getObject(instance, fieldOffset);
+            return (V) UNSAFE.getObject(null == instance ? UNSAFE.staticFieldOffset(instanceField) : instance, fieldOffset);
 
-        }
+        }*/
 
         if (!instanceField.isAccessible()) {
-            instanceField.setAccessible(true);
+            //instanceField.setAccessible(true);
+            setAccessible(instanceField);
         }
 
         Field modifiersField = getModifiersField();
-        modifiersField.setAccessible(true);
+        //modifiersField.setAccessible(true);
+        setAccessible(modifiersField);
         modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
 
         if (null != lockFieldName) {
@@ -231,7 +242,8 @@ public class ReflectionUtil {
         } catch (NoSuchFieldException e) {
             try {
                 Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-                getDeclaredFields0.setAccessible(true);
+                //getDeclaredFields0.setAccessible(true);
+                setAccessible(getDeclaredFields0);
                 Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
                 for (Field field : fields) {
                     if ("modifiers".equals(field.getName())) {
@@ -293,7 +305,8 @@ public class ReflectionUtil {
 
     public static Method method(Class<?> clazz, String methodName, Class<?>... argumentTypes) throws NoSuchMethodException {
         Method method = clazz.getDeclaredMethod(methodName, argumentTypes);
-        method.setAccessible(true);
+        //method.setAccessible(true);
+        setAccessible(method);
         return method;
     }
 
