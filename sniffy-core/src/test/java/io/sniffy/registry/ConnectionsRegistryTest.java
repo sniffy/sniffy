@@ -45,6 +45,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
     @Test
     public void testUnsafe() throws Exception {
+        // TODO: move logic about calculations below to ReflectionsUtils
         System.out.println(ReflectionUtil.UNSAFE.objectFieldOffset(TestClass1.class.getDeclaredField("accessible")));
         System.out.println(ReflectionUtil.UNSAFE.objectFieldOffset(TestClass2.class.getField("accessible")));
     }
