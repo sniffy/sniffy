@@ -7,6 +7,9 @@ public class JVMUtil {
 
     public static int getVersion() {
         String version = System.getProperty("java.version");
+        if (null == version) {
+            return 8; // TODO: log it
+        }
         if (version.startsWith("1.")) {
             version = version.substring(2, 3);
         } else {

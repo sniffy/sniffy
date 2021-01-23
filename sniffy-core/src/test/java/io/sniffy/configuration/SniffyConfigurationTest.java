@@ -2,7 +2,7 @@ package io.sniffy.configuration;
 
 import io.sniffy.Sniffy;
 import org.junit.After;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import ru.yandex.qatools.allure.annotations.Features;
 
@@ -12,16 +12,17 @@ import static org.junit.Assert.*;
 
 public class SniffyConfigurationTest {
 
-    private static Properties systemProperties;
+    private Properties backup;
 
-    @BeforeClass
-    public static void backupSystemPropertiesAndEnvironmentVariables() {
-        systemProperties = new Properties(System.getProperties());
+    @Before
+    public void backupSystemProperties() {
+        backup = new Properties();
+        backup.putAll(System.getProperties());
     }
 
     @After
-    public void restoreSystemPropertiesAndEnvironmentVariables() {
-        System.setProperties(systemProperties);
+    public void restoreSystemProperties() {
+        System.setProperties(backup);
     }
 
     @Test
