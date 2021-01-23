@@ -28,6 +28,7 @@ public class ReflectionFieldCopier {
     private static <T> Field getFieldImpl(Class<T> clazz, String fieldName) {
         try {
             Field field = clazz.getDeclaredField(fieldName);
+            System.out.println(clazz + ".fieldName = " + field);
             //field.setAccessible(true);
             ReflectionUtil.setAccessible(field);
             return field;
