@@ -33,6 +33,7 @@ public class ReflectionFieldCopier {
             ReflectionUtil.setAccessible(field);
             return field;
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
