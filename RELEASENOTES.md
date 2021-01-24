@@ -2,7 +2,14 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.8...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.9...master)
+
+## v3.1.9 - Jan 24th, 2021
+
+ * [Java 16 and Java 17 support](https://github.com/sniffy/sniffy/pull/403)
+ * [Check new SocketImpl and SocketChannel methods added in newer versions of Java](https://github.com/sniffy/sniffy/issues/383)
+ * [Optimize IO/NIO - overhead should be minimal](https://github.com/sniffy/sniffy/issues/390)
+ * [Execute NIO test in compatibility mode on Java 8](https://github.com/sniffy/sniffy/issues/378)
 
 ## v3.1.8 - Nov 11th, 2020
 
