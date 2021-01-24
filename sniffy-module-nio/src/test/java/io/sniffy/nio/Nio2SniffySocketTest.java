@@ -25,7 +25,9 @@ public class Nio2SniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        SniffySelectorProvider.install();
+        //SniffySelectorProvider.install();
+        SniffySelectorProviderModule.initialize();
+
         SniffyAsynchronousChannelProvider.install();
 
         try {
