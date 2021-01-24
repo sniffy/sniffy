@@ -28,9 +28,9 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        //SniffySelectorProvider.uninstall();
         SniffySelectorProviderModule.initialize();
-        //SniffySelectorProvider.install();
+        SniffySelectorProvider.uninstall();
+        SniffySelectorProvider.install();
 
         try {
             ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
@@ -141,10 +141,9 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        //SniffySelectorProvider.uninstall();
-        //SniffySelectorProvider.install();
         SniffySelectorProviderModule.initialize();
-
+        SniffySelectorProvider.uninstall();
+        SniffySelectorProvider.install();
 
         try {
             try (Spy<?> s = Sniffy.spy()) {
@@ -219,9 +218,8 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
         try {
             SniffySelectorProviderModule.initialize();
-
-            //SniffySelectorProvider.uninstall();
-            //SniffySelectorProvider.install();
+            SniffySelectorProvider.uninstall();
+            SniffySelectorProvider.install();
 
             Pipe pipe = Pipe.open();
 
