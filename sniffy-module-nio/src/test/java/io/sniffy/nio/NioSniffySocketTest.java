@@ -1,6 +1,5 @@
 package io.sniffy.nio;
 
-import com.sun.tools.attach.VirtualMachine;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.socket.BaseSocketTest;
@@ -22,11 +21,6 @@ import static io.sniffy.Threads.*;
 import static org.junit.Assert.*;
 
 public class NioSniffySocketTest extends BaseSocketTest {
-
-    @Test
-    public void testZookeeperLikeServer() throws Exception {
-        System.out.println(VirtualMachine.list());
-    }
 
     @Test
     public void testSelectionKeys() throws Exception {
