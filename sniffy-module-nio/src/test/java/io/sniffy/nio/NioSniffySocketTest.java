@@ -1,5 +1,6 @@
 package io.sniffy.nio;
 
+import com.sun.tools.attach.VirtualMachine;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.socket.BaseSocketTest;
@@ -24,7 +25,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
     @Test
     public void testZookeeperLikeServer() throws Exception {
-
+        System.out.println(VirtualMachine.list());
     }
 
     @Test
@@ -33,8 +34,9 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        SniffySelectorProvider.uninstall();
-        SniffySelectorProvider.install();
+        //SniffySelectorProvider.uninstall();
+        SniffySelectorProviderModule.initialize();
+        //SniffySelectorProvider.install();
 
         try {
             ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
@@ -145,8 +147,10 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        SniffySelectorProvider.uninstall();
-        SniffySelectorProvider.install();
+        //SniffySelectorProvider.uninstall();
+        //SniffySelectorProvider.install();
+        SniffySelectorProviderModule.initialize();
+
 
         try {
             try (Spy<?> s = Sniffy.spy()) {
@@ -220,8 +224,10 @@ public class NioSniffySocketTest extends BaseSocketTest {
     public void testPipe() {
 
         try {
-            SniffySelectorProvider.uninstall();
-            SniffySelectorProvider.install();
+            SniffySelectorProviderModule.initialize();
+
+            //SniffySelectorProvider.uninstall();
+            //SniffySelectorProvider.install();
 
             Pipe pipe = Pipe.open();
 
