@@ -51,7 +51,9 @@ public class SniffySelectorProviderModule {
                         }
                     }
                 }
-            } catch (ClassNotFoundException | NoSuchMethodException e) {
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
                 e.printStackTrace();
             }
         }
