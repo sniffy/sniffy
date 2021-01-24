@@ -28,9 +28,12 @@ public class ReflectionFieldCopier {
     private static <T> Field getFieldImpl(Class<T> clazz, String fieldName) {
         try {
             Field field = clazz.getDeclaredField(fieldName);
-            field.setAccessible(true);
+            System.out.println(clazz + ".fieldName = " + field);
+            //field.setAccessible(true);
+            ReflectionUtil.setAccessible(field);
             return field;
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }

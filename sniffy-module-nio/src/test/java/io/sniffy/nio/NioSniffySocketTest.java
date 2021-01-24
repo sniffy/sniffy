@@ -23,16 +23,12 @@ import static org.junit.Assert.*;
 public class NioSniffySocketTest extends BaseSocketTest {
 
     @Test
-    public void testZookeeperLikeServer() throws Exception {
-
-    }
-
-    @Test
     public void testSelectionKeys() throws Exception {
 
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
+        SniffySelectorProviderModule.initialize();
         SniffySelectorProvider.uninstall();
         SniffySelectorProvider.install();
 
@@ -145,6 +141,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
+        SniffySelectorProviderModule.initialize();
         SniffySelectorProvider.uninstall();
         SniffySelectorProvider.install();
 
@@ -220,6 +217,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
     public void testPipe() {
 
         try {
+            SniffySelectorProviderModule.initialize();
             SniffySelectorProvider.uninstall();
             SniffySelectorProvider.install();
 
