@@ -36,9 +36,14 @@ public interface SniffyNetworkConnection {
 
     void setSendBufferSize(int sendBufferSize);
 
+    @Deprecated
     void logSocket(long millis);
 
+    @Deprecated
     void logSocket(long millis, int bytesDown, int bytesUp);
+
+    // TODO: add
+    //void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len);
 
     void checkConnectionAllowed() throws ConnectException;
 

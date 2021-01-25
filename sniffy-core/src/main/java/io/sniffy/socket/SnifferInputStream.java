@@ -1,5 +1,6 @@
 package io.sniffy.socket;
 
+import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import java.io.IOException;
@@ -100,12 +101,14 @@ class SnifferInputStream extends InputStream {
             return bytesDown;
         } finally {
             sleepIfRequired(bytesDown);
+            //snifferSocket.logTraffic(false, Protocol.TCP, b, off, bytesDown); // TODO
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
 
     @Override
     public long skip(long n) throws IOException {
+        // TODO: change this method since it doesn't capture skipped traffic
         snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {

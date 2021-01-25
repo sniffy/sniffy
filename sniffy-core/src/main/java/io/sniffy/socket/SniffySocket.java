@@ -84,14 +84,23 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
         }
     }
 
+    @Deprecated
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
+    @Deprecated
     public void logSocket(long millis, int bytesDown, int bytesUp) {
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
         if (sniffyMode.isEnabled() && null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
             Sniffy.logSocket(id, address, millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
+        }
+    }
+
+    public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
+        if (sniffyMode.isEnabled()) {
+            Sniffy.logTraffic(id, address, sent, protocol, traffic, off, len, sniffyMode.isCaptureStackTraces());
         }
     }
 

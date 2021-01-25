@@ -689,7 +689,7 @@ abstract class LegacySpy<C extends Spy<C>> extends BaseSpy<C> {
         return verify(SqlQueries.queriesBetween(minAllowedStatements, maxAllowedStatements).type(adapter(query)).threads(threadMatcher));
     }
 
-    public abstract Map<StatementMetaData, SqlStats> getExecutedStatements(Threads threadMatcher, boolean removeStackTraces);
+    public abstract Map<StatementMetaData, SqlStats> getExecutedStatements(ThreadMatcher threadMatcher, boolean removeStackTraces);
 
     public abstract C expect(Spy.Expectation expectation);
 

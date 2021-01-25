@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
@@ -15,7 +16,6 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static io.sniffy.Threads.*;
 import static io.sniffy.util.ExceptionUtil.throwException;
 
 /**
@@ -27,7 +27,6 @@ import static io.sniffy.util.ExceptionUtil.throwException;
 public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
 
     private final WeakReference<Spy> selfReference;
-    private final long ownerThreadId;
 
     private boolean closed = false;
     private StackTraceElement[] closeStackTrace;
@@ -38,7 +37,7 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
      * @since 3.1
      */
     @Override
-    public Map<StatementMetaData, SqlStats> getExecutedStatements(Threads threadMatcher, boolean removeStackTraces) {
+    public Map<StatementMetaData, SqlStats> getExecutedStatements(ThreadMatcher threadMatcher, boolean removeStackTraces) {
 
         Map<StatementMetaData, SqlStats> executedStatements = new LinkedHashMap<StatementMetaData, SqlStats>();
         for (Map.Entry<StatementMetaData, SqlStats> entry : this.executedStatements.ascendingMap().entrySet()) {
@@ -46,12 +45,10 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
             StatementMetaData statementMetaData = entry.getKey();
 
             if (removeStackTraces) statementMetaData = new StatementMetaData(
-                    statementMetaData.sql, statementMetaData.query, null, statementMetaData.ownerThreadId
+                    statementMetaData.sql, statementMetaData.query, null, statementMetaData.getThreadMetaData()
             );
 
-            if ( ( (CURRENT == threadMatcher && statementMetaData.ownerThreadId == this.ownerThreadId) ||
-                    (OTHERS == threadMatcher && statementMetaData.ownerThreadId != this.ownerThreadId) ||
-                    (ANY == threadMatcher || null == threadMatcher) ) ) {
+            if (threadMatcher.matches(statementMetaData.getThreadMetaData())) {
                 SqlStats existingSocketStats = executedStatements.get(statementMetaData);
                 if (null == existingSocketStats) {
                     executedStatements.put(statementMetaData, new SqlStats(entry.getValue()));
@@ -65,7 +62,6 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
     }
 
     Spy() {
-        ownerThreadId = Thread.currentThread().getId();
         selfReference = Sniffy.registerSpy(this);
     }
 
@@ -97,15 +93,13 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
             SocketMetaData socketMetaData = entry.getKey();
 
             if (removeStackTraces) socketMetaData = new SocketMetaData(
-                    socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.ownerThreadId
+                    socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.getThreadMetaData()
             );
 
             InetSocketAddress socketAddress = socketMetaData.address;
             InetAddress inetAddress = socketAddress.getAddress();
 
-            if ( ( (CURRENT == threadMatcher && socketMetaData.ownerThreadId == this.ownerThreadId) ||
-                    (OTHERS == threadMatcher && socketMetaData.ownerThreadId != this.ownerThreadId) ||
-                    (ANY == threadMatcher || null == threadMatcher) ) &&
+            if ( (threadMatcher.matches(socketMetaData.getThreadMetaData())) &&
                     (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress())) &&
                     (null == port || port == socketAddress.getPort())
                     ) {
@@ -119,6 +113,41 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
         }
 
         return Collections.unmodifiableMap(socketOperations);
+
+    }
+
+    /**
+     * @since 3.1.10
+     * TODO: add address matcher
+     */
+    public Map<SocketMetaData, Deque<NetworkPacket>> getNetworkTraffic(Threads threadMatcher, String address, boolean removeStackTraces) {
+
+        Map.Entry<String, Integer> hostAndPort = SocketUtil.parseSocketAddress(address);
+
+        String hostName = hostAndPort.getKey();
+        Integer port = hostAndPort.getValue();
+
+        Map<SocketMetaData, Deque<NetworkPacket>> networkTraffic = new LinkedHashMap<SocketMetaData, Deque<NetworkPacket>>();
+        for (Map.Entry<SocketMetaData, Deque<NetworkPacket>> entry : this.networkTraffic.ascendingMap().entrySet()) {
+
+            SocketMetaData socketMetaData = entry.getKey();
+
+            if (removeStackTraces) socketMetaData = new SocketMetaData(
+                    socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.getThreadMetaData()
+            );
+
+            InetSocketAddress socketAddress = socketMetaData.address;
+            InetAddress inetAddress = socketAddress.getAddress();
+
+            if ( ( threadMatcher.matches(socketMetaData.getThreadMetaData()) ) &&
+                    (null == hostName || hostName.equals(inetAddress.getHostName()) || hostName.equals(inetAddress.getHostAddress())) && // TODO: introduce some kind of matchers
+                    (null == port || port == socketAddress.getPort())
+                    ) {
+                networkTraffic.put(socketMetaData, new LinkedList<NetworkPacket>(entry.getValue()));
+            }
+        }
+
+        return Collections.unmodifiableMap(networkTraffic);
 
     }
 

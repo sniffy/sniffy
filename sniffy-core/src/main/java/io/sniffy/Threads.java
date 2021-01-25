@@ -8,8 +8,23 @@ package io.sniffy;
  * @see Spy
  * @since 2.2
  */
-public enum Threads {
+public enum Threads implements ThreadMatcher {
     ANY,
     CURRENT,
-    OTHERS
+    OTHERS;
+
+    @Override
+    public boolean matches(ThreadMetaData threadMetaData) {
+        switch (this) {
+            case ANY:
+                return true;
+            case CURRENT:
+                return Thread.currentThread().getId() == threadMetaData.getThreadId();
+            case OTHERS:
+                return Thread.currentThread().getId() != threadMetaData.getThreadId();
+            default:
+                return false;
+        }
+    }
+
 }
