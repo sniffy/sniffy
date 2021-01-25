@@ -269,7 +269,7 @@ public class SniffyServletTest extends BaseTest {
                         "SELECT 1 FROM DUAL",
                         SqlUtil.guessQueryType("SELECT 1 FROM DUAL"),
                         "",
-                        Thread.currentThread().getId()
+                        Thread.currentThread()
                 ), new SqlStats(301, 0, 0, 0, 1))
         ));
 
@@ -300,14 +300,14 @@ public class SniffyServletTest extends BaseTest {
                                         "SELECT 1 FROM DUAL",
                                         SqlUtil.guessQueryType("SELECT 1 FROM DUAL"),
                                         "",
-                                        Thread.currentThread().getId()
+                                        Thread.currentThread()
                                 ), new SqlStats(301, 200, 300, 0, 1)),
                         Collections.singletonMap(
                                 new SocketMetaData(
                                         new InetSocketAddress(InetAddress.getLocalHost(), 5555),
                                         42,
                                         "stackTrace",
-                                        Thread.currentThread().getId()
+                                        Thread.currentThread()
                                 ),
                                 new SocketStats(100, 200, 300)
                         )
@@ -340,8 +340,8 @@ public class SniffyServletTest extends BaseTest {
         RequestStats requestStats = new RequestStats(21, 42, null, null);
         SampleApplicationException exception = new SampleApplicationException("Message");
         exception.setStackTrace(new StackTraceElement[]{
-                new StackTraceElement("Clazz","foo","Clazz.java", 21),
-                new StackTraceElement("Clazz","bar","Clazz.java", 42)
+                new StackTraceElement("Clazz", "foo", "Clazz.java", 21),
+                new StackTraceElement("Clazz", "bar", "Clazz.java", 42)
         });
         requestStats.addException(exception);
         cache.put("foo", requestStats);
@@ -356,8 +356,8 @@ public class SniffyServletTest extends BaseTest {
 
         assertEquals(exception.getClass().getName(), JsonPath.read(response.getContentAsString(), "$.exceptions[0].class"));
         assertEquals(exception.getMessage(), JsonPath.read(response.getContentAsString(), "$.exceptions[0].message"));
-        assertTrue(((String)JsonPath.read(response.getContentAsString(), "$.exceptions[0].stackTrace")).contains("Clazz.foo"));
-        assertTrue(((String)JsonPath.read(response.getContentAsString(), "$.exceptions[0].stackTrace")).contains("Clazz.bar"));
+        assertTrue(((String) JsonPath.read(response.getContentAsString(), "$.exceptions[0].stackTrace")).contains("Clazz.foo"));
+        assertTrue(((String) JsonPath.read(response.getContentAsString(), "$.exceptions[0].stackTrace")).contains("Clazz.bar"));
 
     }
 
@@ -374,7 +374,7 @@ public class SniffyServletTest extends BaseTest {
                         "SELECT \r\n\"1\" FROM 'DUAL'",
                         SqlUtil.guessQueryType("SELECT \r\n\"1\" FROM 'DUAL'"),
                         "io.sniffy.Test.method(Test.java:99)",
-                        Thread.currentThread().getId()
+                        Thread.currentThread()
                 ), new SqlStats(301, 0, 0, 0, 1))
         ));
 
