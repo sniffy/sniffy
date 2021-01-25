@@ -69,6 +69,6 @@ jobs:
         with:
           java-version: 1.8
       - name: Publish to GitHub Packages
-        run: mvn -P github,ci -B clean deploy -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -P github,ci -B clean deploy -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3 -X
         env:
           GITHUB_TOKEN: ${{ github.token }}
