@@ -1,8 +1,11 @@
 package io.sniffy.util;
 
 import sun.misc.Unsafe;
+import sun.reflect.ReflectionFactory;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.security.AccessController;
 import java.util.concurrent.locks.Lock;
 
 public class ReflectionUtil {
@@ -21,10 +24,65 @@ public class ReflectionUtil {
         UNSAFE = unsafe;
     }
 
+    /**
+     * FakeAccessibleObject class has similar layout as {@link AccessibleObject} and can be used for calculating offsets
+     */
+    private static class FakeAccessibleObject implements AnnotatedElement {
+
+        /**
+         * The Permission object that is used to check whether a client
+         * has sufficient privilege to defeat Java language access
+         * control checks.
+         */
+        static final private java.security.Permission ACCESS_PERMISSION =
+                new ReflectPermission("suppressAccessChecks");
+
+        // Indicates whether language-level access checks are overridden
+        // by this object. Initializes to "false". This field is used by
+        // Field, Method, and Constructor.
+        //
+        // NOTE: for security purposes, this field must not be visible
+        // outside this package.
+        boolean override;
+
+        // Reflection factory used by subclasses for creating field,
+        // method, and constructor accessors. Note that this is called
+        // very early in the bootstrapping process.
+        static final ReflectionFactory reflectionFactory =
+                AccessController.doPrivileged(
+                        new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
+
+        volatile Object securityCheckCache;
+
+        @Override
+        public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+            return null;
+        }
+
+        @Override
+        public Annotation[] getAnnotations() {
+            return new Annotation[0];
+        }
+
+        @Override
+        public Annotation[] getDeclaredAnnotations() {
+            return new Annotation[0];
+        }
+
+    }
+
+
     public static boolean setAccessible(AccessibleObject ao) {
 
         if (JVMUtil.getVersion() >= 16) {
-            UNSAFE.putBoolean(ao, 12, true);
+
+            try {
+                long overrideOffset = UNSAFE.objectFieldOffset(FakeAccessibleObject.class.getDeclaredField("override"));
+                UNSAFE.putBoolean(ao, overrideOffset, true);
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+
             if (ao.isAccessible()) {
                 return true;
             }
