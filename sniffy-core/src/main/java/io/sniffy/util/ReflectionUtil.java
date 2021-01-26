@@ -45,15 +45,6 @@ public class ReflectionUtil {
         // outside this package.
         boolean override;
 
-        // Reflection factory used by subclasses for creating field,
-        // method, and constructor accessors. Note that this is called
-        // very early in the bootstrapping process.
-        static final ReflectionFactory reflectionFactory =
-                AccessController.doPrivileged(
-                        new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
-
-        volatile Object securityCheckCache;
-
         @Override
         public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
             return null;
@@ -69,8 +60,14 @@ public class ReflectionUtil {
             return new Annotation[0];
         }
 
-    }
+        // Reflection factory used by subclasses for creating field,
+        // method, and constructor accessors. Note that this is called
+        // very early in the bootstrapping process.
+        static final Object reflectionFactory = new Object();
 
+        volatile Object securityCheckCache;
+
+    }
 
     public static boolean setAccessible(AccessibleObject ao) {
 
