@@ -1,11 +1,9 @@
 package io.sniffy.util;
 
 import sun.misc.Unsafe;
-import sun.reflect.ReflectionFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
-import java.security.AccessController;
 import java.util.concurrent.locks.Lock;
 
 public class ReflectionUtil {
