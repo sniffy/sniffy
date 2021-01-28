@@ -163,7 +163,9 @@ public class SniffyRule implements TestRule {
                                         Range.parse(socketExpectation.connections()).min,
                                         Range.parse(socketExpectation.connections()).max,
                                         socketExpectation.threads(),
-                                        "".equals(socketExpectation.hostName()) ? null : socketExpectation.hostName()
+                                        "".equals(socketExpectation.hostName()) ?
+                                                null :
+                                                AddressMatchers.exactAddressMatcher(socketExpectation.hostName())
                                 ));
                 }
             }

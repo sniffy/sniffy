@@ -17,6 +17,8 @@ public class StatementMetaData {
     @Deprecated
     public final long ownerThreadId;
 
+    // TODO: add field describing datasource (original connection URL)
+
     private final ThreadMetaData threadMetaData;
 
 

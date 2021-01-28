@@ -9,6 +9,8 @@ import java.net.InetSocketAddress;
  */
 public class SocketMetaData {
 
+    private final Protocol protocol;
+
     @Deprecated
     public final InetSocketAddress address;
     @Deprecated
@@ -17,16 +19,20 @@ public class SocketMetaData {
     public final String stackTrace;
     @Deprecated
     public final long ownerThreadId;
-
     private final ThreadMetaData threadMetaData;
 
     private final int hashCode;
 
     public SocketMetaData(InetSocketAddress address, int connectionId, String stackTrace, Thread ownerThread) {
-        this(address, connectionId, stackTrace, new ThreadMetaData(ownerThread));
+        this(Protocol.TCP, address, connectionId, stackTrace, new ThreadMetaData(ownerThread));
     }
 
-    public SocketMetaData(InetSocketAddress address, int connectionId, String stackTrace, ThreadMetaData threadMetaData) {
+    public SocketMetaData(Protocol protocol, InetSocketAddress address, int connectionId, String stackTrace, Thread ownerThread) {
+        this(protocol, address, connectionId, stackTrace, new ThreadMetaData(ownerThread));
+    }
+
+    public SocketMetaData(Protocol protocol, InetSocketAddress address, int connectionId, String stackTrace, ThreadMetaData threadMetaData) {
+        this.protocol = protocol;
         this.address = address;
         this.connectionId = connectionId;
         this.stackTrace = null == stackTrace ? null : stackTrace.intern();
@@ -37,6 +43,7 @@ public class SocketMetaData {
 
     private int computeHashCode() {
         int result = address.hashCode();
+        result = 31 * result + protocol.hashCode();
         result = 31 * result + connectionId;
         result = 31 * result + System.identityHashCode(stackTrace);
         result = 31 * result + threadMetaData.hashCode();
@@ -52,6 +59,7 @@ public class SocketMetaData {
 
         if (connectionId != that.connectionId) return false;
         if (threadMetaData.getThreadId() != that.threadMetaData.getThreadId()) return false;
+        if (!protocol.equals(that.protocol)) return false;
         if (!address.equals(that.address)) return false;
         //noinspection StringEquality
         return stackTrace == that.stackTrace;
@@ -61,6 +69,13 @@ public class SocketMetaData {
     @Override
     public int hashCode() {
         return hashCode;
+    }
+
+    /**
+     * @since 3.1.10
+     */
+    public Protocol getProtocol() {
+        return protocol;
     }
 
     public InetSocketAddress getAddress() {

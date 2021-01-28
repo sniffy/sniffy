@@ -29,14 +29,7 @@ public class WrongNumberOfQueriesError extends io.sniffy.WrongNumberOfQueriesErr
             Collection<StatementMetaData> executedStatements) {
         StringBuilder sb = new StringBuilder();
         sb.append("Expected between ").append(minimumQueries).append(" and ").append(maximumQueries);
-        if (Threads.CURRENT == threadMatcher) {
-            sb.append(" current thread");
-        } else if (Threads.OTHERS == threadMatcher) {
-            sb.append(" other threads");
-        }
-        if (SqlStatement.ANY != query && null != query) {
-            sb.append(" ").append(query);
-        }
+        threadMatcher.describe(sb);
         sb.append(" queries").append(LINE_SEPARATOR);
         sb.append("Observed ").append(numQueries).append(" queries instead:").append(LINE_SEPARATOR);
         if (null != executedStatements) for (StatementMetaData statement : executedStatements) {

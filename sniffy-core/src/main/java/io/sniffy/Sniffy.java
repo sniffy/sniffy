@@ -350,7 +350,7 @@ public class Sniffy {
         }
     }
 
-    private static void notifyListeners(SocketMetaData socketMetaData, boolean sent, long timestamp, Protocol protocol, byte[] traffic, int off, int len) {
+    private static void notifyListeners(SocketMetaData socketMetaData, boolean sent, long timestamp, byte[] traffic, int off, int len) {
 
         if (hasGlobalSpies) {
             Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
@@ -360,7 +360,7 @@ public class Sniffy {
                 if (null == spy) {
                     iterator.remove();
                 } else {
-                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, protocol, traffic, off, len);
+                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, traffic, off, len);
                 }
             }
         }
@@ -374,7 +374,7 @@ public class Sniffy {
                 if (null == spy) {
                     currentThreadSpies.remove(threadId);
                 } else {
-                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, protocol, traffic, off, len);
+                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, traffic, off, len);
                 }
             }
         }
@@ -450,10 +450,10 @@ public class Sniffy {
         // build stackTrace
         String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
 
-        SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread());
+        SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId, stackTrace, Thread.currentThread());
 
         // notify listeners
-        notifyListeners(socketMetaData, sent, System.currentTimeMillis(), protocol, traffic, off, len);
+        notifyListeners(socketMetaData, sent, System.currentTimeMillis(), traffic, off, len);
 
     }
 

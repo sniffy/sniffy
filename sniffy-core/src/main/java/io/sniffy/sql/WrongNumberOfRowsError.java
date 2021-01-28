@@ -75,19 +75,9 @@ public class WrongNumberOfRowsError extends SniffyAssertionError {
             Map<StatementMetaData, SqlStats> executedStatements) {
         StringBuilder sb = new StringBuilder();
         sb.append("Expected between ").append(minimumQueries).append(" and ").append(maximumQueries);
-        if (Threads.CURRENT == threadMatcher) {
-            sb.append(" current thread");
-        } else if (Threads.OTHERS == threadMatcher) {
-            sb.append(" other threads");
-        }
+        threadMatcher.describe(sb);
+        query.describe(sb);
         sb.append(" rows ");
-        if (SELECT == query) {
-            sb.append("returned / affected");
-        } else if (INSERT == query || UPDATE == query || MERGE == query) {
-            sb.append("affected");
-        } else {
-            sb.append("returned / affected");
-        }
         sb.append(LINE_SEPARATOR);
         sb.append("Observed ").append(numQueries).append(" rows instead:");
         sb.append(LINE_SEPARATOR);

@@ -1,5 +1,7 @@
 package io.sniffy;
 
+import java.io.IOException;
+
 /**
  * Sniffy allows to validate the number of queries generated from different threads
  * You can use Threads enum to select all threads (ANY), current thread (CURRENT) or
@@ -26,5 +28,20 @@ public enum Threads implements ThreadMatcher {
                 return false;
         }
     }
+
+    @Override
+    public void describe(StringBuilder appendable) {
+        switch (this) {
+            case CURRENT:
+                appendable.append(" current thread");
+                break;
+            case OTHERS:
+                appendable.append(" other threads");
+                break;
+            case ANY:
+            default:
+        }
+    }
+
 
 }
