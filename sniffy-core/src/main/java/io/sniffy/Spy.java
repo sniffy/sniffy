@@ -96,7 +96,7 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
         Map<SocketMetaData, SocketStats> socketOperations = new LinkedHashMap<SocketMetaData, SocketStats>();
         for (Map.Entry<SocketMetaData, SocketStats> entry : this.socketOperations.ascendingMap().entrySet()) {
             SocketMetaData socketMetaData = entry.getKey();
-            if (threadMatcher.matches(socketMetaData.getThreadMetaData()) && addressMatcher.matches(socketMetaData.getAddress())) {
+            if (threadMatcher.matches(socketMetaData.getThreadMetaData()) && (null == addressMatcher || addressMatcher.matches(socketMetaData.getAddress()))) {
                 if (removeStackTraces) socketMetaData = new SocketMetaData(
                         socketMetaData.getProtocol(), socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.getThreadMetaData()
                 );
