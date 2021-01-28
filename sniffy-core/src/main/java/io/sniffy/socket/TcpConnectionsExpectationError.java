@@ -45,7 +45,9 @@ public class TcpConnectionsExpectationError extends SniffyAssertionError {
         StringBuilder sb = new StringBuilder();
         sb.append("Expected between ").append(tcpExpectation.min).append(" and ").append(tcpExpectation.max);
         tcpExpectation.threads.describe(sb);
-        tcpExpectation.addressMatcher.describe(sb);
+        if (null != tcpExpectation.addressMatcher) {
+            tcpExpectation.addressMatcher.describe(sb);
+        }
         sb.append(" connections").append(LINE_SEPARATOR);
 
         sb.append("Observed ").append(numConnections).append(" connections instead:").append(LINE_SEPARATOR);
