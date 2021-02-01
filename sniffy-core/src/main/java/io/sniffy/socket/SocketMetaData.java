@@ -23,12 +23,16 @@ public class SocketMetaData {
 
     private final int hashCode;
 
+    public SocketMetaData(Protocol protocol, InetSocketAddress address, int connectionId) {
+        this(protocol, address, connectionId, null, (ThreadMetaData) null);
+    }
+
     public SocketMetaData(InetSocketAddress address, int connectionId, String stackTrace, Thread ownerThread) {
         this(Protocol.TCP, address, connectionId, stackTrace, new ThreadMetaData(ownerThread));
     }
 
     public SocketMetaData(Protocol protocol, InetSocketAddress address, int connectionId, String stackTrace, Thread ownerThread) {
-        this(protocol, address, connectionId, stackTrace, new ThreadMetaData(ownerThread));
+        this(protocol, address, connectionId, stackTrace, null == ownerThread ? null : new ThreadMetaData(ownerThread));
     }
 
     public SocketMetaData(Protocol protocol, InetSocketAddress address, int connectionId, String stackTrace, ThreadMetaData threadMetaData) {
@@ -37,7 +41,7 @@ public class SocketMetaData {
         this.connectionId = connectionId;
         this.stackTrace = null == stackTrace ? null : stackTrace.intern();
         this.threadMetaData = threadMetaData;
-        this.ownerThreadId = threadMetaData.getThreadId();
+        this.ownerThreadId = null == threadMetaData ? -1 : threadMetaData.getThreadId();
         hashCode = computeHashCode();
     }
 
@@ -46,7 +50,7 @@ public class SocketMetaData {
         result = 31 * result + protocol.hashCode();
         result = 31 * result + connectionId;
         result = 31 * result + System.identityHashCode(stackTrace);
-        result = 31 * result + threadMetaData.hashCode();
+        result = 31 * result + (int)(ownerThreadId ^ (ownerThreadId >>> 32));
         return result;
     }
 
@@ -58,7 +62,7 @@ public class SocketMetaData {
         SocketMetaData that = (SocketMetaData) o;
 
         if (connectionId != that.connectionId) return false;
-        if (threadMetaData.getThreadId() != that.threadMetaData.getThreadId()) return false;
+        if (ownerThreadId != that.ownerThreadId) return false;
         if (!protocol.equals(that.protocol)) return false;
         if (!address.equals(that.address)) return false;
         //noinspection StringEquality

@@ -89,6 +89,7 @@ public class Sniffy {
         initialize();
     }
 
+    @Deprecated
     public enum SniffyMode {
         DISABLED(false, false),
         ENABLED(true, true),
@@ -380,14 +381,22 @@ public class Sniffy {
         }
     }
 
+    // TODO: use getEffectiveSpyConfiguration() instead
+    @Deprecated
     public static boolean hasSpies() {
         return getSniffyMode().isEnabled();
     }
 
     /**
-     * @since 3.1.6
+     * @since 3.1.10
      */
-    public static SniffyMode getSniffyMode() {
+    public static SpyConfiguration getEffectiveSpyConfiguration() {
+
+        SpyConfiguration.Builder builder = SpyConfiguration.builder().
+                captureJdbc(false).
+                captureNetwork(false).
+                captureNetworkTraffic(false).
+                captureStackTraces(false);
 
         if (hasGlobalSpies) {
             if (!registeredSpies.isEmpty()) {
@@ -398,7 +407,7 @@ public class Sniffy {
                     if (null == spy) {
                         iterator.remove();
                     } else {
-                        return SniffyMode.ENABLED;
+                        builder = builder.or(spy.getSpyConfiguration());
                     }
                 }
             }
@@ -413,12 +422,30 @@ public class Sniffy {
                 if (null == spy) {
                     currentThreadSpies.remove(threadId);
                 } else {
-                    return spy.captureStackTraces ? SniffyMode.ENABLED : SniffyMode.ENABLED_NO_STACKTRACE;
+                    builder = builder.or(spy.getSpyConfiguration());
                 }
             }
         }
 
-        return SniffyMode.DISABLED;
+        return builder.build();
+
+    }
+
+    // TODO: use getEffectiveSpyConfiguration() instead
+    /**
+     * @since 3.1.6
+     */
+    @Deprecated
+    public static SniffyMode getSniffyMode() {
+
+        SpyConfiguration effectiveSpyConfiguration = getEffectiveSpyConfiguration();
+
+        if (effectiveSpyConfiguration.isCaptureJdbc() || effectiveSpyConfiguration.isCaptureNetwork()) {
+            return effectiveSpyConfiguration.isCaptureStackTraces() ? SniffyMode.ENABLED : SniffyMode.ENABLED_NO_STACKTRACE;
+        } else {
+            return SniffyMode.DISABLED;
+        }
+
     }
 
     // TODO: merge with logTraffic
@@ -547,6 +574,14 @@ public class Sniffy {
      */
     public static <T extends Spy<T>> Spy<? extends Spy<T>> spy() {
         return new Spy<T>();
+    }
+
+    /**
+     * @return a new {@link Spy} instance with given configuration
+     * @since 3.1.10
+     */
+    public static <T extends Spy<T>> Spy<? extends Spy<T>> spy(SpyConfiguration spyConfiguration) {
+        return new Spy<T>(spyConfiguration);
     }
 
     /**

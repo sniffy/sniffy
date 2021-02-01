@@ -17,6 +17,8 @@ import java.util.List;
  */
 public abstract class BaseSpy<C extends BaseSpy<C>> {
 
+    private final SpyConfiguration spyConfiguration;
+
     protected volatile ConcurrentLinkedHashMap<StatementMetaData, SqlStats> executedStatements =
             new ConcurrentLinkedHashMap.Builder<StatementMetaData, SqlStats>().
                     maximumWeightedCapacity(Long.MAX_VALUE).
@@ -43,6 +45,10 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
         }
     }
 
+    protected BaseSpy(SpyConfiguration spyConfiguration) {
+        this.spyConfiguration = spyConfiguration;
+    }
+
     public C reset() {
         resetExecutedStatements();
         resetSocketOpertions();
@@ -52,6 +58,10 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
     @SuppressWarnings("unchecked")
     protected C self() {
         return (C) this;
+    }
+
+    protected SpyConfiguration getSpyConfiguration() {
+        return spyConfiguration;
     }
 
     protected void resetExecutedStatements() {

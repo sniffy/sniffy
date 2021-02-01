@@ -15,10 +15,13 @@ import java.util.Map;
  */
 public class CurrentThreadSpy extends BaseSpy<CurrentThreadSpy> implements Closeable {
 
-    protected final boolean captureStackTraces;
-
+    @Deprecated
     public CurrentThreadSpy(boolean captureStackTraces) {
-        this.captureStackTraces = captureStackTraces;
+        this(SpyConfiguration.builder().captureStackTraces(captureStackTraces).build());
+    }
+
+    CurrentThreadSpy(SpyConfiguration spyConfiguration) {
+        super(spyConfiguration);
         Sniffy.registerCurrentThreadSpy(this);
     }
 

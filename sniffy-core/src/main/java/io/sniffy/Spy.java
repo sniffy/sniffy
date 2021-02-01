@@ -58,6 +58,11 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
     }
 
     Spy() {
+        this(SpyConfiguration.builder().build());
+    }
+
+    Spy(SpyConfiguration spyConfiguration) {
+        super(spyConfiguration);
         selfReference = Sniffy.registerSpy(this);
     }
 
@@ -116,27 +121,100 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
     /**
      * @since 3.1.10
      */
-    public Map<SocketMetaData, Deque<NetworkPacket>> getNetworkTraffic(ThreadMatcher threadMatcher, String address, boolean removeStackTraces) {
-        return getNetworkTraffic(threadMatcher, AddressMatchers.exactAddressMatcher(address), removeStackTraces);
+    public Map<SocketMetaData, List<NetworkPacket>> getNetworkTraffic() {
+        return getNetworkTraffic(Threads.ANY, AddressMatchers.anyAddressMatcher());
     }
 
     /**
      * @since 3.1.10
      */
-    public Map<SocketMetaData, Deque<NetworkPacket>> getNetworkTraffic(ThreadMatcher threadMatcher, AddressMatcher addressMatcher, boolean removeStackTraces) {
+    public Map<SocketMetaData, List<NetworkPacket>> getNetworkTraffic(ThreadMatcher threadMatcher, String address) {
+        return getNetworkTraffic(threadMatcher, AddressMatchers.exactAddressMatcher(address));
+    }
+
+    /**
+     * @since 3.1.10
+     */
+    public Map<SocketMetaData, List<NetworkPacket>> getNetworkTraffic(ThreadMatcher threadMatcher, String address, GroupingOptions groupingOptions) {
+        return getNetworkTraffic(threadMatcher, AddressMatchers.exactAddressMatcher(address), groupingOptions);
+    }
+
+    /**
+     * @since 3.1.10
+     */
+    public Map<SocketMetaData, List<NetworkPacket>> getNetworkTraffic(ThreadMatcher threadMatcher, AddressMatcher addressMatcher) {
+        return getNetworkTraffic(threadMatcher, addressMatcher, GroupingOptions.builder().build());
+    }
+
+    /**
+     * @since 3.1.10
+     */
+    public Map<SocketMetaData, List<NetworkPacket>> getNetworkTraffic(ThreadMatcher threadMatcher, AddressMatcher addressMatcher, GroupingOptions groupingOptions) {
+
+        Map<SocketMetaData, Map<Long, NetworkPacket>> networkTrafficByTime = new LinkedHashMap<SocketMetaData, Map<Long, NetworkPacket>>();
+        for (Map.Entry<SocketMetaData, Deque<NetworkPacket>> entry : this.networkTraffic.ascendingMap().entrySet()) {
+            SocketMetaData socketMetaData = entry.getKey();
+            if (threadMatcher.matches(socketMetaData.getThreadMetaData()) && addressMatcher.matches(socketMetaData.getAddress())) {
+
+                if (!groupingOptions.isGroupByConnection() || !groupingOptions.isGroupByStackTrace() || !groupingOptions.isGroupByThread()) {
+                    SocketMetaData originalSocketMetaData = socketMetaData;
+                    socketMetaData = new SocketMetaData(
+                            originalSocketMetaData.getProtocol(), originalSocketMetaData.getAddress(),
+                            !groupingOptions.isGroupByConnection() ? -1 : originalSocketMetaData.getConnectionId(),
+                            !groupingOptions.isGroupByStackTrace() ? null : originalSocketMetaData.getStackTrace(),
+                            !groupingOptions.isGroupByThread() ? null : originalSocketMetaData.getThreadMetaData()
+                    );
+
+                }
+
+                Map<Long, NetworkPacket> networkPackets = networkTrafficByTime.get(socketMetaData);
+                //noinspection Java8MapApi
+                if (null == networkPackets) {
+                    networkPackets = new TreeMap<Long, NetworkPacket>();
+                    networkTrafficByTime.put(socketMetaData, networkPackets);
+                }
+                for (NetworkPacket networkPacket : entry.getValue()) {
+                    networkPackets.put(networkPacket.getTimestamp(), networkPacket);
+                }
+            }
+        }
+
+        Map<SocketMetaData, List<NetworkPacket>> networkTraffic = new LinkedHashMap<SocketMetaData, List<NetworkPacket>>();
+
+        for (SocketMetaData key : networkTrafficByTime.keySet()) {
+            networkTraffic.put(key, new ArrayList<NetworkPacket>(networkTrafficByTime.get(key).values()));
+        }
+
+        return Collections.unmodifiableMap(networkTraffic);
+        /*
 
         Map<SocketMetaData, Deque<NetworkPacket>> networkTraffic = new LinkedHashMap<SocketMetaData, Deque<NetworkPacket>>();
         for (Map.Entry<SocketMetaData, Deque<NetworkPacket>> entry : this.networkTraffic.ascendingMap().entrySet()) {
             SocketMetaData socketMetaData = entry.getKey();
             if (threadMatcher.matches(socketMetaData.getThreadMetaData()) && addressMatcher.matches(socketMetaData.getAddress())) {
-                if (removeStackTraces) socketMetaData = new SocketMetaData(
-                        socketMetaData.getProtocol(), socketMetaData.address, socketMetaData.connectionId, null, socketMetaData.getThreadMetaData()
-                );
-                networkTraffic.put(socketMetaData, new LinkedList<NetworkPacket>(entry.getValue()));
+
+                if (!groupingOptions.isGroupByConnection() || !groupingOptions.isGroupByStackTrace() || !groupingOptions.isGroupByThread()) {
+                    SocketMetaData originalSocketMetaData = socketMetaData;
+                    socketMetaData = new SocketMetaData(
+                            originalSocketMetaData.getProtocol(), originalSocketMetaData.getAddress(),
+                            !groupingOptions.isGroupByConnection() ? -1 : originalSocketMetaData.getConnectionId(),
+                            !groupingOptions.isGroupByStackTrace() ? null : originalSocketMetaData.getStackTrace(),
+                            !groupingOptions.isGroupByThread() ? null : originalSocketMetaData.getThreadMetaData()
+                    );
+
+                }
+
+                Deque<NetworkPacket> networkPackets = networkTraffic.get(socketMetaData);
+                //noinspection Java8MapApi
+                if (null == networkPackets) {
+                    networkPackets = new LinkedList<NetworkPacket>();
+                    networkTraffic.put(socketMetaData, networkPackets);
+                }
+                networkPackets.addAll(new LinkedList<NetworkPacket>(entry.getValue()));
             }
         }
 
-        return Collections.unmodifiableMap(networkTraffic);
+        return Collections.unmodifiableMap(networkTraffic);*/
 
     }
 

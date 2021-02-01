@@ -20,6 +20,11 @@ public enum SniffyConfiguration {
     private volatile boolean monitorNio;
 
     /**
+     * @since 3.1.10
+     */
+    private volatile boolean captureTraffic;
+
+    /**
      * @since 3.1.2
      */
     private volatile int topSqlCapacity;
@@ -149,6 +154,22 @@ public enum SniffyConfiguration {
         boolean oldValue = this.monitorNio;
         this.monitorNio = monitorNio;
         pcs.firePropertyChange("monitorNio", oldValue, monitorNio);
+    }
+
+    /**
+     * @since 3.1.10
+     */
+    public boolean isCaptureTraffic() {
+        return captureTraffic;
+    }
+
+    /**
+     * @since 3.1.10
+     */
+    public void setCaptureTraffic(boolean captureTraffic) {
+        boolean oldValue = this.captureTraffic;
+        this.captureTraffic = captureTraffic;
+        pcs.firePropertyChange("captureTraffic", oldValue, captureTraffic);
     }
 
     /**

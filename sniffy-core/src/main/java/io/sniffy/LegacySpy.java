@@ -38,6 +38,9 @@ abstract class LegacySpy<C extends Spy<C>> extends BaseSpy<C> {
         }
     }
 
+    LegacySpy(SpyConfiguration spyConfiguration) {
+        super(spyConfiguration);
+    }
 
     /**
      * Executes the {@link Sniffer.Executable#execute()} method on provided argument and verifies the expectations

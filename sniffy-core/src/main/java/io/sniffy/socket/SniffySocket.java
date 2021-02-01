@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffy;
+import io.sniffy.SpyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import java.io.IOException;
@@ -98,9 +99,14 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
     }
 
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
-        Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
-        if (sniffyMode.isEnabled()) {
-            Sniffy.logTraffic(id, address, sent, protocol, traffic, off, len, sniffyMode.isCaptureStackTraces());
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            Sniffy.logTraffic(
+                    id, address,
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
         }
     }
 

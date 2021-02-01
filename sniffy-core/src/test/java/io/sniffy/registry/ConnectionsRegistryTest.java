@@ -3,6 +3,7 @@ package io.sniffy.registry;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonValue;
 import io.sniffy.socket.BaseSocketTest;
+import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.util.ReflectionUtil;
@@ -327,6 +328,11 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 }
 
                 @Override
+                public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+
+                }
+
+                @Override
                 public void checkConnectionAllowed() throws ConnectException {
 
                 }
@@ -446,6 +452,11 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
                 @Override
                 public void logSocket(long millis, int bytesDown, int bytesUp) {
+
+                }
+
+                @Override
+                public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
 
                 }
 

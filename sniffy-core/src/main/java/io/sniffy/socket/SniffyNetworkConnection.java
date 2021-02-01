@@ -43,7 +43,7 @@ public interface SniffyNetworkConnection {
     void logSocket(long millis, int bytesDown, int bytesUp);
 
     // TODO: add
-    //void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len);
+    void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len);
 
     void checkConnectionAllowed() throws ConnectException;
 
