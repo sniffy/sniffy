@@ -3,6 +3,7 @@ package io.sniffy;
 import com.codahale.metrics.Timer;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
@@ -88,6 +89,7 @@ public class Sniffy {
         initialize();
     }
 
+    @Deprecated
     public enum SniffyMode {
         DISABLED(false, false),
         ENABLED(true, true),
@@ -349,14 +351,52 @@ public class Sniffy {
         }
     }
 
+    private static void notifyListeners(SocketMetaData socketMetaData, boolean sent, long timestamp, byte[] traffic, int off, int len) {
+
+        if (hasGlobalSpies) {
+            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+            while (iterator.hasNext()) {
+                WeakReference<Spy> spyReference = iterator.next();
+                Spy spy = spyReference.get();
+                if (null == spy) {
+                    iterator.remove();
+                } else {
+                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, traffic, off, len);
+                }
+            }
+        }
+
+        if (hasThreadLocalSpies) {
+            Long threadId = Thread.currentThread().getId();
+
+            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+            if (null != spyReference) {
+                CurrentThreadSpy spy = spyReference.get();
+                if (null == spy) {
+                    currentThreadSpies.remove(threadId);
+                } else {
+                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, traffic, off, len);
+                }
+            }
+        }
+    }
+
+    // TODO: use getEffectiveSpyConfiguration() instead
+    @Deprecated
     public static boolean hasSpies() {
         return getSniffyMode().isEnabled();
     }
 
     /**
-     * @since 3.1.6
+     * @since 3.1.10
      */
-    public static SniffyMode getSniffyMode() {
+    public static SpyConfiguration getEffectiveSpyConfiguration() {
+
+        SpyConfiguration.Builder builder = SpyConfiguration.builder().
+                captureJdbc(false).
+                captureNetwork(false).
+                captureNetworkTraffic(false).
+                captureStackTraces(false);
 
         if (hasGlobalSpies) {
             if (!registeredSpies.isEmpty()) {
@@ -367,7 +407,7 @@ public class Sniffy {
                     if (null == spy) {
                         iterator.remove();
                     } else {
-                        return SniffyMode.ENABLED;
+                        builder = builder.or(spy.getSpyConfiguration());
                     }
                 }
             }
@@ -382,18 +422,38 @@ public class Sniffy {
                 if (null == spy) {
                     currentThreadSpies.remove(threadId);
                 } else {
-                    return spy.captureStackTraces ? SniffyMode.ENABLED : SniffyMode.ENABLED_NO_STACKTRACE;
+                    builder = builder.or(spy.getSpyConfiguration());
                 }
             }
         }
 
-        return SniffyMode.DISABLED;
+        return builder.build();
+
     }
 
+    // TODO: use getEffectiveSpyConfiguration() instead
+    /**
+     * @since 3.1.6
+     */
+    @Deprecated
+    public static SniffyMode getSniffyMode() {
+
+        SpyConfiguration effectiveSpyConfiguration = getEffectiveSpyConfiguration();
+
+        if (effectiveSpyConfiguration.isCaptureJdbc() || effectiveSpyConfiguration.isCaptureNetwork()) {
+            return effectiveSpyConfiguration.isCaptureStackTraces() ? SniffyMode.ENABLED : SniffyMode.ENABLED_NO_STACKTRACE;
+        } else {
+            return SniffyMode.DISABLED;
+        }
+
+    }
+
+    // TODO: merge with logTraffic
     public static void logSocket(int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp) {
         logSocket(connectionId, address, elapsedTime, bytesDown, bytesUp, true);
     }
 
+    // TODO: merge with logTraffic
     public static void logSocket(int connectionId, InetSocketAddress address, long elapsedTime, int bytesDown, int bytesUp, boolean captureStackTraces) {
 
         // do not track JDBC socket operations
@@ -402,14 +462,26 @@ public class Sniffy {
             socketStats.accumulate(elapsedTime, bytesDown, bytesUp);
         } else {
             // build stackTrace
-            String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
+            String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null; // TODO: is stacktrace different for NIO and NIO2 ?
 
             // increment counters
-            SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread().getId());
+            SocketMetaData socketMetaData = new SocketMetaData(address, connectionId, stackTrace, Thread.currentThread());
 
             // notify listeners
             notifyListeners(socketMetaData, elapsedTime, bytesDown, bytesUp);
         }
+    }
+
+    public static void logTraffic(int connectionId, InetSocketAddress address, boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean captureStackTraces) {
+
+        // build stackTrace
+        String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
+
+        SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId, stackTrace, Thread.currentThread());
+
+        // notify listeners
+        notifyListeners(socketMetaData, sent, System.currentTimeMillis(), traffic, off, len);
+
     }
 
     public static void enterJdbcMethod() {
@@ -447,7 +519,7 @@ public class Sniffy {
                             method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()",
                             SqlStatement.SYSTEM,
                             stackTrace,
-                            Thread.currentThread().getId()
+                            Thread.currentThread()
                     );
                     notifyListeners(
                             statementMetaData,
@@ -482,7 +554,7 @@ public class Sniffy {
         SocketStats socketStats = socketStatsAccumulator.get();
 
         // notify listeners
-        StatementMetaData statementMetaData = new StatementMetaData(sql, SqlUtil.guessQueryType(sql), stackTrace, Thread.currentThread().getId());
+        StatementMetaData statementMetaData = new StatementMetaData(sql, SqlUtil.guessQueryType(sql), stackTrace, Thread.currentThread());
         notifyListeners(
                 statementMetaData,
                 elapsedTime,
@@ -502,6 +574,14 @@ public class Sniffy {
      */
     public static <T extends Spy<T>> Spy<? extends Spy<T>> spy() {
         return new Spy<T>();
+    }
+
+    /**
+     * @return a new {@link Spy} instance with given configuration
+     * @since 3.1.10
+     */
+    public static <T extends Spy<T>> Spy<? extends Spy<T>> spy(SpyConfiguration spyConfiguration) {
+        return new Spy<T>(spyConfiguration);
     }
 
     /**

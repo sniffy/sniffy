@@ -5,6 +5,7 @@ import io.sniffy.SniffyAssertionError;
 import io.sniffy.Spy;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.DisableSockets;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.TcpConnections;
@@ -137,7 +138,9 @@ public class SniffySpringTestListener extends AbstractTestExecutionListener {
                                         Range.parse(socketExpectation.connections()).min,
                                         Range.parse(socketExpectation.connections()).max,
                                         socketExpectation.threads(),
-                                        "".equals(socketExpectation.hostName()) ? null : socketExpectation.hostName()
+                                        "".equals(socketExpectation.hostName()) ?
+                                                null :
+                                                AddressMatchers.exactAddressMatcher(socketExpectation.hostName())
                                 ));
                 }
             }

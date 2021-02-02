@@ -1,6 +1,7 @@
 package io.sniffy.socket;
 
 import io.sniffy.Sniffy;
+import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 
@@ -100,10 +101,12 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
         }
     }
 
+    @Deprecated
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
+    @Deprecated
     public void logSocket(long millis, int bytesDown, int bytesUp) {
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
@@ -113,6 +116,18 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
             if (sniffyMode.isEnabled()) {
                 Sniffy.logSocket(id, address, millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
             }
+        }
+    }
+
+    public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            Sniffy.logTraffic(
+                    id, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
         }
     }
 

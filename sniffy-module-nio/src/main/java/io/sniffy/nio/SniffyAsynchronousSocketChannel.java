@@ -1,8 +1,10 @@
 package io.sniffy.nio;
 
 import io.sniffy.Sniffy;
+import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.util.ExceptionUtil;
 
@@ -188,10 +190,12 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
         Thread.sleep(millis);
     }
 
+    @Deprecated
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
+    @Deprecated
     public void logSocket(long millis, int bytesDown, int bytesUp) {
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
@@ -199,6 +203,18 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
         if (sniffyMode.isEnabled() && null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
             Sniffy.logSocket(id, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
+        }
+    }
+
+    public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            Sniffy.logTraffic(
+                    id, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
         }
     }
 

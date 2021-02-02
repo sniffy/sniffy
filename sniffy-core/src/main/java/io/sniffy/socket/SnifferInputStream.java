@@ -27,7 +27,14 @@ class SnifferInputStream extends InputStream {
         int bytesDown = 0;
         try {
             int read = delegate.read();
-            if (read != -1) bytesDown = 1;
+            if (read != -1) {
+                bytesDown = 1;
+                snifferSocket.logTraffic(
+                        false, Protocol.TCP,
+                        new byte[]{(byte) read},
+                        0, 1
+                );
+            }
             return read;
         } finally {
             sleepIfRequired(bytesDown);
@@ -37,15 +44,15 @@ class SnifferInputStream extends InputStream {
 
     /**
      * Adds a delay as defined for current {@link SnifferSocketImpl} in {@link ConnectionsRegistry#discoveredDataSources}
-     *
+     * <p>
      * Delay is added for each <b>N</b> bytes received where <b>N</b> is the value of {@link SocketOptions#SO_RCVBUF}
-     *
+     * <p>
      * If application reads <b>M</b> bytes where (k-1) * N &lt; M  &lt; k * N exactly <b>k</b> delays will be added
-     *
+     * <p>
      * A call to {@link SnifferOutputStream} obtained from the same {@link SnifferSocketImpl} and made from the same thread
      * will reset the number of buffered (i.e. which can be read without delay) bytes to 0 effectively adding a guaranteed
      * delay to any subsequent {@link SnifferInputStream#read()} request
-     *
+     * <p>
      * TODO: consider if {@link java.net.SocketInputStream#available()} method can be of any use here
      *
      * @param bytesDown number of bytes received from socket
@@ -83,6 +90,13 @@ class SnifferInputStream extends InputStream {
         int bytesDown = 0;
         try {
             bytesDown = delegate.read(b);
+            if (-1 != bytesDown) {
+                snifferSocket.logTraffic(
+                        false, Protocol.TCP,
+                        b,
+                        0, bytesDown
+                );
+            }
             return bytesDown;
         } finally {
             sleepIfRequired(bytesDown);
@@ -97,15 +111,24 @@ class SnifferInputStream extends InputStream {
         int bytesDown = 0;
         try {
             bytesDown = delegate.read(b, off, len);
+            if (-1 != bytesDown) {
+                snifferSocket.logTraffic(
+                        false, Protocol.TCP,
+                        b,
+                        off, bytesDown
+                );
+            }
             return bytesDown;
         } finally {
             sleepIfRequired(bytesDown);
+            //snifferSocket.logTraffic(false, Protocol.TCP, b, off, bytesDown); // TODO
             snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
         }
     }
 
     @Override
     public long skip(long n) throws IOException {
+        // TODO: change this method since it doesn't capture skipped traffic
         snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
@@ -139,6 +162,8 @@ class SnifferInputStream extends InputStream {
 
     @Override
     public void mark(int readlimit) {
+        // TODO: change this method since it doesn't capture skipped traffic
+
         long start = System.currentTimeMillis();
         try {
             delegate.mark(readlimit);

@@ -156,27 +156,27 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
                 // Current thread socket operations
 
-                assertEquals(1, (long) s.getSocketOperations(CURRENT, null, true).entrySet().size());
+                assertEquals(1, (long) s.getSocketOperations(CURRENT, true).entrySet().size());
 
-                s.getSocketOperations(CURRENT, null, true).values().stream().findAny().ifPresent((socketStats) -> {
+                s.getSocketOperations(CURRENT, true).values().stream().findAny().ifPresent((socketStats) -> {
                     Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
                     Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
                 });
 
                 // Other threads socket operations
 
-                assertEquals(1, s.getSocketOperations(OTHERS, null, true).entrySet().stream().count());
+                assertEquals(1, s.getSocketOperations(OTHERS, true).entrySet().stream().count());
 
-                s.getSocketOperations(OTHERS, null, true).values().stream().findAny().ifPresent((socketStats) -> {
+                s.getSocketOperations(OTHERS, true).values().stream().findAny().ifPresent((socketStats) -> {
                     Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
                     Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
                 });
 
                 // Any threads socket operations
 
-                assertEquals(2, s.getSocketOperations(ANY, null, true).entrySet().stream().count());
+                assertEquals(2, s.getSocketOperations(ANY, true).entrySet().stream().count());
 
-                s.getSocketOperations(OTHERS, null, true).values().stream().forEach((socketStats) -> {
+                s.getSocketOperations(OTHERS, true).values().stream().forEach((socketStats) -> {
                     Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
                     Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
                 });

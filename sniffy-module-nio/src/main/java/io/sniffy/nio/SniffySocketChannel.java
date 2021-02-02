@@ -1,8 +1,10 @@
 package io.sniffy.nio;
 
 import io.sniffy.Sniffy;
+import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
@@ -146,10 +148,12 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         }
     }
 
+    @Deprecated
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
+    @Deprecated
     public void logSocket(long millis, int bytesDown, int bytesUp) {
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
@@ -159,6 +163,18 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             if (sniffyMode.isEnabled()) {
                 Sniffy.logSocket(connectionId, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces()); // TODO: stack trace here should be calculated till another package
             }
+        }
+    }
+
+    public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            Sniffy.logTraffic(
+                    connectionId, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
         }
     }
 

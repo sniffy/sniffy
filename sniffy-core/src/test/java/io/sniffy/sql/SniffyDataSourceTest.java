@@ -115,7 +115,7 @@ public class SniffyDataSourceTest extends BaseTest {
                 statement.execute("SELECT 1 FROM DUAL");
                 statement.getResultSet().next();
             }
-            assertTrue(spy.getSocketOperations(Threads.CURRENT, null, false).isEmpty());
+            assertTrue(spy.getSocketOperations(Threads.CURRENT, false).isEmpty());
         }
     }
 
@@ -141,7 +141,7 @@ public class SniffyDataSourceTest extends BaseTest {
                 statement.execute("SELECT 1 FROM DUAL");
                 statement.getResultSet().next();
             }
-            assertTrue(spy.getSocketOperations(Threads.CURRENT, null, false).isEmpty());
+            assertTrue(spy.getSocketOperations(Threads.CURRENT, false).isEmpty());
         }
     }
 
@@ -167,7 +167,7 @@ public class SniffyDataSourceTest extends BaseTest {
                 statement.execute("SELECT 1 FROM DUAL");
                 statement.getResultSet().next();
             }
-            assertTrue(spy.getSocketOperations(Threads.CURRENT, null, false).isEmpty());
+            assertTrue(spy.getSocketOperations(Threads.CURRENT, false).isEmpty());
         }
     }
 
@@ -193,7 +193,7 @@ public class SniffyDataSourceTest extends BaseTest {
                 statement.execute("SELECT 1 FROM DUAL");
                 statement.getResultSet().next();
             }
-            assertTrue(spy.getSocketOperations(Threads.CURRENT, null, false).isEmpty());
+            assertTrue(spy.getSocketOperations(Threads.CURRENT, false).isEmpty());
         }
     }
 
@@ -219,7 +219,7 @@ public class SniffyDataSourceTest extends BaseTest {
                 statement.execute("SELECT 1 FROM DUAL");
                 statement.getResultSet().next();
             }
-            assertTrue(spy.getSocketOperations(Threads.CURRENT, null, false).isEmpty());
+            assertTrue(spy.getSocketOperations(Threads.CURRENT, false).isEmpty());
         }
     }
 
@@ -283,7 +283,7 @@ public class SniffyDataSourceTest extends BaseTest {
                 statement.execute("SELECT 1 FROM DUAL");
                 statement.getResultSet().next();
             }
-            assertTrue(spy.getSocketOperations(Threads.CURRENT, null, false).isEmpty());
+            assertTrue(spy.getSocketOperations(Threads.CURRENT, false).isEmpty());
         }
     }
 

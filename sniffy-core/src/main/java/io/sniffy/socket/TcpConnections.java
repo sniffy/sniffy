@@ -46,19 +46,19 @@ public class TcpConnections {
         protected final int min;
         protected final int max;
         protected final Threads threads;
-        protected final String host;
+        protected final AddressMatcher addressMatcher;
 
-        public TcpExpectation(int min, int max, Threads threads, String host) {
+        public TcpExpectation(int min, int max, Threads threads, AddressMatcher addressMatcher) {
             this.min = min;
             this.max = max;
             this.threads = threads;
-            this.host = host;
+            this.addressMatcher = addressMatcher;
         }
 
         @Override
         public <T extends Spy<T>> Spy<T> verify(Spy<T> spy) throws TcpConnectionsExpectationError {
 
-            Map<SocketMetaData, SocketStats> socketOperations = spy.getSocketOperations(threads, host, true);
+            Map<SocketMetaData, SocketStats> socketOperations = spy.getSocketOperations(threads, addressMatcher, true);
 
             Set<Integer> connectionIds = new HashSet<Integer>();
             for (SocketMetaData socketMetaData : socketOperations.keySet()) {
@@ -106,13 +106,20 @@ public class TcpConnections {
     public static class TcpExpectation_Count extends TcpExpectation {
 
         private TcpExpectation_Count(int min, int max) {
-            super(min, max, Threads.CURRENT, null);
+            super(min, max, Threads.CURRENT, AddressMatchers.anyAddressMatcher());
             if (min < 0) throw new IllegalArgumentException("min cannot be negative");
             if (max < min) throw new IllegalArgumentException("max cannot be less than min");
         }
 
-        public TcpExpectation_Count_Host host(String host) {
-            return new TcpExpectation_Count_Host(min, max, host);
+        public TcpExpectation_Count_AddressMatcher host(String host) {
+            return new TcpExpectation_Count_AddressMatcher(min, max, AddressMatchers.exactAddressMatcher(host));
+        }
+
+        /**
+         * @since 3.1.10
+         */
+        public TcpExpectation_Count_AddressMatcher addressMatcher(AddressMatcher addressMatcher) {
+            return new TcpExpectation_Count_AddressMatcher(min, max, addressMatcher);
         }
 
         public TcpExpectation_Count_Threads threads(Threads threads) {
@@ -133,14 +140,14 @@ public class TcpConnections {
 
     }
 
-    public static class TcpExpectation_Count_Host extends TcpExpectation {
+    public static class TcpExpectation_Count_AddressMatcher extends TcpExpectation {
 
-        private TcpExpectation_Count_Host(int min, int max, String host) {
-            super(min, max, Threads.CURRENT, host);
+        private TcpExpectation_Count_AddressMatcher(int min, int max, AddressMatcher addressMatcher) {
+            super(min, max, Threads.CURRENT, addressMatcher);
         }
 
         public TcpExpectation threads(Threads threads) {
-            return new TcpExpectation(min, max, threads, host);
+            return new TcpExpectation(min, max, threads, addressMatcher);
         }
 
         public TcpExpectation currentThread() {
@@ -160,11 +167,18 @@ public class TcpConnections {
     public static class TcpExpectation_Count_Threads extends TcpExpectation {
 
         private TcpExpectation_Count_Threads(int min, int max, Threads threads) {
-            super(min, max, threads, null);
+            super(min, max, threads, AddressMatchers.anyAddressMatcher());
         }
 
         public TcpExpectation host(String host) {
-            return new TcpExpectation(min, max, threads, host);
+            return new TcpExpectation(min, max, threads, AddressMatchers.exactAddressMatcher(host));
+        }
+
+        /**
+         * @since 3.1.10
+         */
+        public TcpExpectation addressMatcher(AddressMatcher addressMatcher) {
+            return new TcpExpectation(min, max, threads, addressMatcher);
         }
 
     }
