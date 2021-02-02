@@ -1,12 +1,13 @@
 package io.sniffy.socket;
 
-import io.sniffy.*;
+import io.sniffy.Sniffy;
+import io.sniffy.Spy;
+import io.sniffy.SpyConfiguration;
+import io.sniffy.ThreadMetaData;
 import io.sniffy.configuration.SniffyConfiguration;
 import org.junit.Test;
 import ru.yandex.qatools.allure.annotations.Stories;
 
-import java.util.Arrays;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 

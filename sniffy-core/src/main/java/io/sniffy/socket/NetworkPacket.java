@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream;
 /**
  * @since 3.1.10
  */
-public class NetworkPacket {
+public class NetworkPacket implements Comparable<NetworkPacket> {
 
     private final boolean sent;
     private final long timestamp;
@@ -34,6 +34,12 @@ public class NetworkPacket {
 
     public byte[] getBytes() {
         return baos.toByteArray();
+    }
+
+    @Override
+    public int compareTo(NetworkPacket that) {
+        //noinspection UseCompareMethod
+        return (timestamp < that.timestamp) ? -1 : ((timestamp == that.timestamp) ? 0 : 1);
     }
 
 }

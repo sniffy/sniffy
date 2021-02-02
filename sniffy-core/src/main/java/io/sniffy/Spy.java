@@ -151,7 +151,7 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
      */
     public Map<SocketMetaData, List<NetworkPacket>> getNetworkTraffic(ThreadMatcher threadMatcher, AddressMatcher addressMatcher, GroupingOptions groupingOptions) {
 
-        Map<SocketMetaData, Map<Long, NetworkPacket>> networkTrafficByTime = new LinkedHashMap<SocketMetaData, Map<Long, NetworkPacket>>();
+        Map<SocketMetaData, List<NetworkPacket>> networkTraffic = new LinkedHashMap<SocketMetaData, List<NetworkPacket>>();
         for (Map.Entry<SocketMetaData, Deque<NetworkPacket>> entry : this.networkTraffic.ascendingMap().entrySet()) {
             SocketMetaData socketMetaData = entry.getKey();
             if (threadMatcher.matches(socketMetaData.getThreadMetaData()) && addressMatcher.matches(socketMetaData.getAddress())) {
@@ -167,54 +167,21 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
 
                 }
 
-                Map<Long, NetworkPacket> networkPackets = networkTrafficByTime.get(socketMetaData);
+                List<NetworkPacket> networkPackets = networkTraffic.get(socketMetaData);
                 //noinspection Java8MapApi
                 if (null == networkPackets) {
-                    networkPackets = new TreeMap<Long, NetworkPacket>();
-                    networkTrafficByTime.put(socketMetaData, networkPackets);
+                    networkPackets = new ArrayList<NetworkPacket>();
+                    networkTraffic.put(socketMetaData, networkPackets);
                 }
-                for (NetworkPacket networkPacket : entry.getValue()) {
-                    networkPackets.put(networkPacket.getTimestamp(), networkPacket);
-                }
+                networkPackets.addAll(entry.getValue());
             }
         }
 
-        Map<SocketMetaData, List<NetworkPacket>> networkTraffic = new LinkedHashMap<SocketMetaData, List<NetworkPacket>>();
-
-        for (SocketMetaData key : networkTrafficByTime.keySet()) {
-            networkTraffic.put(key, new ArrayList<NetworkPacket>(networkTrafficByTime.get(key).values()));
+        for (List<NetworkPacket> networkPackets : networkTraffic.values()) {
+            Collections.sort(networkPackets);
         }
 
         return Collections.unmodifiableMap(networkTraffic);
-        /*
-
-        Map<SocketMetaData, Deque<NetworkPacket>> networkTraffic = new LinkedHashMap<SocketMetaData, Deque<NetworkPacket>>();
-        for (Map.Entry<SocketMetaData, Deque<NetworkPacket>> entry : this.networkTraffic.ascendingMap().entrySet()) {
-            SocketMetaData socketMetaData = entry.getKey();
-            if (threadMatcher.matches(socketMetaData.getThreadMetaData()) && addressMatcher.matches(socketMetaData.getAddress())) {
-
-                if (!groupingOptions.isGroupByConnection() || !groupingOptions.isGroupByStackTrace() || !groupingOptions.isGroupByThread()) {
-                    SocketMetaData originalSocketMetaData = socketMetaData;
-                    socketMetaData = new SocketMetaData(
-                            originalSocketMetaData.getProtocol(), originalSocketMetaData.getAddress(),
-                            !groupingOptions.isGroupByConnection() ? -1 : originalSocketMetaData.getConnectionId(),
-                            !groupingOptions.isGroupByStackTrace() ? null : originalSocketMetaData.getStackTrace(),
-                            !groupingOptions.isGroupByThread() ? null : originalSocketMetaData.getThreadMetaData()
-                    );
-
-                }
-
-                Deque<NetworkPacket> networkPackets = networkTraffic.get(socketMetaData);
-                //noinspection Java8MapApi
-                if (null == networkPackets) {
-                    networkPackets = new LinkedList<NetworkPacket>();
-                    networkTraffic.put(socketMetaData, networkPackets);
-                }
-                networkPackets.addAll(new LinkedList<NetworkPacket>(entry.getValue()));
-            }
-        }
-
-        return Collections.unmodifiableMap(networkTraffic);*/
 
     }
 
