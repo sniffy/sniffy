@@ -29,6 +29,11 @@ public enum SniffyConfiguration {
      */
     private volatile int topSqlCapacity;
 
+    /**
+     * @since 3.1.10
+     */
+    private volatile int packetMergeThreshold;
+
     private volatile Boolean filterEnabled;
     private volatile String excludePattern;
 
@@ -79,6 +84,13 @@ public enum SniffyConfiguration {
             ));
         } catch (NumberFormatException e) {
             topSqlCapacity = 0;
+        }
+        try {
+            packetMergeThreshold = Integer.parseInt(getProperty(
+                    "io.sniffy.packetMergeThreshold", "IO_SNIFFY_PACKET_MERGE_THRESHOLD", "500"
+            ));
+        } catch (NumberFormatException e) {
+            packetMergeThreshold = 0;
         }
 
         String filterEnabled = getProperty("io.sniffy.filterEnabled", "IO_SNIFFY_FILTER_ENABLED");
@@ -219,6 +231,22 @@ public enum SniffyConfiguration {
     }
 
     /**
+     * @since 3.1.10
+     */
+    public int getPacketMergeThreshold() {
+        return packetMergeThreshold;
+    }
+
+    /**
+     * @since 3.1.10
+     */
+    public void setPacketMergeThreshold(int packetMergeThreshold) {
+        int oldValue = this.packetMergeThreshold;
+        this.packetMergeThreshold = packetMergeThreshold;
+        pcs.firePropertyChange("packetMergeThreshold", oldValue, packetMergeThreshold);
+    }
+
+    /**
      * @since 3.1.3
      */
     public void addTopSqlCapacityListener(PropertyChangeListener listener) {
@@ -230,6 +258,20 @@ public enum SniffyConfiguration {
      */
     public void removeTopSqlCapacityListener(PropertyChangeListener listener) {
         this.pcs.removePropertyChangeListener("topSqlCapacity", listener);
+    }
+
+    /**
+     * @since 3.1.10
+     */
+    public void addPacketMergeThresholdListener(PropertyChangeListener listener) {
+        this.pcs.addPropertyChangeListener("packetMergeThreshold", listener);
+    }
+
+    /**
+     * @since 3.1.10
+     */
+    public void removePacketMergeThresholdListener(PropertyChangeListener listener) {
+        this.pcs.removePropertyChangeListener("packetMergeThreshold", listener);
     }
 
     // filter enabled

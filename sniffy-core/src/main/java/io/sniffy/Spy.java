@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.*;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
@@ -177,11 +178,26 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
             }
         }
 
-        for (List<NetworkPacket> networkPackets : networkTraffic.values()) {
+        for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
+            List<NetworkPacket> networkPackets = entry.getValue();
+
             Collections.sort(networkPackets);
+
+            List<NetworkPacket> reducedNetworkPackets = new ArrayList<NetworkPacket>();
+            NetworkPacket lastNetworkPacket = null;
+
+            for (NetworkPacket networkPacket : networkPackets) {
+                if (null == lastNetworkPacket || !lastNetworkPacket.combine(networkPacket, SniffyConfiguration.INSTANCE.getTopSqlCapacity())) {
+                    reducedNetworkPackets.add(networkPacket);
+                    lastNetworkPacket = networkPacket;
+                }
+            }
+
+            entry.setValue(reducedNetworkPackets);
+
         }
 
-        return Collections.unmodifiableMap(networkTraffic);
+        return networkTraffic;
 
     }
 

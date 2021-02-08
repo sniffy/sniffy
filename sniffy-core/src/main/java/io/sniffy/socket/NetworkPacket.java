@@ -24,6 +24,14 @@ public class NetworkPacket implements Comparable<NetworkPacket> {
         return true;
     }
 
+    public boolean combine(NetworkPacket that, long maxDelay) {
+        if (this.sent != that.sent) return false;
+        if (that.timestamp - this.timestamp > maxDelay) return false;
+        byte[] bytes = that.getBytes();
+        this.baos.write(bytes, 0, bytes.length);
+        return true;
+    }
+
     public boolean isSent() {
         return sent;
     }
