@@ -6,7 +6,6 @@ import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SniffyNetworkConnection;
-import io.sniffy.util.ReflectionUtil;
 import org.junit.After;
 import org.junit.Test;
 import ru.yandex.qatools.allure.annotations.Issue;
@@ -29,29 +28,6 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
     public void clearConnectionRules() {
         ConnectionsRegistry.INSTANCE.clear();
     }
-
-    static class TestClass1 {
-        private boolean accessible;
-
-        private static volatile boolean printStackPropertiesSet;
-
-    }
-
-    static class TestClass2 {
-        public boolean accessible;
-
-        private static volatile boolean printStackPropertiesSet;
-
-    }
-
-    @Test
-    public void testUnsafe() throws Exception {
-        // TODO: move logic about calculations below to ReflectionsUtils
-        System.out.println(ReflectionUtil.UNSAFE.objectFieldOffset(TestClass1.class.getDeclaredField("accessible")));
-        System.out.println(ReflectionUtil.UNSAFE.objectFieldOffset(TestClass2.class.getField("accessible")));
-    }
-
-
 
     @Test
     public void testConnectionClosed() throws Exception {
