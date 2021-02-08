@@ -216,37 +216,38 @@ public class CaptureTrafficTest extends BaseSocketTest {
 
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
 
-            try {
-                Socket socket = new Socket(localhost, echoServerRule.getBoundPort());
-                socket.setReuseAddress(true);
+            Socket socket = new Socket(localhost, echoServerRule.getBoundPort());
+            socket.setReuseAddress(true);
 
-                socket.setOOBInline(true);
-                assertTrue(socket.getOOBInline());
+            socket.setOOBInline(true);
+            assertTrue(socket.getOOBInline());
 
-                assertTrue(socket.isConnected());
+            assertTrue(socket.isConnected());
 
-                OutputStream outputStream = socket.getOutputStream();
-                outputStream.write(REQUEST, 0, REQUEST.length - 1);
-                outputStream.flush();
-                socket.sendUrgentData(REQUEST[REQUEST.length - 1]);
-                outputStream.flush();
-                outputStream.close();
+            OutputStream outputStream = socket.getOutputStream();
+            outputStream.write(REQUEST, 0, REQUEST.length - 1);
+            outputStream.flush();
+            socket.sendUrgentData(REQUEST[REQUEST.length - 1]);
+            outputStream.flush();
 
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                InputStream inputStream = socket.getInputStream();
-                int read;
-                while ((read = inputStream.read()) != -1) {
-                    baos.write(read);
-                }
-                socket.shutdownInput();
-
-                echoServerRule.joinThreads();
-
-                assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
-                assertArrayEquals(RESPONSE, baos.toByteArray());
-            } catch (IOException e) {
-                fail(e.getMessage());
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            InputStream inputStream = socket.getInputStream();
+            int read;
+            while ((read = inputStream.read()) != -1) {
+                baos.write(read);
             }
+            socket.shutdownInput();
+            socket.shutdownOutput();
+
+            outputStream.close();
+            inputStream.close();
+
+            socket.close();
+
+            echoServerRule.joinThreads();
+
+            assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
+            assertArrayEquals(RESPONSE, baos.toByteArray());
 
             Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
 
