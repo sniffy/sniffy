@@ -257,12 +257,23 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int length = 0;
+
+        int position = src.position();
+
         try {
             length = super.write(src);
             return length;
         } finally {
             sleepIfRequiredForWrite(length);
             logSocket(System.currentTimeMillis() - start, 0, length);
+            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+            // TODO: uncomment condition below
+            //if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                src.position(position);
+                byte[] buff = new byte[length];
+                src.get(buff, 0, length);
+                logTraffic(true, Protocol.TCP, buff, 0, buff.length);
+            //}
         }
     }
 
