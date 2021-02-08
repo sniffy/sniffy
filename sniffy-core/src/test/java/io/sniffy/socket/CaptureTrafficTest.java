@@ -230,10 +230,10 @@ public class CaptureTrafficTest extends BaseSocketTest {
             socket.sendUrgentData(REQUEST[REQUEST.length - 1]);
             outputStream.flush();
 
-            for (int i = 0; i < 10_000; i++) {
-                if (echoServerRule.getBytesReceived() < REQUEST.length) {
-                    Thread.sleep(1);
-                } else if (9999 == i) {
+            // On MacOS send urgent data test fails without busy loop on some reason
+            for (int i = 0; i < 10_000 && echoServerRule.getBytesReceived() < REQUEST.length; i++) {
+                Thread.sleep(1);
+                if (9999 == i) {
                     System.err.println("Echo server hasn't received urgent data within 10 seconds");
                 }
             }
@@ -247,10 +247,10 @@ public class CaptureTrafficTest extends BaseSocketTest {
 
             inputStream.close();
 
-            for (int i = 0; i < 10_000; i++) {
-                if (echoServerRule.getBytesReceived() < REQUEST.length) {
-                    Thread.sleep(1);
-                } else if (9999 == i) {
+            // On MacOS send urgent data test fails without busy loop on some reason
+            for (int i = 0; i < 10_000 && echoServerRule.getBytesReceived() < REQUEST.length; i++) {
+                Thread.sleep(1);
+                if (9999 == i) {
                     System.err.println("Echo server hasn't received urgent data within 20 seconds");
                 }
             }
