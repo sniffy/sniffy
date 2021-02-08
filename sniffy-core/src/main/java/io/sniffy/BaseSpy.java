@@ -1,8 +1,8 @@
 package io.sniffy;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.NetworkPacket;
-import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
@@ -10,7 +10,6 @@ import io.sniffy.sql.StatementMetaData;
 
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @since 3.1
@@ -40,7 +39,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
             networkTraffic.putIfAbsent(socketMetaData, networkPackets = new LinkedList<NetworkPacket>());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
-        if (null == lastPacket || !lastPacket.combine(sent, timestamp, traffic, off, len, 50)) {
+        if (null == lastPacket || !lastPacket.combine(sent, timestamp, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
             networkPackets.add(new NetworkPacket(sent, timestamp, traffic, off, len));
         }
     }
