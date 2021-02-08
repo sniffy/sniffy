@@ -220,6 +220,9 @@ public class CaptureTrafficTest extends BaseSocketTest {
                 Socket socket = new Socket(localhost, echoServerRule.getBoundPort());
                 socket.setReuseAddress(true);
 
+                socket.setOOBInline(true);
+                assertTrue(socket.getOOBInline());
+
                 assertTrue(socket.isConnected());
 
                 OutputStream outputStream = socket.getOutputStream();
@@ -237,7 +240,7 @@ public class CaptureTrafficTest extends BaseSocketTest {
                 socket.shutdownInput();
 
                 echoServerRule.joinThreads();
-                
+
                 assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
                 assertArrayEquals(RESPONSE, baos.toByteArray());
             } catch (IOException e) {
