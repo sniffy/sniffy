@@ -225,13 +225,15 @@ public class CaptureTrafficTest extends BaseSocketTest {
             assertTrue(socket.isConnected());
 
             OutputStream outputStream = socket.getOutputStream();
-            outputStream.write(REQUEST, 0, REQUEST.length - 1);
+            outputStream.write(REQUEST, 0, REQUEST.length - 2);
             outputStream.flush();
-            socket.sendUrgentData(REQUEST[REQUEST.length - 1]);
+            socket.sendUrgentData(REQUEST[REQUEST.length - 2]);
+            outputStream.write(REQUEST, REQUEST.length - 1, 1);
             outputStream.flush();
 
             // On MacOS send urgent data test fails without busy loop on some reason
             for (int i = 0; i < 10_000 && echoServerRule.getBytesReceived() < REQUEST.length; i++) {
+                //noinspection BusyWait
                 Thread.sleep(1);
                 if (9999 == i) {
                     System.err.println("Echo server hasn't received urgent data within 10 seconds");
@@ -249,6 +251,7 @@ public class CaptureTrafficTest extends BaseSocketTest {
 
             // On MacOS send urgent data test fails without busy loop on some reason
             for (int i = 0; i < 10_000 && echoServerRule.getBytesReceived() < REQUEST.length; i++) {
+                //noinspection BusyWait
                 Thread.sleep(1);
                 if (9999 == i) {
                     System.err.println("Echo server hasn't received urgent data within 20 seconds");
