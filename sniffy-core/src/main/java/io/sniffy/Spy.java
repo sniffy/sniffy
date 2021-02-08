@@ -187,7 +187,7 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
             NetworkPacket lastNetworkPacket = null;
 
             for (NetworkPacket networkPacket : networkPackets) {
-                if (null == lastNetworkPacket || !lastNetworkPacket.combine(networkPacket, SniffyConfiguration.INSTANCE.getTopSqlCapacity())) {
+                if (null == lastNetworkPacket || !lastNetworkPacket.combine(networkPacket, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
                     reducedNetworkPackets.add(networkPacket);
                     lastNetworkPacket = networkPacket;
                 }

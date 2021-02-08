@@ -39,7 +39,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
             networkTraffic.putIfAbsent(socketMetaData, networkPackets = new LinkedList<NetworkPacket>());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
-        if (null == lastPacket || !lastPacket.combine(sent, timestamp, traffic, off, len, SniffyConfiguration.INSTANCE.getTopSqlCapacity())) {
+        if (null == lastPacket || !lastPacket.combine(sent, timestamp, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
             networkPackets.add(new NetworkPacket(sent, timestamp, traffic, off, len));
         }
     }
