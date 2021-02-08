@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class EchoServerRule extends ExternalResource implements Runnable {
 
@@ -21,6 +22,8 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     private final List<Thread> socketThreads = new ArrayList<>();
     private final List<Socket> sockets = new ArrayList<>();
+
+    private final AtomicInteger bytesReceivedCounter = new AtomicInteger();
 
     private int boundPort = 10000;
     private ServerSocket serverSocket;
@@ -36,8 +39,14 @@ public class EchoServerRule extends ExternalResource implements Runnable {
         return boundPort;
     }
 
+    public int getBytesReceived() {
+        return bytesReceivedCounter.get();
+    }
+
     @Override
     public void before() throws Throwable {
+
+        bytesReceivedCounter.set(0);
 
         for (int i = 0; i < 10; i++, boundPort++) {
             try {
@@ -61,6 +70,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     }
 
+    @Override
     public void after() {
 
         socketThreads.forEach(Thread::interrupt);
@@ -167,14 +177,14 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 int read;
 
                 while ((read = inputStream.read()) != -1) {
+                    bytesReceivedCounter.incrementAndGet();
                     baos.write(read);
                 }
 
                 socket.shutdownInput();
             } catch (SocketException e) {
                 if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
-                    e.printStackTrace(System.err);
-                    System.err.flush();
+                    e.printStackTrace();
                 }
             } catch (Exception e) {
                 e.printStackTrace();

@@ -227,15 +227,14 @@ public class CaptureTrafficTest extends BaseSocketTest {
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(REQUEST, 0, REQUEST.length - 1);
             outputStream.flush();
-            System.err.println("Flushed part of request");
-            System.err.flush();
             socket.sendUrgentData(REQUEST[REQUEST.length - 1]);
-            System.err.println("Sent urgent data");
-            System.err.flush();
             outputStream.flush();
 
-            System.err.println("Outputstream flushed");
-            System.err.flush();
+            for (int i = 0; i < 10_000; i++) {
+                if (echoServerRule.getBytesReceived() < REQUEST.length) {
+                    Thread.sleep(1);
+                }
+            }
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             InputStream inputStream = socket.getInputStream();
@@ -243,31 +242,11 @@ public class CaptureTrafficTest extends BaseSocketTest {
             while ((read = inputStream.read()) != -1) {
                 baos.write(read);
             }
-            socket.shutdownInput();
-
-            System.err.println("Input shut down");
-            System.err.flush();
-
-
-            socket.shutdownOutput();
-
-            System.err.println("Output shut down");
-            System.err.flush();
-
-            outputStream.close();
-
-            System.err.println("Output closed");
-            System.err.flush();
 
             inputStream.close();
-
-            System.err.println("Input closed");
-            System.err.flush();
+            outputStream.close();
 
             socket.close();
-
-            System.err.println("Socket closed");
-            System.err.flush();
 
             echoServerRule.joinThreads();
 
