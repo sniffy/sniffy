@@ -128,11 +128,10 @@ class SnifferInputStream extends InputStream {
 
     @Override
     public long skip(long n) throws IOException {
-        // TODO: change this method since it doesn't capture skipped traffic
         snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
-            return delegate.skip(n);
+            return super.skip(n);
         } finally {
             snifferSocket.logSocket(System.currentTimeMillis() - start);
         }
@@ -162,8 +161,7 @@ class SnifferInputStream extends InputStream {
 
     @Override
     public void mark(int readlimit) {
-        // TODO: change this method since it doesn't capture skipped traffic
-
+        // TODO: support this method in case it is supported in future by SocketInputStream; at least print a warning
         long start = System.currentTimeMillis();
         try {
             delegate.mark(readlimit);
@@ -185,6 +183,7 @@ class SnifferInputStream extends InputStream {
 
     @Override
     public boolean markSupported() {
+        // TODO: support this method in case it is supported in future by SocketInputStream; at least print a warning
         long start = System.currentTimeMillis();
         try {
             return delegate.markSupported();

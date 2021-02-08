@@ -180,6 +180,7 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
             super.sendUrgentData(data);
         } finally {
             logSocket(System.currentTimeMillis() - start, 0, 1);
+            logTraffic(true, Protocol.TCP, new byte[]{(byte) data}, 0, 1);
         }
     }
 

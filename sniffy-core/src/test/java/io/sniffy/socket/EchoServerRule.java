@@ -98,6 +98,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
                 Socket socket = serverSocket.accept();
                 socket.setReuseAddress(true);
+                socket.setOOBInline(true);
 
                 sockets.add(socket);
 

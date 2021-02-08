@@ -36,7 +36,6 @@ public interface SniffyNetworkConnection {
 
     void setSendBufferSize(int sendBufferSize);
 
-    @Deprecated
     void logSocket(long millis);
 
     @Deprecated
