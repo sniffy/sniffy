@@ -229,7 +229,8 @@ public class CaptureTrafficTest extends BaseSocketTest {
                 outputStream.write(REQUEST, 0, REQUEST.length - 1);
                 outputStream.flush();
                 socket.sendUrgentData(REQUEST[REQUEST.length - 1]);
-                socket.shutdownOutput();
+                outputStream.flush();
+                outputStream.close();
 
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 InputStream inputStream = socket.getInputStream();
