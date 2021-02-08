@@ -233,6 +233,8 @@ public class CaptureTrafficTest extends BaseSocketTest {
             for (int i = 0; i < 10_000; i++) {
                 if (echoServerRule.getBytesReceived() < REQUEST.length) {
                     Thread.sleep(1);
+                } else if (9999 == i) {
+                    System.err.println("Echo server hasn't received urgent data within 10 seconds");
                 }
             }
 
@@ -244,6 +246,15 @@ public class CaptureTrafficTest extends BaseSocketTest {
             }
 
             inputStream.close();
+
+            for (int i = 0; i < 10_000; i++) {
+                if (echoServerRule.getBytesReceived() < REQUEST.length) {
+                    Thread.sleep(1);
+                } else if (9999 == i) {
+                    System.err.println("Echo server hasn't received urgent data within 20 seconds");
+                }
+            }
+
             outputStream.close();
 
             socket.close();
