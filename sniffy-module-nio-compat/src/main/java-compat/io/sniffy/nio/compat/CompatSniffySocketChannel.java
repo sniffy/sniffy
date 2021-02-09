@@ -147,7 +147,9 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
                 synchronized (CompatSniffySocketChannel.class) {
                     if (null == defaultReceiveBufferSize) {
                         try {
-                            defaultReceiveBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF);
+                            defaultReceiveBufferSize = JVMUtil.getVersion() > 6 ?
+                                    (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF) :
+                                    socket().getReceiveBufferSize();
                         } catch (SocketException e) {
                             defaultReceiveBufferSize = 0;
                         } catch (IOException e) {
@@ -167,7 +169,9 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
                 synchronized (CompatSniffySocketChannel.class) {
                     if (null == defaultSendBufferSize) {
                         try {
-                            defaultSendBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF);
+                            defaultSendBufferSize = JVMUtil.getVersion() > 6 ?
+                                    (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF) :
+                                    socket().getSendBufferSize();
                         } catch (SocketException e) {
                             defaultSendBufferSize = 0;
                         } catch (IOException e) {
