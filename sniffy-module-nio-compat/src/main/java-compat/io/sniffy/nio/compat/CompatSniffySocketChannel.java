@@ -8,6 +8,7 @@ import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.JVMUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
@@ -50,7 +51,11 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     @Override
     public InetSocketAddress getInetSocketAddress() {
         try {
-            return (InetSocketAddress) getRemoteAddress();
+            if (JVMUtil.getVersion() > 6) {
+                return (InetSocketAddress) getRemoteAddress();
+            } else {
+                return (InetSocketAddress) socket().getRemoteSocketAddress();
+            }
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
