@@ -225,11 +225,20 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
+        int position = dst.position();
         try {
             return bytesDown = super.read(dst);
         } finally {
             sleepIfRequired(bytesDown);
             logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+            // TODO: uncomment condition below
+            //if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                dst.position(position);
+                byte[] buff = new byte[bytesDown];
+                dst.get(buff, 0, bytesDown);
+                logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+            //}
         }
     }
 
@@ -283,6 +292,15 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         long bytesUp = 0;
+
+        int[] positions = new int[length];
+        int[] remainings = new int[length];
+
+        for (int i = 0; i < length; i++) {
+            positions[i] = srcs[offset + i].position();
+            remainings[i] = srcs[offset + i].remaining();
+        }
+
         try {
             bytesUp = super.write(srcs, offset, length);
             return bytesUp;
@@ -294,6 +312,17 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             }
             sleepIfRequiredForWrite((int) bytesUp);
             logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
+            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+            // TODO: uncomment condition below
+            //if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                for (int i = 0; i < length; i++) {
+                    srcs[offset + i].position(positions[i]);
+                    byte[] buff = new byte[remainings[i]];
+                    srcs[offset + i].get(buff, 0, remainings[i]);
+                    logTraffic(true, Protocol.TCP, buff, 0, buff.length);
+                }
+
+            //}
         }
     }
 

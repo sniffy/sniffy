@@ -22,6 +22,7 @@ public enum SniffyConfiguration {
     /**
      * @since 3.1.10
      */
+    @Deprecated
     private volatile boolean captureTraffic;
 
     /**
@@ -171,6 +172,7 @@ public enum SniffyConfiguration {
     /**
      * @since 3.1.10
      */
+    @Deprecated
     public boolean isCaptureTraffic() {
         return captureTraffic;
     }
@@ -178,6 +180,7 @@ public enum SniffyConfiguration {
     /**
      * @since 3.1.10
      */
+    @Deprecated
     public void setCaptureTraffic(boolean captureTraffic) {
         boolean oldValue = this.captureTraffic;
         this.captureTraffic = captureTraffic;
