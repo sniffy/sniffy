@@ -232,13 +232,12 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             sleepIfRequired(bytesDown);
             logSocket(System.currentTimeMillis() - start, bytesDown, 0);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            // TODO: uncomment condition below
-            //if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 dst.position(position);
                 byte[] buff = new byte[bytesDown];
                 dst.get(buff, 0, bytesDown);
                 logTraffic(false, Protocol.TCP, buff, 0, buff.length);
-            //}
+            }
         }
     }
 
@@ -248,6 +247,15 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         long bytesDown = 0;
+
+        int[] positions = new int[length];
+        int[] remainings = new int[length];
+
+        for (int i = 0; i < length; i++) {
+            positions[i] = dsts[offset + i].position();
+            remainings[i] = dsts[offset + i].remaining();
+        }
+
         try {
             bytesDown = super.read(dsts, offset, length);
             return bytesDown;
@@ -256,6 +264,18 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                 sleepIfRequiredForWrite(Integer.MAX_VALUE);
                 logSocket(System.currentTimeMillis() - start, Integer.MAX_VALUE, 0);
                 bytesDown -= Integer.MAX_VALUE;
+            }
+            logSocket(System.currentTimeMillis() - start, (int) bytesDown, 0);
+
+            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                for (int i = 0; i < length; i++) {
+                    dsts[offset + i].position(positions[i]);
+                    byte[] buff = new byte[remainings[i]];
+                    dsts[offset + i].get(buff, 0, remainings[i]);
+                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                }
+
             }
         }
     }
@@ -276,13 +296,12 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             sleepIfRequiredForWrite(length);
             logSocket(System.currentTimeMillis() - start, 0, length);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            // TODO: uncomment condition below
-            //if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 src.position(position);
                 byte[] buff = new byte[length];
                 src.get(buff, 0, length);
                 logTraffic(true, Protocol.TCP, buff, 0, buff.length);
-            //}
+            }
         }
     }
 
@@ -313,8 +332,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             sleepIfRequiredForWrite((int) bytesUp);
             logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            // TODO: uncomment condition below
-            //if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 for (int i = 0; i < length; i++) {
                     srcs[offset + i].position(positions[i]);
                     byte[] buff = new byte[remainings[i]];
@@ -322,7 +340,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                     logTraffic(true, Protocol.TCP, buff, 0, buff.length);
                 }
 
-            //}
+            }
         }
     }
 

@@ -39,6 +39,8 @@ public class CaptureTrafficTest extends BaseSocketTest {
 
             Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
 
+            assertEquals(1, networkTraffic.size());
+
             for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
 
                 SocketMetaData socketMetaData = entry.getKey();
@@ -157,6 +159,8 @@ public class CaptureTrafficTest extends BaseSocketTest {
 
             Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
 
+            assertEquals(1, networkTraffic.size());
+
             for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
 
                 SocketMetaData socketMetaData = entry.getKey();
@@ -255,6 +259,8 @@ public class CaptureTrafficTest extends BaseSocketTest {
             assertArrayEquals(RESPONSE, baos.toByteArray());
 
             Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
+
+            assertEquals(1, networkTraffic.size());
 
             for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
 
@@ -361,6 +367,8 @@ public class CaptureTrafficTest extends BaseSocketTest {
 
             Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
 
+            assertEquals(1, networkTraffic.size());
+
             for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
 
                 SocketMetaData socketMetaData = entry.getKey();
@@ -464,6 +472,8 @@ public class CaptureTrafficTest extends BaseSocketTest {
             }
 
             Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
+
+            assertEquals(1, networkTraffic.size());
 
             for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
 

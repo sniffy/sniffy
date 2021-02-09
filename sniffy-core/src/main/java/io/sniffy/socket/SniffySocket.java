@@ -215,7 +215,7 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     @Override
     public void sendUrgentData(int data) throws IOException {
-        super.sendUrgentData(data);
+        super.sendUrgentData(data); // TODO: log traffic and do stuff
     }
 
     // TODO: evaluate other methods

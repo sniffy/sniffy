@@ -30,166 +30,154 @@ public class NioSniffySocketTest extends BaseSocketTest {
     @Test
     public void testSelectionKeys() throws Exception {
 
-        SnifferSocketImplFactory.uninstall();
-        SnifferSocketImplFactory.install();
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        SniffyConfiguration.INSTANCE.setMonitorNio(true);
+        SniffyConfiguration.INSTANCE.setSocketCaptureEnabled(true);
 
-        SniffySelectorProviderModule.initialize();
-        SniffySelectorProvider.uninstall();
-        SniffySelectorProvider.install();
+        Sniffy.initialize();
 
-        try {
-            ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
+        ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
 
-            Selector selector = Selector.open();
+        Selector selector = Selector.open();
 
-            SocketChannel socketChannel = SocketChannel.open();
-            socketChannel.configureBlocking(false);
+        SocketChannel socketChannel = SocketChannel.open();
+        socketChannel.configureBlocking(false);
 
-            socketChannel.connect(new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()));
+        socketChannel.connect(new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()));
 
-            socketChannel.register(selector, SelectionKey.OP_CONNECT);
+        socketChannel.register(selector, SelectionKey.OP_CONNECT);
 
-            selectorLoop:
-            while (true) {
-                // Wait for an event one of the registered channels
-                selector.select();
+        selectorLoop:
+        while (true) {
+            // Wait for an event one of the registered channels
+            selector.select();
 
-                // Iterate over the set of keys for which events are available
-                Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
-                while (selectedKeys.hasNext()) {
-                    SelectionKey key = selectedKeys.next();
-                    selectedKeys.remove();
+            // Iterate over the set of keys for which events are available
+            Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
+            while (selectedKeys.hasNext()) {
+                SelectionKey key = selectedKeys.next();
+                selectedKeys.remove();
 
-                    if (!key.isValid()) {
-                        continue;
+                if (!key.isValid()) {
+                    continue;
+                }
+
+                // Check what event is available and deal with it
+                if (key.isConnectable()) {
+                    SocketChannel channel = (SocketChannel) key.channel();
+
+                    // Finish the connection. If the connection operation failed
+                    // this will raise an IOException.
+                    try {
+                        channel.finishConnect();
+                    } catch (IOException e) {
+                        // Cancel the channel's registration with our selector
+                        e.printStackTrace();
+                        key.cancel();
+                        break selectorLoop;
                     }
 
-                    // Check what event is available and deal with it
-                    if (key.isConnectable()) {
-                        SocketChannel channel = (SocketChannel) key.channel();
+                    // Register an interest in writing on this channel
+                    //key.interestOps(SelectionKey.OP_WRITE);
+                    key.interestOps(0);
+                    channel.register(selector, SelectionKey.OP_WRITE);
+                } else if (key.isReadable()) {
 
-                        // Finish the connection. If the connection operation failed
-                        // this will raise an IOException.
-                        try {
-                            channel.finishConnect();
-                        } catch (IOException e) {
-                            // Cancel the channel's registration with our selector
-                            e.printStackTrace();
-                            key.cancel();
-                            break selectorLoop;
-                        }
+                    SocketChannel channel = (SocketChannel) key.channel();
 
-                        // Register an interest in writing on this channel
-                        //key.interestOps(SelectionKey.OP_WRITE);
-                        key.interestOps(0);
-                        channel.register(selector, SelectionKey.OP_WRITE);
-                    } else if (key.isReadable()) {
-
-                        SocketChannel channel = (SocketChannel) key.channel();
-
-                        // Attempt to read off the channel
-                        int numRead;
-                        try {
-                            numRead = channel.read(responseBuffer);
-                        } catch (IOException e) {
-                            // The remote forcibly closed the connection, cancel
-                            // the selection key and close the channel.
-                            key.cancel();
-                            channel.close();
-                            break selectorLoop;
-                        }
-
-                        if (!responseBuffer.hasRemaining()) {
-                            // Entire response consumed
-                            key.channel().close();
-                            key.cancel();
-                            break selectorLoop;
-                        }
-
-                        if (numRead == -1) {
-                            // Remote entity shut the socket down cleanly. Do the
-                            // same from our end and cancel the channel.
-                            key.channel().close();
-                            key.cancel();
-                            break selectorLoop;
-                        }
-
-                    } else if (key.isWritable()) {
-                        SocketChannel channel = (SocketChannel) key.channel();
-
-                        ByteBuffer requestBuffer = ByteBuffer.wrap(BaseSocketTest.REQUEST);
-
-                        while (requestBuffer.remaining() > 0) {
-                            channel.write(requestBuffer);
-                        }
-
-                        key.interestOps(0);
-                        channel.register(selector, SelectionKey.OP_READ);
-
+                    // Attempt to read off the channel
+                    int numRead;
+                    try {
+                        numRead = channel.read(responseBuffer);
+                    } catch (IOException e) {
+                        // The remote forcibly closed the connection, cancel
+                        // the selection key and close the channel.
+                        key.cancel();
+                        channel.close();
+                        break selectorLoop;
                     }
+
+                    if (!responseBuffer.hasRemaining()) {
+                        // Entire response consumed
+                        key.channel().close();
+                        key.cancel();
+                        break selectorLoop;
+                    }
+
+                    if (numRead == -1) {
+                        // Remote entity shut the socket down cleanly. Do the
+                        // same from our end and cancel the channel.
+                        key.channel().close();
+                        key.cancel();
+                        break selectorLoop;
+                    }
+
+                } else if (key.isWritable()) {
+                    SocketChannel channel = (SocketChannel) key.channel();
+
+                    ByteBuffer requestBuffer = ByteBuffer.wrap(BaseSocketTest.REQUEST);
+
+                    while (requestBuffer.remaining() > 0) {
+                        channel.write(requestBuffer);
+                    }
+
+                    key.interestOps(0);
+                    channel.register(selector, SelectionKey.OP_READ);
 
                 }
 
             }
 
-            Assert.assertArrayEquals(BaseSocketTest.RESPONSE, responseBuffer.array());
-        } finally {
-            SnifferSocketImplFactory.uninstall();
-            SniffySelectorProvider.uninstall();
         }
+
+        Assert.assertArrayEquals(BaseSocketTest.RESPONSE, responseBuffer.array());
 
     }
 
     @Test
     public void testInstall() throws Exception {
 
-        SnifferSocketImplFactory.uninstall();
-        SnifferSocketImplFactory.install();
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        SniffyConfiguration.INSTANCE.setMonitorNio(true);
+        SniffyConfiguration.INSTANCE.setSocketCaptureEnabled(true);
 
-        SniffySelectorProviderModule.initialize();
-        SniffySelectorProvider.uninstall();
-        SniffySelectorProvider.install();
+        Sniffy.initialize();
 
-        try {
-            try (Spy<?> s = Sniffy.spy()) {
+        try (Spy<?> s = Sniffy.spy()) {
 
-                performSocketOperation();
+            performSocketOperation();
 
-                Thread thread = new Thread(this::performSocketOperation);
-                thread.start();
-                thread.join();
+            Thread thread = new Thread(this::performSocketOperation);
+            thread.start();
+            thread.join();
 
-                // Current thread socket operations
+            // Current thread socket operations
 
-                assertEquals(1, (long) s.getSocketOperations(CURRENT, true).entrySet().size());
+            assertEquals(1, (long) s.getSocketOperations(CURRENT, true).entrySet().size());
 
-                s.getSocketOperations(CURRENT, true).values().stream().findAny().ifPresent((socketStats) -> {
-                    Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
-                    Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
-                });
+            s.getSocketOperations(CURRENT, true).values().stream().findAny().ifPresent((socketStats) -> {
+                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
+            });
 
-                // Other threads socket operations
+            // Other threads socket operations
 
-                assertEquals(1, s.getSocketOperations(OTHERS, true).entrySet().stream().count());
+            assertEquals(1, s.getSocketOperations(OTHERS, true).entrySet().stream().count());
 
-                s.getSocketOperations(OTHERS, true).values().stream().findAny().ifPresent((socketStats) -> {
-                    Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
-                    Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
-                });
+            s.getSocketOperations(OTHERS, true).values().stream().findAny().ifPresent((socketStats) -> {
+                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
+            });
 
-                // Any threads socket operations
+            // Any threads socket operations
 
-                assertEquals(2, s.getSocketOperations(ANY, true).entrySet().stream().count());
+            assertEquals(2, s.getSocketOperations(ANY, true).entrySet().stream().count());
 
-                s.getSocketOperations(OTHERS, true).values().stream().forEach((socketStats) -> {
-                    Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
-                    Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
-                });
+            s.getSocketOperations(OTHERS, true).values().stream().forEach((socketStats) -> {
+                Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
+                Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
+            });
 
-            }
-        } finally {
-            SnifferSocketImplFactory.uninstall();
-            SniffySelectorProvider.uninstall();
         }
 
     }
@@ -206,67 +194,64 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
         long prevTimeStamp = System.currentTimeMillis();
 
-        try {
-            try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
+        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
 
-                performSocketOperation();
+            performSocketOperation();
 
-                Thread thread = new Thread(this::performSocketOperation);
-                thread.start();
-                thread.join();
+            Thread thread = new Thread(this::performSocketOperation);
+            thread.start();
+            thread.join();
 
-                Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
+            Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
 
-                for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
+            assertEquals(1, networkTraffic.size());
 
-                    SocketMetaData socketMetaData = entry.getKey();
+            for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
 
-                    Protocol protocol = socketMetaData.getProtocol(); // say TCP
-                    String hostName = socketMetaData.getAddress().getHostName(); // say "hostname.acme.com"
-                    int port = socketMetaData.getAddress().getPort(); // say 443
+                SocketMetaData socketMetaData = entry.getKey();
 
-                    assertEquals(Protocol.TCP, protocol);
-                    assertEquals(localhost.getHostName(), hostName);
-                    assertEquals(echoServerRule.getBoundPort(), port);
+                Protocol protocol = socketMetaData.getProtocol(); // say TCP
+                String hostName = socketMetaData.getAddress().getHostName(); // say "hostname.acme.com"
+                int port = socketMetaData.getAddress().getPort(); // say 443
 
-                    String stackTrace = socketMetaData.getStackTrace();// optional stacktrace for operation as a String
-                    ThreadMetaData threadMetaData = socketMetaData.getThreadMetaData();// information about thread which performed the operation
+                assertEquals(Protocol.TCP, protocol);
+                assertEquals(localhost.getHostName(), hostName);
+                assertEquals(echoServerRule.getBoundPort(), port);
 
-                    assertNull(stackTrace);
-                    assertNull(threadMetaData);
+                String stackTrace = socketMetaData.getStackTrace();// optional stacktrace for operation as a String
+                ThreadMetaData threadMetaData = socketMetaData.getThreadMetaData();// information about thread which performed the operation
 
-                    boolean nextPacketMustBeSent = true;
+                assertNull(stackTrace);
+                assertNull(threadMetaData);
 
-                    List<NetworkPacket> networkPackets = entry.getValue();
+                boolean nextPacketMustBeSent = true;
 
-                    assertEquals(4, networkPackets.size());
+                List<NetworkPacket> networkPackets = entry.getValue();
 
-                    for (NetworkPacket networkPacket : networkPackets) {
+                assertEquals(4, networkPackets.size());
 
-                        long timestamp = networkPacket.getTimestamp(); // timestamp of operation
-                        byte[] data = networkPacket.getBytes(); // captured traffic
+                for (NetworkPacket networkPacket : networkPackets) {
 
-                        assertTrue(timestamp >= prevTimeStamp);
-                        prevTimeStamp = timestamp;
+                    long timestamp = networkPacket.getTimestamp(); // timestamp of operation
+                    byte[] data = networkPacket.getBytes(); // captured traffic
 
-                        assertEquals(nextPacketMustBeSent, networkPacket.isSent());
+                    assertTrue(timestamp >= prevTimeStamp);
+                    prevTimeStamp = timestamp;
 
-                        if (nextPacketMustBeSent) {
-                            assertArrayEquals(REQUEST, data);
-                        } else {
-                            assertArrayEquals(RESPONSE, data);
-                        }
+                    assertEquals(nextPacketMustBeSent, networkPacket.isSent());
 
-                        nextPacketMustBeSent = !nextPacketMustBeSent;
-
+                    if (nextPacketMustBeSent) {
+                        assertArrayEquals(REQUEST, data);
+                    } else {
+                        assertArrayEquals(RESPONSE, data);
                     }
+
+                    nextPacketMustBeSent = !nextPacketMustBeSent;
 
                 }
 
             }
-        } finally {
-            SnifferSocketImplFactory.uninstall();
-            SniffySelectorProvider.uninstall();
+
         }
 
     }
@@ -291,88 +276,93 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
         long prevTimeStamp = System.currentTimeMillis();
 
-        try {
-            try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
+        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
 
-                try {
-                    SocketChannel client = SocketChannel.open(new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()));
+            try {
+                SocketChannel client = SocketChannel.open(new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()));
 
-                    ByteBuffer requestBufferStart = ByteBuffer.wrap(REQUEST_START);
-                    ByteBuffer requestBufferEnd = ByteBuffer.wrap(REQUEST_END);
-                    ByteBuffer[] requestBuffers = new ByteBuffer[] {
-                            ByteBuffer.allocate(0),
-                            requestBufferStart,
-                            requestBufferEnd,
-                            ByteBuffer.allocate(0)
-                    };
+                ByteBuffer requestBufferStart = ByteBuffer.wrap(REQUEST_START);
+                ByteBuffer requestBufferEnd = ByteBuffer.wrap(REQUEST_END);
+                ByteBuffer[] requestBuffers = new ByteBuffer[] {
+                        ByteBuffer.allocate(0),
+                        requestBufferStart,
+                        requestBufferEnd,
+                        ByteBuffer.allocate(0)
+                };
 
-                    ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
+                ByteBuffer responseBufferStart = ByteBuffer.allocate(RESPONSE_START.length);
+                ByteBuffer responseBufferEnd = ByteBuffer.allocate(RESPONSE_END.length);
+                ByteBuffer[] responseBuffers = new ByteBuffer[] {
+                        ByteBuffer.allocate(0),
+                        responseBufferStart,
+                        responseBufferEnd,
+                        ByteBuffer.allocate(0)
+                };
 
-                    client.write(requestBuffers);
-                    client.read(responseBuffer);
+                client.write(requestBuffers);
+                client.read(responseBuffers);
 
-                    client.close();
+                client.close();
 
-                    echoServerRule.joinThreads();
+                echoServerRule.joinThreads();
 
-                    Assert.assertArrayEquals(BaseSocketTest.REQUEST, echoServerRule.pollReceivedData());
-                    Assert.assertArrayEquals(BaseSocketTest.RESPONSE, responseBuffer.array());
-                } catch (IOException e) {
-                    fail(e.getMessage());
-                }
+                Assert.assertArrayEquals(REQUEST_FULL, echoServerRule.pollReceivedData());
+                Assert.assertArrayEquals(RESPONSE_START, responseBufferStart.array());
+                Assert.assertArrayEquals(RESPONSE_END, responseBufferEnd.array());
+            } catch (IOException e) {
+                fail(e.getMessage());
+            }
 
-                Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
+            Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
 
-                for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
+            assertEquals(1, networkTraffic.size());
 
-                    SocketMetaData socketMetaData = entry.getKey();
+            for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
 
-                    Protocol protocol = socketMetaData.getProtocol(); // say TCP
-                    String hostName = socketMetaData.getAddress().getHostName(); // say "hostname.acme.com"
-                    int port = socketMetaData.getAddress().getPort(); // say 443
+                SocketMetaData socketMetaData = entry.getKey();
 
-                    assertEquals(Protocol.TCP, protocol);
-                    assertEquals(localhost.getHostName(), hostName);
-                    assertEquals(echoServerRule.getBoundPort(), port);
+                Protocol protocol = socketMetaData.getProtocol(); // say TCP
+                String hostName = socketMetaData.getAddress().getHostName(); // say "hostname.acme.com"
+                int port = socketMetaData.getAddress().getPort(); // say 443
 
-                    String stackTrace = socketMetaData.getStackTrace();// optional stacktrace for operation as a String
-                    ThreadMetaData threadMetaData = socketMetaData.getThreadMetaData();// information about thread which performed the operation
+                assertEquals(Protocol.TCP, protocol);
+                assertEquals(localhost.getHostName(), hostName);
+                assertEquals(echoServerRule.getBoundPort(), port);
 
-                    assertNull(stackTrace);
-                    assertNull(threadMetaData);
+                String stackTrace = socketMetaData.getStackTrace();// optional stacktrace for operation as a String
+                ThreadMetaData threadMetaData = socketMetaData.getThreadMetaData();// information about thread which performed the operation
 
-                    boolean nextPacketMustBeSent = true;
+                assertNull(stackTrace);
+                assertNull(threadMetaData);
 
-                    List<NetworkPacket> networkPackets = entry.getValue();
+                boolean nextPacketMustBeSent = true;
 
-                    assertEquals(2, networkPackets.size());
+                List<NetworkPacket> networkPackets = entry.getValue();
 
-                    for (NetworkPacket networkPacket : networkPackets) {
+                assertEquals(2, networkPackets.size());
 
-                        long timestamp = networkPacket.getTimestamp(); // timestamp of operation
-                        byte[] data = networkPacket.getBytes(); // captured traffic
+                for (NetworkPacket networkPacket : networkPackets) {
 
-                        assertTrue(timestamp >= prevTimeStamp);
-                        prevTimeStamp = timestamp;
+                    long timestamp = networkPacket.getTimestamp(); // timestamp of operation
+                    byte[] data = networkPacket.getBytes(); // captured traffic
 
-                        assertEquals(nextPacketMustBeSent, networkPacket.isSent());
+                    assertTrue(timestamp >= prevTimeStamp);
+                    prevTimeStamp = timestamp;
 
-                        if (nextPacketMustBeSent) {
-                            assertArrayEquals(REQUEST, data);
-                        } else {
-                            assertArrayEquals(RESPONSE, data);
-                        }
+                    assertEquals(nextPacketMustBeSent, networkPacket.isSent());
 
-                        nextPacketMustBeSent = !nextPacketMustBeSent;
-
+                    if (nextPacketMustBeSent) {
+                        assertArrayEquals(REQUEST_FULL, data);
+                    } else {
+                        assertArrayEquals(RESPONSE_FULL, data);
                     }
+
+                    nextPacketMustBeSent = !nextPacketMustBeSent;
 
                 }
 
             }
-        } finally {
-            SnifferSocketImplFactory.uninstall();
-            SniffySelectorProvider.uninstall();
+
         }
 
     }
@@ -402,55 +392,50 @@ public class NioSniffySocketTest extends BaseSocketTest {
     }
 
     @Test
-    public void testPipe() {
+    public void testPipe() throws Exception {
 
-        try {
-            SniffySelectorProviderModule.initialize();
-            SniffySelectorProvider.uninstall();
-            SniffySelectorProvider.install();
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        SniffyConfiguration.INSTANCE.setMonitorNio(true);
+        SniffyConfiguration.INSTANCE.setSocketCaptureEnabled(true);
 
-            Pipe pipe = Pipe.open();
+        Sniffy.initialize();
 
-            Pipe.SourceChannel source = pipe.source();
-            Pipe.SinkChannel sink = pipe.sink();
+        Pipe pipe = Pipe.open();
 
-            final ByteBuffer targetBuffer = ByteBuffer.allocate(5);
-            final AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
+        Pipe.SourceChannel source = pipe.source();
+        Pipe.SinkChannel sink = pipe.sink();
 
-            Thread sourceThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        source.read(targetBuffer);
-                    } catch (IOException e) {
-                        exceptionHolder.set(e);
-                    }
+        final ByteBuffer targetBuffer = ByteBuffer.allocate(5);
+        final AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
+
+        Thread sourceThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    source.read(targetBuffer);
+                } catch (IOException e) {
+                    exceptionHolder.set(e);
                 }
-            });
+            }
+        });
 
-            Thread sinkThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        sink.write(ByteBuffer.wrap(new byte[]{1, 2, 3, 5, 8}));
-                    } catch (IOException e) {
-                        exceptionHolder.set(e);
-                    }
+        Thread sinkThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    sink.write(ByteBuffer.wrap(new byte[]{1, 2, 3, 5, 8}));
+                } catch (IOException e) {
+                    exceptionHolder.set(e);
                 }
-            });
+            }
+        });
 
-            sourceThread.start();
-            sinkThread.start();
-            sourceThread.join();
-            sinkThread.join();
+        sourceThread.start();
+        sinkThread.start();
+        sourceThread.join();
+        sinkThread.join();
 
-            assertArrayEquals(new byte[]{1, 2, 3, 5, 8}, targetBuffer.array());
-
-        } catch (Exception e) {
-            SniffySelectorProvider.uninstall();
-        } finally {
-            SniffySelectorProvider.uninstall();
-        }
+        assertArrayEquals(new byte[]{1, 2, 3, 5, 8}, targetBuffer.array());
 
     }
 
