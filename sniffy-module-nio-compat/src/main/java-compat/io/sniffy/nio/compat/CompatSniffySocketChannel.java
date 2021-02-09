@@ -8,6 +8,7 @@ import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.JVMUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
@@ -50,7 +51,11 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     @Override
     public InetSocketAddress getInetSocketAddress() {
         try {
-            return (InetSocketAddress) getRemoteAddress();
+            if (JVMUtil.getVersion() > 6) {
+                return (InetSocketAddress) getRemoteAddress();
+            } else {
+                return (InetSocketAddress) socket().getRemoteSocketAddress();
+            }
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -142,7 +147,9 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
                 synchronized (CompatSniffySocketChannel.class) {
                     if (null == defaultReceiveBufferSize) {
                         try {
-                            defaultReceiveBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF);
+                            defaultReceiveBufferSize = JVMUtil.getVersion() > 6 ?
+                                    (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF) :
+                                    socket().getReceiveBufferSize();
                         } catch (SocketException e) {
                             defaultReceiveBufferSize = 0;
                         } catch (IOException e) {
@@ -162,7 +169,9 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
                 synchronized (CompatSniffySocketChannel.class) {
                     if (null == defaultSendBufferSize) {
                         try {
-                            defaultSendBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF);
+                            defaultSendBufferSize = JVMUtil.getVersion() > 6 ?
+                                    (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF) :
+                                    socket().getSendBufferSize();
                         } catch (SocketException e) {
                             defaultSendBufferSize = 0;
                         } catch (IOException e) {
@@ -261,18 +270,59 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
+        int position = dst.position();
         try {
             return bytesDown = super.read(dst);
         } finally {
             sleepIfRequired(bytesDown);
             logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                dst.position(position);
+                byte[] buff = new byte[bytesDown];
+                dst.get(buff, 0, bytesDown);
+                logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+            }
         }
     }
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        estimateReceiveBuffer();
         checkConnectionAllowed(0);
-        return super.read(dsts, offset, length); // TODO: handle it
+        long start = System.currentTimeMillis();
+        long bytesDown = 0;
+
+        int[] positions = new int[length];
+        int[] remainings = new int[length];
+
+        for (int i = 0; i < length; i++) {
+            positions[i] = dsts[offset + i].position();
+            remainings[i] = dsts[offset + i].remaining();
+        }
+
+        try {
+            bytesDown = super.read(dsts, offset, length);
+            return bytesDown;
+        } finally {
+            while (bytesDown > Integer.MAX_VALUE) {
+                sleepIfRequiredForWrite(Integer.MAX_VALUE);
+                logSocket(System.currentTimeMillis() - start, Integer.MAX_VALUE, 0);
+                bytesDown -= Integer.MAX_VALUE;
+            }
+            logSocket(System.currentTimeMillis() - start, (int) bytesDown, 0);
+
+            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                for (int i = 0; i < length; i++) {
+                    dsts[offset + i].position(positions[i]);
+                    byte[] buff = new byte[remainings[i]];
+                    dsts[offset + i].get(buff, 0, remainings[i]);
+                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                }
+
+            }
+        }
     }
 
     @Override
@@ -281,19 +331,62 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int length = 0;
+
+        int position = src.position();
+
         try {
             length = super.write(src);
             return length;
         } finally {
             sleepIfRequiredForWrite(length);
             logSocket(System.currentTimeMillis() - start, 0, length);
+            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                src.position(position);
+                byte[] buff = new byte[length];
+                src.get(buff, 0, length);
+                logTraffic(true, Protocol.TCP, buff, 0, buff.length);
+            }
         }
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        estimateSendBuffer();
         checkConnectionAllowed(0);
-        return delegate.write(srcs, offset, length); // TODO: handle it
+        long start = System.currentTimeMillis();
+        long bytesUp = 0;
+
+        int[] positions = new int[length];
+        int[] remainings = new int[length];
+
+        for (int i = 0; i < length; i++) {
+            positions[i] = srcs[offset + i].position();
+            remainings[i] = srcs[offset + i].remaining();
+        }
+
+        try {
+            bytesUp = super.write(srcs, offset, length);
+            return bytesUp;
+        } finally {
+            while (bytesUp > Integer.MAX_VALUE) {
+                sleepIfRequiredForWrite(Integer.MAX_VALUE);
+                logSocket(System.currentTimeMillis() - start, 0, Integer.MAX_VALUE);
+                bytesUp -= Integer.MAX_VALUE;
+            }
+            sleepIfRequiredForWrite((int) bytesUp);
+            logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
+            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                for (int i = 0; i < length; i++) {
+                    srcs[offset + i].position(positions[i]);
+                    byte[] buff = new byte[remainings[i]];
+                    srcs[offset + i].get(buff, 0, remainings[i]);
+                    logTraffic(true, Protocol.TCP, buff, 0, buff.length);
+                }
+
+            }
+        }
     }
 
     @Override
