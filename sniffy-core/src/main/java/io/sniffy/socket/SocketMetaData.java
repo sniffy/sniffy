@@ -90,6 +90,7 @@ public class SocketMetaData {
         return connectionId;
     }
 
+    @Deprecated
     public String getStackTrace() {
         return stackTrace;
     }

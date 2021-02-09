@@ -33,14 +33,14 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
                     maximumWeightedCapacity(Long.MAX_VALUE).
                     build();
 
-    protected void addNetworkTraffic(SocketMetaData socketMetaData, boolean sent, long timestamp, byte[] traffic, int off, int len) {
+    protected void addNetworkTraffic(SocketMetaData socketMetaData, boolean sent, long timestamp, String stackTrace, byte[] traffic, int off, int len) {
         Deque<NetworkPacket> networkPackets = networkTraffic.get(socketMetaData);
         if (null == networkPackets) {
             networkTraffic.putIfAbsent(socketMetaData, networkPackets = new LinkedList<NetworkPacket>());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
-        if (null == lastPacket || !lastPacket.combine(sent, timestamp, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-            networkPackets.add(new NetworkPacket(sent, timestamp, traffic, off, len));
+        if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
+            networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, traffic, off, len));
         }
     }
 

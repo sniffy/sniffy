@@ -15,8 +15,11 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class EchoServerRule extends ExternalResource implements Runnable {
+public class ConversationServerRule extends ExternalResource implements Runnable {
 
     private final Thread thread = new Thread(this);
 
@@ -28,10 +31,11 @@ public class EchoServerRule extends ExternalResource implements Runnable {
     private int boundPort = 10000;
     private ServerSocket serverSocket;
 
-    private final byte[] dataToBeSent;
-    private final Queue<ByteArrayOutputStream> receivedData = new ConcurrentLinkedQueue<>();
+    private final List<byte[]> dataToBeReceived;
+    private final List<byte[]> dataToBeSent;
 
-    public EchoServerRule(byte[] dataToBeSent) {
+    public ConversationServerRule(List<byte[]> dataToBeReceived, List<byte[]> dataToBeSent) {
+        this.dataToBeReceived = dataToBeReceived;
         this.dataToBeSent = dataToBeSent;
     }
 
@@ -93,18 +97,11 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     }
 
-    public byte[] pollReceivedData() {
-        return receivedData.poll().toByteArray();
-    }
-
     @Override
     public void run() {
 
         try {
             while (!Thread.interrupted()) {
-
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                receivedData.add(baos);
 
                 Socket socket = serverSocket.accept();
                 socket.setReuseAddress(true);
@@ -116,8 +113,10 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 InputStream inputStream = socket.getInputStream();
                 OutputStream outputStream = socket.getOutputStream();
 
-                Thread socketInputStreamReaderThread = new Thread(new SocketInputStreamReader(socket, inputStream, baos));
-                Thread socketOutputStreamWriterThread = new Thread(new SocketOutputStreamWriter(socket, outputStream));
+                Conversation conversation = new Conversation();
+
+                Thread socketInputStreamReaderThread = new Thread(new SocketInputStreamReader(socket, inputStream, dataToBeReceived, conversation));
+                Thread socketOutputStreamWriterThread = new Thread(new SocketOutputStreamWriter(socket, outputStream, dataToBeSent, conversation));
 
                 socketThreads.add(socketInputStreamReaderThread);
                 socketThreads.add(socketOutputStreamWriterThread);
@@ -159,27 +158,64 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     }
 
+    private class Conversation {
+
+        private volatile boolean receiving = true;
+
+        private synchronized void awaitSending() throws InterruptedException {
+            while (receiving) {
+                wait();
+            }
+        }
+
+        private synchronized void awaitReceiving() throws InterruptedException {
+            while (!receiving) {
+                wait();
+            }
+        }
+
+        private synchronized void sendingFinished() {
+            receiving = true;
+            notifyAll();
+        }
+
+        private synchronized void receivingFinished() {
+            receiving = false;
+            notifyAll();
+        }
+
+    }
+
     private class SocketInputStreamReader implements Runnable {
 
         private final Socket socket;
         private final InputStream inputStream;
-        private final ByteArrayOutputStream baos;
 
-        public SocketInputStreamReader(Socket socket, InputStream inputStream, ByteArrayOutputStream baos) {
+        private final List<byte[]> dataToBeReceived;
+
+        private final Conversation conversation;
+
+        public SocketInputStreamReader(Socket socket, InputStream inputStream, List<byte[]> dataToBeReceived, Conversation conversation) {
             this.socket = socket;
             this.inputStream = inputStream;
-            this.baos = baos;
+            this.dataToBeReceived = dataToBeReceived;
+            this.conversation = conversation;
         }
 
         @Override
         public void run() {
             try {
 
-                int read;
-
-                while ((read = inputStream.read()) != -1) {
-                    bytesReceivedCounter.incrementAndGet();
-                    baos.write(read);
+                for (byte[] dataToBeReceived : dataToBeReceived) {
+                    conversation.awaitReceiving();
+                    for (byte b : dataToBeReceived) {
+                        if (((byte) inputStream.read()) == b) {
+                            bytesReceivedCounter.incrementAndGet();
+                        } else {
+                            throw new RuntimeException("Incomplete request");
+                        }
+                    }
+                    conversation.receivingFinished();
                 }
 
                 socket.shutdownInput();
@@ -200,9 +236,17 @@ public class EchoServerRule extends ExternalResource implements Runnable {
         private final Socket socket;
         private final OutputStream outputStream;
 
-        private SocketOutputStreamWriter(Socket socket, OutputStream outputStream) {
+        private final List<byte[]> dataToBeSent;
+
+        private final Conversation conversation;
+
+        private SocketOutputStreamWriter(Socket socket, OutputStream outputStream, List<byte[]> dataToBeSent, Conversation conversation) {
             this.socket = socket;
             this.outputStream = outputStream;
+
+            this.dataToBeSent = dataToBeSent;
+            this.conversation = conversation;
+
         }
 
         @Override
@@ -210,8 +254,12 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
             try {
 
-                outputStream.write(dataToBeSent);
-                outputStream.flush();
+                for (byte[] dataToBeSent : dataToBeSent) {
+                    conversation.awaitSending();
+                    outputStream.write(dataToBeSent);
+                    outputStream.flush();
+                    conversation.sendingFinished();
+                }
 
                 socket.shutdownOutput();
             } catch (SocketException e) {
