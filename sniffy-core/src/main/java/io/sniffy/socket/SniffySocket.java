@@ -39,7 +39,11 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
         super(delegate);
         this.socketChannel = socketChannel;
         this.id = connectionId;
-        this.address = address;
+        if (null == address) {
+            this.address = (InetSocketAddress) delegate.getRemoteSocketAddress();
+        } else {
+            this.address = address;
+        }
     }
 
     @Override

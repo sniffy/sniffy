@@ -392,7 +392,8 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     @Override
     public Socket socket() {
         try {
-            return new SniffySocket(super.socket(), this, id, getInetSocketAddress());
+            return new SniffySocket(super.socket(), this, id,
+                JVMUtil.getVersion() > 6 ? getInetSocketAddress() : null);
         } catch (SocketException e) {
             e.printStackTrace();
             return super.socket();
