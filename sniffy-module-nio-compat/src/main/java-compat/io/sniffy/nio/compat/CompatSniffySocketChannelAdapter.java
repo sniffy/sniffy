@@ -2,9 +2,11 @@ package io.sniffy.nio.compat;
 
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionCopier;
+import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SocketChannelDelegate;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -36,6 +38,15 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate {
 
     private void copyFromDelegate() {
         socketChannelFieldsCopier.copy(delegate, this);
+    }
+
+    @Override
+    public FileDescriptor getFD() {
+        if (StackTraceExtractor.hasClassAndMethodInStackTrace("sun.nio.ch.FileChannelImpl", "transferToDirectly")) {
+            return null; // disable zero-copy in order to intercept traffic
+        } else {
+            return super.getFD();
+        }
     }
 
     @SuppressWarnings("Since15")
