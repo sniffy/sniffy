@@ -2,6 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
+import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -182,7 +183,13 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     @Override
     public FileDescriptor getFD() {
-        return selChImplDelegate.getFD();
+
+        if (StackTraceExtractor.hasClassAndMethodInStackTrace("sun.nio.ch.FileChannelImpl", "transferToDirectly")) {
+            return null; // disable zero-copy in order to intercept traffic
+        } else {
+            return selChImplDelegate.getFD();
+        }
+
     }
 
     @Override
