@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
-import static io.sniffy.util.StringUtil.splitBySlashAndDecode;
+import static io.sniffy.util.StringUtil.splitByLastSlashAndDecode;
 
 /**
  * @see SniffyFilter
@@ -33,6 +33,7 @@ import static io.sniffy.util.StringUtil.splitBySlashAndDecode;
 public class SniffyServlet extends HttpServlet {
 
     public static final String JAVASCRIPT_MIME_TYPE = "application/javascript";
+    public static final String JSON_MIME_TYPE = "application/json";
 
     public static final String TOP_SQL_URI_PREFIX = SNIFFY_URI_PREFIX + "/topsql/";
 
@@ -95,10 +96,11 @@ public class SniffyServlet extends HttpServlet {
 
             if (null == requestStatsJson) {
                 response.setStatus(HttpServletResponse.SC_OK);
-                response.setContentType(JAVASCRIPT_MIME_TYPE);
+                response.setContentType(JSON_MIME_TYPE);
                 response.flushBuffer();
             } else {
-                response.setContentType(JAVASCRIPT_MIME_TYPE);
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentType(JSON_MIME_TYPE);
                 response.setContentLength(requestStatsJson.length);
 
                 ServletOutputStream outputStream = response.getOutputStream();
@@ -110,7 +112,7 @@ public class SniffyServlet extends HttpServlet {
             addCorsHeaders(response);
 
             response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType(JAVASCRIPT_MIME_TYPE);
+            response.setContentType(JSON_MIME_TYPE);
 
             ConnectionsRegistry.INSTANCE.writeTo(response.getWriter());
 
@@ -131,11 +133,11 @@ public class SniffyServlet extends HttpServlet {
 
             if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
                 String connectionString = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
-                String[] split = splitBySlashAndDecode(connectionString);
+                String[] split = splitByLastSlashAndDecode(connectionString);
                 ConnectionsRegistry.INSTANCE.setSocketAddressStatus(split[0], Integer.parseInt(split[1]), status);
             } else if (path.startsWith(DATASOURCE_REGISTRY_URI_PREFIX)) {
                 String connectionString = path.substring(DATASOURCE_REGISTRY_URI_PREFIX.length());
-                String[] split = splitBySlashAndDecode(connectionString);
+                String[] split = splitByLastSlashAndDecode(connectionString);
                 ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
             } else if (path.startsWith(PERSISTENT_REGISTRY_URI_PREFIX)) {
 
@@ -165,7 +167,7 @@ public class SniffyServlet extends HttpServlet {
             } else {
 
                 response.setStatus(HttpServletResponse.SC_OK);
-                response.setContentType(JAVASCRIPT_MIME_TYPE);
+                response.setContentType(JSON_MIME_TYPE);
 
                 JsonArray arrayJson = new JsonArray();
 

@@ -15,7 +15,7 @@ import java.io.InputStreamReader;
 import java.lang.instrument.Instrumentation;
 import java.net.InetSocketAddress;
 
-import static io.sniffy.util.StringUtil.splitBySlashAndDecode;
+import static io.sniffy.util.StringUtil.splitByLastSlashAndDecode;
 
 public class SniffyAgent {
 
@@ -79,7 +79,7 @@ public class SniffyAgent {
 
                 addCorsHeaders(httpExchange);
 
-                httpExchange.getResponseHeaders().add("Content-Type", "application/javascript");
+                httpExchange.getResponseHeaders().add("Content-Type", "application/json");
                 httpExchange.sendResponseHeaders(200, 0);
 
                 ConnectionsRegistry.INSTANCE.writeTo(httpExchange.getResponseBody(), "UTF-8");
@@ -103,11 +103,11 @@ public class SniffyAgent {
 
                 if (path.startsWith(SOCKET_REGISTRY_URI_PREFIX)) {
                     String connectionString = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
-                    String[] split = splitBySlashAndDecode(connectionString);
+                    String[] split = splitByLastSlashAndDecode(connectionString);
                     ConnectionsRegistry.INSTANCE.setSocketAddressStatus(split[0], Integer.parseInt(split[1]), status);
                 } else if (path.startsWith(DATASOURCE_REGISTRY_URI_PREFIX)) {
                     String connectionString = path.substring(DATASOURCE_REGISTRY_URI_PREFIX.length());
-                    String[] split = splitBySlashAndDecode(connectionString);
+                    String[] split = splitByLastSlashAndDecode(connectionString);
                     ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
                 } else if (path.startsWith(PERSISTENT_REGISTRY_URI_PREFIX)) {
 
