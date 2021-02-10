@@ -347,7 +347,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     @Override
     public Socket socket() {
         try {
-            return new SniffySocket(super.socket(), this, connectionId);
+            return new SniffySocket(super.socket(), this, connectionId, getInetSocketAddress());
         } catch (SocketException e) {
             e.printStackTrace();
             return super.socket();

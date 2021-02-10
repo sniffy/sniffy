@@ -6,6 +6,7 @@ import io.sniffy.SpyConfiguration;
 import io.sniffy.ThreadMetaData;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.*;
+import io.sniffy.util.OSUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.yandex.qatools.allure.annotations.Issue;
@@ -197,6 +198,106 @@ public class NioSniffySocketTest extends BaseSocketTest {
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
 
             performSocketOperation();
+
+            Thread thread = new Thread(this::performSocketOperation);
+            thread.start();
+            thread.join();
+
+            Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
+
+            assertEquals(1, networkTraffic.size());
+
+            for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
+
+                SocketMetaData socketMetaData = entry.getKey();
+
+                Protocol protocol = socketMetaData.getProtocol(); // say TCP
+                String hostName = socketMetaData.getAddress().getHostName(); // say "hostname.acme.com"
+                int port = socketMetaData.getAddress().getPort(); // say 443
+
+                assertEquals(Protocol.TCP, protocol);
+                assertEquals(localhost.getHostName(), hostName);
+                assertEquals(echoServerRule.getBoundPort(), port);
+
+                String stackTrace = socketMetaData.getStackTrace();// optional stacktrace for operation as a String
+                ThreadMetaData threadMetaData = socketMetaData.getThreadMetaData();// information about thread which performed the operation
+
+                assertNull(stackTrace);
+                assertNull(threadMetaData);
+
+                boolean nextPacketMustBeSent = true;
+
+                List<NetworkPacket> networkPackets = entry.getValue();
+
+                assertEquals(4, networkPackets.size());
+
+                for (NetworkPacket networkPacket : networkPackets) {
+
+                    long timestamp = networkPacket.getTimestamp(); // timestamp of operation
+                    byte[] data = networkPacket.getBytes(); // captured traffic
+
+                    assertTrue(timestamp >= prevTimeStamp);
+                    prevTimeStamp = timestamp;
+
+                    assertEquals(nextPacketMustBeSent, networkPacket.isSent());
+
+                    if (nextPacketMustBeSent) {
+                        assertArrayEquals(REQUEST, data);
+                    } else {
+                        assertArrayEquals(RESPONSE, data);
+                    }
+
+                    nextPacketMustBeSent = !nextPacketMustBeSent;
+
+                }
+
+            }
+
+        }
+
+    }
+
+    @Test
+    @Issue("issues/417")
+    public void testCaptureTrafficWithUrgentData() throws Exception {
+
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        SniffyConfiguration.INSTANCE.setMonitorNio(true);
+        SniffyConfiguration.INSTANCE.setSocketCaptureEnabled(true);
+
+        Sniffy.initialize();
+
+        long prevTimeStamp = System.currentTimeMillis();
+
+        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
+
+            try {
+                SocketChannel client = SocketChannel.open(new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()));
+
+                ByteBuffer requestBuffer = ByteBuffer.wrap(BaseSocketTest.REQUEST);
+                requestBuffer.limit(BaseSocketTest.REQUEST.length - 1);
+                ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
+
+                client.write(requestBuffer);
+                client.socket().sendUrgentData(REQUEST[REQUEST.length - 1]);
+                // TODO: also test read and write via SniffySocket input and output streams
+                requestBuffer.clear();
+                client.read(responseBuffer);
+
+                client.close();
+
+                echoServerRule.joinThreads();
+
+                // On MacOS urgent data seems to be lost intermittently
+                // TODO: investigate why urgent data is lost on MacOS
+                if (!OSUtil.isMac()) {
+                    assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
+                }
+
+                Assert.assertArrayEquals(BaseSocketTest.RESPONSE, responseBuffer.array());
+            } catch (IOException e) {
+                fail(e.getMessage());
+            }
 
             Thread thread = new Thread(this::performSocketOperation);
             thread.start();
