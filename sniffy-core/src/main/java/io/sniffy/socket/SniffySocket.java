@@ -35,10 +35,15 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     private volatile Integer connectionStatus;
 
-    public SniffySocket(Socket delegate, SocketChannel socketChannel, int connectionId) throws SocketException {
+    public SniffySocket(Socket delegate, SocketChannel socketChannel, int connectionId, InetSocketAddress address) throws SocketException {
         super(delegate);
         this.socketChannel = socketChannel;
         this.id = connectionId;
+        if (null == address) {
+            this.address = (InetSocketAddress) delegate.getRemoteSocketAddress();
+        } else {
+            this.address = address;
+        }
     }
 
     @Override
@@ -215,7 +220,14 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     @Override
     public void sendUrgentData(int data) throws IOException {
-        super.sendUrgentData(data); // TODO: log traffic and do stuff
+        long start = System.currentTimeMillis();
+        try {
+            checkConnectionAllowed(1);
+            super.sendUrgentData(data);
+        } finally {
+            logSocket(System.currentTimeMillis() - start, 0, 1);
+            logTraffic(true, Protocol.TCP, new byte[]{(byte) data}, 0, 1);
+        }
     }
 
     // TODO: evaluate other methods
