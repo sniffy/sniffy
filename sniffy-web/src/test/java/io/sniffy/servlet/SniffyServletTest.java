@@ -110,7 +110,7 @@ public class SniffyServletTest extends BaseTest {
         sniffyServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("application/javascript", response.getContentType());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentAsByteArray().length > 0);
 
         assertTrue(response.getContentAsString().contains("\"sockets\":"));
@@ -278,7 +278,7 @@ public class SniffyServletTest extends BaseTest {
         sniffyServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("application/javascript", response.getContentType());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":301,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":0,\"bytesUp\":0}]}", response.getContentAsString());
 
@@ -319,7 +319,7 @@ public class SniffyServletTest extends BaseTest {
         sniffyServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("application/javascript", response.getContentType());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("{\"timeToFirstByte\":21,\"time\":42," +
                 "\"executedQueries\":[{\"query\":\"SELECT 1 FROM DUAL\",\"stackTrace\":\"\",\"time\":301,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":200,\"bytesUp\":300}]," +
@@ -351,7 +351,7 @@ public class SniffyServletTest extends BaseTest {
         sniffyServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("application/javascript", response.getContentType());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
 
         assertEquals(exception.getClass().getName(), JsonPath.read(response.getContentAsString(), "$.exceptions[0].class"));
@@ -383,7 +383,7 @@ public class SniffyServletTest extends BaseTest {
         sniffyServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("application/javascript", response.getContentType());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentLength() > 0);
         assertEquals("{\"timeToFirstByte\":21,\"time\":42,\"executedQueries\":[{\"query\":\"SELECT \\r\\n\\\"1\\\" FROM 'DUAL'\",\"stackTrace\":\"io.sniffy.Test.method(Test.java:99)\",\"time\":301,\"invocations\":1,\"rows\":0,\"type\":\"SELECT\",\"bytesDown\":0,\"bytesUp\":0}]}", response.getContentAsString());
 
@@ -453,7 +453,7 @@ public class SniffyServletTest extends BaseTest {
         sniffyServlet.service(request, response);
 
         assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-        assertEquals("application/javascript", response.getContentType());
+        assertEquals("application/json", response.getContentType());
         assertTrue(response.getContentAsByteArray().length > 0);
 
         assertEquals(1, (int) JsonPath.read(response.getContentAsString(), "$.length()"));

@@ -62,12 +62,20 @@ public class StringUtil {
         return sb.toString();
     }
 
-    public static String[] splitBySlashAndDecode(String connectionString) throws UnsupportedEncodingException {
-        String[] split = connectionString.split("/");
-        for (int i = 0; i < split.length; i++) {
-            split[i] = URLDecoder.decode(URLDecoder.decode(split[i], "UTF-8"));
+    public static String[] splitByLastSlashAndDecode(String connectionString) throws UnsupportedEncodingException {
+        int lastIndexOf = connectionString.lastIndexOf("/");
+        if (lastIndexOf >= 0) {
+            return new String[] {
+                    doubleURLDecode(connectionString.substring(0, lastIndexOf)),
+                    lastIndexOf + 1 >= connectionString.length() ? "" : doubleURLDecode(connectionString.substring(lastIndexOf + 1))
+            };
+        } else {
+            return new String[] {doubleURLDecode(connectionString)};
         }
-        return split;
+    }
+
+    public static String doubleURLDecode(String string) throws UnsupportedEncodingException {
+        return URLDecoder.decode(URLDecoder.decode(string, "UTF-8"), "UTF-8");
     }
 
 }
