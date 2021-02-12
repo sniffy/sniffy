@@ -25,7 +25,7 @@ public class StatementMetaData {
     private final int hashCode;
 
     public StatementMetaData(String sql, SqlStatement query, String stackTrace, Thread ownerThread) {
-        this(sql, query, stackTrace, new ThreadMetaData(ownerThread));
+        this(sql, query, stackTrace, ThreadMetaData.create(ownerThread));
     }
 
     public StatementMetaData(String sql, SqlStatement query, String stackTrace, ThreadMetaData threadMetaData) {
