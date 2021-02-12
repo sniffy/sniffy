@@ -181,8 +181,8 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
                             reducedTraffic.put(reducedSocketMetaData, reducedNetworkPackets);
                         }
 
-                        if (getSpyConfiguration().isCaptureStackTraces() && !groupingOptions.isGroupByStackTrace()
-                                || groupingOptions.isGroupByThread()) {
+                        if ((getSpyConfiguration().isCaptureStackTraces() && !groupingOptions.isGroupByStackTrace())
+                                || !groupingOptions.isGroupByThread()) {
                             byte[] bytes = networkPacket.getBytes();
                             networkPacket = new NetworkPacket(
                                     networkPacket.isSent(),
