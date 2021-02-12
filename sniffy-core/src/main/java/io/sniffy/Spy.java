@@ -152,56 +152,65 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
      */
     public Map<SocketMetaData, List<NetworkPacket>> getNetworkTraffic(ThreadMatcher threadMatcher, AddressMatcher addressMatcher, GroupingOptions groupingOptions) {
 
-        Map<SocketMetaData, List<NetworkPacket>> networkTraffic = new LinkedHashMap<SocketMetaData, List<NetworkPacket>>();
+        Map<SocketMetaData, List<NetworkPacket>> reducedTraffic = new LinkedHashMap<SocketMetaData, List<NetworkPacket>>();
+
         for (Map.Entry<SocketMetaData, Deque<NetworkPacket>> entry : this.networkTraffic.ascendingMap().entrySet()) {
+
             SocketMetaData socketMetaData = entry.getKey();
-            if (threadMatcher.matches(socketMetaData.getThreadMetaData()) && addressMatcher.matches(socketMetaData.getAddress())) {
+            Deque<NetworkPacket> networkPackets = entry.getValue();
 
-                if (!groupingOptions.isGroupByConnection() || !groupingOptions.isGroupByStackTrace() || !groupingOptions.isGroupByThread()) {
-                    SocketMetaData originalSocketMetaData = socketMetaData;
-                    socketMetaData = new SocketMetaData(
-                            originalSocketMetaData.getProtocol(), originalSocketMetaData.getAddress(),
-                            !groupingOptions.isGroupByConnection() ? -1 : originalSocketMetaData.getConnectionId(),
-                            !groupingOptions.isGroupByStackTrace() ? null : originalSocketMetaData.getStackTrace(),
-                            !groupingOptions.isGroupByThread() ? null : originalSocketMetaData.getThreadMetaData()
-                    );
+            if (addressMatcher.matches(socketMetaData.getAddress()) &&
+                    (null == socketMetaData.getThreadMetaData() || threadMatcher.matches(socketMetaData.getThreadMetaData()))) {
+
+                for (NetworkPacket networkPacket : networkPackets) {
+
+                    if (threadMatcher.matches(networkPacket.getThreadMetaData())) {
+
+                        SocketMetaData reducedSocketMetaData = new SocketMetaData(
+                                socketMetaData.getProtocol(),
+                                socketMetaData.getAddress(),
+                                groupingOptions.isGroupByConnection() ? socketMetaData.getConnectionId() : -1,
+                                groupingOptions.isGroupByStackTrace() ? networkPacket.getStackTrace() : null,
+                                groupingOptions.isGroupByThread() ? networkPacket.getThreadMetaData() : null
+                        );
+
+                        List<NetworkPacket> reducedNetworkPackets = reducedTraffic.get(reducedSocketMetaData);
+                        //noinspection Java8MapApi
+                        if (null == reducedNetworkPackets) {
+                            reducedNetworkPackets = new ArrayList<NetworkPacket>();
+                            reducedTraffic.put(reducedSocketMetaData, reducedNetworkPackets);
+                        }
+
+                        if (getSpyConfiguration().isCaptureStackTraces() && !groupingOptions.isGroupByStackTrace()
+                                || groupingOptions.isGroupByThread()) {
+                            byte[] bytes = networkPacket.getBytes();
+                            networkPacket = new NetworkPacket(
+                                    networkPacket.isSent(),
+                                    networkPacket.getTimestamp(),
+                                    groupingOptions.isGroupByStackTrace() ? networkPacket.getStackTrace() : null,
+                                    groupingOptions.isGroupByThread() ? networkPacket.getThreadMetaData() : null,
+                                    bytes, 0, bytes.length
+                            );
+                        }
+
+                        if (reducedNetworkPackets.isEmpty()) {
+                            reducedNetworkPackets.add(networkPacket);
+                        } else {
+                            NetworkPacket lastPacket = reducedNetworkPackets.get(reducedNetworkPackets.size() - 1);
+                            if (!lastPacket.combine(networkPacket, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
+                                reducedNetworkPackets.add(networkPacket);
+                            }
+                        }
+
+                    }
 
                 }
 
-                List<NetworkPacket> networkPackets = networkTraffic.get(socketMetaData);
-                //noinspection Java8MapApi
-                if (null == networkPackets) {
-                    networkPackets = new ArrayList<NetworkPacket>();
-                    networkTraffic.put(socketMetaData, networkPackets);
-                }
-                networkPackets.addAll(entry.getValue());
             }
+
         }
 
-        for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
-            List<NetworkPacket> networkPackets = entry.getValue();
-
-            Collections.sort(networkPackets);
-
-            List<NetworkPacket> reducedNetworkPackets = new ArrayList<NetworkPacket>();
-            NetworkPacket lastNetworkPacket = null;
-
-            for (NetworkPacket networkPacket : networkPackets) {
-                if (!groupingOptions.isGroupByStackTrace() && null != networkPacket.getStackTrace()) {
-                    byte[] bytes = networkPacket.getBytes();
-                    networkPacket = new NetworkPacket(networkPacket.isSent(), networkPacket.getTimestamp(), null, bytes, 0, bytes.length);
-                }
-                if (null == lastNetworkPacket || !lastNetworkPacket.combine(networkPacket, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-                    reducedNetworkPackets.add(networkPacket);
-                    lastNetworkPacket = networkPacket;
-                }
-            }
-
-            entry.setValue(reducedNetworkPackets);
-
-        }
-
-        return networkTraffic;
+        return reducedTraffic;
 
     }
 

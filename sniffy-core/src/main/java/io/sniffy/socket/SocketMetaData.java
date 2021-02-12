@@ -28,11 +28,11 @@ public class SocketMetaData {
     }
 
     public SocketMetaData(InetSocketAddress address, int connectionId, String stackTrace, Thread ownerThread) {
-        this(Protocol.TCP, address, connectionId, stackTrace, new ThreadMetaData(ownerThread));
+        this(Protocol.TCP, address, connectionId, stackTrace, ThreadMetaData.create(ownerThread));
     }
 
     public SocketMetaData(Protocol protocol, InetSocketAddress address, int connectionId, String stackTrace, Thread ownerThread) {
-        this(protocol, address, connectionId, stackTrace, null == ownerThread ? null : new ThreadMetaData(ownerThread));
+        this(protocol, address, connectionId, stackTrace, null == ownerThread ? null : ThreadMetaData.create(ownerThread));
     }
 
     public SocketMetaData(Protocol protocol, InetSocketAddress address, int connectionId, String stackTrace, ThreadMetaData threadMetaData) {
@@ -95,6 +95,7 @@ public class SocketMetaData {
         return stackTrace;
     }
 
+    @Deprecated
     public ThreadMetaData getThreadMetaData() {
         return threadMetaData;
     }

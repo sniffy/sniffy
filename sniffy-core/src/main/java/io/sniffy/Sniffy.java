@@ -353,6 +353,8 @@ public class Sniffy {
 
     private static void notifyListeners(SocketMetaData socketMetaData, boolean sent, long timestamp, String stackTrace, byte[] traffic, int off, int len) {
 
+        ThreadMetaData threadMetaData = ThreadMetaData.create(Thread.currentThread());
+
         if (hasGlobalSpies) {
             Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
             while (iterator.hasNext()) {
@@ -361,7 +363,7 @@ public class Sniffy {
                 if (null == spy) {
                     iterator.remove();
                 } else {
-                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, traffic, off, len);
+                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
                 }
             }
         }
@@ -375,7 +377,7 @@ public class Sniffy {
                 if (null == spy) {
                     currentThreadSpies.remove(threadId);
                 } else {
-                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, traffic, off, len);
+                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
                 }
             }
         }
@@ -474,10 +476,12 @@ public class Sniffy {
 
     public static void logTraffic(int connectionId, InetSocketAddress address, boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean captureStackTraces) {
 
+        if (0 == len) return;
+
         // build stackTrace
         String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
 
-        SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId, null, Thread.currentThread()); // TODO: move stackTrace from SocketMetaData
+        SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId);
 
         // notify listeners
         notifyListeners(socketMetaData, sent, System.currentTimeMillis(), stackTrace, traffic, off, len);

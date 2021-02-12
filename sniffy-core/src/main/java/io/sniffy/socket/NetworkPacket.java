@@ -1,31 +1,38 @@
 package io.sniffy.socket;
 
+import io.sniffy.ThreadMetaData;
+
 import java.io.ByteArrayOutputStream;
 
 /**
  * @since 3.1.10
  */
-public class NetworkPacket implements Comparable<NetworkPacket> {
+public class NetworkPacket {
 
     private final boolean sent;
     private final long timestamp;
+
     private final String stackTrace;
+    private final ThreadMetaData threadMetaData;
+
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-    public NetworkPacket(boolean sent, long timestamp, String stackTrace, byte[] traffic, int off, int len) {
+    public NetworkPacket(boolean sent, long timestamp, String stackTrace, ThreadMetaData threadMetaData, byte[] traffic, int off, int len) {
         this.sent = sent;
         this.timestamp = timestamp;
         this.stackTrace = stackTrace;
+        this.threadMetaData = threadMetaData;
         this.baos.write(traffic, off, len);
     }
 
-    public boolean combine(boolean sent, long timestamp, String stackTrace, byte[] traffic, int off, int len, long maxDelay) {
+    public boolean combine(boolean sent, long timestamp, String stackTrace, ThreadMetaData threadMetaData, byte[] traffic, int off, int len, long maxDelay) {
         if (this.sent != sent) return false;
         if (timestamp - this.timestamp > maxDelay) return false;
         //noinspection StringEquality
         if (this.stackTrace != stackTrace) return false;
         //noinspection ConstantConditions
         if (null != this.stackTrace && !this.stackTrace.equals(stackTrace)) return false;
+        if (null != this.threadMetaData && !this.threadMetaData.equals(threadMetaData)) return false;
         this.baos.write(traffic, off, len);
         return true;
     }
@@ -37,6 +44,7 @@ public class NetworkPacket implements Comparable<NetworkPacket> {
         if (this.stackTrace != that.stackTrace) return false;
         //noinspection ConstantConditions
         if (null != this.stackTrace && !this.stackTrace.equals(that.stackTrace)) return false;
+        if (null != this.threadMetaData && !this.threadMetaData.equals(that.threadMetaData)) return false;
         byte[] bytes = that.getBytes();
         this.baos.write(bytes, 0, bytes.length);
         return true;
@@ -54,14 +62,12 @@ public class NetworkPacket implements Comparable<NetworkPacket> {
         return stackTrace;
     }
 
-    public byte[] getBytes() {
-        return baos.toByteArray();
+    public ThreadMetaData getThreadMetaData() {
+        return threadMetaData;
     }
 
-    @Override
-    public int compareTo(NetworkPacket that) {
-        //noinspection UseCompareMethod
-        return (timestamp < that.timestamp) ? -1 : ((timestamp == that.timestamp) ? 0 : 1);
+    public byte[] getBytes() {
+        return baos.toByteArray();
     }
 
 }

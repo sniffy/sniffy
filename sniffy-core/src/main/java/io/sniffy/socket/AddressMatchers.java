@@ -36,8 +36,10 @@ public class AddressMatchers {
         @Override
         public boolean matches(InetSocketAddress inetSocketAddress) {
             InetAddress inetAddress = inetSocketAddress.getAddress();
-            return (null == hostName || hostName.equalsIgnoreCase(inetAddress.getHostName()) || hostName.equalsIgnoreCase(inetAddress.getHostAddress())) &&
-                    (null == port || port == inetSocketAddress.getPort());
+            return (null == hostName ||
+                    (null != inetAddress && (hostName.equalsIgnoreCase(inetAddress.getHostName()) || hostName.equalsIgnoreCase(inetAddress.getHostAddress()))) ||
+                    (null == inetAddress && (hostName.equalsIgnoreCase(inetSocketAddress.getHostName()) || hostName.equalsIgnoreCase(inetSocketAddress.getHostString())))
+            ) && (null == port || port == inetSocketAddress.getPort());
         }
 
         @Override
