@@ -33,15 +33,15 @@ public class SniffyAgent {
     public static void premain(String args, Instrumentation instrumentation) throws Exception {
 
         int port = 5555;
-        boolean monitorNioEnabled = false;
 
         if (args.contains(",") || args.contains("=")) {
-            String[] parameters = args.split("=");
+            String[] parameters = args.split(",");
             for (String parameter : parameters) {
                 String[] kvSplit = parameter.split("=");
                 if (kvSplit.length == 2) {
                     if (kvSplit[0].equals("monitorNio")) {
-                        monitorNioEnabled = Boolean.parseBoolean(kvSplit[1]);
+                        boolean monitorNioEnabled = Boolean.parseBoolean(kvSplit[1]);
+                        SniffyConfiguration.INSTANCE.setMonitorNio(monitorNioEnabled);
                     } else if (kvSplit[0].equals("sniffyPort")) {
                         port = Integer.parseInt(kvSplit[1]);
                     }
@@ -52,7 +52,6 @@ public class SniffyAgent {
         }
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
-        SniffyConfiguration.INSTANCE.setMonitorNio(monitorNioEnabled);
         Sniffy.initialize();
         startServer(port);
     }
