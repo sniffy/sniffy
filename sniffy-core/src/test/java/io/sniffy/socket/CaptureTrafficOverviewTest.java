@@ -51,7 +51,7 @@ public class CaptureTrafficOverviewTest extends BaseSocketTest {
                 assertTrue(networkPackets.get(0).isSent());
 
                 assertArrayEquals(RESPONSE, networkPackets.get(1).getBytes());
-                assertFalse(networkPackets.get(0).isSent());
+                assertFalse(networkPackets.get(1).isSent());
 
             }
 
