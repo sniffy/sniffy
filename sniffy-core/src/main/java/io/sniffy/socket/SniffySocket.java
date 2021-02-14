@@ -56,6 +56,25 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
         return this.address;
     }
 
+    private boolean firstPacketSent;
+    private InetSocketAddress proxiedAddress;
+
+    public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
+        this.proxiedAddress = proxiedAddress;
+    }
+
+    public InetSocketAddress getProxiedInetSocketAddress() {
+        return proxiedAddress;
+    }
+
+    public void setFirstPacketSent(boolean firstPacketSent) {
+        this.firstPacketSent = firstPacketSent;
+    }
+
+    public boolean isFirstPacketSent() {
+        return firstPacketSent;
+    }
+
     private void estimateReceiveBuffer() {
         if (-1 == receiveBufferSize) {
             if (null == defaultReceiveBufferSize) {

@@ -104,6 +104,9 @@ public enum ConnectionsRegistry implements Runnable {
         InetAddress inetAddress = inetSocketAddress.getAddress();
 
         if (null != sniffyNetworkConnection && !threadLocal) {
+
+            // register given SniffyNetworkConnetion instance (SocketImpl or SocketChannel or similar) in sniffySocketImpls map
+
             {
                 AbstractMap.SimpleEntry<String, Integer> hostNamePortPair = new AbstractMap.SimpleEntry<String, Integer>(inetAddress.getHostName(), inetSocketAddress.getPort());
                 Collection<Reference<SniffyNetworkConnection>> sniffySockets = sniffySocketImpls.get(hostNamePortPair);
@@ -134,6 +137,7 @@ public enum ConnectionsRegistry implements Runnable {
             }
         }
 
+        // search for given address in discoveredAddresses map (global or thread local)
         for (Map.Entry<Map.Entry<String, Integer>, Integer> entry : discoveredAddresses.entrySet()) {
 
             String hostName = entry.getKey().getKey();
@@ -147,8 +151,10 @@ public enum ConnectionsRegistry implements Runnable {
 
         }
 
+        // store given address with 0 connection status (allowed without delay) to discoveredAddresses map (global)
         setSocketAddressStatus(inetSocketAddress.getHostName(), inetSocketAddress.getPort(), 0);
 
+        // return 0 - connection allowed without delay
         return 0;
 
     }

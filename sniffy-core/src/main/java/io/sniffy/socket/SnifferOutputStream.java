@@ -5,7 +5,9 @@ import io.sniffy.registry.ConnectionsRegistry;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ConnectException;
+import java.net.InetSocketAddress;
 import java.net.SocketOptions;
+import java.nio.charset.Charset;
 
 /**
  * @since 3.1
@@ -78,6 +80,68 @@ class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b) throws IOException {
+
+        if (!snifferSocket.isFirstPacketSent()) {
+
+            InetSocketAddress proxiedInetSocketAddress = null;
+
+            try {
+                @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(b, Charset.forName("US-ASCII"));
+
+                int connectIx = potentialRequest.indexOf("CONNECT ");
+
+                if (0 == connectIx) {
+                    int crIx = potentialRequest.indexOf("\r");
+                    int lfIx = potentialRequest.indexOf("\n");
+
+                    int newLineIx;
+
+                    if (crIx > 0) {
+                        if (lfIx > 0) {
+                            newLineIx = Math.min(crIx, lfIx);
+                        } else {
+                            newLineIx = lfIx;
+                        }
+                    } else {
+                        if (lfIx > 0) {
+                            newLineIx = lfIx;
+                        } else {
+                            newLineIx = -1;
+                        }
+                    }
+
+                    if (newLineIx > 0) {
+                        int httpVersionIx = potentialRequest.substring(0, newLineIx).indexOf(" HTTP/");
+                        if (httpVersionIx > 0) {
+
+                            String proxiedHostAndPort = potentialRequest.substring("CONNECT ".length(), httpVersionIx);
+
+                            String host;
+                            int port;
+
+                            if (proxiedHostAndPort.contains(":")) {
+                                host = proxiedHostAndPort.substring(0, proxiedHostAndPort.lastIndexOf(":"));
+                                port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":")));
+                            } else {
+                                host = proxiedHostAndPort;
+                                port = 80;
+                            }
+
+                            proxiedInetSocketAddress = InetSocketAddress.createUnresolved(host, port);
+
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            snifferSocket.setProxiedInetSocketAddress(proxiedInetSocketAddress);
+            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, snifferSocket);
+            snifferSocket.setFirstPacketSent(true);
+
+        }
+
         snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {

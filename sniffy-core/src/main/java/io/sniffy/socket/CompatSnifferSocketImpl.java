@@ -20,6 +20,10 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
 
     private InetSocketAddress address;
 
+    private boolean firstPacketSent;
+
+    private InetSocketAddress proxiedAddress;
+
     private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
     private volatile Integer connectionStatus;
@@ -55,6 +59,22 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     @Override
     public InetSocketAddress getInetSocketAddress() {
         return this.address;
+    }
+
+    public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
+        this.proxiedAddress = proxiedAddress;
+    }
+
+    public InetSocketAddress getProxiedInetSocketAddress() {
+        return proxiedAddress;
+    }
+
+    public void setFirstPacketSent(boolean firstPacketSent) {
+        this.firstPacketSent = firstPacketSent;
+    }
+
+    public boolean isFirstPacketSent() {
+        return firstPacketSent;
     }
 
     private void estimateReceiveBuffer() {

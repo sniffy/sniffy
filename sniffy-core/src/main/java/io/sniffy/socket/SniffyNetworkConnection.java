@@ -12,6 +12,14 @@ public interface SniffyNetworkConnection {
 
     void setConnectionStatus(Integer connectionStatus);
 
+    void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress);
+
+    InetSocketAddress getProxiedInetSocketAddress();
+
+    void  setFirstPacketSent(boolean firstPacketSent);
+
+    boolean isFirstPacketSent();
+
     int getPotentiallyBufferedInputBytes();
 
     void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes);
