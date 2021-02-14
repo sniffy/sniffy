@@ -78,7 +78,7 @@ public class SniffyFilter implements Filter {
     public static final String JAVASCRIPT_URI = SNIFFY_RESOURCE_URI_PREFIX + "/sniffy.min.js";
     public static final String JAVASCRIPT_SOURCE_URI = SNIFFY_RESOURCE_URI_PREFIX + "/sniffy.js";
     public static final String JAVASCRIPT_MAP_URI = SNIFFY_RESOURCE_URI_PREFIX + "/sniffy.map";
-    public static final String REQUEST_URI_PREFIX = SNIFFY_URI_PREFIX + "/request/";
+    public static final String REQUEST_URI_PREFIX = SNIFFY_RESOURCE_URI_PREFIX + "/request/";
 
     public static final String SNIFFY = "sniffy";
 

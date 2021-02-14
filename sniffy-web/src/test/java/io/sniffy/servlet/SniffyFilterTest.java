@@ -157,7 +157,7 @@ public class SniffyFilterTest extends BaseTest {
 
         String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_RESOURCE_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
@@ -184,7 +184,7 @@ public class SniffyFilterTest extends BaseTest {
         filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, outerFilterChain);
 
         String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_RESOURCE_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
@@ -224,7 +224,7 @@ public class SniffyFilterTest extends BaseTest {
 
         String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_RESOURCE_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
@@ -274,7 +274,7 @@ public class SniffyFilterTest extends BaseTest {
 
         String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../../" + SNIFFY_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../../" + SNIFFY_RESOURCE_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
@@ -381,7 +381,7 @@ public class SniffyFilterTest extends BaseTest {
         filter.doFilter(requestContext, httpServletResponse, filterChain);
 
         String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith(SNIFFY_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith(SNIFFY_RESOURCE_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
