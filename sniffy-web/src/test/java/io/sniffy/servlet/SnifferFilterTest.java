@@ -12,9 +12,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import static io.sniffy.servlet.SniffyFilter.HEADER_REQUEST_DETAILS;
-import static io.sniffy.servlet.SniffyFilter.REQUEST_URI_PREFIX;
-import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
+import static io.sniffy.servlet.SniffyFilter.*;
 import static org.junit.Assert.assertTrue;
 
 @Deprecated
@@ -33,7 +31,7 @@ public class SnifferFilterTest extends SniffyFilterTest {
 
         String sniffyJsSrc = extractSniffyJsSrc(httpServletResponse.getContentAsString());
 
-        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_URI_PREFIX));
+        assertTrue(sniffyJsSrc + " must be a relative path", sniffyJsSrc.startsWith("../" + SNIFFY_RESOURCE_URI_PREFIX));
 
         String requestDetailsUrl = httpServletResponse.getHeader(HEADER_REQUEST_DETAILS);
 
