@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import static io.sniffy.servlet.SniffyFilter.SNIFFY_RESOURCE_URI_PREFIX;
 import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
 import static io.sniffy.util.StringUtil.splitByLastSlashAndDecode;
 
@@ -41,6 +42,13 @@ public class SniffyServlet extends HttpServlet {
     public static final String SOCKET_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/socket/";
     public static final String DATASOURCE_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/datasource/";
     public static final String PERSISTENT_REGISTRY_URI_PREFIX = SNIFFY_URI_PREFIX + "/connectionregistry/persistent/";
+
+    public static final String TOP_SQL_RESOURCE_URI_PREFIX = SNIFFY_RESOURCE_URI_PREFIX + "/topsql/";
+
+    public static final String CONNECTION_REGISTRY_RESOURCE_URI_PREFIX = SNIFFY_RESOURCE_URI_PREFIX + "/connectionregistry/";
+    public static final String SOCKET_REGISTRY_RESOURCE_URI_PREFIX = SNIFFY_RESOURCE_URI_PREFIX + "/connectionregistry/socket/";
+    public static final String DATASOURCE_REGISTRY_RESOURCE_URI_PREFIX = SNIFFY_RESOURCE_URI_PREFIX + "/connectionregistry/datasource/";
+    public static final String PERSISTENT_REGISTRY_RESOURCE_URI_PREFIX = SNIFFY_RESOURCE_URI_PREFIX + "/connectionregistry/persistent/";
 
     protected final Map<String, RequestStats> cache;
 
@@ -107,7 +115,7 @@ public class SniffyServlet extends HttpServlet {
                 outputStream.write(requestStatsJson);
                 outputStream.flush();
             }
-        } else if (path.equals(CONNECTION_REGISTRY_URI_PREFIX)) {
+        } else if (path.equals(CONNECTION_REGISTRY_URI_PREFIX) || path.equals(CONNECTION_REGISTRY_RESOURCE_URI_PREFIX) ) {
 
             addCorsHeaders(response);
 
@@ -116,7 +124,7 @@ public class SniffyServlet extends HttpServlet {
 
             ConnectionsRegistry.INSTANCE.writeTo(response.getWriter());
 
-        } else if (path.startsWith(CONNECTION_REGISTRY_URI_PREFIX)) {
+        } else if (path.startsWith(CONNECTION_REGISTRY_URI_PREFIX) || path.startsWith(CONNECTION_REGISTRY_RESOURCE_URI_PREFIX)) {
 
             addCorsHeaders(response);
 
@@ -135,11 +143,19 @@ public class SniffyServlet extends HttpServlet {
                 String connectionString = path.substring(SOCKET_REGISTRY_URI_PREFIX.length());
                 String[] split = splitByLastSlashAndDecode(connectionString);
                 ConnectionsRegistry.INSTANCE.setSocketAddressStatus(split[0], Integer.parseInt(split[1]), status);
+            } else if (path.startsWith(SOCKET_REGISTRY_RESOURCE_URI_PREFIX)) {
+                String connectionString = path.substring(SOCKET_REGISTRY_RESOURCE_URI_PREFIX.length());
+                String[] split = splitByLastSlashAndDecode(connectionString);
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(split[0], Integer.parseInt(split[1]), status);
             } else if (path.startsWith(DATASOURCE_REGISTRY_URI_PREFIX)) {
                 String connectionString = path.substring(DATASOURCE_REGISTRY_URI_PREFIX.length());
                 String[] split = splitByLastSlashAndDecode(connectionString);
                 ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
-            } else if (path.startsWith(PERSISTENT_REGISTRY_URI_PREFIX)) {
+            } else if (path.startsWith(DATASOURCE_REGISTRY_RESOURCE_URI_PREFIX)) {
+                String connectionString = path.substring(DATASOURCE_REGISTRY_RESOURCE_URI_PREFIX.length());
+                String[] split = splitByLastSlashAndDecode(connectionString);
+                ConnectionsRegistry.INSTANCE.setDataSourceStatus(split[0], split[1], status);
+            } else if (path.startsWith(PERSISTENT_REGISTRY_URI_PREFIX) || path.startsWith(PERSISTENT_REGISTRY_RESOURCE_URI_PREFIX)) {
 
                 if (null != status && status >= 0) {
                     ConnectionsRegistry.INSTANCE.setPersistRegistry(true);
@@ -153,7 +169,7 @@ public class SniffyServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_CREATED);
             response.flushBuffer();
 
-        } else if (path.equals(TOP_SQL_URI_PREFIX)) {
+        } else if (path.equals(TOP_SQL_URI_PREFIX) || path.equals(TOP_SQL_RESOURCE_URI_PREFIX)) {
 
             addCorsHeaders(response);
 

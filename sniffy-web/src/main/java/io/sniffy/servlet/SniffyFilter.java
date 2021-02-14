@@ -65,18 +65,20 @@ public class SniffyFilter implements Filter {
     public static final String HEADER_TIME_TO_FIRST_BYTE = "Sniffy-Time-To-First-Byte";
     public static final String HEADER_REQUEST_DETAILS = "Sniffy-Request-Details";
 
-    public static final String SNIFFY_URI_PREFIX =
-            "sniffy/" +
+    public static final String SNIFFY_URI_PREFIX = "sniffy";
+    public static final String SNIFFY_RESOURCE_URI_PREFIX =
+            SNIFFY_URI_PREFIX +
+                    '/' +
                     Constants.MAJOR_VERSION +
                     "." +
                     Constants.MINOR_VERSION +
                     "." +
                     Constants.PATCH_VERSION;
 
-    public static final String JAVASCRIPT_URI = SNIFFY_URI_PREFIX + "/sniffy.min.js";
-    public static final String JAVASCRIPT_SOURCE_URI = SNIFFY_URI_PREFIX + "/sniffy.js";
-    public static final String JAVASCRIPT_MAP_URI = SNIFFY_URI_PREFIX + "/sniffy.map";
-    public static final String REQUEST_URI_PREFIX = SNIFFY_URI_PREFIX + "/request/";
+    public static final String JAVASCRIPT_URI = SNIFFY_RESOURCE_URI_PREFIX + "/sniffy.min.js";
+    public static final String JAVASCRIPT_SOURCE_URI = SNIFFY_RESOURCE_URI_PREFIX + "/sniffy.js";
+    public static final String JAVASCRIPT_MAP_URI = SNIFFY_RESOURCE_URI_PREFIX + "/sniffy.map";
+    public static final String REQUEST_URI_PREFIX = SNIFFY_RESOURCE_URI_PREFIX + "/request/";
 
     public static final String SNIFFY = "sniffy";
 

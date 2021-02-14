@@ -121,11 +121,82 @@ public class SniffyServletTest extends BaseTest {
     }
 
     @Test
+    public void testGetConnectionRegistryViaResourceUri() throws Exception {
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic/" + SniffyServlet.CONNECTION_REGISTRY_RESOURCE_URI_PREFIX).
+                buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
+
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 8181, 0);
+        ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 0);
+
+        sniffyServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/json", response.getContentType());
+        assertTrue(response.getContentAsByteArray().length > 0);
+
+        assertTrue(response.getContentAsString().contains("\"sockets\":"));
+        assertTrue(response.getContentAsString().contains("\"dataSources\":"));
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+    }
+
+    @Test
     public void testEditDatasourceRegistry() throws Exception {
 
         ConnectionsRegistry.INSTANCE.clear();
 
         URI dataSource1URI = new URI("/petclinic/" + SniffyServlet.DATASOURCE_REGISTRY_URI_PREFIX +
+                URLEncoder.encode(URLEncoder.encode("jdbc:h2:mem:data/base", "UTF-8"), "UTF-8") + "/sa");
+
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.post(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            sniffyServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().size());
+            Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
+            assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
+            assertEquals("sa", datasource.getValue());
+            assertEquals(0, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource).intValue());
+        }
+
+        // delete datasource from registry
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.delete(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            sniffyServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().size());
+            Map.Entry<String, String> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().keySet().iterator().next();
+            assertEquals("jdbc:h2:mem:data/base", datasource.getKey());
+            assertEquals("sa", datasource.getValue());
+            assertEquals(-1, ConnectionsRegistry.INSTANCE.getDiscoveredDataSources().get(datasource).intValue());
+        }
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+    }
+
+    @Test
+    public void testEditDatasourceRegistryViaResourceUri() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+        URI dataSource1URI = new URI("/petclinic/" + SniffyServlet.DATASOURCE_REGISTRY_RESOURCE_URI_PREFIX +
                 URLEncoder.encode(URLEncoder.encode("jdbc:h2:mem:data/base", "UTF-8"), "UTF-8") + "/sa");
 
         {
@@ -217,6 +288,51 @@ public class SniffyServletTest extends BaseTest {
         ConnectionsRegistry.INSTANCE.clear();
 
         URI dataSource1URI = new URI("/petclinic/" + SniffyServlet.SOCKET_REGISTRY_URI_PREFIX +
+                URLEncoder.encode(URLEncoder.encode("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "UTF-8"), "UTF-8") + "/1234");
+
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.post(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            sniffyServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().size());
+            Map.Entry<String, Integer> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().keySet().iterator().next();
+            assertEquals("2001:0db8:85a3:0000:0000:8a2e:0370:7334", datasource.getKey());
+            assertEquals(1234, datasource.getValue().intValue());
+            assertEquals(0, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().get(datasource).intValue());
+        }
+
+        // delete datasource from registry
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletRequest request = MockMvcRequestBuilders.delete(dataSource1URI).buildRequest(servletContext);
+            request.setContextPath("/petclinic");
+
+            sniffyServlet.service(request, response);
+
+            assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+            assertEquals(1, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().size());
+            Map.Entry<String, Integer> datasource = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().keySet().iterator().next();
+            assertEquals("2001:0db8:85a3:0000:0000:8a2e:0370:7334", datasource.getKey());
+            assertEquals(1234, datasource.getValue().intValue());
+            assertEquals(-1, ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().get(datasource).intValue());
+        }
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+    }
+
+    @Test
+    public void testEditSocketRegistryViaResourceUri() throws Exception {
+
+        ConnectionsRegistry.INSTANCE.clear();
+
+        URI dataSource1URI = new URI("/petclinic/" + SniffyServlet.SOCKET_REGISTRY_RESOURCE_URI_PREFIX +
                 URLEncoder.encode(URLEncoder.encode("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "UTF-8"), "UTF-8") + "/1234");
 
         {
@@ -473,6 +589,54 @@ public class SniffyServletTest extends BaseTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockHttpServletRequest request = MockMvcRequestBuilders.
                 delete("/petclinic/" + SniffyServlet.TOP_SQL_URI_PREFIX).
+                buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
+
+        sniffyServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_CREATED, response.getStatus());
+
+        assertTrue(Sniffy.getGlobalSqlStats().isEmpty());
+
+    }
+
+    @Test
+    public void testGetTopSqlViaResourceUri() throws Exception {
+
+        Sniffy.getGlobalSqlStats().clear();
+
+        executeStatement();
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                get("/petclinic/" + SniffyServlet.TOP_SQL_RESOURCE_URI_PREFIX).
+                buildRequest(servletContext);
+
+        request.setContextPath("/petclinic");
+
+        sniffyServlet.service(request, response);
+
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+        assertEquals("application/json", response.getContentType());
+        assertTrue(response.getContentAsByteArray().length > 0);
+
+        assertEquals(1, (int) JsonPath.read(response.getContentAsString(), "$.length()"));
+        assertEquals("SELECT 1 FROM DUAL", JsonPath.read(response.getContentAsString(), "$[0].sql"));
+        assertEquals(1, (int) JsonPath.read(response.getContentAsString(), "$[0].timer.count"));
+
+    }
+
+    @Test
+    public void testResetTopSqlViaResourceUri() throws Exception {
+
+        Sniffy.getGlobalSqlStats().clear();
+
+        executeStatement();
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpServletRequest request = MockMvcRequestBuilders.
+                delete("/petclinic/" + SniffyServlet.TOP_SQL_RESOURCE_URI_PREFIX).
                 buildRequest(servletContext);
 
         request.setContextPath("/petclinic");
