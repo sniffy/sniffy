@@ -1,0 +1,29 @@
+== Capture Traffic
+
+Sniffy allows you to record traffic sent or received via network and exposes it via Java API.
+
+=== Example
+
+```java
+include::../../../../sniffy-core/src/test/java/io/sniffy/socket/CaptureTrafficOverviewTest.java[tags=CaptureTrafficOverview]
+```
+<1> Use `captureNetworkTraffic(true)` when creating a `Spy` instance to enable traffic capturing
+<2> Invoke socket operation. Can be either in current or another thread. Plain socket API or NIO - doesn't matter.
+<3> Retrieve network packets filtered and grouped as defined in parameters
+<4> Allows you to filter traffic by thread
+<5> Allows you to filter traffic by target address and/or port
+<6> Group traffic by thread
+<7> Group traffic by stack trace
+<8> Group traffic by connection id - surrogate identifier of network connection
+<9> SocketMetaData describes the target host and port and other parameters as described above for `GroupingOptions`
+<10> `NetworkPacket` contains data in bytes, timestamp, direction and optional stacktrace and thread information
+
+=== Configuration
+
+`packetMergeThreshold` allows you to specify threshold for combining similar network packets when capturing traffic.
+For example if your application calls `SocketInputStream.read()` 8 times in a row to read a 64-bit value, Sniffy will merge these calls into a single packet given that they were done within specified threshold and of course given that no write/sent operation was done between them.
+
+=== Caveats
+
+Some libraries use native code for network operations.
+Currently Sniffy doesn't capture this kind of traffic.

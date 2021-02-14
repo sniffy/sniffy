@@ -6,6 +6,7 @@
 
 Sniffy is a Java profiler which shows the results directly in your browser.
 It also brings profiling to your unit (or rather component) tests and allows you to disable certain outgoing connections for fault-tolerance testing.
+It can even record network traffic sent via Java plain old Socket API as well as via NIO API.
 
 === In-browser profiler
 
@@ -30,6 +31,12 @@ It's also possible to specify a fixed delay for all sent and received TCP packet
 
 ```java
 include::../../../../sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit/usage/DisableConnectivityOverviewTest.java[tags=DisableSocketsOverview]
+```
+
+=== Recording network traffic
+
+```java
+include::../../../../sniffy-core/src/test/java/io/sniffy/socket/CaptureTrafficOverviewTest.java[tags=CaptureTrafficOverview]
 ```
 
 = Install
@@ -69,6 +76,10 @@ include::test-spock.adoc[]
 = Emulating network issues
 
 include::network-issues.adoc[]
+
+= Capturing traffic
+
+include::capture-traffic.adoc[]
 
 = Migration from previous versions
 

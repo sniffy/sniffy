@@ -7,7 +7,7 @@ Sniffy
 
 Sniffy is a Java profiler which shows the results directly in your browser.
 It also brings profiling to your unit (or rather component) tests and allows you to disable certain outgoing connections for fault-tolerance testing.
-
+You can also use Sniffy to capture traffic sent or received by your application - just like Wireshark but without admin permission or 3rd-party dependencies.
 
 ![RecordedDemo](http://sniffy.io/demo.gif)
 

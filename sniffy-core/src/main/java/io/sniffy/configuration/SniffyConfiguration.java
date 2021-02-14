@@ -23,6 +23,7 @@ public enum SniffyConfiguration {
      * @since 3.1.10
      */
     @Deprecated
+    // TODO: implement
     private volatile boolean captureTraffic;
 
     /**
@@ -31,6 +32,8 @@ public enum SniffyConfiguration {
     private volatile int topSqlCapacity;
 
     /**
+     * Threshold in milliseconds for merging bytes from similar operations when capturing traffic by Sniffy
+     *
      * @since 3.1.10
      */
     private volatile int packetMergeThreshold;
@@ -50,17 +53,25 @@ public enum SniffyConfiguration {
     /**
      * @since 3.1.9
      */
-    private volatile Boolean jdbcCaptureEnabled;
-    /**
-     * @since 3.1.9
-     */
-    private volatile Boolean jdbcFaultInjectionEnabled;
+    private volatile Boolean jdbcCaptureEnabled; // TODO: implement
 
     /**
      * @since 3.1.9
      */
-    private volatile Boolean socketCaptureEnabled;
+    private volatile Boolean jdbcFaultInjectionEnabled; // TODO: implement
+
     /**
+     * Capture stats (bytes and time) on socket IO (including IO, NIO, NIO2/AIO depending on monitorSocket and monitorNio)
+     * default - true
+     *
+     * @since 3.1.9
+     */
+    private volatile Boolean socketCaptureEnabled;
+
+    /**
+     * Enabled fault injection to socket IO  (including IO, NIO, NIO2/AIO depending on monitorSocket and monitorNio)
+     * default - true
+     *
      * @since 3.1.9
      */
     private volatile Boolean socketFaultInjectionEnabled;
