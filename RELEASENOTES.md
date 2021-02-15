@@ -2,7 +2,16 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.9...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.10...master)
+
+## v3.1.10 - Feb 15th, 2021
+
+ * [Capture network traffic](https://github.com/sniffy/sniffy/issues/400)
+ * [Fix agent arguments parsing](https://github.com/sniffy/sniffy/pull/422) thanks [@Fuud](https://github.com/Fuud)
+ * [Expose Sniffy REST API without explicit version](https://github.com/sniffy/sniffy/pull/428) thanks [@Fuud](https://github.com/Fuud)
+ * [CI fix for PRs from other repos](https://github.com/sniffy/sniffy/pull/426)
+ * [CI tests on x32 JVMs](https://github.com/sniffy/sniffy/pull/409)
+ * [Allow unencoded slashes in Sniffy API](https://github.com/sniffy/sniffy/issues/393)
 
 ## v3.1.9 - Jan 24th, 2021
 
