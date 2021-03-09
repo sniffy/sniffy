@@ -11,6 +11,7 @@
 
     <modules>
         <module>sniffy-core</module>
+        <module>sniffy-module-tls</module>
         <module>sniffy-module-nio</module>
         <module>sniffy-module-nio-compat-deps</module>
         <module>sniffy-module-nio-compat</module>

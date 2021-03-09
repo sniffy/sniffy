@@ -186,6 +186,27 @@ public class Sniffy {
 
         }
 
+        if (SniffyConfiguration.INSTANCE.isDecryptTls()) {
+            loadTlsModule();
+        } else {
+
+            SniffyConfiguration.INSTANCE.addDecryptTlsListener(new PropertyChangeListener() {
+
+                private boolean sniffyTlsModuleInstalled = false;
+
+                @Override
+                public synchronized void propertyChange(PropertyChangeEvent evt) {
+                    if (sniffyTlsModuleInstalled) return;
+                    if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        loadTlsModule();
+                        sniffyTlsModuleInstalled = true;
+                    }
+                }
+
+            });
+
+        }
+
         initialized = true;
 
     }
@@ -212,6 +233,33 @@ public class Sniffy {
                     }
 
                     nioModuleLoaded = true;
+
+                }
+            }
+        }
+    }
+
+    private static volatile boolean tlsModuleLoaded = false;
+
+    // TODO: do something more clever and extensible
+    private static void loadTlsModule() {
+        if (!tlsModuleLoaded) {
+            synchronized (Sniffy.class) {
+                if (!tlsModuleLoaded) {
+
+                    try {
+                        Class.forName("io.sniffy.tls.SniffyTlsModule").getMethod("initialize").invoke(null);
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchMethodException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                    tlsModuleLoaded = true;
 
                 }
             }
@@ -383,6 +431,38 @@ public class Sniffy {
         }
     }
 
+    private static void notifyListenersDecryptedTraffic(SocketMetaData socketMetaData, boolean sent, long timestamp, String stackTrace, byte[] traffic, int off, int len) {
+
+        ThreadMetaData threadMetaData = ThreadMetaData.create(Thread.currentThread());
+
+        if (hasGlobalSpies) {
+            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
+            while (iterator.hasNext()) {
+                WeakReference<Spy> spyReference = iterator.next();
+                Spy spy = spyReference.get();
+                if (null == spy) {
+                    iterator.remove();
+                } else {
+                    spy.addDecryptedNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
+                }
+            }
+        }
+
+        if (hasThreadLocalSpies) {
+            Long threadId = Thread.currentThread().getId();
+
+            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+            if (null != spyReference) {
+                CurrentThreadSpy spy = spyReference.get();
+                if (null == spy) {
+                    currentThreadSpies.remove(threadId);
+                } else {
+                    spy.addDecryptedNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
+                }
+            }
+        }
+    }
+
     // TODO: use getEffectiveSpyConfiguration() instead
     @Deprecated
     public static boolean hasSpies() {
@@ -485,6 +565,20 @@ public class Sniffy {
 
         // notify listeners
         notifyListeners(socketMetaData, sent, System.currentTimeMillis(), stackTrace, traffic, off, len);
+
+    }
+
+    public static void logDecryptedTraffic(int connectionId, InetSocketAddress address, boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean captureStackTraces) {
+
+        if (0 == len) return;
+
+        // build stackTrace
+        String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
+
+        SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId);
+
+        // notify listeners
+        notifyListenersDecryptedTraffic(socketMetaData, sent, System.currentTimeMillis(), stackTrace, traffic, off, len);
 
     }
 

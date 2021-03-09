@@ -27,29 +27,4 @@
         </plugins>
     </build>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-module-nio</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-module-nio-compat</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-core</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
 </project>

@@ -10,12 +10,12 @@ import java.net.SocketOptions;
 /**
  * @since 3.1
  */
-class SnifferInputStream extends InputStream {
+public class SnifferInputStream extends InputStream {
 
     private final SniffyNetworkConnection snifferSocket;
     private final InputStream delegate;
 
-    SnifferInputStream(SniffyNetworkConnection snifferSocket, InputStream delegate) {
+    public SnifferInputStream(SniffyNetworkConnection snifferSocket, InputStream delegate) {
         this.snifferSocket = snifferSocket;
         this.delegate = delegate;
     }
