@@ -1,8 +1,6 @@
 package io.sniffy.tls;
 
 import io.sniffy.Constants;
-import sun.security.jca.ProviderList;
-import sun.security.jca.Providers;
 
 import java.security.Provider;
 import java.util.ArrayList;
@@ -12,26 +10,6 @@ import java.util.Map;
 public class SniffySSLContextProvider extends Provider {
 
     public static final String SNIFFY_PROVIDER_NAME = "Sniffy";
-
-    public static void install() {
-
-        ProviderList list = Providers.getProviderList();
-        ProviderList providerList = ProviderList.insertAt(list, new SniffySSLContextProvider(), 0);
-        Providers.setProviderList(providerList);
-
-    }
-
-    public static void uninstall() {
-
-        ProviderList list = Providers.getProviderList();
-        Provider sniffyProvider = list.getProvider(SNIFFY_PROVIDER_NAME);
-        if (null != sniffyProvider) {
-            ProviderList providerList = ProviderList.remove(list, SNIFFY_PROVIDER_NAME);
-            Providers.setProviderList(providerList);
-        }
-
-
-    }
 
     public SniffySSLContextProvider() {
         super(SNIFFY_PROVIDER_NAME, Constants.MAJOR_VERSION, "SniffySSLContextProvider");

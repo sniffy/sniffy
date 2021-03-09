@@ -52,9 +52,30 @@ public class SniffyProviderListUtil {
         return sslContextProviders;
     }
 
+
+
+    public static void install() {
+
+        ProviderList list = Providers.getProviderList();
+        ProviderList providerList = ProviderList.insertAt(list, new SniffySSLContextProvider(), 0);
+        Providers.setProviderList(providerList);
+
+    }
+
+    public static void uninstall() {
+
+        ProviderList list = Providers.getProviderList();
+        Provider sniffyProvider = list.getProvider(SNIFFY_PROVIDER_NAME);
+        if (null != sniffyProvider) {
+            ProviderList providerList = ProviderList.remove(list, SNIFFY_PROVIDER_NAME);
+            Providers.setProviderList(providerList);
+        }
+
+    }
+
     public static void wrapSSLContextServiceProvidersWithSniffy() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 
-        // TODO: change to install-uninstall methods
+        // TODO: incorporate to install-uninstall methods
 
         getOriginalSslContextProviders();
 

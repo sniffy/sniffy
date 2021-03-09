@@ -13,12 +13,12 @@ public class SniffySSLContextProviderTest {
     public void testInstall() {
 
         try {
-            SniffySSLContextProvider.install();
+            SniffyProviderListUtil.install();
 
             assertTrue(Providers.getProviderList().providers().get(0) instanceof SniffySSLContextProvider);
 
         } finally {
-            SniffySSLContextProvider.uninstall();
+            SniffyProviderListUtil.uninstall();
         }
 
     }
@@ -27,13 +27,13 @@ public class SniffySSLContextProviderTest {
     public void testUninstall() {
 
         try {
-            SniffySSLContextProvider.install();
-            SniffySSLContextProvider.uninstall();
+            SniffyProviderListUtil.install();
+            SniffyProviderListUtil.uninstall();
 
             assertFalse(Providers.getProviderList().providers().stream().anyMatch(provider -> provider instanceof SniffySSLContextProvider));
 
         } finally {
-            SniffySSLContextProvider.uninstall();
+            SniffyProviderListUtil.uninstall();
         }
 
     }

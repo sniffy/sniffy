@@ -4,7 +4,7 @@ public class SniffyTlsModule {
 
     public static void initialize() {
 
-        SniffySSLContextProvider.install();
+        SniffyProviderListUtil.install();
 
         // TODO: uncomment below probably with a feature flag
         /*try {
