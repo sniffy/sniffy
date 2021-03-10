@@ -11,6 +11,8 @@ public class SniffySSLSocketFactory extends SSLSocketFactory {
 
     // TODO: support SSLSocketFactory.theFactory
 
+    // TODO: cover all methods with unit tests
+
     private final SSLSocketFactory delegate;
 
     public SniffySSLSocketFactory(SSLSocketFactory delegate) {

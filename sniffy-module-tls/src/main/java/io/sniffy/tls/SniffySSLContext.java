@@ -9,6 +9,8 @@ import java.security.SecureRandom;
 
 public class SniffySSLContext extends SSLContextSpi {
 
+    // TODO: cover all methods with unit tests
+
     private final SSLContextSpi delegate;
 
     public SniffySSLContext(SSLContextSpi delegate) {
@@ -44,6 +46,7 @@ public class SniffySSLContext extends SSLContextSpi {
         }
     }
 
+    // TODO: implement SniffySSLEngine and match encrypted payloads with what is put on the wire later
     @Override
     public SSLEngine engineCreateSSLEngine() {
         try {
@@ -53,6 +56,7 @@ public class SniffySSLContext extends SSLContextSpi {
         }
     }
 
+    // TODO: implement SniffySSLEngine and match encrypted payloads with what is put on the wire later
     @Override
     public SSLEngine engineCreateSSLEngine(String host, int port) {
         try {

@@ -573,7 +573,7 @@ public class Sniffy {
         if (0 == len) return;
 
         // build stackTrace
-        String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
+        String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null; // TODO: check if package name is correct
 
         SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId);
 

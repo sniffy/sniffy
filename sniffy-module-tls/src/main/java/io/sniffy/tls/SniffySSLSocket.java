@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SniffySSLSocket extends SSLSocketAdapter implements SniffyNetworkConnection {
 
+    // TODO: cover all methods with unit tests
+
     private final SocketChannel socketChannel; // TODO: support
 
     private InetSocketAddress address;

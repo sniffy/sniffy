@@ -16,6 +16,8 @@ import java.util.function.BiFunction;
 
 public class SSLSocketAdapter extends SSLSocket {
 
+    // TODO: cover all methods with unit tests
+
     private final SSLSocket delegate;
 
     public SSLSocketAdapter(SSLSocket delegate) {

@@ -1,8 +1,6 @@
 package io.sniffy.tls;
 
 import io.sniffy.util.ReflectionUtil;
-//import sun.security.jca.ProviderList;
-//import sun.security.jca.Providers;
 
 import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;

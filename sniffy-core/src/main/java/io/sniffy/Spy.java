@@ -217,6 +217,7 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
     /**
      * @since 3.1.11
      */
+    // TODO: refactor and converge with getNetworkTraffic method
     public Map<SocketMetaData, List<NetworkPacket>> getDecryptedNetworkTraffic(ThreadMatcher threadMatcher, AddressMatcher addressMatcher, GroupingOptions groupingOptions) {
 
         Map<SocketMetaData, List<NetworkPacket>> reducedTraffic = new LinkedHashMap<SocketMetaData, List<NetworkPacket>>();
