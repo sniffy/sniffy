@@ -17,7 +17,7 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     private InetSocketAddress address;
 
-    private final static AtomicInteger counter = new AtomicInteger();
+    private final static AtomicInteger counter = new AtomicInteger(); // TODO: make global counter
 
     private final int id;
 
@@ -39,6 +39,17 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
         super(delegate);
         this.socketChannel = socketChannel;
         this.id = connectionId;
+        if (null == address) {
+            this.address = (InetSocketAddress) delegate.getRemoteSocketAddress();
+        } else {
+            this.address = address;
+        }
+    }
+
+    public SniffySocket(Socket delegate, InetSocketAddress address) throws SocketException {
+        super(delegate);
+        this.socketChannel = null;
+        this.id = counter.getAndIncrement(); // TODO: make global
         if (null == address) {
             this.address = (InetSocketAddress) delegate.getRemoteSocketAddress();
         } else {

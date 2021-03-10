@@ -33,6 +33,11 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
                     maximumWeightedCapacity(Long.MAX_VALUE).
                     build();
 
+    protected volatile ConcurrentLinkedHashMap<SocketMetaData, Deque<NetworkPacket>> decryptedNetworkTraffic =
+            new ConcurrentLinkedHashMap.Builder<SocketMetaData, Deque<NetworkPacket>>().
+                    maximumWeightedCapacity(Long.MAX_VALUE).
+                    build();
+
     protected void addNetworkTraffic(
             SocketMetaData socketMetaData,
             boolean sent, long timestamp,
@@ -41,6 +46,21 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
         Deque<NetworkPacket> networkPackets = networkTraffic.get(socketMetaData);
         if (null == networkPackets) {
             networkTraffic.putIfAbsent(socketMetaData, networkPackets = new LinkedList<NetworkPacket>());
+        }
+        NetworkPacket lastPacket = networkPackets.peekLast();
+        if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
+            networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
+        }
+    }
+
+    protected void addDecryptedNetworkTraffic(
+            SocketMetaData socketMetaData,
+            boolean sent, long timestamp,
+            String stackTrace, ThreadMetaData threadMetaData,
+            byte[] traffic, int off, int len) {
+        Deque<NetworkPacket> networkPackets = decryptedNetworkTraffic.get(socketMetaData);
+        if (null == networkPackets) {
+            decryptedNetworkTraffic.putIfAbsent(socketMetaData, networkPackets = new LinkedList<NetworkPacket>());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {

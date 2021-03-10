@@ -20,6 +20,11 @@ public enum SniffyConfiguration {
     private volatile boolean monitorNio;
 
     /**
+     * @since 3.1.11
+     */
+    private volatile boolean decryptTls;
+
+    /**
      * @since 3.1.10
      */
     @Deprecated
@@ -89,6 +94,9 @@ public enum SniffyConfiguration {
         ));
         monitorNio = Boolean.parseBoolean(getProperty(
                 "io.sniffy.monitorNio", "IO_SNIFFY_MONITOR_NIO", "false"
+        ));
+        decryptTls = Boolean.parseBoolean(getProperty(
+                "io.sniffy.decryptTls", "IO_SNIFFY_DECRYPT_TLS", "false"
         ));
         try {
             topSqlCapacity = Integer.parseInt(getProperty(
@@ -180,6 +188,16 @@ public enum SniffyConfiguration {
         pcs.firePropertyChange("monitorNio", oldValue, monitorNio);
     }
 
+    public boolean isDecryptTls() {
+        return decryptTls;
+    }
+
+    public void setDecryptTls(boolean decryptTls) {
+        boolean oldValue = this.decryptTls;
+        this.decryptTls = decryptTls;
+        pcs.firePropertyChange("decryptTls", oldValue, decryptTls);
+    }
+
     /**
      * @since 3.1.10
      */
@@ -224,6 +242,20 @@ public enum SniffyConfiguration {
      */
     public void removeMonitorNioListener(PropertyChangeListener listener) {
         this.pcs.removePropertyChangeListener("monitorNio", listener);
+    }
+
+    /**
+     * @since 3.1.11
+     */
+    public void addDecryptTlsListener(PropertyChangeListener listener) {
+        this.pcs.addPropertyChangeListener("decryptTls", listener);
+    }
+
+    /**
+     * @since 3.1.11
+     */
+    public void removeDecryptTlsListener(PropertyChangeListener listener) {
+        this.pcs.removePropertyChangeListener("decryptTls", listener);
     }
 
     // top sql capacity
