@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 public class SniffySSLContextProviderTest {
 
     @Test
-    public void testInstall() {
+    public void testInstall() throws Exception {
 
         try {
             SniffyProviderListUtil.install();
@@ -24,7 +24,7 @@ public class SniffySSLContextProviderTest {
     }
 
     @Test
-    public void testUninstall() {
+    public void testUninstall() throws Exception {
 
         try {
             SniffyProviderListUtil.install();

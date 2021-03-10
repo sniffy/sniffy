@@ -4,7 +4,11 @@ public class SniffyTlsModule {
 
     public static void initialize() {
 
-        SniffyProviderListUtil.install();
+        try {
+            SniffyProviderListUtil.install();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // TODO: uncomment below probably with a feature flag
         /*try {

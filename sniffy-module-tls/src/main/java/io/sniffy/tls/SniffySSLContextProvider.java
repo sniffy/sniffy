@@ -2,6 +2,7 @@ package io.sniffy.tls;
 
 import io.sniffy.Constants;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,7 +12,7 @@ public class SniffySSLContextProvider extends Provider {
 
     public static final String SNIFFY_PROVIDER_NAME = "Sniffy";
 
-    public SniffySSLContextProvider() {
+    public SniffySSLContextProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         super(SNIFFY_PROVIDER_NAME, Constants.MAJOR_VERSION, "SniffySSLContextProvider");
 
         for (Map.Entry<String, Service[]> entry : SniffyProviderListUtil.getOriginalSslContextProviders().entrySet()) {

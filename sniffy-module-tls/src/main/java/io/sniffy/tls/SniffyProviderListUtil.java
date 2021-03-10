@@ -1,8 +1,8 @@
 package io.sniffy.tls;
 
 import io.sniffy.util.ReflectionUtil;
-import sun.security.jca.ProviderList;
-import sun.security.jca.Providers;
+//import sun.security.jca.ProviderList;
+//import sun.security.jca.Providers;
 
 import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;
@@ -16,7 +16,7 @@ public class SniffyProviderListUtil {
 
     private static volatile Map<String, Provider.Service[]> ORIGINAL_SSL_CONTEXT_PROVIDERS;
 
-    public static Map<String, Provider.Service[]> getOriginalSslContextProviders() {
+    public static Map<String, Provider.Service[]> getOriginalSslContextProviders() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         if (null == ORIGINAL_SSL_CONTEXT_PROVIDERS) {
             synchronized (SniffyProviderListUtil.class) {
                 if (null == ORIGINAL_SSL_CONTEXT_PROVIDERS) {
@@ -32,10 +32,16 @@ public class SniffyProviderListUtil {
         return ORIGINAL_SSL_CONTEXT_PROVIDERS;
     }
 
-    private static Map<String, List<Provider.Service>> getOriginalSSLContextProvidersImpl() {
+    private static Map<String, List<Provider.Service>> getOriginalSSLContextProvidersImpl() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Map<String, List<Provider.Service>> sslContextProviders = new HashMap<String, List<Provider.Service>>();
-        ProviderList list = Providers.getProviderList();
-        for (Provider provider : list.providers()) {
+
+        Class<?> providersClass = Class.forName("sun.security.jca.Providers");
+        Class<?> providerListClass = Class.forName("sun.security.jca.ProviderList");
+
+        for (Provider provider : (List<Provider>)
+                ReflectionUtil.invokeMethod(providerListClass,
+                        ReflectionUtil.invokeMethod(providersClass, null, "getProviderList"),
+                        "providers")) {
             for (Provider.Service service : provider.getServices()) {
                 //System.out.println(service.getType() + " - " + service.getAlgorithm() + " = " + service.getClassName());
                 if (SSLCONTEXT.equals(service.getType())) {
@@ -52,35 +58,48 @@ public class SniffyProviderListUtil {
         return sslContextProviders;
     }
 
+    public static void install() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
+        Class<?> providersClass = Class.forName("sun.security.jca.Providers");
+        Class<?> providerListClass = Class.forName("sun.security.jca.ProviderList");
 
-    public static void install() {
-
-        ProviderList list = Providers.getProviderList();
-        ProviderList providerList = ProviderList.insertAt(list, new SniffySSLContextProvider(), 0);
-        Providers.setProviderList(providerList);
-
-    }
-
-    public static void uninstall() {
-
-        ProviderList list = Providers.getProviderList();
-        Provider sniffyProvider = list.getProvider(SNIFFY_PROVIDER_NAME);
-        if (null != sniffyProvider) {
-            ProviderList providerList = ProviderList.remove(list, SNIFFY_PROVIDER_NAME);
-            Providers.setProviderList(providerList);
-        }
+        Object list = ReflectionUtil.invokeMethod(providersClass, null, "getProviderList");
+        Object providerList = ReflectionUtil.invokeMethod(providerListClass, null, "insertAt",
+                providerListClass, list,
+                Provider.class, new SniffySSLContextProvider(),
+                Integer.TYPE, 0
+        );
+        ReflectionUtil.invokeMethod(providersClass, null, "setProviderList", providerListClass, providerList);
 
     }
 
-    public static void wrapSSLContextServiceProvidersWithSniffy() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    public static void uninstall() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+
+        Class<?> providersClass = Class.forName("sun.security.jca.Providers");
+        Class<?> providerListClass = Class.forName("sun.security.jca.ProviderList");
+
+        Object list = ReflectionUtil.invokeMethod(providersClass, null, "getProviderList");
+        Object providerList = ReflectionUtil.invokeMethod(providerListClass, null, "remove",
+                providerListClass, list,
+                String.class, SNIFFY_PROVIDER_NAME
+        );
+        ReflectionUtil.invokeMethod(providersClass, null, "setProviderList", providerListClass, providerList);
+
+    }
+
+    public static void wrapSSLContextServiceProvidersWithSniffy() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException, ClassNotFoundException {
 
         // TODO: incorporate to install-uninstall methods
 
         getOriginalSslContextProviders();
 
-        ProviderList list = Providers.getProviderList();
-        for (Provider provider : list.providers()) {
+        Class<?> providersClass = Class.forName("sun.security.jca.Providers");
+        Class<?> providerListClass = Class.forName("sun.security.jca.ProviderList");
+
+        for (Provider provider : (List<Provider>)
+                ReflectionUtil.invokeMethod(providerListClass,
+                        ReflectionUtil.invokeMethod(providersClass, null, "getProviderList"),
+                        "providers")) {
 
             if (SNIFFY_PROVIDER_NAME.equals(provider.getName())) continue;
 

@@ -15,7 +15,6 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SniffySSLSocket extends SSLSocketAdapter implements SniffyNetworkConnection {
@@ -118,7 +117,6 @@ public class SniffySSLSocket extends SSLSocketAdapter implements SniffyNetworkCo
 
     @Override
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
-        System.out.println(new String(traffic, off, len, StandardCharsets.ISO_8859_1)); // TODO: remove
         SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
             Sniffy.logDecryptedTraffic(
