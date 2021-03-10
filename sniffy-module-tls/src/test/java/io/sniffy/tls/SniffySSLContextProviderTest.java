@@ -13,6 +13,7 @@ public class SniffySSLContextProviderTest {
     public void testInstall() throws Exception {
 
         try {
+            SniffyTlsModule.initialize();
             SniffyProviderListUtil.install();
 
             assertTrue(Providers.getProviderList().providers().get(0) instanceof SniffySSLContextProvider);
@@ -27,6 +28,7 @@ public class SniffySSLContextProviderTest {
     public void testUninstall() throws Exception {
 
         try {
+            SniffyTlsModule.initialize();
             SniffyProviderListUtil.install();
             SniffyProviderListUtil.uninstall();
 
