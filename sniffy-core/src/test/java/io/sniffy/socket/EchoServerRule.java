@@ -137,6 +137,14 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     public void joinThreads() {
 
+        sockets.forEach((socket) -> {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
         socketThreads.forEach((thread) -> {
             try {
                 thread.join(10000);
@@ -145,14 +153,6 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                     thread.join(1000);
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-
-        sockets.forEach((socket) -> {
-            try {
-                socket.close();
-            } catch (IOException e) {
                 e.printStackTrace();
             }
         });
