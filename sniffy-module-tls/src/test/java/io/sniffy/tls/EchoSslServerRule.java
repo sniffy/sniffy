@@ -40,6 +40,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
     private final List<Socket> sockets = new ArrayList<>();
 
     private final AtomicInteger bytesReceivedCounter = new AtomicInteger();
+    private final int expectedBytes;
 
     private int boundPort = 10000;
     private ServerSocket serverSocket;
@@ -47,9 +48,10 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
     private final byte[] dataToBeSent;
     private final Queue<ByteArrayOutputStream> receivedData = new ConcurrentLinkedQueue<>();
 
-    public EchoSslServerRule(TemporaryFolder tempFolder, byte[] dataToBeSent) {
+    public EchoSslServerRule(TemporaryFolder tempFolder, byte[] dataToBeSent, int expectedBytes) {
         this.tempFolder = tempFolder;
         this.dataToBeSent = dataToBeSent;
+        this.expectedBytes = expectedBytes;
     }
 
     public int getBoundPort() {
@@ -207,7 +209,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
         generalNames.add(new GeneralName(GeneralName.iPAddress, "127.0.0.1"));
         generalNames.add(new GeneralName(GeneralName.iPAddress, "0:0:0:0:0:0:0:1"));
 
-        Collections.list(NetworkInterface.getNetworkInterfaces()).stream().filter(it -> {
+        /*Collections.list(NetworkInterface.getNetworkInterfaces()).stream().filter(it -> {
             try {
                 return it.isUp();
             } catch (SocketException e) {
@@ -217,7 +219,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
             generalNames.add(new GeneralName(GeneralName.dNSName, it.getHostName()));
             generalNames.add(new GeneralName(GeneralName.dNSName, it.getCanonicalHostName()));
             generalNames.add(new GeneralName(GeneralName.iPAddress, !it.getHostAddress().contains("%") ? it.getHostAddress() : it.getHostAddress().substring(0, it.getHostAddress().indexOf("%"))));
-        });
+        });*/
 
         return new GeneralNames(generalNames.toArray(new GeneralName[0]));
 
@@ -359,20 +361,31 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
         socketThreads.forEach((thread) -> {
             try {
+                if (thread.isAlive()) {
+                    thread.interrupt();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+
+        sockets.forEach((socket) -> {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        socketThreads.forEach((thread) -> {
+            try {
                 thread.join(10000);
                 if (thread.isAlive()) {
                     thread.interrupt();
                     thread.join(1000);
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-
-        sockets.forEach((socket) -> {
-            try {
-                socket.close();
-            } catch (IOException e) {
                 e.printStackTrace();
             }
         });
@@ -396,10 +409,12 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
             try {
 
                 int read;
+                int bytesRead = 0;
 
-                while ((read = inputStream.read()) != -1) {
+                while (bytesRead < expectedBytes && (read = inputStream.read()) != -1) {
                     bytesReceivedCounter.incrementAndGet();
                     baos.write(read);
+                    bytesRead++;
                 }
 
             } catch (SocketException e) {

@@ -728,6 +728,14 @@
                 <updatePolicy>daily</updatePolicy>
             </snapshots>
         </pluginRepository>
+        <pluginRepository>
+            <id>kotlinx-repository</id>
+            <name>KotlinX Repository</name>
+            <url>https://dl.bintray.com/kotlin/kotlinx/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </pluginRepository>
     </pluginRepositories>
 
     <profiles>
