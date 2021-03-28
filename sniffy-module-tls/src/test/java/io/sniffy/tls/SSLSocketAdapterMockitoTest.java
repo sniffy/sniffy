@@ -8,8 +8,11 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -106,58 +109,81 @@ public class SSLSocketAdapterMockitoTest {
         assertEquals(handshakeCompletedListener, argumentCaptor.getValue());
     }
 
+    @Test
+    public void testStartHandshake() throws IOException {
+        sslSocketAdapter.startHandshake();
+        verify(delegate).startHandshake();
+        verifyNoMoreInteractions(delegate);
+    }
+
+    @Test
+    public void setUseClientMode() {
+        ArgumentCaptor<Boolean> argumentCaptor = ArgumentCaptor.forClass(Boolean.TYPE);
+        sslSocketAdapter.setUseClientMode(true);
+        verify(delegate).setUseClientMode(argumentCaptor.capture());
+        assertEquals(true, argumentCaptor.getValue());
+    }
+
+    @Test
+    public void testGetUseClientMode() {
+        when(delegate.getUseClientMode()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.getUseClientMode());
+    }
+
+    @Test
+    public void testSetNeedClientAuth() {
+        ArgumentCaptor<Boolean> argumentCaptor = ArgumentCaptor.forClass(Boolean.TYPE);
+        sslSocketAdapter.setNeedClientAuth(true);
+        verify(delegate).setNeedClientAuth(argumentCaptor.capture());
+        assertEquals(true, argumentCaptor.getValue());
+    }
+
+    @Test
+    public void testGetNeedClientAuth() {
+        when(delegate.getNeedClientAuth()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.getNeedClientAuth());
+    }
+
+    @Test
+    public void testSetWantClientAuth() {
+        ArgumentCaptor<Boolean> argumentCaptor = ArgumentCaptor.forClass(Boolean.TYPE);
+        sslSocketAdapter.setWantClientAuth(true);
+        verify(delegate).setWantClientAuth(argumentCaptor.capture());
+        assertEquals(true, argumentCaptor.getValue());
+    }
+
+    @Test
+    public void testGetWantClientAuth() {
+        when(delegate.getWantClientAuth()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.getWantClientAuth());
+    }
+
+    @Test
+    public void testSetEnableSessionCreation() {
+        ArgumentCaptor<Boolean> argumentCaptor = ArgumentCaptor.forClass(Boolean.TYPE);
+        sslSocketAdapter.setEnableSessionCreation(true);
+        verify(delegate).setEnableSessionCreation(argumentCaptor.capture());
+        assertEquals(true, argumentCaptor.getValue());
+    }
+
+    @Test
+    public void testGetEnableSessionCreation() {
+        when(delegate.getEnableSessionCreation()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.getEnableSessionCreation());
+    }
+
+    @Test
+    public void testGetSSLParameters() {
+        SSLParameters sslParameters = mock(SSLParameters.class);
+        when(delegate.getSSLParameters()).thenReturn(sslParameters);
+        assertEquals(sslParameters, sslSocketAdapter.getSSLParameters());
+    }
+
     /*
-
-    @Override
-    public void startHandshake() throws IOException {
-        delegate.startHandshake();
-    }
-
-    @Override
-    public void setUseClientMode(boolean mode) {
-        delegate.setUseClientMode(mode);
-    }
-
-    @Override
-    public boolean getUseClientMode() {
-        return delegate.getUseClientMode();
-    }
-
-    @Override
-    public void setNeedClientAuth(boolean need) {
-        delegate.setNeedClientAuth(need);
-    }
-
-    @Override
-    public boolean getNeedClientAuth() {
-        return delegate.getNeedClientAuth();
-    }
-
-    @Override
-    public void setWantClientAuth(boolean want) {
-        delegate.setWantClientAuth(want);
-    }
-
-    @Override
-    public boolean getWantClientAuth() {
-        return delegate.getWantClientAuth();
-    }
-
-    @Override
-    public void setEnableSessionCreation(boolean flag) {
-        delegate.setEnableSessionCreation(flag);
-    }
-
-    @Override
-    public boolean getEnableSessionCreation() {
-        return delegate.getEnableSessionCreation();
-    }
-
-    @Override
-    public SSLParameters getSSLParameters() {
-        return delegate.getSSLParameters();
-    }
-
     @Override
     public void setSSLParameters(SSLParameters params) {
         delegate.setSSLParameters(params);
