@@ -4,7 +4,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.net.ssl.HandshakeCompletedListener;
@@ -13,6 +15,8 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.function.BiFunction;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -183,27 +187,41 @@ public class SSLSocketAdapterMockitoTest {
         assertEquals(sslParameters, sslSocketAdapter.getSSLParameters());
     }
 
+    @Test
+    public void testSetSSLParameters() {
+        SSLParameters sslParameters = Mockito.mock(SSLParameters.class);
+        ArgumentCaptor<SSLParameters> argumentCaptor = ArgumentCaptor.forClass(SSLParameters.class);
+        sslSocketAdapter.setSSLParameters(sslParameters);
+        verify(delegate).setSSLParameters(argumentCaptor.capture());
+        assertEquals(sslParameters, argumentCaptor.getValue());
+    }
+
+    @Test
+    public void testGetApplicationProtocol() {
+        when(delegate.getApplicationProtocol()).thenReturn("TLS");
+        assertEquals("TLS", sslSocketAdapter.getApplicationProtocol());
+    }
+
+    @Test
+    public void testGetHandshakeApplicationProtocol() {
+        when(delegate.getHandshakeApplicationProtocol()).thenReturn("H2");
+        assertEquals("H2", sslSocketAdapter.getHandshakeApplicationProtocol());
+    }
+
+    @Mock
+    private BiFunction<SSLSocket, List<String>, String> selectorMock;
+
+    @Captor
+    private ArgumentCaptor<BiFunction<SSLSocket, List<String>, String>> selectorCaptor;
+
+    @Test
+    public void testSetHandshakeApplicationProtocolSelector() {
+        sslSocketAdapter.setHandshakeApplicationProtocolSelector(selectorMock);
+        verify(delegate).setHandshakeApplicationProtocolSelector(selectorCaptor.capture());
+        assertEquals(selectorMock, selectorCaptor.getValue());
+    }
+
     /*
-    @Override
-    public void setSSLParameters(SSLParameters params) {
-        delegate.setSSLParameters(params);
-    }
-
-    @Override
-    public String getApplicationProtocol() {
-        return delegate.getApplicationProtocol();
-    }
-
-    @Override
-    public String getHandshakeApplicationProtocol() {
-        return delegate.getHandshakeApplicationProtocol();
-    }
-
-    @Override
-    public void setHandshakeApplicationProtocolSelector(BiFunction<SSLSocket, List<String>, String> selector) {
-        delegate.setHandshakeApplicationProtocolSelector(selector);
-    }
-
     @Override
     public BiFunction<SSLSocket, List<String>, String> getHandshakeApplicationProtocolSelector() {
         return delegate.getHandshakeApplicationProtocolSelector();
