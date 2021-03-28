@@ -728,38 +728,6 @@
                 <updatePolicy>daily</updatePolicy>
             </snapshots>
         </pluginRepository>
-        <pluginRepository>
-            <id>jcenter</id>
-            <name>JCenter</name>
-            <url>https://jcenter.bintray.com/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
-        <pluginRepository>
-            <id>kotlin-dokka-repository</id>
-            <name>Kotlin Dokka Repository</name>
-            <url>https://dl.bintray.com/kotlin/dokka/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
-        <pluginRepository>
-            <id>jetbrains-markdown-repository</id>
-            <name>JetBrains Markdown Repository</name>
-            <url>https://dl.bintray.com/jetbrains/markdown/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
-        <pluginRepository>
-            <id>kotlinx-repository</id>
-            <name>KotlinX Repository</name>
-            <url>https://dl.bintray.com/kotlin/kotlinx/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
     </pluginRepositories>
 
     <profiles>
