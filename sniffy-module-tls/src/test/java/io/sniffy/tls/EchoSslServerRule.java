@@ -214,8 +214,11 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
                 throw new RuntimeException(e);
             }
         }).flatMap(it -> Collections.list(it.getInetAddresses()).stream()).forEach(it -> {
+            // commented out since it's rather slow
+            /*
             generalNames.add(new GeneralName(GeneralName.dNSName, it.getHostName()));
             generalNames.add(new GeneralName(GeneralName.dNSName, it.getCanonicalHostName()));
+            */
             generalNames.add(new GeneralName(GeneralName.iPAddress, !it.getHostAddress().contains("%") ? it.getHostAddress() : it.getHostAddress().substring(0, it.getHostAddress().indexOf("%"))));
         });
 
