@@ -46,7 +46,7 @@ public class BaseSSLSocketTest {
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(REQUEST);
             outputStream.flush();
-            socket.shutdownOutput();
+            outputStream.close();
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             InputStream inputStream = socket.getInputStream();
@@ -54,7 +54,7 @@ public class BaseSSLSocketTest {
             while ((read = inputStream.read()) != -1) {
                 baos.write(read);
             }
-            socket.shutdownInput();
+            inputStream.close();
 
             echoServerRule.joinThreads();
 
