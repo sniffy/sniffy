@@ -46,21 +46,24 @@ public class BaseSSLSocketTest {
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(REQUEST);
             outputStream.flush();
-            outputStream.close();
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             InputStream inputStream = socket.getInputStream();
             int read;
-            while ((read = inputStream.read()) != -1) {
+            int bytesRead = 0;
+            while (bytesRead < RESPONSE.length && (read = inputStream.read()) != -1) {
                 baos.write(read);
+                bytesRead++;
             }
-            inputStream.close();
 
             echoServerRule.joinThreads();
+
+            socket.close();
 
             assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
             assertArrayEquals(RESPONSE, baos.toByteArray());
         } catch (Exception e) {
+            e.printStackTrace();
             fail(e.getMessage());
         }
 
