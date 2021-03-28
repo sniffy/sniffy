@@ -15,6 +15,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -221,28 +222,43 @@ public class SSLSocketAdapterMockitoTest {
         assertEquals(selectorMock, selectorCaptor.getValue());
     }
 
-    /*
-    @Override
-    public BiFunction<SSLSocket, List<String>, String> getHandshakeApplicationProtocolSelector() {
-        return delegate.getHandshakeApplicationProtocolSelector();
+    @Test
+    public void testGetHandshakeApplicationProtocolSelector() {
+        when(delegate.getHandshakeApplicationProtocolSelector()).thenReturn(selectorMock);
+        BiFunction<SSLSocket, List<String>, String> selector = sslSocketAdapter.getHandshakeApplicationProtocolSelector();
+        assertEquals(selectorMock, selector);
     }
 
-    @Override
-    public void connect(SocketAddress endpoint) throws IOException {
-        delegate.connect(endpoint);
+    @Test
+    public void testConnect() throws IOException {
+        SocketAddress socketAddress = Mockito.mock(SocketAddress.class);
+        ArgumentCaptor<SocketAddress> argumentCaptor = ArgumentCaptor.forClass(SocketAddress.class);
+        sslSocketAdapter.connect(socketAddress);
+        verify(delegate).connect(argumentCaptor.capture());
+        assertEquals(socketAddress, argumentCaptor.getValue());
     }
 
-    @Override
-    public void connect(SocketAddress endpoint, int timeout) throws IOException {
-        delegate.connect(endpoint, timeout);
+    @Test
+    public void connect() throws IOException {
+        SocketAddress socketAddress = Mockito.mock(SocketAddress.class);
+        ArgumentCaptor<SocketAddress> argumentCaptor = ArgumentCaptor.forClass(SocketAddress.class);
+        ArgumentCaptor<Integer> timeoutArgumentCaptor = ArgumentCaptor.forClass(Integer.TYPE);
+        sslSocketAdapter.connect(socketAddress, 42);
+        verify(delegate).connect(argumentCaptor.capture(), timeoutArgumentCaptor.capture());
+        assertEquals(socketAddress, argumentCaptor.getValue());
+        assertEquals(42, (int) timeoutArgumentCaptor.getValue());
     }
 
-    @Override
-    public void bind(SocketAddress bindpoint) throws IOException {
-        delegate.bind(bindpoint);
+    @Test
+    public void testBind() throws IOException {
+        SocketAddress socketAddress = Mockito.mock(SocketAddress.class);
+        ArgumentCaptor<SocketAddress> argumentCaptor = ArgumentCaptor.forClass(SocketAddress.class);
+        sslSocketAdapter.bind(socketAddress);
+        verify(delegate).bind(argumentCaptor.capture());
+        assertEquals(socketAddress, argumentCaptor.getValue());
     }
 
-    @Override
+    /*@Override
     public InetAddress getInetAddress() {
         return delegate.getInetAddress();
     }
