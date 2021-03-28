@@ -12,8 +12,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 
@@ -100,7 +98,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
             {
                 KeyStore keyStore = KeyStore.getInstance("jks");
                 keyStore.load(null, "changeit".toCharArray());
-                keyStore.setKeyEntry("key", certificateKeyPair.getPrivate(), serverKeyStorePassword.toCharArray(), new Certificate[]{ serverCertificate, selfSignedCertificate});
+                keyStore.setKeyEntry("key", certificateKeyPair.getPrivate(), serverKeyStorePassword.toCharArray(), new Certificate[]{serverCertificate, selfSignedCertificate});
                 FileOutputStream fos = new FileOutputStream(serverKeyStorePath);
                 keyStore.store(fos, serverKeyStorePassword.toCharArray());
                 fos.close();
@@ -126,7 +124,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
             {
                 KeyStore keyStore = KeyStore.getInstance("jks");
                 keyStore.load(null, "changeit".toCharArray());
-                keyStore.setKeyEntry("key", certificateKeyPair.getPrivate(), clientKeyStorePassword.toCharArray(), new Certificate[]{ serverCertificate, selfSignedCertificate});
+                keyStore.setKeyEntry("key", certificateKeyPair.getPrivate(), clientKeyStorePassword.toCharArray(), new Certificate[]{serverCertificate, selfSignedCertificate});
                 FileOutputStream fos = new FileOutputStream(clientKeyStorePath);
                 keyStore.store(fos, clientKeyStorePassword.toCharArray());
                 fos.close();
@@ -403,7 +401,8 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
                     baos.write(read);
                 }
 
-                socket.shutdownInput();
+                inputStream.close();
+
             } catch (SocketException e) {
                 if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
                     e.printStackTrace();
@@ -433,8 +432,8 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
                 outputStream.write(dataToBeSent);
                 outputStream.flush();
+                outputStream.close();
 
-                socket.shutdownOutput();
             } catch (SocketException e) {
                 if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
                     e.printStackTrace();
@@ -446,7 +445,6 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
         }
 
     }
-
 
 
 }
