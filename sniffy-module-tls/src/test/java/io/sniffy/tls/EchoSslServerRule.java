@@ -17,6 +17,7 @@ import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
 import java.math.BigInteger;
@@ -401,11 +402,17 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
                     baos.write(read);
                 }
 
-                inputStream.close();
-
             } catch (SocketException e) {
                 if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
                     e.printStackTrace();
+                }
+            } catch (SSLException e) {
+                Throwable t = e;
+                if (null != e.getCause()) {
+                    t = e.getCause();
+                }
+                if (!"socket closed".equalsIgnoreCase(t.getMessage())) {
+                    t.printStackTrace();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -432,11 +439,18 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
                 outputStream.write(dataToBeSent);
                 outputStream.flush();
-                outputStream.close();
 
             } catch (SocketException e) {
                 if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
                     e.printStackTrace();
+                }
+            } catch (SSLException e) {
+                Throwable t = e;
+                if (null != e.getCause()) {
+                    t = e.getCause();
+                }
+                if (!"socket closed".equalsIgnoreCase(t.getMessage())) {
+                    t.printStackTrace();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
