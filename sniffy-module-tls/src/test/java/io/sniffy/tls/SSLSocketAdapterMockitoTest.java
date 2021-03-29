@@ -15,6 +15,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -258,26 +259,33 @@ public class SSLSocketAdapterMockitoTest {
         assertEquals(socketAddress, argumentCaptor.getValue());
     }
 
-    /*@Override
-    public InetAddress getInetAddress() {
-        return delegate.getInetAddress();
+    @Test
+    public void testGetInetAddress() {
+        InetAddress inetAddress = mock(InetAddress.class);
+        when(delegate.getInetAddress()).thenReturn(inetAddress);
+        assertEquals(inetAddress, sslSocketAdapter.getInetAddress());
     }
 
-    @Override
-    public InetAddress getLocalAddress() {
-        return delegate.getLocalAddress();
+    @Test
+    public void testGetLocalAddress() {
+        InetAddress inetAddress = mock(InetAddress.class);
+        when(delegate.getLocalAddress()).thenReturn(inetAddress);
+        assertEquals(inetAddress, sslSocketAdapter.getLocalAddress());
     }
 
-    @Override
-    public int getPort() {
-        return delegate.getPort();
+    @Test
+    public void testGetPort() {
+        when(delegate.getPort()).thenReturn(42);
+        assertEquals(42, sslSocketAdapter.getPort());
     }
 
-    @Override
-    public int getLocalPort() {
-        return delegate.getLocalPort();
+    @Test
+    public void testGetLocalPort() {
+        when(delegate.getLocalPort()).thenReturn(42);
+        assertEquals(42, sslSocketAdapter.getLocalPort());
     }
 
+/*
     @Override
     public SocketAddress getRemoteSocketAddress() {
         return delegate.getRemoteSocketAddress();
