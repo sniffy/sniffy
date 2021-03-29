@@ -1,5 +1,8 @@
 package io.sniffy.tls;
 
+import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.ReflectionUtil;
+
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
@@ -7,6 +10,7 @@ import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -129,24 +133,66 @@ public class SSLSocketAdapter extends SSLSocket {
         delegate.setSSLParameters(params);
     }
 
-    @Override
+    // TODO: add earlier versions on Java 1.8 to CI/CD
+    // TODO: support it in Java 6 and 7
+    // wasn't available in earlier versions
+    //@Override
+    @SuppressWarnings("TryWithIdenticalCatches")
     public String getApplicationProtocol() {
-        return delegate.getApplicationProtocol();
+        try {
+            return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getApplicationProtocol", String.class);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
-    @Override
+    // wasn't available in earlier versions
+    //@Override
+    @SuppressWarnings("TryWithIdenticalCatches")
     public String getHandshakeApplicationProtocol() {
-        return delegate.getHandshakeApplicationProtocol();
+        try {
+            return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocol", String.class);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
-    @Override
+    // wasn't available in earlier versions
+    //@Override
+    @SuppressWarnings("TryWithIdenticalCatches")
     public void setHandshakeApplicationProtocolSelector(BiFunction<SSLSocket, List<String>, String> selector) {
-        delegate.setHandshakeApplicationProtocolSelector(selector);
+        try {
+            ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "setHandshakeApplicationProtocolSelector", BiFunction.class, selector, Void.class);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
-    @Override
+    // wasn't available in earlier versions
+    //@Override
+    @SuppressWarnings({"TryWithIdenticalCatches", "unchecked"})
     public BiFunction<SSLSocket, List<String>, String> getHandshakeApplicationProtocolSelector() {
-        return delegate.getHandshakeApplicationProtocolSelector();
+        try {
+            return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocolSelector", BiFunction.class);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
     @Override
