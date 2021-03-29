@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Date;
 
 import static org.junit.Assert.*;
 
@@ -38,14 +39,20 @@ public class BaseSSLSocketTest {
     protected void performSocketOperation() {
 
         try {
+            System.out.println(new Date() + " - Connecting to local SSL server"); // TODO: remove
+
             Socket socket = echoServerRule.getClientSSLContext().getSocketFactory().createSocket(localhost, echoServerRule.getBoundPort());
             socket.setReuseAddress(true);
 
             assertTrue(socket.isConnected());
 
+            System.out.println(new Date() + " - Sending request to local SSL server"); // TODO: remove
+
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(REQUEST);
             outputStream.flush();
+
+            System.out.println(new Date() + " - Request sent to local SSL server"); // TODO: remove
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             InputStream inputStream = socket.getInputStream();
@@ -56,9 +63,15 @@ public class BaseSSLSocketTest {
                 bytesRead++;
             }
 
+            System.out.println(new Date() + " - Response received from local SSL server"); // TODO: remove
+
             echoServerRule.joinThreads();
 
+            System.out.println(new Date() + " - Server threads joined"); // TODO: remove
+
             socket.close();
+
+
 
             assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
             assertArrayEquals(RESPONSE, baos.toByteArray());
