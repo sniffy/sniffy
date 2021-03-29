@@ -40,6 +40,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
     private final List<Socket> sockets = new ArrayList<>();
 
     private final AtomicInteger bytesReceivedCounter = new AtomicInteger();
+    private final int expectedBytes;
 
     private int boundPort = 10000;
     private ServerSocket serverSocket;
@@ -47,9 +48,10 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
     private final byte[] dataToBeSent;
     private final Queue<ByteArrayOutputStream> receivedData = new ConcurrentLinkedQueue<>();
 
-    public EchoSslServerRule(TemporaryFolder tempFolder, byte[] dataToBeSent) {
+    public EchoSslServerRule(TemporaryFolder tempFolder, byte[] dataToBeSent, int expectedBytes) {
         this.tempFolder = tempFolder;
         this.dataToBeSent = dataToBeSent;
+        this.expectedBytes = expectedBytes;
     }
 
     public int getBoundPort() {
@@ -199,6 +201,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
     }
 
+    @SuppressWarnings("CommentedOutCode")
     private static GeneralNames alternativeNames() throws SocketException {
 
         List<GeneralName> generalNames = new ArrayList<>();
@@ -207,6 +210,8 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
         generalNames.add(new GeneralName(GeneralName.iPAddress, "127.0.0.1"));
         generalNames.add(new GeneralName(GeneralName.iPAddress, "0:0:0:0:0:0:0:1"));
 
+        // Commented out since it slows down CI/CD a lot
+        /*
         Collections.list(NetworkInterface.getNetworkInterfaces()).stream().filter(it -> {
             try {
                 return it.isUp();
@@ -214,13 +219,11 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
                 throw new RuntimeException(e);
             }
         }).flatMap(it -> Collections.list(it.getInetAddresses()).stream()).forEach(it -> {
-            // commented out since it's rather slow
-            /*
             generalNames.add(new GeneralName(GeneralName.dNSName, it.getHostName()));
             generalNames.add(new GeneralName(GeneralName.dNSName, it.getCanonicalHostName()));
-            */
             generalNames.add(new GeneralName(GeneralName.iPAddress, !it.getHostAddress().contains("%") ? it.getHostAddress() : it.getHostAddress().substring(0, it.getHostAddress().indexOf("%"))));
         });
+        */
 
         return new GeneralNames(generalNames.toArray(new GeneralName[0]));
 
@@ -331,7 +334,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
                 Socket socket = serverSocket.accept();
                 socket.setReuseAddress(true);
-                //socket.setOOBInline(true);
+                //socket.setOOBInline(true); // OOBInline is not supported for SSLSocket
                 socket.setTcpNoDelay(true);
 
                 sockets.add(socket);
@@ -360,6 +363,35 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
     public void joinThreads() {
 
+        if (bytesReceivedCounter.get() < expectedBytes) {
+            synchronized (this) {
+                try {
+                    wait(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        socketThreads.forEach((thread) -> {
+            try {
+                if (thread.isAlive()) {
+                    thread.interrupt();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+
+        sockets.forEach((socket) -> {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
         socketThreads.forEach((thread) -> {
             try {
                 thread.join(10000);
@@ -368,14 +400,6 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
                     thread.join(1000);
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-
-        sockets.forEach((socket) -> {
-            try {
-                socket.close();
-            } catch (IOException e) {
                 e.printStackTrace();
             }
         });
@@ -396,29 +420,35 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
         @Override
         public void run() {
-            try {
+            synchronized (EchoSslServerRule.this) {
+                try {
 
-                int read;
+                    int read;
+                    int bytesRead = 0;
 
-                while ((read = inputStream.read()) != -1) {
-                    bytesReceivedCounter.incrementAndGet();
-                    baos.write(read);
-                }
+                    while (bytesRead < expectedBytes && (read = inputStream.read()) != -1) {
+                        bytesReceivedCounter.incrementAndGet();
+                        baos.write(read);
+                        bytesRead++;
+                    }
 
-            } catch (SocketException e) {
-                if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
+                } catch (SocketException e) {
+                    if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
+                        e.printStackTrace();
+                    }
+                } catch (SSLException e) {
+                    Throwable t = e;
+                    if (null != e.getCause()) {
+                        t = e.getCause();
+                    }
+                    if (!"socket closed".equalsIgnoreCase(t.getMessage())) {
+                        t.printStackTrace();
+                    }
+                } catch (Exception e) {
                     e.printStackTrace();
+                } finally {
+                    EchoSslServerRule.this.notifyAll(); // TODO: move to joinServerThreads method
                 }
-            } catch (SSLException e) {
-                Throwable t = e;
-                if (null != e.getCause()) {
-                    t = e.getCause();
-                }
-                if (!"socket closed".equalsIgnoreCase(t.getMessage())) {
-                    t.printStackTrace();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
 
         }

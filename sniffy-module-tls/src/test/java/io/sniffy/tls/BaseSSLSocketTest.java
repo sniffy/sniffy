@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 public class BaseSSLSocketTest {
 
     private final TemporaryFolder tempFolder = new TemporaryFolder();
-    private final EchoSslServerRule echoServerRule = new EchoSslServerRule(tempFolder, RESPONSE);
+    private final EchoSslServerRule echoServerRule = new EchoSslServerRule(tempFolder, RESPONSE, REQUEST.length);
 
     @Rule
     public TestRule chain = RuleChain
@@ -60,8 +60,8 @@ public class BaseSSLSocketTest {
 
             socket.close();
 
-            assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
             assertArrayEquals(RESPONSE, baos.toByteArray());
+            assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
         } catch (Exception e) {
             e.printStackTrace();
             fail(e.getMessage());
