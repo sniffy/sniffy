@@ -72,7 +72,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         SocketImpl socketImpl = isServerSocket() ? newSocketImpl(true) :
                 JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
                         new CompatSnifferSocketImpl(newSocketImpl(false));
-        System.out.println("Created = " + socketImpl.getClass()); // TODO: remove
+        new Exception("Created = " + socketImpl.getClass()).printStackTrace(); // TODO: remove
 
         return socketImpl;
     }
