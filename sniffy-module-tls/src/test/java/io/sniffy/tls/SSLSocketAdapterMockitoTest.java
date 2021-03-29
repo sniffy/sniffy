@@ -345,140 +345,204 @@ public class SSLSocketAdapterMockitoTest {
         assertEquals(true, sslSocketAdapter.getTcpNoDelay());
     }
 
-    /*
-    @Override
-    public void setSoLinger(boolean on, int linger) throws SocketException {
-        delegate.setSoLinger(on, linger);
+
+    @Test
+    public void testSetSoLinger() throws SocketException {
+        ArgumentCaptor<Boolean> argument1Captor = ArgumentCaptor.forClass(Boolean.TYPE);
+        ArgumentCaptor<Integer> argument2Captor = ArgumentCaptor.forClass(Integer.TYPE);
+        sslSocketAdapter.setSoLinger(true, 42);
+        verify(delegate).setSoLinger(argument1Captor.capture(), argument2Captor.capture());
+        assertEquals(true, argument1Captor.getValue());
+        assertEquals(42, (int) argument2Captor.getValue());
     }
 
-    @Override
-    public int getSoLinger() throws SocketException {
-        return delegate.getSoLinger();
+    @Test
+    public void testGetSoLinger() throws SocketException {
+        when(delegate.getSoLinger()).thenReturn(42);
+        assertEquals(42, sslSocketAdapter.getSoLinger());
     }
 
-    @Override
-    public void sendUrgentData(int data) throws IOException {
-        delegate.sendUrgentData(data);
+    @Test
+    public void testSendUrgentData() throws IOException {
+        ArgumentCaptor<Integer> argumentCaptor = ArgumentCaptor.forClass(Integer.TYPE);
+        sslSocketAdapter.sendUrgentData(42);
+        verify(delegate).sendUrgentData(argumentCaptor.capture());
+        assertEquals(42, (int) argumentCaptor.getValue());
     }
 
-    @Override
-    public void setOOBInline(boolean on) throws SocketException {
-        delegate.setOOBInline(on);
+    @Test
+    public void testSetOOBInline() throws SocketException {
+        ArgumentCaptor<Boolean> argumentCaptor = ArgumentCaptor.forClass(Boolean.TYPE);
+        sslSocketAdapter.setOOBInline(true);
+        verify(delegate).setOOBInline(argumentCaptor.capture());
+        assertEquals(true, argumentCaptor.getValue());
     }
 
-    @Override
-    public boolean getOOBInline() throws SocketException {
-        return delegate.getOOBInline();
+    @Test
+    public void testGetOOBInline() throws SocketException {
+        when(delegate.getOOBInline()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.getOOBInline());
     }
 
-    @Override
-    public void setSoTimeout(int timeout) throws SocketException {
-        delegate.setSoTimeout(timeout);
+    @Test
+    public void testSetSoTimeout() throws SocketException {
+        ArgumentCaptor<Integer> argumentCaptor = ArgumentCaptor.forClass(Integer.TYPE);
+        sslSocketAdapter.setSoTimeout(42);
+        verify(delegate).setSoTimeout(argumentCaptor.capture());
+        assertEquals(42, (int) argumentCaptor.getValue());
     }
 
-    @Override
-    public int getSoTimeout() throws SocketException {
-        return delegate.getSoTimeout();
+    @Test
+    public void testGetSoTimeout() throws SocketException {
+        when(delegate.getSoTimeout()).thenReturn(42);
+        assertEquals(42, sslSocketAdapter.getSoTimeout());
     }
 
-    @Override
-    public void setSendBufferSize(int size) throws SocketException {
-        delegate.setSendBufferSize(size);
+    @Test
+    public void testSetSendBufferSize() throws SocketException {
+        ArgumentCaptor<Integer> argumentCaptor = ArgumentCaptor.forClass(Integer.TYPE);
+        sslSocketAdapter.setSendBufferSize(42);
+        verify(delegate).setSendBufferSize(argumentCaptor.capture());
+        assertEquals(42, (int) argumentCaptor.getValue());
     }
 
-    @Override
-    public int getSendBufferSize() throws SocketException {
-        return delegate.getSendBufferSize();
+    @Test
+    public void testGetSendBufferSize() throws SocketException {
+        when(delegate.getSendBufferSize()).thenReturn(42);
+        assertEquals(42, sslSocketAdapter.getSendBufferSize());
     }
 
-    @Override
-    public void setReceiveBufferSize(int size) throws SocketException {
-        delegate.setReceiveBufferSize(size);
+    @Test
+    public void testSetReceiveBufferSize() throws SocketException {
+        ArgumentCaptor<Integer> argumentCaptor = ArgumentCaptor.forClass(Integer.TYPE);
+        sslSocketAdapter.setReceiveBufferSize(42);
+        verify(delegate).setReceiveBufferSize(argumentCaptor.capture());
+        assertEquals(42, (int) argumentCaptor.getValue());
     }
 
-    @Override
-    public int getReceiveBufferSize() throws SocketException {
-        return delegate.getReceiveBufferSize();
+    @Test
+    public void testGetReceiveBufferSize() throws SocketException {
+        when(delegate.getReceiveBufferSize()).thenReturn(42);
+        assertEquals(42, sslSocketAdapter.getReceiveBufferSize());
     }
 
-    @Override
-    public void setKeepAlive(boolean on) throws SocketException {
-        delegate.setKeepAlive(on);
+    @Test
+    public void testSetKeepAlive() throws SocketException {
+        ArgumentCaptor<Boolean> argumentCaptor = ArgumentCaptor.forClass(Boolean.TYPE);
+        sslSocketAdapter.setKeepAlive(true);
+        verify(delegate).setKeepAlive(argumentCaptor.capture());
+        assertEquals(true, argumentCaptor.getValue());
     }
 
-    @Override
-    public boolean getKeepAlive() throws SocketException {
-        return delegate.getKeepAlive();
+    @Test
+    public void testGetKeepAlive() throws SocketException {
+        when(delegate.getKeepAlive()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.getKeepAlive());
     }
 
-    @Override
-    public void setTrafficClass(int tc) throws SocketException {
-        delegate.setTrafficClass(tc);
+    @Test
+    public void testSetTrafficClass() throws SocketException {
+        ArgumentCaptor<Integer> argumentCaptor = ArgumentCaptor.forClass(Integer.TYPE);
+        sslSocketAdapter.setTrafficClass(42);
+        verify(delegate).setTrafficClass(argumentCaptor.capture());
+        assertEquals(42, (int) argumentCaptor.getValue());
     }
 
-    @Override
-    public int getTrafficClass() throws SocketException {
-        return delegate.getTrafficClass();
+    @Test
+    public void getTrafficClass() throws SocketException {
+        when(delegate.getTrafficClass()).thenReturn(42);
+        assertEquals(42, sslSocketAdapter.getTrafficClass());
     }
 
-    @Override
-    public void setReuseAddress(boolean on) throws SocketException {
-        delegate.setReuseAddress(on);
+    @Test
+    public void testSetReuseAddress() throws SocketException {
+        ArgumentCaptor<Boolean> argumentCaptor = ArgumentCaptor.forClass(Boolean.TYPE);
+        sslSocketAdapter.setReuseAddress(true);
+        verify(delegate).setReuseAddress(argumentCaptor.capture());
+        assertEquals(true, argumentCaptor.getValue());
     }
 
-    @Override
-    public boolean getReuseAddress() throws SocketException {
-        return delegate.getReuseAddress();
+    @Test
+    public void testGetReuseAddress() throws SocketException {
+        when(delegate.getReuseAddress()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.getReuseAddress());
     }
 
-    @Override
-    public void close() throws IOException {
-        delegate.close();
+    @Test
+    public void testClose() throws IOException {
+        sslSocketAdapter.close();
+        verify(delegate).close();
+        verifyNoMoreInteractions(delegate);
     }
 
-    @Override
-    public void shutdownInput() throws IOException {
-        delegate.shutdownInput();
+    @Test
+    public void testShutdownInput() throws IOException {
+        sslSocketAdapter.shutdownInput();
+        verify(delegate).shutdownInput();
+        verifyNoMoreInteractions(delegate);
     }
 
-    @Override
-    public void shutdownOutput() throws IOException {
-        delegate.shutdownOutput();
+    @Test
+    public void testShutdownOutput() throws IOException {
+        sslSocketAdapter.shutdownOutput();
+        verify(delegate).shutdownOutput();
+        verifyNoMoreInteractions(delegate);
     }
 
-    @Override
+    // TODO: evaluate if we need to delegate it
+    /*@Override
     public String toString() {
         return delegate.toString();
-    }
-
-    @Override
-    public boolean isConnected() {
-        return delegate.isConnected();
-    }
-
-    @Override
-    public boolean isBound() {
-        return delegate.isBound();
-    }
-
-    @Override
-    public boolean isClosed() {
-        return delegate.isClosed();
-    }
-
-    @Override
-    public boolean isInputShutdown() {
-        return delegate.isInputShutdown();
-    }
-
-    @Override
-    public boolean isOutputShutdown() {
-        return delegate.isOutputShutdown();
-    }
-
-    @Override
-    public void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
-        delegate.setPerformancePreferences(connectionTime, latency, bandwidth);
     }*/
+
+    @Test
+    public void testIsConnected() {
+        when(delegate.isConnected()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.isConnected());
+    }
+
+    @Test
+    public void testIsBound() {
+        when(delegate.isBound()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.isBound());
+    }
+
+    @Test
+    public void testIsClosed() {
+        when(delegate.isClosed()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.isClosed());
+    }
+
+    @Test
+    public void testIsInputShutdown() {
+        when(delegate.isInputShutdown()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.isInputShutdown());
+    }
+
+    @Test
+    public void testIsOutputShutdown() {
+        when(delegate.isOutputShutdown()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.isOutputShutdown());
+    }
+
+    @Test
+    public void testSetPerformancePreferences() {
+        ArgumentCaptor<Integer> argument1Captor = ArgumentCaptor.forClass(Integer.TYPE);
+        ArgumentCaptor<Integer> argument2Captor = ArgumentCaptor.forClass(Integer.TYPE);
+        ArgumentCaptor<Integer> argument3Captor = ArgumentCaptor.forClass(Integer.TYPE);
+        sslSocketAdapter.setPerformancePreferences(1, 2, 3);
+        verify(delegate).setPerformancePreferences(argument1Captor.capture(), argument2Captor.capture(), argument3Captor.capture());
+        assertEquals(1, (int) argument1Captor.getValue());
+        assertEquals(2, (int) argument2Captor.getValue());
+        assertEquals(3, (int) argument3Captor.getValue());
+    }
 
 }
