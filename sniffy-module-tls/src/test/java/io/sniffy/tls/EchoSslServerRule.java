@@ -417,6 +417,10 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
                     bytesRead++;
                 }
 
+                System.out.println(new Date() + " - Server received " + bytesRead + " bytes from local SSL client"); // TODO: remove
+
+                System.out.flush();
+
             } catch (SocketException e) {
                 if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
                     e.printStackTrace();

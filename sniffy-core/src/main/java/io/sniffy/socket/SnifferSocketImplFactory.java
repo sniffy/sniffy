@@ -69,12 +69,12 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
     @Override
     public SocketImpl createSocketImpl() {
-        System.out.println("JVMUtil.getVersion() = " + JVMUtil.getVersion()); // TODO: remove
         SocketImpl socketImpl = isServerSocket() ? newSocketImpl(true) :
                 JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
                         new CompatSnifferSocketImpl(newSocketImpl(false));
-        new Exception("Created = " + socketImpl.getClass()).printStackTrace(); // TODO: remove
-        if  (StackTraceExtractor.hasClassInStackTrace("sun.security.ssl.SSLServerSocketImpl")) return newSocketImpl(false);
+        if  (StackTraceExtractor.hasClassInStackTrace("sun.security.ssl.SSLServerSocketImpl")) socketImpl = newSocketImpl(false);
+        new Exception("Created = " + socketImpl.getClass()).printStackTrace(System.out); // TODO: remove
+        System.out.flush();
         return socketImpl;
     }
 
