@@ -3,6 +3,7 @@ package io.sniffy.socket;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ReflectionUtil;
+import io.sniffy.util.StackTraceExtractor;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -73,7 +74,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
                 JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
                         new CompatSnifferSocketImpl(newSocketImpl(false));
         new Exception("Created = " + socketImpl.getClass()).printStackTrace(); // TODO: remove
-
+        if  (StackTraceExtractor.hasClassInStackTrace("sun.security.ssl.SSLServerSocketImpl")) return newSocketImpl(false);
         return socketImpl;
     }
 
