@@ -76,10 +76,8 @@ public class BaseSSLSocketTest {
 
             socket.close();
 
-
-
-            assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
             assertArrayEquals(RESPONSE, baos.toByteArray());
+            assertArrayEquals(REQUEST, echoServerRule.pollReceivedData());
         } catch (Exception e) {
             e.printStackTrace();
             fail(e.getMessage());
