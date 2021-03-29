@@ -201,6 +201,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
     }
 
+    @SuppressWarnings("CommentedOutCode")
     private static GeneralNames alternativeNames() throws SocketException {
 
         List<GeneralName> generalNames = new ArrayList<>();
@@ -209,7 +210,9 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
         generalNames.add(new GeneralName(GeneralName.iPAddress, "127.0.0.1"));
         generalNames.add(new GeneralName(GeneralName.iPAddress, "0:0:0:0:0:0:0:1"));
 
-        /*Collections.list(NetworkInterface.getNetworkInterfaces()).stream().filter(it -> {
+        // Commented out since it slows down CI/CD a lot
+        /*
+        Collections.list(NetworkInterface.getNetworkInterfaces()).stream().filter(it -> {
             try {
                 return it.isUp();
             } catch (SocketException e) {
@@ -219,7 +222,8 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
             generalNames.add(new GeneralName(GeneralName.dNSName, it.getHostName()));
             generalNames.add(new GeneralName(GeneralName.dNSName, it.getCanonicalHostName()));
             generalNames.add(new GeneralName(GeneralName.iPAddress, !it.getHostAddress().contains("%") ? it.getHostAddress() : it.getHostAddress().substring(0, it.getHostAddress().indexOf("%"))));
-        });*/
+        });
+        */
 
         return new GeneralNames(generalNames.toArray(new GeneralName[0]));
 
@@ -330,7 +334,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
                 Socket socket = serverSocket.accept();
                 socket.setReuseAddress(true);
-                //socket.setOOBInline(true);
+                //socket.setOOBInline(true); // OOBInline is not supported for SSLSocket
                 socket.setTcpNoDelay(true);
 
                 sockets.add(socket);
@@ -428,10 +432,6 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
                         bytesRead++;
                     }
 
-                    System.out.println(new Date() + " - Server received " + bytesRead + " bytes from local SSL client"); // TODO: remove
-
-                    System.out.flush();
-
                 } catch (SocketException e) {
                     if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
                         e.printStackTrace();
@@ -447,7 +447,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
-                    EchoSslServerRule.this.notifyAll();
+                    EchoSslServerRule.this.notifyAll(); // TODO: move to joinServerThreads method
                 }
             }
 

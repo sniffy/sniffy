@@ -561,10 +561,6 @@ public class Sniffy {
         // build stackTrace
         String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
 
-        if (null == address) {
-            new Exception("Strange - address is null").printStackTrace(); // TODO: remove
-        }
-
         SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId);
 
         // notify listeners
