@@ -68,9 +68,13 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
     @Override
     public SocketImpl createSocketImpl() {
-        return isServerSocket() ? newSocketImpl(true) :
+        System.out.println("JVMUtil.getVersion() = " + JVMUtil.getVersion()); // TODO: remove
+        SocketImpl socketImpl = isServerSocket() ? newSocketImpl(true) :
                 JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
                         new CompatSnifferSocketImpl(newSocketImpl(false));
+        System.out.println("Created = " + socketImpl.getClass()); // TODO: remove
+
+        return socketImpl;
     }
 
     private static boolean isServerSocket() {
