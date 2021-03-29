@@ -1,5 +1,6 @@
 package io.sniffy.tls;
 
+import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ReflectionUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -207,14 +208,18 @@ public class SSLSocketAdapterMockitoTest {
 
     @Test
     public void testGetApplicationProtocol() throws Exception {
-        when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getApplicationProtocol", String.class)).thenReturn("TLS");
-        assertEquals("TLS", ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getApplicationProtocol", String.class));
+        if (JVMUtil.getVersion() >= 9) {
+            when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getApplicationProtocol", String.class)).thenReturn("TLS");
+            assertEquals("TLS", ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getApplicationProtocol", String.class));
+        }
     }
 
     @Test
     public void testGetHandshakeApplicationProtocol() throws Exception {
-        when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocol", String.class)).thenReturn("TLS");
-        assertEquals("TLS", ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getHandshakeApplicationProtocol", String.class));
+        if (JVMUtil.getVersion() >= 9) {
+            when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocol", String.class)).thenReturn("TLS");
+            assertEquals("TLS", ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getHandshakeApplicationProtocol", String.class));
+        }
     }
 
     @Mock
@@ -225,19 +230,22 @@ public class SSLSocketAdapterMockitoTest {
 
     @Test
     public void testSetHandshakeApplicationProtocolSelector() throws Exception {
-        ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "setHandshakeApplicationProtocolSelector", BiFunction.class, selectorMock, Void.class);
-        ReflectionUtil.invokeMethod(SSLSocket.class, verify(delegate), "setHandshakeApplicationProtocolSelector", BiFunction.class, selectorCaptor.capture(), Void.class);
-        assertEquals(selectorMock, selectorCaptor.getValue());
+        if (JVMUtil.getVersion() >= 9) {
+            ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "setHandshakeApplicationProtocolSelector", BiFunction.class, selectorMock, Void.class);
+            ReflectionUtil.invokeMethod(SSLSocket.class, verify(delegate), "setHandshakeApplicationProtocolSelector", BiFunction.class, selectorCaptor.capture(), Void.class);
+            assertEquals(selectorMock, selectorCaptor.getValue());
+        }
     }
 
     @Test
     public void testGetHandshakeApplicationProtocolSelector() throws Exception {
-
-        when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocolSelector", BiFunction.class)).thenReturn(selectorMock);
-        //noinspection unchecked
-        BiFunction<SSLSocket, List<String>, String> selector = (BiFunction<SSLSocket, List<String>, String>)
-                ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getHandshakeApplicationProtocolSelector", BiFunction.class);
-        assertEquals(selectorMock, selector);
+        if (JVMUtil.getVersion() >= 9) {
+            when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocolSelector", BiFunction.class)).thenReturn(selectorMock);
+            //noinspection unchecked
+            BiFunction<SSLSocket, List<String>, String> selector = (BiFunction<SSLSocket, List<String>, String>)
+                    ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getHandshakeApplicationProtocolSelector", BiFunction.class);
+            assertEquals(selectorMock, selector);
+        }
     }
 
     @Test
