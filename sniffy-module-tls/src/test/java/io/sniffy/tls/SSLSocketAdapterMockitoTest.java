@@ -16,8 +16,12 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.SocketAddress;
+import java.net.SocketException;
+import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -291,42 +295,57 @@ public class SSLSocketAdapterMockitoTest {
         assertEquals(42, sslSocketAdapter.getLocalPort());
     }
 
-/*
-    @Override
-    public SocketAddress getRemoteSocketAddress() {
-        return delegate.getRemoteSocketAddress();
+    @Test
+    public void testGetRemoteSocketAddress() {
+        SocketAddress socketAddress = mock(SocketAddress.class);
+        when(delegate.getRemoteSocketAddress()).thenReturn(socketAddress);
+        assertEquals(socketAddress, sslSocketAdapter.getRemoteSocketAddress());
     }
 
-    @Override
-    public SocketAddress getLocalSocketAddress() {
-        return delegate.getLocalSocketAddress();
+    @Test
+    public void testGetLocalSocketAddress() {
+        SocketAddress socketAddress = mock(SocketAddress.class);
+        when(delegate.getLocalSocketAddress()).thenReturn(socketAddress);
+        assertEquals(socketAddress, sslSocketAdapter.getLocalSocketAddress());
     }
 
-    @Override
-    public SocketChannel getChannel() {
-        return delegate.getChannel();
+    @Test
+    public void testGetChannel() {
+        SocketChannel socketChannel = mock(SocketChannel.class);
+        when(delegate.getChannel()).thenReturn(socketChannel);
+        assertEquals(socketChannel, sslSocketAdapter.getChannel());
     }
 
-    @Override
-    public InputStream getInputStream() throws IOException {
-        return delegate.getInputStream();
+    @Test
+    public void testGetInputStream() throws IOException {
+        InputStream inputStream = mock(InputStream.class);
+        when(delegate.getInputStream()).thenReturn(inputStream);
+        assertEquals(inputStream, sslSocketAdapter.getInputStream());
     }
 
-    @Override
-    public OutputStream getOutputStream() throws IOException {
-        return delegate.getOutputStream();
+    @Test
+    public void testGetOutputStream() throws IOException {
+        OutputStream outputStream = mock(OutputStream.class);
+        when(delegate.getOutputStream()).thenReturn(outputStream);
+        assertEquals(outputStream, sslSocketAdapter.getOutputStream());
     }
 
-    @Override
-    public void setTcpNoDelay(boolean on) throws SocketException {
-        delegate.setTcpNoDelay(on);
+    @Test
+    public void testSetTcpNoDelay() throws SocketException {
+        ArgumentCaptor<Boolean> argumentCaptor = ArgumentCaptor.forClass(Boolean.TYPE);
+        sslSocketAdapter.setTcpNoDelay(true);
+        verify(delegate).setTcpNoDelay(argumentCaptor.capture());
+        assertEquals(true, argumentCaptor.getValue());
     }
 
-    @Override
-    public boolean getTcpNoDelay() throws SocketException {
-        return delegate.getTcpNoDelay();
+    @Test
+    public void testGetTcpNoDelay() throws SocketException {
+        when(delegate.getTcpNoDelay()).thenReturn(true);
+        //noinspection SimplifiableAssertion
+        assertEquals(true, sslSocketAdapter.getTcpNoDelay());
     }
 
+    /*
     @Override
     public void setSoLinger(boolean on, int linger) throws SocketException {
         delegate.setSoLinger(on, linger);
