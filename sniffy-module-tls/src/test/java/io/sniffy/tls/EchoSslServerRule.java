@@ -359,6 +359,16 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
     public void joinThreads() {
 
+        if (bytesReceivedCounter.get() < expectedBytes) {
+            synchronized (this) {
+                try {
+                    wait(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         socketThreads.forEach((thread) -> {
             try {
                 if (thread.isAlive()) {
@@ -406,35 +416,39 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
         @Override
         public void run() {
-            try {
+            synchronized (EchoSslServerRule.this) {
+                try {
 
-                int read;
-                int bytesRead = 0;
+                    int read;
+                    int bytesRead = 0;
 
-                while (bytesRead < expectedBytes && (read = inputStream.read()) != -1) {
-                    bytesReceivedCounter.incrementAndGet();
-                    baos.write(read);
-                    bytesRead++;
-                }
+                    while (bytesRead < expectedBytes && (read = inputStream.read()) != -1) {
+                        bytesReceivedCounter.incrementAndGet();
+                        baos.write(read);
+                        bytesRead++;
+                    }
 
-                System.out.println(new Date() + " - Server received " + bytesRead + " bytes from local SSL client"); // TODO: remove
+                    System.out.println(new Date() + " - Server received " + bytesRead + " bytes from local SSL client"); // TODO: remove
 
-                System.out.flush();
+                    System.out.flush();
 
-            } catch (SocketException e) {
-                if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
+                } catch (SocketException e) {
+                    if (!"socket closed".equalsIgnoreCase(e.getMessage())) {
+                        e.printStackTrace();
+                    }
+                } catch (SSLException e) {
+                    Throwable t = e;
+                    if (null != e.getCause()) {
+                        t = e.getCause();
+                    }
+                    if (!"socket closed".equalsIgnoreCase(t.getMessage())) {
+                        t.printStackTrace();
+                    }
+                } catch (Exception e) {
                     e.printStackTrace();
+                } finally {
+                    EchoSslServerRule.this.notifyAll();
                 }
-            } catch (SSLException e) {
-                Throwable t = e;
-                if (null != e.getCause()) {
-                    t = e.getCause();
-                }
-                if (!"socket closed".equalsIgnoreCase(t.getMessage())) {
-                    t.printStackTrace();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
 
         }
