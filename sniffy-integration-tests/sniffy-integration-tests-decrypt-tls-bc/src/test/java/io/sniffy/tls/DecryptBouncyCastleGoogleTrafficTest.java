@@ -19,7 +19,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
-public class DecryptGoogleTrafficTest {
+public class DecryptBouncyCastleGoogleTrafficTest {
 
     @SuppressWarnings("CharsetObjectCanBeUsed")
     @Test
