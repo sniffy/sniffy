@@ -106,15 +106,15 @@ public class SniffyProviderListUtil {
 
     public static void uninstall() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
-        Class<?> providersClass = Class.forName("sun.security.jca.Providers");
-        Class<?> providerListClass = Class.forName("sun.security.jca.ProviderList");
-
-        Object list = ReflectionUtil.invokeMethod(providersClass, null, "getProviderList");
-        Object providerList = ReflectionUtil.invokeMethod(providerListClass, null, "remove",
-                providerListClass, list,
-                String.class, SNIFFY_PROVIDER_NAME
-        );
-        ReflectionUtil.invokeMethod(providersClass, null, "setProviderList", providerListClass, providerList);
+        for (Provider provider : Security.getProviders()) {
+            if (provider instanceof SniffySSLContextProvider) {
+                Provider originalProvider = ((SniffySSLContextProvider) provider).getOriginalProvider();
+                Security.removeProvider(provider.getName());
+                if (null != originalProvider) {
+                    Security.addProvider(originalProvider); // TODO: how we can preserve original order?
+                }
+            }
+        }
 
     }
 

@@ -14,12 +14,16 @@ public class SniffySSLContextProvider extends Provider {
 
     public static final String SNIFFY_PROVIDER_NAME = "Sniffy";
 
+    private final Provider originalProvider;
+
     public SniffySSLContextProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchAlgorithmException, NoSuchFieldException {
         this(SNIFFY_PROVIDER_NAME, Constants.MAJOR_VERSION, "SniffySSLContextProvider");
     }
 
     public SniffySSLContextProvider(Provider delegate) throws IllegalAccessException, NoSuchFieldException, ClassNotFoundException {
         super(delegate.getName(), delegate.getVersion(), delegate.getInfo());
+
+        this.originalProvider = delegate;
 
         for (Service service : delegate.getServices()) {
             putServiceIfAbsent(new SniffySSLContextProviderService(
@@ -36,6 +40,8 @@ public class SniffySSLContextProvider extends Provider {
 
     public SniffySSLContextProvider(String providerName, double version, String providerInfo) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchAlgorithmException, NoSuchFieldException {
         super(providerName, version, providerInfo);
+
+        this.originalProvider = null;
 
         for (Map.Entry<String, Service[]> entry : SniffyProviderListUtil.getOriginalSslContextProviders().entrySet()) {
             String algorithm = entry.getKey();
@@ -73,4 +79,7 @@ public class SniffySSLContextProvider extends Provider {
         return resultAttributes;
     }
 
+    public Provider getOriginalProvider() {
+        return originalProvider;
+    }
 }
