@@ -13,6 +13,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>sniffy-integration-tests-decrypt-tls</module>
+        <module>sniffy-integration-tests-decrypt-tls-bc</module>
         <module>sniffy-integration-tests-spock</module>
 	    <module>sniffy-integration-tests-spring-boot</module>
 	    <module>sniffy-integration-tests-spring-boot-2</module>

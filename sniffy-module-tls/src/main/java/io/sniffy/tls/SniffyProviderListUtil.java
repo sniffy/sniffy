@@ -2,8 +2,12 @@ package io.sniffy.tls;
 
 import io.sniffy.util.ReflectionUtil;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLContextSpi;
 import java.lang.reflect.InvocationTargetException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.Security;
 import java.util.*;
 
 import static io.sniffy.tls.SniffySSLContextProvider.SNIFFY_PROVIDER_NAME;
@@ -14,13 +18,18 @@ public class SniffyProviderListUtil {
 
     private static volatile Map<String, Provider.Service[]> ORIGINAL_SSL_CONTEXT_PROVIDERS;
 
-    public static Map<String, Provider.Service[]> getOriginalSslContextProviders() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private static volatile SSLContextSpi ORIGINAL_SSL_CONTEXT_SPI;
+
+    public static Map<String, Provider.Service[]> getOriginalSslContextProviders() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchAlgorithmException {
         if (null == ORIGINAL_SSL_CONTEXT_PROVIDERS) {
             synchronized (SniffyProviderListUtil.class) {
                 if (null == ORIGINAL_SSL_CONTEXT_PROVIDERS) {
                     Map<String, List<Provider.Service>> sslContextProviders = getOriginalSSLContextProvidersImpl();
-                    ORIGINAL_SSL_CONTEXT_PROVIDERS = new HashMap<String, Provider.Service[]>(sslContextProviders.size());
+                    ORIGINAL_SSL_CONTEXT_PROVIDERS = new LinkedHashMap<String, Provider.Service[]>(sslContextProviders.size());
                     for (Map.Entry<String, List<Provider.Service>> entry : sslContextProviders.entrySet()) {
+                        if (null == ORIGINAL_SSL_CONTEXT_SPI && "Default".equalsIgnoreCase(entry.getKey()) && !entry.getValue().isEmpty()) {
+                            ORIGINAL_SSL_CONTEXT_SPI = (SSLContextSpi) entry.getValue().get(0).newInstance(null);
+                        }
                         ORIGINAL_SSL_CONTEXT_PROVIDERS.put(entry.getKey(), entry.getValue().toArray(new Provider.Service[0]));
                     }
                     ORIGINAL_SSL_CONTEXT_PROVIDERS = Collections.unmodifiableMap(ORIGINAL_SSL_CONTEXT_PROVIDERS);
@@ -30,18 +39,33 @@ public class SniffyProviderListUtil {
         return ORIGINAL_SSL_CONTEXT_PROVIDERS;
     }
 
+    public static SSLContextSpi getOriginalSslContextSpi() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchAlgorithmException {
+        if (null == ORIGINAL_SSL_CONTEXT_SPI) {
+            synchronized (SniffyProviderListUtil.class) {
+                if (null == ORIGINAL_SSL_CONTEXT_SPI) {
+                    getOriginalSslContextProviders();
+                }
+            }
+        }
+        return ORIGINAL_SSL_CONTEXT_SPI;
+    }
+
+    private static Set<Provider> getOriginalJsseProviders() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchAlgorithmException {
+        Set<Provider> originalProviders = new HashSet<Provider>();
+
+        for (Provider.Service[] services : getOriginalSslContextProviders().values()) {
+            for (Provider.Service service: services) {
+                originalProviders.add(service.getProvider());
+            }
+        }
+        return originalProviders;
+    }
+
     private static Map<String, List<Provider.Service>> getOriginalSSLContextProvidersImpl() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Map<String, List<Provider.Service>> sslContextProviders = new HashMap<String, List<Provider.Service>>();
+        Map<String, List<Provider.Service>> sslContextProviders = new LinkedHashMap<String, List<Provider.Service>>();
 
-        Class<?> providersClass = Class.forName("sun.security.jca.Providers");
-        Class<?> providerListClass = Class.forName("sun.security.jca.ProviderList");
-
-        for (Provider provider : (List<Provider>)
-                ReflectionUtil.invokeMethod(providerListClass,
-                        ReflectionUtil.invokeMethod(providersClass, null, "getProviderList"),
-                        "providers")) {
+        for (Provider provider : Security.getProviders()) {
             for (Provider.Service service : provider.getServices()) {
-                //System.out.println(service.getType() + " - " + service.getAlgorithm() + " = " + service.getClassName());
                 if (SSLCONTEXT.equals(service.getType())) {
                     List<Provider.Service> providers = sslContextProviders.get(service.getAlgorithm());
                     //noinspection Java8MapApi
@@ -56,99 +80,42 @@ public class SniffyProviderListUtil {
         return sslContextProviders;
     }
 
-    public static void install() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    private static class SniffySSLContextChild extends SSLContext {
 
-        Class<?> providersClass = Class.forName("sun.security.jca.Providers");
-        Class<?> providerListClass = Class.forName("sun.security.jca.ProviderList");
+        public SniffySSLContextChild(SSLContextSpi contextSpi, Provider provider, String protocol) {
+            super(contextSpi, provider, protocol);
+        }
 
-        Object list = ReflectionUtil.invokeMethod(providersClass, null, "getProviderList");
-        Object providerList = ReflectionUtil.invokeMethod(providerListClass, null, "insertAt",
-                providerListClass, list,
-                Provider.class, new SniffySSLContextProvider(),
-                Integer.TYPE, 0
-        );
-        ReflectionUtil.invokeMethod(providersClass, null, "setProviderList", providerListClass, providerList);
+    }
+
+    public static void install() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchAlgorithmException, NoSuchFieldException {
+
+        SniffySSLContextProvider sniffySSLContextProvider = new SniffySSLContextProvider();
+        Security.insertProviderAt(sniffySSLContextProvider, 1);
+
+        SSLContext.setDefault(new SniffySSLContextChild(new SniffySSLContext(getOriginalSslContextSpi()), sniffySSLContextProvider, "Default"));
+
+        Set<Provider> originalProviders = getOriginalJsseProviders();
+
+        for (Provider provider : originalProviders) {
+            Security.removeProvider(provider.getName());
+            Security.addProvider(new SniffySSLContextProvider(provider));
+        }
 
     }
 
     public static void uninstall() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
-        Class<?> providersClass = Class.forName("sun.security.jca.Providers");
-        Class<?> providerListClass = Class.forName("sun.security.jca.ProviderList");
-
-        Object list = ReflectionUtil.invokeMethod(providersClass, null, "getProviderList");
-        Object providerList = ReflectionUtil.invokeMethod(providerListClass, null, "remove",
-                providerListClass, list,
-                String.class, SNIFFY_PROVIDER_NAME
-        );
-        ReflectionUtil.invokeMethod(providersClass, null, "setProviderList", providerListClass, providerList);
-
-    }
-
-    public static void wrapSSLContextServiceProvidersWithSniffy() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException, ClassNotFoundException {
-
-        // TODO: incorporate to install-uninstall methods
-
-        getOriginalSslContextProviders();
-
-        Class<?> providersClass = Class.forName("sun.security.jca.Providers");
-        Class<?> providerListClass = Class.forName("sun.security.jca.ProviderList");
-
-        for (Provider provider : (List<Provider>)
-                ReflectionUtil.invokeMethod(providerListClass,
-                        ReflectionUtil.invokeMethod(providersClass, null, "getProviderList"),
-                        "providers")) {
-
-            if (SNIFFY_PROVIDER_NAME.equals(provider.getName())) continue;
-
-            //System.out.println(provider.getName() + " - " + provider.getInfo());
-            //System.out.println("=============");
-            for (Provider.Service service : provider.getServices()) {
-                //System.out.println(service.getType() + " - " + service.getAlgorithm() + " = " + service.getClassName());
-                if (SSLCONTEXT.equals(service.getType())) {
-                    SniffySSLContextProviderService sniffyService = new SniffySSLContextProviderService(
-                            provider, service.getType(), service.getAlgorithm(), SniffySSLContextProviderService.class.getName(), new ArrayList<String>(), new HashMap<String, String>(), service
-                    );
-
-                    Map<Object, Object> legacyServiceMap = ReflectionUtil.getField(Provider.class, provider, "legacyMap");
-                    Map<Object, Object> legacyStringMap = ReflectionUtil.getField(Provider.class, provider, "legacyStrings");
-
-                    {
-                        Set<Object> keys = new LinkedHashSet<Object>();
-
-                        for (Map.Entry<Object, Object> entry : legacyServiceMap.entrySet()) {
-                            if (service.equals(entry.getValue())) {
-                                keys.add(entry.getKey());
-                            }
-                        }
-
-                        for (Object key : keys) {
-                            legacyServiceMap.remove(key);
-                        }
-                    }
-
-                    {
-                        Set<Object> keys = new LinkedHashSet<Object>();
-
-                        for (Map.Entry<Object, Object> entry : legacyStringMap.entrySet()) {
-                            if (service.getClassName().equals(entry.getValue())) {
-                                keys.add(entry.getKey());
-                            }
-                        }
-
-                        for (Object key : keys) {
-                            legacyStringMap.remove(key);
-                        }
-                    }
-
-                    //ReflectionUtil.invokeMethod(Provider.class, provider, "removePropertyStrings", Provider.Service.class, service, Void.class);
-                    //ReflectionUtil.invokeMethod(Provider.class, provider, "removeService", Provider.Service.class, service, Void.class);
-                    ReflectionUtil.invokeMethod(Provider.class, provider, "putService", Provider.Service.class, sniffyService, Void.class);
-
-                    ReflectionUtil.setField(Provider.Service.class, service, "registered", true);
+        for (Provider provider : Security.getProviders()) {
+            if (provider instanceof SniffySSLContextProvider) {
+                Provider originalProvider = ((SniffySSLContextProvider) provider).getOriginalProvider();
+                Security.removeProvider(provider.getName());
+                if (null != originalProvider) {
+                    Security.addProvider(originalProvider); // TODO: how we can preserve original order?
                 }
             }
         }
+
     }
 
 }
