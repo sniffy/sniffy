@@ -13,6 +13,7 @@ import javax.net.ssl.SSLContext;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,10 @@ public class DecryptBouncyCastleGoogleTrafficTest {
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         Sniffy.initialize();
+
+        SSLContext instance = SSLContext.getInstance("TLSv1", "BCJSSE");
+        instance.init(null, null, new SecureRandom());
+        assertTrue(instance.getSocketFactory() instanceof SniffySSLSocketFactory);
 
         assertEquals("Sniffy", SSLContext.getInstance("Default").getProvider().getName());
 
