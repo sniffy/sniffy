@@ -24,4 +24,8 @@ public class JVMUtil {
         return Integer.parseInt(version);
     }
 
+    public static boolean isIbmJ9() {
+        return "IBM J9 VM".equals(System.getProperty("java.vm.name"));
+    }
+
 }
