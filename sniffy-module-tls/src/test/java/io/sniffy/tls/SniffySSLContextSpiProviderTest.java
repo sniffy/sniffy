@@ -6,6 +6,10 @@ import sun.security.jca.Providers;
 
 import javax.net.ssl.SSLSocketFactory;
 import java.net.Socket;
+import java.security.Provider;
+import java.security.Security;
+import java.util.Arrays;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 
@@ -17,7 +21,12 @@ public class SniffySSLContextSpiProviderTest extends BaseSocketTest {
         try {
             SniffyTlsModule.initialize();
 
-            assertTrue(Providers.getProviderList().providers().get(0) instanceof SniffySSLContextSpiProvider);
+            Optional<Provider> sniffyOptionalProvider = Arrays.stream(Security.getProviders()).
+                    filter(provider -> null != provider.getService("SSLContext", "Default")).
+                    findFirst();
+
+            assertTrue(sniffyOptionalProvider.isPresent());
+            assertTrue(sniffyOptionalProvider.get() instanceof SniffySSLContextSpiProvider);
 
         } finally {
             SniffyTlsModule.uninstall();
@@ -46,6 +55,7 @@ public class SniffySSLContextSpiProviderTest extends BaseSocketTest {
 
         try {
             SniffyTlsModule.initialize();
+            SniffyTlsModule.uninstall();
 
             assertFalse(Providers.getProviderList().providers().stream().anyMatch(provider -> provider instanceof SniffySSLContextSpiProvider));
 

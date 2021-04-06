@@ -44,13 +44,13 @@ public class SniffyTlsModule {
     public static void uninstall() {
 
         try {
-            SniffySecurityUtil.uninstall();
+            SniffyProviderListUtil.uninstall();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         try {
-            SniffyProviderListUtil.uninstall();
+            SniffySecurityUtil.uninstall();
         } catch (Exception e) {
             e.printStackTrace();
         }

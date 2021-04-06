@@ -105,6 +105,7 @@ public class SniffySecurityUtil {
                     if (provider.getName().startsWith("Sniffy-")) {
                         Security.removeProvider(provider.getName());
                     } else {
+                        Security.removeProvider(provider.getName());
                         Provider originalProvider = ((SniffySSLContextSpiProvider) provider).getOriginalProvider();
                         Security.insertProviderAt(originalProvider, j);
                         j++;
