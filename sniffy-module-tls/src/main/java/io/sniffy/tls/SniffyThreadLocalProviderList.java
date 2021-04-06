@@ -22,17 +22,13 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
 
     private final ThreadLocal<Boolean> insideSetProviderList = new ThreadLocal<Boolean>();
 
-    public SniffyThreadLocalProviderList() {
-        insideSetProviderList.set(false);
-    }
-
     @Override
     public ProviderList get() {
 
         ProviderList providerList = delegate.get();
 
         if (null == providerList) {
-            if (!insideSetProviderList.get() && StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "setProviderList")) {
+            if (!Boolean.TRUE.equals(insideSetProviderList.get()) && StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "setProviderList")) {
                 insideSetProviderList.set(true);
                 return ProviderList.newList();
             }
@@ -104,7 +100,7 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
     @Override
     public void set(ProviderList value) {
 
-        if (null == delegate.get() && insideSetProviderList.get()) {
+        if (null == delegate.get() && Boolean.TRUE.equals(insideSetProviderList.get())) {
             if (StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "setProviderList")) {
                 // call callback
                 try {
