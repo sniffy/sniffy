@@ -6,11 +6,11 @@ import java.security.Provider;
 import java.util.List;
 import java.util.Map;
 
-public class SniffySSLContextProviderService extends Provider.Service {
+public class SniffySSLContextSpiProviderService extends Provider.Service {
 
     private final Provider.Service delegate;
 
-    public SniffySSLContextProviderService(Provider provider, String type, String algorithm, String className, List<String> aliases, Map<String, String> attributes, Provider.Service delegate) {
+    public SniffySSLContextSpiProviderService(Provider provider, String type, String algorithm, String className, List<String> aliases, Map<String, String> attributes, Provider.Service delegate) {
         super(provider, type, algorithm, className, aliases, attributes);
         this.delegate = delegate;
     }
@@ -20,7 +20,7 @@ public class SniffySSLContextProviderService extends Provider.Service {
     public Object newInstance(Object constructorParameter) throws NoSuchAlgorithmException {
         Object o = delegate.newInstance(constructorParameter);
         if (o instanceof SSLContextSpi) {
-            return new SniffySSLContext((SSLContextSpi) o);
+            return new SniffySSLContextSpi((SSLContextSpi) o);
         } else {
             return o;
         }

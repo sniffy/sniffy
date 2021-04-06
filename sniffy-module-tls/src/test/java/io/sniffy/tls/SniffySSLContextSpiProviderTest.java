@@ -6,24 +6,21 @@ import sun.security.jca.Providers;
 
 import javax.net.ssl.SSLSocketFactory;
 import java.net.Socket;
-import java.security.Provider;
-import java.security.Security;
 
 import static org.junit.Assert.*;
 
-public class SniffySSLContextProviderTest extends BaseSocketTest {
+public class SniffySSLContextSpiProviderTest extends BaseSocketTest {
 
     @Test
     public void testInstall() throws Exception {
 
         try {
             SniffyTlsModule.initialize();
-            SniffyProviderListUtil.install();
 
-            assertTrue(Providers.getProviderList().providers().get(0) instanceof SniffySSLContextProvider);
+            assertTrue(Providers.getProviderList().providers().get(0) instanceof SniffySSLContextSpiProvider);
 
         } finally {
-            SniffyProviderListUtil.uninstall();
+            SniffyTlsModule.uninstall();
         }
 
     }
@@ -33,14 +30,13 @@ public class SniffySSLContextProviderTest extends BaseSocketTest {
 
         try {
             SniffyTlsModule.initialize();
-            SniffyProviderListUtil.install();
 
             Socket socket = SSLSocketFactory.getDefault().createSocket(localhost, echoServerRule.getBoundPort());
 
             assertTrue(socket instanceof SniffySSLSocket);
 
         } finally {
-            SniffyProviderListUtil.uninstall();
+            SniffyTlsModule.uninstall();
         }
 
     }
@@ -50,13 +46,11 @@ public class SniffySSLContextProviderTest extends BaseSocketTest {
 
         try {
             SniffyTlsModule.initialize();
-            SniffyProviderListUtil.install();
-            SniffyProviderListUtil.uninstall();
 
-            assertFalse(Providers.getProviderList().providers().stream().anyMatch(provider -> provider instanceof SniffySSLContextProvider));
+            assertFalse(Providers.getProviderList().providers().stream().anyMatch(provider -> provider instanceof SniffySSLContextSpiProvider));
 
         } finally {
-            SniffyProviderListUtil.uninstall();
+            SniffyTlsModule.uninstall();
         }
 
     }

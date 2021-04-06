@@ -13,7 +13,6 @@ import javax.net.ssl.SSLContext;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
-import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.List;
@@ -27,21 +26,20 @@ public class DecryptBouncyCastleGoogleTrafficTest {
     @Test
     public void testGoogleTraffic() throws Exception {
 
-        Security.insertProviderAt(new BouncyCastleProvider(), 1);
-        Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
-
-        assertEquals("BCJSSE", SSLContext.getInstance("Default").getProvider().getName());
-
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         Sniffy.initialize();
+
+        assertTrue(SSLContext.getInstance("Default").getProvider().getName().contains("Sniffy"));
+
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
 
         SSLContext instance = SSLContext.getInstance("TLSv1", "BCJSSE");
         instance.init(null, null, new SecureRandom());
         assertTrue(instance.getSocketFactory() instanceof SniffySSLSocketFactory);
 
-        Provider sniffyProvider = SSLContext.getInstance("Default").getProvider();
-        assertEquals("Sniffy-BCJSSE", sniffyProvider.getName());
+        assertEquals("Sniffy-BCJSSE", SSLContext.getInstance("Default").getProvider().getName());
 
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
 
