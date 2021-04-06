@@ -8,22 +8,28 @@ import javax.net.ssl.SSLSocketFactory;
 import java.net.Socket;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Arrays;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 
-public class SniffySSLContextProviderTest extends BaseSocketTest {
+public class SniffySSLContextSpiProviderTest extends BaseSocketTest {
 
     @Test
     public void testInstall() throws Exception {
 
         try {
             SniffyTlsModule.initialize();
-            SniffyProviderListUtil.install();
 
-            assertTrue(Providers.getProviderList().providers().get(0) instanceof SniffySSLContextProvider);
+            Optional<Provider> sniffyOptionalProvider = Arrays.stream(Security.getProviders()).
+                    filter(provider -> null != provider.getService("SSLContext", "Default")).
+                    findFirst();
+
+            assertTrue(sniffyOptionalProvider.isPresent());
+            assertTrue(sniffyOptionalProvider.get() instanceof SniffySSLContextSpiProvider);
 
         } finally {
-            SniffyProviderListUtil.uninstall();
+            SniffyTlsModule.uninstall();
         }
 
     }
@@ -33,14 +39,13 @@ public class SniffySSLContextProviderTest extends BaseSocketTest {
 
         try {
             SniffyTlsModule.initialize();
-            SniffyProviderListUtil.install();
 
             Socket socket = SSLSocketFactory.getDefault().createSocket(localhost, echoServerRule.getBoundPort());
 
             assertTrue(socket instanceof SniffySSLSocket);
 
         } finally {
-            SniffyProviderListUtil.uninstall();
+            SniffyTlsModule.uninstall();
         }
 
     }
@@ -50,13 +55,12 @@ public class SniffySSLContextProviderTest extends BaseSocketTest {
 
         try {
             SniffyTlsModule.initialize();
-            SniffyProviderListUtil.install();
-            SniffyProviderListUtil.uninstall();
+            SniffyTlsModule.uninstall();
 
-            assertFalse(Providers.getProviderList().providers().stream().anyMatch(provider -> provider instanceof SniffySSLContextProvider));
+            assertFalse(Providers.getProviderList().providers().stream().anyMatch(provider -> provider instanceof SniffySSLContextSpiProvider));
 
         } finally {
-            SniffyProviderListUtil.uninstall();
+            SniffyTlsModule.uninstall();
         }
 
     }

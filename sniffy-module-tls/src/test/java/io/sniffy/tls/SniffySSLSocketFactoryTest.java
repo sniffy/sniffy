@@ -17,14 +17,13 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
 
         try {
             SniffyTlsModule.initialize();
-            SniffyProviderListUtil.install();
 
             Socket socket = SSLSocketFactory.getDefault().createSocket(localhost, echoServerRule.getBoundPort());
 
             assertTrue(socket instanceof SniffySSLSocket);
 
         } finally {
-            SniffyProviderListUtil.uninstall();
+            SniffyTlsModule.uninstall();
         }
 
     }

@@ -28,17 +28,32 @@ public class SniffyTlsModule {
         }
 
         try {
+            SniffySecurityUtil.wrapJsseProvidersWithSniffy();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
             SniffyProviderListUtil.install();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // TODO: uncomment below probably with a feature flag
-        /*try {
-            SniffyProviderListUtil.wrapSSLContextServiceProvidersWithSniffy();
+    }
+
+    public static void uninstall() {
+
+        try {
+            SniffyProviderListUtil.uninstall();
         } catch (Exception e) {
             e.printStackTrace();
-        }*/
+        }
+
+        try {
+            SniffySecurityUtil.uninstall();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 
