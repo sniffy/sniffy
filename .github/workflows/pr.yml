@@ -24,9 +24,17 @@ jobs:
           echo "Running Script"
           cd /work/
           pwd
-          java -v
+          java -version
           which java
           ls -la
+          mkdir /work/ibmjdk
+          cp -r /opt/ibm/java /work/ibmjdk
+    - name: Check java
+      run: |
+        pwd
+        ls
+        ./ibmjdk/bin/java -version
+      shell: bash
 #  test-matrix:
 #    runs-on: ${{ matrix.os }}
 #    strategy:
