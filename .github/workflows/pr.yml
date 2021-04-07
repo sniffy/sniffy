@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-20.04
     name: Test JDK IBM J9, ubuntu-20.04
     steps:
+    - uses: docker-practice/actions-setup-docker@master
     - uses: addnab/docker-run-action@v3
       with:
         image: docker pull infinitenature/ibmjdk:java8
@@ -25,6 +26,7 @@ jobs:
           cd /work/
           pwd
           java -v
+          which java
           ls -la
 #  test-matrix:
 #    runs-on: ${{ matrix.os }}
