@@ -14,22 +14,32 @@ on:
 jobs:
   test-ibm-j9:
     runs-on: ubuntu-20.04
-    name: Test JDK IBM J9, ubuntu-20.04
+    name: Test JDK IBM J9 1.8, ubuntu-20.04
     steps:
-    - uses: addnab/docker-run-action@v3
+    - name: Pull IBM JDK J9 1.8 Docker Image
+      uses: ibmjava:8-sdk-alpine
       with:
         image: infinitenature/ibmjdk:java8
         options: -v ${{ github.workspace }}:/work
-        run: |
-          mkdir /work/ibmjdk
-          cp -R /opt/ibm/java/* /work/ibmjdk
-          ls -la /work/ibmjdk
-    - name: Check java
+        run: cp -R /opt/ibm/java/* /work/ibmjdk
+    - name: Set Java Version
       run: |
-        pwd
-        ls -la ${{ github.workspace }}
-        ${{ github.workspace }}/ibmjdk/bin/java -version
+        export JAVA_HOME=ls -la ${{ github.workspace }}/ibmjdk
+        ${JAVA_HOME}/bin/java -version
       shell: bash
+    - name: Set up Maven
+      uses: stCarolas/setup-maven@v4
+      with:
+        maven-version: 3.6.1
+    - uses: actions/checkout@v2
+    - name: Cache Maven packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
+        restore-keys: ${{ runner.os }}-maven
+    - name: Build with Maven
+      run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
 #  test-matrix:
 #    runs-on: ${{ matrix.os }}
 #    strategy:
