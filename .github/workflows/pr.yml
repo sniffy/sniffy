@@ -17,9 +17,9 @@ jobs:
     name: Test JDK IBM J9 1.8, ubuntu-20.04
     steps:
     - name: Pull IBM JDK J9 1.8 Docker Image
-      uses: ibmjava:8-sdk-alpine
+      uses: addnab/docker-run-action@v3
       with:
-        image: infinitenature/ibmjdk:java8
+        image: ibmjava:8-sdk-alpine
         options: -v ${{ github.workspace }}:/work
         run: cp -R /opt/ibm/java/* /work/ibmjdk
     - name: Set Java Version
