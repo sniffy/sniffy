@@ -19,18 +19,15 @@ jobs:
     - uses: addnab/docker-run-action@v3
       with:
         image: infinitenature/ibmjdk:java8
-        options: -v ${{ github.workspace }}:/work -e ABC=123
+        options: -v ${{ github.workspace }}:/work
         run: |
-          echo "Running Script"
-          cd /work/
-          pwd
-          java -version
-          which java
-          ls -la
           mkdir /work/ibmjdk
           cp -R /opt/ibm/java /work/ibmjdk
+          ls -la /work/ibmjdk
     - name: Check java
       run: |
+        pwd
+        ls -la ${{ github.workspace }}
         ${{ github.workspace }}/ibmjdk/bin/java -version
       shell: bash
 #  test-matrix:
