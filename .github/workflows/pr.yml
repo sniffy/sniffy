@@ -136,11 +136,11 @@ jobs:
         with:
           java-version: 7
       - name: Set up Maven 3.2.5
-        uses: stCarolas/setup-maven@v4
-        with:
-          maven-version: 3.2.5
+        run: mkdir -p /tmp && cd /tmp && curl https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz -o apache-maven-3.2.5-bin.tar.gz && tar -xzvf apache-maven-3.2.5-bin.tar.gz && export M2_HOME=/tmp/apache-maven-3.2.5 && export MAVEN_HOME=/tmp/apache-maven-3.2.5 && export PATH=${M2_HOME}/bin:${PATH}
+        shell: bash
       - name: Run compatibility tests using Maven 3.2.5 and Java 7
-        run: mvn -f sniffy-compatibility-tests/pom.xml clean verify
+        run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
+        shell: bash
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -152,7 +152,8 @@ jobs:
         if: matrix.os != 'macOS-10.15'
       # No Java 6 on MacOS
       - name: Run compatibility tests using Maven 3.2.5 and Java 6
-        run: mvn -f sniffy-compatibility-tests/pom.xml clean verify
+        run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
+        shell: bash
         if: matrix.os != 'macOS-10.15'
       - uses: codecov/codecov-action@v1
         with:
