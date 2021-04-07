@@ -28,12 +28,10 @@ jobs:
           which java
           ls -la
           mkdir /work/ibmjdk
-          cp -r /opt/ibm/java /work/ibmjdk
+          cp -R /opt/ibm/java /work/ibmjdk
     - name: Check java
       run: |
-        pwd
-        ls
-        ./ibmjdk/bin/java -version
+        ${{ github.workspace }}/ibmjdk/bin/java -version
       shell: bash
 #  test-matrix:
 #    runs-on: ${{ matrix.os }}
