@@ -22,7 +22,7 @@ jobs:
         options: -v ${{ github.workspace }}:/work
         run: |
           mkdir /work/ibmjdk
-          cp -R /opt/ibm/java /work/ibmjdk
+          cp -R /opt/ibm/java/* /work/ibmjdk
           ls -la /work/ibmjdk
     - name: Check java
       run: |
