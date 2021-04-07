@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-20.04
     name: Test JDK IBM J9 1.8, ubuntu-20.04
     steps:
+    - uses: actions/checkout@v2
     - name: Pull IBM JDK J9 1.8 Docker Image
       uses: addnab/docker-run-action@v3
       with:
@@ -33,7 +34,6 @@ jobs:
       uses: stCarolas/setup-maven@v4
       with:
         maven-version: 3.6.1
-    - uses: actions/checkout@v2
     - name: Cache Maven packages
       uses: actions/cache@v2
       with:
