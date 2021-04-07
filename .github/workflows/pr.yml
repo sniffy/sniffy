@@ -26,7 +26,7 @@ jobs:
           cp -R /opt/ibm/java/* /work/ibmjdk
     - name: Set Java Version
       run: |
-        export JAVA_HOME=ls -la ${{ github.workspace }}/ibmjdk
+        export JAVA_HOME=${{ github.workspace }}/ibmjdk
         ${JAVA_HOME}/bin/java -version
       shell: bash
     - name: Set up Maven
