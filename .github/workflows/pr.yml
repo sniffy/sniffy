@@ -21,7 +21,9 @@ jobs:
       with:
         image: ibmjava:8-sdk-alpine
         options: -v ${{ github.workspace }}:/work
-        run: cp -R /opt/ibm/java/* /work/ibmjdk
+        run: |
+          mkdir /work/ibmjdk
+          cp -R /opt/ibm/java/* /work/ibmjdk
     - name: Set Java Version
       run: |
         export JAVA_HOME=ls -la ${{ github.workspace }}/ibmjdk
