@@ -139,7 +139,14 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                                                 "Default"
                                         );
                                         SSLContext.setDefault(defaultSniffySSLContext);
-                                        ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, defaultSniffySSLContext.getSocketFactory()); // TODO: instead we should wrap delegate
+                                        SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
+                                        if (null != originalSSLSocketFactory) {
+                                            ReflectionUtil.setFields(
+                                                    SSLSocketFactory.class,
+                                                    null,
+                                                    SSLSocketFactory.class,
+                                                    new SniffySSLSocketFactory(originalSSLSocketFactory));
+                                        }
                                     } catch (Throwable e) {
                                         e.printStackTrace(); // TODO: do the same in other dangerous places
                                     }

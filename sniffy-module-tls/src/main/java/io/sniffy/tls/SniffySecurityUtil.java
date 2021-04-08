@@ -14,8 +14,6 @@ public class SniffySecurityUtil {
 
     public static final String SSLCONTEXT = "SSLContext";
 
-    private static SSLSocketFactory originalSSLSocketFactory;
-
     public static void wrapJsseProvidersWithSniffy() throws IllegalAccessException, NoSuchFieldException, ClassNotFoundException, NoSuchAlgorithmException {
 
         synchronized (Security.class) {
@@ -80,8 +78,14 @@ public class SniffySecurityUtil {
                             "Default"
                     );
                     SSLContext.setDefault(defaultSniffySSLContext);
-                    originalSSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
-                    ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, defaultSniffySSLContext.getSocketFactory()); // TODO: instead we should wrap delegate
+                    SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
+                    if (null != originalSSLSocketFactory) {
+                        ReflectionUtil.setFields(
+                                SSLSocketFactory.class,
+                                null,
+                                SSLSocketFactory.class,
+                                new SniffySSLSocketFactory(originalSSLSocketFactory));
+                    }
                 }
             }
 
@@ -89,7 +93,7 @@ public class SniffySecurityUtil {
 
     }
 
-    public static void uninstall() throws NoSuchAlgorithmException {
+    public static void uninstall() throws NoSuchAlgorithmException, NoSuchFieldException, IllegalAccessException {
 
         synchronized (Security.class) {
 
@@ -133,13 +137,25 @@ public class SniffySecurityUtil {
                 Provider.Service defaultSSLContextSpiProviderService =
                         firstSSLContextSpiProviderWithDefaultSSLContextSpi.getService(SSLCONTEXT, "Default");
                 if (null != defaultSSLContextSpiProviderService) {
+                    // TODO: don't rollback to SniffySSLContext even though it doesn do anything Sniffy
                     SniffySSLContext defaultSSLContext = new SniffySSLContext(
                             (SSLContextSpi) defaultSSLContextSpiProviderService.newInstance(null),
                             firstSSLContextSpiProviderWithDefaultSSLContextSpi,
                             "Default"
                     );
                     SSLContext.setDefault(defaultSSLContext);
-                    ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, originalSSLSocketFactory);
+                    SSLSocketFactory sniffySSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
+                    if (sniffySSLSocketFactory instanceof SniffySSLSocketFactory) {
+                        ReflectionUtil.setFields(
+                                SSLSocketFactory.class,
+                                null,
+                                SSLSocketFactory.class,
+                                ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate()
+                        );
+                    } else if (null == sniffySSLSocketFactory) {
+                        ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
+                        ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
+                    }
                 }
             }
 
