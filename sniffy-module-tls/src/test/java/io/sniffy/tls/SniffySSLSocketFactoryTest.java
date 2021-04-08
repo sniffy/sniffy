@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.Security;
+import java.util.Properties;
 
 import static org.junit.Assert.*;
 
@@ -113,7 +114,10 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
                 ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
                 ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
 
-                Security.setProperty("ssl.SocketFactory.provider", null);
+                Properties properties = ReflectionUtil.getFirstField(Security.class, null, Properties.class);
+                if (null != properties) {
+                    properties.remove("ssl.SocketFactory.provider");
+                }
                 SSLSocketFactory.getDefault();
             }
 
