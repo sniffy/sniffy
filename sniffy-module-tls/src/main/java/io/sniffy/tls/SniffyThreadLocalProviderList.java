@@ -8,6 +8,7 @@ import sun.security.jca.Providers;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLContextSpi;
+import javax.net.ssl.SSLSocketFactory;
 import java.security.Provider;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -132,13 +133,13 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                                         firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi.getService(SSLCONTEXT, "Default");
                                 if (null != defaultSniffySSLContextSpiProviderService) {
                                     try {
-                                        SSLContext.setDefault(
-                                                new SniffySSLContext(
-                                                        (SSLContextSpi) defaultSniffySSLContextSpiProviderService.newInstance(null),
-                                                        firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi,
-                                                        "Default"
-                                                )
+                                        SniffySSLContext defaultSniffySSLContext = new SniffySSLContext(
+                                                (SSLContextSpi) defaultSniffySSLContextSpiProviderService.newInstance(null),
+                                                firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi,
+                                                "Default"
                                         );
+                                        SSLContext.setDefault(defaultSniffySSLContext);
+                                        ReflectionUtil.setField(SSLSocketFactory.class, null, "b", defaultSniffySSLContext.getSocketFactory()); // TODO: instead we should wrap delegate
                                     } catch (Throwable e) {
                                         e.printStackTrace(); // TODO: do the same in other dangerous places
                                     }
