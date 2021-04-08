@@ -140,7 +140,7 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                                                 "Default"
                                         );
                                         SSLContext.setDefault(defaultSniffySSLContext);
-                                        if (JVMUtil.getVersion() >= 14) {
+                                        if (JVMUtil.getVersion() >= 13) {
                                             SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder", null, SSLSocketFactory.class);
                                             if (null != originalSSLSocketFactory) {
                                                 ReflectionUtil.setFields(

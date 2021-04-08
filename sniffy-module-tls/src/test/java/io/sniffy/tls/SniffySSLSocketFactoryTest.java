@@ -66,7 +66,7 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
     @Issue("issues/439")
     public void testExistingSSLSocketFactoryWasCreateViaSecurityProperties() throws Exception {
 
-        if (JVMUtil.getVersion() >= 14) {
+        if (JVMUtil.getVersion() >= 13) {
             ReflectionUtil.setFields(
                     "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
                     null,
