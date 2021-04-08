@@ -87,17 +87,36 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
         try {
             SniffyTlsModule.initialize();
 
-            Socket socket = SSLSocketFactory.getDefault().createSocket(localhost, echoServerRule.getBoundPort());
+            {
+                Socket socket = SSLSocketFactory.getDefault().createSocket(localhost, echoServerRule.getBoundPort());
+                assertTrue(socket instanceof SniffySSLSocket);
+            }
 
-            assertTrue(socket instanceof SniffySSLSocket);
-
-        } finally {
             SniffyTlsModule.uninstall();
 
-            Socket socket = SSLSocketFactory.getDefault().createSocket(localhost, echoServerRule.getBoundPort());
+            {
+                Socket socket = SSLSocketFactory.getDefault().createSocket(localhost, echoServerRule.getBoundPort());
+                assertFalse(socket instanceof SniffySSLSocket);
+                assertNull(SSLSocketFactory.getDefault().createSocket());
+            }
 
-            assertFalse(socket instanceof SniffySSLSocket);
-            assertNull(SSLSocketFactory.getDefault().createSocket());
+        } finally {
+
+            if (JVMUtil.getVersion() >= 13) {
+                ReflectionUtil.setFields(
+                        "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
+                        null,
+                        SSLSocketFactory.class,
+                        null
+                );
+            } else {
+                ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
+                ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
+
+                Security.setProperty("ssl.SocketFactory.provider", null);
+                SSLSocketFactory.getDefault();
+            }
+
         }
 
     }
