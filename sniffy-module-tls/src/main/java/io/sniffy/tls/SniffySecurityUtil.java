@@ -80,8 +80,8 @@ public class SniffySecurityUtil {
                             "Default"
                     );
                     SSLContext.setDefault(defaultSniffySSLContext);
-                    originalSSLSocketFactory = ReflectionUtil.getField(SSLSocketFactory.class, null, "b");
-                    ReflectionUtil.setField(SSLSocketFactory.class, null, "b", defaultSniffySSLContext.getSocketFactory()); // TODO: instead we should wrap delegate
+                    originalSSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
+                    ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, defaultSniffySSLContext.getSocketFactory()); // TODO: instead we should wrap delegate
                 }
             }
 
@@ -139,7 +139,7 @@ public class SniffySecurityUtil {
                             "Default"
                     );
                     SSLContext.setDefault(defaultSSLContext);
-                    ReflectionUtil.setField(SSLSocketFactory.class, null, "b", originalSSLSocketFactory);
+                    ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, originalSSLSocketFactory);
                 }
             }
 

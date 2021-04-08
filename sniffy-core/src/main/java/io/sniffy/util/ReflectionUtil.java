@@ -217,7 +217,19 @@ public class ReflectionUtil {
 
     public static <T, V> V getField(Class<T> clazz, T instance, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         Object field = getField(clazz, instance, fieldName, null);
+        //noinspection unchecked
         return (V) field;
+    }
+
+    public static <T, V> V getFirstField(Class<T> clazz, T instance, Class<V> valueClass) throws NoSuchFieldException, IllegalAccessException {
+        Object resultField = null;
+        for (Field field: clazz.getDeclaredFields()) {
+            if (field.getType().equals(valueClass)) {
+                resultField = getField(clazz, instance, field.getName(), null);
+            }
+        }
+        //noinspection unchecked
+        return (V) resultField;
     }
 
     public static <T, V> V getField(Class<T> clazz, T instance, String fieldName, String lockFieldName) throws NoSuchFieldException, IllegalAccessException {
