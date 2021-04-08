@@ -118,6 +118,15 @@ public class ReflectionUtil {
         return fieldsFound && result;
     }
 
+    public static <T, V> boolean setFirstField(Class<T> clazz, T instance, Class<V> valueClass, V value) {
+        for (Field field: clazz.getDeclaredFields()) {
+            if (field.getType().equals(valueClass)) {
+                return setField(clazz, instance, field.getName(), value, null);
+            }
+        }
+        return false;
+    }
+
     public static <T, V> boolean setField(Class<T> clazz, T instance, String fieldName, V value, String lockFieldName) {
 
         //noinspection TryWithIdenticalCatches

@@ -66,10 +66,11 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
     public void testExistingSSLSocketFactoryWasCreateViaSecurityProperties() throws Exception {
 
         ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
+        ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
 
         Security.setProperty("ssl.SocketFactory.provider", TestSSLSocketFactory.class.getName());
-
-        assertEquals(SSLSocketFactory.getDefault().getClass(), TestSSLSocketFactory.class);
+        SSLSocketFactory.getDefault();
+        assertEquals(TestSSLSocketFactory.class, SSLSocketFactory.getDefault().getClass());
         assertNull(SSLSocketFactory.getDefault().createSocket());
 
         try {
