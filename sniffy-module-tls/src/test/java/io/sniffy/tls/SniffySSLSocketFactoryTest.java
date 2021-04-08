@@ -1,6 +1,7 @@
 package io.sniffy.tls;
 
 import io.sniffy.socket.BaseSocketTest;
+import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
 import ru.yandex.qatools.allure.annotations.Issue;
@@ -65,11 +66,21 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
     @Issue("issues/439")
     public void testExistingSSLSocketFactoryWasCreateViaSecurityProperties() throws Exception {
 
-        ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
-        ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
+        if (JVMUtil.getVersion() >= 14) {
+            ReflectionUtil.setFields(
+                    "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
+                    null,
+                    SSLSocketFactory.class,
+                    new TestSSLSocketFactory()
+            ); // cannot test "ssl.SocketFactory.provider" on Java 14+ since this property is used in static initializer
+        } else {
+            ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
+            ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
 
-        Security.setProperty("ssl.SocketFactory.provider", TestSSLSocketFactory.class.getName());
-        SSLSocketFactory.getDefault();
+            Security.setProperty("ssl.SocketFactory.provider", TestSSLSocketFactory.class.getName());
+            SSLSocketFactory.getDefault();
+        }
+
         assertEquals(TestSSLSocketFactory.class, SSLSocketFactory.getDefault().getClass());
         assertNull(SSLSocketFactory.getDefault().createSocket());
 

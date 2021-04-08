@@ -106,6 +106,15 @@ public class ReflectionUtil {
         return setField(clazz, instance, fieldName, value, null);
     }
 
+    public static <T, V> boolean setFields(String className, T instance, Class<V> valueClass, V value) {
+        try {
+            //noinspection unchecked
+            return setFields((Class<T>) Class.forName(className), instance, valueClass, value);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
     public static <T, V> boolean setFields(Class<T> clazz, T instance, Class<V> valueClass, V value) {
         boolean fieldsFound = false;
         boolean result = true;
@@ -228,6 +237,11 @@ public class ReflectionUtil {
         Object field = getField(clazz, instance, fieldName, null);
         //noinspection unchecked
         return (V) field;
+    }
+
+    public static <T, V> V getFirstField(String className, T instance, Class<V> valueClass) throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
+        //noinspection unchecked
+        return getFirstField((Class<T>) Class.forName(className), instance, valueClass);
     }
 
     public static <T, V> V getFirstField(Class<T> clazz, T instance, Class<V> valueClass) throws NoSuchFieldException, IllegalAccessException {

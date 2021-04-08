@@ -1,6 +1,7 @@
 package io.sniffy.tls;
 
 import io.sniffy.Constants;
+import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ReflectionUtil;
 
 import javax.net.ssl.SSLContext;
@@ -78,13 +79,25 @@ public class SniffySecurityUtil {
                             "Default"
                     );
                     SSLContext.setDefault(defaultSniffySSLContext);
-                    SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
-                    if (null != originalSSLSocketFactory) {
-                        ReflectionUtil.setFields(
-                                SSLSocketFactory.class,
-                                null,
-                                SSLSocketFactory.class,
-                                new SniffySSLSocketFactory(originalSSLSocketFactory));
+
+                    if (JVMUtil.getVersion() >= 14) {
+                        SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder", null, SSLSocketFactory.class);
+                        if (null != originalSSLSocketFactory) {
+                            ReflectionUtil.setFields(
+                                    "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
+                                    null,
+                                    SSLSocketFactory.class,
+                                    new SniffySSLSocketFactory(originalSSLSocketFactory));
+                        }
+                    } else {
+                        SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
+                        if (null != originalSSLSocketFactory) {
+                            ReflectionUtil.setFields(
+                                    SSLSocketFactory.class,
+                                    null,
+                                    SSLSocketFactory.class,
+                                    new SniffySSLSocketFactory(originalSSLSocketFactory));
+                        }
                     }
                 }
             }
@@ -93,7 +106,7 @@ public class SniffySecurityUtil {
 
     }
 
-    public static void uninstall() throws NoSuchAlgorithmException, NoSuchFieldException, IllegalAccessException {
+    public static void uninstall() throws NoSuchAlgorithmException, NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
 
         synchronized (Security.class) {
 
@@ -144,17 +157,36 @@ public class SniffySecurityUtil {
                             "Default"
                     );
                     SSLContext.setDefault(defaultSSLContext);
-                    SSLSocketFactory sniffySSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
-                    if (sniffySSLSocketFactory instanceof SniffySSLSocketFactory) {
-                        ReflectionUtil.setFields(
-                                SSLSocketFactory.class,
-                                null,
-                                SSLSocketFactory.class,
-                                ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate()
-                        );
-                    } else if (null == sniffySSLSocketFactory) {
-                        ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
-                        ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
+                    if (JVMUtil.getVersion() >= 14) {
+                        SSLSocketFactory sniffySSLSocketFactory = ReflectionUtil.getFirstField("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder", null, SSLSocketFactory.class);
+                        if (sniffySSLSocketFactory instanceof SniffySSLSocketFactory) {
+                            ReflectionUtil.setFields(
+                                    "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
+                                    null,
+                                    SSLSocketFactory.class,
+                                    ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate()
+                            );
+                        } else if (null == sniffySSLSocketFactory) {
+                            ReflectionUtil.setFields(
+                                    "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
+                                    null,
+                                    SSLSocketFactory.class,
+                                    null
+                            );
+                        }
+                    } else {
+                        SSLSocketFactory sniffySSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
+                        if (sniffySSLSocketFactory instanceof SniffySSLSocketFactory) {
+                            ReflectionUtil.setFields(
+                                    SSLSocketFactory.class,
+                                    null,
+                                    SSLSocketFactory.class,
+                                    ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate()
+                            );
+                        } else if (null == sniffySSLSocketFactory) {
+                            ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
+                            ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
+                        }
                     }
                 }
             }
