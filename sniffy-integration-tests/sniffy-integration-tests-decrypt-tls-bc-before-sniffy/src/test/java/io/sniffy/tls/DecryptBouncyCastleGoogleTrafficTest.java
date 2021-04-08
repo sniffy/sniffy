@@ -39,7 +39,7 @@ public class DecryptBouncyCastleGoogleTrafficTest {
         instance.init(null, null, new SecureRandom());
         assertTrue(instance.getSocketFactory() instanceof SniffySSLSocketFactory);
 
-        assertEquals("Sniffy-BCJSSE", SSLContext.getInstance("Default").getProvider().getName());
+        assertEquals("Sniffy-BCJSSE", SSLContext.getDefault().getProvider().getName());
 
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
 
