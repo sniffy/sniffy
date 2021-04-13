@@ -1,6 +1,7 @@
 package io.sniffy.tls;
 
 import io.sniffy.socket.BaseSocketTest;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.Test;
 import sun.security.jca.Providers;
 
@@ -62,6 +63,23 @@ public class SniffySSLContextSpiProviderTest extends BaseSocketTest {
         } finally {
             SniffyTlsModule.uninstall();
         }
+
+    }
+
+    @Test
+    public void testAliases() throws Exception {
+
+        BouncyCastleJsseProvider delegate = new BouncyCastleJsseProvider();
+
+        SniffySSLContextSpiProvider sniffyProvider = new SniffySSLContextSpiProvider(delegate);
+
+        assertEquals(delegate.getServices().size(), sniffyProvider.getServices().size());
+
+        Provider.Service delegateTrustManagerFactoryService = delegate.getService("TrustManagerFactory", "X.509");
+        assertNotNull(delegateTrustManagerFactoryService);
+
+        Provider.Service sniffyTrustManagerFactoryService = sniffyProvider.getService("TrustManagerFactory", "X.509");
+        assertNotNull(sniffyTrustManagerFactoryService);
 
     }
 
