@@ -6,6 +6,7 @@ import io.sniffy.util.StackTraceExtractor;
 import java.security.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SniffySSLContextSpiProvider extends Provider {
@@ -27,7 +28,7 @@ public class SniffySSLContextSpiProvider extends Provider {
                     service.getType(),
                     service.getAlgorithm(),
                     service.getClassName(),
-                    new ArrayList<String>(),
+                    extractAliases(service),
                     extractAttributes(service),
                     service)
             );
@@ -48,6 +49,10 @@ public class SniffySSLContextSpiProvider extends Provider {
         if (null == getService(service.getAlgorithm(), service.getType())) {
             putService(service);
         }
+    }
+
+    public static List<String> extractAliases(Service service) throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
+        return ReflectionUtil.getField(Service.class, service, "aliases");
     }
 
     public static Map<String, String> extractAttributes(Service service) throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
