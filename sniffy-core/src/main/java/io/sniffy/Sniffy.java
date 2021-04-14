@@ -589,7 +589,7 @@ public class Sniffy {
         private final byte[] buff;
 
         public EncryptedPacket(byte[] buff, int offset, int len) {
-            this.buff = Arrays.copyOfRange(buff, offset, len);
+            this.buff = Arrays.copyOfRange(buff, offset, offset + len);
         }
 
         public EncryptedPacket(byte[] buff) {
