@@ -1,14 +1,14 @@
 package io.sniffy.tls;
 
 import io.sniffy.Sniffy;
+import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.ReflectionUtil;
 
 import javax.net.ssl.*;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
@@ -75,7 +75,6 @@ public class SniffySSLEngine extends SSLEngine {
                 src.position(position);
                 byte[] buff = new byte[length];
                 src.get(buff, 0, length);
-
 
 
                 try {
@@ -253,23 +252,58 @@ public class SniffySSLEngine extends SSLEngine {
     }
 
     //@Override
+    @SuppressWarnings("TryWithIdenticalCatches")
     public String getApplicationProtocol() {
-        return delegate.getApplicationProtocol();
+        try {
+            return ReflectionUtil.invokeMethod(SSLEngine.class, delegate, "getApplicationProtocol", String.class);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
     //@Override
+    @SuppressWarnings("TryWithIdenticalCatches")
     public String getHandshakeApplicationProtocol() {
-        return delegate.getHandshakeApplicationProtocol();
+        try {
+            return ReflectionUtil.invokeMethod(SSLEngine.class, delegate, "getHandshakeApplicationProtocol", String.class);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
     // TODO: wrap methods below on JVMS where it is supported
-
     public void setHandshakeApplicationProtocolSelector(BiFunction<SSLEngine, List<String>, String> selector) {
-        delegate.setHandshakeApplicationProtocolSelector(selector);
+        try {
+            ReflectionUtil.invokeMethod(SSLEngine.class, delegate, "setHandshakeApplicationProtocolSelector", BiFunction.class, selector, Void.class);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
+    @SuppressWarnings({"unchecked", "TryWithIdenticalCatches"})
     public BiFunction<SSLEngine, List<String>, String> getHandshakeApplicationProtocolSelector() {
-        return delegate.getHandshakeApplicationProtocolSelector();
+        try {
+            return (BiFunction<SSLEngine, List<String>, String>)
+                    ReflectionUtil.invokeMethod(SSLEngine.class, delegate, "getHandshakeApplicationProtocolSelector", BiFunction.class);
+        } catch (NoSuchMethodException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.throwException(e);
+        } catch (IllegalAccessException e) {
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
 }
