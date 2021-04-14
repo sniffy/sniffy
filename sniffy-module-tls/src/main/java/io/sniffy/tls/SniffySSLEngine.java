@@ -252,23 +252,24 @@ public class SniffySSLEngine extends SSLEngine {
         delegate.setSSLParameters(params);
     }
 
-    @Override
+    //@Override
     public String getApplicationProtocol() {
         return delegate.getApplicationProtocol();
     }
 
-    @Override
+    //@Override
     public String getHandshakeApplicationProtocol() {
         return delegate.getHandshakeApplicationProtocol();
     }
 
-    @Override
+    // TODO: wrap methods below on JVMS where it is supported
+
     public void setHandshakeApplicationProtocolSelector(BiFunction<SSLEngine, List<String>, String> selector) {
         delegate.setHandshakeApplicationProtocolSelector(selector);
     }
 
-    @Override
     public BiFunction<SSLEngine, List<String>, String> getHandshakeApplicationProtocolSelector() {
         return delegate.getHandshakeApplicationProtocolSelector();
     }
+
 }
