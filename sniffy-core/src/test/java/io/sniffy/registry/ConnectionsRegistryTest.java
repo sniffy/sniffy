@@ -274,26 +274,6 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 }
 
                 @Override
-                public int getReceiveBufferSize() {
-                    return 0;
-                }
-
-                @Override
-                public void setReceiveBufferSize(int receiveBufferSize) {
-
-                }
-
-                @Override
-                public int getSendBufferSize() {
-                    return 0;
-                }
-
-                @Override
-                public void setSendBufferSize(int sendBufferSize) {
-
-                }
-
-                @Override
                 public void logSocket(long millis) {
 
                 }
@@ -398,26 +378,6 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
                 @Override
                 public void setLastWriteThreadId(long lastWriteThreadId) {
-
-                }
-
-                @Override
-                public int getReceiveBufferSize() {
-                    return 0;
-                }
-
-                @Override
-                public void setReceiveBufferSize(int receiveBufferSize) {
-
-                }
-
-                @Override
-                public int getSendBufferSize() {
-                    return 0;
-                }
-
-                @Override
-                public void setSendBufferSize(int sendBufferSize) {
 
                 }
 

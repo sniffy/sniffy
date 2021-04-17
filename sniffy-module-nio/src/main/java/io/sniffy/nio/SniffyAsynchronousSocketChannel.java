@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 // TODO: this functionality is available in java 1.7+ only - make sure it is safe
+
 /**
  * @since 3.1.7
  */
@@ -32,12 +33,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
     private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
-    protected static volatile Integer defaultReceiveBufferSize;
-    protected static volatile Integer defaultSendBufferSize;
-
-    private int receiveBufferSize = -1;
-    private int sendBufferSize = -1;
-
+    // fields related to injecting latency fault
     private volatile int potentiallyBufferedInputBytes = 0;
     private volatile int potentiallyBufferedOutputBytes = 0;
 
@@ -66,24 +62,17 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     }
 
 
-
-
     /**
-     * Adds a delay as defined for current {@link SnifferSocketImpl} in {@link ConnectionsRegistry#discoveredDataSources}
-     *
+     * Adds a delay as defined for current {@link SniffyAsynchronousSocketChannel} in {@link ConnectionsRegistry#discoveredDataSources}
+     * <p>
      * Delay is added for each <b>N</b> bytes received where <b>N</b> is the value of {@link SocketOptions#SO_RCVBUF}
-     *
+     * <p>
      * If application reads <b>M</b> bytes where (k-1) * N &lt; M  &lt; k * N exactly <b>k</b> delays will be added
-     *
-     * A call to {@link SnifferOutputStream} obtained from the same {@link SnifferSocketImpl} and made from the same thread
-     * will reset the number of buffered (i.e. which can be read without delay) bytes to 0 effectively adding a guaranteed
-     * delay to any subsequent {@link SnifferInputStream#read()} request
-     *
-     * TODO: consider if {@link java.net.SocketInputStream#available()} method can be of any use here
      *
      * @param bytesDown number of bytes received from socket
      * @throws ConnectException on underlying socket exception
      */
+    @SuppressWarnings("JavadocReference")
     private void sleepIfRequired(int bytesDown) throws ConnectException {
 
         lastReadThreadId = Thread.currentThread().getId();
@@ -92,36 +81,27 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
             potentiallyBufferedOutputBytes = 0;
         }
 
-        if (0 == receiveBufferSize) {
-            checkConnectionAllowed(1);
-        } else {
+        int potentiallyBufferedInputBytes = this.potentiallyBufferedInputBytes -= bytesDown;
 
-            int potentiallyBufferedInputBytes = this.potentiallyBufferedInputBytes -= bytesDown;
-
-            if (potentiallyBufferedInputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / receiveBufferSize;
-                checkConnectionAllowed(estimatedNumberOfTcpPackets);
-                this.potentiallyBufferedInputBytes = receiveBufferSize;
-            }
-
+        if (potentiallyBufferedInputBytes < 0) {
+            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+            checkConnectionAllowed(estimatedNumberOfTcpPackets);
+            this.potentiallyBufferedInputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
         }
 
     }
 
     /**
-     * Adds a delay as defined for current {@link SnifferSocketImpl} in {@link ConnectionsRegistry#discoveredDataSources}
-     *
+     * Adds a delay as defined for current {@link SniffyAsynchronousSocketChannel} in {@link ConnectionsRegistry#discoveredDataSources}
+     * <p>
      * Delay is added for each <b>N</b> bytes sent where <b>N</b> is the value of {@link SocketOptions#SO_SNDBUF}
-     *
+     * <p>
      * If application writes <b>M</b> bytes where (k-1) * N &lt; M  &lt; k * N exactly <b>k</b> delays will be added
-     *
-     * A call to {@link SnifferInputStream} obtained from the same {@link SnifferSocketImpl} and made from the same thread
-     * will reset the number of buffered (i.e. which can be written without delay) bytes to 0 effectively adding a guaranteed
-     * delay to any subsequent {@link SnifferOutputStream#write(int)} request
      *
      * @param bytesUp number of bytes sent to socket
      * @throws ConnectException on underlying socket exception
      */
+    @SuppressWarnings("JavadocReference")
     private void sleepIfRequiredForWrite(int bytesUp) throws ConnectException {
 
         lastWriteThreadId = Thread.currentThread().getId();
@@ -130,60 +110,14 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
             potentiallyBufferedInputBytes = 0;
         }
 
-        if (0 == sendBufferSize) {
-            checkConnectionAllowed(1);
-        } else {
+        int potentiallyBufferedOutputBytes = this.potentiallyBufferedOutputBytes -= bytesUp;
 
-            int potentiallyBufferedOutputBytes = this.potentiallyBufferedOutputBytes -= bytesUp;
-
-            if (potentiallyBufferedOutputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / sendBufferSize;
-                checkConnectionAllowed(estimatedNumberOfTcpPackets);
-                this.potentiallyBufferedOutputBytes = sendBufferSize;
-            }
-
+        if (potentiallyBufferedOutputBytes < 0) {
+            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+            checkConnectionAllowed(estimatedNumberOfTcpPackets);
+            this.potentiallyBufferedOutputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
         }
 
-    }
-
-    private void estimateReceiveBuffer() {
-        if (-1 == receiveBufferSize) {
-            if (null == defaultReceiveBufferSize) {
-                synchronized (SniffySocketChannel.class) {
-                    if (null == defaultReceiveBufferSize) {
-                        try {
-                            defaultReceiveBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF);
-                            if (null == defaultReceiveBufferSize) defaultReceiveBufferSize = 0;
-                        } catch (SocketException e) {
-                            defaultReceiveBufferSize = 0;
-                        } catch (IOException e) {
-                            defaultReceiveBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            receiveBufferSize = defaultReceiveBufferSize;
-        }
-    }
-
-    private void estimateSendBuffer() {
-        if (-1 == sendBufferSize) {
-            if (null == defaultSendBufferSize) {
-                synchronized (SniffySocketChannel.class) {
-                    if (null == defaultSendBufferSize) {
-                        try {
-                            defaultSendBufferSize = (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF);
-                            if (null == defaultSendBufferSize) defaultSendBufferSize = 0;
-                        } catch (SocketException e) {
-                            defaultSendBufferSize = 0;
-                        } catch (IOException e) {
-                            defaultSendBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            sendBufferSize = defaultSendBufferSize;
-        }
     }
 
     private static void sleepImpl(int millis) throws InterruptedException {
@@ -312,8 +246,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     }
 
     @Override
-    public Future<Integer> read(ByteBuffer dst)  {
-        estimateReceiveBuffer();
+    public Future<Integer> read(ByteBuffer dst) {
 
         final long start = System.currentTimeMillis();
 
@@ -378,7 +311,6 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
     @Override
     public Future<Integer> write(ByteBuffer src) {
-        estimateSendBuffer();
 
         final long start = System.currentTimeMillis();
 
@@ -461,27 +393,6 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     }
 
     //
-
-
-    @Override
-    public int getReceiveBufferSize() {
-        return receiveBufferSize;
-    }
-
-    @Override
-    public void setReceiveBufferSize(int receiveBufferSize) {
-        this.receiveBufferSize = receiveBufferSize;
-    }
-
-    @Override
-    public int getSendBufferSize() {
-        return sendBufferSize;
-    }
-
-    @Override
-    public void setSendBufferSize(int sendBufferSize) {
-        this.sendBufferSize = sendBufferSize;
-    }
 
     @Override
     public int getPotentiallyBufferedInputBytes() {

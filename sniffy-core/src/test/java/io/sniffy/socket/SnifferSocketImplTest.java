@@ -2,7 +2,6 @@ package io.sniffy.socket;
 
 import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -14,12 +13,9 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static java.net.SocketOptions.SO_RCVBUF;
-import static java.net.SocketOptions.SO_SNDBUF;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -32,12 +28,6 @@ public class SnifferSocketImplTest {
     private Sleep sleep;
 
     private SnifferSocketImpl sniffySocket;
-
-    @BeforeClass
-    public static void initSnifferSocketImplStatic() {
-        SnifferSocketImpl.defaultReceiveBufferSize = 64;
-        SnifferSocketImpl.defaultSendBufferSize = 64;
-    }
 
     @Before
     public void createSniffySocket() throws Exception {
@@ -404,7 +394,7 @@ public class SnifferSocketImplTest {
 
     }
 
-    @Test
+    /*@Test
     public void testEstimateReceiveBufferNoRcvBufOption() throws Exception {
 
         InputStream expected = new ByteArrayInputStream(new byte[]{1, 2, 3});
@@ -444,7 +434,7 @@ public class SnifferSocketImplTest {
 
         assertEquals((Integer) 0, SnifferSocketImpl.defaultReceiveBufferSize);
 
-    }
+    }*/
 
     @Test
     public void testGetOutputStream() throws Exception {
@@ -465,7 +455,7 @@ public class SnifferSocketImplTest {
 
     }
 
-    @Test
+    /*@Test
     public void testEstimateSendBufferNoSndBufOption() throws Exception {
 
         ByteArrayOutputStream expected = new ByteArrayOutputStream();
@@ -509,7 +499,7 @@ public class SnifferSocketImplTest {
 
         assertEquals((Integer) 0, SnifferSocketImpl.defaultSendBufferSize);
 
-    }
+    }*/
 
     @Test
     public void testAvailable() throws Exception {
@@ -582,7 +572,7 @@ public class SnifferSocketImplTest {
 
     }
 
-    @Test
+    /*@Test
     @Features({"issues/219"})
     public void testSetReceiveBufferSize() throws Exception {
         int backup = sniffySocket.getReceiveBufferSize();
@@ -650,7 +640,7 @@ public class SnifferSocketImplTest {
         verify(delegate, times(2)).setOption(anyInt(), notNull());
         verifyNoMoreInteractions(delegate);
 
-    }
+    }*/
 
     @Issue("issues/317")
     @Test

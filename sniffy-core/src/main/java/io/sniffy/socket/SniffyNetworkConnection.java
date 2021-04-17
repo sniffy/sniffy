@@ -6,7 +6,9 @@ import java.net.InetSocketAddress;
 /**
  * @since 3.1.7
  */
-public interface SniffyNetworkConnection {
+public interface SniffyNetworkConnection extends TrafficCapturingNetworkConnection {
+
+    int DEFAULT_TCP_WINDOW_SIZE = 212992;
 
     InetSocketAddress getInetSocketAddress();
 
@@ -28,21 +30,10 @@ public interface SniffyNetworkConnection {
 
     void setLastWriteThreadId(long lastWriteThreadId);
 
-    int getReceiveBufferSize();
-
-    void setReceiveBufferSize(int receiveBufferSize);
-
-    int getSendBufferSize();
-
-    void setSendBufferSize(int sendBufferSize);
-
     void logSocket(long millis);
 
     @Deprecated
     void logSocket(long millis, int bytesDown, int bytesUp);
-
-    // TODO: add
-    void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len);
 
     void checkConnectionAllowed() throws ConnectException;
 

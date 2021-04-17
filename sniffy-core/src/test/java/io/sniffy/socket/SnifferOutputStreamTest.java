@@ -10,6 +10,7 @@ import ru.yandex.qatools.allure.annotations.Features;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -56,23 +57,22 @@ public class SnifferOutputStreamTest {
     @Features("issues/219")
     public void testWriteByteArrayThreeTcpPackets() throws IOException {
 
-        when(snifferSocket.getSendBufferSize()).thenReturn(5);
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         SnifferOutputStream sos = new SnifferOutputStream(snifferSocket, baos);
 
         byte[] THREE_BYTES_CHUNK = {1, 2, 3};
-        byte[] ELEVEN_BYTES_CHUNK = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+        byte[] DATA_FOR_TWO_TCP_WINDOWS = new byte[SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE * 2];
+        Arrays.fill(DATA_FOR_TWO_TCP_WINDOWS, (byte) 1);
 
-        byte[] ALL_DATA = new byte[THREE_BYTES_CHUNK.length + ELEVEN_BYTES_CHUNK.length];
+        byte[] ALL_DATA = new byte[THREE_BYTES_CHUNK.length + DATA_FOR_TWO_TCP_WINDOWS.length];
         System.arraycopy(THREE_BYTES_CHUNK, 0, ALL_DATA, 0, THREE_BYTES_CHUNK.length);
-        System.arraycopy(ELEVEN_BYTES_CHUNK, 0, ALL_DATA, THREE_BYTES_CHUNK.length, ELEVEN_BYTES_CHUNK.length);
+        System.arraycopy(DATA_FOR_TWO_TCP_WINDOWS, 0, ALL_DATA, THREE_BYTES_CHUNK.length, DATA_FOR_TWO_TCP_WINDOWS.length);
 
         sos.write(THREE_BYTES_CHUNK);
 
-        when(snifferSocket.getPotentiallyBufferedOutputBytes()).thenReturn(3);
+        when(snifferSocket.getPotentiallyBufferedOutputBytes()).thenReturn(THREE_BYTES_CHUNK.length);
 
-        sos.write(ELEVEN_BYTES_CHUNK);
+        sos.write(DATA_FOR_TWO_TCP_WINDOWS);
 
         verify(snifferSocket, times(2)).checkConnectionAllowed(eq(0));
 
@@ -84,7 +84,7 @@ public class SnifferOutputStreamTest {
 
         inOrder.verify(snifferSocket).checkConnectionAllowed(eq(0));
         inOrder.verify(snifferSocket).checkConnectionAllowed(eq(2));
-        inOrder.verify(snifferSocket).logSocket(anyLong(), eq(0), eq(ELEVEN_BYTES_CHUNK.length));
+        inOrder.verify(snifferSocket).logSocket(anyLong(), eq(0), eq(DATA_FOR_TWO_TCP_WINDOWS.length));
 
         inOrder.verify(snifferSocket, times(0)).checkConnectionAllowed(anyInt());
         inOrder.verify(snifferSocket, times(0)).logSocket(anyLong(), anyInt(), anyInt());
