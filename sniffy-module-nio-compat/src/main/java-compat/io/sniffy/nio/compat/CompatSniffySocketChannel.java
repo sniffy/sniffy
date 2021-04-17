@@ -28,9 +28,7 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     protected static volatile Integer defaultReceiveBufferSize;
     protected static volatile Integer defaultSendBufferSize;
 
-    private int receiveBufferSize = -1;
-    private int sendBufferSize = -1;
-
+    // fields related to injecting latency fault
     private volatile int potentiallyBufferedInputBytes = 0;
     private volatile int potentiallyBufferedOutputBytes = 0;
 
@@ -86,18 +84,12 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
             potentiallyBufferedOutputBytes = 0;
         }
 
-        if (0 == receiveBufferSize) {
-            checkConnectionAllowed(1);
-        } else {
+        int potentiallyBufferedInputBytes = this.potentiallyBufferedInputBytes -= bytesDown;
 
-            int potentiallyBufferedInputBytes = this.potentiallyBufferedInputBytes -= bytesDown;
-
-            if (potentiallyBufferedInputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / receiveBufferSize;
-                checkConnectionAllowed(estimatedNumberOfTcpPackets);
-                this.potentiallyBufferedInputBytes = receiveBufferSize;
-            }
-
+        if (potentiallyBufferedInputBytes < 0) {
+            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+            checkConnectionAllowed(estimatedNumberOfTcpPackets);
+            this.potentiallyBufferedInputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
         }
 
     }
@@ -124,64 +116,14 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
             potentiallyBufferedInputBytes = 0;
         }
 
-        if (0 == sendBufferSize) {
-            checkConnectionAllowed(1);
-        } else {
+        int potentiallyBufferedOutputBytes = this.potentiallyBufferedOutputBytes -= bytesUp;
 
-            int potentiallyBufferedOutputBytes = this.potentiallyBufferedOutputBytes -= bytesUp;
-
-            if (potentiallyBufferedOutputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / sendBufferSize;
-                checkConnectionAllowed(estimatedNumberOfTcpPackets);
-                this.potentiallyBufferedOutputBytes = sendBufferSize;
-            }
-
+        if (potentiallyBufferedOutputBytes < 0) {
+            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+            checkConnectionAllowed(estimatedNumberOfTcpPackets);
+            this.potentiallyBufferedOutputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
         }
 
-    }
-
-    @IgnoreJRERequirement
-    private void estimateReceiveBuffer() {
-        if (-1 == receiveBufferSize) {
-            if (null == defaultReceiveBufferSize) {
-                synchronized (CompatSniffySocketChannel.class) {
-                    if (null == defaultReceiveBufferSize) {
-                        try {
-                            defaultReceiveBufferSize = JVMUtil.getVersion() > 6 ?
-                                    (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF) :
-                                    socket().getReceiveBufferSize();
-                        } catch (SocketException e) {
-                            defaultReceiveBufferSize = 0;
-                        } catch (IOException e) {
-                            defaultReceiveBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            receiveBufferSize = defaultReceiveBufferSize;
-        }
-    }
-
-    @IgnoreJRERequirement
-    private void estimateSendBuffer() {
-        if (-1 == sendBufferSize) {
-            if (null == defaultSendBufferSize) {
-                synchronized (CompatSniffySocketChannel.class) {
-                    if (null == defaultSendBufferSize) {
-                        try {
-                            defaultSendBufferSize = JVMUtil.getVersion() > 6 ?
-                                    (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF) :
-                                    socket().getSendBufferSize();
-                        } catch (SocketException e) {
-                            defaultSendBufferSize = 0;
-                        } catch (IOException e) {
-                            defaultSendBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            sendBufferSize = defaultSendBufferSize;
-        }
     }
 
     @Deprecated
@@ -266,7 +208,6 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        estimateReceiveBuffer();
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
@@ -288,7 +229,6 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        estimateReceiveBuffer();
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         long bytesDown = 0;
@@ -327,7 +267,6 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        estimateSendBuffer();
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int length = 0;
@@ -352,7 +291,6 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        estimateSendBuffer();
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         long bytesUp = 0;
@@ -401,26 +339,6 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     }
 
     //
-
-    @Override
-    public int getReceiveBufferSize() {
-        return receiveBufferSize;
-    }
-
-    @Override
-    public void setReceiveBufferSize(int receiveBufferSize) {
-        this.receiveBufferSize = receiveBufferSize;
-    }
-
-    @Override
-    public int getSendBufferSize() {
-        return sendBufferSize;
-    }
-
-    @Override
-    public void setSendBufferSize(int sendBufferSize) {
-        this.sendBufferSize = sendBufferSize;
-    }
 
     @Override
     public int getPotentiallyBufferedInputBytes() {
