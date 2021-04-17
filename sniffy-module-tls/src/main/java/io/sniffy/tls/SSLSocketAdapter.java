@@ -11,11 +11,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.SocketAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.channels.SocketChannel;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 public class SSLSocketAdapter extends SSLSocket {
@@ -400,4 +399,21 @@ public class SSLSocketAdapter extends SSLSocket {
         delegate.setPerformancePreferences(connectionTime, latency, bandwidth);
     }
 
+    // TODO: move methods below to Java8/9+ only implementation
+    /*
+    @Override
+    public <T> Socket setOption(SocketOption<T> name, T value) throws IOException {
+        return super.setOption(name, value);
+    }
+
+    @Override
+    public <T> T getOption(SocketOption<T> name) throws IOException {
+        return super.getOption(name);
+    }
+
+    @Override
+    public Set<SocketOption<?>> supportedOptions() {
+        return super.supportedOptions();
+    }
+     */
 }

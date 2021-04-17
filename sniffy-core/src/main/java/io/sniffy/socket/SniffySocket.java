@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
 import java.nio.channels.SocketChannel;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkConnection {
@@ -17,16 +18,9 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     private InetSocketAddress address;
 
-    private final static AtomicInteger counter = new AtomicInteger(); // TODO: make global counter
-
     private final int id;
 
-    protected static volatile Integer defaultReceiveBufferSize;
-    protected static volatile Integer defaultSendBufferSize;
-
-    private int receiveBufferSize = -1;
-    private int sendBufferSize = -1;
-
+    // fields related to injecting latency fault
     private volatile int potentiallyBufferedInputBytes = 0;
     private volatile int potentiallyBufferedOutputBytes = 0;
 
@@ -49,7 +43,7 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
     public SniffySocket(Socket delegate, InetSocketAddress address) throws SocketException {
         super(delegate);
         this.socketChannel = null;
-        this.id = counter.getAndIncrement(); // TODO: make global
+        this.id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
         if (null == address) {
             this.address = (InetSocketAddress) delegate.getRemoteSocketAddress();
         } else {
@@ -65,40 +59,6 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
     @Override
     public InetSocketAddress getInetSocketAddress() {
         return this.address;
-    }
-
-    private void estimateReceiveBuffer() {
-        if (-1 == receiveBufferSize) {
-            if (null == defaultReceiveBufferSize) {
-                synchronized (SnifferSocketImpl.class) {
-                    if (null == defaultReceiveBufferSize) {
-                        try {
-                            defaultReceiveBufferSize = super.getReceiveBufferSize();
-                        } catch (SocketException e) {
-                            defaultReceiveBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            receiveBufferSize = defaultReceiveBufferSize;
-        }
-    }
-
-    private void estimateSendBuffer() {
-        if (-1 == sendBufferSize) {
-            if (null == defaultSendBufferSize) {
-                synchronized (SnifferSocketImpl.class) {
-                    if (null == defaultSendBufferSize) {
-                        try {
-                            defaultSendBufferSize = super.getSendBufferSize();
-                        } catch (SocketException e) {
-                            defaultSendBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            sendBufferSize = defaultSendBufferSize;
-        }
     }
 
     @Deprecated
@@ -208,7 +168,6 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
     @Override
     public InputStream getInputStream() throws IOException {
         long start = System.currentTimeMillis();
-        estimateReceiveBuffer();
         checkConnectionAllowed();
         try {
             return new SnifferInputStream(this, super.getInputStream());
@@ -220,7 +179,6 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
     @Override
     public OutputStream getOutputStream() throws IOException {
         long start = System.currentTimeMillis();
-        estimateSendBuffer();
         checkConnectionAllowed();
         try {
             return new SnifferOutputStream(this, super.getOutputStream());
@@ -243,30 +201,25 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     // TODO: evaluate other methods
 
+    // TODO: move methods below to JAva8+ only implementation
+
+    /*@Override
+    public <T> Socket setOption(SocketOption<T> name, T value) throws IOException {
+        return super.setOption(name, value);
+    }
+
+    @Override
+    public <T> T getOption(SocketOption<T> name) throws IOException {
+        return super.getOption(name);
+    }
+
+    @Override
+    public Set<SocketOption<?>> supportedOptions() {
+        return super.supportedOptions();
+    }*/
 
 
     //
-
-
-    @Override
-    public int getReceiveBufferSize() {
-        return receiveBufferSize;
-    }
-
-    @Override
-    public void setReceiveBufferSize(int receiveBufferSize) {
-        this.receiveBufferSize = receiveBufferSize;
-    }
-
-    @Override
-    public int getSendBufferSize() {
-        return sendBufferSize;
-    }
-
-    @Override
-    public void setSendBufferSize(int sendBufferSize) {
-        this.sendBufferSize = sendBufferSize;
-    }
 
     @Override
     public int getPotentiallyBufferedInputBytes() {
