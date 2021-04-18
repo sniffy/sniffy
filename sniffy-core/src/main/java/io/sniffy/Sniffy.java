@@ -601,11 +601,18 @@ public class Sniffy {
         }
 
         public boolean startsWith(byte[] that) {
-            if (buff.length < that.length) {
+            if (null == buff) return false;
+            if (null == that) return false;
+
+            if (buff.length <= that.length) {
                 return false;
             } else {
-                return Arrays.equals(buff, 0, that.length, that, 0, that.length);
+                for (int i = 0; i < that.length; i++) {
+                    if (buff[i] != that[i]) return false;
+                }
+                return true;
             }
+
         }
 
         @Override

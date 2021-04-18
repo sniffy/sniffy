@@ -6,17 +6,13 @@ import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
 
 import javax.net.ssl.*;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
 import static javax.net.ssl.SSLEngineResult.Status.OK;
 
@@ -121,8 +117,6 @@ public class SniffySSLEngine extends SSLEngine {
         src.position(position);
         srcClone.flip();
 
-        System.out.println("dstPosition=" + dstPosition);
-
         try {
             // TODO: The inbound network buffer may be modified as a result of this call: therefore if the network data packet is required for some secondary purpose, the data should be duplicated before calling this method.
             SSLEngineResult sslEngineResult = delegate.unwrap(src, dst);
@@ -148,9 +142,6 @@ public class SniffySSLEngine extends SSLEngine {
                 //src.position(position);
                 byte[] srcBuff = new byte[srcLength];
                 srcClone.get(srcBuff, 0, srcLength);
-
-                System.out.println("Decrypting " + srcLength + " bytes, starting with " + srcBuff[0] + ", " + srcBuff[1] + " and ending with " + srcBuff[srcBuff.length - 2] + ", " + srcBuff[srcBuff.length - 1]);
-                System.out.println(Arrays.toString(srcBuff));
 
                 if (dstLength > 0) {
                     dst.position(dstPosition);

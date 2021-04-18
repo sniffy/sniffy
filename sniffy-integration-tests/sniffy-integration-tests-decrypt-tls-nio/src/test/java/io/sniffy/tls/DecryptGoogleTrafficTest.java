@@ -29,23 +29,19 @@ public class DecryptGoogleTrafficTest {
         Sniffy.initialize();
     }
 
+    @SuppressWarnings("CharsetObjectCanBeUsed")
     @Test
     public void testGoogleTraffic() throws Exception {
 
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
 
-            CloseableHttpAsyncClient httpclient = HttpAsyncClients.createDefault();
-            try {
+            try (CloseableHttpAsyncClient httpclient = HttpAsyncClients.createDefault()) {
                 httpclient.start();
                 HttpGet request = new HttpGet("https://www.google.com");
                 Future<HttpResponse> future = httpclient.execute(request, null);
                 HttpResponse response = future.get();
-                System.out.println("Response: " + response.getStatusLine());
-                System.out.println("Shutting down");
-            } finally {
-                httpclient.close();
+                assertEquals(200, response.getStatusLine().getStatusCode());
             }
-            System.out.println("Done");
 
             Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
                     Threads.ANY,
@@ -70,7 +66,9 @@ public class DecryptGoogleTrafficTest {
             NetworkPacket request = entry.getValue().get(0);
             NetworkPacket response = entry.getValue().get(1);
 
+            //noinspection SimplifiableAssertion
             assertEquals(true, request.isSent());
+            //noinspection SimplifiableAssertion
             assertEquals(false, response.isSent());
 
             assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).contains("Host: www.google.com"));
