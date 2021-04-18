@@ -3,6 +3,8 @@ package io.sniffy;
 import com.codahale.metrics.Timer;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
@@ -39,6 +41,8 @@ import static io.sniffy.util.StackTraceExtractor.*;
  * @since 3.1
  */
 public class Sniffy {
+
+    private static final Polyglog LOG = PolyglogFactory.log(Sniffy.class);
 
     public static final int TOP_SQL_CAPACITY = 1024;
 
@@ -120,6 +124,8 @@ public class Sniffy {
 
         if (initialized) return;
 
+        LOG.info("Initializing Sniffy " + Constants.MAJOR_VERSION + "." + Constants.MINOR_VERSION + "." + Constants.PATCH_VERSION);
+
         SniffyConfiguration.INSTANCE.addTopSqlCapacityListener(new PropertyChangeListener() {
 
             @Override
@@ -136,13 +142,17 @@ public class Sniffy {
 
         if (SniffyConfiguration.INSTANCE.isMonitorSocket()) {
 
+            LOG.info("Socket monitoring enabled - installing SnifferSocketImplFactory");
+
             try {
                 SnifferSocketImplFactory.install();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error("Couldn't install SnifferSocketImplFactory", e);
             }
 
         } else {
+
+            LOG.debug("Socket monitoring disabled - installing SnifferSocketImplFactory");
 
             SniffyConfiguration.INSTANCE.addMonitorSocketListener(new PropertyChangeListener() {
 
@@ -152,11 +162,12 @@ public class Sniffy {
                 public synchronized void propertyChange(PropertyChangeEvent evt) {
                     if (sniffySocketImplFactoryInstalled) return;
                     if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        LOG.info("Socket monitoring enabled - installing SnifferSocketImplFactory");
                         try {
                             SnifferSocketImplFactory.install();
                             sniffySocketImplFactoryInstalled = true;
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            LOG.error("Couldn't install SnifferSocketImplFactory", e);
                         }
                     }
                 }
@@ -166,6 +177,7 @@ public class Sniffy {
         }
 
         if (SniffyConfiguration.INSTANCE.isMonitorNio()) {
+            LOG.info("NIO monitoring enabled - loading NIO Sniffy Module");
             loadNioModule();
         } else {
 
@@ -177,6 +189,7 @@ public class Sniffy {
                 public synchronized void propertyChange(PropertyChangeEvent evt) {
                     if (sniffySelectorProviderInstalled) return;
                     if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        LOG.info("NIO monitoring enabled - loading NIO Sniffy Module");
                         loadNioModule();
                         sniffySelectorProviderInstalled = true;
                     }
@@ -187,6 +200,7 @@ public class Sniffy {
         }
 
         if (SniffyConfiguration.INSTANCE.isDecryptTls()) {
+            LOG.info("TLS decryption enabled - loading TLS Sniffy Module");
             loadTlsModule();
         } else {
 
@@ -198,6 +212,7 @@ public class Sniffy {
                 public synchronized void propertyChange(PropertyChangeEvent evt) {
                     if (sniffyTlsModuleInstalled) return;
                     if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        LOG.info("TLS decryption enabled - loading TLS Sniffy Module");
                         loadTlsModule();
                         sniffyTlsModuleInstalled = true;
                     }
@@ -222,14 +237,8 @@ public class Sniffy {
                     try {
                         Class.forName("io.sniffy.nio.SniffySelectorProviderModule").getMethod("initialize").invoke(null);
                         Class.forName("io.sniffy.nio.compat.SniffyCompatSelectorProviderModule").getMethod("initialize").invoke(null);;
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                    } catch (Exception e) {
+                        LOG.error(e);
                     }
 
                     nioModuleLoaded = true;
@@ -249,14 +258,8 @@ public class Sniffy {
 
                     try {
                         Class.forName("io.sniffy.tls.SniffyTlsModule").getMethod("initialize").invoke(null);
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                    } catch (Exception e) {
+                        LOG.error(e);
                     }
 
                     tlsModuleLoaded = true;
