@@ -1,6 +1,7 @@
 package io.sniffy.tls;
 
 import io.sniffy.Sniffy;
+import io.sniffy.socket.SocketMetaData;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
 
@@ -48,9 +49,6 @@ public class SniffySSLEngine extends SSLEngine {
         int dstPosition = dst.position();
         int dstLength = 0;
 
-        System.out.println("dstPosition = " + dstPosition);
-        System.out.flush();
-
         try {
             SSLEngineResult sslEngineResult = delegate.wrap(src, dst);
             if (handshaking) {
@@ -76,15 +74,7 @@ public class SniffySSLEngine extends SSLEngine {
                 byte[] buff = new byte[length];
                 src.get(buff, 0, length);
 
-
-                try {
-                    System.out.println(new String(buff, "US-ASCII"));
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
-
                 if (dstLength > 0) {
-                    System.out.println("dstLength = " + dstLength);
                     dst.position(dstPosition);
                     byte[] dstBuff = new byte[dstLength];
                     dst.get(dstBuff, 0, dstLength);
@@ -112,7 +102,61 @@ public class SniffySSLEngine extends SSLEngine {
 
     @Override
     public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer dst) throws SSLException {
-        return delegate.unwrap(src, dst);
+        //return delegate.unwrap(src, dst);
+
+        int position = src.position();
+        int length = 0;
+
+        int dstPosition = dst.position();
+        int dstLength = 0;
+
+        try {
+            SSLEngineResult sslEngineResult = delegate.unwrap(src, dst);
+            if (handshaking) {
+                SSLEngineResult.HandshakeStatus handshakeStatus = sslEngineResult.getHandshakeStatus();
+                SSLEngineResult.Status status = sslEngineResult.getStatus();
+                if (NOT_HANDSHAKING == handshakeStatus && OK == status) {
+                    handshaking = false;
+                }
+            }
+
+            if (!handshaking) {
+                length = sslEngineResult.bytesConsumed();
+                if (length > 0) {
+                    dstLength = sslEngineResult.bytesProduced();
+                }
+            }
+
+            return sslEngineResult;
+        } finally {
+
+            if (!handshaking && length > 0) {
+                src.position(position);
+                byte[] buff = new byte[length];
+                src.get(buff, 0, length);
+
+                if (dstLength > 0) {
+                    dst.position(dstPosition);
+                    byte[] dstBuff = new byte[dstLength];
+                    dst.get(dstBuff, 0, dstLength);
+
+                    SocketMetaData socketMetaData = Sniffy.GLOBAL_DECRYPTION_MAP.get(new Sniffy.EncryptedPacket(buff));
+                    if (null != socketMetaData) {
+                        Sniffy.logDecryptedTraffic(
+                                socketMetaData.getConnectionId(),
+                                socketMetaData.getAddress(),
+                                false,
+                                socketMetaData.getProtocol(),
+                                dstBuff,
+                                0,
+                                dstLength,
+                                null != socketMetaData.getStackTrace()
+                        );
+                    }
+                }
+            }
+
+        }
     }
 
     @Override
