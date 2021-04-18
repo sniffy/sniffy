@@ -9,9 +9,14 @@ import javax.net.ssl.*;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
 import static javax.net.ssl.SSLEngineResult.Status.OK;
 
@@ -105,12 +110,21 @@ public class SniffySSLEngine extends SSLEngine {
         //return delegate.unwrap(src, dst);
 
         int position = src.position();
-        int length = 0;
+        int srcLength = 0;
 
         int dstPosition = dst.position();
         int dstLength = 0;
 
+        // The inbound network buffer may be modified as a result of this call: therefore if the network data packet is required for some secondary purpose, the data should be duplicated before calling this method.
+        ByteBuffer srcClone = ByteBuffer.allocate(src.limit() - src.position());
+        srcClone.put(src);
+        src.position(position);
+        srcClone.flip();
+
+        System.out.println("dstPosition=" + dstPosition);
+
         try {
+            // TODO: The inbound network buffer may be modified as a result of this call: therefore if the network data packet is required for some secondary purpose, the data should be duplicated before calling this method.
             SSLEngineResult sslEngineResult = delegate.unwrap(src, dst);
             if (handshaking) {
                 SSLEngineResult.HandshakeStatus handshakeStatus = sslEngineResult.getHandshakeStatus();
@@ -121,8 +135,8 @@ public class SniffySSLEngine extends SSLEngine {
             }
 
             if (!handshaking) {
-                length = sslEngineResult.bytesConsumed();
-                if (length > 0) {
+                srcLength = sslEngineResult.bytesConsumed();
+                if (srcLength > 0) {
                     dstLength = sslEngineResult.bytesProduced();
                 }
             }
@@ -130,17 +144,48 @@ public class SniffySSLEngine extends SSLEngine {
             return sslEngineResult;
         } finally {
 
-            if (!handshaking && length > 0) {
-                src.position(position);
-                byte[] buff = new byte[length];
-                src.get(buff, 0, length);
+            if (!handshaking && srcLength > 0) {
+                //src.position(position);
+                byte[] srcBuff = new byte[srcLength];
+                srcClone.get(srcBuff, 0, srcLength);
+
+                System.out.println("Decrypting " + srcLength + " bytes, starting with " + srcBuff[0] + ", " + srcBuff[1] + " and ending with " + srcBuff[srcBuff.length - 2] + ", " + srcBuff[srcBuff.length - 1]);
+                System.out.println(Arrays.toString(srcBuff));
 
                 if (dstLength > 0) {
                     dst.position(dstPosition);
                     byte[] dstBuff = new byte[dstLength];
                     dst.get(dstBuff, 0, dstLength);
 
-                    SocketMetaData socketMetaData = Sniffy.GLOBAL_DECRYPTION_MAP.get(new Sniffy.EncryptedPacket(buff));
+                    //SocketMetaData socketMetaData = Sniffy.GLOBAL_DECRYPTION_MAP.get(new Sniffy.EncryptedPacket(srcBuff));
+
+                    // TODO: optimize this horrible code below
+                    Sniffy.EncryptedPacket encryptedPacket = new Sniffy.EncryptedPacket(srcBuff);
+                    SocketMetaData socketMetaData = Sniffy.GLOBAL_DECRYPTION_MAP.get(encryptedPacket);
+
+                    if (null == socketMetaData) {
+                        Map.Entry<Sniffy.EncryptedPacket, SocketMetaData> matchedEntry = null;
+
+                        for (Map.Entry<Sniffy.EncryptedPacket, SocketMetaData> entry : Sniffy.GLOBAL_DECRYPTION_MAP.entrySet()) {
+                            if (entry.getKey().startsWith(srcBuff)) {
+                                matchedEntry = entry;
+                            }
+                        }
+
+                        if (null != matchedEntry) {
+
+                            Sniffy.EncryptedPacket key = matchedEntry.getKey();
+                            socketMetaData = matchedEntry.getValue();
+
+                            Sniffy.GLOBAL_DECRYPTION_MAP.remove(key);
+                            Sniffy.GLOBAL_DECRYPTION_MAP.put(key.trimToSize(srcBuff.length), socketMetaData);
+
+
+                        }
+                    } else {
+                        Sniffy.GLOBAL_DECRYPTION_MAP.remove(encryptedPacket); // TODO: check that we're doing the same
+                    }
+
                     if (null != socketMetaData) {
                         Sniffy.logDecryptedTraffic(
                                 socketMetaData.getConnectionId(),

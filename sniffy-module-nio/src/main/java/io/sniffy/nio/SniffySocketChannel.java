@@ -15,6 +15,7 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Arrays;
 
 import static io.sniffy.Sniffy.CONNECTION_ID_SEQUENCE;
 
@@ -237,6 +238,9 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                     dst.position(position);
                     byte[] buff = new byte[bytesDown];
                     dst.get(buff, 0, bytesDown);
+
+                    System.out.println("Received " + bytesDown + " bytes, starting with " + buff[0] + ", " + buff[1] + " and ending with " + buff[buff.length - 2] + ", " + buff[buff.length - 1]);
+                    System.out.println(Arrays.toString(buff));
 
                     logTraffic(false, Protocol.TCP, buff, 0, buff.length);
                 }

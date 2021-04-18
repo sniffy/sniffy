@@ -22,6 +22,7 @@ public class DecryptGoogleTrafficTest {
     public static void loadTlsModule() {
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        SniffyConfiguration.INSTANCE.setMonitorNio(true);
         Sniffy.initialize();
     }
 

@@ -596,6 +596,18 @@ public class Sniffy {
             this.buff = buff;
         }
 
+        public EncryptedPacket trimToSize(int maxSize) {
+            return new EncryptedPacket(Arrays.copyOfRange(buff, 0, Math.max(maxSize, buff.length)));
+        }
+
+        public boolean startsWith(byte[] that) {
+            if (buff.length < that.length) {
+                return false;
+            } else {
+                return Arrays.equals(buff, 0, that.length, that, 0, that.length);
+            }
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -613,10 +625,12 @@ public class Sniffy {
     }
 
     // TODO: implement optimizations; use thread local, ssl engine ids to sniffy connections ids mappings, etc.
+    // TODO: make it bounded
     public static ConcurrentMap<EncryptedPacket, DecryptedPacket> GLOBAL_ENCRYPTION_MAP
             = new ConcurrentHashMap<EncryptedPacket, DecryptedPacket>();
 
     // TODO: implement optimizations; use thread local, ssl engine ids to sniffy connections ids mappings, etc.
+    // TODO: make it bounded
     public static ConcurrentMap<EncryptedPacket, SocketMetaData> GLOBAL_DECRYPTION_MAP
             = new ConcurrentHashMap<EncryptedPacket, SocketMetaData>();
 

@@ -65,16 +65,16 @@ public class DecryptGoogleTrafficTest {
             assertNotNull(entry.getKey());
             assertNotNull(entry.getValue());
 
-            //assertEquals(2, entry.getValue().size()); // TODO: uncomment once response decryption is done
+            assertEquals(2, entry.getValue().size());
 
             NetworkPacket request = entry.getValue().get(0);
-            //NetworkPacket response = entry.getValue().get(1); // TODO: uncomment once response decryption is done
+            NetworkPacket response = entry.getValue().get(1);
 
             assertEquals(true, request.isSent());
-            // assertEquals(false, response.isSent()); // TODO: uncomment once response decryption is done
+            assertEquals(false, response.isSent());
 
             assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).contains("Host: www.google.com"));
-            //assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200")); // TODO: uncomment once response decryption is done
+            assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200"));
 
         }
 
