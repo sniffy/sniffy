@@ -76,7 +76,7 @@ public class Sniffy {
                     maximumWeightedCapacity(SniffyConfiguration.INSTANCE.getTopSqlCapacity()).
                     build();
 
-    private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
+    private static final ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
 
     public final static AtomicInteger CONNECTION_ID_SEQUENCE = new AtomicInteger();
 
@@ -120,6 +120,7 @@ public class Sniffy {
 
         if (initialized) return;
 
+        //noinspection Convert2Lambda
         SniffyConfiguration.INSTANCE.addTopSqlCapacityListener(new PropertyChangeListener() {
 
             @Override
@@ -221,14 +222,8 @@ public class Sniffy {
 
                     try {
                         Class.forName("io.sniffy.nio.SniffySelectorProviderModule").getMethod("initialize").invoke(null);
-                        Class.forName("io.sniffy.nio.compat.SniffyCompatSelectorProviderModule").getMethod("initialize").invoke(null);;
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
+                        Class.forName("io.sniffy.nio.compat.SniffyCompatSelectorProviderModule").getMethod("initialize").invoke(null);
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
 
@@ -249,13 +244,7 @@ public class Sniffy {
 
                     try {
                         Class.forName("io.sniffy.tls.SniffyTlsModule").getMethod("initialize").invoke(null);
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
 
@@ -307,159 +296,114 @@ public class Sniffy {
         currentThreadSpies.remove(Thread.currentThread().getId());
     }
 
+    private static Iterable<BaseSpy<?>> getEffectiveSpyList() {
+
+        //noinspection Convert2Lambda
+        return new Iterable<BaseSpy<?>>() {
+
+            @Override
+            public Iterator<BaseSpy<?>> iterator() {
+
+                return new Iterator<BaseSpy<?>>() {
+
+                    private BaseSpy<?> next;
+
+                    @SuppressWarnings("rawtypes")
+                    private final Iterator<WeakReference<Spy>> globalSpiesIterator = registeredSpies.iterator();
+                    private boolean globalSpiesChecked;
+
+                    private boolean threadLocalSpiesChecked;
+
+                    @Override
+                    public boolean hasNext() {
+
+                        if (!globalSpiesChecked) {
+                            try {
+                                if (hasGlobalSpies) {
+                                    while (globalSpiesIterator.hasNext()) {
+                                        //noinspection rawtypes
+                                        WeakReference<Spy> spyReference = globalSpiesIterator.next();
+                                        Spy<?> spy = spyReference.get();
+                                        if (null == spy) {
+                                            globalSpiesIterator.remove();
+                                        } else {
+                                            next = spy;
+                                            return true;
+                                        }
+                                    }
+                                }
+                            } finally {
+                                globalSpiesChecked = true;
+                            }
+                        }
+
+                        if (!threadLocalSpiesChecked) {
+                            try {
+                                if (hasThreadLocalSpies) {
+                                    Long threadId = Thread.currentThread().getId();
+
+                                    WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+                                    if (null != spyReference) {
+                                        CurrentThreadSpy spy = spyReference.get();
+                                        if (null == spy) {
+                                            currentThreadSpies.remove(threadId);
+                                        } else {
+                                            next = spy;
+                                            return true;
+                                        }
+                                    }
+                                }
+                            } finally {
+                                threadLocalSpiesChecked = true;
+                            }
+                        }
+
+                        return false;
+
+                    }
+
+                    @Override
+                    public BaseSpy<?> next() {
+                        return next;
+                    }
+
+                };
+
+            }
+
+        };
+
+    }
+
     private static void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
-
-        if (hasGlobalSpies) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
         }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
-                }
-            }
-        }
-
     }
 
     private static void notifyListeners(StatementMetaData statementMetaData) {
-
-        if (hasGlobalSpies) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    spy.addReturnedRow(statementMetaData);
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addReturnedRow(statementMetaData);
         }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    spy.addReturnedRow(statementMetaData);
-                }
-            }
-        }
-
     }
 
     private static void notifyListeners(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
-
-        if (hasGlobalSpies) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
-                }
-            }
-        }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
         }
     }
 
     private static void notifyListeners(SocketMetaData socketMetaData, boolean sent, long timestamp, String stackTrace, byte[] traffic, int off, int len) {
-
         ThreadMetaData threadMetaData = ThreadMetaData.create(Thread.currentThread());
-
-        if (hasGlobalSpies) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
-                }
-            }
-        }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
         }
     }
 
     private static void notifyListenersDecryptedTraffic(SocketMetaData socketMetaData, boolean sent, long timestamp, String stackTrace, byte[] traffic, int off, int len) {
-
         ThreadMetaData threadMetaData = ThreadMetaData.create(Thread.currentThread());
-
-        if (hasGlobalSpies) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    spy.addDecryptedNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
-                }
-            }
-        }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    spy.addDecryptedNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addDecryptedNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
         }
     }
 
@@ -480,33 +424,8 @@ public class Sniffy {
                 captureNetworkTraffic(false).
                 captureStackTraces(false);
 
-        if (hasGlobalSpies) {
-            if (!registeredSpies.isEmpty()) {
-                Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-                while (iterator.hasNext()) {
-                    WeakReference<Spy> spyReference = iterator.next();
-                    Spy spy = spyReference.get();
-                    if (null == spy) {
-                        iterator.remove();
-                    } else {
-                        builder = builder.or(spy.getSpyConfiguration());
-                    }
-                }
-            }
-        }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    builder = builder.or(spy.getSpyConfiguration());
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            builder = builder.or(spy.getSpyConfiguration());
         }
 
         return builder.build();
