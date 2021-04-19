@@ -3,13 +3,12 @@ package io.sniffy.socket;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.Socket;
-import java.net.SocketImpl;
-import java.net.SocketImplFactory;
+import java.net.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -133,6 +132,84 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
                 assertEquals(RESPONSE.length, socketStats.bytesDown.intValue());
             });
 
+        }
+
+    }
+
+    @Test
+    public void testServerSocket() throws Exception {
+
+        SnifferSocketImplFactory.uninstall();
+
+        try {
+            SnifferSocketImplFactory.install();
+
+            int boundPort = 10000;
+
+            ServerSocket serverSocket = null;
+
+            for (int i = 0; i < 10; i++, boundPort++) {
+                try {
+                    serverSocket = new ServerSocket(boundPort, 50, InetAddress.getByName(null));
+                    serverSocket.setReuseAddress(true);
+                    break;
+                } catch (IOException e) {
+                    try {
+                        if (null != serverSocket) {
+                            serverSocket.close();
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+
+            AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
+            AtomicReference<Socket> socketHolder = new AtomicReference<>();
+
+            final ServerSocket boundServerSocket = serverSocket;
+
+            SocketImpl boundServerSocketImpl = ReflectionUtil.getField(ServerSocket.class, boundServerSocket, "impl");
+            assertFalse(boundServerSocketImpl instanceof SnifferSocketImpl);
+
+            Thread serverThread = new Thread(new Runnable() {
+
+                @Override
+                public void run() {
+
+                    try {
+
+                        Socket accept = boundServerSocket.accept();
+                        socketHolder.set(accept);
+
+                    } catch (Exception e) {
+                        exceptionHolder.set(e);
+                    }
+
+                }
+
+            });
+
+            serverThread.start();
+
+            Socket clientSocket = new Socket(localhost, boundPort);
+            assertTrue(clientSocket.isConnected());
+
+            SocketImpl clientSocketImpl = ReflectionUtil.getField(Socket.class, clientSocket, "impl");
+            assertTrue(clientSocketImpl instanceof SnifferSocketImpl);
+
+            assertNull(exceptionHolder.get());
+
+            Socket socket = socketHolder.get();
+            SocketImpl socketImpl = ReflectionUtil.getField(Socket.class, socket, "impl");
+            assertFalse(socketImpl instanceof SnifferSocketImpl);
+
+            clientSocket.close();
+
+            serverThread.join();
+
+        } finally {
+            SnifferSocketImplFactory.uninstall();
         }
 
     }
