@@ -318,44 +318,38 @@ public class Sniffy {
                     public boolean hasNext() {
 
                         if (!globalSpiesChecked) {
-                            try {
-                                if (hasGlobalSpies) {
-                                    while (globalSpiesIterator.hasNext()) {
-                                        //noinspection rawtypes
-                                        WeakReference<Spy> spyReference = globalSpiesIterator.next();
-                                        Spy<?> spy = spyReference.get();
-                                        if (null == spy) {
-                                            globalSpiesIterator.remove();
-                                        } else {
-                                            next = spy;
-                                            return true;
-                                        }
+                            if (hasGlobalSpies) {
+                                while (globalSpiesIterator.hasNext()) {
+                                    //noinspection rawtypes
+                                    WeakReference<Spy> spyReference = globalSpiesIterator.next();
+                                    Spy<?> spy = spyReference.get();
+                                    if (null == spy) {
+                                        globalSpiesIterator.remove();
+                                    } else {
+                                        next = spy;
+                                        return true;
                                     }
                                 }
-                            } finally {
-                                globalSpiesChecked = true;
                             }
+                            globalSpiesChecked = true;
                         }
 
                         if (!threadLocalSpiesChecked) {
-                            try {
-                                if (hasThreadLocalSpies) {
-                                    Long threadId = Thread.currentThread().getId();
+                            if (hasThreadLocalSpies) {
+                                Long threadId = Thread.currentThread().getId();
 
-                                    WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-                                    if (null != spyReference) {
-                                        CurrentThreadSpy spy = spyReference.get();
-                                        if (null == spy) {
-                                            currentThreadSpies.remove(threadId);
-                                        } else {
-                                            next = spy;
-                                            return true;
-                                        }
+                                WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+                                if (null != spyReference) {
+                                    CurrentThreadSpy spy = spyReference.get();
+                                    if (null == spy) {
+                                        currentThreadSpies.remove(threadId);
+                                    } else {
+                                        next = spy;
+                                        return true;
                                     }
                                 }
-                            } finally {
-                                threadLocalSpiesChecked = true;
                             }
+                            threadLocalSpiesChecked = true;
                         }
 
                         return false;
