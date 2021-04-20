@@ -7,6 +7,12 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |===
 |System Property |Environment Variable |Sniffy Agent parameter |Description |Default Value
 
+|-Dio.sniffy.logLevel
+|IO_SNIFFY_LOG_LEVEL
+|N/A
+|Sniffy logging level; allowed values are: TRACE, DEBUG, INFO, ERROR, OFF
+|info
+
 |-Dio.sniffy.monitorJdbc
 |IO_SNIFFY_MONITOR_JDBC
 |N/A

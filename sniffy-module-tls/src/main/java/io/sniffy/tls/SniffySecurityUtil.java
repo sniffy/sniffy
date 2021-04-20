@@ -52,14 +52,14 @@ public class SniffySecurityUtil {
                     if (hasSSLContextService) {
                         String originalProviderName = originalSecurityProvider.getName();
 
-                        LOG.info("Original provider " + originalProviderName + " provides SSLContextSPI service");
-
                         SniffySSLContextSpiProvider sniffySSLContextSpiProvider = new SniffySSLContextSpiProvider(
                                 originalSecurityProvider,
                                 "Sniffy-" + originalProviderName,
                                 Constants.MAJOR_VERSION,
                                 "SniffySSLContextProvider"
                         );
+
+                        LOG.info("Original provider " + originalProviderName + " provides SSLContextSPI service - wrapped with " + sniffySSLContextSpiProvider);
 
                         if (hasDefaultSSLContextService && null == firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi) {
                             firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi = sniffySSLContextSpiProvider;
@@ -82,30 +82,39 @@ public class SniffySecurityUtil {
                 Provider.Service defaultSniffySSLContextSpiProviderService =
                         firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi.getService(SSLCONTEXT, "Default");
                 if (null != defaultSniffySSLContextSpiProviderService) {
+                    LOG.info("Identified default SSLContext service provider - " + firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi + " with service " + defaultSniffySSLContextSpiProviderService);
                     SniffySSLContext defaultSniffySSLContext = new SniffySSLContext(
                             (SSLContextSpi) defaultSniffySSLContextSpiProviderService.newInstance(null),
                             firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi,
                             "Default"
                     );
+                    LOG.info("Setting SSLContext.default to " + defaultSniffySSLContext);
                     SSLContext.setDefault(defaultSniffySSLContext);
-
                     if (JVMUtil.getVersion() >= 13) {
+                        LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
+
                         SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder", null, SSLSocketFactory.class);
                         if (null != originalSSLSocketFactory) {
+                            SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
+                            LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
                             ReflectionUtil.setFields(
                                     "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
                                     null,
                                     SSLSocketFactory.class,
-                                    new SniffySSLSocketFactory(originalSSLSocketFactory));
+                                    sniffySSLSocketFactory);
                         }
                     } else {
+                        LOG.info("Java 12- detected - attempt to update singleton inside javax.net.ssl.SSLSocketFactory");
+
                         SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
                         if (null != originalSSLSocketFactory) {
+                            SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
+                            LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
                             ReflectionUtil.setFields(
                                     SSLSocketFactory.class,
                                     null,
                                     SSLSocketFactory.class,
-                                    new SniffySSLSocketFactory(originalSSLSocketFactory));
+                                    sniffySSLSocketFactory);
                         }
                     }
                 }
@@ -117,9 +126,13 @@ public class SniffySecurityUtil {
 
     public static void uninstall() throws NoSuchAlgorithmException, NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
 
+        LOG.info("Uninstalling Sniffy JSSE providers and wrappers");
+
         synchronized (Security.class) {
 
             Provider[] providers = Security.getProviders();
+
+            LOG.info("Wrapped security providers are " + Arrays.toString(providers));
 
             for (int i = 0, j = 1; i < providers.length; i++) {
 
@@ -133,6 +146,7 @@ public class SniffySecurityUtil {
                         Security.removeProvider(provider.getName());
                         Provider originalProvider = ((SniffySSLContextSpiProvider) provider).getOriginalProvider();
                         Security.insertProviderAt(originalProvider, j);
+                        LOG.info("Unwrapped provider " + provider.getName() + "; replaced " + provider + " with " + originalProvider);
                         j++;
                     }
 
@@ -159,23 +173,30 @@ public class SniffySecurityUtil {
                 Provider.Service defaultSSLContextSpiProviderService =
                         firstSSLContextSpiProviderWithDefaultSSLContextSpi.getService(SSLCONTEXT, "Default");
                 if (null != defaultSSLContextSpiProviderService) {
+                    LOG.info("Identified default SSLContext service provider - " + firstSSLContextSpiProviderWithDefaultSSLContextSpi + " with service " + defaultSSLContextSpiProviderService);
                     // TODO: don't rollback to SniffySSLContext even though it doesn do anything Sniffy
                     SniffySSLContext defaultSSLContext = new SniffySSLContext(
                             (SSLContextSpi) defaultSSLContextSpiProviderService.newInstance(null),
                             firstSSLContextSpiProviderWithDefaultSSLContextSpi,
                             "Default"
                     );
+                    LOG.info("Setting SSLContext.default to " + defaultSSLContext);
                     SSLContext.setDefault(defaultSSLContext);
                     if (JVMUtil.getVersion() >= 13) {
+                        LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
+
                         SSLSocketFactory sniffySSLSocketFactory = ReflectionUtil.getFirstField("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder", null, SSLSocketFactory.class);
                         if (sniffySSLSocketFactory instanceof SniffySSLSocketFactory) {
+                            SSLSocketFactory originalSSLSocketFactory = ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate();
+                            LOG.info("Replacing " + sniffySSLSocketFactory + " with " + originalSSLSocketFactory);
                             ReflectionUtil.setFields(
                                     "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
                                     null,
                                     SSLSocketFactory.class,
-                                    ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate()
+                                    originalSSLSocketFactory
                             );
                         } else if (null == sniffySSLSocketFactory) {
+                            LOG.info("Removing javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
                             ReflectionUtil.setFields(
                                     "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
                                     null,
@@ -184,16 +205,22 @@ public class SniffySecurityUtil {
                             );
                         }
                     } else {
+                        LOG.info("Java 12- detected - attempt to update singleton inside javax.net.ssl.SSLSocketFactory");
+
                         SSLSocketFactory sniffySSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
                         if (sniffySSLSocketFactory instanceof SniffySSLSocketFactory) {
+                            SSLSocketFactory originalSSLSocketFactory = ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate();
+                            LOG.info("Replacing " + sniffySSLSocketFactory + " with " + originalSSLSocketFactory);
                             ReflectionUtil.setFields(
                                     SSLSocketFactory.class,
                                     null,
                                     SSLSocketFactory.class,
-                                    ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate()
+                                    originalSSLSocketFactory
                             );
                         } else if (null == sniffySSLSocketFactory) {
+                            LOG.info("Removing javax.net.ssl.SSLSocketFactory static fields of type SSLSocketFactory");
                             ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
+                            LOG.info("Setting javax.net.ssl.SSLSocketFactory static fields of type boolean to false");
                             ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
                         }
                     }

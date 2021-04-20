@@ -1,5 +1,7 @@
 package io.sniffy.log;
 
+import io.sniffy.configuration.SniffyConfiguration;
+
 public abstract class AbstractPolyglogImpl implements Polyglog {
 
     @Override
@@ -24,7 +26,7 @@ public abstract class AbstractPolyglogImpl implements Polyglog {
 
     @Override
     public boolean isLevelEnabled(PolyglogLevel level) {
-        return true;
+        return level.isEnabled(SniffyConfiguration.INSTANCE.getLogLevel());
     }
 
 }

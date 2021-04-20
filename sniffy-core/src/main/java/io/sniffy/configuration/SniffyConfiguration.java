@@ -1,7 +1,11 @@
 package io.sniffy.configuration;
 
+import io.sniffy.log.PolyglogLevel;
+
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+
+import static io.sniffy.log.PolyglogLevel.INFO;
 
 /**
  * @since 3.1
@@ -10,6 +14,11 @@ public enum SniffyConfiguration {
     INSTANCE;
 
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+
+    /**
+     * @since 3.1.11
+     */
+    private volatile PolyglogLevel logLevel;
 
     private volatile boolean monitorJdbc;
     private volatile boolean monitorSocket;
@@ -86,6 +95,12 @@ public enum SniffyConfiguration {
     }
 
     void loadSniffyConfiguration() {
+
+        String logLevelProperty = getProperty("io.sniffy.logLevel", "IO_SNIFFY_LOG_LEVEL", "info");
+        PolyglogLevel polyglogLevel = PolyglogLevel.parse(logLevelProperty);
+
+        logLevel = null == polyglogLevel ? INFO : polyglogLevel;
+
         monitorJdbc = Boolean.parseBoolean(getProperty(
                 "io.sniffy.monitorJdbc", "IO_SNIFFY_MONITOR_JDBC", "true"
         ));
@@ -115,6 +130,7 @@ public enum SniffyConfiguration {
 
         String filterEnabled = getProperty("io.sniffy.filterEnabled", "IO_SNIFFY_FILTER_ENABLED");
         this.filterEnabled = null == filterEnabled ? null : Boolean.parseBoolean(filterEnabled);
+
         excludePattern = getProperty("io.sniffy.excludePattern", "IO_SNIFFY_EXCLUDE_PATTERN", null);
 
         String injectHtmlEnabled = getProperty("io.sniffy.injectHtml", "IO_SNIFFY_INJECT_HTML");
@@ -156,6 +172,20 @@ public enum SniffyConfiguration {
         }
 
         return value;
+    }
+
+    /**
+     * @since 3.1.11
+     */
+    public PolyglogLevel getLogLevel() {
+        return logLevel;
+    }
+
+    /**
+     * @since 3.1.11
+     */
+    public void setLogLevel(PolyglogLevel logLevel) {
+        this.logLevel = logLevel;
     }
 
     public boolean isMonitorJdbc() {
