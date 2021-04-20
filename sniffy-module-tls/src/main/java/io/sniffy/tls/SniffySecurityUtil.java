@@ -1,6 +1,8 @@
 package io.sniffy.tls;
 
 import io.sniffy.Constants;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ReflectionUtil;
 
@@ -10,8 +12,11 @@ import javax.net.ssl.SSLSocketFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Arrays;
 
 public class SniffySecurityUtil {
+
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySecurityUtil.class);
 
     public static final String SSLCONTEXT = "SSLContext";
 
@@ -20,6 +25,8 @@ public class SniffySecurityUtil {
         synchronized (Security.class) {
 
             Provider[] originalSecurityProviders = Security.getProviders();
+
+            LOG.info("Original security providers are " + Arrays.toString(originalSecurityProviders));
 
             SniffySSLContextSpiProvider firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi = null;
 
@@ -44,6 +51,8 @@ public class SniffySecurityUtil {
 
                     if (hasSSLContextService) {
                         String originalProviderName = originalSecurityProvider.getName();
+
+                        LOG.info("Original provider " + originalProviderName + " provides SSLContextSPI service");
 
                         SniffySSLContextSpiProvider sniffySSLContextSpiProvider = new SniffySSLContextSpiProvider(
                                 originalSecurityProvider,

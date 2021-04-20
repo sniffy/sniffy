@@ -1,5 +1,7 @@
 package io.sniffy.tls;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
 
@@ -11,15 +13,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiFunction;
 
 public class SSLSocketAdapter extends SSLSocket {
 
     // TODO: cover all methods with unit tests
+    private static final Polyglog LOG = PolyglogFactory.log(SSLSocketAdapter.class);
 
     private final SSLSocket delegate;
 
@@ -141,10 +145,13 @@ public class SSLSocketAdapter extends SSLSocket {
         try {
             return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getApplicationProtocol", String.class);
         } catch (NoSuchMethodException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (InvocationTargetException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (IllegalAccessException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
     }
@@ -156,10 +163,13 @@ public class SSLSocketAdapter extends SSLSocket {
         try {
             return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocol", String.class);
         } catch (NoSuchMethodException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (InvocationTargetException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (IllegalAccessException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
     }
@@ -171,10 +181,13 @@ public class SSLSocketAdapter extends SSLSocket {
         try {
             ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "setHandshakeApplicationProtocolSelector", BiFunction.class, selector, Void.class);
         } catch (NoSuchMethodException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (InvocationTargetException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (IllegalAccessException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
     }
@@ -186,10 +199,13 @@ public class SSLSocketAdapter extends SSLSocket {
         try {
             return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocolSelector", BiFunction.class);
         } catch (NoSuchMethodException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (InvocationTargetException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (IllegalAccessException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
     }

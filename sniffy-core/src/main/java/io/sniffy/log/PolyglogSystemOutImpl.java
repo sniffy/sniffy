@@ -48,7 +48,7 @@ public class PolyglogSystemOutImpl extends AbstractPolyglogImpl {
     }
 
     @Override
-    public void error(Exception e) {
+    public void error(Throwable e) {
         if (null != e) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));

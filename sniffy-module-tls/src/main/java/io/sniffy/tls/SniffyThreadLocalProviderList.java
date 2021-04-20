@@ -1,6 +1,8 @@
 package io.sniffy.tls;
 
 import io.sniffy.Constants;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
@@ -20,6 +22,8 @@ import static io.sniffy.tls.SniffySecurityUtil.SSLCONTEXT;
 
 class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
 
+    private static final Polyglog LOG = PolyglogFactory.log(SniffyThreadLocalProviderList.class);
+
     private final ThreadLocal<ProviderList> delegate = new ThreadLocal<ProviderList>();
 
     private final ThreadLocal<Boolean> insideSetProviderList = new ThreadLocal<Boolean>();
@@ -32,6 +36,7 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
         if (null == providerList) {
             if (!Boolean.TRUE.equals(insideSetProviderList.get()) && StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "setProviderList")) {
                 insideSetProviderList.set(true);
+                LOG.info("Sniffy detected call to Providers.setProviderList() - setting flag insideSetProviderList to true");
                 return ProviderList.newList();
             }
         }
@@ -118,13 +123,20 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                     // call callback
                     try {
 
+                        LOG.info("Wrapping ProviderList " + value);
+
                         Map.Entry<ProviderList, SniffySSLContextSpiProvider> tuple = wrapProviderList(value);
 
+                        LOG.info("Wrapped ProviderList " + tuple.getKey());
+                        LOG.info("First SniffySSLContextSpiProvider with default SSLContextSPI is " + tuple.getValue());
+
                         if (value == tuple.getKey()) {
+                            LOG.info("ProviderList wasn't changed - invoking original Providers.setSystemProviderList() method");
                             ReflectionUtil.invokeMethod(Providers.class, null, "setSystemProviderList", ProviderList.class, value, Void.class);
                         } else {
 
                             value = tuple.getKey();
+                            LOG.info("ProviderList wasn't changed - invoking original Providers.setSystemProviderList() method with wrapped list");
                             ReflectionUtil.invokeMethod(Providers.class, null, "setSystemProviderList", ProviderList.class, value, Void.class);
 
                             SniffySSLContextSpiProvider firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi = tuple.getValue();
@@ -139,48 +151,60 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                                                 firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi,
                                                 "Default"
                                         );
+                                        LOG.info("Setting SSLContext.default to " + defaultSniffySSLContext);
                                         SSLContext.setDefault(defaultSniffySSLContext);
                                         if (JVMUtil.getVersion() >= 13) {
+                                            LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
+
                                             SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder", null, SSLSocketFactory.class);
                                             if (null != originalSSLSocketFactory) {
+                                                SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
+                                                LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
                                                 ReflectionUtil.setFields(
                                                         "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
                                                         null,
                                                         SSLSocketFactory.class,
-                                                        new SniffySSLSocketFactory(originalSSLSocketFactory));
+                                                        sniffySSLSocketFactory);
                                             }
                                         } else {
+                                            LOG.info("Java 12- detected - attempt to update singleton inside javax.net.ssl.SSLSocketFactory");
+
                                             SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
                                             if (null != originalSSLSocketFactory) {
+                                                SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
+                                                LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
                                                 ReflectionUtil.setFields(
                                                         SSLSocketFactory.class,
                                                         null,
                                                         SSLSocketFactory.class,
-                                                        new SniffySSLSocketFactory(originalSSLSocketFactory));
+                                                        sniffySSLSocketFactory);
                                             }
                                         }
                                     } catch (Throwable e) {
-                                        e.printStackTrace(); // TODO: do the same in other dangerous places
+                                        // TODO: do the same in other dangerous places
+                                        LOG.error(e);
                                     }
                                 }
                             }
 
                         }
 
+                        LOG.info("Sniffy detected exit from Providers.setProviderList() - setting flag insideSetProviderList to false");
                         insideSetProviderList.set(false);
                         return;
 
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOG.error(e);
                     }
 
                 }
+                LOG.info("Sniffy detected exit from Providers.setProviderList() - setting flag insideSetProviderList to false");
                 insideSetProviderList.set(false);
             }
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            LOG.error(e);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            LOG.error(e);
         }
 
         delegate.set(value);

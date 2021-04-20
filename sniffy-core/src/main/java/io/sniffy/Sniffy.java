@@ -153,7 +153,7 @@ public class Sniffy {
 
         } else {
 
-            LOG.debug("Socket monitoring disabled - installing SnifferSocketImplFactory");
+            LOG.debug("Socket monitoring disabled - installing hook on SniffyConfiguration.INSTANCE.monitorSocket property");
 
             SniffyConfiguration.INSTANCE.addMonitorSocketListener(new PropertyChangeListener() {
 

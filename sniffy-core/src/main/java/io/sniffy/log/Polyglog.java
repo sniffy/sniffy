@@ -14,7 +14,7 @@ public interface Polyglog {
 
     void error(String message, Exception e);
 
-    void error(Exception e);
+    void error(Throwable e);
 
     boolean isLevelEnabled(PolyglogLevel level);
 
