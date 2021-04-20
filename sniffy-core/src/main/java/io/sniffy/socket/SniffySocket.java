@@ -40,17 +40,6 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
         }
     }
 
-    public SniffySocket(Socket delegate, InetSocketAddress address) throws SocketException {
-        super(delegate);
-        this.socketChannel = null;
-        this.id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
-        if (null == address) {
-            this.address = (InetSocketAddress) delegate.getRemoteSocketAddress();
-        } else {
-            this.address = address;
-        }
-    }
-
     @Override
     public void setConnectionStatus(Integer connectionStatus) {
         this.connectionStatus = connectionStatus;

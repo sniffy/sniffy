@@ -345,13 +345,13 @@ public class Sniffy {
                                         currentThreadSpies.remove(threadId);
                                     } else {
                                         next = spy;
+                                        threadLocalSpiesChecked = true;
                                         return true;
                                     }
                                 }
                             }
-                            threadLocalSpiesChecked = true;
                         }
-
+                        threadLocalSpiesChecked = true;
                         return false;
 
                     }
