@@ -1,5 +1,7 @@
 package io.sniffy.tls;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 
@@ -11,6 +13,8 @@ import java.util.Map;
 
 public class SniffySSLContextSpiProvider extends Provider {
 
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySSLContextSpiProvider.class);
+
     private final Provider originalProvider;
 
     public SniffySSLContextSpiProvider(Provider delegate) throws IllegalAccessException, NoSuchFieldException, ClassNotFoundException {
@@ -19,6 +23,7 @@ public class SniffySSLContextSpiProvider extends Provider {
 
     public SniffySSLContextSpiProvider(Provider delegate, String providerName, double providerVersion, String providerInfo) throws IllegalAccessException, NoSuchFieldException, ClassNotFoundException {
         super(providerName, providerVersion, providerInfo);
+        LOG.trace("Created SniffySSLContextSpiProvider(" + delegate + ", " + providerName + ", " + providerVersion + ", " + providerInfo + ")");
 
         this.originalProvider = delegate;
 
@@ -40,6 +45,7 @@ public class SniffySSLContextSpiProvider extends Provider {
         String providerName = super.getName();
         if ("Sniffy-SunJSSE".equals(providerName) && StackTraceExtractor.hasClassAndMethodInStackTrace(
                 "sun.security.ssl.SSLContextImpl", "getTrustManagers")) {
+            LOG.trace("Mocking SunJSSE provider name since Sniffy was called from sun.security.ssl.SSLContextImpl.getTrustManagers()");
             providerName = "SunJSSE";
         }
         return providerName;
