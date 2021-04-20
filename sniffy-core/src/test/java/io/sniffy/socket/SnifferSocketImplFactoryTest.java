@@ -9,6 +9,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -167,6 +169,8 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
             AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
             AtomicReference<Socket> socketHolder = new AtomicReference<>();
 
+            CountDownLatch latch = new CountDownLatch(1);
+
             final ServerSocket boundServerSocket = serverSocket;
 
             SocketImpl boundServerSocketImpl = ReflectionUtil.getField(ServerSocket.class, boundServerSocket, "impl");
@@ -181,6 +185,7 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
                         Socket accept = boundServerSocket.accept();
                         socketHolder.set(accept);
+                        latch.countDown();
 
                     } catch (Exception e) {
                         exceptionHolder.set(e);
@@ -194,6 +199,8 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
             Socket clientSocket = new Socket(localhost, boundPort);
             assertTrue(clientSocket.isConnected());
+
+            latch.await(10, TimeUnit.SECONDS);
 
             SocketImpl clientSocketImpl = ReflectionUtil.getField(Socket.class, clientSocket, "impl");
             assertTrue(clientSocketImpl instanceof SnifferSocketImpl);
