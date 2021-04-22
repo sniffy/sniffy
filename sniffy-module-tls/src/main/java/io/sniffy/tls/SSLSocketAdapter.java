@@ -1,5 +1,7 @@
 package io.sniffy.tls;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
 
@@ -21,6 +23,7 @@ import java.util.function.BiFunction;
 public class SSLSocketAdapter extends SSLSocket {
 
     // TODO: cover all methods with unit tests
+    private static final Polyglog LOG = PolyglogFactory.log(SSLSocketAdapter.class);
 
     private final SSLSocket delegate;
 
@@ -142,10 +145,13 @@ public class SSLSocketAdapter extends SSLSocket {
         try {
             return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getApplicationProtocol", String.class);
         } catch (NoSuchMethodException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (InvocationTargetException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (IllegalAccessException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
     }
@@ -157,10 +163,13 @@ public class SSLSocketAdapter extends SSLSocket {
         try {
             return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocol", String.class);
         } catch (NoSuchMethodException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (InvocationTargetException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (IllegalAccessException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
     }
@@ -172,10 +181,13 @@ public class SSLSocketAdapter extends SSLSocket {
         try {
             ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "setHandshakeApplicationProtocolSelector", BiFunction.class, selector, Void.class);
         } catch (NoSuchMethodException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (InvocationTargetException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (IllegalAccessException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
     }
@@ -187,10 +199,13 @@ public class SSLSocketAdapter extends SSLSocket {
         try {
             return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocolSelector", BiFunction.class);
         } catch (NoSuchMethodException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (InvocationTargetException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         } catch (IllegalAccessException e) {
+            LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
     }
@@ -400,4 +415,21 @@ public class SSLSocketAdapter extends SSLSocket {
         delegate.setPerformancePreferences(connectionTime, latency, bandwidth);
     }
 
+    // TODO: move methods below to Java8/9+ only implementation
+    /*
+    @Override
+    public <T> Socket setOption(SocketOption<T> name, T value) throws IOException {
+        return super.setOption(name, value);
+    }
+
+    @Override
+    public <T> T getOption(SocketOption<T> name) throws IOException {
+        return super.getOption(name);
+    }
+
+    @Override
+    public Set<SocketOption<?>> supportedOptions() {
+        return super.supportedOptions();
+    }
+     */
 }

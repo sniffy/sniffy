@@ -2,7 +2,14 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.10...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.11...master)
+
+## v3.1.11 - Apr 23rd, 2021
+
+ * [Decrypt captured TLS traffic](https://github.com/sniffy/sniffy/issues/429)
+ * [Add logging](https://github.com/sniffy/sniffy/issues/376)
+ * [Sniffy break sendBufferSize / receiveBufferSize properties at least in SSLSocket implementation](https://github.com/sniffy/sniffy/issues/453)
+ * [IBM J9 Support](https://github.com/sniffy/sniffy/issues/447)
 
 ## v3.1.10 - Feb 15th, 2021
 

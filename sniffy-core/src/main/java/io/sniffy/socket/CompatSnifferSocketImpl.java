@@ -3,6 +3,8 @@ package io.sniffy.socket;
 import io.sniffy.Sniffy;
 import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import java.io.FileDescriptor;
@@ -16,6 +18,8 @@ import java.net.*;
  */
 class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements SniffyNetworkConnection {
 
+    private static final Polyglog LOG = PolyglogFactory.log(CompatSnifferSocketImpl.class);
+
     private final Sleep sleep;
 
     private InetSocketAddress address;
@@ -25,13 +29,6 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     private volatile Integer connectionStatus;
 
     // fields related to injecting latency fault
-
-    protected static volatile Integer defaultReceiveBufferSize;
-    protected static volatile Integer defaultSendBufferSize;
-
-    private int receiveBufferSize = -1;
-    private int sendBufferSize = -1;
-
     private volatile int potentiallyBufferedInputBytes = 0;
     private volatile int potentiallyBufferedOutputBytes = 0;
 
@@ -57,50 +54,6 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
         return this.address;
     }
 
-    private void estimateReceiveBuffer() {
-        if (-1 == getReceiveBufferSize()) {
-            if (null == defaultReceiveBufferSize) {
-                synchronized (CompatSnifferSocketImpl.class) {
-                    if (null == defaultReceiveBufferSize) {
-                        try {
-                            Object o = delegate.getOption(SocketOptions.SO_RCVBUF);
-                            if (o instanceof Integer) {
-                                defaultReceiveBufferSize = (Integer) o;
-                            } else {
-                                defaultReceiveBufferSize = 0;
-                            }
-                        } catch (SocketException e) {
-                            defaultReceiveBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            setReceiveBufferSize(defaultReceiveBufferSize);
-        }
-    }
-
-    private void estimateSendBuffer() {
-        if (-1 == getSendBufferSize()) {
-            if (null == defaultSendBufferSize) {
-                synchronized (CompatSnifferSocketImpl.class) {
-                    if (null == defaultSendBufferSize) {
-                        try {
-                            Object o = delegate.getOption(SocketOptions.SO_SNDBUF);
-                            if (o instanceof Integer) {
-                                defaultSendBufferSize = (Integer) o;
-                            } else {
-                                defaultSendBufferSize = 0;
-                            }
-                        } catch (SocketException e) {
-                            defaultSendBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            setSendBufferSize(defaultSendBufferSize);
-        }
-    }
-
     @Deprecated
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
@@ -122,6 +75,7 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
         SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("CompatSnifferSocketImpl.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + id);
             Sniffy.logTraffic(
                     id, getInetSocketAddress(),
                     sent, protocol,
@@ -354,7 +308,6 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     @Override
     protected InputStream getInputStream() throws IOException {
         long start = System.currentTimeMillis();
-        estimateReceiveBuffer();
         checkConnectionAllowed();
         try {
             return new SnifferInputStream(this, super.getInputStream());
@@ -366,7 +319,6 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     @Override
     protected OutputStream getOutputStream() throws IOException {
         long start = System.currentTimeMillis();
-        estimateSendBuffer();
         checkConnectionAllowed();
         try {
             return new SnifferOutputStream(this, super.getOutputStream());
@@ -403,21 +355,6 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
         long start = System.currentTimeMillis();
         try {
             super.setOption(optID, value);
-
-            if (SocketOptions.SO_RCVBUF == optID) {
-                try {
-                    setReceiveBufferSize(((Number) value).intValue());
-                } catch (Exception e) {
-                    // TODO: log me maybe
-                }
-            } else if (SocketOptions.SO_SNDBUF == optID) {
-                try {
-                    setSendBufferSize(((Number) value).intValue());
-                } catch (Exception e) {
-                    // TODO: log me maybe
-                }
-            }
-
         } finally {
             logSocket(System.currentTimeMillis() - start);
         }
@@ -464,56 +401,5 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     public void setLastWriteThreadId(long lastWriteThreadId) {
         this.lastWriteThreadId = lastWriteThreadId;
     }
-
-    public int getReceiveBufferSize() {
-        return receiveBufferSize;
-    }
-
-    public void setReceiveBufferSize(int receiveBufferSize) {
-        this.receiveBufferSize = receiveBufferSize;
-    }
-
-    public int getSendBufferSize() {
-        return sendBufferSize;
-    }
-
-    public void setSendBufferSize(int sendBufferSize) {
-        this.sendBufferSize = sendBufferSize;
-    }
-
-    // New methods in Java 9
-    // TODO: use multi-release jars to handle it
-
-    /*
-    @Override
-    protected <T> void setOption(java.net.SocketOption<T> name, T value) throws IOException {
-        long start = System.currentTimeMillis();
-        try {
-            super.setOption(name, value);
-        } finally {
-            logSocket(System.currentTimeMillis() - start);
-        }
-    }
-
-    @Override
-    protected <T> T getOption(java.net.SocketOption<T> name) throws IOException {
-        long start = System.currentTimeMillis();
-        try {
-            return super.getOption(name);
-        } finally {
-            logSocket(System.currentTimeMillis() - start);
-        }
-    }
-
-    @Override
-    protected Set<java.net.SocketOption<?>> supportedOptions() {
-        long start = System.currentTimeMillis();
-        try {
-            return super.supportedOptions();
-        } finally {
-            logSocket(System.currentTimeMillis() - start);
-        }
-    }
-    */
 
 }

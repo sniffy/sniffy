@@ -1,5 +1,8 @@
 package io.sniffy.tls;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+
 import javax.net.ssl.SSLContextSpi;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -8,10 +11,13 @@ import java.util.Map;
 
 public class SniffySSLContextSpiProviderService extends Provider.Service {
 
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySSLContextSpiProviderService.class);
+
     private final Provider.Service delegate;
 
     public SniffySSLContextSpiProviderService(Provider provider, String type, String algorithm, String className, List<String> aliases, Map<String, String> attributes, Provider.Service delegate) {
         super(provider, type, algorithm, className, aliases, attributes);
+        LOG.trace("Created SniffySSLContextSpiProviderService(" + provider + ", " + type + ", " + algorithm + ", " + className + ", " + aliases + ", " + attributes + ", " + delegate + ")");
         this.delegate = delegate;
     }
 

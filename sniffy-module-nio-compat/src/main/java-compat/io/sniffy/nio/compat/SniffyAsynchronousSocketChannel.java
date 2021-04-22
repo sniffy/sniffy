@@ -459,27 +459,6 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
     //
 
-
-    @Override
-    public int getReceiveBufferSize() {
-        return receiveBufferSize;
-    }
-
-    @Override
-    public void setReceiveBufferSize(int receiveBufferSize) {
-        this.receiveBufferSize = receiveBufferSize;
-    }
-
-    @Override
-    public int getSendBufferSize() {
-        return sendBufferSize;
-    }
-
-    @Override
-    public void setSendBufferSize(int sendBufferSize) {
-        this.sendBufferSize = sendBufferSize;
-    }
-
     @Override
     public int getPotentiallyBufferedInputBytes() {
         return potentiallyBufferedInputBytes;

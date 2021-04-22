@@ -5,42 +5,48 @@ import io.sniffy.registry.ConnectionsRegistry;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ConnectException;
-import java.net.SocketOptions;
 
 /**
  * @since 3.1
  */
 public class SnifferOutputStream extends OutputStream {
 
+    // TODO: refactor
     private final SniffyNetworkConnection snifferSocket;
+    private final TrafficCapturingNetworkConnection trafficCapturingNetworkConnection;
     private final OutputStream delegate;
 
-    public SnifferOutputStream(SniffyNetworkConnection snifferSocket, OutputStream delegate) {
-        this.snifferSocket = snifferSocket;
+    public SnifferOutputStream(TrafficCapturingNetworkConnection trafficCapturingNetworkConnection, OutputStream delegate) {
+        this.trafficCapturingNetworkConnection = trafficCapturingNetworkConnection;
+        if (trafficCapturingNetworkConnection instanceof SniffyNetworkConnection) {
+            this.snifferSocket = (SniffyNetworkConnection) trafficCapturingNetworkConnection;
+        } else {
+            this.snifferSocket = null;
+        }
         this.delegate = delegate;
     }
 
     @Override
     public void write(int b) throws IOException {
-        snifferSocket.checkConnectionAllowed(0);
+        if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
-            snifferSocket.logTraffic(
+            trafficCapturingNetworkConnection.logTraffic(
                     true, Protocol.TCP,
                     new byte[]{(byte) b},
                     0, 1
             );
         } finally {
             sleepIfRequired(1);
-            snifferSocket.logSocket(System.currentTimeMillis() - start, 0, 1);
+            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, 0, 1);
         }
     }
 
     /**
      * Adds a delay as defined for current {@link SnifferSocketImpl} in {@link ConnectionsRegistry#discoveredDataSources}
      * <p>
-     * Delay is added for each <b>N</b> bytes sent where <b>N</b> is the value of {@link SocketOptions#SO_SNDBUF}
+     * Delay is added for each <b>N</b> bytes sent where <b>N</b> is the value of {@link SniffyNetworkConnection#DEFAULT_TCP_WINDOW_SIZE}
      * <p>
      * If application writes <b>M</b> bytes where (k-1) * N &lt; M  &lt; k * N exactly <b>k</b> delays will be added
      * <p>
@@ -51,7 +57,10 @@ public class SnifferOutputStream extends OutputStream {
      * @param bytesUp number of bytes sent to socket
      * @throws ConnectException on underlying socket exception
      */
+    @SuppressWarnings("JavadocReference")
     private void sleepIfRequired(int bytesUp) throws ConnectException {
+
+        if (null == snifferSocket) return;
 
         snifferSocket.setLastWriteThreadId(Thread.currentThread().getId());
 
@@ -59,76 +68,70 @@ public class SnifferOutputStream extends OutputStream {
             snifferSocket.setPotentiallyBufferedInputBytes(0);
         }
 
-        if (0 == snifferSocket.getSendBufferSize()) {
-            snifferSocket.checkConnectionAllowed(1);
-        } else {
+        int potentiallyBufferedOutputBytes = snifferSocket.getPotentiallyBufferedOutputBytes() - bytesUp;
+        snifferSocket.setPotentiallyBufferedOutputBytes(potentiallyBufferedOutputBytes);
 
-            int potentiallyBufferedOutputBytes = snifferSocket.getPotentiallyBufferedOutputBytes() - bytesUp;
-            snifferSocket.setPotentiallyBufferedOutputBytes(potentiallyBufferedOutputBytes);
-
-            if (potentiallyBufferedOutputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / snifferSocket.getSendBufferSize();
-                snifferSocket.checkConnectionAllowed(estimatedNumberOfTcpPackets);
-                snifferSocket.setPotentiallyBufferedOutputBytes(snifferSocket.getSendBufferSize());
-            }
-
+        if (potentiallyBufferedOutputBytes < 0) {
+            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+            snifferSocket.checkConnectionAllowed(estimatedNumberOfTcpPackets);
+            snifferSocket.setPotentiallyBufferedOutputBytes(SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE);
         }
 
     }
 
     @Override
     public void write(byte[] b) throws IOException {
-        snifferSocket.checkConnectionAllowed(0);
+        if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
-            snifferSocket.logTraffic(
+            trafficCapturingNetworkConnection.logTraffic(
                     true, Protocol.TCP,
                     b,
                     0, b.length
             );
         } finally {
             sleepIfRequired(b.length);
-            snifferSocket.logSocket(System.currentTimeMillis() - start, 0, b.length);
+            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, 0, b.length);
         }
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        snifferSocket.checkConnectionAllowed(0);
+        if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
             delegate.write(b, off, len);
-            snifferSocket.logTraffic(
+            trafficCapturingNetworkConnection.logTraffic(
                     true, Protocol.TCP,
                     b,
                     off, len
             );
         } finally {
             sleepIfRequired(len);
-            snifferSocket.logSocket(System.currentTimeMillis() - start, 0, len);
+            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, 0, len);
         }
     }
 
     @Override
     public void flush() throws IOException {
-        snifferSocket.checkConnectionAllowed(1);
+        if (null != snifferSocket) snifferSocket.checkConnectionAllowed(1);
         long start = System.currentTimeMillis();
         try {
             delegate.flush();
         } finally {
-            snifferSocket.logSocket(System.currentTimeMillis() - start);
+            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start);
         }
     }
 
     @Override
     public void close() throws IOException {
-        snifferSocket.checkConnectionAllowed(0);
+        if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {
             delegate.close();
         } finally {
-            snifferSocket.logSocket(System.currentTimeMillis() - start);
+            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start);
         }
     }
 
