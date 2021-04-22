@@ -290,6 +290,7 @@ public class Sniffy {
     }
 
     protected static WeakReference<Spy> registerSpy(Spy spy) {
+        LOG.trace("Registered new global Spy " + spy);
         hasGlobalSpies = true;
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
         registeredSpies.add(spyReference);
@@ -297,6 +298,7 @@ public class Sniffy {
     }
 
     protected static WeakReference<CurrentThreadSpy> registerCurrentThreadSpy(CurrentThreadSpy spy) {
+        LOG.trace("Registered new ThreadLocal Spy " + spy);
         hasThreadLocalSpies = true;
         WeakReference<CurrentThreadSpy> spyReference = new WeakReference<CurrentThreadSpy>(spy);
         currentThreadSpies.put(Thread.currentThread().getId(), spyReference);
@@ -304,11 +306,13 @@ public class Sniffy {
     }
 
     protected static void removeSpyReference(WeakReference<Spy> spyReference) {
+        LOG.trace("Removing global Spy reference" + spyReference);
         registeredSpies.remove(spyReference);
     }
 
     protected static void removeCurrentThreadSpyReference() {
-        currentThreadSpies.remove(Thread.currentThread().getId());
+        WeakReference<CurrentThreadSpy> removed = currentThreadSpies.remove(Thread.currentThread().getId());
+        LOG.trace("Removed ThreadLocal Spy reference " + removed);
     }
 
     private static Iterable<BaseSpy<?>> getEffectiveSpyList() {

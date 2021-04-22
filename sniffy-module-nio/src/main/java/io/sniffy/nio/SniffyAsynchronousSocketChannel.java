@@ -3,6 +3,8 @@ package io.sniffy.nio;
 import io.sniffy.Sniffy;
 import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
@@ -28,6 +30,8 @@ import java.util.concurrent.TimeoutException;
  * @since 3.1.7
  */
 public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel implements SniffyNetworkConnection {
+
+    private static final Polyglog LOG = PolyglogFactory.log(SniffyAsynchronousSocketChannel.class);
 
     private final AsynchronousSocketChannel delegate;
 
@@ -143,6 +147,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
         SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("SniffyAsynchronousSocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + id);
             Sniffy.logTraffic(
                     id, getInetSocketAddress(),
                     sent, protocol,

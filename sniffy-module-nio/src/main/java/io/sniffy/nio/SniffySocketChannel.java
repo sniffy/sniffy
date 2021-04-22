@@ -3,6 +3,8 @@ package io.sniffy.nio;
 import io.sniffy.Sniffy;
 import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
@@ -10,7 +12,10 @@ import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -19,6 +24,8 @@ import java.nio.channels.spi.SelectorProvider;
  * @since 3.1.7
  */
 public class SniffySocketChannel extends SniffySocketChannelAdapter implements SniffyNetworkConnection {
+
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySocketChannel.class);
 
     private final int connectionId = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
@@ -33,6 +40,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
         super(provider, delegate);
+        LOG.trace("Created new SniffySocketChannel(" + provider + ", " + delegate + ") = " + this);
     }
 
     @Override
@@ -107,6 +115,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
         SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("SniffySocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
             Sniffy.logTraffic(
                     connectionId, getInetSocketAddress(),
                     sent, protocol,
@@ -281,7 +290,9 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     @Override
     public Socket socket() {
         try {
-            return new SniffySocket(super.socket(), this, connectionId, getInetSocketAddress());
+            SniffySocket sniffySocket = new SniffySocket(super.socket(), this, connectionId, getInetSocketAddress());
+            LOG.trace("Getting SniffySocket " + sniffySocket + " from SniffySocketChannel " + this);
+            return sniffySocket;
         } catch (SocketException e) {
             e.printStackTrace();
             return super.socket();

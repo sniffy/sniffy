@@ -3,6 +3,8 @@ package io.sniffy.socket;
 import io.sniffy.Sniffy;
 import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import java.io.FileDescriptor;
@@ -15,6 +17,8 @@ import java.net.*;
  * @since 3.1.9
  */
 class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements SniffyNetworkConnection {
+
+    private static final Polyglog LOG = PolyglogFactory.log(CompatSnifferSocketImpl.class);
 
     private final Sleep sleep;
 
@@ -71,6 +75,7 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
         SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("CompatSnifferSocketImpl.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + id);
             Sniffy.logTraffic(
                     id, getInetSocketAddress(),
                     sent, protocol,
