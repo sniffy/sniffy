@@ -79,6 +79,12 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |Enable collecting network stats (bytes sent/received, time spent) if monitorSocket or monitorNio are enabled
 |true
 
+|-Dio.sniffy.decryptTls
+|IO_SNIFFY_DECRYPT_TLS
+|N/A
+|Enable decrypting captured TLS traffic
+|false
+
 |-Dio.sniffy.socketFaultInjectionEnabled
 |IO_SNIFFY_SOCKET_FAULT_INJECTION_ENABLED
 |N/A

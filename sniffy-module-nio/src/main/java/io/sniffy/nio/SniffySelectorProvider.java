@@ -1,5 +1,7 @@
 package io.sniffy.nio;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.OSUtil;
 import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
@@ -19,6 +21,8 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
  */
 public class SniffySelectorProvider extends SelectorProvider {
 
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySelectorProvider.class);
+
     private static volatile SelectorProvider previousSelectorProvider;
 
     private final SelectorProvider delegate;
@@ -30,6 +34,8 @@ public class SniffySelectorProvider extends SelectorProvider {
     public static synchronized boolean install() {
 
         SelectorProvider delegate = SelectorProvider.provider();
+
+        LOG.info("Original SelectorProvider was " + delegate);
 
         if (null == delegate) {
             return false;
@@ -45,6 +51,8 @@ public class SniffySelectorProvider extends SelectorProvider {
 
         SelectorProvider sniffySelectorProvider = new SniffySelectorProvider(delegate);
 
+        LOG.info("Setting SelectorProvider to " + sniffySelectorProvider);
+
         if (ReflectionUtil.setField("java.nio.channels.spi.SelectorProvider$Holder", null, "INSTANCE", sniffySelectorProvider)) {
             return true;
         } else {
@@ -54,6 +62,8 @@ public class SniffySelectorProvider extends SelectorProvider {
     }
 
     public static boolean uninstall() {
+
+        LOG.info("Restoring original SelectorProvider " + previousSelectorProvider);
 
         if (null == previousSelectorProvider) {
             return false;

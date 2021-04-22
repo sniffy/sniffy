@@ -1,5 +1,7 @@
 package io.sniffy.nio;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.*;
 
 import java.io.IOException;
@@ -20,6 +22,8 @@ import static io.sniffy.util.ReflectionUtil.setField;
  */
 public class SniffySelector extends AbstractSelector {
 
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySelector.class);
+
     private final AbstractSelector delegate;
 
     private final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
@@ -31,6 +35,7 @@ public class SniffySelector extends AbstractSelector {
     public SniffySelector(SelectorProvider provider, AbstractSelector delegate) {
         super(provider);
         this.delegate = delegate;
+        LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
     }
 
     public SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {

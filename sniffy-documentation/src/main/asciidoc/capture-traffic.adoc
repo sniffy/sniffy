@@ -23,7 +23,26 @@ include::../../../../sniffy-core/src/test/java/io/sniffy/socket/CaptureTrafficOv
 `packetMergeThreshold` allows you to specify threshold for combining similar network packets when capturing traffic.
 For example if your application calls `SocketInputStream.read()` 8 times in a row to read a 64-bit value, Sniffy will merge these calls into a single packet given that they were done within specified threshold and of course given that no write/sent operation was done between them.
 
+=== SSL/TLS Traffic Decryption
+
+Sniffy can decrypt capture traffic but you need to enable this feature explicitly using -D`io.sniffy.decryptTls` system property or `IO_SNIFFY_DECRYPT_TLS` environment variable.
+It's also possible to enable it programmatically using  `io.sniffy.configuration.SniffyConfiguration.INSTANCE.setDecryptTls()` method.
+
+Decrypted traffic is available along with original traffic using dedicated `getDecryptedNetworkTraffic` method in Spy class.
+
+```java
+Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
+        Threads.CURRENT,
+        AddressMatchers.exactAddressMatcher("www.google.com:443"),
+        GroupingOptions.builder().
+                groupByConnection(false).
+                groupByStackTrace(false).
+                groupByThread(false).
+                build()
+);
+```
+
 === Caveats
 
-Some libraries use native code for network operations.
+Some libraries like Apache APR and Netty (only when native transport is enabled explicitly) use native code for network operations.
 Currently Sniffy doesn't capture this kind of traffic.
