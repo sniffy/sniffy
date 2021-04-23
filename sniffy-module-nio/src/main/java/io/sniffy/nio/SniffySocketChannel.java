@@ -19,6 +19,7 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Arrays;
 
 /**
  * @since 3.1.7
@@ -175,14 +176,17 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         try {
             return bytesDown = super.read(dst);
         } finally {
-            sleepIfRequired(bytesDown);
-            logSocket(System.currentTimeMillis() - start, bytesDown, 0);
-            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                dst.position(position);
-                byte[] buff = new byte[bytesDown];
-                dst.get(buff, 0, bytesDown);
-                logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+            if (bytesDown >= 0) { // TODO: implement same check in other places
+                sleepIfRequired(bytesDown);
+                logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+                SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                    dst.position(position);
+                    byte[] buff = new byte[bytesDown];
+                    dst.get(buff, 0, bytesDown);
+
+                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                }
             }
         }
     }

@@ -13,6 +13,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>sniffy-integration-tests-decrypt-tls</module>
+        <module>sniffy-integration-tests-decrypt-tls-nio</module>
         <module>sniffy-integration-tests-decrypt-tls-bc</module>
         <module>sniffy-integration-tests-decrypt-tls-bc-before-sniffy</module>
         <module>sniffy-integration-tests-spock</module>

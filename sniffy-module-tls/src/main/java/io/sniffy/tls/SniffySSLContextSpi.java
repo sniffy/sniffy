@@ -58,7 +58,9 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     @Override
     public SSLEngine engineCreateSSLEngine() {
         try {
-            return ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineCreateSSLEngine", SSLEngine.class);
+            return new SniffySSLEngine(
+                    ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineCreateSSLEngine", SSLEngine.class)
+            );
         } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
@@ -69,7 +71,10 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     @Override
     public SSLEngine engineCreateSSLEngine(String host, int port) {
         try {
-            return ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineCreateSSLEngine", String.class, host, Integer.TYPE, port, SSLEngine.class);
+            return new SniffySSLEngine(
+                    ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineCreateSSLEngine", String.class, host, Integer.TYPE, port, SSLEngine.class),
+                    host, port
+            );
         } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);

@@ -13,6 +13,7 @@ import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlUtil;
 import io.sniffy.sql.StatementMetaData;
 
+import javax.net.ssl.SSLEngine;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.*;
@@ -486,14 +488,112 @@ public class Sniffy {
         }
     }
 
+
+    public static class DecryptedPacket {
+
+        private final byte[] buff;
+        private final SSLEngine sslEngine;
+
+        public DecryptedPacket(byte[] buff, SSLEngine sslEngine) {
+            this.buff = buff;
+            this.sslEngine = sslEngine;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            EncryptedPacket that = (EncryptedPacket) o;
+
+            return Arrays.equals(buff, that.buff);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(buff);
+        }
+
+    }
+
+    public static class EncryptedPacket {
+
+        private final byte[] buff;
+
+        public EncryptedPacket(byte[] buff, int offset, int len) {
+            this.buff = Arrays.copyOfRange(buff, offset, offset + len);
+        }
+
+        public EncryptedPacket(byte[] buff) {
+            this.buff = buff;
+        }
+
+        public EncryptedPacket trimToSize(int maxSize) {
+            return new EncryptedPacket(Arrays.copyOfRange(buff, 0, Math.max(maxSize, buff.length)));
+        }
+
+        public boolean startsWith(byte[] that) {
+            if (null == buff) return false;
+            if (null == that) return false;
+
+            if (buff.length <= that.length) {
+                return false;
+            } else {
+                for (int i = 0; i < that.length; i++) {
+                    if (buff[i] != that[i]) return false;
+                }
+                return true;
+            }
+
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            EncryptedPacket that = (EncryptedPacket) o;
+
+            return Arrays.equals(buff, that.buff);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(buff);
+        }
+    }
+
+    // TODO: implement optimizations; use thread local, ssl engine ids to sniffy connections ids mappings, etc.
+    // TODO: make it bounded
+    public static ConcurrentMap<EncryptedPacket, DecryptedPacket> GLOBAL_ENCRYPTION_MAP
+            = new ConcurrentHashMap<EncryptedPacket, DecryptedPacket>();
+
+    // TODO: implement optimizations; use thread local, ssl engine ids to sniffy connections ids mappings, etc.
+    // TODO: make it bounded
+    public static ConcurrentMap<EncryptedPacket, SocketMetaData> GLOBAL_DECRYPTION_MAP
+            = new ConcurrentHashMap<EncryptedPacket, SocketMetaData>();
+
     public static void logTraffic(int connectionId, InetSocketAddress address, boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean captureStackTraces) {
 
         if (0 == len) return;
 
+        SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId);
+
         // build stackTrace
         String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
 
-        SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId);
+        {
+            if (sent) {
+                EncryptedPacket encryptedPacket = new EncryptedPacket(traffic, off, len);
+                DecryptedPacket decryptedPacket = GLOBAL_ENCRYPTION_MAP.remove(encryptedPacket);
+                if (null != decryptedPacket) {
+                    logDecryptedTraffic(connectionId, address, sent, protocol, decryptedPacket.buff, 0, decryptedPacket.buff.length, captureStackTraces);
+                }
+            } else {
+                EncryptedPacket encryptedPacket = new EncryptedPacket(traffic, off, len);
+                GLOBAL_DECRYPTION_MAP.put(encryptedPacket, new SocketMetaData(protocol, address, connectionId, stackTrace, Thread.currentThread()));
+            }
+        }
 
         // notify listeners
         notifyListeners(socketMetaData, sent, System.currentTimeMillis(), stackTrace, traffic, off, len);
