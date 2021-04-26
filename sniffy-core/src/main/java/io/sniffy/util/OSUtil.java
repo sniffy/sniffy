@@ -22,4 +22,8 @@ public class OSUtil {
         return null != osName && (osName.contains("mac") || osName.contains("darwin"));
     }
 
+    public static String getOsName() {
+        return osName;
+    }
+
 }

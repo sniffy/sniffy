@@ -2,9 +2,7 @@ package io.sniffy.socket;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.JVMUtil;
-import io.sniffy.util.ReflectionUtil;
+import io.sniffy.util.*;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -20,6 +18,8 @@ import java.net.SocketImplFactory;
 public class SnifferSocketImplFactory implements SocketImplFactory {
 
     private static final Polyglog LOG = PolyglogFactory.log(SnifferSocketImplFactory.class);
+
+    private static final Polyglog CONSTRUCTOR_VERBOSE_LOG = PolyglogFactory.oneTimeLog(SnifferSocketImplFactory.class);
 
     // @VisibleForTesting
     protected final static Constructor<? extends SocketImpl> defaultSocketImplClassConstructor =
@@ -92,6 +92,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
                         JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
                                 new CompatSnifferSocketImpl(newSocketImpl(false));
         LOG.trace("Created SocketImpl " + socketImpl);
+        CONSTRUCTOR_VERBOSE_LOG.trace("StackTrace for creating new SniffySSLEngine was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
         return socketImpl;
     }
 

@@ -1,32 +1,46 @@
 package io.sniffy.tls;
 
 import io.sniffy.Sniffy;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
+import io.sniffy.util.StackTraceExtractor;
+import io.sniffy.util.StringUtil;
 
 import javax.net.ssl.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import static io.sniffy.log.PolyglogLevel.TRACE;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
 import static javax.net.ssl.SSLEngineResult.Status.OK;
 
 public class SniffySSLEngine extends SSLEngine {
 
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySSLSocketFactory.class);
+
+    private static final Polyglog CONSTRUCTOR_VERBOSE_LOG = PolyglogFactory.oneTimeLog(SniffySSLSocketFactory.class);
+
+    private static final Polyglog WRAP_VERBOSE_LOG = PolyglogFactory.oneTimeLog(SniffySSLSocketFactory.class);
+
     private final SSLEngine delegate;
 
     public SniffySSLEngine(SSLEngine delegate) {
         this.delegate = delegate;
+        LOG.trace("Created SniffySSLEngine(" + delegate + ")");
+        CONSTRUCTOR_VERBOSE_LOG.trace("StackTrace for creating new SniffySSLEngine was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
     }
 
     public SniffySSLEngine(SSLEngine delegate, String peerHost, int peerPort) {
         super(peerHost, peerPort);
         this.delegate = delegate;
+        LOG.trace("Created SniffySSLEngine(" + delegate + ", " + peerHost + ", " + peerPort + ")");
+        CONSTRUCTOR_VERBOSE_LOG.trace("StackTrace for creating new SniffySSLEngine was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
     }
 
     @Override
@@ -43,6 +57,8 @@ public class SniffySSLEngine extends SSLEngine {
 
     @Override
     public SSLEngineResult wrap(ByteBuffer src, ByteBuffer dst) throws SSLException {
+
+        WRAP_VERBOSE_LOG.trace("StackTrace for first SSLEngine.wrap() invocation was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
 
         int position = src.position();
         int length = 0;
@@ -80,6 +96,8 @@ public class SniffySSLEngine extends SSLEngine {
                     byte[] dstBuff = new byte[dstLength];
                     dst.get(dstBuff, 0, dstLength);
 
+                    LOG.trace(buff.length + " bytes encrypted to " + dstBuff.length + " (excluding handshake)");
+
                     Sniffy.GLOBAL_ENCRYPTION_MAP.put(
                             new Sniffy.EncryptedPacket(dstBuff),
                             new Sniffy.DecryptedPacket(buff, this)
@@ -93,11 +111,13 @@ public class SniffySSLEngine extends SSLEngine {
 
     @Override
     public SSLEngineResult wrap(ByteBuffer[] srcs, ByteBuffer dst) throws SSLException {
+        LOG.trace("Gathering wrap from " + (null == srcs ? 0 : srcs.length) + " ByteBuffer instances");
         return delegate.wrap(srcs, dst);
     }
 
     @Override
     public SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length, ByteBuffer dst) throws SSLException {
+        LOG.trace("Gathering wrap from " + length + " ByteBuffer instances");
         return delegate.wrap(srcs, offset, length, dst);
     }
 
@@ -148,6 +168,8 @@ public class SniffySSLEngine extends SSLEngine {
                     byte[] dstBuff = new byte[dstLength];
                     dst.get(dstBuff, 0, dstLength);
 
+                    LOG.trace(srcBuff.length + " bytes decrypted to " + dstBuff.length + " (excluding handshake)");
+
                     //SocketMetaData socketMetaData = Sniffy.GLOBAL_DECRYPTION_MAP.get(new Sniffy.EncryptedPacket(srcBuff));
 
                     // TODO: optimize this horrible code below
@@ -197,11 +219,13 @@ public class SniffySSLEngine extends SSLEngine {
 
     @Override
     public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts) throws SSLException {
+        LOG.trace("Scattering unwrap to " + (null == dsts ? 0 : dsts.length) + " ByteBuffer instances");
         return delegate.unwrap(src, dsts);
     }
 
     @Override
     public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts, int offset, int length) throws SSLException {
+        LOG.trace("Scattering unwrap to " + length + " ByteBuffer instances");
         return delegate.unwrap(src, dsts, offset, length);
     }
 
@@ -360,6 +384,7 @@ public class SniffySSLEngine extends SSLEngine {
     }
 
     // TODO: wrap methods below on JVMS where it is supported
+    @SuppressWarnings("TryWithIdenticalCatches")
     public void setHandshakeApplicationProtocolSelector(BiFunction<SSLEngine, List<String>, String> selector) {
         try {
             ReflectionUtil.invokeMethod(SSLEngine.class, delegate, "setHandshakeApplicationProtocolSelector", BiFunction.class, selector, Void.class);

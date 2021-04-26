@@ -12,7 +12,7 @@ public interface Polyglog {
 
     void log(PolyglogLevel level, String message);
 
-    void error(String message, Exception e);
+    void error(String message, Throwable e);
 
     void error(Throwable e);
 

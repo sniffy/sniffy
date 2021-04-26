@@ -42,7 +42,7 @@ public class PolyglogSystemOutImpl extends AbstractPolyglogImpl {
     }
 
     @Override
-    public void error(String message, Exception e) {
+    public void error(String message, Throwable e) {
         log(PolyglogLevel.ERROR, message);
         error(e);
     }
