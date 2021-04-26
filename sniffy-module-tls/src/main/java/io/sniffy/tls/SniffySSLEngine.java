@@ -169,9 +169,12 @@ public class SniffySSLEngine extends SSLEngine {
                             socketMetaData = matchedEntry.getValue();
 
                             Sniffy.GLOBAL_DECRYPTION_MAP.remove(key);
-                            Sniffy.GLOBAL_DECRYPTION_MAP.put(key.trimToSize(srcBuff.length), socketMetaData);
+                            //Sniffy.GLOBAL_DECRYPTION_MAP.put(key.trimToSize(srcBuff.length), socketMetaData);
+                            Sniffy.GLOBAL_DECRYPTION_MAP.put(key.startingFrom(srcBuff.length), socketMetaData);
 
 
+                        } else {
+                            System.out.println("unmatched entry :( ");
                         }
                     } else {
                         Sniffy.GLOBAL_DECRYPTION_MAP.remove(encryptedPacket); // TODO: check that we're doing the same

@@ -74,6 +74,11 @@ public class DecryptGoogleTrafficTest {
             assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).contains("Host: www.google.com"));
             assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200"));
 
+            System.out.println("REQUEST:");
+            System.out.println(new String(request.getBytes(), Charset.forName("US-ASCII")));
+            System.out.println("RESPONSE:");
+            System.out.println(new String(response.getBytes(), Charset.forName("US-ASCII")));
+
         }
 
     }

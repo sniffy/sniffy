@@ -532,6 +532,10 @@ public class Sniffy {
             return new EncryptedPacket(Arrays.copyOfRange(buff, 0, Math.max(maxSize, buff.length)));
         }
 
+        public EncryptedPacket startingFrom(int start) {
+            return new EncryptedPacket(Arrays.copyOfRange(buff, start, buff.length));
+        }
+
         public boolean startsWith(byte[] that) {
             if (null == buff) return false;
             if (null == that) return false;
