@@ -5,6 +5,7 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SocketMetaData;
@@ -12,17 +13,19 @@ import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlUtil;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.JVMUtil;
+import io.sniffy.util.OSUtil;
 
 import javax.net.ssl.SSLEngine;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,6 +43,7 @@ import static io.sniffy.util.StackTraceExtractor.*;
  *     spy.verify(SqlQueries.atMostOneQuery());
  * </code>
  * </pre>
+ *
  * @since 3.1
  */
 public class Sniffy {
@@ -51,7 +55,7 @@ public class Sniffy {
     /**
      * Indicates if Sniffy potentially has global (non thread-local) spies registered
      * Once set to true it is never reseted to false
-     *
+     * <p>
      * Used for (premature) optimization only
      *
      * @since 3.1.9
@@ -61,7 +65,7 @@ public class Sniffy {
     /**
      * Indicates if Sniffy potentially has thread-local spies registered
      * Once set to true it is never reseted to false
-     *
+     * <p>
      * Used for (premature) optimization only
      *
      * @since 3.1.9
@@ -127,6 +131,28 @@ public class Sniffy {
         if (initialized) return;
 
         LOG.info("Initializing Sniffy " + Constants.MAJOR_VERSION + "." + Constants.MINOR_VERSION + "." + Constants.PATCH_VERSION);
+
+        LOG.info("OS is " + OSUtil.getOsName());
+        LOG.info("Java version is " + JVMUtil.getVersion());
+
+        if (LOG.isLevelEnabled(PolyglogLevel.INFO)) {
+            Properties properties = System.getProperties();
+            String[] propertyNames = new String[]{
+                    "java.vm.vendor",
+                    "java.vm.name",
+                    "java.vm.version",
+                    "java.version",
+                    "java.version.date",
+                    "os.name",
+                    "os.arch",
+                    "os.version"
+            };
+            if (null != properties) {
+                for (String propertyName : propertyNames) {
+                    LOG.info(propertyName + " = " + properties.getProperty(propertyName));
+                }
+            }
+        }
 
         //noinspection Convert2Lambda
         SniffyConfiguration.INSTANCE.addTopSqlCapacityListener(new PropertyChangeListener() {
@@ -448,6 +474,7 @@ public class Sniffy {
     }
 
     // TODO: use getEffectiveSpyConfiguration() instead
+
     /**
      * @since 3.1.6
      */
@@ -743,6 +770,7 @@ public class Sniffy {
     /**
      * Execute the {@link Executable#execute()} method, record the SQL queries
      * and return the {@link Spy} object with stats
+     *
      * @param executable code to test
      * @return statistics on executed queries
      * @throws RuntimeException if underlying code under test throws an Exception
@@ -755,6 +783,7 @@ public class Sniffy {
     /**
      * Execute the {@link Runnable#run()} method, record the SQL queries
      * and return the {@link Spy} object with stats
+     *
      * @param runnable code to test
      * @return statistics on executed queries
      * @since 3.1
@@ -766,8 +795,9 @@ public class Sniffy {
     /**
      * Execute the {@link Callable#call()} method, record the SQL queries
      * and return the {@link Spy.SpyWithValue} object with stats
+     *
      * @param callable code to test
-     * @param <V> type of return value
+     * @param <V>      type of return value
      * @return statistics on executed queries
      * @throws Exception if underlying code under test throws an Exception
      * @since 3.1

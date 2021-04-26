@@ -4,6 +4,8 @@ import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
+import io.sniffy.util.StackTraceExtractor;
+import io.sniffy.util.StringUtil;
 
 import javax.net.ssl.*;
 import java.security.KeyManagementException;
@@ -15,11 +17,14 @@ public class SniffySSLContextSpi extends SSLContextSpi {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySSLContextSpi.class);
 
+    private static final Polyglog CONSTRUCTOR_VERBOSE_LOG = PolyglogFactory.oneTimeLog(SniffySSLContextSpi.class);
+
     private final SSLContextSpi delegate;
 
     public SniffySSLContextSpi(SSLContextSpi delegate) {
         this.delegate = delegate;
         LOG.trace("Created SniffySSLContextSpi(" + delegate + ")");
+        CONSTRUCTOR_VERBOSE_LOG.trace("StackTrace for creating new SniffySSLEngine was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
     }
 
     @Override

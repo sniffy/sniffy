@@ -1,6 +1,7 @@
 package io.sniffy.util;
 
 import java.lang.reflect.Method;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,6 +9,45 @@ import java.util.List;
 public class StackTraceExtractor {
     
     private StackTraceExtractor() {
+    }
+
+    public static String getStackTraceAsString() {
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        StringBuilder sb = new StringBuilder();
+
+        StackTraceElement baseMethodTrace = null;
+        for (int i = 2; i < stackTraceElements.length; i++) {
+            StackTraceElement el = stackTraceElements[i];
+
+            String location = "unknown";
+            try {
+                CodeSource codeSource = Class.forName(el.getClassName()).getProtectionDomain().getCodeSource();
+                location = (null == codeSource) ? "unknown" : codeSource.getLocation().toString();
+                if (location.lastIndexOf('/') != location.length() - 1) {
+                    location = location.substring(location.lastIndexOf('/') + 1);
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
+                // ignore
+            }
+            if (i > 2) {
+                sb.append('\t');
+            }
+            sb.append(el.getClassName()).
+                    append(".").
+                    append(el.getMethodName()).
+                    append("(").
+                    append(el.getFileName()).
+                    append(":").
+                    append(el.getLineNumber()).
+                    append(") [").
+                    append(location).
+                    append("]");
+            if (i < stackTraceElements.length - 1) {
+                sb.append(StringUtil.LINE_SEPARATOR);
+            }
+        }
+        return sb.toString();
     }
 
     public static List<StackTraceElement> getTraceForProxiedMethod(Method method) throws ClassNotFoundException {

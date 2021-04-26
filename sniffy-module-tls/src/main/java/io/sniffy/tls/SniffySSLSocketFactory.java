@@ -20,6 +20,7 @@ public class SniffySSLSocketFactory extends SSLSocketFactory {
 
     public SniffySSLSocketFactory(SSLSocketFactory delegate) {
         this.delegate = delegate;
+        LOG.trace("Created SniffySSLSocketFactory(" + delegate + ")");
     }
 
     public SSLSocketFactory getDelegate() {
