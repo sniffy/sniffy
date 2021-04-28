@@ -20,7 +20,6 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.Arrays;
 
 /**
  * @since 3.1.7

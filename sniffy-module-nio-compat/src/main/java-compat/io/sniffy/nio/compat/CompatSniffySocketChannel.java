@@ -3,30 +3,36 @@ package io.sniffy.nio.compat;
 import io.sniffy.Sniffy;
 import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
+import io.sniffy.socket.SniffySSLNetworkConnection;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.JVMUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @since 3.1.7
  */
 public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter implements SniffyNetworkConnection {
 
-    private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
+    private static final Polyglog LOG = PolyglogFactory.log(CompatSniffySocketChannel.class);
 
-    protected static volatile Integer defaultReceiveBufferSize;
-    protected static volatile Integer defaultSendBufferSize;
+    private final int connectionId = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
+
+    private volatile Integer connectionStatus;
 
     // fields related to injecting latency fault
     private volatile int potentiallyBufferedInputBytes = 0;
@@ -35,10 +41,11 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     private volatile long lastReadThreadId;
     private volatile long lastWriteThreadId;
 
-    private volatile Integer connectionStatus;
+    private boolean firstChunk = true;
 
     protected CompatSniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
         super(provider, delegate);
+        LOG.trace("Created new CompatSniffySocketChannel(" + provider + ", " + delegate + ") = " + this);
     }
 
     @Override
@@ -136,17 +143,40 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
 
-        Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
-        if (sniffyMode.isEnabled() && null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
-            Sniffy.logSocket(id, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
+        if (null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
+            Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
+            if (sniffyMode.isEnabled()) {
+                Sniffy.logSocket(connectionId, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces()); // TODO: stack trace here should be calculated till another package
+            }
         }
     }
 
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
         SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("CompatSniffySocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
             Sniffy.logTraffic(
-                    id, getInetSocketAddress(),
+                    connectionId, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
+            if (sent && firstChunk) {
+                SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                if (null != sniffySSLNetworkConnection) {
+                    sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
+                }
+            }
+            firstChunk = false;
+        }
+    }
+
+    public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("CompatSniffySocketChannel.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
+            Sniffy.logDecryptedTraffic(
+                    connectionId, getInetSocketAddress(),
                     sent, protocol,
                     traffic, off, len,
                     effectiveSpyConfiguration.isCaptureStackTraces()
@@ -215,14 +245,17 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
         try {
             return bytesDown = super.read(dst);
         } finally {
-            sleepIfRequired(bytesDown);
-            logSocket(System.currentTimeMillis() - start, bytesDown, 0);
-            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                dst.position(position);
-                byte[] buff = new byte[bytesDown];
-                dst.get(buff, 0, bytesDown);
-                logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+            if (bytesDown >= 0) { // TODO: implement same check in other places
+                sleepIfRequired(bytesDown);
+                logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+                SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                    dst.position(position);
+                    byte[] buff = new byte[bytesDown];
+                    dst.get(buff, 0, bytesDown);
+
+                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                }
             }
         }
     }
