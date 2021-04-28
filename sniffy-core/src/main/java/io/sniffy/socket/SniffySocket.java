@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkConnection {
@@ -30,6 +31,8 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
     private volatile long lastWriteThreadId;
 
     private volatile Integer connectionStatus;
+
+    private boolean firstChunk = true;
 
     public SniffySocket(Socket delegate, SocketChannel socketChannel, int connectionId, InetSocketAddress address) throws SocketException {
         super(delegate);
@@ -70,6 +73,26 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
             LOG.trace("SniffySocket.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + id);
             Sniffy.logTraffic(
+                    id, address,
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
+            if (sent && firstChunk) {
+                SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                if (null != sniffySSLNetworkConnection) {
+                    sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
+                }
+            }
+            firstChunk = false;
+        }
+    }
+
+    public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("SniffySocket.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + id);
+            Sniffy.logDecryptedTraffic(
                     id, address,
                     sent, protocol,
                     traffic, off, len,

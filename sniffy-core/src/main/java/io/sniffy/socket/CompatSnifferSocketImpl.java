@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
+import java.nio.ByteBuffer;
 
 /**
  * @since 3.1.9
@@ -38,6 +39,8 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
 
     private volatile long lastReadThreadId;
     private volatile long lastWriteThreadId;
+
+    private boolean firstChunk = true;
 
     protected CompatSnifferSocketImpl(SocketImpl delegate, Sleep sleep) {
         super(delegate);
@@ -82,6 +85,27 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
             LOG.trace("CompatSnifferSocketImpl.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + id);
             LOG_TRAFFIC_VERBOSE_LOG.trace("StackTrace for first CompatSnifferSocketImpl.logTraffic() invocation was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
             Sniffy.logTraffic(
+                    id, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
+            if (sent && firstChunk) {
+                SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                if (null != sniffySSLNetworkConnection) {
+                    sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
+                }
+            }
+            firstChunk = false;
+        }
+    }
+
+    public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("CompatSnifferSocketImpl.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + id);
+            LOG_TRAFFIC_VERBOSE_LOG.trace("StackTrace for first CompatSnifferSocketImpl.logDecryptedTraffic() invocation was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
+            Sniffy.logDecryptedTraffic(
                     id, getInetSocketAddress(),
                     sent, protocol,
                     traffic, off, len,
