@@ -8,6 +8,7 @@ import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
+import io.sniffy.socket.SniffySSLNetworkConnection;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
 
@@ -19,7 +20,6 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.Arrays;
 
 /**
  * @since 3.1.7
@@ -38,6 +38,8 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     private volatile long lastReadThreadId;
     private volatile long lastWriteThreadId;
+
+    private boolean firstChunk = true;
 
     protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
         super(provider, delegate);
@@ -118,6 +120,26 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
             LOG.trace("SniffySocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
             Sniffy.logTraffic(
+                    connectionId, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
+            if (sent && firstChunk) {
+                SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                if (null != sniffySSLNetworkConnection) {
+                    sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
+                }
+            }
+            firstChunk = false;
+        }
+    }
+
+    public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("SniffySocketChannel.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
+            Sniffy.logDecryptedTraffic(
                     connectionId, getInetSocketAddress(),
                     sent, protocol,
                     traffic, off, len,

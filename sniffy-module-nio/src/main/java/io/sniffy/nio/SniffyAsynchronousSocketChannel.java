@@ -8,6 +8,7 @@ import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
+import io.sniffy.socket.SniffySSLNetworkConnection;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -45,6 +46,8 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     private volatile long lastWriteThreadId;
 
     private volatile Integer connectionStatus;
+
+    private boolean firstChunk = true;
 
     public SniffyAsynchronousSocketChannel(AsynchronousChannelProvider provider, AsynchronousSocketChannel delegate) {
         super(provider);
@@ -149,6 +152,26 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
             LOG.trace("SniffyAsynchronousSocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + id);
             Sniffy.logTraffic(
+                    id, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
+            if (sent && firstChunk) {
+                SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                if (null != sniffySSLNetworkConnection) {
+                    sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
+                }
+            }
+            firstChunk = false;
+        }
+    }
+
+    public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("SniffyAsynchronousSocketChannel.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + id);
+            Sniffy.logDecryptedTraffic(
                     id, getInetSocketAddress(),
                     sent, protocol,
                     traffic, off, len,

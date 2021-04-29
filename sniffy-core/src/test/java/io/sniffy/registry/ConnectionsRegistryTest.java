@@ -289,6 +289,11 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 }
 
                 @Override
+                public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+
+                }
+
+                @Override
                 public void checkConnectionAllowed() throws ConnectException {
 
                 }
@@ -393,6 +398,11 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
                 @Override
                 public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+
+                }
+
+                @Override
+                public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
 
                 }
 

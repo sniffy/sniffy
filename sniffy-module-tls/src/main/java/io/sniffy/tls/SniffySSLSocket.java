@@ -42,6 +42,10 @@ public class SniffySSLSocket extends SSLSocketAdapter implements TrafficCapturin
             );
         }
     }
+    @Override
+    public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        logTraffic(sent, protocol, traffic, off, len);
+    }
 
     //
 

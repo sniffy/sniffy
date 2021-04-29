@@ -3,7 +3,9 @@ package io.sniffy.tls;
 import io.sniffy.Sniffy;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.socket.SocketMetaData;
+import io.sniffy.socket.Protocol;
+import io.sniffy.socket.SniffyNetworkConnection;
+import io.sniffy.socket.SniffySSLNetworkConnection;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
@@ -13,14 +15,12 @@ import javax.net.ssl.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
 
-import static io.sniffy.log.PolyglogLevel.TRACE;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
 import static javax.net.ssl.SSLEngineResult.Status.OK;
 
-public class SniffySSLEngine extends SSLEngine {
+public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnection {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySSLSocketFactory.class);
 
@@ -53,56 +53,69 @@ public class SniffySSLEngine extends SSLEngine {
         return delegate.getPeerPort();
     }
 
-    private boolean handshaking = false;
+    private SniffyNetworkConnection sniffyNetworkConnection;
+
+    private boolean firstWrap = true;
+
+    @Override
+    public SniffyNetworkConnection getSniffyNetworkConnection() {
+        return sniffyNetworkConnection;
+    }
+
+    @Override
+    public void setSniffyNetworkConnection(SniffyNetworkConnection sniffyNetworkConnection) {
+        this.sniffyNetworkConnection = sniffyNetworkConnection;
+    }
 
     @Override
     public SSLEngineResult wrap(ByteBuffer src, ByteBuffer dst) throws SSLException {
 
         WRAP_VERBOSE_LOG.trace("StackTrace for first SSLEngine.wrap() invocation was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
 
-        int position = src.position();
-        int length = 0;
+        int srcPosition = src.position();
+        int srcLength = 0;
 
         int dstPosition = dst.position();
         int dstLength = 0;
 
+        boolean handshaking = false;
+
         try {
             SSLEngineResult sslEngineResult = delegate.wrap(src, dst);
-            if (handshaking) {
-                SSLEngineResult.HandshakeStatus handshakeStatus = sslEngineResult.getHandshakeStatus();
-                SSLEngineResult.Status status = sslEngineResult.getStatus();
-                if (NOT_HANDSHAKING == handshakeStatus && OK == status) {
-                    handshaking = false;
-                }
-            }
 
-            if (!handshaking) {
-                length = sslEngineResult.bytesConsumed();
-                if (length > 0) {
-                    dstLength = sslEngineResult.bytesProduced();
-                }
-            }
+            SSLEngineResult.HandshakeStatus handshakeStatus = sslEngineResult.getHandshakeStatus();
+            SSLEngineResult.Status status = sslEngineResult.getStatus();
+            handshaking = NOT_HANDSHAKING != handshakeStatus || OK != status;
+
+            srcLength = sslEngineResult.bytesConsumed();
+            dstLength = sslEngineResult.bytesProduced();
 
             return sslEngineResult;
         } finally {
 
-            if (!handshaking && length > 0) {
-                src.position(position);
-                byte[] buff = new byte[length];
-                src.get(buff, 0, length);
+            if (firstWrap && dstLength > 0) {
+                firstWrap = false;
 
-                if (dstLength > 0) {
-                    dst.position(dstPosition);
-                    byte[] dstBuff = new byte[dstLength];
-                    dst.get(dstBuff, 0, dstLength);
+                dst.position(dstPosition);
+                byte[] dstBuff = new byte[dstLength]; // TODO: limit it if it's bigger than say 512
+                dst.get(dstBuff, 0, dstLength);
 
-                    LOG.trace(buff.length + " bytes encrypted to " + dstBuff.length + " (excluding handshake)");
+                Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(dstBuff), this);
 
-                    Sniffy.GLOBAL_ENCRYPTION_MAP.put(
-                            new Sniffy.EncryptedPacket(dstBuff),
-                            new Sniffy.DecryptedPacket(buff, this)
-                    );
-                }
+            }
+
+            if (!handshaking && srcLength > 0 && dstLength > 0 && sniffyNetworkConnection != null) {
+
+                src.position(srcPosition);
+                byte[] buff = new byte[srcLength];
+                src.get(buff, 0, srcLength);
+
+                sniffyNetworkConnection.logDecryptedTraffic(
+                        true,
+                        Protocol.TCP,
+                        buff, 0, srcLength
+                );
+
             }
 
         }
@@ -111,122 +124,166 @@ public class SniffySSLEngine extends SSLEngine {
 
     @Override
     public SSLEngineResult wrap(ByteBuffer[] srcs, ByteBuffer dst) throws SSLException {
-        LOG.trace("Gathering wrap from " + (null == srcs ? 0 : srcs.length) + " ByteBuffer instances");
-        return delegate.wrap(srcs, dst);
+        return wrap(srcs, 0, null == srcs ? 0 : srcs.length, dst);
     }
 
+    // TODO: cover with tests
     @Override
     public SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length, ByteBuffer dst) throws SSLException {
-        LOG.trace("Gathering wrap from " + length + " ByteBuffer instances");
-        return delegate.wrap(srcs, offset, length, dst);
+        WRAP_VERBOSE_LOG.trace("StackTrace for first SSLEngine.wrap() invocation was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
+
+        int srcLength = 0;
+
+        int[] positions = new int[length];
+        int[] remainings = new int[length];
+
+        for (int i = 0; i < length; i++) {
+            positions[i] = srcs[offset + i].position();
+            remainings[i] = srcs[offset + i].remaining();
+        }
+
+        int dstPosition = dst.position();
+        int dstLength = 0;
+
+        boolean handshaking = false;
+
+        try {
+            SSLEngineResult sslEngineResult = delegate.wrap(srcs, offset, length, dst);
+
+            SSLEngineResult.HandshakeStatus handshakeStatus = sslEngineResult.getHandshakeStatus();
+            SSLEngineResult.Status status = sslEngineResult.getStatus();
+            handshaking = NOT_HANDSHAKING != handshakeStatus || OK != status;
+
+            srcLength = sslEngineResult.bytesConsumed();
+            dstLength = sslEngineResult.bytesProduced();
+
+            return sslEngineResult;
+        } finally {
+
+            if (firstWrap && dstLength > 0) {
+                firstWrap = false;
+
+                dst.position(dstPosition);
+                byte[] dstBuff = new byte[dstLength]; // TODO: limit it if it's bigger than say 512
+                dst.get(dstBuff, 0, dstLength);
+
+                Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(dstBuff), this);
+
+            }
+
+            if (!handshaking && srcLength > 0 && dstLength > 0 && sniffyNetworkConnection != null) {
+
+                for (int i = 0; i < length; i++) {
+                    srcs[offset + i].position(positions[i]);
+                    byte[] buff = new byte[remainings[i]];
+                    srcs[offset + i].get(buff, 0, remainings[i]);
+                    sniffyNetworkConnection.logDecryptedTraffic(
+                            true,
+                            Protocol.TCP,
+                            buff, 0, srcLength
+                    );
+                }
+
+            }
+
+        }
+
     }
 
     @Override
     public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer dst) throws SSLException {
-        //return delegate.unwrap(src, dst);
 
-        int position = src.position();
         int srcLength = 0;
 
         int dstPosition = dst.position();
         int dstLength = 0;
 
-        // The inbound network buffer may be modified as a result of this call: therefore if the network data packet is required for some secondary purpose, the data should be duplicated before calling this method.
-        ByteBuffer srcClone = ByteBuffer.allocate(src.limit() - src.position());
-        srcClone.put(src);
-        src.position(position);
-        srcClone.flip();
+        boolean handshaking = false;
 
         try {
-            // TODO: The inbound network buffer may be modified as a result of this call: therefore if the network data packet is required for some secondary purpose, the data should be duplicated before calling this method.
             SSLEngineResult sslEngineResult = delegate.unwrap(src, dst);
-            if (handshaking) {
-                SSLEngineResult.HandshakeStatus handshakeStatus = sslEngineResult.getHandshakeStatus();
-                SSLEngineResult.Status status = sslEngineResult.getStatus();
-                if (NOT_HANDSHAKING == handshakeStatus && OK == status) {
-                    handshaking = false;
-                }
-            }
 
-            if (!handshaking) {
-                srcLength = sslEngineResult.bytesConsumed();
-                if (srcLength > 0) {
-                    dstLength = sslEngineResult.bytesProduced();
-                }
-            }
+            SSLEngineResult.HandshakeStatus handshakeStatus = sslEngineResult.getHandshakeStatus();
+            SSLEngineResult.Status status = sslEngineResult.getStatus();
+            handshaking = NOT_HANDSHAKING != handshakeStatus || OK != status;
+
+            srcLength = sslEngineResult.bytesConsumed();
+            dstLength = sslEngineResult.bytesProduced();
 
             return sslEngineResult;
         } finally {
 
-            if (!handshaking && srcLength > 0) {
-                //src.position(position);
-                byte[] srcBuff = new byte[srcLength];
-                srcClone.get(srcBuff, 0, srcLength);
+            if (!handshaking && srcLength > 0 && dstLength > 0 && sniffyNetworkConnection != null) {
 
-                if (dstLength > 0) {
-                    dst.position(dstPosition);
-                    byte[] dstBuff = new byte[dstLength];
-                    dst.get(dstBuff, 0, dstLength);
+                dst.position(dstPosition);
+                byte[] buff = new byte[dstLength];
+                dst.get(buff, 0, dstLength);
 
-                    LOG.trace(srcBuff.length + " bytes decrypted to " + dstBuff.length + " (excluding handshake)");
+                sniffyNetworkConnection.logDecryptedTraffic(
+                        false,
+                        Protocol.TCP,
+                        buff, 0, dstLength
+                );
 
-                    //SocketMetaData socketMetaData = Sniffy.GLOBAL_DECRYPTION_MAP.get(new Sniffy.EncryptedPacket(srcBuff));
-
-                    // TODO: optimize this horrible code below
-                    Sniffy.EncryptedPacket encryptedPacket = new Sniffy.EncryptedPacket(srcBuff);
-                    SocketMetaData socketMetaData = Sniffy.GLOBAL_DECRYPTION_MAP.get(encryptedPacket);
-
-                    if (null == socketMetaData) {
-                        Map.Entry<Sniffy.EncryptedPacket, SocketMetaData> matchedEntry = null;
-
-                        for (Map.Entry<Sniffy.EncryptedPacket, SocketMetaData> entry : Sniffy.GLOBAL_DECRYPTION_MAP.entrySet()) {
-                            if (entry.getKey().startsWith(srcBuff)) {
-                                matchedEntry = entry;
-                            }
-                        }
-
-                        if (null != matchedEntry) {
-
-                            Sniffy.EncryptedPacket key = matchedEntry.getKey();
-                            socketMetaData = matchedEntry.getValue();
-
-                            Sniffy.GLOBAL_DECRYPTION_MAP.remove(key);
-                            Sniffy.GLOBAL_DECRYPTION_MAP.put(key.trimToSize(srcBuff.length), socketMetaData);
-
-
-                        }
-                    } else {
-                        Sniffy.GLOBAL_DECRYPTION_MAP.remove(encryptedPacket); // TODO: check that we're doing the same
-                    }
-
-                    if (null != socketMetaData) {
-                        Sniffy.logDecryptedTraffic(
-                                socketMetaData.getConnectionId(),
-                                socketMetaData.getAddress(),
-                                false,
-                                socketMetaData.getProtocol(),
-                                dstBuff,
-                                0,
-                                dstLength,
-                                null != socketMetaData.getStackTrace()
-                        );
-                    }
-                }
             }
 
         }
+
     }
 
     @Override
     public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts) throws SSLException {
-        LOG.trace("Scattering unwrap to " + (null == dsts ? 0 : dsts.length) + " ByteBuffer instances");
-        return delegate.unwrap(src, dsts);
+        return unwrap(src, dsts, 0, null == dsts ? 0 : dsts.length);
     }
 
     @Override
     public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts, int offset, int length) throws SSLException {
         LOG.trace("Scattering unwrap to " + length + " ByteBuffer instances");
-        return delegate.unwrap(src, dsts, offset, length);
+
+        int srcLength = 0;
+
+        int[] positions = new int[length];
+        int[] remainings = new int[length];
+
+        for (int i = 0; i < length; i++) {
+            positions[i] = dsts[offset + i].position();
+            remainings[i] = dsts[offset + i].remaining();
+        }
+
+        int dstLength = 0;
+
+        boolean handshaking = false;
+
+        try {
+            SSLEngineResult sslEngineResult = delegate.unwrap(src, dsts, offset, length);
+
+            SSLEngineResult.HandshakeStatus handshakeStatus = sslEngineResult.getHandshakeStatus();
+            SSLEngineResult.Status status = sslEngineResult.getStatus();
+            handshaking = NOT_HANDSHAKING != handshakeStatus || OK != status;
+
+            srcLength = sslEngineResult.bytesConsumed();
+            dstLength = sslEngineResult.bytesProduced();
+
+            return sslEngineResult;
+        } finally {
+
+            if (!handshaking && srcLength > 0 && dstLength > 0 && sniffyNetworkConnection != null) {
+
+                for (int i = 0; i < length; i++) {
+                    dsts[offset + i].position(positions[i]);
+                    byte[] buff = new byte[remainings[i]];
+                    dsts[offset + i].get(buff, 0, remainings[i]);
+                    sniffyNetworkConnection.logDecryptedTraffic(
+                            false,
+                            Protocol.TCP,
+                            buff, 0, dstLength
+                    );
+                }
+
+            }
+
+        }
+
     }
 
     @Override
@@ -297,7 +354,6 @@ public class SniffySSLEngine extends SSLEngine {
     @Override
     public void beginHandshake() throws SSLException {
         delegate.beginHandshake();
-        handshaking = true;
     }
 
     @Override
