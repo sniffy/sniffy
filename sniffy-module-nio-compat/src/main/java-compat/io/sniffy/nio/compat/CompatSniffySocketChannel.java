@@ -15,10 +15,7 @@ import io.sniffy.util.JVMUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -363,7 +360,7 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     @Override
     public Socket socket() {
         try {
-            return new SniffySocket(super.socket(), this, id,
+            return new SniffySocket(super.socket(), this, connectionId,
                 JVMUtil.getVersion() > 6 ? getInetSocketAddress() : null);
         } catch (SocketException e) {
             e.printStackTrace();
