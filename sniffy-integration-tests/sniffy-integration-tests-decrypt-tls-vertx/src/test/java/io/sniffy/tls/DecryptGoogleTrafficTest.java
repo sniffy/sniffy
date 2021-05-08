@@ -2,6 +2,7 @@ package io.sniffy.tls;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
@@ -20,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
@@ -30,6 +32,7 @@ public class DecryptGoogleTrafficTest {
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
+        SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
         Sniffy.initialize();
     }
 
@@ -47,10 +50,10 @@ public class DecryptGoogleTrafficTest {
 
             CyclicBarrier cb = new CyclicBarrier(2);
 
+            AtomicBoolean success = new AtomicBoolean(false);
+
             httpRequest.send(asyncResult -> {
-                if (asyncResult.succeeded()) {
-                    System.out.println(asyncResult.result().body());
-                }
+                success.set(asyncResult.succeeded());
                 try {
                     cb.await();
                 } catch (InterruptedException | BrokenBarrierException e) {
@@ -59,6 +62,8 @@ public class DecryptGoogleTrafficTest {
             });
 
             cb.await();
+
+            assertTrue(success.get());
 
             {
                 Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic(

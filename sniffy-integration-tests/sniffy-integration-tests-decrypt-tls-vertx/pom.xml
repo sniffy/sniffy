@@ -40,15 +40,16 @@
     </build>
 
     <dependencies>
+        <!-- Vert.X version 4.0.3 doesn't work on JDK9 and breaks compatibility tests; use 3.9.7 for now -->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
-            <version>4.0.3</version>
+            <version>3.9.7</version>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web-client</artifactId>
-            <version>4.0.3</version>
+            <version>3.9.7</version>
         </dependency>
         <dependency>
             <groupId>io.sniffy</groupId>
