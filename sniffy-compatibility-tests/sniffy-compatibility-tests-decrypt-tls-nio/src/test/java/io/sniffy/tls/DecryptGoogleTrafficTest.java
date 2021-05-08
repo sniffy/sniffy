@@ -9,10 +9,13 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
+import java.security.Security;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -22,11 +25,14 @@ import static org.junit.Assert.*;
 public class DecryptGoogleTrafficTest {
 
     @BeforeClass
-    public static void loadTlsModule() {
+    public static void loadTlsModuleAndSetupBouncyCastle() {
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
         Sniffy.initialize();
+
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
     }
 
     @SuppressWarnings("CharsetObjectCanBeUsed")
