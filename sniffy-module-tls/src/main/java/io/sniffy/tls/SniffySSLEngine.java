@@ -53,7 +53,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         return delegate.getPeerPort();
     }
 
-    private SniffyNetworkConnection sniffyNetworkConnection;
+    private volatile SniffyNetworkConnection sniffyNetworkConnection;
 
     private boolean firstWrap = true;
 
