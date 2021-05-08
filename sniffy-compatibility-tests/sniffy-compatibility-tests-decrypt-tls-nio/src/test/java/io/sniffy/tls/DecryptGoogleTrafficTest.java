@@ -39,48 +39,46 @@ public class DecryptGoogleTrafficTest {
     @Test
     public void testGoogleTraffic() throws Exception {
 
-        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
+        Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build());
 
-            try (CloseableHttpAsyncClient httpclient = HttpAsyncClients.createDefault()) {
-                httpclient.start();
-                HttpGet request = new HttpGet("https://www.google.com");
-                Future<HttpResponse> future = httpclient.execute(request, null);
-                HttpResponse response = future.get();
-                assertEquals(200, response.getStatusLine().getStatusCode());
-            }
+        CloseableHttpAsyncClient httpclient = HttpAsyncClients.createDefault();
+        httpclient.start();
+        HttpGet request = new HttpGet("https://www.google.com");
+        Future<HttpResponse> future = httpclient.execute(request, null);
+        HttpResponse response = future.get();
+        assertEquals(200, response.getStatusLine().getStatusCode());
+        httpclient.close();
 
-            Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
-                    Threads.ANY,
-                    AddressMatchers.exactAddressMatcher("www.google.com:443"),
-                    GroupingOptions.builder().
-                            groupByConnection(false).
-                            groupByStackTrace(false).
-                            groupByThread(false).
-                            build()
-            );
+        Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
+                Threads.ANY,
+                AddressMatchers.exactAddressMatcher("www.google.com:443"),
+                GroupingOptions.builder().
+                        groupByConnection(false).
+                        groupByStackTrace(false).
+                        groupByThread(false).
+                        build()
+        );
 
-            assertEquals(1, decryptedNetworkTraffic.size());
+        assertEquals(1, decryptedNetworkTraffic.size());
 
-            Map.Entry<SocketMetaData, List<NetworkPacket>> entry = decryptedNetworkTraffic.entrySet().iterator().next();
+        Map.Entry<SocketMetaData, List<NetworkPacket>> entry = decryptedNetworkTraffic.entrySet().iterator().next();
 
-            assertNotNull(entry);
-            assertNotNull(entry.getKey());
-            assertNotNull(entry.getValue());
+        assertNotNull(entry);
+        assertNotNull(entry.getKey());
+        assertNotNull(entry.getValue());
 
-            assertEquals(2, entry.getValue().size());
+        assertEquals(2, entry.getValue().size());
 
-            NetworkPacket request = entry.getValue().get(0);
-            NetworkPacket response = entry.getValue().get(1);
+        NetworkPacket request = entry.getValue().get(0);
+        NetworkPacket response = entry.getValue().get(1);
 
-            //noinspection SimplifiableAssertion
-            assertEquals(true, request.isSent());
-            //noinspection SimplifiableAssertion
-            assertEquals(false, response.isSent());
+        //noinspection SimplifiableAssertion
+        assertEquals(true, request.isSent());
+        //noinspection SimplifiableAssertion
+        assertEquals(false, response.isSent());
 
-            assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).contains("Host: www.google.com"));
-            assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200"));
-
-        }
+        assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).contains("Host: www.google.com"));
+        assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200"));
 
     }
 
