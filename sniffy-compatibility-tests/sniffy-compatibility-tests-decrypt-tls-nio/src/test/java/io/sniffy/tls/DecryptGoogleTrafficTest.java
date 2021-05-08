@@ -69,16 +69,16 @@ public class DecryptGoogleTrafficTest {
 
         assertEquals(2, entry.getValue().size());
 
-        NetworkPacket request = entry.getValue().get(0);
-        NetworkPacket response = entry.getValue().get(1);
+        NetworkPacket requestPacket = entry.getValue().get(0);
+        NetworkPacket responsePacket = entry.getValue().get(1);
 
         //noinspection SimplifiableAssertion
-        assertEquals(true, request.isSent());
+        assertEquals(true, requestPacket.isSent());
         //noinspection SimplifiableAssertion
-        assertEquals(false, response.isSent());
+        assertEquals(false, responsePacket.isSent());
 
-        assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).contains("Host: www.google.com"));
-        assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200"));
+        assertTrue(new String(requestPacket.getBytes(), Charset.forName("US-ASCII")).contains("Host: www.google.com"));
+        assertTrue(new String(responsePacket.getBytes(), Charset.forName("US-ASCII")).contains("200"));
 
     }
 
