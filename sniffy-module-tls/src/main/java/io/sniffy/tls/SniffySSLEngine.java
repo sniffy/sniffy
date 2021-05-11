@@ -28,6 +28,8 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
 
     private static final Polyglog WRAP_VERBOSE_LOG = PolyglogFactory.oneTimeLog(SniffySSLSocketFactory.class);
 
+    private static final Polyglog UNKNOWN_CONNECTION_LOG = PolyglogFactory.oneTimeLog(SniffySSLSocketFactory.class);
+
     private final SSLEngine delegate;
 
     public SniffySSLEngine(SSLEngine delegate) {
@@ -104,17 +106,23 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
 
             }
 
-            if (!handshaking && srcLength > 0 && dstLength > 0 && sniffyNetworkConnection != null) {
+            if (!handshaking && srcLength > 0 && dstLength > 0) {
 
-                src.position(srcPosition);
-                byte[] buff = new byte[srcLength];
-                src.get(buff, 0, srcLength);
+                if (null == sniffyNetworkConnection) {
+                    UNKNOWN_CONNECTION_LOG.trace("SSLEngine invoked for unknown connection id " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
+                } else {
 
-                sniffyNetworkConnection.logDecryptedTraffic(
-                        true,
-                        Protocol.TCP,
-                        buff, 0, srcLength
-                );
+                    src.position(srcPosition);
+                    byte[] buff = new byte[srcLength];
+                    src.get(buff, 0, srcLength);
+
+                    sniffyNetworkConnection.logDecryptedTraffic(
+                            true,
+                            Protocol.TCP,
+                            buff, 0, srcLength
+                    );
+
+                }
 
             }
 
@@ -171,17 +179,21 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
 
             }
 
-            if (!handshaking && srcLength > 0 && dstLength > 0 && sniffyNetworkConnection != null) {
+            if (!handshaking && srcLength > 0 && dstLength > 0) {
 
-                for (int i = 0; i < length; i++) {
-                    srcs[offset + i].position(positions[i]);
-                    byte[] buff = new byte[remainings[i]];
-                    srcs[offset + i].get(buff, 0, remainings[i]);
-                    sniffyNetworkConnection.logDecryptedTraffic(
-                            true,
-                            Protocol.TCP,
-                            buff, 0, srcLength
-                    );
+                if (null == sniffyNetworkConnection) {
+                    UNKNOWN_CONNECTION_LOG.trace("SSLEngine invoked for unknown connection id " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
+                } else {
+                    for (int i = 0; i < length; i++) {
+                        srcs[offset + i].position(positions[i]);
+                        byte[] buff = new byte[remainings[i]];
+                        srcs[offset + i].get(buff, 0, remainings[i]);
+                        sniffyNetworkConnection.logDecryptedTraffic(
+                                true,
+                                Protocol.TCP,
+                                buff, 0, srcLength
+                        );
+                    }
                 }
 
             }
@@ -213,17 +225,21 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
             return sslEngineResult;
         } finally {
 
-            if (!handshaking && srcLength > 0 && dstLength > 0 && sniffyNetworkConnection != null) {
+            if (!handshaking && srcLength > 0 && dstLength > 0) {
 
-                dst.position(dstPosition);
-                byte[] buff = new byte[dstLength];
-                dst.get(buff, 0, dstLength);
+                if (null == sniffyNetworkConnection) {
+                    UNKNOWN_CONNECTION_LOG.trace("SSLEngine invoked for unknown connection id " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
+                } else {
+                    dst.position(dstPosition);
+                    byte[] buff = new byte[dstLength];
+                    dst.get(buff, 0, dstLength);
 
-                sniffyNetworkConnection.logDecryptedTraffic(
-                        false,
-                        Protocol.TCP,
-                        buff, 0, dstLength
-                );
+                    sniffyNetworkConnection.logDecryptedTraffic(
+                            false,
+                            Protocol.TCP,
+                            buff, 0, dstLength
+                    );
+                }
 
             }
 
@@ -267,17 +283,21 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
             return sslEngineResult;
         } finally {
 
-            if (!handshaking && srcLength > 0 && dstLength > 0 && sniffyNetworkConnection != null) {
+            if (!handshaking && srcLength > 0 && dstLength > 0) {
 
-                for (int i = 0; i < length; i++) {
-                    dsts[offset + i].position(positions[i]);
-                    byte[] buff = new byte[remainings[i]];
-                    dsts[offset + i].get(buff, 0, remainings[i]);
-                    sniffyNetworkConnection.logDecryptedTraffic(
-                            false,
-                            Protocol.TCP,
-                            buff, 0, dstLength
-                    );
+                if (null == sniffyNetworkConnection) {
+                    UNKNOWN_CONNECTION_LOG.trace("SSLEngine invoked for unknown connection id " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
+                } else {
+                    for (int i = 0; i < length; i++) {
+                        dsts[offset + i].position(positions[i]);
+                        byte[] buff = new byte[remainings[i]];
+                        dsts[offset + i].get(buff, 0, remainings[i]);
+                        sniffyNetworkConnection.logDecryptedTraffic(
+                                false,
+                                Protocol.TCP,
+                                buff, 0, dstLength
+                        );
+                    }
                 }
 
             }
