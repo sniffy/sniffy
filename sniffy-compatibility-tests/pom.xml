@@ -16,6 +16,7 @@
     <modules>
         <module>sniffy-compatibility-tests-io</module>
         <module>sniffy-compatibility-tests-nio</module>
+        <module>sniffy-compatibility-tests-decrypt-tls-nio</module>
     </modules>
 
     <build>

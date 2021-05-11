@@ -60,7 +60,7 @@
                     <plugin>
                         <groupId>org.jetbrains.dokka</groupId>
                         <artifactId>dokka-maven-plugin</artifactId>
-                        <version>1.4.30</version>
+                        <version>1.4.32</version>
                         <executions>
                             <execution>
                                 <phase>process-sources</phase>

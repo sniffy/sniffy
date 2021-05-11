@@ -32,6 +32,7 @@
                 <configuration>
                     <useFile>false</useFile>
                     <includes>
+                        <!-- TODO: is it required? -->
                         <include>**/*Spec.java</include>
                     </includes>
                 </configuration>

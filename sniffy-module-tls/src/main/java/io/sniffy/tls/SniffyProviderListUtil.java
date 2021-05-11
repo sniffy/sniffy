@@ -14,11 +14,22 @@ public class SniffyProviderListUtil {
 
     public static void install() {
 
+        LOG.info("Setting Providers.threadLists to SniffyThreadLocalProviderList");
+        SniffyThreadLocalProviderList sniffyThreadLocalProviderList = new SniffyThreadLocalProviderList();
+        ReflectionUtil.setField(Providers.class, null, "threadLists", sniffyThreadLocalProviderList);
+
         LOG.info("Setting Providers.threadListsUsed to 1");
         ReflectionUtil.setField(Providers.class, null, "threadListsUsed", 1);
 
-        LOG.info("Setting Providers.threadLists to SniffyThreadLocalProviderList");
-        ReflectionUtil.setField(Providers.class, null, "threadLists", new SniffyThreadLocalProviderList());
+        // now let us verify that Sniffy JSSE provider interceptor was installed correctly
+
+        Providers.beginThreadProviderList(ProviderList.newList());
+        ProviderList threadProviderList = Providers.getThreadProviderList();
+        LOG.trace("Providers.getThreadProviderList() = " + threadProviderList);
+        if (null == threadProviderList) {
+            LOG.error("SniffyThreadLocalProviderList doesn't work - probably because Providers.threadLists variable was inlined by JVM");
+        }
+        Providers.endThreadProviderList(null);
 
     }
 
