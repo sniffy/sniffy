@@ -16,6 +16,7 @@ import io.sniffy.util.OSUtil;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -128,6 +129,18 @@ public class Sniffy {
         if (initialized) return;
 
         LOG.info("Initializing Sniffy " + Constants.MAJOR_VERSION + "." + Constants.MINOR_VERSION + "." + Constants.PATCH_VERSION);
+
+        try {
+            Properties sniffyVersionProperties = new Properties();
+            InputStream propertiesIS = Sniffy.class.getClassLoader().getResourceAsStream("sniffyversion.properties");
+            sniffyVersionProperties.load(propertiesIS);
+            LOG.info("sniffy.version = " + sniffyVersionProperties.getProperty("sniffy.version"));
+            LOG.info("sniffy.build.time = " + sniffyVersionProperties.getProperty("sniffy.build.time"));
+            LOG.info("sniffy.scm.revision = " + sniffyVersionProperties.getProperty("sniffy.scm.revision"));
+            LOG.info("sniffy.scm.branch = " + sniffyVersionProperties.getProperty("sniffy.scm.branch"));
+        } catch (Exception e) {
+            LOG.error("Failed to parse Sniffy version", e);
+        }
 
         LOG.info("OS is " + OSUtil.getOsName());
         LOG.info("Java version is " + JVMUtil.getVersion());
