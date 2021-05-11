@@ -252,6 +252,17 @@ public class Sniffy {
 
     }
 
+    public static void reinitialize() {
+
+        LOG.info("Reinitializing Sniffy");
+
+        if (SniffyConfiguration.INSTANCE.isDecryptTls()) {
+            LOG.info("TLS decryption enabled - loading TLS Sniffy Module");
+            reloadTlsModule();
+        }
+
+    }
+
     private static volatile boolean nioModuleLoaded = false;
 
     // TODO: do something more clever and extensible
@@ -275,6 +286,17 @@ public class Sniffy {
     }
 
     private static volatile boolean tlsModuleLoaded = false;
+
+    // TODO: do something more clever and extensible
+    private static void reloadTlsModule() {
+
+        try {
+            Class.forName("io.sniffy.tls.SniffyTlsModule").getMethod("reinitialize").invoke(null);
+        } catch (Exception e) {
+            LOG.error(e);
+        }
+
+    }
 
     // TODO: do something more clever and extensible
     private static void loadTlsModule() {

@@ -33,6 +33,8 @@ public class DecryptBouncyCastleGoogleTrafficTest {
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
         Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
 
+        Sniffy.reinitialize(); // https://github.com/sniffy/sniffy/issues/478
+
         SSLContext instance = SSLContext.getInstance("TLSv1", "BCJSSE");
         instance.init(null, null, new SecureRandom());
         assertTrue(instance.getSocketFactory() instanceof SniffySSLSocketFactory);

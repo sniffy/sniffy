@@ -52,6 +52,18 @@ public class SniffyTlsModule {
 
     }
 
+    public static void reinitialize() {
+
+        try {
+            LOG.info("Installing Sniffy JSSE provider");
+            SniffySecurityUtil.wrapJsseProvidersWithSniffy();
+            LOG.info("Installed Sniffy JSSE provider");
+        } catch (Exception e) {
+            LOG.error(e);
+        }
+
+    }
+
     public static void uninstall() {
 
         try {
