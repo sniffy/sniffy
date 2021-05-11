@@ -2,6 +2,7 @@ package io.sniffy.tls;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
@@ -26,6 +27,7 @@ public class DecryptBouncyCastleGoogleTrafficTest {
     @Test
     public void testGoogleTraffic() throws Exception {
 
+        SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         Sniffy.initialize();
