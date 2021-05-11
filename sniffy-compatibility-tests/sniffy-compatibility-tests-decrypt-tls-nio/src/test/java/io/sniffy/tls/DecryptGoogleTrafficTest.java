@@ -26,13 +26,15 @@ public class DecryptGoogleTrafficTest {
 
     @BeforeClass
     public static void loadTlsModuleAndSetupBouncyCastle() {
+
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
+
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
         Sniffy.initialize();
 
-        Security.insertProviderAt(new BouncyCastleProvider(), 1);
-        Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
     }
 
     @SuppressWarnings("CharsetObjectCanBeUsed")

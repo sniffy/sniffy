@@ -35,6 +35,14 @@ public class SniffyTlsModule {
         }
 
         try {
+            LOG.info("Installing interceptor for installing new JSSE providers");
+            SniffyProviderListUtil.install();
+            LOG.info("Installed interceptor for installing new JSSE providers");
+        } catch (Exception e) {
+            LOG.error(e);
+        }
+
+        try {
             LOG.info("Installing Sniffy JSSE provider");
             SniffySecurityUtil.wrapJsseProvidersWithSniffy();
             LOG.info("Installed Sniffy JSSE provider");
@@ -42,10 +50,14 @@ public class SniffyTlsModule {
             LOG.error(e);
         }
 
+    }
+
+    public static void reinitialize() {
+
         try {
-            LOG.info("Installing interceptor for installing new JSSE providers");
-            SniffyProviderListUtil.install();
-            LOG.info("Installed interceptor for installing new JSSE providers");
+            LOG.info("Installing Sniffy JSSE provider");
+            SniffySecurityUtil.wrapJsseProvidersWithSniffy();
+            LOG.info("Installed Sniffy JSSE provider");
         } catch (Exception e) {
             LOG.error(e);
         }
