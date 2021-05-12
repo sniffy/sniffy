@@ -265,6 +265,12 @@ public class Sniffy {
 
     }
 
+    /**
+     * Reinitialize Sniffy modules if possible; for example it might wrap newly added JSSE providers and
+     * perform other similar functions/
+     *
+     * @since 3.1.12
+     */
     public static void reinitialize() {
 
         LOG.info("Reinitializing Sniffy");
