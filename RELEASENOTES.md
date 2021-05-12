@@ -2,7 +2,12 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.11...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.12...master)
+
+## v3.1.12 - May 12th, 2021
+
+ * [Implement SniffySSLEngine and match encrypted payloads with what is put on the wire later](https://github.com/sniffy/sniffy/issues/436)
+ * [Log SCM revision](https://github.com/sniffy/sniffy/pull/477)
 
 ## v3.1.11 - Apr 23rd, 2021
 
