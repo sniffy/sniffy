@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-integration-tests</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.10-SNAPSHOT</version>
+        <version>3.1.13-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -32,6 +32,7 @@
                 <configuration>
                     <useFile>false</useFile>
                     <includes>
+                        <!-- TODO: is it required? -->
                         <include>**/*Spec.java</include>
                     </includes>
                 </configuration>

@@ -3,9 +3,12 @@ package io.sniffy.nio.compat;
 import io.sniffy.Sniffy;
 import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
+import io.sniffy.socket.SniffySSLNetworkConnection;
 import io.sniffy.socket.SniffySocket;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.JVMUtil;
@@ -16,31 +19,30 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @since 3.1.7
  */
 public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter implements SniffyNetworkConnection {
 
-    private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
+    private static final Polyglog LOG = PolyglogFactory.log(CompatSniffySocketChannel.class);
 
-    protected static volatile Integer defaultReceiveBufferSize;
-    protected static volatile Integer defaultSendBufferSize;
+    private final int connectionId = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
-    private int receiveBufferSize = -1;
-    private int sendBufferSize = -1;
+    private volatile Integer connectionStatus;
 
+    // fields related to injecting latency fault
     private volatile int potentiallyBufferedInputBytes = 0;
     private volatile int potentiallyBufferedOutputBytes = 0;
 
     private volatile long lastReadThreadId;
     private volatile long lastWriteThreadId;
 
-    private volatile Integer connectionStatus;
+    private boolean firstChunk = true;
 
     protected CompatSniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
         super(provider, delegate);
+        LOG.trace("Created new CompatSniffySocketChannel(" + provider + ", " + delegate + ") = " + this);
     }
 
     @Override
@@ -86,18 +88,12 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
             potentiallyBufferedOutputBytes = 0;
         }
 
-        if (0 == receiveBufferSize) {
-            checkConnectionAllowed(1);
-        } else {
+        int potentiallyBufferedInputBytes = this.potentiallyBufferedInputBytes -= bytesDown;
 
-            int potentiallyBufferedInputBytes = this.potentiallyBufferedInputBytes -= bytesDown;
-
-            if (potentiallyBufferedInputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / receiveBufferSize;
-                checkConnectionAllowed(estimatedNumberOfTcpPackets);
-                this.potentiallyBufferedInputBytes = receiveBufferSize;
-            }
-
+        if (potentiallyBufferedInputBytes < 0) {
+            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+            checkConnectionAllowed(estimatedNumberOfTcpPackets);
+            this.potentiallyBufferedInputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
         }
 
     }
@@ -124,64 +120,14 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
             potentiallyBufferedInputBytes = 0;
         }
 
-        if (0 == sendBufferSize) {
-            checkConnectionAllowed(1);
-        } else {
+        int potentiallyBufferedOutputBytes = this.potentiallyBufferedOutputBytes -= bytesUp;
 
-            int potentiallyBufferedOutputBytes = this.potentiallyBufferedOutputBytes -= bytesUp;
-
-            if (potentiallyBufferedOutputBytes < 0) {
-                int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / sendBufferSize;
-                checkConnectionAllowed(estimatedNumberOfTcpPackets);
-                this.potentiallyBufferedOutputBytes = sendBufferSize;
-            }
-
+        if (potentiallyBufferedOutputBytes < 0) {
+            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+            checkConnectionAllowed(estimatedNumberOfTcpPackets);
+            this.potentiallyBufferedOutputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
         }
 
-    }
-
-    @IgnoreJRERequirement
-    private void estimateReceiveBuffer() {
-        if (-1 == receiveBufferSize) {
-            if (null == defaultReceiveBufferSize) {
-                synchronized (CompatSniffySocketChannel.class) {
-                    if (null == defaultReceiveBufferSize) {
-                        try {
-                            defaultReceiveBufferSize = JVMUtil.getVersion() > 6 ?
-                                    (Integer) delegate.getOption(StandardSocketOptions.SO_RCVBUF) :
-                                    socket().getReceiveBufferSize();
-                        } catch (SocketException e) {
-                            defaultReceiveBufferSize = 0;
-                        } catch (IOException e) {
-                            defaultReceiveBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            receiveBufferSize = defaultReceiveBufferSize;
-        }
-    }
-
-    @IgnoreJRERequirement
-    private void estimateSendBuffer() {
-        if (-1 == sendBufferSize) {
-            if (null == defaultSendBufferSize) {
-                synchronized (CompatSniffySocketChannel.class) {
-                    if (null == defaultSendBufferSize) {
-                        try {
-                            defaultSendBufferSize = JVMUtil.getVersion() > 6 ?
-                                    (Integer) delegate.getOption(StandardSocketOptions.SO_SNDBUF) :
-                                    socket().getSendBufferSize();
-                        } catch (SocketException e) {
-                            defaultSendBufferSize = 0;
-                        } catch (IOException e) {
-                            defaultSendBufferSize = 0;
-                        }
-                    }
-                }
-            }
-            sendBufferSize = defaultSendBufferSize;
-        }
     }
 
     @Deprecated
@@ -194,17 +140,40 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
 
-        Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
-        if (sniffyMode.isEnabled() && null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
-            Sniffy.logSocket(id, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces());
+        if (null != getInetSocketAddress() && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
+            Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
+            if (sniffyMode.isEnabled()) {
+                Sniffy.logSocket(connectionId, getInetSocketAddress(), millis, bytesDown, bytesUp, sniffyMode.isCaptureStackTraces()); // TODO: stack trace here should be calculated till another package
+            }
         }
     }
 
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
         SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("CompatSniffySocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
             Sniffy.logTraffic(
-                    id, getInetSocketAddress(),
+                    connectionId, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
+            if (sent && firstChunk) {
+                SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                if (null != sniffySSLNetworkConnection) {
+                    sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
+                }
+            }
+            firstChunk = false;
+        }
+    }
+
+    public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("CompatSniffySocketChannel.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
+            Sniffy.logDecryptedTraffic(
+                    connectionId, getInetSocketAddress(),
                     sent, protocol,
                     traffic, off, len,
                     effectiveSpyConfiguration.isCaptureStackTraces()
@@ -266,7 +235,6 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        estimateReceiveBuffer();
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
@@ -274,21 +242,23 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
         try {
             return bytesDown = super.read(dst);
         } finally {
-            sleepIfRequired(bytesDown);
-            logSocket(System.currentTimeMillis() - start, bytesDown, 0);
-            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                dst.position(position);
-                byte[] buff = new byte[bytesDown];
-                dst.get(buff, 0, bytesDown);
-                logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+            if (bytesDown >= 0) { // TODO: implement same check in other places
+                sleepIfRequired(bytesDown);
+                logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+                SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                    dst.position(position);
+                    byte[] buff = new byte[bytesDown];
+                    dst.get(buff, 0, bytesDown);
+
+                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                }
             }
         }
     }
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        estimateReceiveBuffer();
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         long bytesDown = 0;
@@ -327,7 +297,6 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        estimateSendBuffer();
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int length = 0;
@@ -352,7 +321,6 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        estimateSendBuffer();
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         long bytesUp = 0;
@@ -392,7 +360,7 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     @Override
     public Socket socket() {
         try {
-            return new SniffySocket(super.socket(), this, id,
+            return new SniffySocket(super.socket(), this, connectionId,
                 JVMUtil.getVersion() > 6 ? getInetSocketAddress() : null);
         } catch (SocketException e) {
             e.printStackTrace();
@@ -401,26 +369,6 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     }
 
     //
-
-    @Override
-    public int getReceiveBufferSize() {
-        return receiveBufferSize;
-    }
-
-    @Override
-    public void setReceiveBufferSize(int receiveBufferSize) {
-        this.receiveBufferSize = receiveBufferSize;
-    }
-
-    @Override
-    public int getSendBufferSize() {
-        return sendBufferSize;
-    }
-
-    @Override
-    public void setSendBufferSize(int sendBufferSize) {
-        this.sendBufferSize = sendBufferSize;
-    }
 
     @Override
     public int getPotentiallyBufferedInputBytes() {

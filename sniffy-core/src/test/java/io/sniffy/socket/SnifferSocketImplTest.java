@@ -2,7 +2,6 @@ package io.sniffy.socket;
 
 import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -14,12 +13,9 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static java.net.SocketOptions.SO_RCVBUF;
-import static java.net.SocketOptions.SO_SNDBUF;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -32,12 +28,6 @@ public class SnifferSocketImplTest {
     private Sleep sleep;
 
     private SnifferSocketImpl sniffySocket;
-
-    @BeforeClass
-    public static void initSnifferSocketImplStatic() {
-        SnifferSocketImpl.defaultReceiveBufferSize = 64;
-        SnifferSocketImpl.defaultSendBufferSize = 64;
-    }
 
     @Before
     public void createSniffySocket() throws Exception {
@@ -405,48 +395,6 @@ public class SnifferSocketImplTest {
     }
 
     @Test
-    public void testEstimateReceiveBufferNoRcvBufOption() throws Exception {
-
-        InputStream expected = new ByteArrayInputStream(new byte[]{1, 2, 3});
-        SnifferSocketImpl.defaultReceiveBufferSize = null;
-
-        when(delegate.getInputStream()).thenReturn(expected);
-        when(delegate.getOption(SO_RCVBUF)).thenReturn(null);
-
-        InputStream actual = sniffySocket.getInputStream();
-
-        verify(delegate).getInputStream();
-        verifyNoMoreInteractions(ignoreStubs(delegate));
-
-        assertEquals(SnifferInputStream.class, actual.getClass());
-        assertEquals(1, actual.read());
-
-        assertEquals((Integer) 0, SnifferSocketImpl.defaultReceiveBufferSize);
-
-    }
-
-    @Test
-    public void testEstimateReceiveBufferRcvBufOptionThrowsException() throws Exception {
-
-        InputStream expected = new ByteArrayInputStream(new byte[]{1, 2, 3});
-        SnifferSocketImpl.defaultReceiveBufferSize = null;
-
-        when(delegate.getInputStream()).thenReturn(expected);
-        when(delegate.getOption(SO_RCVBUF)).thenThrow(new SocketException());
-
-        InputStream actual = sniffySocket.getInputStream();
-
-        verify(delegate).getInputStream();
-        verifyNoMoreInteractions(ignoreStubs(delegate));
-
-        assertEquals(SnifferInputStream.class, actual.getClass());
-        assertEquals(1, actual.read());
-
-        assertEquals((Integer) 0, SnifferSocketImpl.defaultReceiveBufferSize);
-
-    }
-
-    @Test
     public void testGetOutputStream() throws Exception {
 
         ByteArrayOutputStream expected = new ByteArrayOutputStream();
@@ -462,52 +410,6 @@ public class SnifferSocketImplTest {
         actual.write(1);
 
         assertArrayEquals(new byte[]{1}, expected.toByteArray());
-
-    }
-
-    @Test
-    public void testEstimateSendBufferNoSndBufOption() throws Exception {
-
-        ByteArrayOutputStream expected = new ByteArrayOutputStream();
-        SnifferSocketImpl.defaultSendBufferSize = null;
-
-        when(delegate.getOutputStream()).thenReturn(expected);
-        when(delegate.getOption(SO_SNDBUF)).thenReturn(null);
-
-        OutputStream actual = sniffySocket.getOutputStream();
-
-        verify(delegate).getOutputStream();
-        verifyNoMoreInteractions(ignoreStubs(delegate));
-
-        assertEquals(SnifferOutputStream.class, actual.getClass());
-        actual.write(3);
-
-        assertEquals(3, (int) expected.toByteArray()[0]);
-
-        assertEquals((Integer) 0, SnifferSocketImpl.defaultSendBufferSize);
-
-    }
-
-    @Test
-    public void testEstimateSendBufferSndBufOptionThrowsException() throws Exception {
-
-        ByteArrayOutputStream expected = new ByteArrayOutputStream();
-        SnifferSocketImpl.defaultSendBufferSize = null;
-
-        when(delegate.getOutputStream()).thenReturn(expected);
-        when(delegate.getOption(SO_SNDBUF)).thenThrow(new SocketException());
-
-        OutputStream actual = sniffySocket.getOutputStream();
-
-        verify(delegate).getOutputStream();
-        verifyNoMoreInteractions(ignoreStubs(delegate));
-
-        assertEquals(SnifferOutputStream.class, actual.getClass());
-        actual.write(3);
-
-        assertEquals(3, (int) expected.toByteArray()[0]);
-
-        assertEquals((Integer) 0, SnifferSocketImpl.defaultSendBufferSize);
 
     }
 
@@ -579,76 +481,6 @@ public class SnifferSocketImplTest {
         verifyNoMoreInteractions(delegate);
 
         assertEquals(expected, actual);
-
-    }
-
-    @Test
-    @Features({"issues/219"})
-    public void testSetReceiveBufferSize() throws Exception {
-        int backup = sniffySocket.getReceiveBufferSize();
-        try {
-            sniffySocket.setOption(SO_RCVBUF, 5);
-            assertEquals(5, sniffySocket.getReceiveBufferSize());
-        } finally {
-            sniffySocket.setReceiveBufferSize(backup);
-        }
-    }
-
-    @Test
-    @Features({"issues/219"})
-    public void testSetSendBufferSize() throws Exception {
-        int backup = sniffySocket.getSendBufferSize();
-        try {
-            sniffySocket.setOption(SO_SNDBUF, 9);
-            assertEquals(9, sniffySocket.getSendBufferSize());
-        } finally {
-            sniffySocket.setSendBufferSize(backup);
-        }
-    }
-
-    @Test
-    @Features("issues/340")
-    public void testTcpDelayHeuristics() throws Exception {
-
-        verifyNoMoreInteractions(delegate);
-
-        when(delegate.getInputStream()).thenReturn(mock(InputStream.class));
-        when(delegate.getOutputStream()).thenReturn(mock(OutputStream.class));
-
-        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 10);
-
-        doNothing().when(sleep).doSleep(anyInt());
-
-        // TCP Delay
-        sniffySocket.connect("localhost", 123);
-
-        sniffySocket.setOption(SO_SNDBUF, 10);
-        sniffySocket.setOption(SO_RCVBUF, 10);
-
-        InputStream inputStream = sniffySocket.getInputStream();
-        OutputStream outputStream = sniffySocket.getOutputStream();
-
-        // TCP Delay
-        inputStream.read(); // read 1 byte; 9 in cache
-        inputStream.read(); // read 1 byte; 8 in cache
-
-        // TCP Delay
-        outputStream.write(0); // write 1 byte; 9 in cache
-        outputStream.write(0); // write 1 byte; 8 in cache
-
-        // TCP Delay
-        inputStream.read(); // read 1 byte; 9 in cache
-
-        // TCP Delay
-        outputStream.write(0); // write 1 byte; 9 in cache
-
-        verify(sleep, times(5)).doSleep(eq(10));
-
-        verify(delegate).connect(eq("localhost"), eq(123));
-        verify(delegate).getInputStream();
-        verify(delegate).getOutputStream();
-        verify(delegate, times(2)).setOption(anyInt(), notNull());
-        verifyNoMoreInteractions(delegate);
 
     }
 

@@ -7,6 +7,12 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |===
 |System Property |Environment Variable |Sniffy Agent parameter |Description |Default Value
 
+|-Dio.sniffy.logLevel
+|IO_SNIFFY_LOG_LEVEL
+|N/A
+|Sniffy logging level; allowed values are: TRACE, DEBUG, INFO, ERROR, OFF
+|info
+
 |-Dio.sniffy.monitorJdbc
 |IO_SNIFFY_MONITOR_JDBC
 |N/A
@@ -30,6 +36,12 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |N/A
 |Maximum number of top SQL queries to store
 |1024
+
+|-Dio.sniffy.packetMergeThreshold
+|IO_SNIFFY_PACKET_MERGE_THRESHOLD
+|N/A
+|Threshold for combining similar network packets when capturing traffic
+|500
 
 |-Dio.sniffy.filterEnabled
 |IO_SNIFFY_FILTER_ENABLED
@@ -60,6 +72,24 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |sniffyPort
 |HTTP port Sniffy Agent is listening on
 |5555
+
+|-Dio.sniffy.socketCaptureEnabled
+|IO_SNIFFY_SOCKET_CAPTURE_ENABLED
+|N/A
+|Enable collecting network stats (bytes sent/received, time spent) if monitorSocket or monitorNio are enabled
+|true
+
+|-Dio.sniffy.decryptTls
+|IO_SNIFFY_DECRYPT_TLS
+|N/A
+|Enable decrypting captured TLS traffic
+|false
+
+|-Dio.sniffy.socketFaultInjectionEnabled
+|IO_SNIFFY_SOCKET_FAULT_INJECTION_ENABLED
+|N/A
+|Enable injecting network faults if monitorSocket or monitorNio are enabled
+|true
 
 |===
 

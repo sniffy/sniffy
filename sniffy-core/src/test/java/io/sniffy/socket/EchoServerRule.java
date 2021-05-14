@@ -14,14 +14,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class EchoServerRule extends ExternalResource implements Runnable {
 
     private final Thread thread = new Thread(this);
 
-    private final List<Thread> socketThreads = new ArrayList<>();
-    private final List<Socket> sockets = new ArrayList<>();
+    private final List<Thread> socketThreads = new CopyOnWriteArrayList<>();
+    private final List<Socket> sockets = new CopyOnWriteArrayList<>();
 
     private final AtomicInteger bytesReceivedCounter = new AtomicInteger();
 

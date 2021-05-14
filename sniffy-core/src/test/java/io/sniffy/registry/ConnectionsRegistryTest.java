@@ -294,26 +294,6 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 }
 
                 @Override
-                public int getReceiveBufferSize() {
-                    return 0;
-                }
-
-                @Override
-                public void setReceiveBufferSize(int receiveBufferSize) {
-
-                }
-
-                @Override
-                public int getSendBufferSize() {
-                    return 0;
-                }
-
-                @Override
-                public void setSendBufferSize(int sendBufferSize) {
-
-                }
-
-                @Override
                 public void logSocket(long millis) {
 
                 }
@@ -325,6 +305,11 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
                 @Override
                 public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+
+                }
+
+                @Override
+                public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
 
                 }
 
@@ -442,26 +427,6 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 }
 
                 @Override
-                public int getReceiveBufferSize() {
-                    return 0;
-                }
-
-                @Override
-                public void setReceiveBufferSize(int receiveBufferSize) {
-
-                }
-
-                @Override
-                public int getSendBufferSize() {
-                    return 0;
-                }
-
-                @Override
-                public void setSendBufferSize(int sendBufferSize) {
-
-                }
-
-                @Override
                 public void logSocket(long millis) {
 
                 }
@@ -473,6 +438,11 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
 
                 @Override
                 public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
+
+                }
+
+                @Override
+                public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
 
                 }
 

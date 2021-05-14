@@ -48,6 +48,7 @@ public class ExceptionUtil {
         return (Class<Throwable>)Class.forName(className);
     }
 
+    // TODO: unwind InvocationTargetException
     public static RuntimeException throwException(Throwable e) {
         ExceptionUtil.<RuntimeException>throwAny(e);
         return new RuntimeException(e);

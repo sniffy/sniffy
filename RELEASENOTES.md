@@ -2,7 +2,28 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.9...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.12...master)
+
+## v3.1.12 - May 12th, 2021
+
+ * [Implement SniffySSLEngine and match encrypted payloads with what is put on the wire later](https://github.com/sniffy/sniffy/issues/436)
+ * [Log SCM revision](https://github.com/sniffy/sniffy/pull/477)
+
+## v3.1.11 - Apr 23rd, 2021
+
+ * [Decrypt captured TLS traffic](https://github.com/sniffy/sniffy/issues/429)
+ * [Add logging](https://github.com/sniffy/sniffy/issues/376)
+ * [Sniffy break sendBufferSize / receiveBufferSize properties at least in SSLSocket implementation](https://github.com/sniffy/sniffy/issues/453)
+ * [IBM J9 Support](https://github.com/sniffy/sniffy/issues/447)
+
+## v3.1.10 - Feb 15th, 2021
+
+ * [Capture network traffic](https://github.com/sniffy/sniffy/issues/400)
+ * [Fix agent arguments parsing](https://github.com/sniffy/sniffy/pull/422) thanks [@Fuud](https://github.com/Fuud)
+ * [Expose Sniffy REST API without explicit version](https://github.com/sniffy/sniffy/pull/428) thanks [@Fuud](https://github.com/Fuud)
+ * [CI fix for PRs from other repos](https://github.com/sniffy/sniffy/pull/426)
+ * [CI tests on x32 JVMs](https://github.com/sniffy/sniffy/pull/409)
+ * [Allow unencoded slashes in Sniffy API](https://github.com/sniffy/sniffy/issues/393)
 
 ## v3.1.9 - Jan 24th, 2021
 

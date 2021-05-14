@@ -6,16 +6,17 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>sniffy-compatibility-tests</artifactId>
     <groupId>io.sniffy</groupId>
-    <version>3.1.10-SNAPSHOT</version>
+    <version>3.1.13-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
-        <jacoco.version>0.8.6</jacoco.version>
+        <jacoco.version>0.8.7-SNAPSHOT</jacoco.version>
     </properties>
 
     <modules>
         <module>sniffy-compatibility-tests-io</module>
         <module>sniffy-compatibility-tests-nio</module>
+        <module>sniffy-compatibility-tests-decrypt-tls-nio</module>
     </modules>
 
     <build>
@@ -89,5 +90,20 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
 
 </project>

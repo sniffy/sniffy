@@ -6,12 +6,12 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>sniffy-compatibility-tests-io</artifactId>
     <groupId>io.sniffy</groupId>
-    <version>3.1.10-SNAPSHOT</version>
+    <version>3.1.13-SNAPSHOT</version>
 
     <parent>
         <artifactId>sniffy-compatibility-tests</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.10-SNAPSHOT</version>
+        <version>3.1.13-SNAPSHOT</version>
     </parent>
 
 </project>

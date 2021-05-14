@@ -3,22 +3,27 @@ package io.sniffy;
 import com.codahale.metrics.Timer;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
-import io.sniffy.socket.Protocol;
-import io.sniffy.socket.SnifferSocketImplFactory;
-import io.sniffy.socket.SocketMetaData;
-import io.sniffy.socket.SocketStats;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.log.PolyglogLevel;
+import io.sniffy.socket.*;
 import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlUtil;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.JVMUtil;
+import io.sniffy.util.OSUtil;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,16 +41,19 @@ import static io.sniffy.util.StackTraceExtractor.*;
  *     spy.verify(SqlQueries.atMostOneQuery());
  * </code>
  * </pre>
+ *
  * @since 3.1
  */
 public class Sniffy {
+
+    private static final Polyglog LOG = PolyglogFactory.log(Sniffy.class);
 
     public static final int TOP_SQL_CAPACITY = 1024;
 
     /**
      * Indicates if Sniffy potentially has global (non thread-local) spies registered
      * Once set to true it is never reseted to false
-     *
+     * <p>
      * Used for (premature) optimization only
      *
      * @since 3.1.9
@@ -55,7 +63,7 @@ public class Sniffy {
     /**
      * Indicates if Sniffy potentially has thread-local spies registered
      * Once set to true it is never reseted to false
-     *
+     * <p>
      * Used for (premature) optimization only
      *
      * @since 3.1.9
@@ -76,7 +84,7 @@ public class Sniffy {
                     maximumWeightedCapacity(SniffyConfiguration.INSTANCE.getTopSqlCapacity()).
                     build();
 
-    private static ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
+    private static final ThreadLocal<SocketStats> socketStatsAccumulator = new ThreadLocal<SocketStats>();
 
     public final static AtomicInteger CONNECTION_ID_SEQUENCE = new AtomicInteger();
 
@@ -120,6 +128,43 @@ public class Sniffy {
 
         if (initialized) return;
 
+        LOG.info("Initializing Sniffy " + Constants.MAJOR_VERSION + "." + Constants.MINOR_VERSION + "." + Constants.PATCH_VERSION);
+
+        try {
+            Properties sniffyVersionProperties = new Properties();
+            InputStream propertiesIS = Sniffy.class.getClassLoader().getResourceAsStream("sniffyversion.properties");
+            sniffyVersionProperties.load(propertiesIS);
+            LOG.info("sniffy.version = " + sniffyVersionProperties.getProperty("sniffy.version"));
+            LOG.info("sniffy.build.time = " + sniffyVersionProperties.getProperty("sniffy.build.time"));
+            LOG.info("sniffy.scm.revision = " + sniffyVersionProperties.getProperty("sniffy.scm.revision"));
+            LOG.info("sniffy.scm.branch = " + sniffyVersionProperties.getProperty("sniffy.scm.branch"));
+        } catch (Exception e) {
+            LOG.error("Failed to parse Sniffy version", e);
+        }
+
+        LOG.info("OS is " + OSUtil.getOsName());
+        LOG.info("Java version is " + JVMUtil.getVersion());
+
+        if (LOG.isLevelEnabled(PolyglogLevel.INFO)) {
+            Properties properties = System.getProperties();
+            String[] propertyNames = new String[]{
+                    "java.vm.vendor",
+                    "java.vm.name",
+                    "java.vm.version",
+                    "java.version",
+                    "java.version.date",
+                    "os.name",
+                    "os.arch",
+                    "os.version"
+            };
+            if (null != properties) {
+                for (String propertyName : propertyNames) {
+                    LOG.info(propertyName + " = " + properties.getProperty(propertyName));
+                }
+            }
+        }
+
+        //noinspection Convert2Lambda
         SniffyConfiguration.INSTANCE.addTopSqlCapacityListener(new PropertyChangeListener() {
 
             @Override
@@ -136,13 +181,17 @@ public class Sniffy {
 
         if (SniffyConfiguration.INSTANCE.isMonitorSocket()) {
 
+            LOG.info("Socket monitoring enabled - installing SnifferSocketImplFactory");
+
             try {
                 SnifferSocketImplFactory.install();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error("Couldn't install SnifferSocketImplFactory", e);
             }
 
         } else {
+
+            LOG.debug("Socket monitoring disabled - installing hook on SniffyConfiguration.INSTANCE.monitorSocket property");
 
             SniffyConfiguration.INSTANCE.addMonitorSocketListener(new PropertyChangeListener() {
 
@@ -152,11 +201,12 @@ public class Sniffy {
                 public synchronized void propertyChange(PropertyChangeEvent evt) {
                     if (sniffySocketImplFactoryInstalled) return;
                     if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        LOG.info("Socket monitoring enabled - installing SnifferSocketImplFactory");
                         try {
                             SnifferSocketImplFactory.install();
                             sniffySocketImplFactoryInstalled = true;
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            LOG.error("Couldn't install SnifferSocketImplFactory", e);
                         }
                     }
                 }
@@ -166,6 +216,7 @@ public class Sniffy {
         }
 
         if (SniffyConfiguration.INSTANCE.isMonitorNio()) {
+            LOG.info("NIO monitoring enabled - loading NIO Sniffy Module");
             loadNioModule();
         } else {
 
@@ -177,6 +228,7 @@ public class Sniffy {
                 public synchronized void propertyChange(PropertyChangeEvent evt) {
                     if (sniffySelectorProviderInstalled) return;
                     if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        LOG.info("NIO monitoring enabled - loading NIO Sniffy Module");
                         loadNioModule();
                         sniffySelectorProviderInstalled = true;
                     }
@@ -186,7 +238,47 @@ public class Sniffy {
 
         }
 
+        if (SniffyConfiguration.INSTANCE.isDecryptTls()) {
+            LOG.info("TLS decryption enabled - loading TLS Sniffy Module");
+            loadTlsModule();
+        } else {
+
+            SniffyConfiguration.INSTANCE.addDecryptTlsListener(new PropertyChangeListener() {
+
+                private boolean sniffyTlsModuleInstalled = false;
+
+                @Override
+                public synchronized void propertyChange(PropertyChangeEvent evt) {
+                    if (sniffyTlsModuleInstalled) return;
+                    if (Boolean.TRUE.equals(evt.getNewValue())) {
+                        LOG.info("TLS decryption enabled - loading TLS Sniffy Module");
+                        loadTlsModule();
+                        sniffyTlsModuleInstalled = true;
+                    }
+                }
+
+            });
+
+        }
+
         initialized = true;
+
+    }
+
+    /**
+     * Reinitialize Sniffy modules if possible; for example it might wrap newly added JSSE providers and
+     * perform other similar functions/
+     *
+     * @since 3.1.12
+     */
+    public static void reinitialize() {
+
+        LOG.info("Reinitializing Sniffy");
+
+        if (SniffyConfiguration.INSTANCE.isDecryptTls()) {
+            LOG.info("TLS decryption enabled - loading TLS Sniffy Module");
+            reloadTlsModule();
+        }
 
     }
 
@@ -200,18 +292,44 @@ public class Sniffy {
 
                     try {
                         Class.forName("io.sniffy.nio.SniffySelectorProviderModule").getMethod("initialize").invoke(null);
-                        Class.forName("io.sniffy.nio.compat.SniffyCompatSelectorProviderModule").getMethod("initialize").invoke(null);;
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                        Class.forName("io.sniffy.nio.compat.SniffyCompatSelectorProviderModule").getMethod("initialize").invoke(null);
+                    } catch (Exception e) {
+                        LOG.error(e);
                     }
 
                     nioModuleLoaded = true;
+
+                }
+            }
+        }
+    }
+
+    private static volatile boolean tlsModuleLoaded = false;
+
+    // TODO: do something more clever and extensible
+    private static void reloadTlsModule() {
+
+        try {
+            Class.forName("io.sniffy.tls.SniffyTlsModule").getMethod("reinitialize").invoke(null);
+        } catch (Exception e) {
+            LOG.error(e);
+        }
+
+    }
+
+    // TODO: do something more clever and extensible
+    private static void loadTlsModule() {
+        if (!tlsModuleLoaded) {
+            synchronized (Sniffy.class) {
+                if (!tlsModuleLoaded) {
+
+                    try {
+                        Class.forName("io.sniffy.tls.SniffyTlsModule").getMethod("initialize").invoke(null);
+                    } catch (Exception e) {
+                        LOG.error(e);
+                    }
+
+                    tlsModuleLoaded = true;
 
                 }
             }
@@ -238,6 +356,7 @@ public class Sniffy {
     }
 
     protected static WeakReference<Spy> registerSpy(Spy spy) {
+        LOG.trace("Registered new global Spy " + spy);
         hasGlobalSpies = true;
         WeakReference<Spy> spyReference = new WeakReference<Spy>(spy);
         registeredSpies.add(spyReference);
@@ -245,6 +364,7 @@ public class Sniffy {
     }
 
     protected static WeakReference<CurrentThreadSpy> registerCurrentThreadSpy(CurrentThreadSpy spy) {
+        LOG.trace("Registered new ThreadLocal Spy " + spy);
         hasThreadLocalSpies = true;
         WeakReference<CurrentThreadSpy> spyReference = new WeakReference<CurrentThreadSpy>(spy);
         currentThreadSpies.put(Thread.currentThread().getId(), spyReference);
@@ -252,134 +372,117 @@ public class Sniffy {
     }
 
     protected static void removeSpyReference(WeakReference<Spy> spyReference) {
+        LOG.trace("Removing global Spy reference" + spyReference);
         registeredSpies.remove(spyReference);
     }
 
     protected static void removeCurrentThreadSpyReference() {
-        currentThreadSpies.remove(Thread.currentThread().getId());
+        WeakReference<CurrentThreadSpy> removed = currentThreadSpies.remove(Thread.currentThread().getId());
+        LOG.trace("Removed ThreadLocal Spy reference " + removed);
+    }
+
+    private static Iterable<BaseSpy<?>> getEffectiveSpyList() {
+
+        //noinspection Convert2Lambda
+        return new Iterable<BaseSpy<?>>() {
+
+            @Override
+            public Iterator<BaseSpy<?>> iterator() {
+
+                return new Iterator<BaseSpy<?>>() {
+
+                    private BaseSpy<?> next;
+
+                    @SuppressWarnings("rawtypes")
+                    private final Iterator<WeakReference<Spy>> globalSpiesIterator = registeredSpies.iterator();
+                    private boolean globalSpiesChecked;
+
+                    private boolean threadLocalSpiesChecked;
+
+                    @Override
+                    public boolean hasNext() {
+
+                        if (!globalSpiesChecked) {
+                            if (hasGlobalSpies) {
+                                while (globalSpiesIterator.hasNext()) {
+                                    //noinspection rawtypes
+                                    WeakReference<Spy> spyReference = globalSpiesIterator.next();
+                                    Spy<?> spy = spyReference.get();
+                                    if (null == spy) {
+                                        globalSpiesIterator.remove();
+                                    } else {
+                                        next = spy;
+                                        return true;
+                                    }
+                                }
+                            }
+                            globalSpiesChecked = true;
+                        }
+
+                        if (!threadLocalSpiesChecked) {
+                            if (hasThreadLocalSpies) {
+                                Long threadId = Thread.currentThread().getId();
+
+                                WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
+                                if (null != spyReference) {
+                                    CurrentThreadSpy spy = spyReference.get();
+                                    if (null == spy) {
+                                        currentThreadSpies.remove(threadId);
+                                    } else {
+                                        next = spy;
+                                        threadLocalSpiesChecked = true;
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                        threadLocalSpiesChecked = true;
+                        return false;
+
+                    }
+
+                    @Override
+                    public BaseSpy<?> next() {
+                        return next;
+                    }
+
+                };
+
+            }
+
+        };
+
     }
 
     private static void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
-
-        if (hasGlobalSpies) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
         }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
-                }
-            }
-        }
-
     }
 
     private static void notifyListeners(StatementMetaData statementMetaData) {
-
-        if (hasGlobalSpies) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    spy.addReturnedRow(statementMetaData);
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addReturnedRow(statementMetaData);
         }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    spy.addReturnedRow(statementMetaData);
-                }
-            }
-        }
-
     }
 
     private static void notifyListeners(SocketMetaData socketMetaData, long elapsedTime, int bytesDown, int bytesUp) {
-
-        if (hasGlobalSpies) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
-                }
-            }
-        }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addSocketOperation(socketMetaData, elapsedTime, bytesDown, bytesUp);
         }
     }
 
     private static void notifyListeners(SocketMetaData socketMetaData, boolean sent, long timestamp, String stackTrace, byte[] traffic, int off, int len) {
-
         ThreadMetaData threadMetaData = ThreadMetaData.create(Thread.currentThread());
-
-        if (hasGlobalSpies) {
-            Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Spy> spyReference = iterator.next();
-                Spy spy = spyReference.get();
-                if (null == spy) {
-                    iterator.remove();
-                } else {
-                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
         }
+    }
 
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    spy.addNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
-                }
-            }
+    private static void notifyListenersDecryptedTraffic(SocketMetaData socketMetaData, boolean sent, long timestamp, String stackTrace, byte[] traffic, int off, int len) {
+        ThreadMetaData threadMetaData = ThreadMetaData.create(Thread.currentThread());
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            spy.addDecryptedNetworkTraffic(socketMetaData, sent, timestamp, stackTrace, threadMetaData, traffic, off, len);
         }
     }
 
@@ -400,33 +503,8 @@ public class Sniffy {
                 captureNetworkTraffic(false).
                 captureStackTraces(false);
 
-        if (hasGlobalSpies) {
-            if (!registeredSpies.isEmpty()) {
-                Iterator<WeakReference<Spy>> iterator = registeredSpies.iterator();
-                while (iterator.hasNext()) {
-                    WeakReference<Spy> spyReference = iterator.next();
-                    Spy spy = spyReference.get();
-                    if (null == spy) {
-                        iterator.remove();
-                    } else {
-                        builder = builder.or(spy.getSpyConfiguration());
-                    }
-                }
-            }
-        }
-
-        if (hasThreadLocalSpies) {
-            Long threadId = Thread.currentThread().getId();
-
-            WeakReference<CurrentThreadSpy> spyReference = currentThreadSpies.get(threadId);
-            if (null != spyReference) {
-                CurrentThreadSpy spy = spyReference.get();
-                if (null == spy) {
-                    currentThreadSpies.remove(threadId);
-                } else {
-                    builder = builder.or(spy.getSpyConfiguration());
-                }
-            }
+        for (BaseSpy<?> spy : getEffectiveSpyList()) {
+            builder = builder.or(spy.getSpyConfiguration());
         }
 
         return builder.build();
@@ -434,6 +512,7 @@ public class Sniffy {
     }
 
     // TODO: use getEffectiveSpyConfiguration() instead
+
     /**
      * @since 3.1.6
      */
@@ -474,17 +553,36 @@ public class Sniffy {
         }
     }
 
+    // TODO: how to do lookup if client hello is written to socket in a few steps ?
+    public final static Map<ByteBuffer, SniffySSLNetworkConnection> CLIENT_HELLO_CACHE = new ConcurrentLinkedHashMap.Builder<ByteBuffer, SniffySSLNetworkConnection>().
+            maximumWeightedCapacity(200).
+            build();
+
     public static void logTraffic(int connectionId, InetSocketAddress address, boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean captureStackTraces) {
 
         if (0 == len) return;
 
+        SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId);
+
         // build stackTrace
         String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null;
+
+        // notify listeners
+        notifyListeners(socketMetaData, sent, System.currentTimeMillis(), stackTrace, traffic, off, len);
+
+    }
+
+    public static void logDecryptedTraffic(int connectionId, InetSocketAddress address, boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean captureStackTraces) {
+
+        if (0 == len) return;
+
+        // build stackTrace
+        String stackTrace = captureStackTraces ? printStackTrace(getTraceTillPackage("java.net")) : null; // TODO: check if package name is correct
 
         SocketMetaData socketMetaData = new SocketMetaData(protocol, address, connectionId);
 
         // notify listeners
-        notifyListeners(socketMetaData, sent, System.currentTimeMillis(), stackTrace, traffic, off, len);
+        notifyListenersDecryptedTraffic(socketMetaData, sent, System.currentTimeMillis(), stackTrace, traffic, off, len);
 
     }
 
@@ -617,6 +715,7 @@ public class Sniffy {
     /**
      * Execute the {@link Executable#execute()} method, record the SQL queries
      * and return the {@link Spy} object with stats
+     *
      * @param executable code to test
      * @return statistics on executed queries
      * @throws RuntimeException if underlying code under test throws an Exception
@@ -629,6 +728,7 @@ public class Sniffy {
     /**
      * Execute the {@link Runnable#run()} method, record the SQL queries
      * and return the {@link Spy} object with stats
+     *
      * @param runnable code to test
      * @return statistics on executed queries
      * @since 3.1
@@ -640,8 +740,9 @@ public class Sniffy {
     /**
      * Execute the {@link Callable#call()} method, record the SQL queries
      * and return the {@link Spy.SpyWithValue} object with stats
+     *
      * @param callable code to test
-     * @param <V> type of return value
+     * @param <V>      type of return value
      * @return statistics on executed queries
      * @throws Exception if underlying code under test throws an Exception
      * @since 3.1

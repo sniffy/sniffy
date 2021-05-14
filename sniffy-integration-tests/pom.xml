@@ -5,13 +5,17 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.10-SNAPSHOT</version>
+        <version>3.1.13-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>sniffy-integration-tests</artifactId>
     <packaging>pom</packaging>
     <modules>
+        <module>sniffy-integration-tests-decrypt-tls</module>
+        <module>sniffy-integration-tests-decrypt-tls-vertx</module>
+        <module>sniffy-integration-tests-decrypt-tls-bc</module>
+        <module>sniffy-integration-tests-decrypt-tls-bc-before-sniffy</module>
         <module>sniffy-integration-tests-spock</module>
 	    <module>sniffy-integration-tests-spring-boot</module>
 	    <module>sniffy-integration-tests-spring-boot-2</module>

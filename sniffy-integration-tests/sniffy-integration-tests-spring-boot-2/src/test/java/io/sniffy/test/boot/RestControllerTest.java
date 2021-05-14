@@ -21,6 +21,7 @@ import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.List;
 
+import static io.sniffy.servlet.SniffyFilter.SNIFFY_RESOURCE_URI_PREFIX;
 import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
 import static org.junit.Assert.*;
 
@@ -166,6 +167,31 @@ public class RestControllerTest {
         }
 
         restTemplate.postForEntity("http://localhost:" + localServerPort + "/" + SNIFFY_URI_PREFIX + "/connectionregistry/datasource/jdbc:h2:mem:6ee1f026/8606/490f/b358/1ea2f87cb877/SA", 0, Object.class);
+
+    }
+
+    @Test
+    public void testSniffyAPIAvailableWithAndWithoutVersion() {
+
+        {
+            ResponseEntity<Connectivity> entity = restTemplate.getForEntity("http://localhost:" + localServerPort + "/" + SNIFFY_URI_PREFIX + "/connectionregistry/", Connectivity.class);
+
+            DatabaseConnectivity databaseConnectivity = entity.getBody().getDataSources().get(0);
+
+            assertEquals("jdbc:h2:mem:6ee1f026/8606/490f/b358/1ea2f87cb877", databaseConnectivity.getUrl());
+            assertEquals("SA", databaseConnectivity.getUserName());
+            assertEquals(0, databaseConnectivity.getStatus().intValue());
+        }
+
+        {
+            ResponseEntity<Connectivity> entity = restTemplate.getForEntity("http://localhost:" + localServerPort + "/" + SNIFFY_RESOURCE_URI_PREFIX + "/connectionregistry/", Connectivity.class);
+
+            DatabaseConnectivity databaseConnectivity = entity.getBody().getDataSources().get(0);
+
+            assertEquals("jdbc:h2:mem:6ee1f026/8606/490f/b358/1ea2f87cb877", databaseConnectivity.getUrl());
+            assertEquals("SA", databaseConnectivity.getUserName());
+            assertEquals(0, databaseConnectivity.getStatus().intValue());
+        }
 
     }
 

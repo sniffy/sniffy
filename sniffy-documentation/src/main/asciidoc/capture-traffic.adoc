@@ -1,0 +1,55 @@
+== Capture Traffic
+
+Sniffy allows you to record traffic sent or received via network and exposes it via Java API.
+
+=== Example
+
+```java
+include::../../../../sniffy-core/src/test/java/io/sniffy/socket/CaptureTrafficOverviewTest.java[tags=CaptureTrafficOverview]
+```
+<1> Use `captureNetworkTraffic(true)` when creating a `Spy` instance to enable traffic capturing
+<2> Invoke socket operation. Can be either in current or another thread. Plain socket API or NIO - doesn't matter.
+<3> Retrieve network packets filtered and grouped as defined in parameters
+<4> Allows you to filter traffic by thread
+<5> Allows you to filter traffic by target address and/or port
+<6> Group traffic by thread
+<7> Group traffic by stack trace
+<8> Group traffic by connection id - surrogate identifier of network connection
+<9> SocketMetaData describes the target host and port and other parameters as described above for `GroupingOptions`
+<10> `NetworkPacket` contains data in bytes, timestamp, direction and optional stacktrace and thread information
+
+=== Configuration
+
+`packetMergeThreshold` allows you to specify threshold for combining similar network packets when capturing traffic.
+For example if your application calls `SocketInputStream.read()` 8 times in a row to read a 64-bit value, Sniffy will merge these calls into a single packet given that they were done within specified threshold and of course given that no write/sent operation was done between them.
+
+=== SSL/TLS Traffic Decryption
+
+Sniffy can decrypt capture traffic but you need to enable this feature explicitly using -D`io.sniffy.decryptTls` system property or `IO_SNIFFY_DECRYPT_TLS` environment variable.
+It's also possible to enable it programmatically using  `io.sniffy.configuration.SniffyConfiguration.INSTANCE.setDecryptTls()` method.
+
+Decrypted traffic is available along with original traffic using dedicated `getDecryptedNetworkTraffic` method in Spy class.
+
+```java
+Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
+        Threads.CURRENT,
+        AddressMatchers.exactAddressMatcher("www.google.com:443"),
+        GroupingOptions.builder().
+                groupByConnection(false).
+                groupByStackTrace(false).
+                groupByThread(false).
+                build()
+);
+```
+
+=== Caveats
+
+Some libraries like Apache APR and Netty (only when native transport is enabled explicitly) use native code for network operations.
+Currently Sniffy doesn't capture this kind of traffic.
+
+Sniffy provides an alternative implementation of `SSLEngine`, `SSLSocketFactory` and other classes from JSSE framework.
+Since some of these constructs can be cached in application code, please make sure to initialize Sniffy as early as possible.
+If absolutely necessary you can initialize Sniffy as a javaagent, although it's a bit cumbersome - see https://sniffy.io/docs/latest/#_standalone_setup[Standalone Setup] section for details.
+
+Sniffy support custom JSSE providers such as BouncyCastle. However if you're installing *AFTER* you initialize Sniffy you _might_ need to reinitialize Sniffy.
+It's possible using `Sniffy.reinitialize()` method.e

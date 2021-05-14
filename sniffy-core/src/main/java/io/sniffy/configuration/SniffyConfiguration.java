@@ -1,7 +1,11 @@
 package io.sniffy.configuration;
 
+import io.sniffy.log.PolyglogLevel;
+
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+
+import static io.sniffy.log.PolyglogLevel.INFO;
 
 /**
  * @since 3.1
@@ -10,6 +14,11 @@ public enum SniffyConfiguration {
     INSTANCE;
 
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+
+    /**
+     * @since 3.1.11
+     */
+    private volatile PolyglogLevel logLevel;
 
     private volatile boolean monitorJdbc;
     private volatile boolean monitorSocket;
@@ -20,9 +29,15 @@ public enum SniffyConfiguration {
     private volatile boolean monitorNio;
 
     /**
+     * @since 3.1.11
+     */
+    private volatile boolean decryptTls;
+
+    /**
      * @since 3.1.10
      */
     @Deprecated
+    // TODO: implement
     private volatile boolean captureTraffic;
 
     /**
@@ -31,6 +46,8 @@ public enum SniffyConfiguration {
     private volatile int topSqlCapacity;
 
     /**
+     * Threshold in milliseconds for merging bytes from similar operations when capturing traffic by Sniffy
+     *
      * @since 3.1.10
      */
     private volatile int packetMergeThreshold;
@@ -50,17 +67,25 @@ public enum SniffyConfiguration {
     /**
      * @since 3.1.9
      */
-    private volatile Boolean jdbcCaptureEnabled;
-    /**
-     * @since 3.1.9
-     */
-    private volatile Boolean jdbcFaultInjectionEnabled;
+    private volatile Boolean jdbcCaptureEnabled; // TODO: implement
 
     /**
      * @since 3.1.9
      */
-    private volatile Boolean socketCaptureEnabled;
+    private volatile Boolean jdbcFaultInjectionEnabled; // TODO: implement
+
     /**
+     * Capture stats (bytes and time) on socket IO (including IO, NIO, NIO2/AIO depending on monitorSocket and monitorNio)
+     * default - true
+     *
+     * @since 3.1.9
+     */
+    private volatile Boolean socketCaptureEnabled;
+
+    /**
+     * Enabled fault injection to socket IO  (including IO, NIO, NIO2/AIO depending on monitorSocket and monitorNio)
+     * default - true
+     *
      * @since 3.1.9
      */
     private volatile Boolean socketFaultInjectionEnabled;
@@ -70,6 +95,12 @@ public enum SniffyConfiguration {
     }
 
     void loadSniffyConfiguration() {
+
+        String logLevelProperty = getProperty("io.sniffy.logLevel", "IO_SNIFFY_LOG_LEVEL", "info");
+        PolyglogLevel polyglogLevel = PolyglogLevel.parse(logLevelProperty);
+
+        logLevel = null == polyglogLevel ? INFO : polyglogLevel;
+
         monitorJdbc = Boolean.parseBoolean(getProperty(
                 "io.sniffy.monitorJdbc", "IO_SNIFFY_MONITOR_JDBC", "true"
         ));
@@ -78,6 +109,9 @@ public enum SniffyConfiguration {
         ));
         monitorNio = Boolean.parseBoolean(getProperty(
                 "io.sniffy.monitorNio", "IO_SNIFFY_MONITOR_NIO", "false"
+        ));
+        decryptTls = Boolean.parseBoolean(getProperty(
+                "io.sniffy.decryptTls", "IO_SNIFFY_DECRYPT_TLS", "false"
         ));
         try {
             topSqlCapacity = Integer.parseInt(getProperty(
@@ -96,6 +130,7 @@ public enum SniffyConfiguration {
 
         String filterEnabled = getProperty("io.sniffy.filterEnabled", "IO_SNIFFY_FILTER_ENABLED");
         this.filterEnabled = null == filterEnabled ? null : Boolean.parseBoolean(filterEnabled);
+
         excludePattern = getProperty("io.sniffy.excludePattern", "IO_SNIFFY_EXCLUDE_PATTERN", null);
 
         String injectHtmlEnabled = getProperty("io.sniffy.injectHtml", "IO_SNIFFY_INJECT_HTML");
@@ -139,6 +174,20 @@ public enum SniffyConfiguration {
         return value;
     }
 
+    /**
+     * @since 3.1.11
+     */
+    public PolyglogLevel getLogLevel() {
+        return logLevel;
+    }
+
+    /**
+     * @since 3.1.11
+     */
+    public void setLogLevel(PolyglogLevel logLevel) {
+        this.logLevel = logLevel;
+    }
+
     public boolean isMonitorJdbc() {
         return monitorJdbc;
     }
@@ -167,6 +216,16 @@ public enum SniffyConfiguration {
         boolean oldValue = this.monitorNio;
         this.monitorNio = monitorNio;
         pcs.firePropertyChange("monitorNio", oldValue, monitorNio);
+    }
+
+    public boolean isDecryptTls() {
+        return decryptTls;
+    }
+
+    public void setDecryptTls(boolean decryptTls) {
+        boolean oldValue = this.decryptTls;
+        this.decryptTls = decryptTls;
+        pcs.firePropertyChange("decryptTls", oldValue, decryptTls);
     }
 
     /**
@@ -213,6 +272,20 @@ public enum SniffyConfiguration {
      */
     public void removeMonitorNioListener(PropertyChangeListener listener) {
         this.pcs.removePropertyChangeListener("monitorNio", listener);
+    }
+
+    /**
+     * @since 3.1.11
+     */
+    public void addDecryptTlsListener(PropertyChangeListener listener) {
+        this.pcs.addPropertyChangeListener("decryptTls", listener);
+    }
+
+    /**
+     * @since 3.1.11
+     */
+    public void removeDecryptTlsListener(PropertyChangeListener listener) {
+        this.pcs.removePropertyChangeListener("decryptTls", listener);
     }
 
     // top sql capacity

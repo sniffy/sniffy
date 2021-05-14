@@ -6,11 +6,12 @@
 
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-parent</artifactId>
-    <version>3.1.10-SNAPSHOT</version>
+    <version>3.1.13-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
         <module>sniffy-core</module>
+        <module>sniffy-module-tls</module>
         <module>sniffy-module-nio</module>
         <module>sniffy-module-nio-compat-deps</module>
         <module>sniffy-module-nio-compat</module>
@@ -33,7 +34,7 @@
         <spring.boot.version>1.5.22.RELEASE</spring.boot.version>
         <kotlin.version>1.4.10</kotlin.version>
         <kotest.version>4.3.0</kotest.version>
-        <jacoco.version>0.8.7-SNAPSHOT</jacoco.version>
+        <jacoco.version>0.8.7</jacoco.version>
     </properties>
 
     <scm>
@@ -726,38 +727,6 @@
                 <enabled>true</enabled>
                 <updatePolicy>daily</updatePolicy>
             </snapshots>
-        </pluginRepository>
-        <pluginRepository>
-            <id>jcenter</id>
-            <name>JCenter</name>
-            <url>https://jcenter.bintray.com/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
-        <pluginRepository>
-            <id>kotlin-dokka-repository</id>
-            <name>Kotlin Dokka Repository</name>
-            <url>https://dl.bintray.com/kotlin/dokka/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
-        <pluginRepository>
-            <id>jetbrains-markdown-repository</id>
-            <name>JetBrains Markdown Repository</name>
-            <url>https://dl.bintray.com/jetbrains/markdown/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
-        <pluginRepository>
-            <id>kotlinx-repository</id>
-            <name>KotlinX Repository</name>
-            <url>https://dl.bintray.com/kotlin/kotlinx/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
         </pluginRepository>
     </pluginRepositories>
 

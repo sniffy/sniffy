@@ -106,6 +106,36 @@ public class ReflectionUtil {
         return setField(clazz, instance, fieldName, value, null);
     }
 
+    public static <T, V> boolean setFields(String className, T instance, Class<V> valueClass, V value) {
+        try {
+            //noinspection unchecked
+            return setFields((Class<T>) Class.forName(className), instance, valueClass, value);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    public static <T, V> boolean setFields(Class<T> clazz, T instance, Class<V> valueClass, V value) {
+        boolean fieldsFound = false;
+        boolean result = true;
+        for (Field field: clazz.getDeclaredFields()) {
+            if (field.getType().equals(valueClass)) {
+                fieldsFound = true;
+                result = result && setField(clazz, instance, field.getName(), value, null);
+            }
+        }
+        return fieldsFound && result;
+    }
+
+    public static <T, V> boolean setFirstField(Class<T> clazz, T instance, Class<V> valueClass, V value) {
+        for (Field field: clazz.getDeclaredFields()) {
+            if (field.getType().equals(valueClass)) {
+                return setField(clazz, instance, field.getName(), value, null);
+            }
+        }
+        return false;
+    }
+
     public static <T, V> boolean setField(Class<T> clazz, T instance, String fieldName, V value, String lockFieldName) {
 
         //noinspection TryWithIdenticalCatches
@@ -205,7 +235,24 @@ public class ReflectionUtil {
 
     public static <T, V> V getField(Class<T> clazz, T instance, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         Object field = getField(clazz, instance, fieldName, null);
+        //noinspection unchecked
         return (V) field;
+    }
+
+    public static <T, V> V getFirstField(String className, T instance, Class<V> valueClass) throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
+        //noinspection unchecked
+        return getFirstField((Class<T>) Class.forName(className), instance, valueClass);
+    }
+
+    public static <T, V> V getFirstField(Class<T> clazz, T instance, Class<V> valueClass) throws NoSuchFieldException, IllegalAccessException {
+        Object resultField = null;
+        for (Field field: clazz.getDeclaredFields()) {
+            if (field.getType().equals(valueClass)) {
+                resultField = getField(clazz, instance, field.getName(), null);
+            }
+        }
+        //noinspection unchecked
+        return (V) resultField;
     }
 
     public static <T, V> V getField(Class<T> clazz, T instance, String fieldName, String lockFieldName) throws NoSuchFieldException, IllegalAccessException {
@@ -316,8 +363,12 @@ public class ReflectionUtil {
             String methodName,
             @SuppressWarnings("unused") Class<R> returnClass
     ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method method = method(clazz, methodName);
-        return (R) method.invoke(instance);
+        return (R) invokeMethod(clazz, instance, methodName);
+    }
+
+    public static Object invokeMethod(
+            Class<?> clazz, Object instance, String methodName) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return method(clazz, methodName).invoke(instance);
     }
 
     @SuppressWarnings("unchecked")
@@ -327,8 +378,16 @@ public class ReflectionUtil {
             Class<P1> argument1Type, P1 argument1,
             @SuppressWarnings("unused") Class<R> returnClass
     ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return (R) invokeMethod(clazz, instance, methodName, argument1Type, argument1);
+    }
+
+    public static <P1> Object invokeMethod(
+            Class<?> clazz, Object instance,
+            String methodName,
+            Class<P1> argument1Type, Object argument1
+    ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = method(clazz, methodName, argument1Type);
-        return (R) method.invoke(instance, argument1);
+        return method.invoke(instance, argument1);
     }
 
     @SuppressWarnings("unchecked")
@@ -339,8 +398,17 @@ public class ReflectionUtil {
             Class<P2> argument2Type, P2 argument2,
             @SuppressWarnings("unused") Class<R> returnClass
     ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return (R) invokeMethod(clazz, instance, methodName, argument1Type, argument1, argument2Type, argument2);
+    }
+
+    public static <P1, P2> Object invokeMethod(
+            Class<?> clazz, Object instance,
+            String methodName,
+            Class<P1> argument1Type, Object argument1,
+            Class<P2> argument2Type, Object argument2
+    ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = method(clazz, methodName, argument1Type, argument2Type);
-        return (R) method.invoke(instance, argument1, argument2);
+        return method.invoke(instance, argument1, argument2);
     }
 
     @SuppressWarnings("unchecked")
@@ -352,8 +420,18 @@ public class ReflectionUtil {
             Class<P3> argument3Type, P3 argument3,
             @SuppressWarnings("unused") Class<R> returnClass
     ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return (R) invokeMethod(clazz, instance, methodName, argument1Type, argument1, argument2Type, argument2, argument3Type, argument3);
+    }
+
+    public static <P1, P2, P3> Object invokeMethod(
+            Class<?> clazz, Object instance,
+            String methodName,
+            Class<P1> argument1Type, Object argument1,
+            Class<P2> argument2Type, Object argument2,
+            Class<P3> argument3Type, Object argument3
+    ) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = method(clazz, methodName, argument1Type, argument2Type, argument3Type);
-        return (R) method.invoke(instance, argument1, argument2, argument3);
+        return method.invoke(instance, argument1, argument2, argument3);
     }
 
     public static Method method(Class<?> clazz, String methodName, Class<?>... argumentTypes) throws NoSuchMethodException {

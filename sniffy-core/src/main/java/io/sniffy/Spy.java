@@ -1,5 +1,6 @@
 package io.sniffy;
 
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.*;
 import io.sniffy.sql.SqlStats;
@@ -151,10 +152,20 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
      * @since 3.1.10
      */
     public Map<SocketMetaData, List<NetworkPacket>> getNetworkTraffic(ThreadMatcher threadMatcher, AddressMatcher addressMatcher, GroupingOptions groupingOptions) {
+        return filterTraffic(this.networkTraffic, threadMatcher, addressMatcher, groupingOptions);
+    }
 
+    /**
+     * @since 3.1.11
+     */
+    public Map<SocketMetaData, List<NetworkPacket>> getDecryptedNetworkTraffic(ThreadMatcher threadMatcher, AddressMatcher addressMatcher, GroupingOptions groupingOptions) {
+        return filterTraffic(this.decryptedNetworkTraffic, threadMatcher, addressMatcher, groupingOptions);
+    }
+
+    private Map<SocketMetaData, List<NetworkPacket>> filterTraffic(ConcurrentLinkedHashMap<SocketMetaData, Deque<NetworkPacket>> originalTraffic, ThreadMatcher threadMatcher, AddressMatcher addressMatcher, GroupingOptions groupingOptions) {
         Map<SocketMetaData, List<NetworkPacket>> reducedTraffic = new LinkedHashMap<SocketMetaData, List<NetworkPacket>>();
 
-        for (Map.Entry<SocketMetaData, Deque<NetworkPacket>> entry : this.networkTraffic.ascendingMap().entrySet()) {
+        for (Map.Entry<SocketMetaData, Deque<NetworkPacket>> entry : originalTraffic.ascendingMap().entrySet()) {
 
             SocketMetaData socketMetaData = entry.getKey();
             Deque<NetworkPacket> networkPackets = entry.getValue();
@@ -211,7 +222,6 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
         }
 
         return reducedTraffic;
-
     }
 
     // Expect and verify methods
