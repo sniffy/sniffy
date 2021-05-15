@@ -94,6 +94,7 @@ public class SnifferOutputStream extends OutputStream {
             try {
                 @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(b, Charset.forName("US-ASCII"));
 
+                // TODO: support CONNECT header sent in multiple small chunks
                 int connectIx = potentialRequest.indexOf("CONNECT ");
 
                 if (0 == connectIx) {
@@ -138,13 +139,17 @@ public class SnifferOutputStream extends OutputStream {
                         }
                     }
                 }
+
+                if (null != proxiedInetSocketAddress) {
+                    snifferSocket.setProxiedInetSocketAddress(proxiedInetSocketAddress);
+                    ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, snifferSocket);
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                snifferSocket.setFirstPacketSent(true);
             }
-
-            snifferSocket.setProxiedInetSocketAddress(proxiedInetSocketAddress);
-            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, snifferSocket);
-            snifferSocket.setFirstPacketSent(true);
 
         }
 

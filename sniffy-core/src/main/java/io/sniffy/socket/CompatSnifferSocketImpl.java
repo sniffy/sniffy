@@ -65,18 +65,22 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
         return this.address;
     }
 
+    @Override
     public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
         this.proxiedAddress = proxiedAddress;
     }
 
+    @Override
     public InetSocketAddress getProxiedInetSocketAddress() {
         return proxiedAddress;
     }
 
+    @Override
     public void setFirstPacketSent(boolean firstPacketSent) {
         this.firstPacketSent = firstPacketSent;
     }
 
+    @Override
     public boolean isFirstPacketSent() {
         return firstPacketSent;
     }

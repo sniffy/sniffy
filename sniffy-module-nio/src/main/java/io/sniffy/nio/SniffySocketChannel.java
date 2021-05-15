@@ -63,18 +63,22 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     private boolean firstPacketSent;
     private InetSocketAddress proxiedAddress;
 
+    @Override
     public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
         this.proxiedAddress = proxiedAddress;
     }
 
+    @Override
     public InetSocketAddress getProxiedInetSocketAddress() {
         return proxiedAddress;
     }
 
+    @Override
     public void setFirstPacketSent(boolean firstPacketSent) {
         this.firstPacketSent = firstPacketSent;
     }
 
+    @Override
     public boolean isFirstPacketSent() {
         return firstPacketSent;
     }
