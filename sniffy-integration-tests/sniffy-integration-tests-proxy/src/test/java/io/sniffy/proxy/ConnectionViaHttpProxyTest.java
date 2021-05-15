@@ -6,11 +6,9 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
-import org.littleshoot.proxy.HttpProxyServer;
-import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -22,11 +20,11 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertTrue;
 
 public class ConnectionViaHttpProxyTest {
 
-    private static HttpProxyServer server;
+    @Rule
+    public ProxyServerRule rule = new ProxyServerRule();
 
     @BeforeClass
     public static void loadTlsModule() {
@@ -34,16 +32,6 @@ public class ConnectionViaHttpProxyTest {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
         Sniffy.initialize();
-
-        server =
-                DefaultHttpProxyServer.bootstrap()
-                        .withPort(8080)
-                        .start();
-    }
-
-    @AfterClass
-    public static void stopProxy() {
-        server.stop();
     }
 
     @Test
@@ -79,11 +67,17 @@ public class ConnectionViaHttpProxyTest {
             NetworkPacket request = entry.getValue().get(0);
             NetworkPacket response = entry.getValue().get(1);
 
+            //noinspection SimplifiableAssertion
             assertEquals(true, request.isSent());
+            //noinspection SimplifiableAssertion
             assertEquals(false, response.isSent());
 
+            //noinspection CharsetObjectCanBeUsed
             assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).contains("Host: www.google.com"));
-            assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200"));
+            //noinspection CharsetObjectCanBeUsed
+            String responseBody = new String(response.getBytes(), Charset.forName("US-ASCII"));
+            assertTrue(responseBody.startsWith("HTTP"));
+            assertTrue(responseBody.contains("200"));
 
         }
 

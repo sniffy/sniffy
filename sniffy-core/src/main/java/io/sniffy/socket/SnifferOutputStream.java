@@ -128,13 +128,13 @@ public class SnifferOutputStream extends OutputStream {
 
                             if (proxiedHostAndPort.contains(":")) {
                                 host = proxiedHostAndPort.substring(0, proxiedHostAndPort.lastIndexOf(":"));
-                                port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":")));
+                                port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":") + 1));
                             } else {
                                 host = proxiedHostAndPort;
                                 port = 80;
                             }
 
-                            proxiedInetSocketAddress = InetSocketAddress.createUnresolved(host, port);
+                            proxiedInetSocketAddress = new InetSocketAddress(host, port);
 
                         }
                     }
@@ -144,6 +144,8 @@ public class SnifferOutputStream extends OutputStream {
                     snifferSocket.setProxiedInetSocketAddress(proxiedInetSocketAddress);
                     ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, snifferSocket);
                 }
+
+                // TODO: only capture traffic
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -156,6 +158,7 @@ public class SnifferOutputStream extends OutputStream {
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
+            // TODO: do the same with proxied connection id after CONNECT handshake is finished
             trafficCapturingNetworkConnection.logTraffic(
                     true, Protocol.TCP,
                     b,
@@ -170,6 +173,75 @@ public class SnifferOutputStream extends OutputStream {
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
+
+        if (null != snifferSocket && !snifferSocket.isFirstPacketSent()) {
+
+            InetSocketAddress proxiedInetSocketAddress = null;
+
+            try {
+                @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(b, Charset.forName("US-ASCII"));
+
+                // TODO: support CONNECT header sent in multiple small chunks
+                int connectIx = potentialRequest.indexOf("CONNECT ");
+
+                if (0 == connectIx) {
+                    int crIx = potentialRequest.indexOf("\r");
+                    int lfIx = potentialRequest.indexOf("\n");
+
+                    int newLineIx;
+
+                    if (crIx > 0) {
+                        if (lfIx > 0) {
+                            newLineIx = Math.min(crIx, lfIx);
+                        } else {
+                            newLineIx = lfIx;
+                        }
+                    } else {
+                        if (lfIx > 0) {
+                            newLineIx = lfIx;
+                        } else {
+                            newLineIx = -1;
+                        }
+                    }
+
+                    if (newLineIx > 0) {
+                        int httpVersionIx = potentialRequest.substring(0, newLineIx).indexOf(" HTTP/");
+                        if (httpVersionIx > 0) {
+
+                            String proxiedHostAndPort = potentialRequest.substring("CONNECT ".length(), httpVersionIx);
+
+                            String host;
+                            int port;
+
+                            if (proxiedHostAndPort.contains(":")) {
+                                host = proxiedHostAndPort.substring(0, proxiedHostAndPort.lastIndexOf(":"));
+                                port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":") + 1));
+                            } else {
+                                host = proxiedHostAndPort;
+                                port = 80;
+                            }
+
+                            proxiedInetSocketAddress = new InetSocketAddress(host, port);
+
+                        }
+                    }
+                }
+
+                if (null != proxiedInetSocketAddress) {
+                    snifferSocket.setProxiedInetSocketAddress(proxiedInetSocketAddress);
+                    ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, snifferSocket);
+                }
+
+                // TODO: only capture traffic
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                snifferSocket.setFirstPacketSent(true);
+            }
+
+        }
+
         long start = System.currentTimeMillis();
         try {
             delegate.write(b, off, len);

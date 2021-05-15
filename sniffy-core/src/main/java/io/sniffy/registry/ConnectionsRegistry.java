@@ -95,7 +95,7 @@ public enum ConnectionsRegistry implements Runnable {
 
     public int resolveSocketAddressStatus(InetSocketAddress inetSocketAddress, SniffyNetworkConnection sniffyNetworkConnection) {
 
-        if (null == inetSocketAddress || null == inetSocketAddress.getAddress()) {
+        if (null == inetSocketAddress || null == inetSocketAddress.getAddress()) { // TODO: can be null for unresolved addresses
             return 0;
         }
 
