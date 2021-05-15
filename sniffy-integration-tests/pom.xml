@@ -21,6 +21,7 @@
 	    <module>sniffy-integration-tests-spring-boot-2</module>
 	    <module>sniffy-integration-tests-spring-kafka</module>
 	    <module>sniffy-integration-tests-tomcat</module>
+	    <module>sniffy-integration-tests-proxy</module>
     </modules>
 
     <build>
