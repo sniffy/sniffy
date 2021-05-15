@@ -22,7 +22,7 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.*;
 
-public class DecryptGoogleTrafficTest {
+public class DecryptGoogleTrafficCompatibilityTest {
 
     @BeforeClass
     public static void loadTlsModuleAndSetupBouncyCastle() {

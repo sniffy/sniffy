@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>sniffy-integration-tests-decrypt-tls-bc-before-sniffy</artifactId>
+    <artifactId>sniffy-integration-tests-decrypt-tls-bc-after-sniffy</artifactId>
 
     <build>
         <plugins>
