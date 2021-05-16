@@ -39,6 +39,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpasyncclient</artifactId>
+            <version>4.1.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-junit</artifactId>
             <version>${project.version}</version>

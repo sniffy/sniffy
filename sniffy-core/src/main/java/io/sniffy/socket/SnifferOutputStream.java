@@ -179,7 +179,7 @@ public class SnifferOutputStream extends OutputStream {
             InetSocketAddress proxiedInetSocketAddress = null;
 
             try {
-                @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(b, Charset.forName("US-ASCII"));
+                @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(b, off, len, Charset.forName("US-ASCII"));
 
                 // TODO: support CONNECT header sent in multiple small chunks
                 int connectIx = potentialRequest.indexOf("CONNECT ");

@@ -6,18 +6,20 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
-import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.*;
 
@@ -39,10 +41,18 @@ public class ConnectionViaHttpProxyTest {
 
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
 
-            URL url = new URL("https://www.google.com");
-            URLConnection urlConnection = url.openConnection(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved("localhost", 8080)));
-
-            urlConnection.getInputStream().read();
+            {
+                CloseableHttpAsyncClient httpclient = HttpAsyncClientBuilder.
+                        create().
+                        setProxy(new HttpHost("localhost", 8080)).
+                        build();
+                httpclient.start();
+                HttpGet request = new HttpGet("https://www.google.com");
+                Future<HttpResponse> future = httpclient.execute(request, null);
+                HttpResponse response = future.get();
+                assertEquals(200, response.getStatusLine().getStatusCode());
+                httpclient.close();
+            }
 
             Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
                     Threads.CURRENT,
