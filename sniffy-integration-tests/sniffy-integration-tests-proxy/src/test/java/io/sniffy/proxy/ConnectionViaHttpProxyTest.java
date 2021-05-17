@@ -55,7 +55,7 @@ public class ConnectionViaHttpProxyTest {
             }
 
             Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
-                    Threads.CURRENT,
+                    Threads.ANY,
                     AddressMatchers.exactAddressMatcher("www.google.com:443"),
                     GroupingOptions.builder().
                             groupByConnection(false).

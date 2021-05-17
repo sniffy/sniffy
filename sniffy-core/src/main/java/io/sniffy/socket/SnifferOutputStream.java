@@ -145,7 +145,7 @@ public class SnifferOutputStream extends OutputStream {
                     ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, snifferSocket);
                 }
 
-                // TODO: only capture traffic
+                // TODO: log traffic for proxy address as well
 
             } catch (Exception e) {
                 e.printStackTrace();

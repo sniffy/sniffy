@@ -20,6 +20,7 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.charset.Charset;
 
 /**
  * @since 3.1.7
@@ -152,8 +153,30 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                 if (null != sniffySSLNetworkConnection) {
                     sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
                 }
+                firstChunk = false;
             }
-            firstChunk = false;
+        }
+    }
+
+    public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean isConnectPacket) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("SniffySocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
+            Sniffy.logTraffic(
+                    connectionId, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
+            if (!isConnectPacket) {
+                if (sent && firstChunk) {
+                    SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                    if (null != sniffySSLNetworkConnection) {
+                        sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
+                    }
+                }
+                firstChunk = false;
+            }
         }
     }
 
@@ -162,7 +185,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
             LOG.trace("SniffySocketChannel.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
             Sniffy.logDecryptedTraffic(
-                    connectionId, getInetSocketAddress(),
+                    connectionId, null == getProxiedInetSocketAddress() ? getInetSocketAddress() : getProxiedInetSocketAddress(),
                     sent, protocol,
                     traffic, off, len,
                     effectiveSpyConfiguration.isCaptureStackTraces()
@@ -288,11 +311,76 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             sleepIfRequiredForWrite(length);
             logSocket(System.currentTimeMillis() - start, 0, length);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic() || isFirstPacketSent()) {
                 src.position(position);
                 byte[] buff = new byte[length];
                 src.get(buff, 0, length);
-                logTraffic(true, Protocol.TCP, buff, 0, buff.length);
+
+                InetSocketAddress proxiedInetSocketAddress = null;
+
+                if (!isFirstPacketSent()) {
+
+                    @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(buff, Charset.forName("US-ASCII"));
+
+                    // TODO: support CONNECT header sent in multiple small chunks
+                    int connectIx = potentialRequest.indexOf("CONNECT ");
+
+                    if (0 == connectIx) {
+                        int crIx = potentialRequest.indexOf("\r");
+                        int lfIx = potentialRequest.indexOf("\n");
+
+                        int newLineIx;
+
+                        if (crIx > 0) {
+                            if (lfIx > 0) {
+                                newLineIx = Math.min(crIx, lfIx);
+                            } else {
+                                newLineIx = lfIx;
+                            }
+                        } else {
+                            if (lfIx > 0) {
+                                newLineIx = lfIx;
+                            } else {
+                                newLineIx = -1;
+                            }
+                        }
+
+                        if (newLineIx > 0) {
+                            int httpVersionIx = potentialRequest.substring(0, newLineIx).indexOf(" HTTP/");
+                            if (httpVersionIx > 0) {
+
+                                String proxiedHostAndPort = potentialRequest.substring("CONNECT ".length(), httpVersionIx);
+
+                                String host;
+                                int port;
+
+                                if (proxiedHostAndPort.contains(":")) {
+                                    host = proxiedHostAndPort.substring(0, proxiedHostAndPort.lastIndexOf(":"));
+                                    port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":") + 1));
+                                } else {
+                                    host = proxiedHostAndPort;
+                                    port = 80;
+                                }
+
+                                proxiedInetSocketAddress = new InetSocketAddress(host, port);
+
+                            }
+                        }
+                    }
+
+                    if (null != proxiedInetSocketAddress) {
+                        setProxiedInetSocketAddress(proxiedInetSocketAddress);
+                        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, this);
+                    }
+
+                    // TODO: only capture traffic
+
+                }
+
+                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, null != proxiedInetSocketAddress);
+                }
+
             }
         }
     }
