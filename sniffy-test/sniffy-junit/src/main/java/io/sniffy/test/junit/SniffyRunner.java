@@ -2,6 +2,7 @@ package io.sniffy.test.junit;
 
 import io.sniffy.Sniffy;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.PolyglogLevel;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.TestClass;
@@ -15,6 +16,7 @@ public class SniffyRunner extends BlockJUnit4ClassRunner {
 
     static {
 
+        SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE); // TODO: make configurable
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
