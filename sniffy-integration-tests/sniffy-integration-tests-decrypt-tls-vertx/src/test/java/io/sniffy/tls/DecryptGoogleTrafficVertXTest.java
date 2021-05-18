@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
-public class DecryptGoogleTrafficTest {
+public class DecryptGoogleTrafficVertXTest {
 
     @BeforeClass
     public static void loadTlsModule() {

@@ -20,6 +20,7 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.charset.Charset;
 
 /**
  * @since 3.1.7
@@ -27,6 +28,8 @@ import java.nio.channels.spi.SelectorProvider;
 public class SniffySocketChannel extends SniffySocketChannelAdapter implements SniffyNetworkConnection {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySocketChannel.class);
+
+    private static final Polyglog PROXY_CONNECT_LOG = PolyglogFactory.oneTimeLog(SniffySocketChannel.class);
 
     private final int connectionId = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
@@ -60,6 +63,28 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         }
     }
 
+    private boolean firstPacketSent;
+    private InetSocketAddress proxiedAddress;
+
+    @Override
+    public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
+        this.proxiedAddress = proxiedAddress;
+    }
+
+    @Override
+    public InetSocketAddress getProxiedInetSocketAddress() {
+        return proxiedAddress;
+    }
+
+    @Override
+    public void setFirstPacketSent(boolean firstPacketSent) {
+        this.firstPacketSent = firstPacketSent;
+    }
+
+    @Override
+    public boolean isFirstPacketSent() {
+        return firstPacketSent;
+    }
 
     private void sleepIfRequired(int bytesDown) throws ConnectException {
 
@@ -130,8 +155,30 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                 if (null != sniffySSLNetworkConnection) {
                     sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
                 }
+                firstChunk = false;
             }
-            firstChunk = false;
+        }
+    }
+
+    public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean isConnectPacket) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("SniffySocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
+            Sniffy.logTraffic(
+                    connectionId, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
+            if (!isConnectPacket) {
+                if (sent && firstChunk) {
+                    SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                    if (null != sniffySSLNetworkConnection) {
+                        sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
+                    }
+                }
+                firstChunk = false;
+            }
         }
     }
 
@@ -140,7 +187,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
             LOG.trace("SniffySocketChannel.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
             Sniffy.logDecryptedTraffic(
-                    connectionId, getInetSocketAddress(),
+                    connectionId, null == getProxiedInetSocketAddress() ? getInetSocketAddress() : getProxiedInetSocketAddress(),
                     sent, protocol,
                     traffic, off, len,
                     effectiveSpyConfiguration.isCaptureStackTraces()
@@ -266,11 +313,83 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             sleepIfRequiredForWrite(length);
             logSocket(System.currentTimeMillis() - start, 0, length);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic() || isFirstPacketSent()) {
                 src.position(position);
                 byte[] buff = new byte[length];
                 src.get(buff, 0, length);
-                logTraffic(true, Protocol.TCP, buff, 0, buff.length);
+
+                InetSocketAddress proxiedInetSocketAddress = null;
+
+                if (!isFirstPacketSent()) {
+
+                    try {
+                        @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(buff, Charset.forName("US-ASCII"));
+
+                        PROXY_CONNECT_LOG.trace("First packet is " + potentialRequest);
+
+                        // TODO: support CONNECT header sent in multiple small chunks
+                        int connectIx = potentialRequest.indexOf("CONNECT ");
+
+                        if (0 == connectIx) {
+
+                            int crIx = potentialRequest.indexOf("\r");
+                            int lfIx = potentialRequest.indexOf("\n");
+
+                            int newLineIx;
+
+                            if (crIx > 0) {
+                                if (lfIx > 0) {
+                                    newLineIx = Math.min(crIx, lfIx);
+                                } else {
+                                    newLineIx = lfIx;
+                                }
+                            } else {
+                                if (lfIx > 0) {
+                                    newLineIx = lfIx;
+                                } else {
+                                    newLineIx = -1;
+                                }
+                            }
+
+                            if (newLineIx > 0) {
+                                int httpVersionIx = potentialRequest.substring(0, newLineIx).indexOf(" HTTP/");
+                                if (httpVersionIx > 0) {
+
+                                    String proxiedHostAndPort = potentialRequest.substring("CONNECT ".length(), httpVersionIx);
+
+                                    String host;
+                                    int port;
+
+                                    if (proxiedHostAndPort.contains(":")) {
+                                        host = proxiedHostAndPort.substring(0, proxiedHostAndPort.lastIndexOf(":"));
+                                        port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":") + 1));
+                                    } else {
+                                        host = proxiedHostAndPort;
+                                        port = 80;
+                                    }
+
+                                    proxiedInetSocketAddress = new InetSocketAddress(host, port);
+
+                                }
+                            }
+                        }
+
+                        if (null != proxiedInetSocketAddress) {
+                            setProxiedInetSocketAddress(proxiedInetSocketAddress);
+                            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, this);
+                        }
+
+                        // TODO: only capture traffic
+                    } finally {
+                        setFirstPacketSent(true);
+                    }
+
+                }
+
+                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, null != proxiedInetSocketAddress);
+                }
+
             }
         }
     }
@@ -301,6 +420,80 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             sleepIfRequiredForWrite((int) bytesUp);
             logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+
+            InetSocketAddress proxiedInetSocketAddress = null;
+
+            if (!isFirstPacketSent()) {
+
+                try {
+
+                    srcs[offset].position(positions[0]);
+                    byte[] buff = new byte[remainings[0]];
+                    srcs[offset].get(buff, 0, remainings[0]);
+
+                    @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(buff, Charset.forName("US-ASCII"));
+
+                    PROXY_CONNECT_LOG.trace("First packet is " + potentialRequest);
+
+                    // TODO: support CONNECT header sent in multiple small chunks
+                    int connectIx = potentialRequest.indexOf("CONNECT ");
+
+                    if (0 == connectIx) {
+
+                        int crIx = potentialRequest.indexOf("\r");
+                        int lfIx = potentialRequest.indexOf("\n");
+
+                        int newLineIx;
+
+                        if (crIx > 0) {
+                            if (lfIx > 0) {
+                                newLineIx = Math.min(crIx, lfIx);
+                            } else {
+                                newLineIx = lfIx;
+                            }
+                        } else {
+                            if (lfIx > 0) {
+                                newLineIx = lfIx;
+                            } else {
+                                newLineIx = -1;
+                            }
+                        }
+
+                        if (newLineIx > 0) {
+                            int httpVersionIx = potentialRequest.substring(0, newLineIx).indexOf(" HTTP/");
+                            if (httpVersionIx > 0) {
+
+                                String proxiedHostAndPort = potentialRequest.substring("CONNECT ".length(), httpVersionIx);
+
+                                String host;
+                                int port;
+
+                                if (proxiedHostAndPort.contains(":")) {
+                                    host = proxiedHostAndPort.substring(0, proxiedHostAndPort.lastIndexOf(":"));
+                                    port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":") + 1));
+                                } else {
+                                    host = proxiedHostAndPort;
+                                    port = 80;
+                                }
+
+                                proxiedInetSocketAddress = new InetSocketAddress(host, port);
+
+                            }
+                        }
+                    }
+
+                    if (null != proxiedInetSocketAddress) {
+                        setProxiedInetSocketAddress(proxiedInetSocketAddress);
+                        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, this);
+                    }
+
+                    // TODO: only capture traffic
+                } finally {
+                    setFirstPacketSent(true);
+                }
+
+            }
+
             if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 for (int i = 0; i < length; i++) {
                     srcs[offset + i].position(positions[i]);

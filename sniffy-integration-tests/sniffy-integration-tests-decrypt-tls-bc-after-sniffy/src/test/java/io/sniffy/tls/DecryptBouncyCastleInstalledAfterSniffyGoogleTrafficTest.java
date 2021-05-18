@@ -22,7 +22,7 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 @RunWith(SniffyRunner.class)
-public class DecryptBouncyCastleGoogleTrafficTest {
+public class DecryptBouncyCastleInstalledAfterSniffyGoogleTrafficTest {
 
     @SuppressWarnings("CharsetObjectCanBeUsed")
     @Test

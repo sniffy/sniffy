@@ -232,6 +232,26 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                     lastConnectionStatus.set(connectionStatus);
                 }
 
+                @Override
+                public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
+
+                }
+
+                @Override
+                public InetSocketAddress getProxiedInetSocketAddress() {
+                    return null;
+                }
+
+                @Override
+                public void setFirstPacketSent(boolean firstPacketSent) {
+
+                }
+
+                @Override
+                public boolean isFirstPacketSent() {
+                    return false;
+                }
+
                 // TODO: do something with non implemented bethod below
                 @Override
                 public int getPotentiallyBufferedInputBytes() {
@@ -343,6 +363,26 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                 @Override
                 public void setConnectionStatus(Integer connectionStatus) {
                     lastConnectionStatus.set(connectionStatus);
+                }
+
+                @Override
+                public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
+
+                }
+
+                @Override
+                public InetSocketAddress getProxiedInetSocketAddress() {
+                    return null;
+                }
+
+                @Override
+                public void setFirstPacketSent(boolean firstPacketSent) {
+
+                }
+
+                @Override
+                public boolean isFirstPacketSent() {
+                    return false;
                 }
 
                 // TODO: do something with non implemented bethod below
