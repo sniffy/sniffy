@@ -2,6 +2,7 @@ package io.sniffy.proxy;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
@@ -30,6 +31,7 @@ public class ConnectionViaHttpProxyTest {
 
     @BeforeClass
     public static void loadTlsModule() {
+        SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
