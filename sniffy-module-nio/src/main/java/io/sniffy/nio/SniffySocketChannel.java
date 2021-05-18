@@ -29,6 +29,8 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySocketChannel.class);
 
+    private static final Polyglog PROXY_CONNECT_LOG = PolyglogFactory.oneTimeLog(SniffySocketChannel.class);
+
     private final int connectionId = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
     private volatile Integer connectionStatus;
@@ -326,6 +328,9 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                     int connectIx = potentialRequest.indexOf("CONNECT ");
 
                     if (0 == connectIx) {
+
+                        PROXY_CONNECT_LOG.trace("Connecting via proxy; first packet is " + potentialRequest);
+
                         int crIx = potentialRequest.indexOf("\r");
                         int lfIx = potentialRequest.indexOf("\n");
 
