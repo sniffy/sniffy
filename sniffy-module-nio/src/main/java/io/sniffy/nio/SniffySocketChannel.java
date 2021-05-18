@@ -322,9 +322,118 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
                 if (!isFirstPacketSent()) {
 
+                    try {
+                        @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(buff, Charset.forName("US-ASCII"));
+
+                        PROXY_CONNECT_LOG.trace("First packet is " + potentialRequest);
+
+                        // TODO: support CONNECT header sent in multiple small chunks
+                        int connectIx = potentialRequest.indexOf("CONNECT ");
+
+                        if (0 == connectIx) {
+
+                            int crIx = potentialRequest.indexOf("\r");
+                            int lfIx = potentialRequest.indexOf("\n");
+
+                            int newLineIx;
+
+                            if (crIx > 0) {
+                                if (lfIx > 0) {
+                                    newLineIx = Math.min(crIx, lfIx);
+                                } else {
+                                    newLineIx = lfIx;
+                                }
+                            } else {
+                                if (lfIx > 0) {
+                                    newLineIx = lfIx;
+                                } else {
+                                    newLineIx = -1;
+                                }
+                            }
+
+                            if (newLineIx > 0) {
+                                int httpVersionIx = potentialRequest.substring(0, newLineIx).indexOf(" HTTP/");
+                                if (httpVersionIx > 0) {
+
+                                    String proxiedHostAndPort = potentialRequest.substring("CONNECT ".length(), httpVersionIx);
+
+                                    String host;
+                                    int port;
+
+                                    if (proxiedHostAndPort.contains(":")) {
+                                        host = proxiedHostAndPort.substring(0, proxiedHostAndPort.lastIndexOf(":"));
+                                        port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":") + 1));
+                                    } else {
+                                        host = proxiedHostAndPort;
+                                        port = 80;
+                                    }
+
+                                    proxiedInetSocketAddress = new InetSocketAddress(host, port);
+
+                                }
+                            }
+                        }
+
+                        if (null != proxiedInetSocketAddress) {
+                            setProxiedInetSocketAddress(proxiedInetSocketAddress);
+                            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, this);
+                        }
+
+                        // TODO: only capture traffic
+                    } finally {
+                        setFirstPacketSent(true);
+                    }
+
+                }
+
+                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, null != proxiedInetSocketAddress);
+                }
+
+            }
+        }
+    }
+
+    @Override
+    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        checkConnectionAllowed(0);
+        long start = System.currentTimeMillis();
+        long bytesUp = 0;
+
+        int[] positions = new int[length];
+        int[] remainings = new int[length];
+
+        for (int i = 0; i < length; i++) {
+            positions[i] = srcs[offset + i].position();
+            remainings[i] = srcs[offset + i].remaining();
+        }
+
+        try {
+            bytesUp = super.write(srcs, offset, length);
+            return bytesUp;
+        } finally {
+            while (bytesUp > Integer.MAX_VALUE) {
+                sleepIfRequiredForWrite(Integer.MAX_VALUE);
+                logSocket(System.currentTimeMillis() - start, 0, Integer.MAX_VALUE);
+                bytesUp -= Integer.MAX_VALUE;
+            }
+            sleepIfRequiredForWrite((int) bytesUp);
+            logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
+            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+
+            InetSocketAddress proxiedInetSocketAddress = null;
+
+            if (!isFirstPacketSent()) {
+
+                try {
+
+                    srcs[offset].position(positions[0]);
+                    byte[] buff = new byte[remainings[0]];
+                    srcs[offset].get(buff, 0, remainings[0]);
+
                     @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(buff, Charset.forName("US-ASCII"));
 
-                    PROXY_CONNECT_LOG.trace("Connecting via proxy; first packet is " + potentialRequest);
+                    PROXY_CONNECT_LOG.trace("First packet is " + potentialRequest);
 
                     // TODO: support CONNECT header sent in multiple small chunks
                     int connectIx = potentialRequest.indexOf("CONNECT ");
@@ -379,43 +488,12 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                     }
 
                     // TODO: only capture traffic
-
-                }
-
-                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, null != proxiedInetSocketAddress);
+                } finally {
+                    setFirstPacketSent(true);
                 }
 
             }
-        }
-    }
 
-    @Override
-    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        checkConnectionAllowed(0);
-        long start = System.currentTimeMillis();
-        long bytesUp = 0;
-
-        int[] positions = new int[length];
-        int[] remainings = new int[length];
-
-        for (int i = 0; i < length; i++) {
-            positions[i] = srcs[offset + i].position();
-            remainings[i] = srcs[offset + i].remaining();
-        }
-
-        try {
-            bytesUp = super.write(srcs, offset, length);
-            return bytesUp;
-        } finally {
-            while (bytesUp > Integer.MAX_VALUE) {
-                sleepIfRequiredForWrite(Integer.MAX_VALUE);
-                logSocket(System.currentTimeMillis() - start, 0, Integer.MAX_VALUE);
-                bytesUp -= Integer.MAX_VALUE;
-            }
-            sleepIfRequiredForWrite((int) bytesUp);
-            logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
-            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
             if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 for (int i = 0; i < length; i++) {
                     srcs[offset + i].position(positions[i]);
