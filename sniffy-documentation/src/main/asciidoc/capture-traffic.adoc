@@ -46,3 +46,10 @@ Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryp
 
 Some libraries like Apache APR and Netty (only when native transport is enabled explicitly) use native code for network operations.
 Currently Sniffy doesn't capture this kind of traffic.
+
+Sniffy provides an alternative implementation of `SSLEngine`, `SSLSocketFactory` and other classes from JSSE framework.
+Since some of these constructs can be cached in application code, please make sure to initialize Sniffy as early as possible.
+If absolutely necessary you can initialize Sniffy as a javaagent, although it's a bit cumbersome - see https://sniffy.io/docs/latest/#_standalone_setup[Standalone Setup] section for details.
+
+Sniffy support custom JSSE providers such as BouncyCastle. However if you're installing *AFTER* you initialize Sniffy you _might_ need to reinitialize Sniffy.
+It's possible using `Sniffy.reinitialize()` method.e
