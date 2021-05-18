@@ -324,12 +324,12 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
                     @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(buff, Charset.forName("US-ASCII"));
 
+                    PROXY_CONNECT_LOG.trace("Connecting via proxy; first packet is " + potentialRequest);
+
                     // TODO: support CONNECT header sent in multiple small chunks
                     int connectIx = potentialRequest.indexOf("CONNECT ");
 
                     if (0 == connectIx) {
-
-                        PROXY_CONNECT_LOG.trace("Connecting via proxy; first packet is " + potentialRequest);
 
                         int crIx = potentialRequest.indexOf("\r");
                         int lfIx = potentialRequest.indexOf("\n");
