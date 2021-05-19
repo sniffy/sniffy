@@ -28,7 +28,7 @@ public class DecryptBouncyCastleGoogleTrafficTestHelper {
 
         // Sniffy.reinitialize(); // https://github.com/sniffy/sniffy/issues/478 - bug in io.sniffy.tls.SniffyProviderListUtil
 
-        SSLContext instance = SSLContext.getInstance("TLSv1", "BCJSSE");
+        SSLContext instance = SSLContext.getInstance("TLSv1.2", "BCJSSE");
         instance.init(null, null, new SecureRandom());
         assertTrue(instance.getSocketFactory() instanceof SniffySSLSocketFactory);
 
@@ -70,7 +70,9 @@ public class DecryptBouncyCastleGoogleTrafficTestHelper {
             //noinspection SimplifiableAssertion
             assertEquals(false, response.isSent());
 
+            //noinspection CharsetObjectCanBeUsed
             assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).contains("Host: www.google.com"));
+            //noinspection CharsetObjectCanBeUsed
             assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200"));
 
         }
