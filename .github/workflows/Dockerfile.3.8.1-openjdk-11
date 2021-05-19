@@ -4,4 +4,5 @@ ADD . /usr/src/mymaven
 
 RUN cd /usr/src/mymaven && \
     mvn -v && \
+    mvn dependency:resolve || mvn dependency:resolve || true && \
     mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
