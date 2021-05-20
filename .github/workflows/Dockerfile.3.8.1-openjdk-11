@@ -2,6 +2,8 @@ FROM maven:3.8.1-openjdk-11
 
 ADD . /usr/src/mymaven
 
+ADD ~/.m2/repository $MAVEN_CONFIG/repository
+
 RUN cd /usr/src/mymaven && \
     mvn -v && \
     mvn -f sniffy-compatibility-tests/pom.xml -P qemu test
