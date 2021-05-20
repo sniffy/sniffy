@@ -3,6 +3,7 @@ FROM maven:3.8.1-adoptopenjdk-16-openj9
 ADD . /usr/src/mymaven
 
 RUN cd /usr/src/mymaven && \
+    export MAVEN_OPTS="-Xmx1024m" && \
     mvn -v && \
     mvn dependency:resolve || mvn dependency:resolve || true && \
     mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
