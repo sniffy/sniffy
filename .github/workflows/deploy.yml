@@ -27,6 +27,22 @@ jobs:
         uses: docker/setup-buildx-action@v1
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
+      - name: Set up JDK 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.1
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
+          restore-keys: ${{ runner.os }}-maven
+      - name: Build with Maven
+        run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - name: Build with arm64 OpenJDK 11
         uses: docker/build-push-action@v2
         with:

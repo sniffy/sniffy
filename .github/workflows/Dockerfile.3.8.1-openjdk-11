@@ -4,5 +4,4 @@ ADD . /usr/src/mymaven
 
 RUN cd /usr/src/mymaven && \
     mvn -v && \
-    mvn dependency:resolve || mvn dependency:resolve || true && \
     mvn test
