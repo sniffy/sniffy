@@ -36,29 +36,184 @@ jobs:
           context: .
           file: ./.github/workflows/Dockerfile.3.8.1-openjdk-11
           platforms: linux/arm64
+          #https://github.com/multiarch/qemu-user-static/issues/128
           push: false
-  test-ppc64le:
+  test-ibm-j9:
     runs-on: ubuntu-20.04
-    name: Test with ppc64le OpenJDK 16 J9
+    name: Test JDK IBM J9 1.8, ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-      - name: Set up QEMU
-        id: qemu
-        uses: docker/setup-qemu-action@v1
+      - name: Pull IBM JDK J9 1.8 Docker Image
+        uses: addnab/docker-run-action@v3
         with:
-          image: tonistiigi/binfmt:latest
-          platforms: all
-      - name: Available platforms
-        run: echo ${{ steps.qemu.outputs.platforms }}
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Available platforms
-        run: echo ${{ steps.buildx.outputs.platforms }}
-      - name: Build with ppc64le OpenJDK 16 J9
-        uses: docker/build-push-action@v2
+          image: ibmjava:8-sdk-alpine
+          options: -v ${{ github.workspace }}:/work
+          run: |
+            mkdir /work/ibmjdk
+            cp -R /opt/ibm/java/* /work/ibmjdk
+      - name: Set Java Version
+        run: |
+          export JAVA_HOME=${{ github.workspace }}/ibmjdk
+          ${JAVA_HOME}/bin/java -version
+        shell: bash
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
         with:
-          context: .
-          file: ./.github/workflows/Dockerfile.3.8.1-adoptopenjdk-16-openj9
-          platforms: linux/ppc64le
-          push: false
+          maven-version: 3.8.1
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
+          restore-keys: ${{ runner.os }}-maven
+      - name: Build with Maven
+        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+  test-matrix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17-ea ]
+        os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+    name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.1
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
+          restore-keys: ${{ runner.os }}-maven
+      - name: Build with Maven
+        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        if: matrix.os != 'windows-2019'
+      - name: Build with Maven
+        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        if: matrix.os == 'windows-2019'
+      - name: Set up JDK ${{ matrix.java }} x86
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+          architecture: x86
+        if: matrix.os != 'macos-10.15'
+      - name: Build with Maven x86
+        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        if: matrix.os == 'ubuntu-20.04'
+      - name: Build with Maven x86
+        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        if: matrix.os == 'windows-2019'
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+  compatibility-matrix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+    name: Legacy JDK, ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.1
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
+          restore-keys: ${{ runner.os }}-maven
+      - name: Build with Maven
+        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        if: matrix.os != 'windows-2019'
+      - name: Build with Maven
+        run: mvn -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        if: matrix.os == 'windows-2019'
+      - name: Run compatibility tests using Java 8
+        run: mvn -f sniffy-compatibility-tests/pom.xml test
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Run compatibility tests using Java 11
+        run: mvn -f sniffy-compatibility-tests/pom.xml test
+      - name: Set up JDK 17-ea
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17-ea
+      - name: Run compatibility tests using Java 17-ea
+        run: mvn -f sniffy-compatibility-tests/pom.xml test
+      - name: Set up JDK 7
+        uses: actions/setup-java@v1
+        with:
+          java-version: 7
+      - name: Set up Maven 3.2.5
+        run: mkdir -p /tmp && cd /tmp && curl https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz -o apache-maven-3.2.5-bin.tar.gz && tar -xzvf apache-maven-3.2.5-bin.tar.gz && export M2_HOME=/tmp/apache-maven-3.2.5 && export MAVEN_HOME=/tmp/apache-maven-3.2.5 && export PATH=${M2_HOME}/bin:${PATH}
+        shell: bash
+      - name: Run compatibility tests using Maven 3.2.5 and Java 7
+        run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
+        shell: bash
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+      # No Java 6 on MacOS
+      - name: Set up JDK 6
+        uses: actions/setup-java@v1
+        with:
+          java-version: 6
+        if: matrix.os != 'macOS-10.15'
+      # No Java 6 on MacOS
+      - name: Run compatibility tests using Maven 3.2.5 and Java 6
+        run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
+        shell: bash
+        if: matrix.os != 'macOS-10.15'
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+        if: matrix.os != 'macOS-10.15'
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java' ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: ${{ matrix.language }}
+      - name: Set up JDK 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.1
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
+          restore-keys: ${{ runner.os }}-maven
+      - name: Build with Maven
+        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
