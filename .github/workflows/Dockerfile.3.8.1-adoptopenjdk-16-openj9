@@ -1,4 +1,4 @@
-FROM maven:3.8.1-ibmjava-8
+FROM maven:3.8.1-adoptopenjdk-16-openj9
 
 ADD . /usr/src/mymaven
 

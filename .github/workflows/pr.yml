@@ -39,7 +39,7 @@ jobs:
           push: false
   test-ppc64le:
     runs-on: ubuntu-20.04
-    name: Test with s390x IbmJDK 8
+    name: Test with ppc64le OpenJDK 16 J9
     steps:
       - uses: actions/checkout@v2
       - name: Set up QEMU
@@ -55,10 +55,10 @@ jobs:
         uses: docker/setup-buildx-action@v1
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
-      - name: Build with s390x IbmJDK 8
+      - name: Build with ppc64le OpenJDK 16 J9
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./.github/workflows/Dockerfile.3.8.1-ibmjava-8
-          platforms: linux/s390x
+          file: ./.github/workflows/Dockerfile.3.8.1-adoptopenjdk-16-openj9
+          platforms: linux/ppc64le
           push: false
