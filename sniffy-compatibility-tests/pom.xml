@@ -91,6 +91,24 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>qemu</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco.version}</version>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <pluginRepositories>
         <pluginRepository>
             <id>sonatype-nexus-snapshots</id>

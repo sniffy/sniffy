@@ -4,4 +4,4 @@ ADD . /usr/src/mymaven
 
 RUN cd /usr/src/mymaven && \
     mvn -v && \
-    mvn test
+    mvn -f sniffy-compatibility-tests/pom.xml -P qemu test
