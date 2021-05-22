@@ -40,7 +40,7 @@ jobs:
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
-          restore-keys: ${{ runner.os }}-maven
+          restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu
       - name: Build with Maven
@@ -85,7 +85,7 @@ jobs:
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
-          restore-keys: ${{ runner.os }}-maven
+          restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu
       - name: Build with Maven
@@ -126,7 +126,7 @@ jobs:
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
-          restore-keys: ${{ runner.os }}-maven
+          restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
@@ -157,7 +157,7 @@ jobs:
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
-          restore-keys: ${{ runner.os }}-maven
+          restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
@@ -207,7 +207,7 @@ jobs:
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
-          restore-keys: ${{ runner.os }}-maven
+          restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
@@ -290,7 +290,7 @@ jobs:
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
-          restore-keys: ${{ runner.os }}-maven
+          restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
@@ -324,7 +324,7 @@ jobs:
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
-          restore-keys: ${{ runner.os }}-maven
+          restore-keys: ${{ runner.os }}-maven-
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v3
