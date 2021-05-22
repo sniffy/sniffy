@@ -40,7 +40,14 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -B dependency:resolve dependency:resolve-plugins compile -U -P ci || mvn -B dependency:resolve dependency:resolve-plugins compile -U -P ci
+        run: mvn -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -B dependency:resolve dependency:resolve-plugins -U -P ci
+      - name: Build with Maven without tests
+        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.skip=true -Dmaven.wagon.http.retryHandler.count=3 || mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        if: matrix.os != 'windows-2019'
+      - name: Build with Maven without tests
+        shell: cmd
+        run: .\mvnretry.bat -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.test.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
   arch-matrix:
