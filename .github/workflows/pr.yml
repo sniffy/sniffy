@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - develop
       - master
       - release/*
       - hotfix/*
