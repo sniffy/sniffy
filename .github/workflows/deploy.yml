@@ -162,7 +162,7 @@ jobs:
         run: mvn dependency:resolve -U -P ci || mvn dependency:resolve -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
-        run: mvnretry dependency:resolve -U -P ci
+        run: mvnretry.bat dependency:resolve -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
@@ -211,7 +211,7 @@ jobs:
         run: mvn dependency:resolve -U -P ci || mvn dependency:resolve -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
-        run: mvnretry dependency:resolve -U -P ci
+        run: mvnretry.bat dependency:resolve -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
