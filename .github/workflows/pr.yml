@@ -41,6 +41,10 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -B dependency:resolve dependency:resolve-plugins -U -P ci
+        if: matrix.os != 'windows-2019'
+      - name: Resolve dependencies
+        shell: cmd
+        run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
         run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
