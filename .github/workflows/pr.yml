@@ -11,9 +11,37 @@ on:
     branches-ignore:
       - tag/*
 jobs:
-  test-arm64:
+  smoke-test:
     runs-on: ubuntu-20.04
-    name: Test with arm64 AdoptOpenJDK 11
+    name: Smoke Test JDK 8, ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.1
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ubuntu-20.04-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
+          restore-keys: ubuntu-20.04-maven
+      - name: Resolve dependencies
+        run: mvn dependency:resolve -U -P ci || mvn dependency:resolve -U -P ci
+      - name: Build with Maven
+        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+  arch-matrix:
+    runs-on: ubuntu-20.04
+    needs:
+      - smoke-test
+    strategy:
+      matrix:
+        platform: [ linux/arm, linux/arm64 ]
+    name: Test with ${{ matrix.platform }} AdoptOpenJDK 11
     steps:
       - uses: actions/checkout@v2
       - name: Set up QEMU
@@ -48,60 +76,17 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - run: cp -R ~/.m2/repository ./repository
-      - name: Build with arm64 AdoptOpenJDK 11
+      - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./.github/workflows/Dockerfile.3.8.1-openjdk-11
-          platforms: linux/arm64
-          #https://github.com/multiarch/qemu-user-static/issues/128
-          push: false
-  test-arm:
-    runs-on: ubuntu-20.04
-    name: Test with arm AdoptOpenJDK 11
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up QEMU
-        id: qemu
-        uses: docker/setup-qemu-action@v1
-        with:
-          image: tonistiigi/binfmt:latest
-          platforms: all
-      - name: Available platforms
-        run: echo ${{ steps.qemu.outputs.platforms }}
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Available platforms
-        run: echo ${{ steps.buildx.outputs.platforms }}
-      - name: Set up JDK 8
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
-        with:
-          maven-version: 3.8.1
-      - name: Cache Maven packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
-          restore-keys: ${{ runner.os }}-maven
-      - name: Resolve dependencies
-        run: mvn dependency:resolve -U -P ci,qemu || mvn dependency:resolve -U -P ci,qemu
-      - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-      - run: cp -R ~/.m2/repository ./repository
-      - name: Build with arm AdoptOpenJDK 11
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./.github/workflows/Dockerfile.3.8.1-openjdk-11
-          platforms: linux/arm
+          platforms: ${{ matrix.platform }}
           #https://github.com/multiarch/qemu-user-static/issues/128
           push: false
   test-ibm-j9:
+    needs:
+      - smoke-test
     runs-on: ubuntu-20.04
     name: Test JDK IBM J9 1.8, ubuntu-20.04
     steps:
@@ -137,6 +122,8 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   test-matrix:
+    needs:
+      - smoke-test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -189,6 +176,8 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   compatibility-matrix:
+    needs:
+      - smoke-test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -266,6 +255,8 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
         if: matrix.os != 'macOS-10.15'
   analyze:
+    needs:
+      - smoke-test
     name: Analyze
     runs-on: ubuntu-20.04
     strategy:
