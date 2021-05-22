@@ -43,8 +43,10 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven
+      - name: Resolve dependencies
+        run: mvn dependency:resolve -U -P ci,qemu || mvn dependency:resolve -U -P ci,qemu
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with arm64 AdoptOpenJDK 11
         uses: docker/build-push-action@v2
@@ -86,8 +88,10 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven
+      - name: Resolve dependencies
+        run: mvn dependency:resolve -U -P ci,qemu || mvn dependency:resolve -U -P ci,qemu
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with arm AdoptOpenJDK 11
         uses: docker/build-push-action@v2
@@ -125,8 +129,10 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven
+      - name: Resolve dependencies
+        run: mvn dependency:resolve -U -P ci || mvn dependency:resolve -U -P ci
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -154,8 +160,14 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven
+      - name: Resolve dependencies
+        run: mvn dependency:resolve -U -P ci || mvn dependency:resolve -U -P ci
+        if: matrix.os != 'windows-2019'
+      - name: Resolve dependencies
+        run: mvnretry dependency:resolve -U -P ci
+        if: matrix.os == 'windows-2019'
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
       - name: Build with Maven
         run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
@@ -197,8 +209,14 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven
+      - name: Resolve dependencies
+        run: mvn dependency:resolve -U -P ci || mvn dependency:resolve -U -P ci
+        if: matrix.os != 'windows-2019'
+      - name: Resolve dependencies
+        run: mvnretry dependency:resolve -U -P ci
+        if: matrix.os == 'windows-2019'
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
       - name: Build with Maven
         run: mvn -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
@@ -273,7 +291,9 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven
+      - name: Resolve dependencies
+        run: mvn dependency:resolve -U -P ci || mvn dependency:resolve -U -P ci
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
