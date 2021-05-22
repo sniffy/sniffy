@@ -41,15 +41,15 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -B dependency:resolve dependency:resolve-plugins -U -P ci
-      - name: Build with Maven without tests
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.skip=true -Dmaven.wagon.http.retryHandler.count=3 || mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2019'
-      - name: Build with Maven without tests
-        shell: cmd
-        run: .\mvnretry.bat -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.test.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        if: matrix.os != 'windows-2019'
+      - name: Build with Maven
+        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        if: matrix.os == 'windows-2019'
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
     runs-on: ubuntu-20.04
     needs:
@@ -146,6 +146,13 @@ jobs:
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
         java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17-ea ]
         os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+        exclude:
+          - java: 8
+            os: ubuntu-20.04
+          - java: 11
+            os: windows-2019
+          - java: 16
+            os: macos-10.15
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
