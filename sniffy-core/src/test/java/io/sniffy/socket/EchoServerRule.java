@@ -137,27 +137,23 @@ public class EchoServerRule extends ExternalResource implements Runnable {
     }
 
     public void joinThreads() {
-        joinThreads(true);
-    }
-
-    public void joinThreads(boolean tryJoinFirst) {
-
-        sockets.forEach((socket) -> {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
 
         socketThreads.forEach((thread) -> {
             try {
-                if (tryJoinFirst) thread.join(10000);
+                thread.join(10000);
                 if (thread.isAlive()) {
                     thread.interrupt();
                     thread.join(1000);
                 }
             } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        sockets.forEach((socket) -> {
+            try {
+                socket.close();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         });
