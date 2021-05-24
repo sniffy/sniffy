@@ -300,10 +300,6 @@ jobs:
       - smoke-test
     name: Analyze
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'java' ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
