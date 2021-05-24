@@ -3,9 +3,14 @@ package io.sniffy.socket;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
+import io.sniffy.configuration.SniffyConfiguration;
 import org.junit.Test;
 
 public class TcpExpectationTest extends BaseSocketTest {
+
+    static {
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+    }
 
     @Test
     public void testExactConnections() {
