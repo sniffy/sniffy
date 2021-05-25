@@ -1,6 +1,7 @@
 package io.sniffy.test;
 
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,9 +66,8 @@ public class SharedConnectionDataSourceTest {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource);
 
-        {
-            Connection masterConnection = sharedConnectionDataSource.getConnection();
-            Connection slaveConnection = newSingleThreadExecutor().submit((Callable<Connection>) sharedConnectionDataSource::getConnection).get();
+        try (Connection masterConnection = sharedConnectionDataSource.getConnection();
+            Connection slaveConnection = newSingleThreadExecutor().submit((Callable<Connection>) sharedConnectionDataSource::getConnection).get()) {
 
             assertNotEquals(masterConnection, slaveConnection);
         }
@@ -83,9 +83,8 @@ public class SharedConnectionDataSourceTest {
             sharedConnectionDataSource.resetMasterConnection();
         }
 
-        {
-            Connection masterConnection = sharedConnectionDataSource.getConnection();
-            Connection slaveConnection = newSingleThreadExecutor().submit((Callable<Connection>) sharedConnectionDataSource::getConnection).get();
+        try (Connection masterConnection = sharedConnectionDataSource.getConnection();
+             Connection slaveConnection = newSingleThreadExecutor().submit((Callable<Connection>) sharedConnectionDataSource::getConnection).get()) {
 
             assertNotEquals(masterConnection, slaveConnection);
         }

@@ -35,6 +35,8 @@
         <kotlin.version>1.4.10</kotlin.version>
         <kotest.version>4.3.0</kotest.version>
         <jacoco.version>0.8.7</jacoco.version>
+
+        <skip.java7.compatibility.tests>true</skip.java7.compatibility.tests>
     </properties>
 
     <scm>
@@ -364,7 +366,7 @@
                                 <goal>test</goal>
                             </goals>
                             <configuration>
-                                <skip>false</skip>
+                                <skip>${skip.java7.compatibility.tests}</skip>
                                 <systemPropertyVariables>
                                     <io.sniffy.forceJava7Compatibility>true</io.sniffy.forceJava7Compatibility>
                                 </systemPropertyVariables>
@@ -732,6 +734,16 @@
 
     <profiles>
 
+        <profile>
+            <id>jdk8</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <jdk>1.8</jdk>
+            </activation>
+            <properties>
+                <skip.java7.compatibility.tests>false</skip.java7.compatibility.tests>
+            </properties>
+        </profile>
         <profile>
             <id>jdk9plus</id>
             <activation>
