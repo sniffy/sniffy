@@ -140,7 +140,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
         socketThreads.forEach((thread) -> {
             try {
-                thread.join(10000);
+                thread.join(1000);
                 if (thread.isAlive()) {
                     thread.interrupt();
                     thread.join(1000);
@@ -154,6 +154,18 @@ public class EchoServerRule extends ExternalResource implements Runnable {
             try {
                 socket.close();
             } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        socketThreads.forEach((thread) -> {
+            try {
+                thread.join(1000);
+                if (thread.isAlive()) {
+                    thread.interrupt();
+                    thread.join(1000);
+                }
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         });
