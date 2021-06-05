@@ -1,13 +1,8 @@
 package io.sniffy.test.spring;
 
-import io.sniffy.socket.BaseSocketTest;
-import io.sniffy.socket.DisableSockets;
 import io.sniffy.socket.EchoServerRule;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.junit.Test;
-import org.junit.runner.Description;
 import org.junit.runner.RunWith;
-import org.junit.runners.model.Statement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
@@ -28,7 +23,7 @@ import static org.springframework.test.context.TestExecutionListeners.MergeMode.
 @ContextConfiguration(classes = SpringDisableSocketsGloballyTest.class)
 @TestExecutionListeners(value = SniffySpringTestListener.class, mergeMode = MERGE_WITH_DEFAULTS)
 @DisableSocketsGlobally
-public class SpringDisableSocketsGloballyTest /*extends BaseSocketTest*/ {
+public class SpringDisableSocketsGloballyTest {
 
     private final static EchoServerRule echoServerRule = new EchoServerRule(new byte[]{9,8,7,6,5,4,3,2});
 
@@ -81,7 +76,6 @@ public class SpringDisableSocketsGloballyTest /*extends BaseSocketTest*/ {
 
     }
 
-    @DisableSockets
     @Test
     @Features("issues/490")
     public void testAllConnectionsDisabled() {

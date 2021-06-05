@@ -38,13 +38,13 @@ public class DisableSocketsGloballyConfiguration implements ImportAware, BeanFac
 
     @Override
     public void setImportMetadata(AnnotationMetadata importMetadata) {
+        @SuppressWarnings("unused")
         Map<String, Object> map = importMetadata.getAnnotationAttributes(DisableSocketsGlobally.class.getName());
         connectionsRegistry();
     }
 
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-        System.out.println(beanFactory);
         connectionsRegistry();
     }
 
@@ -59,4 +59,5 @@ public class DisableSocketsGloballyConfiguration implements ImportAware, BeanFac
         connectionsRegistry();
         return bean;
     }
+
 }
