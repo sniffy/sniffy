@@ -1,4 +1,4 @@
-FROM maven:3.8.4-adoptopenjdk-11
+FROM maven:3.8.1-adoptopenjdk-11
 
 ADD . /usr/src/mymaven
 
