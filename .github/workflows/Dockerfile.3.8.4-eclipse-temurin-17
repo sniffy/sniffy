@@ -1,4 +1,4 @@
-FROM maven:3.8.4-openjdk-17
+FROM maven:3.8.4-eclipse-temurin-17
 
 ADD . /usr/src/mymaven
 
