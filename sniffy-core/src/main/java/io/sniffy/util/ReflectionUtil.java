@@ -10,7 +10,10 @@ public class ReflectionUtil {
 
     public final static Unsafe UNSAFE;
 
+    private static final int METHOD_MH_ACCESSOR = 0x1;
+
     static {
+
         Unsafe unsafe = null;
         try {
             Field f = Unsafe.class.getDeclaredField("theUnsafe");
@@ -20,11 +23,29 @@ public class ReflectionUtil {
             // TODO: what do we do with drunken sailor?
         }
         UNSAFE = unsafe;
+
+
+        if (JVMUtil.getVersion() >= 18) {
+
+            try {
+
+                Class<?> reflectionFactoryClass = Class.forName("jdk.internal.reflect.ReflectionFactory");
+                Field useDirectMethodHandle = reflectionFactoryClass.getDeclaredField("useDirectMethodHandle");
+                long useDirectMethodHandleOffset = UNSAFE.staticFieldOffset(useDirectMethodHandle);
+                UNSAFE.putInt(reflectionFactoryClass, useDirectMethodHandleOffset, METHOD_MH_ACCESSOR);
+
+            } catch (Throwable e) {
+                // TODO: what do we do with drunken sailor?
+            }
+
+        }
+
     }
 
     /**
      * FakeAccessibleObject class has similar layout as {@link AccessibleObject} and can be used for calculating offsets
      */
+    @SuppressWarnings({"unused", "NullableProblems"})
     private static class FakeAccessibleObject implements AnnotatedElement {
 
         /**
@@ -78,10 +99,7 @@ public class ReflectionUtil {
                 e.printStackTrace();
             }
 
-            if (ao.isAccessible()) {
-                return true;
-            }
-            return false;
+            return ao.isAccessible();
         }
 
         ao.setAccessible(true);
@@ -177,6 +195,13 @@ public class ReflectionUtil {
             setAccessible(modifiersField);
 
             modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+            // TODO: check if code below can actually work and evaluate it instead of static constructor stuff
+            /*if (JVMUtil.getVersion() >= 18) {
+                Field trustedFinalField = getTrustedFinalField();
+                setAccessible(trustedFinalField);
+                trustedFinalField.setBoolean(instanceField, false);
+            }*/
 
             if (null != lockFieldName) {
 
@@ -296,6 +321,13 @@ public class ReflectionUtil {
         //modifiersField.setAccessible(true);
         setAccessible(modifiersField);
         modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+        // TODO: check if code below can actually work and evaluate it instead of static constructor stuff
+        /*if (JVMUtil.getVersion() >= 18) {
+            Field trustedFinalField = getTrustedFinalField();
+            setAccessible(trustedFinalField);
+            trustedFinalField.setBoolean(instanceField, false);
+        }*/
 
         if (null != lockFieldName) {
 
