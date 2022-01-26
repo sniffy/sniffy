@@ -65,7 +65,7 @@ jobs:
         run: mvn -o -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os == 'ubuntu-20.04'
       - name: Build with Maven x86
-        run: mvn -o -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -o -X -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
       - uses: codecov/codecov-action@v1
         with:
@@ -213,7 +213,7 @@ jobs:
         run: mvn -o -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os == 'ubuntu-20.04'
       - name: Build with Maven x86
-        run: mvn -o -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -o -X -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
       - uses: codecov/codecov-action@v1
         with:
