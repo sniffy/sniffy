@@ -1,5 +1,7 @@
 package io.sniffy.servlet;
 
+import io.qameta.allure.Feature;
+import io.qameta.allure.Issue;
 import io.sniffy.BaseTest;
 import io.sniffy.registry.ConnectionsRegistry;
 import org.graalvm.polyglot.Context;
@@ -16,8 +18,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
-import ru.yandex.qatools.allure.annotations.Features;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import javax.script.ScriptException;
 import javax.servlet.*;
@@ -405,7 +405,7 @@ public class SniffyFilterTest extends BaseTest {
     }
 
     @Test
-    @Features("issues/304")
+    @Feature("issues/304")
     public void testInjectHtmlExcludePattern() throws IOException, ServletException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");
