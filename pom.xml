@@ -135,6 +135,21 @@
                         <artifactId>org.jacoco.report</artifactId>
                         <version>${jacoco.version}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-utils</artifactId>
+                        <version>3.0.22</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.maven.shared</groupId>
+                        <artifactId>file-management</artifactId>
+                        <version>1.2.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.maven.reporting</groupId>
+                        <artifactId>maven-reporting-api</artifactId>
+                        <version>3.0</version>
+                    </dependency>
                 </dependencies>
                 <executions>
                     <execution>
@@ -201,6 +216,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.2.0</version>
+                <configuration>
+                    <!-- TODO: remove it please; it's only required for java 18-ea 19-ea in windows 32 bit -->
+                    <outputDirectory>${basedir}/target/classes</outputDirectory>
+                </configuration>
             </plugin>
 
 
