@@ -112,11 +112,28 @@
                 <version>${jacoco.version}</version>
                 <dependencies>
                     <!-- fix for [ERROR] 'dependencies.dependency.groupId' for ${project.groupId}:org.jacoco.agent:jar:runtime with value '${project.groupId}' does not match a valid id pattern. @ -->
+                    <!-- TODO: remove when moving to non-SNAPSHOT version -->
                     <dependency>
                         <groupId>org.jacoco</groupId>
                         <artifactId>org.jacoco.build</artifactId>
                         <version>${jacoco.version}</version>
                         <type>pom</type>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>org.jacoco.agent</artifactId>
+                        <version>${jacoco.version}</version>
+                        <classifier>runtime</classifier>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>org.jacoco.core</artifactId>
+                        <version>${jacoco.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>org.jacoco.report</artifactId>
+                        <version>${jacoco.version}</version>
                     </dependency>
                 </dependencies>
                 <executions>
