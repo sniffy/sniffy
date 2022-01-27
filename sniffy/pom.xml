@@ -12,6 +12,23 @@
     <artifactId>sniffy</artifactId>
     <name>Sniffy</name>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.webjars.bower</groupId>
+                <artifactId>jquery</artifactId>
+                <version>1.12.4</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.webjars.bower</groupId>
+                <artifactId>bootstrap</artifactId>
+                <version>3.3.7</version>
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>io.sniffy</groupId>
@@ -40,7 +57,6 @@
         <dependency>
             <groupId>org.webjars.bower</groupId>
             <artifactId>bootstrap</artifactId>
-            <version>3.3.7</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -59,7 +75,6 @@
         <dependency>
             <groupId>org.webjars.bower</groupId>
             <artifactId>jquery</artifactId>
-            <version>1.12.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
