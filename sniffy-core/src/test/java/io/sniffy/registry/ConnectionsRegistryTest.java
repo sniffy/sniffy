@@ -2,13 +2,13 @@ package io.sniffy.registry;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonValue;
+import io.qameta.allure.Issue;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.socket.SniffyNetworkConnection;
 import org.junit.After;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.StringReader;
 import java.io.StringWriter;

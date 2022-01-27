@@ -1,10 +1,10 @@
 package io.sniffy;
 
 import com.codahale.metrics.Timer;
+import io.qameta.allure.Feature;
 import io.sniffy.configuration.SniffyConfiguration;
 import org.junit.Before;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -56,7 +56,7 @@ public class SniffyTest extends BaseTest {
     }
 
     @Test
-    @Features("issues/292")
+    @Feature("issues/292")
     public void testGlobalSqlStatsDisabled() throws Exception {
         int topSqlCapacity = SniffyConfiguration.INSTANCE.getTopSqlCapacity();
         try {
@@ -70,7 +70,7 @@ public class SniffyTest extends BaseTest {
     }
 
     @Test
-    @Features("issues/292")
+    @Feature("issues/292")
     public void testGetGlobalSqlStats() throws Exception {
         Sniffy.getGlobalSqlStats().clear();
         executeStatements(3);
@@ -82,7 +82,7 @@ public class SniffyTest extends BaseTest {
     }
 
     @Test
-    @Features("issues/292")
+    @Feature("issues/292")
     public void testLruGlobalSqlStats() throws Exception {
         Sniffy.getGlobalSqlStats().clear();
         for (int i = 0; i < Sniffy.TOP_SQL_CAPACITY; i++) {

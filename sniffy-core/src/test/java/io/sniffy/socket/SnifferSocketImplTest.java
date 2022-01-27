@@ -1,13 +1,13 @@
 package io.sniffy.socket;
 
+import io.qameta.allure.Feature;
+import io.qameta.allure.Issue;
 import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import ru.yandex.qatools.allure.annotations.Features;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.*;
 import java.net.*;
@@ -249,7 +249,7 @@ public class SnifferSocketImplTest {
     }
 
     @Test
-    @Features({"issues/219"})
+    @Feature("issues/219")
     public void testConnectWithDelay() throws Exception {
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 10);
@@ -266,7 +266,7 @@ public class SnifferSocketImplTest {
     }
 
     @Test
-    @Features({"issues/219"})
+    @Feature("issues/219")
     public void testConnectWithDelayException() throws Exception {
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, -10);
@@ -287,7 +287,7 @@ public class SnifferSocketImplTest {
     }
 
     @Test
-    @Features({"issues/219"})
+    @Feature("issues/219")
     public void testConnectWithDelayThreadSleeps() throws Exception {
 
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 123, 1000);
