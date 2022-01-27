@@ -116,6 +116,7 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>org.jacoco.build</artifactId>
                         <version>${jacoco.version}</version>
+                        <type>pom</type>
                     </dependency>
                 </dependencies>
                 <executions>
