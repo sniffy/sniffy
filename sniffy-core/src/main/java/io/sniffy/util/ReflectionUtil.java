@@ -19,7 +19,8 @@ public class ReflectionUtil {
             Field f = Unsafe.class.getDeclaredField("theUnsafe");
             f.setAccessible(true);
             unsafe = (Unsafe) f.get(null);
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            e.printStackTrace();
             // TODO: what do we do with drunken sailor?
         }
         UNSAFE = unsafe;
@@ -35,6 +36,7 @@ public class ReflectionUtil {
                 UNSAFE.putInt(reflectionFactoryClass, useDirectMethodHandleOffset, METHOD_MH_ACCESSOR);
 
             } catch (Throwable e) {
+                e.printStackTrace();
                 // TODO: what do we do with drunken sailor?
             }
 
