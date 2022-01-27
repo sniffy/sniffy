@@ -34,7 +34,7 @@
         <spring.boot.version>1.5.22.RELEASE</spring.boot.version>
         <kotlin.version>1.4.10</kotlin.version>
         <kotest.version>4.3.0</kotest.version>
-        <jacoco.version>0.8.8-SNAPSHOT</jacoco.version>
+        <jacoco.version>0.8.8-20220125.215654-28</jacoco.version>
 
         <skip.java7.compatibility.tests>true</skip.java7.compatibility.tests>
         <animal-sniffer.version>1.20</animal-sniffer.version>
@@ -64,12 +64,6 @@
 
 
     <dependencies>
-
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-core</artifactId>
-            <version>3.8.1</version>
-        </dependency>
 
         <dependency>
             <groupId>org.codehaus.mojo</groupId>
@@ -116,6 +110,14 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
+                <dependencies>
+                    <!-- fix for [ERROR] 'dependencies.dependency.groupId' for ${project.groupId}:org.jacoco.agent:jar:runtime with value '${project.groupId}' does not match a valid id pattern. @ -->
+                    <dependency>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>org.jacoco.build</artifactId>
+                        <version>${jacoco.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <goals>
