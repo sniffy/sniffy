@@ -193,6 +193,8 @@
                 <configuration>
                     <source>8</source>
                     <failOnError>false</failOnError> <!-- TODO: remove it please -->
+                    <offline>false</offline>
+                    <isOffline>false</isOffline>
                 </configuration>
                 <executions>
                     <execution>
@@ -334,6 +336,8 @@
                         <runOrder>alphabetical</runOrder>
                         <!-- skip the default execution, we have separate for Ng and for JUnit -->
                         <skip>true</skip>
+                        <!-- line below is a workaround for build on windows x86 java 18-ea / 19-ea -->
+                        <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
                     </configuration>
                     <executions>
                         <execution>

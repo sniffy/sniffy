@@ -50,6 +50,7 @@
     <build>
 
         <sourceDirectory>${src.dir}</sourceDirectory>
+        <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
 
         <plugins>
             <plugin>
