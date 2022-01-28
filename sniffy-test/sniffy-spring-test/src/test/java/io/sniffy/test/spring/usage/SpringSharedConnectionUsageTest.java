@@ -1,5 +1,6 @@
 package io.sniffy.test.spring.usage;
 
+import io.qameta.allure.Feature;
 import io.sniffy.test.spring.DataSourceTestConfiguration;
 import io.sniffy.test.spring.EnableSharedConnection;
 import io.sniffy.test.spring.SharedConnection;
@@ -13,7 +14,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -36,7 +36,7 @@ public class SpringSharedConnectionUsageTest {
 
     @Test
     @SharedConnection // <3>
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testSharedConnectionTwoRows() throws SQLException, ExecutionException, InterruptedException {
 
         jdbcTemplate.batchUpdate(

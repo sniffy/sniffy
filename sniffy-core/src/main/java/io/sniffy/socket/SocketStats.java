@@ -21,7 +21,7 @@ public class SocketStats {
         this.bytesUp.set(Math.max(bytesUp, 0));
     }
 
-    public void accumulate(long elapsedTime, int bytesDown, int bytesUp) {
+    public void accumulate(long elapsedTime, long bytesDown, long bytesUp) {
         this.elapsedTime.addAndGet(elapsedTime);
         this.bytesDown.addAndGet(Math.max(bytesDown, 0));
         this.bytesUp.addAndGet(Math.max(bytesUp, 0));

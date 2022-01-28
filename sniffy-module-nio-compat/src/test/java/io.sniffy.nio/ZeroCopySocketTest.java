@@ -1,34 +1,27 @@
 package io.sniffy.nio;
 
+import io.qameta.allure.Issue;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
-import io.sniffy.SpyConfiguration;
-import io.sniffy.ThreadMetaData;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.BaseSocketTest;
-import io.sniffy.socket.NetworkPacket;
-import io.sniffy.socket.Protocol;
-import io.sniffy.socket.SocketMetaData;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import ru.yandex.qatools.allure.annotations.Issue;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
-import java.nio.channels.*;
-import java.nio.file.StandardOpenOption;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SocketChannel;
 
-import static io.sniffy.Threads.*;
-import static org.junit.Assert.*;
+import static io.sniffy.Threads.CURRENT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ZeroCopySocketTest extends BaseSocketTest {
 
@@ -222,7 +215,7 @@ public class ZeroCopySocketTest extends BaseSocketTest {
                     file.close();
                 }
                 {
-                    RandomAccessFile file  = new RandomAccessFile(newFile, "r");
+                    RandomAccessFile file = new RandomAccessFile(newFile, "r");
                     file.getChannel().read(responseBuffer);
                     file.close();
                 }

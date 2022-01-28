@@ -1,12 +1,12 @@
 package io.sniffy;
 
 
+import io.qameta.allure.Issue;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SocketMetaData;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.net.InetSocketAddress;
 import java.util.List;

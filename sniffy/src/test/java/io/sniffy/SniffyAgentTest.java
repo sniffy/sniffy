@@ -1,6 +1,9 @@
 package io.sniffy;
 
 import com.jayway.jsonpath.JsonPath;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Features;
+import io.qameta.allure.Issue;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -8,8 +11,6 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import ru.yandex.qatools.allure.annotations.Features;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.IOException;
 
@@ -30,7 +31,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features("issues/327")
+    @Feature("issues/327")
     public void testGetRegistry() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/connectionregistry/", String.class);
@@ -38,7 +39,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features("issues/327")
+    @Feature("issues/327")
     public void testAllowConnection() {
         TestRestTemplate template = new TestRestTemplate();
 
@@ -60,7 +61,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features({"issues/327","issues/219"})
+    @Features({@Feature("issues/327"), @Feature("issues/219")})
     public void testSetConnectionDelay() {
         TestRestTemplate template = new TestRestTemplate();
 
@@ -81,7 +82,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features("issues/327")
+    @Feature("issues/327")
     public void testAllowDataSource() {
         TestRestTemplate template = new TestRestTemplate();
 
@@ -104,7 +105,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features("issues/327")
+    @Feature("issues/327")
     public void testPersistent() {
         TestRestTemplate template = new TestRestTemplate();
 
@@ -123,7 +124,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features("issues/327")
+    @Feature("issues/327")
     public void testGetHomePage() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/", String.class);
@@ -131,7 +132,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features("issues/327")
+    @Feature("issues/327")
     public void testGetFavicon() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/favicon.ico", String.class);
@@ -140,7 +141,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features("issues/327")
+    @Feature("issues/327")
     public void testGetIcon() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/icon32.png", String.class);
@@ -149,7 +150,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features("issues/327")
+    @Feature("issues/327")
     public void testGetMissingResource() {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/missing/resource", String.class);
@@ -157,7 +158,7 @@ public class SniffyAgentTest {
     }
 
     @Test
-    @Features("issues/334")
+    @Feature("issues/334")
     @Issue("issues/357")
     public void testCorsHeaders() {
         TestRestTemplate template = new TestRestTemplate();

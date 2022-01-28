@@ -1,10 +1,8 @@
 package io.sniffy.test.tomcat;
 
+import io.qameta.allure.Issue;
 import org.apache.catalina.core.StandardContext;
-import org.apache.catalina.loader.VirtualWebappLoader;
-import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.naming.resources.FileDirContext;
 import org.apache.naming.resources.VirtualDirContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -12,10 +10,8 @@ import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.File;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

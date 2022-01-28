@@ -10,21 +10,43 @@ public class ReflectionUtil {
 
     public final static Unsafe UNSAFE;
 
+    private static final int METHOD_MH_ACCESSOR = 0x1;
+
     static {
+
         Unsafe unsafe = null;
         try {
             Field f = Unsafe.class.getDeclaredField("theUnsafe");
             f.setAccessible(true);
             unsafe = (Unsafe) f.get(null);
-        } catch (Exception e) {
-            // TODO: what do we do with drunken sailor?
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
         UNSAFE = unsafe;
+
+        if (JVMUtil.getVersion() >= 18) {
+
+            // workaround https://openjdk.java.net/jeps/416 - JEP 416: Reimplement Core Reflection with Method Handles
+
+            try {
+
+                Class<?> reflectionFactoryClass = Class.forName("jdk.internal.reflect.ReflectionFactory");
+                Field useDirectMethodHandle = reflectionFactoryClass.getDeclaredField("useDirectMethodHandle");
+                long useDirectMethodHandleOffset = UNSAFE.staticFieldOffset(useDirectMethodHandle);
+                UNSAFE.putInt(reflectionFactoryClass, useDirectMethodHandleOffset, METHOD_MH_ACCESSOR);
+
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
+        }
+
     }
 
     /**
      * FakeAccessibleObject class has similar layout as {@link AccessibleObject} and can be used for calculating offsets
      */
+    @SuppressWarnings({"unused", "NullableProblems"})
     private static class FakeAccessibleObject implements AnnotatedElement {
 
         /**
@@ -78,10 +100,7 @@ public class ReflectionUtil {
                 e.printStackTrace();
             }
 
-            if (ao.isAccessible()) {
-                return true;
-            }
-            return false;
+            return ao.isAccessible();
         }
 
         ao.setAccessible(true);
@@ -168,22 +187,26 @@ public class ReflectionUtil {
             }*/
 
             if (!instanceField.isAccessible()) {
-                //instanceField.setAccessible(true);
                 setAccessible(instanceField);
             }
 
             Field modifiersField = getModifiersField();
-            //modifiersField.setAccessible(true);
             setAccessible(modifiersField);
 
             modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+            // TODO: check if code below can actually work and evaluate it instead of static constructor stuff
+            /*if (JVMUtil.getVersion() >= 18) {
+                Field trustedFinalField = getTrustedFinalField();
+                setAccessible(trustedFinalField);
+                trustedFinalField.setBoolean(instanceField, false);
+            }*/
 
             if (null != lockFieldName) {
 
                 Field lockField = clazz.getDeclaredField(lockFieldName);
 
                 if (!lockField.isAccessible()) {
-                    //lockField.setAccessible(true);
                     setAccessible(lockField);
                 }
 
@@ -288,14 +311,20 @@ public class ReflectionUtil {
         }*/
 
         if (!instanceField.isAccessible()) {
-            //instanceField.setAccessible(true);
             setAccessible(instanceField);
         }
 
         Field modifiersField = getModifiersField();
-        //modifiersField.setAccessible(true);
         setAccessible(modifiersField);
         modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+        // TODO: check if we actually need more magic for getters to work or is it only required by setters
+        // TODO: check if code below can actually work and evaluate it instead of static constructor stuff
+        /*if (JVMUtil.getVersion() >= 18) {
+            Field trustedFinalField = getTrustedFinalField();
+            setAccessible(trustedFinalField);
+            trustedFinalField.setBoolean(instanceField, false);
+        }*/
 
         if (null != lockFieldName) {
 
@@ -342,7 +371,6 @@ public class ReflectionUtil {
         } catch (NoSuchFieldException e) {
             try {
                 Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-                //getDeclaredFields0.setAccessible(true);
                 setAccessible(getDeclaredFields0);
                 Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
                 for (Field field : fields) {
@@ -436,7 +464,6 @@ public class ReflectionUtil {
 
     public static Method method(Class<?> clazz, String methodName, Class<?>... argumentTypes) throws NoSuchMethodException {
         Method method = clazz.getDeclaredMethod(methodName, argumentTypes);
-        //method.setAccessible(true);
         setAccessible(method);
         return method;
     }

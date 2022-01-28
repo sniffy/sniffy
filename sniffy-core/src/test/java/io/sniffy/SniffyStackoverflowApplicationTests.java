@@ -1,12 +1,12 @@
 package io.sniffy;
 
+import io.qameta.allure.Feature;
 import io.sniffy.sql.SniffyDataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import javax.sql.DataSource;
 import java.util.stream.Collectors;
@@ -27,7 +27,7 @@ public class SniffyStackoverflowApplicationTests extends BaseTest
 	}
 
 	@Test
-	@Features("issues/331")
+	@Feature("issues/331")
 	public void testStackOverflow()
 	{
 		jdbcTemplate.queryForList("SELECT * FROM DUAL WHERE NULL IN(:ids)",
