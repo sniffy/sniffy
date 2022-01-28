@@ -454,7 +454,7 @@ public class Sniffy {
 
     }
 
-    private static void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
+    private static void notifyListeners(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, long rowsUpdated) {
         for (BaseSpy<?> spy : getEffectiveSpyList()) {
             spy.addExecutedStatement(statementMetaData, elapsedTime, bytesDown, bytesUp, rowsUpdated);
         }
@@ -628,7 +628,7 @@ public class Sniffy {
                             elapsedTime,
                             socketStats.bytesDown.intValue(),
                             socketStats.bytesUp.intValue(),
-                            0
+                            0L
                     );
                 }
 
@@ -645,10 +645,10 @@ public class Sniffy {
     }
 
     public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace) {
-        return executeStatement(sql, elapsedTime, stackTrace, 0);
+        return executeStatement(sql, elapsedTime, stackTrace, 0L);
     }
 
-    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace, int rowsUpdated) {
+    public static StatementMetaData executeStatement(String sql, long elapsedTime, String stackTrace, long rowsUpdated) {
         // increment global counter
         Sniffer.executedStatementsGlobalCounter.incrementAndGet();
 

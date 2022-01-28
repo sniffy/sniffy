@@ -110,47 +110,6 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
-                <dependencies>
-                    <!-- fix for [ERROR] 'dependencies.dependency.groupId' for ${project.groupId}:org.jacoco.agent:jar:runtime with value '${project.groupId}' does not match a valid id pattern. @ -->
-                    <!-- TODO: remove when moving to non-SNAPSHOT version -->
-                    <dependency>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>org.jacoco.build</artifactId>
-                        <version>${jacoco.version}</version>
-                        <type>pom</type>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>org.jacoco.agent</artifactId>
-                        <version>${jacoco.version}</version>
-                        <classifier>runtime</classifier>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>org.jacoco.core</artifactId>
-                        <version>${jacoco.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>org.jacoco.report</artifactId>
-                        <version>${jacoco.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.codehaus.plexus</groupId>
-                        <artifactId>plexus-utils</artifactId>
-                        <version>3.0.22</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.apache.maven.shared</groupId>
-                        <artifactId>file-management</artifactId>
-                        <version>1.2.1</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.apache.maven.reporting</groupId>
-                        <artifactId>maven-reporting-api</artifactId>
-                        <version>3.0</version>
-                    </dependency>
-                </dependencies>
                 <executions>
                     <execution>
                         <goals>
@@ -211,26 +170,12 @@
                 </executions>
             </plugin>
 
-            <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-resources-plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
-                <configuration>
-                    <!-- TODO: remove it please; it's only required for java 18-ea 19-ea in windows 32 bit -->
-                    <outputDirectory>${basedir}/target/classes</outputDirectory>
-                </configuration>
-            </plugin>
-
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <source>8</source>
                     <failOnError>false</failOnError> <!-- TODO: remove it please -->
-                    <!-- TODO: remove it please; it's only required for java 18-ea 19-ea in windows 32 bit -->
-                    <isOffline>false</isOffline>
                 </configuration>
                 <executions>
                     <execution>
@@ -246,6 +191,12 @@
 
         <pluginManagement>
             <plugins>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -372,8 +323,6 @@
                         <runOrder>alphabetical</runOrder>
                         <!-- skip the default execution, we have separate for Ng and for JUnit -->
                         <skip>true</skip>
-                        <!-- line below is a workaround for build on windows x86 java 18-ea / 19-ea -->
-                        <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
                         <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
                     </configuration>
                     <executions>

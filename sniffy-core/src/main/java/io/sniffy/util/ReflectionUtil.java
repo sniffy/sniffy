@@ -21,12 +21,12 @@ public class ReflectionUtil {
             unsafe = (Unsafe) f.get(null);
         } catch (Throwable e) {
             e.printStackTrace();
-            // TODO: what do we do with drunken sailor?
         }
         UNSAFE = unsafe;
 
-
         if (JVMUtil.getVersion() >= 18) {
+
+            // workaround https://openjdk.java.net/jeps/416 - JEP 416: Reimplement Core Reflection with Method Handles
 
             try {
 
@@ -37,7 +37,6 @@ public class ReflectionUtil {
 
             } catch (Throwable e) {
                 e.printStackTrace();
-                // TODO: what do we do with drunken sailor?
             }
 
         }
@@ -188,12 +187,10 @@ public class ReflectionUtil {
             }*/
 
             if (!instanceField.isAccessible()) {
-                //instanceField.setAccessible(true);
                 setAccessible(instanceField);
             }
 
             Field modifiersField = getModifiersField();
-            //modifiersField.setAccessible(true);
             setAccessible(modifiersField);
 
             modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
@@ -210,7 +207,6 @@ public class ReflectionUtil {
                 Field lockField = clazz.getDeclaredField(lockFieldName);
 
                 if (!lockField.isAccessible()) {
-                    //lockField.setAccessible(true);
                     setAccessible(lockField);
                 }
 
@@ -315,15 +311,14 @@ public class ReflectionUtil {
         }*/
 
         if (!instanceField.isAccessible()) {
-            //instanceField.setAccessible(true);
             setAccessible(instanceField);
         }
 
         Field modifiersField = getModifiersField();
-        //modifiersField.setAccessible(true);
         setAccessible(modifiersField);
         modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
 
+        // TODO: check if we actually need more magic for getters to work or is it only required by setters
         // TODO: check if code below can actually work and evaluate it instead of static constructor stuff
         /*if (JVMUtil.getVersion() >= 18) {
             Field trustedFinalField = getTrustedFinalField();
@@ -376,7 +371,6 @@ public class ReflectionUtil {
         } catch (NoSuchFieldException e) {
             try {
                 Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-                //getDeclaredFields0.setAccessible(true);
                 setAccessible(getDeclaredFields0);
                 Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
                 for (Field field : fields) {
@@ -470,7 +464,6 @@ public class ReflectionUtil {
 
     public static Method method(Class<?> clazz, String methodName, Class<?>... argumentTypes) throws NoSuchMethodException {
         Method method = clazz.getDeclaredMethod(methodName, argumentTypes);
-        //method.setAccessible(true);
         setAccessible(method);
         return method;
     }
