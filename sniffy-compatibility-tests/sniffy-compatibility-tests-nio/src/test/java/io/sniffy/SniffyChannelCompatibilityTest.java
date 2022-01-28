@@ -33,7 +33,7 @@ public class SniffyChannelCompatibilityTest {
     protected static InetAddress localhost;
 
     static {
-        ScheduledThreadDump.scheduleThreadDump(60); // last mile resort for troubleshooting
+        ScheduledThreadDump.scheduleThreadDump(30); // last mile resort for troubleshooting
     }
 
     @Rule

@@ -78,7 +78,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
         }
 
         try {
-            thread.join();
+            thread.join(10000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

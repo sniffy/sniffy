@@ -24,6 +24,8 @@ public class ScheduledThreadDump {
                     System.out.println();
                 }
 
+                System.out.flush();
+
             }
         };
 
