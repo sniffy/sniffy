@@ -229,7 +229,7 @@
                 <configuration>
                     <source>8</source>
                     <failOnError>false</failOnError> <!-- TODO: remove it please -->
-                    <offline>false</offline>
+                    <!-- TODO: remove it please; it's only required for java 18-ea 19-ea in windows 32 bit -->
                     <isOffline>false</isOffline>
                 </configuration>
                 <executions>

@@ -30,7 +30,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.4
+          maven-version: 3.8.1
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -98,7 +98,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.4
+          maven-version: 3.8.1
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -141,7 +141,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.4
+          maven-version: 3.8.1
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -162,14 +162,14 @@ jobs:
     strategy:
       matrix:
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
-        java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18-ea, 19-ea ]
+        java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17-ea ]
         os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
         exclude:
           - java: 8
             os: ubuntu-20.04
           - java: 11
             os: windows-2019
-          - java: 17
+          - java: 16
             os: macos-10.15
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
@@ -181,7 +181,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.4
+          maven-version: 3.8.1
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -212,10 +212,10 @@ jobs:
       # Cannot invoke "org.apache.maven.artifact.Artifact.getFile()" because "jacocoAgentArtifact" is null
       # Might be caused by https://openjdk.java.net/jeps/416 or just regression issue in 32-bit windows builds
       - name: Build with Maven x86
-        run: mvn -o -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: ${{ matrix.os == 'ubuntu-20.04' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
       - name: Build with Maven x86
-        run: mvn -o -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: ${{ matrix.os == 'windows-2019' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
       - uses: codecov/codecov-action@v1
         with:
@@ -237,7 +237,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.4
+          maven-version: 3.8.1
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -318,7 +318,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.4
+          maven-version: 3.8.1
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -351,7 +351,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.4
+          maven-version: 3.8.1
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
