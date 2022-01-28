@@ -45,6 +45,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 serverSocket.setReuseAddress(true);
                 break;
             } catch (IOException e) {
+                e.printStackTrace();
                 try {
                     serverSocket.close();
                 } catch (Exception ex) {
@@ -79,6 +80,10 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
         try {
             thread.join(10000L);
+            if (thread.isAlive()) {
+                thread.interrupt();
+                thread.join(1000);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
