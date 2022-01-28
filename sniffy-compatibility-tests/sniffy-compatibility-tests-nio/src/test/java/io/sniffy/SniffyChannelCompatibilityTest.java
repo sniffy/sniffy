@@ -32,6 +32,10 @@ public class SniffyChannelCompatibilityTest {
 
     protected static InetAddress localhost;
 
+    static {
+        ScheduledThreadDump.scheduleThreadDump(60); // last mile resort for troubleshooting
+    }
+
     @Rule
     public EchoServerRule echoServerRule = new EchoServerRule(RESPONSE);
 
