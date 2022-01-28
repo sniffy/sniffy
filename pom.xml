@@ -374,6 +374,7 @@
                         <skip>true</skip>
                         <!-- line below is a workaround for build on windows x86 java 18-ea / 19-ea -->
                         <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
+                        <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
                     </configuration>
                     <executions>
                         <execution>
