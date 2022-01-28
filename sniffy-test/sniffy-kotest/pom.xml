@@ -95,7 +95,6 @@
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-test-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
