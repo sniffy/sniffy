@@ -323,7 +323,7 @@
                         <runOrder>alphabetical</runOrder>
                         <!-- skip the default execution, we have separate for Ng and for JUnit -->
                         <skip>true</skip>
-                        <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
+                        <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                     </configuration>
                     <executions>
                         <execution>
