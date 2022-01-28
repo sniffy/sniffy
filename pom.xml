@@ -354,6 +354,7 @@
                                 <excludes>
                                     <exclude>%regex[.*TestNg.*]</exclude>
                                 </excludes>
+                                <forkCount>2</forkCount>
                             </configuration>
                         </execution>
                         <execution>
@@ -371,6 +372,7 @@
                                 <excludes>
                                     <exclude>%regex[.*TestNg.*]</exclude>
                                 </excludes>
+                                <forkCount>2</forkCount>
                             </configuration>
                         </execution>
                         <execution>
@@ -388,6 +390,7 @@
                                 <excludes>
                                     <exclude>%regex[.*TestNg.*]</exclude>
                                 </excludes>
+                                <forkCount>2</forkCount>
                             </configuration>
                         </execution>
                     </executions>
