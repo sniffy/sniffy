@@ -53,14 +53,14 @@
             <id>jdk16minus</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
-                <jdk>(,16)</jdk>
+                <jdk>(,16)</jdk> <!-- TODO : do we still need separate profile for it? -->
             </activation>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.jetbrains.dokka</groupId>
                         <artifactId>dokka-maven-plugin</artifactId>
-                        <version>1.4.32</version>
+                        <version>1.6.10</version>
                         <executions>
                             <execution>
                                 <phase>process-sources</phase>
