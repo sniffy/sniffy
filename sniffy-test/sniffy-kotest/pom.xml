@@ -12,9 +12,9 @@
     <artifactId>sniffy-kotest</artifactId>
 
     <properties>
-        <kotlin.version>1.4.10</kotlin.version>
-        <kotest.version>4.3.0</kotest.version>
-        <ktor.version>1.4.1</ktor.version>
+        <kotlin.version>1.6.10</kotlin.version>
+        <kotest.version>5.1.0</kotest.version>
+        <ktor.version>1.6.7</ktor.version>
     </properties>
 
     <build>
@@ -80,12 +80,12 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore-nio</artifactId>
-                <version>4.4.13</version>
+                <version>4.4.15</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-                <version>4.4.13</version>
+                <version>4.4.15</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -125,13 +125,13 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpasyncclient</artifactId>
-            <version>4.1.4</version>
+            <version>4.1.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <version>4.0.2</version>
+            <version>5.0.2</version>
             <scope>test</scope>
         </dependency>
 
