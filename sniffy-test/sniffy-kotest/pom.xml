@@ -12,11 +12,11 @@
     <artifactId>sniffy-kotest</artifactId>
 
     <properties>
-        <kotlin.version>1.5.32</kotlin.version>
-        <kotest.version>4.6.4</kotest.version>
-        <ktor.version>1.6.7</ktor.version>
-        <dokka-maven-plugin.version>1.5.31</dokka-maven-plugin.version>
-        <kotlin-stdlib-jdk8.version>1.5.32</kotlin-stdlib-jdk8.version>
+        <kotlin.version>1.4.10</kotlin.version>
+        <kotest.version>4.3.0</kotest.version>
+        <ktor.version>1.4.1</ktor.version>
+        <dokka-maven-plugin.version>1.4.32</dokka-maven-plugin.version>
+        <kotlin-stdlib-jdk8.version>1.4.10</kotlin-stdlib-jdk8.version>
     </properties>
 
     <build>
