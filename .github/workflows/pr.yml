@@ -12,6 +12,7 @@ on:
       - tag/*
 env:
   MAVEN_OPTS: -Dkotlin.environment.keepalive=true
+# TODO: somehow grab test results from the github action
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
@@ -49,8 +50,11 @@ jobs:
         run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
+        run: mvn -B verify --file pom.xml -U -P ci,dokka -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        if: matrix.os == 'ubuntu-20.04'
+      - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2019'
+        if: matrix.os == 'macos-10.15'
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'

@@ -46,8 +46,11 @@ jobs:
         run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
+        run: mvn -B verify --file pom.xml -U -P ci,dokka -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        if: matrix.os == 'ubuntu-20.04'
+      - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2019'
+        if: matrix.os == 'macos-10.15'
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
@@ -374,7 +377,7 @@ jobs:
       - name: Resolve dependencies
         run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Publish to the Maven Central Repository
-        run: mvn -T 1.5C -P sonatype,ci -B deploy -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -P sonatype,ci,dokka -B deploy -Dmaven.wagon.http.retryHandler.count=3
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
@@ -383,6 +386,6 @@ jobs:
         with:
           java-version: 1.8
       - name: Publish to GitHub Packages
-        run: mvn -T 1.5C -P github,ci -B clean deploy -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3 -X
+        run: mvn -P github,ci,dokka -B clean deploy -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3 -X
         env:
           GITHUB_TOKEN: ${{ github.token }}

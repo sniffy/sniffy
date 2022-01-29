@@ -56,10 +56,11 @@
 
     <profiles>
         <profile>
-            <id>jdk16minus</id>
+            <id>dokka</id> <!-- TODO: come up with profile which builds javadoc, sites, etc. -->
             <activation>
                 <activeByDefault>false</activeByDefault>
-                <jdk>(,16)</jdk> <!-- TODO : do we still need separate profile for it? -->
+                <!-- fails on parallel (-T) maven builds with intermittent NullPointerException -->
+                <!-- WAS: <jdk>(,16)</jdk>  -->
             </activation>
             <build>
                 <plugins>
