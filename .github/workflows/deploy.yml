@@ -74,7 +74,7 @@ jobs:
       - smoke-test
     strategy:
       matrix:
-        platform: [ linux/arm, linux/arm64 ]
+        platform: [ linux/arm, linux/arm64, linux/s390x ]
     name: Test with ${{ matrix.platform }} AdoptOpenJDK 11
     steps:
       - uses: actions/checkout@v2
