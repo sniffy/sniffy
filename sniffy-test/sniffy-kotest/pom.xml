@@ -39,6 +39,9 @@
                         <goals>
                             <goal>test-compile</goal>
                         </goals>
+                        <configuration>
+                            <jvmTarget>1.8</jvmTarget>
+                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
