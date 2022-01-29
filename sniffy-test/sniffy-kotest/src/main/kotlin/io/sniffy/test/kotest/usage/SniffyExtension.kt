@@ -39,7 +39,7 @@ open class SniffyExtension(expectation: Spy.Expectation? = null) : TestCaseExten
         try {
             spy.verify()
         } catch (e: SniffyAssertionError) {
-            return TestResult.Failure(testResult.duration, e)
+            return TestResult.failure(duration = testResult.duration, e = e)
         }
         return testResult
     }

@@ -24,13 +24,13 @@ class ExpectSniffyAssertionExceptionExtension : TestCaseExtension {
     override suspend fun intercept(testCase: TestCase, execute: suspend (TestCase) -> TestResult): TestResult {
         val testResult = execute(testCase)
         try {
-            testResult.errorOrNull shouldBe instanceOf(SniffyAssertionError::class)
+            testResult.error shouldBe instanceOf(SniffyAssertionError::class)
         } catch (e: AssertionError) {
-            return TestResult.Failure(testResult.duration, e)
+            return TestResult.failure(duration = testResult.duration, e = e)
         } catch (e: Exception) {
-            return TestResult.Failure(testResult.duration, AssertionError(e))
+            return TestResult.failure(duration = testResult.duration, e = AssertionError(e))
         }
-        return TestResult.Success(testResult.duration)
+        return TestResult.success(testResult.duration)
     }
 }
 
