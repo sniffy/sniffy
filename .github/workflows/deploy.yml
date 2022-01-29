@@ -7,7 +7,8 @@ on:
       - develop
   release:
     types: [ created ]
-
+env:
+  MAVEN_OPTS: -Dkotlin.environment.keepalive=true
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
