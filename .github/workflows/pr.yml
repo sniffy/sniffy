@@ -10,9 +10,6 @@ on:
   pull_request:
     branches-ignore:
       - tag/*
-env:
-  MAVEN_OPTS: -Dkotlin.environment.keepalive=true
-# TODO: somehow grab test results from the github action
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
