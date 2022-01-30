@@ -7,7 +7,6 @@ on:
       - develop
   release:
     types: [ created ]
-
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
@@ -38,7 +37,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -B dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C -B dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
@@ -74,7 +73,7 @@ jobs:
       - smoke-test
     strategy:
       matrix:
-        platform: [ linux/arm, linux/arm64 ]
+        platform: [ linux/arm, linux/arm64, linux/s390x ]
     name: Test with ${{ matrix.platform }} AdoptOpenJDK 11
     steps:
       - uses: actions/checkout@v2
@@ -106,7 +105,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci,qemu
       - name: Build with Maven
         run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - run: cp -R ~/.m2/repository ./repository
@@ -149,7 +148,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
         run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
       - uses: codecov/codecov-action@v1
@@ -189,11 +188,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
-        run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
+        run: .\mvnretry.bat -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
@@ -245,11 +244,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
-        run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
+        run: .\mvnretry.bat -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
@@ -326,7 +325,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/deploy.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
         run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - name: Perform CodeQL Analysis
@@ -371,7 +370,7 @@ jobs:
           echo "name:        ${{ steps.import_gpg.outputs.name }}"
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Publish to the Maven Central Repository
         run: mvn -P sonatype,ci -B deploy -Dmaven.wagon.http.retryHandler.count=3
         env:

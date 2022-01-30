@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - develop
       - master
       - release/*
       - hotfix/*
@@ -41,11 +40,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -B dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C -B dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
-        run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
+        run: .\mvnretry.bat -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
@@ -77,7 +76,7 @@ jobs:
       - smoke-test
     strategy:
       matrix:
-        platform: [ linux/arm, linux/arm64 ]
+        platform: [ linux/arm, linux/arm64, linux/s390x ]
     name: Test with ${{ matrix.platform }} AdoptOpenJDK 11
     steps:
       - uses: actions/checkout@v2
@@ -109,7 +108,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci,qemu
       - name: Build with Maven
         run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - run: cp -R ~/.m2/repository ./repository
@@ -152,7 +151,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
         run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - uses: codecov/codecov-action@v1
@@ -192,7 +191,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
@@ -248,7 +247,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
@@ -329,7 +328,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
         run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - name: Perform CodeQL Analysis
