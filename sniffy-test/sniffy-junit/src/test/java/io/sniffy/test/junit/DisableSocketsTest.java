@@ -1,10 +1,10 @@
 package io.sniffy.test.junit;
 
+import io.qameta.allure.Feature;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.DisableSockets;
 import org.junit.Rule;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import java.net.ConnectException;
 import java.net.Socket;
@@ -19,7 +19,7 @@ public class DisableSocketsTest extends BaseSocketTest {
 
     @DisableSockets
     @Test
-    @Features("issues/224")
+    @Feature("issues/224")
     public void testAllConnectionsDisabled() {
 
         try {

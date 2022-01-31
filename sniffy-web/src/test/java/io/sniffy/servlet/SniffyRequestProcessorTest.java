@@ -1,7 +1,7 @@
 package io.sniffy.servlet;
 
+import io.qameta.allure.Issue;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRegistration;

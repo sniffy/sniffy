@@ -34,9 +34,10 @@
         <spring.boot.version>1.5.22.RELEASE</spring.boot.version>
         <kotlin.version>1.4.10</kotlin.version>
         <kotest.version>4.3.0</kotest.version>
-        <jacoco.version>0.8.7</jacoco.version>
+        <jacoco.version>0.8.8-SNAPSHOT</jacoco.version>
 
         <skip.java7.compatibility.tests>true</skip.java7.compatibility.tests>
+        <animal-sniffer.version>1.20</animal-sniffer.version>
     </properties>
 
     <scm>
@@ -71,8 +72,8 @@
         </dependency>
 
         <dependency>
-            <groupId>ru.yandex.qatools.allure</groupId>
-            <artifactId>allure-java-annotations</artifactId>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-java-commons</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -168,10 +169,10 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.2.0</version>
                 <configuration>
                     <source>8</source>
                     <failOnError>false</failOnError> <!-- TODO: remove it please -->
@@ -190,6 +191,18 @@
 
         <pluginManagement>
             <plugins>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.3.1</version>
+                </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -247,7 +260,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.9.0</version>
                     <configuration>
                         <source>1.6</source>
                         <target>1.6</target>
@@ -265,12 +278,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>1.4.1</version>
+                    <version>3.0.0</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.codehaus.mojo</groupId>
                             <artifactId>animal-sniffer-enforcer-rule</artifactId>
-                            <version>1.19</version>
+                            <version>${animal-sniffer.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -310,6 +323,7 @@
                         <runOrder>alphabetical</runOrder>
                         <!-- skip the default execution, we have separate for Ng and for JUnit -->
                         <skip>true</skip>
+                        <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
                     </configuration>
                     <executions>
                         <execution>
@@ -639,21 +653,14 @@
             <dependency>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-annotations</artifactId>
-                <version>1.19</version>
+                <version>${animal-sniffer.version}</version>
                 <optional>true</optional>
             </dependency>
 
             <dependency>
-                <groupId>ru.yandex.qatools.allure</groupId>
-                <artifactId>allure-java-annotations</artifactId>
-                <version>1.5.4</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-java-commons</artifactId>
+                <version>2.17.2</version>
             </dependency>
 
             <dependency>
@@ -755,7 +762,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
                         <configuration>
                             <source>1.9</source>
                             <target>1.9</target>
@@ -780,7 +786,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.2</version>
                         <configuration>
                             <source>1.8</source>
                             <target>1.8</target>

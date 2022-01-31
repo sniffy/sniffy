@@ -1,6 +1,9 @@
 package io.sniffy.boot;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import io.qameta.allure.Issue;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
@@ -19,9 +22,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import ru.yandex.qatools.allure.annotations.Issue;
-import ru.yandex.qatools.allure.annotations.Severity;
-import ru.yandex.qatools.allure.model.SeverityLevel;
 
 import javax.annotation.Resource;
 import javax.sql.DataSource;

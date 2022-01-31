@@ -1,11 +1,11 @@
 package io.sniffy.socket;
 
+import io.qameta.allure.Story;
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Stories;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -72,7 +72,7 @@ public class CaptureDataInputStreamTrafficTest {
     }
 
     @Test
-    @Stories({"issues/415"})
+    @Story("issues/415")
     public void testCaptureInputStream() throws Exception {
 
         SniffyConfiguration.INSTANCE.setCaptureTraffic(true);

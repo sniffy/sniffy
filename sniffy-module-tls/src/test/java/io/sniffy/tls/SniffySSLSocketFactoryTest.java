@@ -1,11 +1,10 @@
 package io.sniffy.tls;
 
+import io.qameta.allure.Issue;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Issue;
-import sun.security.jca.Providers;
 
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;

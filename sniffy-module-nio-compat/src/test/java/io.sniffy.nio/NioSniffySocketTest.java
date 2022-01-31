@@ -1,5 +1,6 @@
 package io.sniffy.nio;
 
+import io.qameta.allure.Issue;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.SpyConfiguration;
@@ -9,7 +10,6 @@ import io.sniffy.socket.*;
 import io.sniffy.util.OSUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
