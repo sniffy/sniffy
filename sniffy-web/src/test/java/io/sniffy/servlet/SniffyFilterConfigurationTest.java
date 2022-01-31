@@ -9,7 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static io.sniffy.servlet.SniffyFilter.HEADER_NUMBER_OF_QUERIES;
 import static io.sniffy.servlet.SniffyFilter.HEADER_REQUEST_DETAILS;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
