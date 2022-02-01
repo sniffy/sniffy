@@ -1,13 +1,12 @@
 package io.sniffy.test;
 
+import io.qameta.allure.Feature;
 import org.h2.jdbcx.JdbcDataSource;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import ru.yandex.qatools.allure.annotations.Features;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
@@ -23,7 +22,6 @@ import java.util.logging.Logger;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -42,7 +40,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void usage() throws Exception {
         // tag::sharedConnectionDataSourceUsage[]
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource); // <1>
@@ -61,7 +59,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testSameConnectionReturnedForAllThreads() throws SQLException, ExecutionException, InterruptedException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource);
@@ -92,7 +90,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testSlaveConnectionCloseIgnored() throws SQLException, ExecutionException, InterruptedException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource);
@@ -116,7 +114,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testStatementGetConnectionReturnsProxy() throws SQLException, InterruptedException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(targetDataSource);
@@ -134,7 +132,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testGetLogWriterCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -151,7 +149,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testSetLogWriterCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -173,7 +171,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testGetLoginTimeoutCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -188,7 +186,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testSetLoginTimeoutCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -209,7 +207,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testGetParentLoggerCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -226,7 +224,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testUnwrapCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);
@@ -247,7 +245,7 @@ public class SharedConnectionDataSourceTest {
     }
 
     @Test
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testIsWrapperForCallsTarget() throws SQLException {
 
         SharedConnectionDataSource sharedConnectionDataSource = new SharedConnectionDataSource(mockDataSouce);

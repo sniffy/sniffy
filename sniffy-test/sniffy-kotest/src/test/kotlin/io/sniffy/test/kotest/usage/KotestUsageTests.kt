@@ -11,7 +11,6 @@ import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
-import io.kotest.core.test.TestStatus
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.instanceOf
@@ -26,8 +25,10 @@ class ExpectSniffyAssertionExceptionExtension : TestCaseExtension {
         val testResult = execute(testCase)
         try {
             testResult.error shouldBe instanceOf(SniffyAssertionError::class)
+        } catch (e: AssertionError) {
+            return TestResult.failure(duration = testResult.duration, e = e)
         } catch (e: Exception) {
-            return testResult.copy(status = TestStatus.Failure, error = e)
+            return TestResult.failure(duration = testResult.duration, e = AssertionError(e))
         }
         return TestResult.success(testResult.duration)
     }

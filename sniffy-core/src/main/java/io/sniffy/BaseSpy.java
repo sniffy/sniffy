@@ -101,7 +101,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
     }
 
 
-    protected void addExecutedStatement(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, int rowsUpdated) {
+    protected void addExecutedStatement(StatementMetaData statementMetaData, long elapsedTime, int bytesDown, int bytesUp, long rowsUpdated) {
         SqlStats sqlStats = executedStatements.get(statementMetaData);
         if (null == sqlStats) {
             sqlStats = executedStatements.putIfAbsent(statementMetaData, new SqlStats(elapsedTime, bytesDown, bytesUp, rowsUpdated, 1));

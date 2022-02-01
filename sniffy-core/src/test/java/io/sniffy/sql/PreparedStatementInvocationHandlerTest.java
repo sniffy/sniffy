@@ -1,11 +1,11 @@
 package io.sniffy.sql;
 
+import io.qameta.allure.Issue;
 import io.sniffy.BaseTest;
 import io.sniffy.CurrentThreadSpy;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.IOException;
 import java.lang.reflect.Proxy;

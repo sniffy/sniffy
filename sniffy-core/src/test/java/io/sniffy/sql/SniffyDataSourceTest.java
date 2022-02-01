@@ -8,12 +8,8 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.TcpConnections;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.stubbing.Answer;
 
-import javax.sql.DataSource;
-import javax.sql.PooledConnection;
-import javax.sql.XADataSource;
+import javax.sql.*;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -23,8 +19,6 @@ import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
 
 public class SniffyDataSourceTest extends BaseTest {
 
@@ -98,12 +92,16 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
-        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
-
-        when(targetDataSource.getConnection()).then(invocation -> {
-            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
-            return invocation.callRealMethod();
-        });
+        CommonDataSource targetDataSource = (CommonDataSource) Proxy.newProxyInstance(
+                JdbcDataSource.class.getClassLoader(),
+                new Class[]{ DataSource.class, XADataSource.class, ConnectionPoolDataSource.class, CommonDataSource.class },
+                (proxy, method, args) -> {
+                    if (method.getName().equals("getConnection")) {
+                        Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+                    }
+                    return method.invoke(h2DataSource, args);
+                }
+        );
 
         SniffyDataSource sniffyDataSource = new SniffyDataSource(targetDataSource);
 
@@ -124,12 +122,16 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
-        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
-
-        when(targetDataSource.getConnection(anyString(), anyString())).then(invocation -> {
-            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
-            return invocation.callRealMethod();
-        });
+        CommonDataSource targetDataSource = (CommonDataSource) Proxy.newProxyInstance(
+                JdbcDataSource.class.getClassLoader(),
+                new Class[]{ DataSource.class, XADataSource.class, ConnectionPoolDataSource.class, CommonDataSource.class },
+                (proxy, method, args) -> {
+                    if (method.getName().equals("getConnection")) {
+                        Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+                    }
+                    return method.invoke(h2DataSource, args);
+                }
+        );
 
         SniffyDataSource sniffyDataSource = new SniffyDataSource(targetDataSource);
 
@@ -150,12 +152,16 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
-        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
-
-        when(targetDataSource.getXAConnection()).then(invocation -> {
-            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
-            return invocation.callRealMethod();
-        });
+        CommonDataSource targetDataSource = (CommonDataSource) Proxy.newProxyInstance(
+                JdbcDataSource.class.getClassLoader(),
+                new Class[]{ DataSource.class, XADataSource.class, ConnectionPoolDataSource.class, CommonDataSource.class },
+                (proxy, method, args) -> {
+                    if (method.getName().equals("getXAConnection")) {
+                        Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+                    }
+                    return method.invoke(h2DataSource, args);
+                }
+        );
 
         SniffyDataSource sniffyDataSource = new SniffyDataSource(targetDataSource);
 
@@ -176,12 +182,16 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
-        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
-
-        when(targetDataSource.getXAConnection(anyString(), anyString())).then(invocation -> {
-            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
-            return invocation.callRealMethod();
-        });
+        CommonDataSource targetDataSource = (CommonDataSource) Proxy.newProxyInstance(
+                JdbcDataSource.class.getClassLoader(),
+                new Class[]{ DataSource.class, XADataSource.class, ConnectionPoolDataSource.class, CommonDataSource.class },
+                (proxy, method, args) -> {
+                    if (method.getName().equals("getXAConnection")) {
+                        Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+                    }
+                    return method.invoke(h2DataSource, args);
+                }
+        );
 
         SniffyDataSource sniffyDataSource = new SniffyDataSource(targetDataSource);
 
@@ -202,12 +212,16 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
-        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
-
-        when(targetDataSource.getXAConnection()).then(invocation -> {
-            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
-            return invocation.callRealMethod();
-        });
+        CommonDataSource targetDataSource = (CommonDataSource) Proxy.newProxyInstance(
+                JdbcDataSource.class.getClassLoader(),
+                new Class[]{ DataSource.class, XADataSource.class, ConnectionPoolDataSource.class, CommonDataSource.class },
+                (proxy, method, args) -> {
+                    if (method.getName().equals("getConnection")) {
+                        Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+                    }
+                    return method.invoke(h2DataSource, args);
+                }
+        );
 
         SniffyDataSource sniffyDataSource = new SniffyDataSource(targetDataSource);
 
@@ -228,19 +242,30 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
-        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
-
         AtomicReference<Connection> targetConnectionReference = new AtomicReference<>();
 
-        when(targetDataSource.getPooledConnection()).thenAnswer((Answer<PooledConnection>) invocation -> {
-            PooledConnection pc = Mockito.spy((PooledConnection) invocation.callRealMethod());
-            when(pc.getConnection()).thenAnswer((Answer<Connection>) invocation1 -> {
-                Connection c = (Connection) invocation1.callRealMethod();
-                targetConnectionReference.set(c);
-                return c;
-            });
-            return pc;
-        });
+        CommonDataSource targetDataSource = (CommonDataSource) Proxy.newProxyInstance(
+                JdbcDataSource.class.getClassLoader(),
+                new Class[]{ DataSource.class, XADataSource.class, ConnectionPoolDataSource.class, CommonDataSource.class },
+                (proxy, method, args) -> {
+                    Object result = method.invoke(h2DataSource, args);
+                    if (method.getName().equals("getPooledConnection")) {
+                        PooledConnection pc = (PooledConnection) result;
+                        return (PooledConnection) Proxy.newProxyInstance(
+                                JdbcDataSource.class.getClassLoader(),
+                                new Class[] { PooledConnection.class },
+                                (proxy1, method1, args1) -> {
+                                    Object result1 = method1.invoke(pc, args1);
+                                    if (method1.getName().equals("getConnection")) {
+                                        targetConnectionReference.set((Connection) result1);
+                                    }
+                                    return result1;
+                                }
+                        );
+                    }
+                    return result;
+                }
+        );
 
         SniffyDataSource sniffyDataSource = new SniffyDataSource(targetDataSource);
 
@@ -266,12 +291,16 @@ public class SniffyDataSourceTest extends BaseTest {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
-        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
-
-        when(targetDataSource.getXAConnection(anyString(), anyString())).then(invocation -> {
-            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
-            return invocation.callRealMethod();
-        });
+        CommonDataSource targetDataSource = (CommonDataSource) Proxy.newProxyInstance(
+                JdbcDataSource.class.getClassLoader(),
+                new Class[]{ DataSource.class, XADataSource.class, ConnectionPoolDataSource.class, CommonDataSource.class },
+                (proxy, method, args) -> {
+                    if (method.getName().equals("getConnection")) {
+                        Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+                    }
+                    return method.invoke(h2DataSource, args);
+                }
+        );
 
         SniffyDataSource sniffyDataSource = new SniffyDataSource(targetDataSource);
 

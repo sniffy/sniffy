@@ -1,19 +1,19 @@
 package io.sniffy.servlet;
 
 import com.jayway.jsonpath.JsonPath;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Issue;
 import io.sniffy.BaseTest;
 import io.sniffy.configuration.SniffyConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import ru.yandex.qatools.allure.annotations.Features;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static io.sniffy.servlet.SniffyFilter.HEADER_NUMBER_OF_QUERIES;
 import static io.sniffy.servlet.SniffyFilter.HEADER_REQUEST_DETAILS;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -87,7 +86,7 @@ public class SniffyFilterConfigurationTest extends BaseTest {
     }
 
     @Test
-    @Features("issues/288")
+    @Feature("issues/288")
     public void testSystemInConfigFilterDisabledGloballyOneQuery() throws IOException, ServletException {
 
         doAnswer(invocation -> {executeStatement(); return null;}).
@@ -107,7 +106,7 @@ public class SniffyFilterConfigurationTest extends BaseTest {
     }
 
     @Test
-    @Features("issues/288")
+    @Feature("issues/288")
     public void testSystemInConfigFilterEnabledGloballyOneQuery() throws IOException, ServletException {
 
         Boolean filterEnabledBackup = SniffyConfiguration.INSTANCE.getFilterEnabled();
