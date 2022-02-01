@@ -32,7 +32,7 @@ public class SharedConnectionIntegrationTest {
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(
-                     "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, ?)"
+                     "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (NEXT VALUE FOR SEQ_PROJECT, ?)"
              )) {
 
             ps.setString(1, "foo");
