@@ -1,5 +1,6 @@
 package io.sniffy.test.spring;
 
+import io.qameta.allure.Feature;
 import io.sniffy.socket.EchoServerRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -77,7 +77,7 @@ public class SpringDisableSocketsGloballyTest {
     }
 
     @Test
-    @Features("issues/490")
+    @Feature("issues/490")
     public void testAllConnectionsDisabled() {
 
         assertNotNull(someBeanUsingNetwork.connectException);
