@@ -2,15 +2,14 @@ package io.sniffy.servlet;
 
 import io.sniffy.CurrentThreadSpy;
 import io.sniffy.Sniffy;
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -196,7 +195,20 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 requestStats.setTimeToFirstByte(getTimeToFirstByte());
                 requestStats.setElapsedTime(getElapsedTime());
                 updateRequestCache();
-                responseWrapper.flushIfPossible();
+
+                if (SniffyConfiguration.INSTANCE.getFlushResponse()) {
+                    boolean asyncStarted = false;
+                    try {
+                        asyncStarted = httpServletRequest.isAsyncStarted();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    if (!asyncStarted) {
+                        responseWrapper.flushIfPossible();
+                    }
+                }
+
             } catch (Exception e) {
                 if (null != sniffyFilter.servletContext) {
                     sniffyFilter.servletContext.log("Exception in SniffyRequestProcessor; original chain was already called", e);

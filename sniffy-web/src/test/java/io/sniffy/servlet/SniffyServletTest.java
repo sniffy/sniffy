@@ -1,6 +1,9 @@
 package io.sniffy.servlet;
 
 import com.jayway.jsonpath.JsonPath;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Issue;
+import io.qameta.allure.Issues;
 import io.sniffy.BaseTest;
 import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
@@ -16,9 +19,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import ru.yandex.qatools.allure.annotations.Features;
-import ru.yandex.qatools.allure.annotations.Issue;
-import ru.yandex.qatools.allure.annotations.Issues;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletResponse;
@@ -237,7 +237,7 @@ public class SniffyServletTest extends BaseTest {
     }
 
     @Test
-    @Features({"issues/219"})
+    @Feature("issues/219")
     public void testEditDatasourceRegistryAddDelay() throws Exception {
 
         ConnectionsRegistry.INSTANCE.clear();
@@ -552,7 +552,7 @@ public class SniffyServletTest extends BaseTest {
     }
 
     @Test
-    @Features("issues/292")
+    @Feature("issues/292")
     public void testGetTopSql() throws Exception {
 
         Sniffy.getGlobalSqlStats().clear();
@@ -579,7 +579,7 @@ public class SniffyServletTest extends BaseTest {
     }
 
     @Test
-    @Features("issues/292")
+    @Feature("issues/292")
     public void testResetTopSql() throws Exception {
 
         Sniffy.getGlobalSqlStats().clear();

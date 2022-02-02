@@ -1,5 +1,6 @@
 package io.sniffy.test.spring;
 
+import io.qameta.allure.Feature;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +10,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import java.sql.*;
 import java.util.Arrays;
@@ -32,11 +32,11 @@ public class SharedConnectionRollbackIntegrationTest {
 
     @Test
     @SharedConnection
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testSharedConnectionTwoRows() throws SQLException, ExecutionException, InterruptedException {
 
         jdbcTemplate.batchUpdate(
-                "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, ?)",
+                "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (NEXT VALUE FOR SEQ_PROJECT, ?)",
                 Arrays.asList(new Object[]{"foo"}, new Object[]{"bar"})
         );
 
@@ -48,11 +48,11 @@ public class SharedConnectionRollbackIntegrationTest {
 
     @Test
     @SharedConnection
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testSharedConnectionThreeRows() throws SQLException, ExecutionException, InterruptedException {
 
         jdbcTemplate.batchUpdate(
-                "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, ?)",
+                "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (NEXT VALUE FOR SEQ_PROJECT, ?)",
                 Arrays.asList(new Object[]{"foo"}, new Object[]{"bar"}, new Object[]{"baz"})
         );
 

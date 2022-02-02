@@ -1,5 +1,7 @@
 package io.sniffy.servlet;
 
+import io.qameta.allure.Feature;
+import io.qameta.allure.Issue;
 import io.sniffy.BaseTest;
 import io.sniffy.registry.ConnectionsRegistry;
 import org.graalvm.polyglot.Context;
@@ -8,7 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -16,8 +18,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
-import ru.yandex.qatools.allure.annotations.Features;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import javax.script.ScriptException;
 import javax.servlet.*;
@@ -38,7 +38,6 @@ import java.util.stream.IntStream;
 
 import static io.sniffy.servlet.SniffyFilter.*;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -405,7 +404,7 @@ public class SniffyFilterTest extends BaseTest {
     }
 
     @Test
-    @Features("issues/304")
+    @Feature("issues/304")
     public void testInjectHtmlExcludePattern() throws IOException, ServletException {
 
         answerWithContent("<html><head><title>Title</title></head><body>Hello, World!</body></html>");

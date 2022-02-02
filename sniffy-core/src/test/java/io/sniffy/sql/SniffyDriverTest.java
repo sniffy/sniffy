@@ -1,5 +1,6 @@
 package io.sniffy.sql;
 
+import io.qameta.allure.Feature;
 import io.sniffy.BaseTest;
 import io.sniffy.Constants;
 import io.sniffy.Sniffy;
@@ -8,7 +9,6 @@ import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.After;
 import org.junit.Test;
 import org.mockito.Mockito;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.net.InetAddress.getLoopbackAddress;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 public class SniffyDriverTest extends BaseTest {
@@ -56,7 +56,7 @@ public class SniffyDriverTest extends BaseTest {
     }
 
     @Test
-    @Features({"issues/219"})
+    @Feature("issues/219")
     public void testGetMockConnectionWithDelay() throws Exception {
 
         ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 1000);
@@ -84,7 +84,7 @@ public class SniffyDriverTest extends BaseTest {
     }
 
     @Test
-    @Features({"issues/219"})
+    @Feature("issues/219")
     public void testGetMockConnectionRejectedWithDelay() throws Exception {
 
         ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", -1000);
@@ -112,7 +112,7 @@ public class SniffyDriverTest extends BaseTest {
     }
 
     @Test
-    @Features({"issues/219"})
+    @Feature("issues/219")
     public void testGetMockConnectionWithDelayInterrupted() throws Exception {
 
         ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", 1000);
@@ -141,7 +141,7 @@ public class SniffyDriverTest extends BaseTest {
     }
 
     @Test
-    @Features({"issues/219"})
+    @Feature("issues/219")
     public void testGetMockConnectionRejectedWithDelayInterrupted() throws Exception {
 
         ConnectionsRegistry.INSTANCE.setDataSourceStatus("jdbc:h2:mem:", "sa", -1000);

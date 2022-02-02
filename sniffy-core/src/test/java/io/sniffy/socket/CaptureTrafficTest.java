@@ -1,5 +1,7 @@
 package io.sniffy.socket;
 
+import io.qameta.allure.Stories;
+import io.qameta.allure.Story;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.SpyConfiguration;
@@ -7,7 +9,6 @@ import io.sniffy.ThreadMetaData;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.util.OSUtil;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Stories;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,7 +23,7 @@ import static org.junit.Assert.*;
 public class CaptureTrafficTest extends BaseSocketTest {
 
     @Test
-    @Stories({"issues/400", "issues/401"})
+    @Stories({@Story("issues/400"), @Story("issues/401")})
     public void testTrafficCapture() throws Exception {
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
@@ -92,7 +93,7 @@ public class CaptureTrafficTest extends BaseSocketTest {
     }
 
     @Test
-    @Stories({"issues/400", "issues/401"})
+    @Stories({@Story("issues/400"), @Story("issues/401")})
     public void testTrafficCaptureDisabled() throws Exception {
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
@@ -106,7 +107,7 @@ public class CaptureTrafficTest extends BaseSocketTest {
     }
 
     @Test
-    @Stories({"issues/411"})
+    @Story("issues/411")
     public void testCaptureInputStream() throws Exception {
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
@@ -212,7 +213,7 @@ public class CaptureTrafficTest extends BaseSocketTest {
     }
 
     @Test
-    @Stories({"issues/411"})
+    @Story("issues/411")
     public void testCaptureInputStream_SendUrgentData() throws Exception {
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
@@ -313,7 +314,7 @@ public class CaptureTrafficTest extends BaseSocketTest {
     }
 
     @Test
-    @Stories({"issues/411"})
+    @Story("issues/411")
     public void testCaptureInputStream_Skip() throws Exception {
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
@@ -420,7 +421,7 @@ public class CaptureTrafficTest extends BaseSocketTest {
     }
 
     @Test
-    @Stories({"issues/411"})
+    @Story("issues/411")
     public void testCaptureInputStreamWithoutStackTraces() throws Exception {
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);

@@ -102,7 +102,7 @@ class StatementInvocationHandler<T extends Statement> extends SniffyInvocationHa
 
     protected Object invokeTargetAndRecord(Method method, Object[] args, String sql, boolean isUpdateQuery) throws Throwable {
         long start = System.currentTimeMillis();
-        int rowsUpdated = 0;
+        long rowsUpdated = 0;
         try {
             Sniffy.enterJdbcMethod();
             checkConnectionAllowed(true);

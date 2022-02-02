@@ -90,6 +90,16 @@ public enum SniffyConfiguration {
      */
     private volatile Boolean socketFaultInjectionEnabled;
 
+    /**
+     * @since 3.1.13
+     */
+    private volatile Boolean useSecureCookie;
+
+    /**
+     * @since 3.1.13
+     */
+    private volatile Boolean flushResponse;
+
     SniffyConfiguration() {
         loadSniffyConfiguration();
     }
@@ -147,6 +157,12 @@ public enum SniffyConfiguration {
         this.socketCaptureEnabled = null == socketCaptureEnabled || Boolean.parseBoolean(socketCaptureEnabled);
         String socketFaultInjectionEnabled = getProperty("io.sniffy.socketFaultInjectionEnabled", "IO_SNIFFY_SOCKET_FAULT_INJECTION_ENABLED");
         this.socketFaultInjectionEnabled = null == socketFaultInjectionEnabled || Boolean.parseBoolean(socketFaultInjectionEnabled);
+
+        String useSecureCookie = getProperty("io.sniffy.useSecureCookie", "IO_SNIFFY_USE_SECURE_COOKIE", "true");
+        this.useSecureCookie = null == useSecureCookie || Boolean.parseBoolean(useSecureCookie);
+
+        String flushResponse = getProperty("io.sniffy.flushResponse", "IO_SNIFFY_FLUSH_RESPONSE", "true");
+        this.flushResponse = null == flushResponse || Boolean.parseBoolean(flushResponse);
 
     }
 
@@ -444,6 +460,20 @@ public enum SniffyConfiguration {
      */
     public void setSocketFaultInjectionEnabled(Boolean socketFaultInjectionEnabled) {
         this.socketFaultInjectionEnabled = socketFaultInjectionEnabled;
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public Boolean getUseSecureCookie() {
+        return useSecureCookie;
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public Boolean getFlushResponse() {
+        return flushResponse;
     }
 
 }

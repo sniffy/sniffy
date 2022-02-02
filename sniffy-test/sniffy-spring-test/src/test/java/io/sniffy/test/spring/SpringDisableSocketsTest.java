@@ -1,5 +1,6 @@
 package io.sniffy.test.spring;
 
+import io.qameta.allure.Feature;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.DisableSockets;
 import org.junit.Test;
@@ -7,7 +8,6 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import java.net.ConnectException;
 import java.net.Socket;
@@ -22,7 +22,7 @@ public class SpringDisableSocketsTest extends BaseSocketTest {
 
     @DisableSockets
     @Test
-    @Features("issues/224")
+    @Feature("issues/224")
     public void testAllConnectionsDisabled() {
 
         try {

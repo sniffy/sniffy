@@ -52,4 +52,4 @@ Since some of these constructs can be cached in application code, please make su
 If absolutely necessary you can initialize Sniffy as a javaagent, although it's a bit cumbersome - see https://sniffy.io/docs/latest/#_standalone_setup[Standalone Setup] section for details.
 
 Sniffy support custom JSSE providers such as BouncyCastle. However if you're installing *AFTER* you initialize Sniffy you _might_ need to reinitialize Sniffy.
-It's possible using `Sniffy.reinitialize()` method.e
+It's possible using `Sniffy.reinitialize()` method. In general it will work out of the box without any further actions from developer given that Sniffy is initialized on an early stage.

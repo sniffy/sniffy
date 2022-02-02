@@ -1,12 +1,12 @@
 package io.sniffy.test.spring;
 
+import io.qameta.allure.Feature;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -27,12 +27,12 @@ public class SharedConnectionIntegrationTest {
 
     @Test
     @SharedConnection
-    @Features("issue/344")
+    @Feature("issue/344")
     public void testSharedConnection() throws SQLException, ExecutionException, InterruptedException {
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(
-                     "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, ?)"
+                     "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (NEXT VALUE FOR SEQ_PROJECT, ?)"
              )) {
 
             ps.setString(1, "foo");

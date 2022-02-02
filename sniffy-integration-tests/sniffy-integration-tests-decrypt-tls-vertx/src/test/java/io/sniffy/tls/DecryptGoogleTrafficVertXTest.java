@@ -40,6 +40,8 @@ public class DecryptGoogleTrafficVertXTest {
     @Test
     public void testGoogleTraffic() throws Exception {
 
+        // TODO: do not use external servers like www.google.com in tests
+
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
 
             Vertx vertx = Vertx.vertx();

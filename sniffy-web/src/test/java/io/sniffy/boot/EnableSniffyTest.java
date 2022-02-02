@@ -1,6 +1,9 @@
 package io.sniffy.boot;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import io.qameta.allure.Issue;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.Threads;
@@ -12,19 +15,18 @@ import io.sniffy.sql.StatementMetaData;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import ru.yandex.qatools.allure.annotations.Issue;
-import ru.yandex.qatools.allure.annotations.Severity;
-import ru.yandex.qatools.allure.model.SeverityLevel;
 
 import javax.annotation.Resource;
+import javax.sql.CommonDataSource;
+import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
+import javax.sql.XADataSource;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -74,12 +76,16 @@ public class EnableSniffyTest {
         JdbcDataSource h2DataSource = new JdbcDataSource();
         h2DataSource.setURL("jdbc:h2:mem:");
 
-        JdbcDataSource targetDataSource = Mockito.spy(h2DataSource);
-
-        Mockito.when(targetDataSource.getConnection()).then(invocation -> {
-            Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
-            return invocation.callRealMethod();
-        });
+        DataSource targetDataSource = (DataSource) Proxy.newProxyInstance(
+                JdbcDataSource.class.getClassLoader(),
+                new Class[]{ DataSource.class, XADataSource.class, ConnectionPoolDataSource.class, CommonDataSource.class },
+                (proxy, method, args) -> {
+                    if (method.getName().equals("getConnection")) {
+                        Sniffy.logSocket(1, new InetSocketAddress(InetAddress.getLoopbackAddress(), 9876), 2, 3, 4);
+                    }
+                    return method.invoke(h2DataSource, args);
+                }
+        );
 
         return targetDataSource;
     }
