@@ -322,6 +322,8 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
                 if (!isFirstPacketSent()) {
 
+                    // TODO: support HTTPS proxies as well (HTTPS tunnel over HTTPS) - low priority since rarely used
+
                     try {
                         @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(buff, Charset.forName("US-ASCII"));
 
@@ -356,6 +358,8 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                                 if (httpVersionIx > 0) {
 
                                     String proxiedHostAndPort = potentialRequest.substring("CONNECT ".length(), httpVersionIx);
+
+                                    // TODO: consider parsing Host header as well
 
                                     String host;
                                     int port;
