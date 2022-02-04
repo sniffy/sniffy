@@ -43,6 +43,7 @@ public class ProxyServerRule implements TestRule {
                 try {
                     new Socket("localhost", 8080);
                     connected = true;
+                    break;
                 } catch (Exception e) {
                     try {
                         Thread.sleep(100);
