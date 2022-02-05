@@ -34,6 +34,7 @@ public class ProxyServerRule implements TestRule {
                 delegate.evaluate();
             } catch (Exception e) {
                 e.printStackTrace();
+                throw e;
             } finally {
                 stopProxy();
             }
