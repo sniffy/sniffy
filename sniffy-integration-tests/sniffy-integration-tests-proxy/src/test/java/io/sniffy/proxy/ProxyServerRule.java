@@ -32,6 +32,8 @@ public class ProxyServerRule implements TestRule {
                 waitForProxy();
                 System.out.println("Proxy server ready; running test");
                 delegate.evaluate();
+            } catch (Exception e) {
+                e.printStackTrace();
             } finally {
                 stopProxy();
             }
