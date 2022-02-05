@@ -30,6 +30,7 @@ public class ProxyServerRule implements TestRule {
             try {
                 startProxy();
                 waitForProxy();
+                System.out.println("Proxy server ready; running test");
                 delegate.evaluate();
             } finally {
                 stopProxy();
@@ -70,14 +71,17 @@ public class ProxyServerRule implements TestRule {
                         .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                         .redirectError(ProcessBuilder.Redirect.INHERIT)
                         .start();
+                System.out.println("Started proxy server process");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
         private void stopProxy() throws InterruptedException {
+            System.out.println("Destroying proxy server process");
             process.destroy();
             process.waitFor(1, TimeUnit.MINUTES);
+            System.out.println("Proxy server process joined");
         }
 
     }
