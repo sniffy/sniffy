@@ -10,9 +10,6 @@ on:
   pull_request:
     branches-ignore:
       - tag/*
-# https://youtrack.jetbrains.com/issue/KT-43894
-env:
-  MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
@@ -52,9 +49,15 @@ jobs:
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -67,9 +70,15 @@ jobs:
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os == 'ubuntu-20.04'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
