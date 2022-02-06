@@ -61,6 +61,11 @@ Error:  	at org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment$Companio
                                     <name>idea.ignore.disabled.plugins</name>
                                     <value>true</value>
                                 </property>
+                                <!-- https://youtrack.jetbrains.com/issue/KT-43894 -->
+                                <property>
+                                    <name>idea.home.path</name>
+                                    <value>${java.io.tmpdir}</value>
+                                </property>
                             </properties>
                         </configuration>
                     </execution>

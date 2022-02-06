@@ -46,15 +46,9 @@ jobs:
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -67,15 +61,9 @@ jobs:
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os == 'ubuntu-20.04'
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -120,9 +108,6 @@ jobs:
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu
       - name: Build with Maven
         run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
         uses: docker/build-push-action@v2
@@ -166,9 +151,6 @@ jobs:
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -215,15 +197,9 @@ jobs:
       - name: Build with Maven
         run: mvn -T 1.5C -B clean package --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
         if: matrix.os != 'windows-2019'
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Build with Maven
         run: mvn -T 1.5C -B clean package --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3' '-Dhttp.keepAlive=false' '-Dmaven.wagon.http.pool=false'
         if: matrix.os == 'windows-2019'
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Set up JDK ${{ matrix.java }} x86
         uses: actions/setup-java@v1
         with:
@@ -237,15 +213,9 @@ jobs:
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: ${{ matrix.os == 'ubuntu-20.04' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: ${{ matrix.os == 'windows-2019' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -283,15 +253,9 @@ jobs:
       - name: Build with Maven
         run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Build with Maven
         run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Run compatibility tests using Java 8
         run: mvn -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 11
@@ -364,9 +328,6 @@ jobs:
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
         run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        # https://youtrack.jetbrains.com/issue/KT-43894
-        env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
   deploy:
@@ -413,8 +374,6 @@ jobs:
       - name: Publish to the Maven Central Repository
         run: mvn -P sonatype,ci -B deploy -Dmaven.wagon.http.retryHandler.count=3
         env:
-          # https://youtrack.jetbrains.com/issue/KT-43894
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
       - name: Set up Java for publishing to GitHub Packages
@@ -424,6 +383,4 @@ jobs:
       - name: Publish to GitHub Packages
         run: mvn -P github,ci -B clean deploy -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3 -X
         env:
-          # https://youtrack.jetbrains.com/issue/KT-43894
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
           GITHUB_TOKEN: ${{ github.token }}
