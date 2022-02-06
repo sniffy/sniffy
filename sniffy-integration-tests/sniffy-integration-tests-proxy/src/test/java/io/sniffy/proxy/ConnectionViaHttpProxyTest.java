@@ -50,7 +50,7 @@ public class ConnectionViaHttpProxyTest {
             {
                 CloseableHttpAsyncClient httpclient = HttpAsyncClientBuilder.
                         create().
-                        setProxy(new HttpHost("localhost", 8080)).
+                        setProxy(new HttpHost("localhost", rule.getPortNumber())).
                         build();
                 httpclient.start();
                 HttpGet request = new HttpGet("https://www.google.com");
@@ -100,7 +100,7 @@ public class ConnectionViaHttpProxyTest {
         Map<Map.Entry<String, Integer>, Integer> discoveredAddresses = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
 
         assertTrue(discoveredAddresses.containsKey(new AbstractMap.SimpleEntry<>("www.google.com", 443)));
-        assertTrue(discoveredAddresses.containsKey(new AbstractMap.SimpleEntry<>("localhost", 8080)));
+        assertTrue(discoveredAddresses.containsKey(new AbstractMap.SimpleEntry<>("localhost", rule.getPortNumber())));
 
     }
 
@@ -113,7 +113,7 @@ public class ConnectionViaHttpProxyTest {
                 CloseableHttpClient httpclient = HttpClients.createDefault();
 
                 HttpHost target = new HttpHost("www.google.com", 443, "https");
-                HttpHost proxy = new HttpHost("localhost", 8080, "http");
+                HttpHost proxy = new HttpHost("localhost", rule.getPortNumber(), "http");
 
                 RequestConfig config = RequestConfig.custom()
                         .setProxy(proxy)
@@ -167,7 +167,7 @@ public class ConnectionViaHttpProxyTest {
         Map<Map.Entry<String, Integer>, Integer> discoveredAddresses = ConnectionsRegistry.INSTANCE.getDiscoveredAddresses();
 
         assertTrue(discoveredAddresses.containsKey(new AbstractMap.SimpleEntry<>("www.google.com", 443)));
-        assertTrue(discoveredAddresses.containsKey(new AbstractMap.SimpleEntry<>("localhost", 8080)));
+        assertTrue(discoveredAddresses.containsKey(new AbstractMap.SimpleEntry<>("localhost", rule.getPortNumber())));
 
     }
 

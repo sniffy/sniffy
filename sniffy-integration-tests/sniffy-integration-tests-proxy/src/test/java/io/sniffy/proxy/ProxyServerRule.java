@@ -8,12 +8,19 @@ import org.littleshoot.proxy.Launcher;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProxyServerRule implements TestRule {
+
+    private static final AtomicInteger port = new AtomicInteger(8080);
 
     @Override
     public Statement apply(Statement base, Description description) {
         return new ProxyServerStatement(base);
+    }
+
+    public int getPortNumber() {
+        return port.get();
     }
 
     public static class ProxyServerStatement extends Statement {
@@ -46,7 +53,7 @@ public class ProxyServerRule implements TestRule {
 
             for (int i = 0; i < 1000; i++) {
                 try {
-                    new Socket("localhost", 8080);
+                    new Socket("localhost", port.get());
                     connected = true;
                     break;
                 } catch (Exception e) {
@@ -70,10 +77,12 @@ public class ProxyServerRule implements TestRule {
                 process = new ProcessBuilder(
                         System.getProperty("java.home") + "/bin/java",
                         "-classpath", System.getProperty("java.class.path"),
-                        Launcher.class.getName())
+                        Launcher.class.getName(),
+                        "-port", Integer.toString(port.incrementAndGet()))
                         .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                         .redirectError(ProcessBuilder.Redirect.INHERIT)
                         .start();
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> process.destroy()));
                 System.out.println("Started proxy server process");
             } catch (IOException e) {
                 e.printStackTrace();
