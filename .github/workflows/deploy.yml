@@ -9,7 +9,7 @@ on:
     types: [ created ]
 # https://youtrack.jetbrains.com/issue/KT-43894
 env:
-  MAVEN_OPTS: "-Didea.home.path=${{ RUNNER_TEMP }}"
+  MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
