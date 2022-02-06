@@ -41,13 +41,13 @@ jobs:
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
-        run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
+        run: .\mvnretry.bat -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
       - uses: codecov/codecov-action@v1
         with:
@@ -59,10 +59,10 @@ jobs:
           architecture: x86
         if: matrix.os != 'macos-10.15'
       - name: Build with Maven x86
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os == 'ubuntu-20.04'
       - name: Build with Maven x86
-        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
       - uses: codecov/codecov-action@v1
         with:
@@ -107,7 +107,7 @@ jobs:
       - name: Resolve dependencies
         run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci,qemu
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
         uses: docker/build-push-action@v2
@@ -150,7 +150,7 @@ jobs:
       - name: Resolve dependencies
         run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -195,10 +195,10 @@ jobs:
         run: .\mvnretry.bat -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
-        run: mvn -B clean package --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
+        run: mvn -T 1.5C -B clean package --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
         if: matrix.os != 'windows-2019'
       - name: Build with Maven
-        run: mvn -B clean package --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3' '-Dhttp.keepAlive=false' '-Dmaven.wagon.http.pool=false'
+        run: mvn -T 1.5C -B clean package --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3' '-Dhttp.keepAlive=false' '-Dmaven.wagon.http.pool=false'
         if: matrix.os == 'windows-2019'
       - name: Set up JDK ${{ matrix.java }} x86
         uses: actions/setup-java@v1
@@ -211,10 +211,10 @@ jobs:
       # Cannot invoke "org.apache.maven.artifact.Artifact.getFile()" because "jacocoAgentArtifact" is null
       # Might be caused by https://openjdk.java.net/jeps/416 or just regression issue in 32-bit windows builds
       - name: Build with Maven x86
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: ${{ matrix.os == 'ubuntu-20.04' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
       - name: Build with Maven x86
-        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: ${{ matrix.os == 'windows-2019' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
       - uses: codecov/codecov-action@v1
         with:
@@ -251,10 +251,10 @@ jobs:
         run: .\mvnretry.bat -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
       - name: Run compatibility tests using Java 8
         run: mvn -f sniffy-compatibility-tests/pom.xml test
@@ -327,7 +327,7 @@ jobs:
       - name: Resolve dependencies
         run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
   deploy:
