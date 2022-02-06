@@ -29,6 +29,10 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
 
     private InetSocketAddress address;
 
+    private boolean firstPacketSent;
+
+    private InetSocketAddress proxiedAddress;
+
     private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
     private volatile Integer connectionStatus;
@@ -61,12 +65,34 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
         return this.address;
     }
 
+    @Override
+    public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
+        this.proxiedAddress = proxiedAddress;
+    }
+
+    @Override
+    public InetSocketAddress getProxiedInetSocketAddress() {
+        return proxiedAddress;
+    }
+
+    @Override
+    public void setFirstPacketSent(boolean firstPacketSent) {
+        this.firstPacketSent = firstPacketSent;
+    }
+
+    @Override
+    public boolean isFirstPacketSent() {
+        return firstPacketSent;
+    }
+
     @Deprecated
+    @Override
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis, int bytesDown, int bytesUp) {
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;

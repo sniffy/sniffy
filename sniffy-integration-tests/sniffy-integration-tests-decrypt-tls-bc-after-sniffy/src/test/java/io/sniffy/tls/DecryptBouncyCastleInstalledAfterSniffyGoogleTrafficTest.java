@@ -5,7 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(SniffyRunner.class)
-public class DecryptBouncyCastleGoogleTrafficTest {
+public class DecryptBouncyCastleInstalledAfterSniffyGoogleTrafficTest {
 
     @SuppressWarnings("CharsetObjectCanBeUsed")
     @Test
