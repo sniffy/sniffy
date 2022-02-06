@@ -38,6 +38,7 @@ public interface SniffyNetworkConnection extends TrafficCapturingNetworkConnecti
 
     void setLastWriteThreadId(long lastWriteThreadId);
 
+    @Deprecated
     void logSocket(long millis);
 
     @Deprecated

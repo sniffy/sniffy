@@ -149,11 +149,13 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis, int bytesDown, int bytesUp) {
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;

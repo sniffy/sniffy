@@ -252,7 +252,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                     return false;
                 }
 
-                // TODO: do something with non implemented bethod below
+                // TODO: do something with non implemented method below
                 @Override
                 public int getPotentiallyBufferedInputBytes() {
                     return 0;
@@ -385,7 +385,7 @@ public class ConnectionsRegistryTest extends BaseSocketTest {
                     return false;
                 }
 
-                // TODO: do something with non implemented bethod below
+                // TODO: do something with non implemented method below
                 @Override
                 public int getPotentiallyBufferedInputBytes() {
                     return 0;
