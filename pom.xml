@@ -57,6 +57,17 @@
                 <updatePolicy>daily</updatePolicy>
             </snapshots>
         </repository>
+        <repository>
+            <id>maven-kotlin-dev-repo</id>
+            <name>maven-kotlin-dev-repo</name>
+            <url>https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
 
