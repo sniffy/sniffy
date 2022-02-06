@@ -7,8 +7,9 @@ on:
       - develop
   release:
     types: [ created ]
+# https://youtrack.jetbrains.com/issue/KT-43894
 env:
-  MAVEN_OPTS: "-Didea.home.path=/tmp"
+  MAVEN_OPTS: "-Didea.home.path=${{ runner.temp }}"
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
