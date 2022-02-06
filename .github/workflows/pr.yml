@@ -51,13 +51,13 @@ jobs:
         if: matrix.os != 'windows-2019'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -72,13 +72,13 @@ jobs:
         if: matrix.os == 'ubuntu-20.04'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -125,7 +125,7 @@ jobs:
         run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
         uses: docker/build-push-action@v2
@@ -171,7 +171,7 @@ jobs:
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -220,13 +220,13 @@ jobs:
         if: matrix.os != 'windows-2019'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Set up JDK ${{ matrix.java }} x86
         uses: actions/setup-java@v1
         with:
@@ -242,13 +242,13 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-20.04' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: ${{ matrix.os == 'windows-2019' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -288,13 +288,13 @@ jobs:
         if: matrix.os != 'windows-2019'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Run compatibility tests using Java 8
         run: mvn -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 11
@@ -369,6 +369,6 @@ jobs:
         run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }}"
+          MAVEN_OPTS: "-Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1

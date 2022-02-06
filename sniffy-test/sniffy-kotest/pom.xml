@@ -27,46 +27,6 @@
 
         <plugins>
 
-            <!--
-            need to set -Didea.ignore.disabled.plugins=true
-
-            Otherwise it triggers following error from kotlin compiler plugin
-
-            Error:  Failed to execute goal org.jetbrains.kotlin:kotlin-maven-plugin:1.6.20-RC-94:compile (compile) on project sniffy-kotest: Compilation failure
-Error:  java.lang.NullPointerException
-Error:  	at java.base/java.io.Reader.<init>(Reader.java:167)
-Error:  	at java.base/java.io.InputStreamReader.<init>(InputStreamReader.java:109)
-Error:  	at com.intellij.ide.plugins.PluginManagerCore.readBrokenPluginFile(PluginManagerCore.java:249)
-Error:  	at com.intellij.ide.plugins.PluginManagerCore.getBrokenPluginVersions(PluginManagerCore.java:241)
-Error:  	at com.intellij.ide.plugins.PluginManagerCore.createLoadingResult(PluginManagerCore.java:822)
-Error:  	at com.intellij.ide.plugins.DescriptorListLoadingContext.createSingleDescriptorContext(DescriptorListLoadingContext.java:64)
-Error:  	at com.intellij.ide.plugins.PluginManagerCore.registerExtensionPointAndExtensions(PluginManagerCore.java:1318)
-Error:  	at com.intellij.core.CoreApplicationEnvironment.registerExtensionPointAndExtensions(CoreApplicationEnvironment.java:287)
-Error:  	at org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment$Companion.registerApplicationExtensionPointsAndExtensionsFrom(KotlinCoreEnvironment.kt:622)
-
-            -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>properties-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <executions>
-                    <execution>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>set-system-properties</goal>
-                        </goals>
-                        <configuration>
-                            <properties>
-                                <property>
-                                    <name>idea.ignore.disabled.plugins</name>
-                                    <value>true</value>
-                                </property>
-                            </properties>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
