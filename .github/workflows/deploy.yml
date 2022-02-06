@@ -7,6 +7,8 @@ on:
       - develop
   release:
     types: [ created ]
+env:
+  MAVEN_OPTS: "-Didea.home.path=/tmp"
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}

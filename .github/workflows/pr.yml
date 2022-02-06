@@ -10,6 +10,8 @@ on:
   pull_request:
     branches-ignore:
       - tag/*
+env:
+  MAVEN_OPTS: "-Didea.home.path=/tmp"
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
