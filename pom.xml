@@ -333,7 +333,7 @@
                         <!-- skip the default execution, we have separate for Ng and for JUnit -->
                         <skip>true</skip>
                         <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
-                        <argLine>-Xmx1024m</argLine>
+                        <argLine>-Xmx1024m ${argLine}</argLine>
                     </configuration>
                     <executions>
                         <execution>
