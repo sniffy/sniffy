@@ -35,6 +35,7 @@
                         <!-- TODO: is it required? -->
                         <include>**/*Spec.java</include>
                     </includes>
+                    <argLine>-Xmx1024m -XX:MaxPermSize=256m</argLine>
                 </configuration>
             </plugin>
         </plugins>
