@@ -35,7 +35,7 @@
                         <!-- TODO: is it required? -->
                         <include>**/*Spec.java</include>
                     </includes>
-                    <argLine>-Xmx1024m ${argLine}</argLine>
+                    <argLine>-Xmx768m ${argLine}</argLine>
                 </configuration>
             </plugin>
         </plugins>
