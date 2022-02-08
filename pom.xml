@@ -334,6 +334,7 @@
                         <skip>true</skip>
                         <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                         <argLine>-Xmx768m ${argLine}</argLine>
+                        <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                     </configuration>
                     <executions>
                         <execution>
