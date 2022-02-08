@@ -7,6 +7,7 @@ import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.StringUtil;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.client.HttpRequest;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -99,7 +101,9 @@ public class DecryptGoogleTrafficVertXTest {
             assertNotNull(entry.getKey());
             assertNotNull(entry.getValue());
 
-            assertEquals(2, entry.getValue().size());
+            System.err.println(convertNetworkPacketsToString(entry.getValue()));
+
+            assertEquals("Expected 2 packets, but instead got " + convertNetworkPacketsToString(entry.getValue()), 2, entry.getValue().size());
 
             NetworkPacket request = entry.getValue().get(0);
             NetworkPacket response = entry.getValue().get(1);
@@ -114,6 +118,12 @@ public class DecryptGoogleTrafficVertXTest {
 
         }
 
+    }
+
+    private static String convertNetworkPacketsToString(List<NetworkPacket> packets) {
+        return packets.stream().map(packet ->
+                packet.getTimestamp() + " isSent=" + packet.isSent() + " content=" + StringUtil.LINE_SEPARATOR + new String(packet.getBytes()) + StringUtil.LINE_SEPARATOR
+        ).collect(Collectors.toList()).toString();
     }
 
 }
