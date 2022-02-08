@@ -81,11 +81,13 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis, int bytesDown, int bytesUp) {
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
         if (sniffyMode.isEnabled() && null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {

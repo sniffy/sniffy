@@ -6,20 +6,15 @@ import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
-import io.sniffy.socket.Protocol;
-import io.sniffy.socket.SniffyNetworkConnection;
-import io.sniffy.socket.SniffySSLNetworkConnection;
-import io.sniffy.socket.SniffySocket;
+import io.sniffy.socket.*;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.JVMUtil;
-import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.nio.charset.Charset;
 
 /**
  * @since 3.1.7
@@ -27,8 +22,6 @@ import java.nio.charset.Charset;
 public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter implements SniffyNetworkConnection {
 
     private static final Polyglog LOG = PolyglogFactory.log(CompatSniffySocketChannel.class);
-
-    private static final Polyglog PROXY_CONNECT_LOG = PolyglogFactory.oneTimeLog(CompatSniffySocketChannel.class);
 
     private final int connectionId = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
@@ -156,11 +149,13 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis, int bytesDown, int bytesUp) {
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
@@ -362,76 +357,25 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
                 byte[] buff = new byte[length];
                 src.get(buff, 0, length);
 
-                InetSocketAddress proxiedInetSocketAddress = null;
+                boolean isConnectPacket = false;
 
                 if (!isFirstPacketSent()) {
 
                     try {
-                        @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(buff, Charset.forName("US-ASCII"));
-
-                        PROXY_CONNECT_LOG.trace("First packet is " + potentialRequest);
-
-                        // TODO: support CONNECT header sent in multiple small chunks
-                        int connectIx = potentialRequest.indexOf("CONNECT ");
-
-                        if (0 == connectIx) {
-
-                            int crIx = potentialRequest.indexOf("\r");
-                            int lfIx = potentialRequest.indexOf("\n");
-
-                            int newLineIx;
-
-                            if (crIx > 0) {
-                                if (lfIx > 0) {
-                                    newLineIx = Math.min(crIx, lfIx);
-                                } else {
-                                    newLineIx = lfIx;
-                                }
-                            } else {
-                                if (lfIx > 0) {
-                                    newLineIx = lfIx;
-                                } else {
-                                    newLineIx = -1;
-                                }
-                            }
-
-                            if (newLineIx > 0) {
-                                int httpVersionIx = potentialRequest.substring(0, newLineIx).indexOf(" HTTP/");
-                                if (httpVersionIx > 0) {
-
-                                    String proxiedHostAndPort = potentialRequest.substring("CONNECT ".length(), httpVersionIx);
-
-                                    String host;
-                                    int port;
-
-                                    if (proxiedHostAndPort.contains(":")) {
-                                        host = proxiedHostAndPort.substring(0, proxiedHostAndPort.lastIndexOf(":"));
-                                        port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":") + 1));
-                                    } else {
-                                        host = proxiedHostAndPort;
-                                        port = 80;
-                                    }
-
-                                    proxiedInetSocketAddress = new InetSocketAddress(host, port);
-
-                                }
-                            }
-                        }
-
-                        if (null != proxiedInetSocketAddress) {
-                            setProxiedInetSocketAddress(proxiedInetSocketAddress);
-                            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, this);
-                        }
-
-                        // TODO: only capture traffic
+                        SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(this);
+                        sniffyPacketAnalyzer.analyze(buff, 0, buff.length);
+                    } catch (Exception e) {
+                        LOG.error(e);
                     } finally {
                         setFirstPacketSent(true);
                     }
 
+                    isConnectPacket = null != proxiedAddress;
+
                 }
 
                 if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, null != proxiedInetSocketAddress);
+                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
                 }
 
             }
@@ -465,85 +409,33 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
             logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
 
-            InetSocketAddress proxiedInetSocketAddress = null;
+            boolean isConnectPacket = false;
 
             if (!isFirstPacketSent()) {
 
+                srcs[offset].position(positions[0]);
+                byte[] buff = new byte[remainings[0]];
+                srcs[offset].get(buff, 0, remainings[0]);
+
                 try {
-
-                    srcs[offset].position(positions[0]);
-                    byte[] buff = new byte[remainings[0]];
-                    srcs[offset].get(buff, 0, remainings[0]);
-
-                    @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(buff, Charset.forName("US-ASCII"));
-
-                    PROXY_CONNECT_LOG.trace("First packet is " + potentialRequest);
-
-                    // TODO: support CONNECT header sent in multiple small chunks
-                    int connectIx = potentialRequest.indexOf("CONNECT ");
-
-                    if (0 == connectIx) {
-
-                        int crIx = potentialRequest.indexOf("\r");
-                        int lfIx = potentialRequest.indexOf("\n");
-
-                        int newLineIx;
-
-                        if (crIx > 0) {
-                            if (lfIx > 0) {
-                                newLineIx = Math.min(crIx, lfIx);
-                            } else {
-                                newLineIx = lfIx;
-                            }
-                        } else {
-                            if (lfIx > 0) {
-                                newLineIx = lfIx;
-                            } else {
-                                newLineIx = -1;
-                            }
-                        }
-
-                        if (newLineIx > 0) {
-                            int httpVersionIx = potentialRequest.substring(0, newLineIx).indexOf(" HTTP/");
-                            if (httpVersionIx > 0) {
-
-                                String proxiedHostAndPort = potentialRequest.substring("CONNECT ".length(), httpVersionIx);
-
-                                String host;
-                                int port;
-
-                                if (proxiedHostAndPort.contains(":")) {
-                                    host = proxiedHostAndPort.substring(0, proxiedHostAndPort.lastIndexOf(":"));
-                                    port = Integer.parseInt(proxiedHostAndPort.substring(proxiedHostAndPort.lastIndexOf(":") + 1));
-                                } else {
-                                    host = proxiedHostAndPort;
-                                    port = 80;
-                                }
-
-                                proxiedInetSocketAddress = new InetSocketAddress(host, port);
-
-                            }
-                        }
-                    }
-
-                    if (null != proxiedInetSocketAddress) {
-                        setProxiedInetSocketAddress(proxiedInetSocketAddress);
-                        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, this);
-                    }
-
-                    // TODO: only capture traffic
+                    SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(this);
+                    sniffyPacketAnalyzer.analyze(buff, 0, buff.length);
+                } catch (Exception e) {
+                    LOG.error(e);
                 } finally {
                     setFirstPacketSent(true);
                 }
+
+                isConnectPacket = null != proxiedAddress;
 
             }
 
             if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 for (int i = 0; i < length; i++) {
                     srcs[offset + i].position(positions[i]);
-                    byte[] buff = new byte[remainings[i]];
+                    byte[] buff = new byte[remainings[i]]; // TODO: here in other places avoid wrapping ByteBuffer to byte[]
                     srcs[offset + i].get(buff, 0, remainings[i]);
-                    logTraffic(true, Protocol.TCP, buff, 0, buff.length);
+                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
                 }
 
             }
