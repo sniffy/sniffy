@@ -34,6 +34,7 @@ public class DecryptBouncyCastleGoogleTrafficTest {
 
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        SniffyConfiguration.INSTANCE.setPacketMergeThreshold(10000);
         Sniffy.initialize();
 
         SSLContext instance = SSLContext.getInstance("TLSv1", "BCJSSE");

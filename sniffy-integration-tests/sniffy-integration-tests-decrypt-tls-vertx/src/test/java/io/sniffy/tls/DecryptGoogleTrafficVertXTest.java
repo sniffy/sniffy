@@ -35,6 +35,7 @@ public class DecryptGoogleTrafficVertXTest {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
         SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
+        SniffyConfiguration.INSTANCE.setPacketMergeThreshold(10000);
         Sniffy.initialize();
     }
 
@@ -100,8 +101,6 @@ public class DecryptGoogleTrafficVertXTest {
             assertNotNull(entry);
             assertNotNull(entry.getKey());
             assertNotNull(entry.getValue());
-
-            System.err.println(convertNetworkPacketsToString(entry.getValue()));
 
             assertEquals("Expected 2 packets, but instead got " + convertNetworkPacketsToString(entry.getValue()), 2, entry.getValue().size());
 
