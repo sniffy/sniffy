@@ -154,6 +154,8 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
 
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
 
+        LOG.error("Checking if connection to " + inetSocketAddress + " is allowed");
+
         if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
 
         if (null != inetSocketAddress) {
