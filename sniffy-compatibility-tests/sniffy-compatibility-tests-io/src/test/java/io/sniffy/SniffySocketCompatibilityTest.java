@@ -20,7 +20,7 @@ public class SniffySocketCompatibilityTest {
     public void testBlockHttpUrlConnection() throws Exception {
         try {
             SnifferSocketImplFactory.install();
-            ConnectionsRegistry.INSTANCE.setSocketAddressStatus("google.com", 443, -1);
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus("www.google.com", 443, -1);
 
             for (int i = 0; i < 10; i++) {
 
