@@ -264,6 +264,7 @@ jobs:
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || dir /s /b /o:gn
         shell: cmd
+        if: ${{ matrix.os == 'windows-2019' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
