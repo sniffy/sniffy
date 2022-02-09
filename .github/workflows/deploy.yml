@@ -16,7 +16,7 @@ jobs:
           - java: 8
             os: ubuntu-20.04
           - java: 11
-            os: windows-2019
+            os: windows-2022
           - java: 17
             os: macos-10.15
     name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
@@ -38,20 +38,20 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn -T 1.5C -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C -B dependency:resolve dependency:resolve-plugins -U -P ci
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -72,7 +72,7 @@ jobs:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -180,12 +180,12 @@ jobs:
       matrix:
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
         java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18-ea, 19-ea ]
-        os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+        os: [ ubuntu-20.04, windows-2022, macos-10.15 ]
         exclude:
           - java: 8
             os: ubuntu-20.04
           - java: 11
-            os: windows-2019
+            os: windows-2022
           - java: 17
             os: macos-10.15
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
@@ -207,20 +207,20 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
       - name: Build with Maven
         run: mvn -T 1.5C -B clean package --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1.5C -B clean package --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3' '-Dhttp.keepAlive=false' '-Dmaven.wagon.http.pool=false'
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -242,7 +242,7 @@ jobs:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
         run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: ${{ matrix.os == 'windows-2019' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
+        if: ${{ matrix.os == 'windows-2022' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -255,7 +255,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+        os: [ ubuntu-20.04, windows-2022, macos-10.15 ]
     name: Legacy JDK, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -275,20 +275,20 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
       - name: Build with Maven
         run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1.5C -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
