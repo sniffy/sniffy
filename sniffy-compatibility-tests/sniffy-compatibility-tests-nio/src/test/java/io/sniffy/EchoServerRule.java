@@ -46,10 +46,12 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 break;
             } catch (IOException e) {
                 e.printStackTrace();
-                try {
-                    serverSocket.close();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                if (null != serverSocket) {
+                    try {
+                        serverSocket.close();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         }

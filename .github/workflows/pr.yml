@@ -201,7 +201,7 @@ jobs:
     steps:
       - uses: actions/upload-artifact@v2
         with:
-          name: my-artifact
+          name: surefire-fork-dump
           path: |
             **/target/hs_err*.*
       - uses: actions/checkout@v2
@@ -239,6 +239,12 @@ jobs:
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: surefire-fork-dump
+          path: |
+            **/target/hs_err*.*
       - name: Set up JDK ${{ matrix.java }} x86
         uses: actions/setup-java@v1
         with:
@@ -256,11 +262,17 @@ jobs:
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
-        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: ${{ matrix.os == 'windows-2019' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || dir /s /b /o:gn
+        shell: cmd
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: surefire-x86-fork-dump
+          path: |
+            **/target/hs_err*.*
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
