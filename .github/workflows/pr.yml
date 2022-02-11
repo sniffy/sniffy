@@ -64,6 +64,11 @@ jobs:
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: surefire-fork-dump
+          path: |
+            **/target/surefire-reports/
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -201,11 +206,6 @@ jobs:
             os: macos-10.15
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
-      - uses: actions/upload-artifact@v2
-        with:
-          name: surefire-fork-dump
-          path: |
-            **/target/hs_err*.*
       - uses: actions/checkout@v2
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v1
