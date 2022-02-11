@@ -320,6 +320,13 @@ jobs:
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - name: Resolve dependencies for compatibility tests
+        run: mvn -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci
+        if: matrix.os != 'windows-2019'
+      - name: Resolve dependencies for compatibility tests
+        shell: cmd
+        run: .\mvnretry.bat -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci
+        if: matrix.os == 'windows-2019'
       - name: Run compatibility tests using Java 8
         run: mvn -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 11
