@@ -132,6 +132,8 @@ jobs:
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - name: Resolve dependencies for compatibility tests
+        run: mvn -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
         uses: docker/build-push-action@v2
