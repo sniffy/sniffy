@@ -360,6 +360,7 @@
                                 <goal>test</goal>
                             </goals>
                             <configuration>
+                                <forkCount>3</forkCount>
                                 <skip>false</skip>
                                 <testNGArtifactName>dev:null</testNGArtifactName>
                                 <excludes>
@@ -374,6 +375,7 @@
                                 <goal>test</goal>
                             </goals>
                             <configuration>
+                                <forkCount>3</forkCount>
                                 <skip>false</skip>
                                 <systemPropertyVariables>
                                     <io.sniffy.forceJava14Compatibility>true</io.sniffy.forceJava14Compatibility>
@@ -391,6 +393,7 @@
                                 <goal>test</goal>
                             </goals>
                             <configuration>
+                                <forkCount>3</forkCount>
                                 <skip>${skip.java7.compatibility.tests}</skip>
                                 <systemPropertyVariables>
                                     <io.sniffy.forceJava7Compatibility>true</io.sniffy.forceJava7Compatibility>
