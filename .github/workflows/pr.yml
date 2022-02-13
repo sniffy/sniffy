@@ -4,17 +4,13 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - develop
       - master
       - release/*
       - hotfix/*
   pull_request:
     branches-ignore:
       - tag/*
-
-# TODO: improve logging for parallel builds
-
-# Existing failures:
-# WARNING: Caught exception while allowing TestExecutionListener [io.sniffy.test.spring.SniffySpringTestListener@3e3cac41] to process 'after' execution for test: method [public void io.sniffy.test.spring.SpringIntegration_NoQueriesAllowedByDefault_Test.testNotAllowedQueriesByDefault()], instance [io.sniffy.test.spring.SpringIntegration_NoQueriesAllowedByDefault_Test@763df8f3], excep
 
 jobs:
   smoke-test:
@@ -235,8 +231,7 @@ jobs:
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
-        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || dir /s /b /o:gn
-        shell: cmd
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -265,8 +260,7 @@ jobs:
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
-        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3 || dir /s /b /o:gn
-        shell: cmd
+        run: mvn -T 1.5C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: ${{ matrix.os == 'windows-2019' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
