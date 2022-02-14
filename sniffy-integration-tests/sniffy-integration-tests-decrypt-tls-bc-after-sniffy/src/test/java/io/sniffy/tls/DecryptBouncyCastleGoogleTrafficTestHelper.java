@@ -50,7 +50,7 @@ public class DecryptBouncyCastleGoogleTrafficTestHelper {
                     urlConnection.getInputStream().read();
 
                     break;
-                } catch (SSLException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                     if (e.getMessage().contains("An established connection was aborted by the software in your host machine") && OSUtil.isWindows() && JVMUtil.getVersion() == 14) {
                         System.err.println("Caught " + e + " exception on Java 14 running on Windows; retrying");
