@@ -1,10 +1,10 @@
 package io.sniffy.proxy;
 
+import net.bytebuddy.utility.privilege.GetSystemPropertyAction;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.littleshoot.proxy.Launcher;
-import sun.security.action.GetPropertyAction;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -78,7 +78,7 @@ public class ProxyServerRule implements TestRule {
 
             try {
                 process = new ProcessBuilder(
-                        doPrivileged(new GetPropertyAction("java.home")) + "/bin/java",
+                        doPrivileged(new GetSystemPropertyAction("java.home")) + "/bin/java",
                         "-classpath", System.getProperty("java.class.path"),
                         Launcher.class.getName(),
                         "-port", Integer.toString(port.incrementAndGet()))
