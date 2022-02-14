@@ -156,7 +156,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
                 // Current thread socket operations
 
-                assertEquals(1, (long) s.getSocketOperations(CURRENT, true).entrySet().size());
+                assertEquals(1, s.getSocketOperations(CURRENT, true).entrySet().size());
 
                 s.getSocketOperations(CURRENT, true).values().stream().findAny().ifPresent((socketStats) -> {
                     Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
