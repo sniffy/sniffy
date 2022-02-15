@@ -61,12 +61,12 @@ public class DecryptBouncyCastleGoogleTrafficTest {
 
                     break;
                 } catch (IOException e) {
-                    e.printStackTrace();
                     if (e.getMessage().contains("An established connection was aborted by the software in your host machine") && OSUtil.isWindows() && JVMUtil.getVersion() == 14) {
+                        e.printStackTrace();
                         System.err.println("Caught " + e + " exception on Java 14 running on Windows; retrying");
                         Thread.sleep(5000);
                     } else {
-                        break;
+                        throw e;
                     }
                 }
 
