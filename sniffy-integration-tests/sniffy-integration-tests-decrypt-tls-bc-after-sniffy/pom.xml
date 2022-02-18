@@ -26,7 +26,7 @@
                     <!--<rerunFailingTestsCount>3</rerunFailingTestsCount>-->
                     <runOrder>alphabetical</runOrder>
                     <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
-                    <argLine>-Xmx768m ${argLine}</argLine>
+                    <argLine>-Xmx1024m ${argLine}</argLine>
                     <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                 </configuration>
             </plugin>
