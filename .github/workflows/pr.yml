@@ -62,9 +62,10 @@ jobs:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: actions/upload-artifact@v2
         with:
-          name: surefire-fork-dump
+          name: surefire-test-report-smoke-test-${{ matrix.java }}-${{ matrix.os }}
           path: |
             **/target/surefire-reports/
+            **/target/hs_err*.*
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -239,8 +240,9 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: surefire-fork-dump
+          name: surefire-test-report-test-matrix-${{ matrix.java }}-${{ matrix.os }}
           path: |
+            **/target/surefire-reports/
             **/target/hs_err*.*
       - name: Set up JDK ${{ matrix.java }} x86
         uses: actions/setup-java@v1
@@ -268,8 +270,9 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: surefire-x86-fork-dump
+          name: surefire-test-report-test-matrix-x86-${{ matrix.java }}-${{ matrix.os }}
           path: |
+            **/target/surefire-reports/
             **/target/hs_err*.*
       - uses: codecov/codecov-action@v1
         with:
