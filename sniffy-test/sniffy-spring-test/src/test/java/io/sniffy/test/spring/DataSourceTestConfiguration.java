@@ -10,9 +10,36 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 
 @Configuration
 public class DataSourceTestConfiguration {
+
+    @Bean public Object something() {
+        Thread t = new Thread(() -> {
+
+            try {
+
+                Thread.sleep(5000);
+
+                Thread.getAllStackTraces().entrySet().stream()
+                        .filter(entry -> !entry.getKey().isDaemon())
+                        .filter(entry -> entry.getKey().isAlive())
+                        .forEach(entry -> {
+                            System.out.println(entry.getKey().getName() + " " + entry.getKey().getState());
+                            System.out.println(Arrays.toString(entry.getValue()));
+                            System.out.println();
+                        });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        });
+        t.setDaemon(true);
+        Runtime.getRuntime().addShutdownHook(t);
+        return new Object();
+    }
 
     @Bean
     public DataSource originalDataSource() throws SQLException {

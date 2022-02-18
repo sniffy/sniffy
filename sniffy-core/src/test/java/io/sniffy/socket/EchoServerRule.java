@@ -70,6 +70,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
             throw new IOException("Failed to find an available port");
         }
 
+        thread.setDaemon(true);
         thread.start();
 
     }
