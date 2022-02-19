@@ -57,6 +57,10 @@ public class DecryptGoogleTrafficVertXTest {
             AtomicBoolean success = new AtomicBoolean(false);
 
             httpRequest.send(asyncResult -> {
+                if (asyncResult.failed()) {
+                    asyncResult.cause().printStackTrace();
+                    System.err.println(asyncResult.result().bodyAsString());
+                }
                 success.set(asyncResult.succeeded());
                 try {
                     cb.await();
