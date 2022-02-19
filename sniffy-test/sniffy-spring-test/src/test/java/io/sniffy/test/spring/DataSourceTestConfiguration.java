@@ -15,12 +15,17 @@ import java.util.Arrays;
 @Configuration
 public class DataSourceTestConfiguration {
 
-    @Bean public Object something() {
+    @Bean
+    public Object something() {
         Thread t = new Thread(() -> {
 
             try {
 
+                System.err.println("Sniffy ShutdownHook executed - will dump stack traces in 5 seconds");
+
                 Thread.sleep(5000);
+
+                System.err.println("Sniffy ShutdownHook executed - printing dump stack");
 
                 Thread.getAllStackTraces().entrySet().stream()
                         .filter(entry -> !entry.getKey().isDaemon())

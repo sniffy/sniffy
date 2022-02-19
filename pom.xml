@@ -322,6 +322,7 @@
                         <!-- skip the default execution, we have separate for Ng and for JUnit -->
                         <skip>true</skip>
                         <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                        <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
                         <argLine>-Xmx1024m ${argLine}</argLine>
                         <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                     </configuration>
