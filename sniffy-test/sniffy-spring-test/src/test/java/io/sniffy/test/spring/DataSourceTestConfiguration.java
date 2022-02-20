@@ -21,6 +21,10 @@ public class DataSourceTestConfiguration {
 
             try {
 
+                Thread.sleep(60000);
+
+                // https://issues.apache.org/jira/browse/SUREFIRE-1879
+
                 System.err.println("Sniffy ShutdownHook executed - will dump stack traces in 5 seconds");
 
                 Thread.sleep(5000);
@@ -42,7 +46,8 @@ public class DataSourceTestConfiguration {
 
         });
         t.setDaemon(true);
-        Runtime.getRuntime().addShutdownHook(t);
+        t.start();
+        //Runtime.getRuntime().addShutdownHook(t);
         return new Object();
     }
 
