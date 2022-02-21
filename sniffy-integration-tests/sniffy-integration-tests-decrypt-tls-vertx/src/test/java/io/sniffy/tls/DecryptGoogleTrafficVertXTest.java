@@ -2,10 +2,13 @@ package io.sniffy.tls;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.log.PolyglogLevel;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
+import io.sniffy.test.junit.SniffyRule;
 import io.sniffy.util.ExceptionUtil;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -27,6 +30,8 @@ import static io.sniffy.socket.NetworkPacket.convertNetworkPacketsToString;
 import static org.junit.Assert.*;
 
 public class DecryptGoogleTrafficVertXTest {
+
+    private static final Polyglog LOG = PolyglogFactory.log(DecryptGoogleTrafficVertXTest.class);
 
     @BeforeClass
     public static void loadTlsModule() {
@@ -57,6 +62,7 @@ public class DecryptGoogleTrafficVertXTest {
             AtomicBoolean success = new AtomicBoolean(false);
 
             httpRequest.send(asyncResult -> {
+                LOG.debug("HTTP Request complete; received result " + asyncResult + "; succeeded=" + asyncResult.succeeded());
                 if (asyncResult.failed()) {
                     asyncResult.cause().printStackTrace();
                     System.err.println(asyncResult.result().bodyAsString());
