@@ -2,6 +2,8 @@ package io.sniffy.test.junit;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.log.PolyglogLevel;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.*;
@@ -32,6 +34,8 @@ import java.util.List;
  * @since 3.1
  */
 public class SniffyRule implements TestRule {
+
+    private static final Polyglog LOG = PolyglogFactory.log(SniffyRule.class);
 
     static {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
@@ -180,6 +184,7 @@ public class SniffyRule implements TestRule {
 
             try {
                 if (null != disableSockets) {
+                    LOG.debug("Disabling all network connections");
                     ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
                 }
 
@@ -190,6 +195,7 @@ public class SniffyRule implements TestRule {
                 }).close();
             } finally {
                 if (null != disableSockets) {
+                    LOG.debug("Enabling all network connections");
                     ConnectionsRegistry.INSTANCE.clear();
                 }
             }
