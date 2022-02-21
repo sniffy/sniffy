@@ -1,5 +1,6 @@
 package io.sniffy.test.kafka;
 
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.socket.DisableSockets;
 import io.sniffy.test.junit.SniffyRule;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -38,7 +39,7 @@ public class SimpleKafkaTest {
     @Autowired
     EmbeddedKafkaBroker embeddedKafkaBroker;
 
-    @Rule public final SniffyRule sniffy = new SniffyRule();
+    @Rule public final SniffyRule sniffy = new SniffyRule(PolyglogLevel.TRACE);
 
     @Test
     public void testReceivingKafkaEvents() {

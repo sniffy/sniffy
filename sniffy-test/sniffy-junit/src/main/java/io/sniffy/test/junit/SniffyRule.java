@@ -2,6 +2,7 @@ package io.sniffy.test.junit;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.*;
 import io.sniffy.sql.NoSql;
@@ -36,6 +37,13 @@ public class SniffyRule implements TestRule {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
         Sniffy.initialize();
+    }
+
+    public SniffyRule() {
+    }
+
+    public SniffyRule(PolyglogLevel level) {
+        SniffyConfiguration.INSTANCE.setLogLevel(level);
     }
 
     public Statement apply(Statement statement, Description description) {
