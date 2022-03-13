@@ -24,7 +24,7 @@ public class ReflectionUtil {
         }
         UNSAFE = unsafe;
 
-        if (JVMUtil.getVersion() >= 18) {
+        if (JVMUtil.getVersion() == 18) {
 
             // workaround https://openjdk.java.net/jeps/416 - JEP 416: Reimplement Core Reflection with Method Handles
 
@@ -34,6 +34,22 @@ public class ReflectionUtil {
                 Field useDirectMethodHandle = reflectionFactoryClass.getDeclaredField("useDirectMethodHandle");
                 long useDirectMethodHandleOffset = UNSAFE.staticFieldOffset(useDirectMethodHandle);
                 UNSAFE.putInt(reflectionFactoryClass, useDirectMethodHandleOffset, METHOD_MH_ACCESSOR);
+
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
+        } else if (JVMUtil.getVersion() == 19) {
+
+            try {
+
+                Class<?> reflectionFactoryClass = Class.forName("jdk.internal.reflect.ReflectionFactory");
+                Field configField = reflectionFactoryClass.getDeclaredField("config");
+                long configOffset = UNSAFE.staticFieldOffset(configField);
+                Object config = UNSAFE.getObject(reflectionFactoryClass, configOffset);
+
+                UNSAFE.putObject(reflectionFactoryClass, configOffset, null);
+                System.setProperty("jdk.reflect.useDirectMethodHandle", "false");
 
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -99,6 +115,15 @@ public class ReflectionUtil {
             } catch (NoSuchFieldException e) {
                 e.printStackTrace();
             }
+
+            /*if (JVMUtil.getVersion() >= 19 && ao instanceof Field) {
+                try {
+                    long trustedFinalOffset = UNSAFE.objectFieldOffset(FakeField.class.getDeclaredField("trustedFinal"));
+                    UNSAFE.putBoolean(ao, trustedFinalOffset, false);
+                } catch (NoSuchFieldException e) {
+                    e.printStackTrace();
+                }
+            }*/
 
             return ao.isAccessible();
         }

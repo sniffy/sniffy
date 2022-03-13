@@ -185,7 +185,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
 
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(from);
-        calendar.add(1, Calendar.YEAR);
+        calendar.add(Calendar.YEAR, 1);
         Date to = calendar.getTime();
 
         String signatureAlgorythm = "SHA256WithRSA";
