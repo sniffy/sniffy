@@ -6,6 +6,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.Lock;
 
 public class ReflectionUtil {
@@ -182,7 +183,7 @@ public class ReflectionUtil {
         return false;
     }
 
-    private static final Set<Field> nonAccessibleFields = new HashSet<>();
+    private static final Set<Field> nonAccessibleFields = new ConcurrentSkipListSet<Field>(); // TODO: make thread-safe and optimize
 
     public static <T, V> boolean setField(Class<T> clazz, T instance, String fieldName, V value, String lockFieldName) {
 
