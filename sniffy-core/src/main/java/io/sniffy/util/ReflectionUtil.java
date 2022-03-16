@@ -4,8 +4,10 @@ import sun.misc.Unsafe;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.Lock;
 
@@ -183,7 +185,9 @@ public class ReflectionUtil {
         return false;
     }
 
-    private static final Set<Field> nonAccessibleFields = new ConcurrentSkipListSet<Field>(); // TODO: make thread-safe and optimize
+    private static final Set<Field> nonAccessibleFields = Collections.<Field>newSetFromMap(
+            new ConcurrentHashMap<Field, Boolean>()
+    );
 
     public static <T, V> boolean setField(Class<T> clazz, T instance, String fieldName, V value, String lockFieldName) {
 
