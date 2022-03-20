@@ -2,8 +2,11 @@ package io.sniffy.socket;
 
 import io.qameta.allure.Feature;
 import io.qameta.allure.Issue;
+import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -26,6 +29,11 @@ public class SnifferSocketImplTest {
     private Sleep sleep;
 
     private SnifferSocketImpl sniffySocket;
+
+    @BeforeClass
+    public static void enableSniffyTraceLogging() {
+        SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
+    }
 
     @Before
     public void createSniffySocket() throws Exception {
