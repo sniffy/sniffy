@@ -38,9 +38,9 @@ import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
-public class DecryptGoogleTrafficVertXTest {
+public class DecryptLocalhostHttpsTrafficVertXTest {
 
-    private static final Polyglog LOG = PolyglogFactory.log(DecryptGoogleTrafficVertXTest.class);
+    private static final Polyglog LOG = PolyglogFactory.log(DecryptLocalhostHttpsTrafficVertXTest.class);
 
     @BeforeClass
     public static void loadTlsModule() {
