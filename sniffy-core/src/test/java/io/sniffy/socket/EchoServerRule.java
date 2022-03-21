@@ -26,7 +26,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     private final AtomicInteger bytesReceivedCounter = new AtomicInteger();
 
-    private int boundPort = 10000;
+    private int boundPort = 10400;
     private ServerSocket serverSocket;
 
     private final byte[] dataToBeSent;

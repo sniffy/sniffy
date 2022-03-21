@@ -22,7 +22,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
     private final List<Thread> socketThreads = new ArrayList<Thread>();
     private final List<Socket> sockets = new ArrayList<Socket>();
 
-    private int boundPort = 10000;
+    private int boundPort = 10200;
     private ServerSocket serverSocket;
 
     private final byte[] dataToBeSent;

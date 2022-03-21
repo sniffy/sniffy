@@ -42,7 +42,7 @@ public class EchoSslServerRule extends ExternalResource implements Runnable {
     private final AtomicInteger bytesReceivedCounter = new AtomicInteger();
     private final int expectedBytes;
 
-    private int boundPort = 10000;
+    private int boundPort = 10600;
     private ServerSocket serverSocket;
 
     private final byte[] dataToBeSent;

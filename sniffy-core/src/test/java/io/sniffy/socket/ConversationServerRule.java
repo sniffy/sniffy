@@ -28,7 +28,7 @@ public class ConversationServerRule extends ExternalResource implements Runnable
 
     private final AtomicInteger bytesReceivedCounter = new AtomicInteger();
 
-    private int boundPort = 10000;
+    private int boundPort = 10300;
     private ServerSocket serverSocket;
 
     private final List<byte[]> dataToBeReceived;
