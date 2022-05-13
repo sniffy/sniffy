@@ -4,12 +4,14 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - develop
       - master
       - release/*
       - hotfix/*
   pull_request:
     branches-ignore:
       - tag/*
+
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
@@ -40,18 +42,30 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -T 1.5C -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C -B dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1 -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1 -B dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
-        run: .\mvnretry.bat -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
+        run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1 -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1 -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: surefire-test-report-smoke-test-${{ matrix.java }}-${{ matrix.os }}
+          path: |
+            **/target/surefire-reports/
+            **/target/hs_err*.*
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -62,11 +76,17 @@ jobs:
           architecture: x86
         if: matrix.os != 'macos-10.15'
       - name: Build with Maven x86
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1 -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os == 'ubuntu-20.04'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
-        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1 -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -108,9 +128,14 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci,qemu
+        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu || mvn dependency:resolve dependency:resolve-plugins -U -P ci,qemu
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1 -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - name: Resolve dependencies for compatibility tests
+        run: mvn -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
         uses: docker/build-push-action@v2
@@ -151,9 +176,12 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1 -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -164,7 +192,7 @@ jobs:
     strategy:
       matrix:
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
-        java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18-ea, 19-ea ]
+        java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19-ea ]
         os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
         exclude:
           - java: 8
@@ -191,34 +219,61 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1 -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
-        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1 -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: surefire-test-report-test-matrix-${{ matrix.java }}-${{ matrix.os }}
+          path: |
+            **/target/surefire-reports/
+            **/target/hs_err*.*
       - name: Set up JDK ${{ matrix.java }} x86
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
           architecture: x86
-        if: ${{ matrix.os != 'macos-10.15' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
-# Had to disable x86 windows builds on java 18-ea and 19-ea due to strange errors like these:
+        if: ${{ matrix.os != 'macos-10.15' && matrix.java != '18' && matrix.java != '19-ea' }}
+# https://issues.apache.org/jira/projects/MNG/issues/MNG-7399
+# Had to disable x86 windows builds on java 18 and 19-ea due to strange errors like these:
 # The parameters 'isOffline' for goal org.apache.maven.plugins:maven-javadoc-plugin:3.3.1:jar are missing or invalid
 # Cannot invoke "org.apache.maven.artifact.Artifact.getFile()" because "jacocoAgentArtifact" is null
 # Might be caused by https://openjdk.java.net/jeps/416 or just regression issue in 32-bit windows builds
       - name: Build with Maven x86
-        run: mvn -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: ${{ matrix.os == 'ubuntu-20.04' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
+        run: mvn -T 1 -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        if: ${{ matrix.os == 'ubuntu-20.04' && matrix.java != '18' && matrix.java != '19-ea' }}
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
-        run: mvn -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: ${{ matrix.os == 'windows-2019' && matrix.java != '18-ea' && matrix.java != '19-ea' }}
+        run: mvn -T 1 -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        if: ${{ matrix.os == 'windows-2019' && matrix.java != '18' && matrix.java != '19-ea' }}
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: surefire-test-report-test-matrix-x86-${{ matrix.java }}-${{ matrix.os }}
+          path: |
+            **/target/surefire-reports/
+            **/target/hs_err*.*
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -247,17 +302,30 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1 -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1 -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        if: matrix.os == 'windows-2019'
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+      - name: Resolve dependencies for compatibility tests
+        run: mvn -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci
+        if: matrix.os != 'windows-2019'
+      - name: Resolve dependencies for compatibility tests
+        shell: cmd
+        run: .\mvnretry.bat -f sniffy-compatibility-tests/pom.xml dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Run compatibility tests using Java 8
         run: mvn -f sniffy-compatibility-tests/pom.xml test
@@ -273,6 +341,28 @@ jobs:
           java-version: 17
       - name: Run compatibility tests using Java 17
         run: mvn -f sniffy-compatibility-tests/pom.xml test
+
+      - name: Set up JDK 18 32-bit
+        uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: 18
+          architecture: x86
+        if: matrix.os == 'windows-2019'
+      - name: Run compatibility tests using Java 18 32 bit
+        run: mvn -f sniffy-compatibility-tests/pom.xml test
+        if: matrix.os == 'windows-2019'
+      - name: Set up JDK 19-ea 32-bit
+        uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: 19-ea
+          architecture: x86
+        if: matrix.os == 'windows-2019'
+      - name: Run compatibility tests using Java 19-ea 32 bit
+        run: mvn -f sniffy-compatibility-tests/pom.xml test
+        if: matrix.os == 'windows-2019'
+
       - name: Set up JDK 7
         uses: actions/setup-java@v1
         with:
@@ -328,8 +418,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1.5C dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn dependency:resolve dependency:resolve-plugins -U -P ci || mvn dependency:resolve dependency:resolve-plugins -U -P ci
       - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1 -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        # https://youtrack.jetbrains.com/issue/KT-43894
+        env:
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1

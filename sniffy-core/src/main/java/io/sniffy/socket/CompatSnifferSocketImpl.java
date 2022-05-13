@@ -25,6 +25,8 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
 
     private static final Polyglog LOG_TRAFFIC_VERBOSE_LOG = PolyglogFactory.oneTimeLog(CompatSnifferSocketImpl.class);
 
+    private static final Polyglog LOG_FAULT_TOLERANCE_VERBOSE_LOG = PolyglogFactory.oneTimeLog(CompatSnifferSocketImpl.class);
+
     private final Sleep sleep;
 
     private InetSocketAddress address;
@@ -153,6 +155,8 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     }
 
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
+        LOG_FAULT_TOLERANCE_VERBOSE_LOG.error("Checking if connection to " + inetSocketAddress + " is allowed; other invocations will not be logged");
 
         if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
 

@@ -32,7 +32,7 @@
         <sniffy.ui.version>3.1.8</sniffy.ui.version>
         <spring.version>4.3.27.RELEASE</spring.version>
         <spring.boot.version>1.5.22.RELEASE</spring.boot.version>
-        <jacoco.version>0.8.8-SNAPSHOT</jacoco.version>
+        <jacoco.version>0.8.8</jacoco.version>
 
         <skip.java7.compatibility.tests>true</skip.java7.compatibility.tests>
         <animal-sniffer.version>1.20</animal-sniffer.version>
@@ -322,6 +322,9 @@
                         <!-- skip the default execution, we have separate for Ng and for JUnit -->
                         <skip>true</skip>
                         <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                        <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
+                        <argLine>-Xmx1024m ${argLine}</argLine>
+                        <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                     </configuration>
                     <executions>
                         <execution>
@@ -347,6 +350,7 @@
                                 <goal>test</goal>
                             </goals>
                             <configuration>
+                                <forkCount>1</forkCount>
                                 <skip>false</skip>
                                 <testNGArtifactName>dev:null</testNGArtifactName>
                                 <excludes>
@@ -446,6 +450,12 @@
                 <artifactId>slf4j-api</artifactId>
                 <version>1.7.30</version>
             </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.2.3</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>

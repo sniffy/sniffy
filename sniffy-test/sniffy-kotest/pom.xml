@@ -102,11 +102,6 @@
                 <version>4.4.15</version>
             </dependency>
             <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-stdlib-jdk8</artifactId>
-                <version>${kotlin-stdlib-jdk8.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpasyncclient</artifactId>
                 <version>4.1.5</version>
@@ -124,11 +119,6 @@
                 <version>${kotest.version}</version>
             </dependency>
 
-            <!--<dependency>
-                <groupId>io.kotest</groupId>
-                <artifactId>kotest-runner-junit5-jvm</artifactId>
-                <version>${kotest.version}</version>
-            </dependency>-->
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib</artifactId>

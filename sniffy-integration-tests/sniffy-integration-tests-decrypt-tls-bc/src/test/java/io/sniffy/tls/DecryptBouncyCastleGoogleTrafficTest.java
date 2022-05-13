@@ -5,11 +5,14 @@ import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
+import io.sniffy.util.JVMUtil;
+import io.sniffy.util.OSUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
@@ -34,6 +37,7 @@ public class DecryptBouncyCastleGoogleTrafficTest {
 
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+        SniffyConfiguration.INSTANCE.setPacketMergeThreshold(10000);
         Sniffy.initialize();
 
         SSLContext instance = SSLContext.getInstance("TLSv1", "BCJSSE");
@@ -45,11 +49,28 @@ public class DecryptBouncyCastleGoogleTrafficTest {
 
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
 
-            URL url = new URL("https://www.google.com");
-            URLConnection urlConnection = url.openConnection();
+            for (int i = 0; i < 10; i++) {
 
-            //noinspection ResultOfMethodCallIgnored
-            urlConnection.getInputStream().read();
+                try {
+                    URL url = new URL("https://www.google.com");
+                    URLConnection urlConnection = url.openConnection();
+
+                    // On Java 14 with parallel builds sometimes throws SSLException: An established connection was aborted by the software in your host machine
+                    //noinspection ResultOfMethodCallIgnored
+                    urlConnection.getInputStream().read();
+
+                    break;
+                } catch (IOException e) {
+                    if (e.getMessage().contains("An established connection was aborted by the software in your host machine") && OSUtil.isWindows() && (JVMUtil.getVersion() == 14 || JVMUtil.getVersion() == 13)) {
+                        e.printStackTrace();
+                        System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Windows; retrying in 2 seconds");
+                        Thread.sleep(2000);
+                    } else {
+                        throw e;
+                    }
+                }
+
+            }
 
             Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
                     Threads.CURRENT,

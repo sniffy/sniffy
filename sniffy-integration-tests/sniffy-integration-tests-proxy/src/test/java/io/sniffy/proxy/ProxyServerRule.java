@@ -1,5 +1,6 @@
 package io.sniffy.proxy;
 
+import net.bytebuddy.utility.privilege.GetSystemPropertyAction;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -9,6 +10,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.security.AccessController.doPrivileged;
 
 public class ProxyServerRule implements TestRule {
 
@@ -75,7 +78,7 @@ public class ProxyServerRule implements TestRule {
 
             try {
                 process = new ProcessBuilder(
-                        System.getProperty("java.home") + "/bin/java",
+                        doPrivileged(new GetSystemPropertyAction("java.home")) + "/bin/java",
                         "-classpath", System.getProperty("java.class.path"),
                         Launcher.class.getName(),
                         "-port", Integer.toString(port.incrementAndGet()))

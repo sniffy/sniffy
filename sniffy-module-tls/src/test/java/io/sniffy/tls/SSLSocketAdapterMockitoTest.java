@@ -19,6 +19,7 @@ import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -278,15 +279,15 @@ public class SSLSocketAdapterMockitoTest {
     }
 
     @Test
-    public void testGetInetAddress() {
-        InetAddress inetAddress = mock(InetAddress.class);
+    public void testGetInetAddress() throws Exception {
+        InetAddress inetAddress = Inet4Address.getByAddress(new byte[]{0, 0, 0, 0});
         when(delegate.getInetAddress()).thenReturn(inetAddress);
         assertEquals(inetAddress, sslSocketAdapter.getInetAddress());
     }
 
     @Test
-    public void testGetLocalAddress() {
-        InetAddress inetAddress = mock(InetAddress.class);
+    public void testGetLocalAddress() throws Exception {
+        InetAddress inetAddress = Inet4Address.getByAddress(new byte[]{0, 0, 0, 0});
         when(delegate.getLocalAddress()).thenReturn(inetAddress);
         assertEquals(inetAddress, sslSocketAdapter.getLocalAddress());
     }

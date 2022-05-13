@@ -2,8 +2,12 @@ package io.sniffy;
 
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SnifferSocketImplFactory;
+import io.sniffy.util.JVMUtil;
+import io.sniffy.util.OSUtil;
 import org.junit.Test;
 
+import javax.net.ssl.SSLException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -17,11 +21,30 @@ public class SniffySocketCompatibilityTest {
     public void testBlockHttpUrlConnection() throws Exception {
         try {
             SnifferSocketImplFactory.install();
-            ConnectionsRegistry.INSTANCE.setSocketAddressStatus("google.com", 443, -1);
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus("www.google.com", 443, -1);
 
-            URL url = new URL("https://google.com");
-            URLConnection urlConnection = url.openConnection();
-            urlConnection.getInputStream().read();
+            for (int i = 0; i < 10; i++) {
+
+                try {
+                    URL url = new URL("https://www.google.com");
+                    URLConnection urlConnection = url.openConnection();
+
+                    // On Java 14 with parallel builds sometimes throws SSLException: An established connection was aborted by the software in your host machine
+                    //noinspection ResultOfMethodCallIgnored
+                    urlConnection.getInputStream().read();
+
+                    break;
+                } catch (IOException e) {
+                    if (e.getMessage().contains("An established connection was aborted by the software in your host machine") && OSUtil.isWindows() && (JVMUtil.getVersion() == 14 || JVMUtil.getVersion() == 13)) {
+                        e.printStackTrace();
+                        System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Windows; retrying in 2 seconds");
+                        Thread.sleep(2000);
+                    } else {
+                        throw e;
+                    }
+                }
+
+            }
 
             fail("Should have been blocked by Sniffy");
         } catch (ConnectException e) {

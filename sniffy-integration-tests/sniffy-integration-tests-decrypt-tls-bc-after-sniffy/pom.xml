@@ -20,6 +20,16 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--<rerunFailingTestsCount>3</rerunFailingTestsCount>-->
+                    <runOrder>alphabetical</runOrder>
+                    <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                    <argLine>-Xmx1024m ${argLine}</argLine>
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

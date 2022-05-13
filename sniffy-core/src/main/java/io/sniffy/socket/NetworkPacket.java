@@ -1,8 +1,10 @@
 package io.sniffy.socket;
 
 import io.sniffy.ThreadMetaData;
+import io.sniffy.util.StringUtil;
 
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 
 /**
  * @since 3.1.10
@@ -68,6 +70,23 @@ public class NetworkPacket {
 
     public byte[] getBytes() {
         return baos.toByteArray();
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public static String convertNetworkPacketsToString(List<NetworkPacket> packets) {
+        StringBuilder sb = new StringBuilder();
+        for (NetworkPacket packet : packets) {
+            sb.append(packet.getTimestamp()).
+                    append(" isSent=").
+                    append(packet.isSent()).
+                    append(" content=").
+                    append(StringUtil.LINE_SEPARATOR).
+                    append(new String(packet.getBytes())).
+                    append(StringUtil.LINE_SEPARATOR);
+        }
+        return sb.toString();
     }
 
 }
