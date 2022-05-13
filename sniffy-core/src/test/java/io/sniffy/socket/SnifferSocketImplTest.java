@@ -165,7 +165,7 @@ public class SnifferSocketImplTest {
     @Test
     public void testGetInetAddress() throws Exception {
 
-        InetAddress expected = mock(InetAddress.class);
+        InetAddress expected = InetAddress.getLocalHost();
 
         when(delegate.getInetAddress()).thenReturn(expected);
 
