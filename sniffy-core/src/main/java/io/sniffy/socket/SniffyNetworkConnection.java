@@ -14,6 +14,14 @@ public interface SniffyNetworkConnection extends TrafficCapturingNetworkConnecti
 
     void setConnectionStatus(Integer connectionStatus);
 
+    void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress);
+
+    InetSocketAddress getProxiedInetSocketAddress();
+
+    void  setFirstPacketSent(boolean firstPacketSent);
+
+    boolean isFirstPacketSent();
+
     int getPotentiallyBufferedInputBytes();
 
     void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes);
@@ -30,6 +38,7 @@ public interface SniffyNetworkConnection extends TrafficCapturingNetworkConnecti
 
     void setLastWriteThreadId(long lastWriteThreadId);
 
+    @Deprecated
     void logSocket(long millis);
 
     @Deprecated

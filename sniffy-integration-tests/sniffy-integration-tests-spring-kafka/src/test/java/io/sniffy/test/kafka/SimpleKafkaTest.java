@@ -1,5 +1,6 @@
 package io.sniffy.test.kafka;
 
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.socket.DisableSockets;
 import io.sniffy.test.junit.SniffyRule;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -9,9 +10,11 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.errors.TimeoutException;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -31,6 +34,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @EmbeddedKafka(partitions = 1, topics = { "testTopic" })
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SimpleKafkaTest {
 
     private static final String TEST_TOPIC = "testTopic";
@@ -38,7 +42,7 @@ public class SimpleKafkaTest {
     @Autowired
     EmbeddedKafkaBroker embeddedKafkaBroker;
 
-    @Rule public final SniffyRule sniffy = new SniffyRule();
+    @Rule public final SniffyRule sniffy = new SniffyRule(PolyglogLevel.TRACE);
 
     @Test
     public void testReceivingKafkaEvents() {
@@ -58,7 +62,7 @@ public class SimpleKafkaTest {
 
     @Test
     @DisableSockets
-    public void testDisabledKafkaProducer() throws Exception {
+    public void testSniffyDisabledKafkaProducer() throws Exception {
         Producer<Integer, String> producer = configureProducer();
 
         Future<RecordMetadata> recordMetadataFuture = producer.send(new ProducerRecord<>(TEST_TOPIC, 123, "my-test-value"));

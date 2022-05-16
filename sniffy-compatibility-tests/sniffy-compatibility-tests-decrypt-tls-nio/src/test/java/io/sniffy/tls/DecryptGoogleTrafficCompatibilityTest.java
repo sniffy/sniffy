@@ -22,7 +22,7 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.*;
 
-public class DecryptGoogleTrafficTest {
+public class DecryptGoogleTrafficCompatibilityTest {
 
     @BeforeClass
     public static void loadTlsModuleAndSetupBouncyCastle() {
@@ -33,6 +33,7 @@ public class DecryptGoogleTrafficTest {
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
+        SniffyConfiguration.INSTANCE.setPacketMergeThreshold(10000);
         Sniffy.initialize();
 
     }

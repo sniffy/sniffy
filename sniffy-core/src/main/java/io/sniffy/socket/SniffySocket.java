@@ -34,6 +34,8 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     private boolean firstChunk = true;
 
+    private final Sleep sleep = new Sleep();
+
     public SniffySocket(Socket delegate, SocketChannel socketChannel, int connectionId, InetSocketAddress address) throws SocketException {
         super(delegate);
         this.socketChannel = socketChannel;
@@ -55,12 +57,37 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
         return this.address;
     }
 
+    private boolean firstPacketSent;
+    private InetSocketAddress proxiedAddress;
+
+    @Override
+    public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
+        this.proxiedAddress = proxiedAddress;
+    }
+
+    @Override
+    public InetSocketAddress getProxiedInetSocketAddress() {
+        return proxiedAddress;
+    }
+
+    @Override
+    public void setFirstPacketSent(boolean firstPacketSent) {
+        this.firstPacketSent = firstPacketSent;
+    }
+
+    @Override
+    public boolean isFirstPacketSent() {
+        return firstPacketSent;
+    }
+
     @Deprecated
+    @Override
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis, int bytesDown, int bytesUp) {
         Sniffy.SniffyMode sniffyMode = Sniffy.getSniffyMode();
         if (sniffyMode.isEnabled() && null != address && (millis > 0 || bytesDown > 0 || bytesUp > 0)) {
@@ -120,23 +147,19 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
             }
             if (connectionStatus < 0) {
                 if (numberOfSleepCycles > 0 && -1 != connectionStatus) try {
-                    sleepImpl(-1 * connectionStatus * numberOfSleepCycles);
+                    sleep.doSleep(-1 * connectionStatus * numberOfSleepCycles);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
                 throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
             } else if (numberOfSleepCycles > 0 && connectionStatus > 0) {
                 try {
-                    sleepImpl(connectionStatus * numberOfSleepCycles);
+                    sleep.doSleep(connectionStatus * numberOfSleepCycles);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
         }
-    }
-
-    private static void sleepImpl(int millis) throws InterruptedException {
-        Thread.sleep(millis);
     }
 
     @Override

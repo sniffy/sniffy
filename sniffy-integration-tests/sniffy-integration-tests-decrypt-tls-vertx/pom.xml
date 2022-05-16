@@ -24,6 +24,15 @@
     </build>
 
     <dependencies>
+        <!-- mockserver -->
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-netty</artifactId>
+            <version>5.13.0</version>
+            <classifier>shaded</classifier>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Vert.X version 4.0.3 doesn't work on JDK9 and breaks compatibility tests; use 3.9.7 for now -->
         <dependency>
             <groupId>io.vertx</groupId>

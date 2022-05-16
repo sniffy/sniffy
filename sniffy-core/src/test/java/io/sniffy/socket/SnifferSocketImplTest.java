@@ -2,8 +2,11 @@ package io.sniffy.socket;
 
 import io.qameta.allure.Feature;
 import io.qameta.allure.Issue;
+import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.registry.ConnectionsRegistry;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -14,8 +17,6 @@ import java.net.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -28,6 +29,11 @@ public class SnifferSocketImplTest {
     private Sleep sleep;
 
     private SnifferSocketImpl sniffySocket;
+
+    @BeforeClass
+    public static void enableSniffyTraceLogging() {
+        SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
+    }
 
     @Before
     public void createSniffySocket() throws Exception {
@@ -159,7 +165,7 @@ public class SnifferSocketImplTest {
     @Test
     public void testGetInetAddress() throws Exception {
 
-        InetAddress expected = mock(InetAddress.class);
+        InetAddress expected = Inet4Address.getByAddress(new byte[]{0, 0, 0, 0});
 
         when(delegate.getInetAddress()).thenReturn(expected);
 

@@ -36,7 +36,7 @@ public class SharedConnectionRollbackIntegrationTest {
     public void testSharedConnectionTwoRows() throws SQLException, ExecutionException, InterruptedException {
 
         jdbcTemplate.batchUpdate(
-                "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, ?)",
+                "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (NEXT VALUE FOR SEQ_PROJECT, ?)",
                 Arrays.asList(new Object[]{"foo"}, new Object[]{"bar"})
         );
 
@@ -52,7 +52,7 @@ public class SharedConnectionRollbackIntegrationTest {
     public void testSharedConnectionThreeRows() throws SQLException, ExecutionException, InterruptedException {
 
         jdbcTemplate.batchUpdate(
-                "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, ?)",
+                "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (NEXT VALUE FOR SEQ_PROJECT, ?)",
                 Arrays.asList(new Object[]{"foo"}, new Object[]{"bar"}, new Object[]{"baz"})
         );
 

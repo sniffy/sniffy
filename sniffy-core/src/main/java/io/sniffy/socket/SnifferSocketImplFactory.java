@@ -92,7 +92,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
                         JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
                                 new CompatSnifferSocketImpl(newSocketImpl(false));
         LOG.trace("Created SocketImpl " + socketImpl);
-        CONSTRUCTOR_VERBOSE_LOG.trace("StackTrace for creating new SniffySSLEngine was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
+        CONSTRUCTOR_VERBOSE_LOG.trace("StackTrace for creating new SocketImpl was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
         return socketImpl;
     }
 
@@ -140,7 +140,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         if (null != defaultSocketImplFactoryMethod) {
             //noinspection TryWithIdenticalCatches
             try {
-                LOG.trace("Creating SocketImpl delegate using original SocketImpl factory method " + defaultSocketImplFactoryMethod);
+                LOG.trace("Creating SocketImpl delegate using original SocketImpl factory method " + defaultSocketImplFactoryMethod + " with argument serverSocket=" + serverSocket);
                 originalSocketImpl = (SocketImpl) defaultSocketImplFactoryMethod.invoke(null, serverSocket);
             } catch (IllegalAccessException e) {
                 LOG.error(e);

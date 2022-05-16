@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.net.InetAddress.getLoopbackAddress;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 public class SniffyDriverTest extends BaseTest {

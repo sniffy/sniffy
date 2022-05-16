@@ -63,10 +63,17 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     @Override
     public SocketChannel accept() throws IOException {
+
+        SocketChannel socketChannel = delegate.accept();
+
+        if (null == socketChannel) {
+            return null;
+        }
+
         // Windows Selector is implemented using pair of sockets which are explicitly casted and do not work with Sniffy
         return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
-                delegate.accept() :
-                new SniffySocketChannelAdapter(provider(), delegate.accept());
+                socketChannel :
+                new SniffySocketChannelAdapter(provider(), socketChannel);
     }
 
     @Override

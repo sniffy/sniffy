@@ -35,6 +35,8 @@
                         <!-- TODO: is it required? -->
                         <include>**/*Spec.java</include>
                     </includes>
+                    <argLine>-Xmx1024m ${argLine}</argLine>
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                 </configuration>
             </plugin>
         </plugins>

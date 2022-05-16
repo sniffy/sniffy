@@ -1,5 +1,7 @@
 package io.sniffy.socket;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import java.io.IOException;
@@ -10,6 +12,8 @@ import java.net.ConnectException;
  * @since 3.1
  */
 public class SnifferOutputStream extends OutputStream {
+
+    private static final Polyglog LOG = PolyglogFactory.log(SnifferOutputStream.class);
 
     // TODO: refactor
     private final SniffyNetworkConnection snifferSocket;
@@ -81,7 +85,22 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b) throws IOException {
+
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
+
+        if (null != snifferSocket && !snifferSocket.isFirstPacketSent()) {
+
+            try {
+                SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(snifferSocket);
+                sniffyPacketAnalyzer.analyze(b, 0, b.length);
+            } catch (Exception e) {
+                LOG.error(e);
+            } finally {
+                snifferSocket.setFirstPacketSent(true);
+            }
+
+        }
+
         long start = System.currentTimeMillis();
         try {
             delegate.write(b);
@@ -99,6 +118,20 @@ public class SnifferOutputStream extends OutputStream {
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
+
+        if (null != snifferSocket && !snifferSocket.isFirstPacketSent()) {
+
+            try {
+                SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(snifferSocket);
+                sniffyPacketAnalyzer.analyze(b, off, len);
+            } catch (Exception e) {
+                LOG.error(e);
+            } finally {
+                snifferSocket.setFirstPacketSent(true);
+            }
+
+        }
+
         long start = System.currentTimeMillis();
         try {
             delegate.write(b, off, len);

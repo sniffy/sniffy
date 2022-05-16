@@ -69,6 +69,7 @@
                 <configuration>
                     <runOrder>alphabetical</runOrder>
                     <forkedProcessTimeoutInSeconds>120</forkedProcessTimeoutInSeconds>
+                    <argLine>-Xmx1024m ${argLine}</argLine>
                 </configuration>
             </plugin>
         </plugins>
@@ -120,6 +121,8 @@
                         <configuration>
                             <runOrder>alphabetical</runOrder>
                             <forkedProcessTimeoutInSeconds>120</forkedProcessTimeoutInSeconds>
+                            <argLine>-Xmx1024m ${argLine}</argLine>
+                            <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         </configuration>
                     </plugin>
                 </plugins>
