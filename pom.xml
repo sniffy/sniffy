@@ -33,7 +33,7 @@
         <spring.version>4.3.30.RELEASE</spring.version>
         <spring.boot.version>1.5.22.RELEASE</spring.boot.version>
         <jacoco.version>0.8.8</jacoco.version>
-        <graalvm.version>22.1.0</graalvm.version>
+        <graalvm.version>20.3.6.1</graalvm.version>
 
         <skip.java7.compatibility.tests>true</skip.java7.compatibility.tests>
         <animal-sniffer.version>1.20</animal-sniffer.version>
