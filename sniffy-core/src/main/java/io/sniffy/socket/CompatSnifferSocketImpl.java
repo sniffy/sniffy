@@ -366,10 +366,11 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
         long start = System.currentTimeMillis();
         checkConnectionAllowed();
         // TODO: implement the same for NIO stack
-        boolean isInputStreamBufferingEnabled = true; // TODO: take from configuration
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        boolean isInputStreamBufferingEnabled = effectiveSpyConfiguration.isBufferIncomingTraffic();;
         try {
             SnifferInputStream snifferInputStream = new SnifferInputStream(this, super.getInputStream());
-            return isInputStreamBufferingEnabled ? new BufferedInputStream(snifferInputStream, 10 * 1024) : snifferInputStream; // TODO: move buffer size to configurationissues/528
+            return isInputStreamBufferingEnabled ? new BufferedInputStream(snifferInputStream, SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize()) : snifferInputStream;
         } finally {
             logSocket(System.currentTimeMillis() - start);
         }

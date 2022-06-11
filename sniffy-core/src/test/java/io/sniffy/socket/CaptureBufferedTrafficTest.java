@@ -1,30 +1,24 @@
 package io.sniffy.socket;
 
 import io.qameta.allure.Issue;
-import io.qameta.allure.Stories;
-import io.qameta.allure.Story;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.SpyConfiguration;
 import io.sniffy.ThreadMetaData;
 import io.sniffy.configuration.SniffyConfiguration;
-import io.sniffy.util.OSUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.Assert.*;
 
@@ -95,7 +89,7 @@ public class CaptureBufferedTrafficTest {
 
         long prevTimeStamp = System.currentTimeMillis();
 
-        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
+        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).bufferIncomingTraffic(true).build())) {
 
             performSocketOperation();
 
@@ -146,6 +140,31 @@ public class CaptureBufferedTrafficTest {
                     nextPacketMustBeSent = !nextPacketMustBeSent;
 
                 }
+
+            }
+
+        }
+
+    }
+
+    @Test
+    @Issue("issues/528")
+    public void testTrafficCaptureUnbufferedInputStream() throws Exception {
+
+        SniffyConfiguration.INSTANCE.setMonitorSocket(true);
+
+        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
+
+            performSocketOperation();
+
+            Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic();
+
+            assertEquals(1, networkTraffic.size());
+
+            for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
+
+                List<NetworkPacket> networkPackets = entry.getValue();
+                assertTrue(networkPackets.size() > 2);
 
             }
 
