@@ -55,7 +55,11 @@ public class DecryptBouncyCastleGoogleTrafficTestHelper {
                         e.printStackTrace();
                         System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Windows; retrying in 2 seconds");
                         Thread.sleep(2000);
-                    } else {
+                    } else if (e.getMessage().contains("Broken pipe") && OSUtil.isMac() && (JVMUtil.getVersion() >= 13)) {
+                        e.printStackTrace();
+                        System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Mac OS; retrying in 2 seconds");
+                        Thread.sleep(2000);
+                    }{
                         throw e;
                     }
                 }

@@ -9,10 +9,7 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.StringUtil;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 
@@ -368,8 +365,11 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     protected InputStream getInputStream() throws IOException {
         long start = System.currentTimeMillis();
         checkConnectionAllowed();
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        boolean isInputStreamBufferingEnabled = effectiveSpyConfiguration.isBufferIncomingTraffic();
         try {
-            return new SnifferInputStream(this, super.getInputStream());
+            SnifferInputStream snifferInputStream = new SnifferInputStream(this, super.getInputStream());
+            return isInputStreamBufferingEnabled ? new BufferedInputStream(snifferInputStream, SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize()) : snifferInputStream;
         } finally {
             logSocket(System.currentTimeMillis() - start);
         }

@@ -234,6 +234,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
+        // TODO: honor SpyConfiguration.isBufferIncomingTraffic() and SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize() settings
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
@@ -258,6 +259,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        // TODO: honor SpyConfiguration.isBufferIncomingTraffic() and SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize() settings
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         long bytesDown = 0;
