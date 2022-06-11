@@ -61,7 +61,10 @@ public class DecryptBouncyCastleGoogleTrafficTest {
 
                     break;
                 } catch (IOException e) {
-                    if (e.getMessage().contains("An established connection was aborted by the software in your host machine") && OSUtil.isWindows() && (JVMUtil.getVersion() == 14 || JVMUtil.getVersion() == 13)) {
+                    if ((
+                            e.getMessage().contains("An established connection was aborted by the software in your host machine") ||
+                                    e.getMessage().contains("handshake_failure(40)")
+                    ) && OSUtil.isWindows() && (JVMUtil.getVersion() == 14 || JVMUtil.getVersion() == 13)) {
                         e.printStackTrace();
                         System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Windows; retrying in 2 seconds");
                         Thread.sleep(2000);
