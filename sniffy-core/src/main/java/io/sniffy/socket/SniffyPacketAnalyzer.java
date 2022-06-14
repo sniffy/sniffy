@@ -1,5 +1,6 @@
 package io.sniffy.socket;
 
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import java.net.InetSocketAddress;
@@ -15,6 +16,8 @@ public class SniffyPacketAnalyzer {
     }
 
     public void analyze(byte[] b, int off, int len) throws Exception {
+
+        if (!Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getInterceptProxyConnections())) return;
 
         InetSocketAddress proxiedInetSocketAddress = null;
 

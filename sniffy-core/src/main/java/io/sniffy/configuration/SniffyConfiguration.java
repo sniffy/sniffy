@@ -114,6 +114,11 @@ public enum SniffyConfiguration {
      */
     private volatile Boolean flushResponse;
 
+    /**
+     * @since 3.1.13
+     */
+    private volatile Boolean interceptProxyConnections;
+
     SniffyConfiguration() {
         loadSniffyConfiguration();
     }
@@ -189,6 +194,9 @@ public enum SniffyConfiguration {
 
         String flushResponse = getProperty("io.sniffy.flushResponse", "IO_SNIFFY_FLUSH_RESPONSE", "true");
         this.flushResponse = null == flushResponse || Boolean.parseBoolean(flushResponse);
+
+        String interceptProxyConnections = getProperty("io.sniffy.interceptProxyConnections", "IO_SNIFFY_INTERCEPT_PROXY_CONNECTIONS", "true");
+        this.interceptProxyConnections = null == flushResponse || Boolean.parseBoolean(interceptProxyConnections);
 
     }
 
@@ -532,6 +540,13 @@ public enum SniffyConfiguration {
      */
     public Boolean getFlushResponse() {
         return flushResponse;
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public Boolean getInterceptProxyConnections() {
+        return interceptProxyConnections;
     }
 
 }
