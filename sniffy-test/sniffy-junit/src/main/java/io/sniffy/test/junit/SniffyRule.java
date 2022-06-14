@@ -46,6 +46,10 @@ public class SniffyRule implements TestRule {
     public SniffyRule() {
     }
 
+    /**
+     * @since 3.1.13
+     * @param level logging level
+     */
     public SniffyRule(PolyglogLevel level) {
         SniffyConfiguration.INSTANCE.setLogLevel(level);
     }

@@ -43,7 +43,7 @@ sniffy:jdbc:h2:mem:
 
 Some of Sniffy classes are deprecated as of version 3.1.0 with an equivalent replacement as shown in the table below:
 
-.Table Sniffy 3.1.0 deprecated classes
+.Sniffy 3.1.0 deprecated classes
 |===
 |Deprecated class |New class
 
@@ -87,7 +87,7 @@ Some of Sniffy classes are deprecated as of version 3.1.0 with an equivalent rep
 
 Some methods in `io.sniffy.Sniffer` class are now deprecated and although they're still available in `io.sniffy.Sniffy` class they will be removed completely in future versions of Sniffy.
 
-.Table io.sniffy.Sniffer deprecated methods
+.io.sniffy.Sniffer deprecated methods
 |===
 |Deprecated method |Replacement
 
@@ -102,7 +102,7 @@ Some methods in `io.sniffy.Sniffer` class are now deprecated and although they'r
 
 Some methods in `io.sniffy.Spy` class are now deprecated and will be removed completely in future versions of Sniffy.
 
-.Table io.sniffy.Spy deprecated methods
+.io.sniffy.Spy deprecated methods
 |===
 |Deprecated method |Replacement
 
@@ -119,3 +119,7 @@ Some methods in `io.sniffy.Spy` class are now deprecated and will be removed com
 === Deprecated annotations
 
 [line-through]`@EnableSniffy(excludePattern="...")` has been deprecated in favor of `@EnableSniffy(advanced = @SniffyAdvancedConfiguration(excludePattern = "...",))`
+
+=== Type changes
+
+Property `rows` in `io.sniffy.sql.SqlStats` has been changed from `AtomicInteger` to `AtomicLong` in release `3.1.13`
