@@ -10,7 +10,7 @@ import java.sql.Statement;
 
 public abstract class BaseTest {
 
-    protected static final String INSERT_PREPARED_STATEMENT = "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, ?)";
+    protected static final String INSERT_PREPARED_STATEMENT = "INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (NEXT VALUE FOR SEQ_PROJECT, ?)";
     /**
      * H2 is keeping the schema while we have at least one connection
      */
@@ -56,7 +56,7 @@ public abstract class BaseTest {
                 for (int i = 0; i < count; i++) {
                     switch (query) {
                         case INSERT:
-                            statement.executeUpdate("INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (SEQ_PROJECT.NEXTVAL, 'foo')");
+                            statement.executeUpdate("INSERT INTO PUBLIC.PROJECT (ID, NAME) VALUES (NEXT VALUE FOR SEQ_PROJECT, 'foo')");
                             break;
                         case UPDATE:
                             statement.executeUpdate("UPDATE PUBLIC.PROJECT SET NAME = UPPER(NAME)");
@@ -65,7 +65,7 @@ public abstract class BaseTest {
                             statement.executeUpdate("DELETE FROM PUBLIC.PROJECT");
                             break;
                         case MERGE:
-                            statement.executeUpdate("MERGE INTO PUBLIC.PROJECT (ID, NAME) KEY (ID) VALUES (SEQ_PROJECT.NEXTVAL, 'bar')");
+                            statement.executeUpdate("MERGE INTO PUBLIC.PROJECT (ID, NAME) KEY (ID) VALUES (NEXT VALUE FOR SEQ_PROJECT, 'bar')");
                             break;
                         case OTHER:
                             statement.execute("CREATE TABLE IF NOT EXISTS PROJECT (ID NUMBER PRIMARY KEY, NAME VARCHAR(255))");

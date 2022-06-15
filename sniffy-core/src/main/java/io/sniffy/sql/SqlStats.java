@@ -3,13 +3,14 @@ package io.sniffy.sql;
 import io.sniffy.socket.SocketStats;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @since 3.1
  */
 public class SqlStats extends SocketStats {
 
-    public final AtomicInteger rows = new AtomicInteger();
+    public final AtomicLong rows = new AtomicLong();
 
     /**
      * Number of queries (or batches) executed
@@ -20,13 +21,13 @@ public class SqlStats extends SocketStats {
         this(that.elapsedTime.longValue(), that.bytesDown.longValue(), that.bytesUp.longValue(), that.rows.intValue(), that.queries.intValue());
     }
 
-    public SqlStats(long elapsedTime, long bytesDown, long bytesUp, int rows, int queries) {
+    public SqlStats(long elapsedTime, long bytesDown, long bytesUp, long rows, int queries) {
         super(elapsedTime, bytesDown, bytesUp);
         this.rows.set(rows);
         this.queries.set(queries);
     }
 
-    public void accumulate(long elapsedTime, int bytesDown, int bytesUp, int rows, int queries) {
+    public void accumulate(long elapsedTime, long bytesDown, long bytesUp, long rows, int queries) {
         super.accumulate(elapsedTime, bytesDown, bytesUp);
         this.rows.addAndGet(rows);
         this.queries.addAndGet(queries);

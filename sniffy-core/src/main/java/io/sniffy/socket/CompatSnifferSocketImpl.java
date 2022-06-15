@@ -9,10 +9,7 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.StringUtil;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 
@@ -25,9 +22,15 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
 
     private static final Polyglog LOG_TRAFFIC_VERBOSE_LOG = PolyglogFactory.oneTimeLog(CompatSnifferSocketImpl.class);
 
+    private static final Polyglog LOG_FAULT_TOLERANCE_VERBOSE_LOG = PolyglogFactory.oneTimeLog(CompatSnifferSocketImpl.class);
+
     private final Sleep sleep;
 
     private InetSocketAddress address;
+
+    private boolean firstPacketSent;
+
+    private InetSocketAddress proxiedAddress;
 
     private final int id = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
@@ -61,12 +64,34 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
         return this.address;
     }
 
+    @Override
+    public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
+        this.proxiedAddress = proxiedAddress;
+    }
+
+    @Override
+    public InetSocketAddress getProxiedInetSocketAddress() {
+        return proxiedAddress;
+    }
+
+    @Override
+    public void setFirstPacketSent(boolean firstPacketSent) {
+        this.firstPacketSent = firstPacketSent;
+    }
+
+    @Override
+    public boolean isFirstPacketSent() {
+        return firstPacketSent;
+    }
+
     @Deprecated
+    @Override
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis, int bytesDown, int bytesUp) {
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
@@ -127,6 +152,8 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     }
 
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+
+        LOG_FAULT_TOLERANCE_VERBOSE_LOG.error("Checking if connection to " + inetSocketAddress + " is allowed; other invocations will not be logged");
 
         if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
 
@@ -338,8 +365,11 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
     protected InputStream getInputStream() throws IOException {
         long start = System.currentTimeMillis();
         checkConnectionAllowed();
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        boolean isInputStreamBufferingEnabled = effectiveSpyConfiguration.isBufferIncomingTraffic();
         try {
-            return new SnifferInputStream(this, super.getInputStream());
+            SnifferInputStream snifferInputStream = new SnifferInputStream(this, super.getInputStream());
+            return isInputStreamBufferingEnabled ? new BufferedInputStream(snifferInputStream, SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize()) : snifferInputStream;
         } finally {
             logSocket(System.currentTimeMillis() - start);
         }

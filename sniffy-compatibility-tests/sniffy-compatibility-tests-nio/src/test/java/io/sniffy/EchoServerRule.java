@@ -22,7 +22,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
     private final List<Thread> socketThreads = new ArrayList<Thread>();
     private final List<Socket> sockets = new ArrayList<Socket>();
 
-    private int boundPort = 10000;
+    private int boundPort = 10200;
     private ServerSocket serverSocket;
 
     private final byte[] dataToBeSent;
@@ -45,10 +45,13 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 serverSocket.setReuseAddress(true);
                 break;
             } catch (IOException e) {
-                try {
-                    serverSocket.close();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                e.printStackTrace();
+                if (null != serverSocket) {
+                    try {
+                        serverSocket.close();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         }
@@ -78,7 +81,11 @@ public class EchoServerRule extends ExternalResource implements Runnable {
         }
 
         try {
-            thread.join();
+            thread.join(10000L);
+            if (thread.isAlive()) {
+                thread.interrupt();
+                thread.join(1000);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

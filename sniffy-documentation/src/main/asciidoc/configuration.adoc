@@ -3,7 +3,7 @@ This configuration can be overriden in `web.xml` and/or `@EnableSniffy` annotati
 
 WARNING: sniffy configuration is parsed only once and any changes made to system properties or environment variables in run-time won't have any effect on `Sniffy`
 
-.Table Configuration properties
+.Configuration properties
 |===
 |System Property |Environment Variable |Sniffy Agent parameter |Description |Default Value
 
@@ -24,6 +24,12 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |N/A
 |Monitor socket connections
 |false (enabled implicitly by Sniffy javaagent or SniffyFiler)
+
+|-Dio.sniffy.interceptProxyConnections
+|IO_SNIFFY_INTERCEPT_PROXY_CONNECTIONS
+|N/A
+|Analyze potential HTTP proxy requests and track connections done via proxies
+|true
 
 |-Dio.sniffy.monitorNio
 |IO_SNIFFY_MONITOR_NIO
@@ -79,6 +85,18 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |Enable collecting network stats (bytes sent/received, time spent) if monitorSocket or monitorNio are enabled
 |true
 
+|-Dio.sniffy.bufferIncomingTraffic
+|IO_SNIFFY_BUFFER_INCOMING_TRAFFIC
+|N/A
+|Buffer incoming network packets
+|false
+
+|-Dio.sniffy.incomingTrafficBufferSize
+|IO_SNIFFY_INCOMING_TRAFFIC_BUFFER_SIZE
+|N/A
+|Size of network buffer for incoming network packets; used if bufferIncomingTraffic is set to true
+|51200
+
 |-Dio.sniffy.decryptTls
 |IO_SNIFFY_DECRYPT_TLS
 |N/A
@@ -89,6 +107,18 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |IO_SNIFFY_SOCKET_FAULT_INJECTION_ENABLED
 |N/A
 |Enable injecting network faults if monitorSocket or monitorNio are enabled
+|true
+
+|-Dio.sniffy.useSecureCookie
+|IO_SNIFFY_USE_SECURE_COOKIE
+|N/A
+|Mark cookies set by Sniffy as secure
+|true
+
+|-Dio.sniffy.flushResponse
+|IO_SNIFFY_FLUSH_RESPONSE
+|N/A
+|Force flush servlet response if possible
 |true
 
 |===

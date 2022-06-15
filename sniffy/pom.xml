@@ -5,18 +5,36 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.12</version>
+        <version>3.1.13-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <version>3.1.13-SNAPSHOT</version>
     <artifactId>sniffy</artifactId>
     <name>Sniffy</name>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.webjars.bower</groupId>
+                <artifactId>jquery</artifactId>
+                <version>1.12.4</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.webjars.bower</groupId>
+                <artifactId>bootstrap</artifactId>
+                <version>3.3.7</version>
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-web</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- begin javadoc dependencies -->
@@ -40,7 +58,6 @@
         <dependency>
             <groupId>org.webjars.bower</groupId>
             <artifactId>bootstrap</artifactId>
-            <version>3.3.7</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -59,7 +76,6 @@
         <dependency>
             <groupId>org.webjars.bower</groupId>
             <artifactId>jquery</artifactId>
-            <version>1.12.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

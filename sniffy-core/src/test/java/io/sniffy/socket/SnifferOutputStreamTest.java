@@ -1,12 +1,12 @@
 package io.sniffy.socket;
 
+import io.qameta.allure.Feature;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-import ru.yandex.qatools.allure.annotations.Features;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,9 +14,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
-import static org.mockito.internal.verification.VerificationModeFactory.noInteractions;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -54,7 +52,7 @@ public class SnifferOutputStreamTest {
     }
 
     @Test
-    @Features("issues/219")
+    @Feature("issues/219")
     public void testWriteByteArrayThreeTcpPackets() throws IOException {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

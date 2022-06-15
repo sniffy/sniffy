@@ -26,7 +26,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     private final AtomicInteger bytesReceivedCounter = new AtomicInteger();
 
-    private int boundPort = 10000;
+    private int boundPort = 10400;
     private ServerSocket serverSocket;
 
     private final byte[] dataToBeSent;
@@ -55,10 +55,13 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 serverSocket.setReuseAddress(true);
                 break;
             } catch (IOException e) {
-                try {
-                    serverSocket.close();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                e.printStackTrace();
+                if (null != serverSocket) {
+                    try {
+                        serverSocket.close();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         }
@@ -67,6 +70,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
             throw new IOException("Failed to find an available port");
         }
 
+        thread.setDaemon(true);
         thread.start();
 
     }
@@ -140,7 +144,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
         socketThreads.forEach((thread) -> {
             try {
-                thread.join(10000);
+                thread.join(1000);
                 if (thread.isAlive()) {
                     thread.interrupt();
                     thread.join(1000);
@@ -154,6 +158,18 @@ public class EchoServerRule extends ExternalResource implements Runnable {
             try {
                 socket.close();
             } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        socketThreads.forEach((thread) -> {
+            try {
+                thread.join(1000);
+                if (thread.isAlive()) {
+                    thread.interrupt();
+                    thread.join(1000);
+                }
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         });

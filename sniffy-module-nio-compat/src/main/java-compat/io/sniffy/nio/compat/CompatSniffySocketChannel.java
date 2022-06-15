@@ -6,13 +6,9 @@ import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
-import io.sniffy.socket.Protocol;
-import io.sniffy.socket.SniffyNetworkConnection;
-import io.sniffy.socket.SniffySSLNetworkConnection;
-import io.sniffy.socket.SniffySocket;
+import io.sniffy.socket.*;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.JVMUtil;
-import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
 import java.net.*;
@@ -63,6 +59,28 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
         }
     }
 
+    private boolean firstPacketSent;
+    private InetSocketAddress proxiedAddress;
+
+    @Override
+    public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
+        this.proxiedAddress = proxiedAddress;
+    }
+
+    @Override
+    public InetSocketAddress getProxiedInetSocketAddress() {
+        return proxiedAddress;
+    }
+
+    @Override
+    public void setFirstPacketSent(boolean firstPacketSent) {
+        this.firstPacketSent = firstPacketSent;
+    }
+
+    @Override
+    public boolean isFirstPacketSent() {
+        return firstPacketSent;
+    }
 
     /**
      * Adds a delay as defined for current {@link SnifferSocketImpl} in {@link ConnectionsRegistry#discoveredDataSources}
@@ -131,11 +149,13 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis) {
         logSocket(millis, 0, 0);
     }
 
     @Deprecated
+    @Override
     public void logSocket(long millis, int bytesDown, int bytesUp) {
 
         if (!SniffyConfiguration.INSTANCE.getSocketCaptureEnabled()) return;
@@ -163,8 +183,30 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
                 if (null != sniffySSLNetworkConnection) {
                     sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
                 }
+                firstChunk = false;
             }
-            firstChunk = false;
+        }
+    }
+
+    public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean isConnectPacket) {
+        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            LOG.trace("CompatSniffySocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
+            Sniffy.logTraffic(
+                    connectionId, getInetSocketAddress(),
+                    sent, protocol,
+                    traffic, off, len,
+                    effectiveSpyConfiguration.isCaptureStackTraces()
+            );
+            if (!isConnectPacket) {
+                if (sent && firstChunk) {
+                    SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                    if (null != sniffySSLNetworkConnection) {
+                        sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
+                    }
+                }
+                firstChunk = false;
+            }
         }
     }
 
@@ -173,7 +215,7 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
         if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
             LOG.trace("CompatSniffySocketChannel.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
             Sniffy.logDecryptedTraffic(
-                    connectionId, getInetSocketAddress(),
+                    connectionId, null == getProxiedInetSocketAddress() ? getInetSocketAddress() : getProxiedInetSocketAddress(),
                     sent, protocol,
                     traffic, off, len,
                     effectiveSpyConfiguration.isCaptureStackTraces()
@@ -310,11 +352,32 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
             sleepIfRequiredForWrite(length);
             logSocket(System.currentTimeMillis() - start, 0, length);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            if (effectiveSpyConfiguration.isCaptureNetworkTraffic() || isFirstPacketSent()) {
                 src.position(position);
                 byte[] buff = new byte[length];
                 src.get(buff, 0, length);
-                logTraffic(true, Protocol.TCP, buff, 0, buff.length);
+
+                boolean isConnectPacket = false;
+
+                if (!isFirstPacketSent()) {
+
+                    try {
+                        SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(this);
+                        sniffyPacketAnalyzer.analyze(buff, 0, buff.length);
+                    } catch (Exception e) {
+                        LOG.error(e);
+                    } finally {
+                        setFirstPacketSent(true);
+                    }
+
+                    isConnectPacket = null != proxiedAddress;
+
+                }
+
+                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
+                }
+
             }
         }
     }
@@ -345,12 +408,34 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
             sleepIfRequiredForWrite((int) bytesUp);
             logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+
+            boolean isConnectPacket = false;
+
+            if (!isFirstPacketSent()) {
+
+                srcs[offset].position(positions[0]);
+                byte[] buff = new byte[remainings[0]];
+                srcs[offset].get(buff, 0, remainings[0]);
+
+                try {
+                    SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(this);
+                    sniffyPacketAnalyzer.analyze(buff, 0, buff.length);
+                } catch (Exception e) {
+                    LOG.error(e);
+                } finally {
+                    setFirstPacketSent(true);
+                }
+
+                isConnectPacket = null != proxiedAddress;
+
+            }
+
             if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 for (int i = 0; i < length; i++) {
                     srcs[offset + i].position(positions[i]);
-                    byte[] buff = new byte[remainings[i]];
+                    byte[] buff = new byte[remainings[i]]; // TODO: here in other places avoid wrapping ByteBuffer to byte[]
                     srcs[offset + i].get(buff, 0, remainings[i]);
-                    logTraffic(true, Protocol.TCP, buff, 0, buff.length);
+                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
                 }
 
             }

@@ -18,6 +18,34 @@ include::../../../../sniffy-core/src/test/java/io/sniffy/socket/CaptureTrafficOv
 <9> SocketMetaData describes the target host and port and other parameters as described above for `GroupingOptions`
 <10> `NetworkPacket` contains data in bytes, timestamp, direction and optional stacktrace and thread information
 
+`SpyConfiguration` supports following properties:
+
+.Configuration properties
+|===
+|Property name |Description |Default Value
+
+|captureStackTraces
+|Capture stack traces for network communication
+|true
+
+|captureNetwork
+|Capture network interactions
+|Global configuration `io.sniffy.monitorSocket`
+
+|captureNetworkTraffic
+|Capture network traffic
+|false
+
+|captureJdbc
+|Capture JDBC queries
+|Global configuration `io.sniffy.monitorJdbc`
+
+|bufferIncomingTraffic
+|Buffer incoming traffic - might be useful to more accurately capture traffic of conversation based protocols in multithreaded environments
+|Global configuration `io.sniffy.bufferIncomingTraffic`
+
+|===
+
 === Configuration
 
 `packetMergeThreshold` allows you to specify threshold for combining similar network packets when capturing traffic.
@@ -52,4 +80,4 @@ Since some of these constructs can be cached in application code, please make su
 If absolutely necessary you can initialize Sniffy as a javaagent, although it's a bit cumbersome - see https://sniffy.io/docs/latest/#_standalone_setup[Standalone Setup] section for details.
 
 Sniffy support custom JSSE providers such as BouncyCastle. However if you're installing *AFTER* you initialize Sniffy you _might_ need to reinitialize Sniffy.
-It's possible using `Sniffy.reinitialize()` method.e
+It's possible using `Sniffy.reinitialize()` method. In general it will work out of the box without any further actions from developer given that Sniffy is initialized on an early stage.

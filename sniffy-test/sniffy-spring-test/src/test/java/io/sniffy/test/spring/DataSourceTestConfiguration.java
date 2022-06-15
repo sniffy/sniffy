@@ -10,9 +10,46 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 
 @Configuration
 public class DataSourceTestConfiguration {
+
+    @Bean
+    public Object something() {
+        Thread t = new Thread(() -> {
+
+            try {
+
+                Thread.sleep(60000);
+
+                // https://issues.apache.org/jira/browse/SUREFIRE-1879
+
+                System.err.println("Sniffy ShutdownHook executed - will dump stack traces in 5 seconds");
+
+                Thread.sleep(5000);
+
+                System.err.println("Sniffy ShutdownHook executed - printing dump stack");
+
+                Thread.getAllStackTraces().entrySet().stream()
+                        .filter(entry -> !entry.getKey().isDaemon())
+                        .filter(entry -> entry.getKey().isAlive())
+                        .forEach(entry -> {
+                            System.out.println(entry.getKey().getName() + " " + entry.getKey().getState());
+                            System.out.println(Arrays.toString(entry.getValue()));
+                            System.out.println();
+                        });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        });
+        t.setDaemon(true);
+        t.start();
+        //Runtime.getRuntime().addShutdownHook(t);
+        return new Object();
+    }
 
     @Bean
     public DataSource originalDataSource() throws SQLException {

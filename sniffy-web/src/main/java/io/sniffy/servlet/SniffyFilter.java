@@ -2,7 +2,10 @@ package io.sniffy.servlet;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.Constants;
+import io.sniffy.Sniffy;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import javax.servlet.*;
@@ -59,6 +62,8 @@ import static io.sniffy.servlet.SniffyRequestProcessor.SNIFFY_REQUEST_PROCESSOR_
  * @since 3.1
  */
 public class SniffyFilter implements Filter {
+
+    private static final Polyglog LOG = PolyglogFactory.log(Sniffy.class);
 
     public static final String HEADER_CORS_HEADERS = "Access-Control-Expose-Headers";
     public static final String HEADER_NUMBER_OF_QUERIES = "Sniffy-Sql-Queries";
@@ -341,6 +346,14 @@ public class SniffyFilter implements Filter {
                                   String name, String value) throws MalformedURLException {
         Cookie cookie = new Cookie(name, value);
         cookie.setPath("/");
+        if (SniffyConfiguration.INSTANCE.getUseSecureCookie()) {
+            // TODO: take this configuration from servlet config as well (also consider spring)
+            try {
+                cookie.setSecure(true);
+            } catch (Exception e) {
+                LOG.error(e);
+            }
+        }
         httpServletResponse.addCookie(cookie);
     }
 

@@ -3,7 +3,6 @@ package io.sniffy.test.kotest.usage
 import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
-import io.kotest.core.test.TestStatus
 import io.sniffy.Sniffy
 import io.sniffy.SniffyAssertionError
 import io.sniffy.Spy
@@ -40,7 +39,7 @@ open class SniffyExtension(expectation: Spy.Expectation? = null) : TestCaseExten
         try {
             spy.verify()
         } catch (e: SniffyAssertionError) {
-            return testResult.copy(status = TestStatus.Failure, error = e)
+            return TestResult.failure(duration = testResult.duration, e = e)
         }
         return testResult
     }

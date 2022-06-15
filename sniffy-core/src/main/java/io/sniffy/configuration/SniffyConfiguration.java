@@ -41,6 +41,13 @@ public enum SniffyConfiguration {
     private volatile boolean captureTraffic;
 
     /**
+     * Enable buffering incoming traffic
+     *
+     * @since 3.1.13
+     */
+    private volatile boolean bufferIncomingTraffic;
+
+    /**
      * @since 3.1.2
      */
     private volatile int topSqlCapacity;
@@ -51,6 +58,13 @@ public enum SniffyConfiguration {
      * @since 3.1.10
      */
     private volatile int packetMergeThreshold;
+
+    /**
+     * If buffering incoming connections is enabled, this property allows to customize incoming buffer size
+     *
+     * @since 3.1.13
+     */
+    private volatile int incomingTrafficBufferSize;
 
     private volatile Boolean filterEnabled;
     private volatile String excludePattern;
@@ -90,6 +104,21 @@ public enum SniffyConfiguration {
      */
     private volatile Boolean socketFaultInjectionEnabled;
 
+    /**
+     * @since 3.1.13
+     */
+    private volatile Boolean useSecureCookie;
+
+    /**
+     * @since 3.1.13
+     */
+    private volatile Boolean flushResponse;
+
+    /**
+     * @since 3.1.13
+     */
+    private volatile Boolean interceptProxyConnections;
+
     SniffyConfiguration() {
         loadSniffyConfiguration();
     }
@@ -128,6 +157,15 @@ public enum SniffyConfiguration {
             packetMergeThreshold = 0;
         }
 
+
+        try {
+            incomingTrafficBufferSize = Integer.parseInt(getProperty(
+                    "io.sniffy.incomingTrafficBufferSize", "IO_SNIFFY_INCOMING_TRAFFIC_BUFFER_SIZE", "51200"
+            ));
+        } catch (NumberFormatException e) {
+            incomingTrafficBufferSize = 0;
+        }
+
         String filterEnabled = getProperty("io.sniffy.filterEnabled", "IO_SNIFFY_FILTER_ENABLED");
         this.filterEnabled = null == filterEnabled ? null : Boolean.parseBoolean(filterEnabled);
 
@@ -147,6 +185,18 @@ public enum SniffyConfiguration {
         this.socketCaptureEnabled = null == socketCaptureEnabled || Boolean.parseBoolean(socketCaptureEnabled);
         String socketFaultInjectionEnabled = getProperty("io.sniffy.socketFaultInjectionEnabled", "IO_SNIFFY_SOCKET_FAULT_INJECTION_ENABLED");
         this.socketFaultInjectionEnabled = null == socketFaultInjectionEnabled || Boolean.parseBoolean(socketFaultInjectionEnabled);
+
+        String bufferIncomingTraffic = getProperty("io.sniffy.bufferIncomingTraffic", "IO_SNIFFY_BUFFER_INCOMING_TRAFFIC");
+        this.bufferIncomingTraffic = Boolean.parseBoolean(bufferIncomingTraffic);
+
+        String useSecureCookie = getProperty("io.sniffy.useSecureCookie", "IO_SNIFFY_USE_SECURE_COOKIE", "true");
+        this.useSecureCookie = null == useSecureCookie || Boolean.parseBoolean(useSecureCookie);
+
+        String flushResponse = getProperty("io.sniffy.flushResponse", "IO_SNIFFY_FLUSH_RESPONSE", "true");
+        this.flushResponse = null == flushResponse || Boolean.parseBoolean(flushResponse);
+
+        String interceptProxyConnections = getProperty("io.sniffy.interceptProxyConnections", "IO_SNIFFY_INTERCEPT_PROXY_CONNECTIONS", "true");
+        this.interceptProxyConnections = null == flushResponse || Boolean.parseBoolean(interceptProxyConnections);
 
     }
 
@@ -247,6 +297,22 @@ public enum SniffyConfiguration {
     }
 
     /**
+     * @since 3.1.13
+     */
+    public boolean isBufferIncomingTraffic() {
+        return bufferIncomingTraffic;
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public void setBufferIncomingTraffic(boolean bufferIncomingTraffic) {
+        boolean oldValue = this.bufferIncomingTraffic;
+        this.bufferIncomingTraffic = bufferIncomingTraffic;
+        pcs.firePropertyChange("bufferIncomingTraffic", oldValue, captureTraffic);
+    }
+
+    /**
      * @since 3.1.3
      */
     public void addMonitorSocketListener(PropertyChangeListener listener) {
@@ -320,6 +386,22 @@ public enum SniffyConfiguration {
         int oldValue = this.packetMergeThreshold;
         this.packetMergeThreshold = packetMergeThreshold;
         pcs.firePropertyChange("packetMergeThreshold", oldValue, packetMergeThreshold);
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public int getIncomingTrafficBufferSize() {
+        return incomingTrafficBufferSize;
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public void setIncomingTrafficBufferSize(int incomingTrafficBufferSize) {
+        int oldValue = this.incomingTrafficBufferSize;
+        this.incomingTrafficBufferSize = incomingTrafficBufferSize;
+        pcs.firePropertyChange("incomingTrafficBufferSize", oldValue, incomingTrafficBufferSize);
     }
 
     /**
@@ -444,6 +526,27 @@ public enum SniffyConfiguration {
      */
     public void setSocketFaultInjectionEnabled(Boolean socketFaultInjectionEnabled) {
         this.socketFaultInjectionEnabled = socketFaultInjectionEnabled;
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public Boolean getUseSecureCookie() {
+        return useSecureCookie;
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public Boolean getFlushResponse() {
+        return flushResponse;
+    }
+
+    /**
+     * @since 3.1.13
+     */
+    public Boolean getInterceptProxyConnections() {
+        return interceptProxyConnections;
     }
 
 }

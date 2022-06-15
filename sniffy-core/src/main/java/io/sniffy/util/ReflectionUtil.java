@@ -4,27 +4,70 @@ import sun.misc.Unsafe;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.Lock;
 
 public class ReflectionUtil {
 
     public final static Unsafe UNSAFE;
 
+    private static final int METHOD_MH_ACCESSOR = 0x1;
+
     static {
+
         Unsafe unsafe = null;
         try {
             Field f = Unsafe.class.getDeclaredField("theUnsafe");
             f.setAccessible(true);
             unsafe = (Unsafe) f.get(null);
-        } catch (Exception e) {
-            // TODO: what do we do with drunken sailor?
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
         UNSAFE = unsafe;
+
+        if (JVMUtil.getVersion() == 18) {
+
+            // workaround https://openjdk.java.net/jeps/416 - JEP 416: Reimplement Core Reflection with Method Handles
+
+            try {
+
+                Class<?> reflectionFactoryClass = Class.forName("jdk.internal.reflect.ReflectionFactory");
+                Field useDirectMethodHandle = reflectionFactoryClass.getDeclaredField("useDirectMethodHandle");
+                long useDirectMethodHandleOffset = UNSAFE.staticFieldOffset(useDirectMethodHandle);
+                UNSAFE.putInt(reflectionFactoryClass, useDirectMethodHandleOffset, METHOD_MH_ACCESSOR);
+
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
+        } else if (JVMUtil.getVersion() == 19) {
+
+            // todo: code below seems useless
+            try {
+
+                Class<?> reflectionFactoryClass = Class.forName("jdk.internal.reflect.ReflectionFactory");
+                Field configField = reflectionFactoryClass.getDeclaredField("config");
+                long configOffset = UNSAFE.staticFieldOffset(configField);
+
+                UNSAFE.putObject(reflectionFactoryClass, configOffset, null);
+                System.setProperty("jdk.reflect.useDirectMethodHandle", "false");
+
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
+        }
+
     }
 
     /**
      * FakeAccessibleObject class has similar layout as {@link AccessibleObject} and can be used for calculating offsets
      */
+    @SuppressWarnings({"unused", "NullableProblems"})
     private static class FakeAccessibleObject implements AnnotatedElement {
 
         /**
@@ -78,10 +121,16 @@ public class ReflectionUtil {
                 e.printStackTrace();
             }
 
-            if (ao.isAccessible()) {
-                return true;
-            }
-            return false;
+            /*if (JVMUtil.getVersion() >= 19 && ao instanceof Field) {
+                try {
+                    long trustedFinalOffset = UNSAFE.objectFieldOffset(FakeField.class.getDeclaredField("trustedFinal"));
+                    UNSAFE.putBoolean(ao, trustedFinalOffset, false);
+                } catch (NoSuchFieldException e) {
+                    e.printStackTrace();
+                }
+            }*/
+
+            return ao.isAccessible();
         }
 
         ao.setAccessible(true);
@@ -136,6 +185,10 @@ public class ReflectionUtil {
         return false;
     }
 
+    private static final Set<Field> nonAccessibleFields = Collections.<Field>newSetFromMap(
+            new ConcurrentHashMap<Field, Boolean>()
+    );
+
     public static <T, V> boolean setField(Class<T> clazz, T instance, String fieldName, V value, String lockFieldName) {
 
         //noinspection TryWithIdenticalCatches
@@ -167,23 +220,31 @@ public class ReflectionUtil {
                 return true;
             }*/
 
+            if (!nonAccessibleFields.contains(instanceField) && !instanceField.isAccessible()) {
+                nonAccessibleFields.add(instanceField);
+            }
+
             if (!instanceField.isAccessible()) {
-                //instanceField.setAccessible(true);
                 setAccessible(instanceField);
             }
 
             Field modifiersField = getModifiersField();
-            //modifiersField.setAccessible(true);
             setAccessible(modifiersField);
 
             modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+            // TODO: check if code below can actually work and evaluate it instead of static constructor stuff
+            /*if (JVMUtil.getVersion() >= 18) {
+                Field trustedFinalField = getTrustedFinalField();
+                setAccessible(trustedFinalField);
+                trustedFinalField.setBoolean(instanceField, false);
+            }*/
 
             if (null != lockFieldName) {
 
                 Field lockField = clazz.getDeclaredField(lockFieldName);
 
                 if (!lockField.isAccessible()) {
-                    //lockField.setAccessible(true);
                     setAccessible(lockField);
                 }
 
@@ -195,7 +256,7 @@ public class ReflectionUtil {
 
                     try {
                         lock.lock();
-                        instanceField.set(instance, value);
+                        set(instanceField, instance, value);
                         return true;
                     } finally {
                         lock.unlock();
@@ -205,14 +266,14 @@ public class ReflectionUtil {
 
                     //noinspection SynchronizationOnLocalVariableOrMethodParameter
                     synchronized (lockObject) {
-                        instanceField.set(instance, value);
+                        set(instanceField, instance, value);
                         return true;
                     }
 
                 }
 
             } else {
-                instanceField.set(instance, value);
+                set(instanceField, instance, value);
                 return true;
             }
 
@@ -220,6 +281,77 @@ public class ReflectionUtil {
             return false;
         } catch (IllegalAccessException e) {
             return false;
+        }
+
+    }
+
+    private static <T,V> void set(Field instanceField, T instance, V value) throws IllegalAccessException {
+        if (JVMUtil.getVersion() == 19 && nonAccessibleFields.contains(instanceField)) {
+
+            long offset = null == instance ?
+                    UNSAFE.staticFieldOffset(instanceField) :
+                    UNSAFE.objectFieldOffset(instanceField);
+
+            Object object = null == instance ? instanceField.getDeclaringClass() : instance;
+
+            if (instanceField.getType() == Boolean.TYPE && value instanceof Boolean) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    UNSAFE.putBooleanVolatile(object, offset, (Boolean) value);
+                } else {
+                    UNSAFE.putBoolean(object, offset, (Boolean) value);
+                }
+            } else if (instanceField.getType() == Integer.TYPE && value instanceof Number) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    UNSAFE.putIntVolatile(object, offset, ((Number) value).intValue());
+                } else {
+                    UNSAFE.putInt(object, offset, ((Number) value).intValue());
+                }
+            } else if (instanceField.getType() == Long.TYPE && value instanceof Number) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    UNSAFE.putLongVolatile(object, offset, ((Number) value).longValue());
+                } else {
+                    UNSAFE.putLong(object, offset, ((Number) value).longValue());
+                }
+            } else if (instanceField.getType() == Short.TYPE && value instanceof Number) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    UNSAFE.putShortVolatile(object, offset, ((Number) value).shortValue());
+                } else {
+                    UNSAFE.putShort(object, offset, ((Number) value).shortValue());
+                }
+            } else if (instanceField.getType() == Byte.TYPE && value instanceof Number) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    UNSAFE.putByteVolatile(object, offset, ((Number) value).byteValue());
+                } else {
+                    UNSAFE.putByte(object, offset, ((Number) value).byteValue());
+                }
+            } else if (instanceField.getType() == Double.TYPE && value instanceof Number) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    UNSAFE.putDoubleVolatile(object, offset, ((Number) value).doubleValue());
+                } else {
+                    UNSAFE.putDouble(object, offset, ((Number) value).doubleValue());
+                }
+            } else if (instanceField.getType() == Float.TYPE && value instanceof Number) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    UNSAFE.putFloatVolatile(object, offset, ((Number) value).floatValue());
+                } else {
+                    UNSAFE.putFloat(object, offset, ((Number) value).floatValue());
+                }
+            } else if (instanceField.getType() == Character.TYPE && value instanceof Character) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    UNSAFE.putCharVolatile(object, offset, (Character) value);
+                } else {
+                    UNSAFE.putChar(object, offset, (Character) value);
+                }
+            } else {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    UNSAFE.putObjectVolatile(object, offset, value);
+                } else {
+                    UNSAFE.putObject(object, offset, value);
+                }
+            }
+
+        } else {
+            instanceField.set(instance, value);
         }
 
     }
@@ -288,14 +420,20 @@ public class ReflectionUtil {
         }*/
 
         if (!instanceField.isAccessible()) {
-            //instanceField.setAccessible(true);
             setAccessible(instanceField);
         }
 
         Field modifiersField = getModifiersField();
-        //modifiersField.setAccessible(true);
         setAccessible(modifiersField);
         modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
+
+        // TODO: check if we actually need more magic for getters to work or is it only required by setters
+        // TODO: check if code below can actually work and evaluate it instead of static constructor stuff
+        /*if (JVMUtil.getVersion() >= 18) {
+            Field trustedFinalField = getTrustedFinalField();
+            setAccessible(trustedFinalField);
+            trustedFinalField.setBoolean(instanceField, false);
+        }*/
 
         if (null != lockFieldName) {
 
@@ -342,7 +480,6 @@ public class ReflectionUtil {
         } catch (NoSuchFieldException e) {
             try {
                 Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-                //getDeclaredFields0.setAccessible(true);
                 setAccessible(getDeclaredFields0);
                 Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
                 for (Field field : fields) {
@@ -436,7 +573,6 @@ public class ReflectionUtil {
 
     public static Method method(Class<?> clazz, String methodName, Class<?>... argumentTypes) throws NoSuchMethodException {
         Method method = clazz.getDeclaredMethod(methodName, argumentTypes);
-        //method.setAccessible(true);
         setAccessible(method);
         return method;
     }

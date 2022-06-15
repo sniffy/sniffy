@@ -1,5 +1,6 @@
 package io.sniffy.nio;
 
+import io.qameta.allure.Issue;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.SpyConfiguration;
@@ -9,7 +10,6 @@ import io.sniffy.socket.*;
 import io.sniffy.util.OSUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Issue;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.sniffy.Threads.*;
+import static io.sniffy.socket.NetworkPacket.convertNetworkPacketsToString;
 import static org.junit.Assert.*;
 
 public class NioSniffySocketTest extends BaseSocketTest {
@@ -154,7 +155,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
             // Current thread socket operations
 
-            assertEquals(1, (long) s.getSocketOperations(CURRENT, true).entrySet().size());
+            assertEquals(1, s.getSocketOperations(CURRENT, true).entrySet().size());
 
             s.getSocketOperations(CURRENT, true).values().stream().findAny().ifPresent((socketStats) -> {
                 Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
@@ -163,7 +164,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
             // Other threads socket operations
 
-            assertEquals(1, s.getSocketOperations(OTHERS, true).entrySet().stream().count());
+            assertEquals(1, s.getSocketOperations(OTHERS, true).entrySet().size());
 
             s.getSocketOperations(OTHERS, true).values().stream().findAny().ifPresent((socketStats) -> {
                 Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
@@ -172,9 +173,9 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
             // Any threads socket operations
 
-            assertEquals(2, s.getSocketOperations(ANY, true).entrySet().stream().count());
+            assertEquals(2, s.getSocketOperations(ANY, true).entrySet().size());
 
-            s.getSocketOperations(OTHERS, true).values().stream().forEach((socketStats) -> {
+            s.getSocketOperations(OTHERS, true).values().forEach((socketStats) -> {
                 Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
                 Assert.assertEquals(BaseSocketTest.RESPONSE.length, socketStats.bytesDown.intValue());
             });
@@ -264,6 +265,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
         SniffyConfiguration.INSTANCE.setSocketCaptureEnabled(true);
+        SniffyConfiguration.INSTANCE.setPacketMergeThreshold(10000);
 
         Sniffy.initialize();
 
@@ -329,7 +331,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
                 List<NetworkPacket> networkPackets = entry.getValue();
 
-                assertEquals(4, networkPackets.size());
+                assertEquals("Expected 4 packets, but instead got " + convertNetworkPacketsToString(networkPackets), 4, networkPackets.size());
 
                 for (NetworkPacket networkPacket : networkPackets) {
 
@@ -367,7 +369,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
     @Test
     @Issue("issues/402")
-    public void testCaptureTrafficGatheringScattering() throws Exception {
+    public void testCaptureTrafficGatheringScattering() {
 
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
@@ -509,25 +511,19 @@ public class NioSniffySocketTest extends BaseSocketTest {
         final ByteBuffer targetBuffer = ByteBuffer.allocate(5);
         final AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
 
-        Thread sourceThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    source.read(targetBuffer);
-                } catch (IOException e) {
-                    exceptionHolder.set(e);
-                }
+        Thread sourceThread = new Thread(() -> {
+            try {
+                source.read(targetBuffer);
+            } catch (IOException e) {
+                exceptionHolder.set(e);
             }
         });
 
-        Thread sinkThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    sink.write(ByteBuffer.wrap(new byte[]{1, 2, 3, 5, 8}));
-                } catch (IOException e) {
-                    exceptionHolder.set(e);
-                }
+        Thread sinkThread = new Thread(() -> {
+            try {
+                sink.write(ByteBuffer.wrap(new byte[]{1, 2, 3, 5, 8}));
+            } catch (IOException e) {
+                exceptionHolder.set(e);
             }
         });
 

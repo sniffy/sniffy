@@ -146,7 +146,7 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
         try {
             SnifferSocketImplFactory.install();
 
-            int boundPort = 10000;
+            int boundPort = 10500;
 
             ServerSocket serverSocket = null;
 

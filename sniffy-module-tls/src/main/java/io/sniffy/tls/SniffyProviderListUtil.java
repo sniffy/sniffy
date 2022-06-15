@@ -27,7 +27,7 @@ public class SniffyProviderListUtil {
         ProviderList threadProviderList = Providers.getThreadProviderList();
         LOG.trace("Providers.getThreadProviderList() = " + threadProviderList);
         if (null == threadProviderList) {
-            LOG.error("SniffyThreadLocalProviderList doesn't work - probably because Providers.threadLists variable was inlined by JVM");
+            LOG.error("SniffyThreadLocalProviderList doesn't work - probably because Providers.threadLists variable was inlined by JVM. Try loading Sniffy at earlier stage - see https://sniffy.io/docs/ for details");
         }
         Providers.endThreadProviderList(null);
 

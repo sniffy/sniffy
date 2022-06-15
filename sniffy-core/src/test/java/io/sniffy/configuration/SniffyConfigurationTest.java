@@ -1,10 +1,10 @@
 package io.sniffy.configuration;
 
+import io.qameta.allure.Feature;
 import io.sniffy.Sniffy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import ru.yandex.qatools.allure.annotations.Features;
 
 import java.util.Properties;
 
@@ -122,7 +122,7 @@ public class SniffyConfigurationTest {
     }
 
     @Test
-    @Features("issues/292")
+    @Feature("issues/292")
     public void testTopSqlCapacity() {
 
         SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
@@ -231,7 +231,7 @@ public class SniffyConfigurationTest {
     }
 
     @Test
-    @Features("issues/304")
+    @Feature("issues/304")
     public void testInjectHtmlExcludePattern() {
 
         SniffyConfiguration sniffyConfiguration = SniffyConfiguration.INSTANCE;
