@@ -42,7 +42,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -T 1C -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -T 1C -B dependency:resolve dependency:resolve-plugins -U -P ci
+        run: mvn -T 1C -B dependency:resolve dependency:resolve-plugins -U -P ci || mvn -X -T 1C -B dependency:resolve dependency:resolve-plugins -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
