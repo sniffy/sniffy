@@ -11,6 +11,7 @@
  * [If @DisableSockets is applied to the whole test class it should be effective before context initialization](https://github.com/sniffy/sniffy/issues/490)
  * [java.lang.IllegalArgumentException: null from SniffySocketChannelAdapter.write(SniffySocketChannelAdapter.java:119)](https://github.com/sniffy/sniffy/issues/498)
  * [Traffic captured with Sniffy is incorrectly splitted into packets](https://github.com/sniffy/sniffy/issues/528)
+ * Support of Java 18 and 19
 
 ## v3.1.12 - May 12th, 2021
 
