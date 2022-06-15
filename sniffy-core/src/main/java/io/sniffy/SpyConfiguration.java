@@ -8,6 +8,10 @@ public class SpyConfiguration {
     private final boolean captureNetwork;
     private final boolean captureNetworkTraffic;
     private final boolean captureJdbc;
+
+    /**
+     * @since 3.1.13
+     */
     private final boolean bufferIncomingTraffic;
 
     private SpyConfiguration(boolean captureStackTraces, boolean captureNetwork, boolean captureNetworkTraffic, boolean captureJdbc, boolean bufferIncomingTraffic) {
@@ -34,6 +38,9 @@ public class SpyConfiguration {
         return captureJdbc;
     }
 
+    /**
+     * @since 3.1.13
+     */
     public boolean isBufferIncomingTraffic() {
         return bufferIncomingTraffic;
     }
@@ -78,6 +85,9 @@ public class SpyConfiguration {
             return this;
         }
 
+        /**
+         * @since 3.1.13
+         */
         public Builder bufferIncomingTraffic(boolean bufferIncomingTraffic) {
             this.bufferIncomingTraffic = bufferIncomingTraffic;
             return this;

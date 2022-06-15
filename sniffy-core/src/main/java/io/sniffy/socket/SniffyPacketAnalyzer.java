@@ -1,20 +1,35 @@
 package io.sniffy.socket;
 
+import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 
 // TODO: support HTTPS proxies as well (HTTPS tunnel over HTTPS) - low priority since rarely used
+/**
+ * @since 3.1.13
+ */
 public class SniffyPacketAnalyzer {
 
+    /**
+     * @since 3.1.13
+     */
     private final SniffyNetworkConnection snifferSocket;
 
+    /**
+     * @since 3.1.13
+     */
     public SniffyPacketAnalyzer(SniffyNetworkConnection snifferSocket) {
         this.snifferSocket = snifferSocket;
     }
 
+    /**
+     * @since 3.1.13
+     */
     public void analyze(byte[] b, int off, int len) throws Exception {
+
+        if (!Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getInterceptProxyConnections())) return;
 
         InetSocketAddress proxiedInetSocketAddress = null;
 

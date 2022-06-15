@@ -12,3 +12,17 @@ include::../../../../sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit
 <4> - Do not make any changes in your code - just add the `@Rule SniffyRule` and put annotations on your test method.
 <5> - Add `@DisableSockets` annotation on your test method or test class and any attempt to open a network connection will fail
 <6> - All socket operations executed within test method annotated with `@DisableSockets` will throw a `java.net.ConnectException`
+
+You can enable more verbose logging by using a `SniffyRule` constructor which takes `io.sniffy.log.PolyglogLevel` enum value for logging customization.
+By default, Sniffy logs output to system output stream, but it might change in future releases.
+
+=== JUnit Runner
+
+Sniffy comes with a JUnit runner class `SniffyRunner` which can be used for eagerly initializing Sniffy.
+It might be useful in certain conditions such as testing custom security providers installed in runtime.
+
+You don't have to use in the majority of use cases.
+
+```java
+@RunWith(SniffyRunner.class)
+```

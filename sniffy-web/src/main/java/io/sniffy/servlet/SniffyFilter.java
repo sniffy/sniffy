@@ -347,6 +347,7 @@ public class SniffyFilter implements Filter {
         Cookie cookie = new Cookie(name, value);
         cookie.setPath("/");
         if (SniffyConfiguration.INSTANCE.getUseSecureCookie()) {
+            // TODO: take this configuration from servlet config as well (also consider spring)
             try {
                 cookie.setSecure(true);
             } catch (Exception e) {
