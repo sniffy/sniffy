@@ -5,11 +5,11 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.13-SNAPSHOT</version>
+        <version>3.1.13</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <version>3.1.13-SNAPSHOT</version>
+    <version>3.1.13</version>
     <artifactId>sniffy</artifactId>
     <name>Sniffy</name>
 

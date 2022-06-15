@@ -2,7 +2,15 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.12...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.13...master)
+
+## v3.1.13 - June 15th, 2022
+
+ * [Discover and disable connections made via HTTP Proxies](https://github.com/sniffy/sniffy/issues/421)
+ * [Test on various architectures using QEMU](https://github.com/sniffy/sniffy/issues/451)
+ * [If @DisableSockets is applied to the whole test class it should be effective before context initialization](https://github.com/sniffy/sniffy/issues/490)
+ * [java.lang.IllegalArgumentException: null from SniffySocketChannelAdapter.write(SniffySocketChannelAdapter.java:119)](https://github.com/sniffy/sniffy/issues/498)
+ * [Traffic captured with Sniffy is incorrectly splitted into packets](https://github.com/sniffy/sniffy/issues/528)
 
 ## v3.1.12 - May 12th, 2021
 
