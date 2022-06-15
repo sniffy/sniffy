@@ -55,6 +55,8 @@ public class DecryptBouncyCastleGoogleTrafficTest {
                     URL url = new URL("https://www.google.com");
                     URLConnection urlConnection = url.openConnection();
 
+                    urlConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+
                     // On Java 14 with parallel builds sometimes throws SSLException: An established connection was aborted by the software in your host machine
                     //noinspection ResultOfMethodCallIgnored
                     urlConnection.getInputStream().read();
