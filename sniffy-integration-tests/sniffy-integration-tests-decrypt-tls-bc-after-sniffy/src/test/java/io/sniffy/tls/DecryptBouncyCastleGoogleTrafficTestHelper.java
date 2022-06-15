@@ -62,7 +62,7 @@ public class DecryptBouncyCastleGoogleTrafficTestHelper {
                         e.printStackTrace();
                         System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Mac OS; retrying in 2 seconds");
                         Thread.sleep(2000);
-                    }{
+                    } else {
                         throw e;
                     }
                 }
