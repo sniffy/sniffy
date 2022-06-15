@@ -42,11 +42,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -T 1C -B dependency:go-offline -U -P ci || mvn -X -T 1C -B dependency:go-offline -U -P ci
+        run: mvn -T 1C -B generate-sources dependency:go-offline -U -P ci || mvn -X -T 1C -B generate-sources dependency:go-offline -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
-        run: .\mvnretry.bat dependency:go-offline -U -P ci
+        run: .\mvnretry.bat generate-sources dependency:go-offline -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
@@ -128,14 +128,14 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:go-offline -U -P ci,qemu || mvn dependency:go-offline -U -P ci,qemu
+        run: mvn generate-sources dependency:go-offline -U -P ci,qemu || mvn generate-sources dependency:go-offline -U -P ci,qemu
       - name: Build with Maven
         run: mvn -T 1C -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Resolve dependencies for compatibility tests
-        run: mvn -f sniffy-compatibility-tests/pom.xml dependency:go-offline -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml dependency:go-offline -U -P ci
+        run: mvn -f sniffy-compatibility-tests/pom.xml generate-sources dependency:go-offline -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml generate-sources dependency:go-offline -U -P ci
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
         uses: docker/build-push-action@v2
@@ -176,7 +176,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:go-offline -U -P ci || mvn dependency:go-offline -U -P ci
+        run: mvn generate-sources dependency:go-offline -U -P ci || mvn generate-sources dependency:go-offline -U -P ci
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
@@ -219,11 +219,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:go-offline -U -P ci || mvn dependency:go-offline -U -P ci
+        run: mvn generate-sources dependency:go-offline -U -P ci || mvn generate-sources dependency:go-offline -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
-        run: .\mvnretry.bat dependency:go-offline -U -P ci
+        run: .\mvnretry.bat generate-sources dependency:go-offline -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
@@ -302,11 +302,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:go-offline -U -P ci || mvn dependency:go-offline -U -P ci
+        run: mvn generate-sources dependency:go-offline -U -P ci || mvn generate-sources dependency:go-offline -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies
         shell: cmd
-        run: .\mvnretry.bat dependency:go-offline -U -P ci
+        run: .\mvnretry.bat generate-sources dependency:go-offline -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Build with Maven
         run: mvn -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
@@ -321,11 +321,11 @@ jobs:
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Resolve dependencies for compatibility tests
-        run: mvn -f sniffy-compatibility-tests/pom.xml dependency:go-offline -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml dependency:go-offline -U -P ci
+        run: mvn -f sniffy-compatibility-tests/pom.xml generate-sources dependency:go-offline -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml generate-sources dependency:go-offline -U -P ci
         if: matrix.os != 'windows-2019'
       - name: Resolve dependencies for compatibility tests
         shell: cmd
-        run: .\mvnretry.bat -f sniffy-compatibility-tests/pom.xml dependency:go-offline -U -P ci
+        run: .\mvnretry.bat -f sniffy-compatibility-tests/pom.xml generate-sources dependency:go-offline -U -P ci
         if: matrix.os == 'windows-2019'
       - name: Run compatibility tests using Java 8
         run: mvn -f sniffy-compatibility-tests/pom.xml test
@@ -418,7 +418,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn dependency:go-offline -U -P ci || mvn dependency:go-offline -U -P ci
+        run: mvn generate-sources dependency:go-offline -U -P ci || mvn generate-sources dependency:go-offline -U -P ci
       - name: Build with Maven
         run: mvn -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
