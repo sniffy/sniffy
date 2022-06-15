@@ -106,6 +106,15 @@
         <plugins>
 
             <plugin>
+                <groupId>de.qaware.maven</groupId>
+                <artifactId>go-offline-maven-plugin</artifactId>
+                <configuration>
+                    <dynamicDependencies>
+                    </dynamicDependencies>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
@@ -190,6 +199,12 @@
 
         <pluginManagement>
             <plugins>
+
+                <plugin>
+                    <groupId>de.qaware.maven</groupId>
+                    <artifactId>go-offline-maven-plugin</artifactId>
+                    <version>1.2.8</version>
+                </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
