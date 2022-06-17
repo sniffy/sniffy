@@ -60,4 +60,26 @@
         </dependency>
     </dependencies>
 
+
+
+    <profiles>
+        <profile>
+            <id>jdk11minus</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <jdk>(,1.11)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
