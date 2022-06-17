@@ -76,6 +76,14 @@
                         <configuration>
                             <skip>true</skip>
                         </configuration>
+                        <executions>
+                            <execution>
+                                <id>JUnit-execution</id>
+                                <configuration>
+                                    <skip>true</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
