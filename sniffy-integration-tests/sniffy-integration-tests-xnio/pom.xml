@@ -92,7 +92,7 @@
                             <execution>
                                 <id>JUnit-execution-java7-compatibility</id>
                                 <configuration>
-                                    <skip>${skip.java7.compatibility.tests}</skip>
+                                    <skip>true</skip>
                                 </configuration>
                             </execution>
                         </executions>
