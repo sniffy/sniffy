@@ -10,6 +10,7 @@ import io.sniffy.sql.StatementMetaData;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * @since 3.1
@@ -45,7 +46,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
             byte[] traffic, int off, int len) {
         Deque<NetworkPacket> networkPackets = networkTraffic.get(socketMetaData);
         if (null == networkPackets) {
-            networkTraffic.putIfAbsent(socketMetaData, networkPackets = new LinkedList<NetworkPacket>());
+            networkTraffic.putIfAbsent(socketMetaData, networkPackets = new ConcurrentLinkedDeque<NetworkPacket>());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
@@ -60,7 +61,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
             byte[] traffic, int off, int len) {
         Deque<NetworkPacket> networkPackets = decryptedNetworkTraffic.get(socketMetaData);
         if (null == networkPackets) {
-            decryptedNetworkTraffic.putIfAbsent(socketMetaData, networkPackets = new LinkedList<NetworkPacket>());
+            decryptedNetworkTraffic.putIfAbsent(socketMetaData, networkPackets = new ConcurrentLinkedDeque<NetworkPacket>());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
