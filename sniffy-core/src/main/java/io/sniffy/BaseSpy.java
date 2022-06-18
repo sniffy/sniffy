@@ -7,6 +7,8 @@ import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.JVMUtil;
+import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -39,6 +41,16 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
                     maximumWeightedCapacity(Long.MAX_VALUE).
                     build();
 
+    // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
+    @IgnoreJRERequirement
+    private static <T> Deque<T> createConcurrentDeque() {
+        if (JVMUtil.getVersion() < 7) {
+            return new ConcurrentLinkedDeque<T>();
+        } else {
+            return new LinkedList<T>();
+        }
+    }
+
     protected void addNetworkTraffic(
             SocketMetaData socketMetaData,
             boolean sent, long timestamp,
@@ -46,11 +58,20 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
             byte[] traffic, int off, int len) {
         Deque<NetworkPacket> networkPackets = networkTraffic.get(socketMetaData);
         if (null == networkPackets) {
-            networkTraffic.putIfAbsent(socketMetaData, networkPackets = new ConcurrentLinkedDeque<NetworkPacket>());
+            networkTraffic.putIfAbsent(socketMetaData, networkPackets = createConcurrentDeque());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-            networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
+            if (JVMUtil.getVersion() < 7) {
+                // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (networkPackets) {
+                    networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
+                }
+            } else {
+                networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
+            }
+
         }
     }
 
@@ -61,11 +82,20 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
             byte[] traffic, int off, int len) {
         Deque<NetworkPacket> networkPackets = decryptedNetworkTraffic.get(socketMetaData);
         if (null == networkPackets) {
-            decryptedNetworkTraffic.putIfAbsent(socketMetaData, networkPackets = new ConcurrentLinkedDeque<NetworkPacket>());
+            decryptedNetworkTraffic.putIfAbsent(socketMetaData, networkPackets = createConcurrentDeque());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-            networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
+            if (JVMUtil.getVersion() < 7) {
+                // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (networkPackets) {
+                    networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
+                }
+            } else {
+                networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
+            }
+
         }
     }
 
