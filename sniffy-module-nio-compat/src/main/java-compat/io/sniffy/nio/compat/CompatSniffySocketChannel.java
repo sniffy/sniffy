@@ -276,6 +276,31 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     }
 
     @Override
+    public int read(ByteBuffer dst) throws IOException {
+        // TODO: honor SpyConfiguration.isBufferIncomingTraffic() and SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize() settings
+        checkConnectionAllowed(0);
+        long start = System.currentTimeMillis();
+        int bytesDown = 0;
+        int position = dst.position();
+        try {
+            return bytesDown = super.read(dst);
+        } finally {
+            if (bytesDown >= 0) { // TODO: implement same check in other places
+                sleepIfRequired(bytesDown);
+                logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+                SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
+                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+                    dst.position(position);
+                    byte[] buff = new byte[bytesDown];
+                    dst.get(buff, 0, bytesDown);
+
+                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                }
+            }
+        }
+    }
+
+    @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
         // TODO: honor SpyConfiguration.isBufferIncomingTraffic() and SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize() settings
         checkConnectionAllowed(0);
