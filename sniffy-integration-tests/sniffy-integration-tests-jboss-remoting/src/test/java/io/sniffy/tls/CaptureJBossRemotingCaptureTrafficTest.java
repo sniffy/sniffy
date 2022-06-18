@@ -182,9 +182,18 @@ public class CaptureJBossRemotingCaptureTrafficTest {
                 }
             }
 
-            Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic(Threads.ANY, AddressMatchers.anyAddressMatcher(), GroupingOptions.builder().build());
+            try {
+                Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic(Threads.ANY, AddressMatchers.anyAddressMatcher(), GroupingOptions.builder().build());
 
-            assertNotNull(networkTraffic);
+                assertNotNull(networkTraffic);
+            } catch (Exception e) {
+                System.err.flush();
+                System.err.println("Caught interresting exception! <<<");
+                e.printStackTrace();
+                System.err.println("Caught interresting exception! >>>");
+                System.err.flush();
+                throw e;
+            }
 
         }
 
