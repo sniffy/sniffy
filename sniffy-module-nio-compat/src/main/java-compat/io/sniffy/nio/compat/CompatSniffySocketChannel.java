@@ -276,41 +276,16 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     }
 
     @Override
-    public int read(ByteBuffer dst) throws IOException {
-        checkConnectionAllowed(0);
-        long start = System.currentTimeMillis();
-        int bytesDown = 0;
-        int position = dst.position();
-        try {
-            return bytesDown = super.read(dst);
-        } finally {
-            if (bytesDown >= 0) { // TODO: implement same check in other places
-                sleepIfRequired(bytesDown);
-                logSocket(System.currentTimeMillis() - start, bytesDown, 0);
-                SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                    dst.position(position);
-                    byte[] buff = new byte[bytesDown];
-                    dst.get(buff, 0, bytesDown);
-
-                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
-                }
-            }
-        }
-    }
-
-    @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        // TODO: honor SpyConfiguration.isBufferIncomingTraffic() and SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize() settings
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         long bytesDown = 0;
 
         int[] positions = new int[length];
-        int[] remainings = new int[length];
 
         for (int i = 0; i < length; i++) {
             positions[i] = dsts[offset + i].position();
-            remainings[i] = dsts[offset + i].remaining();
         }
 
         try {
@@ -327,9 +302,11 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
             if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 for (int i = 0; i < length; i++) {
+                    //TODO: cover by unit test
+                    int newPosition = dsts[offset + i].position();
                     dsts[offset + i].position(positions[i]);
-                    byte[] buff = new byte[remainings[i]];
-                    dsts[offset + i].get(buff, 0, remainings[i]);
+                    byte[] buff = new byte[newPosition - positions[i]];
+                    dsts[offset + i].get(buff, 0, newPosition - positions[i]);
                     logTraffic(false, Protocol.TCP, buff, 0, buff.length);
                 }
 

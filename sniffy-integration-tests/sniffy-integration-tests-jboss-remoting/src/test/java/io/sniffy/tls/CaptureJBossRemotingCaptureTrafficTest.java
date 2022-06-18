@@ -1,5 +1,6 @@
 package io.sniffy.tls;
 
+import io.qameta.allure.Issue;
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.PolyglogLevel;
@@ -133,6 +134,7 @@ public class CaptureJBossRemotingCaptureTrafficTest {
     private static final int MAX_SERVER_TRANSMIT = 0x14000;
 
     @Test
+    @Issue("issues/536")
     public void testChannelOptions() throws Exception {
         serverEndpoint.registerService("test", new OpenListener() {
             @Override
