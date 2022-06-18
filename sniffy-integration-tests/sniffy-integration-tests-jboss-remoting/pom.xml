@@ -69,44 +69,4 @@
         </dependency>
     </dependencies>
 
-    <profiles>
-        <profile>
-            <id>jdk11minus</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <jdk>(,1.11)</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <skip>true</skip>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>JUnit-execution</id>
-                                <configuration>
-                                    <skip>true</skip>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>JUnit-execution-java14-compatibility</id>
-                                <configuration>
-                                    <skip>true</skip>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>JUnit-execution-java7-compatibility</id>
-                                <configuration>
-                                    <skip>${skip.java7.compatibility.tests}</skip>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
 </project>
