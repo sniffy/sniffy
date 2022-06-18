@@ -45,9 +45,9 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
     @IgnoreJRERequirement
     private static <T> Deque<T> createConcurrentDeque() {
         if (JVMUtil.getVersion() < 7) {
-            return new ConcurrentLinkedDeque<T>();
-        } else {
             return new LinkedList<T>();
+        } else {
+            return new ConcurrentLinkedDeque<T>();
         }
     }
 
