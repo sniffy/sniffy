@@ -90,6 +90,18 @@
                                     <skip>true</skip>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>JUnit-execution-java14-compatibility</id>
+                                <configuration>
+                                    <skip>true</skip>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>JUnit-execution-java7-compatibility</id>
+                                <configuration>
+                                    <skip>${skip.java7.compatibility.tests}</skip>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                 </plugins>
