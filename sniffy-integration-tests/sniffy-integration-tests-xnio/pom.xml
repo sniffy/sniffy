@@ -80,7 +80,7 @@
                         <executions>
                             <execution>
                                 <id>JUnit-execution</id>
-                                <phase>test</phase>
+                                <phase>none</phase>
                                 <goals>
                                     <goal>test</goal>
                                 </goals>
@@ -90,7 +90,7 @@
                             </execution>
                             <execution>
                                 <id>JUnit-execution-java14-compatibility</id>
-                                <phase>test</phase>
+                                <phase>none</phase>
                                 <goals>
                                     <goal>test</goal>
                                 </goals>
@@ -100,7 +100,7 @@
                             </execution>
                             <execution>
                                 <id>JUnit-execution-java7-compatibility</id>
-                                <phase>test</phase>
+                                <phase>none</phase>
                                 <goals>
                                     <goal>test</goal>
                                 </goals>
