@@ -72,6 +72,7 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skip>true</skip>
@@ -79,18 +80,30 @@
                         <executions>
                             <execution>
                                 <id>JUnit-execution</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
                                 <configuration>
                                     <skip>true</skip>
                                 </configuration>
                             </execution>
                             <execution>
                                 <id>JUnit-execution-java14-compatibility</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
                                 <configuration>
                                     <skip>true</skip>
                                 </configuration>
                             </execution>
                             <execution>
                                 <id>JUnit-execution-java7-compatibility</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
                                 <configuration>
                                     <skip>true</skip>
                                 </configuration>
