@@ -195,6 +195,88 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <runOrder>alphabetical</runOrder>
+                    <!-- skip the default execution, we have separate for Ng and for JUnit -->
+                    <skip>true</skip>
+                    <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                    <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
+                    <argLine>-Xmx1024m ${argLine}</argLine>
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>TestNg-execution</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <junitArtifactName>dev:null</junitArtifactName>
+                            <includes>
+                                <include>%regex[.*TestNg.*]</include>
+                            </includes>
+                            <!-- to continue on next execution in case of failures here -->
+                            <testFailureIgnore>true</testFailureIgnore>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>JUnit-execution</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <forkCount>1</forkCount>
+                            <skip>false</skip>
+                            <testNGArtifactName>dev:null</testNGArtifactName>
+                            <excludes>
+                                <exclude>%regex[.*TestNg.*]</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>JUnit-execution-java14-compatibility</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <systemPropertyVariables>
+                                <io.sniffy.forceJava14Compatibility>true</io.sniffy.forceJava14Compatibility>
+                            </systemPropertyVariables>
+                            <testNGArtifactName>dev:null</testNGArtifactName>
+                            <excludes>
+                                <exclude>%regex[.*TestNg.*]</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>JUnit-execution-java7-compatibility</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.java7.compatibility.tests}</skip>
+                            <systemPropertyVariables>
+                                <io.sniffy.forceJava7Compatibility>true</io.sniffy.forceJava7Compatibility>
+                            </systemPropertyVariables>
+                            <testNGArtifactName>dev:null</testNGArtifactName>
+                            <excludes>
+                                <exclude>%regex[.*TestNg.*]</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
 
         <pluginManagement>
@@ -333,82 +415,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.0.0-M5</version>
-                    <configuration>
-                        <runOrder>alphabetical</runOrder>
-                        <!-- skip the default execution, we have separate for Ng and for JUnit -->
-                        <skip>true</skip>
-                        <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
-                        <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
-                        <argLine>-Xmx1024m ${argLine}</argLine>
-                        <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>TestNg-execution</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>test</goal>
-                            </goals>
-                            <configuration>
-                                <skip>false</skip>
-                                <junitArtifactName>dev:null</junitArtifactName>
-                                <includes>
-                                    <include>%regex[.*TestNg.*]</include>
-                                </includes>
-                                <!-- to continue on next execution in case of failures here -->
-                                <testFailureIgnore>true</testFailureIgnore>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>JUnit-execution</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>test</goal>
-                            </goals>
-                            <configuration>
-                                <forkCount>1</forkCount>
-                                <skip>false</skip>
-                                <testNGArtifactName>dev:null</testNGArtifactName>
-                                <excludes>
-                                    <exclude>%regex[.*TestNg.*]</exclude>
-                                </excludes>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>JUnit-execution-java14-compatibility</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>test</goal>
-                            </goals>
-                            <configuration>
-                                <skip>false</skip>
-                                <systemPropertyVariables>
-                                    <io.sniffy.forceJava14Compatibility>true</io.sniffy.forceJava14Compatibility>
-                                </systemPropertyVariables>
-                                <testNGArtifactName>dev:null</testNGArtifactName>
-                                <excludes>
-                                    <exclude>%regex[.*TestNg.*]</exclude>
-                                </excludes>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>JUnit-execution-java7-compatibility</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>test</goal>
-                            </goals>
-                            <configuration>
-                                <skip>${skip.java7.compatibility.tests}</skip>
-                                <systemPropertyVariables>
-                                    <io.sniffy.forceJava7Compatibility>true</io.sniffy.forceJava7Compatibility>
-                                </systemPropertyVariables>
-                                <testNGArtifactName>dev:null</testNGArtifactName>
-                                <excludes>
-                                    <exclude>%regex[.*TestNg.*]</exclude>
-                                </excludes>
-                            </configuration>
-                        </execution>
-                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

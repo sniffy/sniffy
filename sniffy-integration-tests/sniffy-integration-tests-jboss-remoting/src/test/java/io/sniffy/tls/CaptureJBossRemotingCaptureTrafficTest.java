@@ -108,6 +108,7 @@ public class CaptureJBossRemotingCaptureTrafficTest {
         builder.setFactory(saslServerFactory);
         builder.setMechanismConfigurationSelector(mechanismInformation -> SaslMechanismInformation.Names.SCRAM_SHA_256.equals(mechanismInformation.getMechanismName()) ? MechanismConfiguration.EMPTY : null);
         final SaslAuthenticationFactory saslAuthenticationFactory = builder.build();
+        // TODO: iterate with retries on IOException (or SocketException) and store the port in a property
         server = networkServerProvider.createServer(
                 new InetSocketAddress("localhost", 30123),
                 OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE),
