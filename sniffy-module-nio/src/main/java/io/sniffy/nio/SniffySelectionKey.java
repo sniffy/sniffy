@@ -2,9 +2,11 @@ package io.sniffy.nio;
 
 import io.sniffy.util.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.spi.AbstractSelector;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
@@ -67,7 +69,15 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public void cancel() {
-        delegate.cancel();
+        synchronized (this) {
+            delegate.cancel();
+            try {
+                // TODO: reevaluate copying other fields across NIO stack
+                ReflectionUtil.invokeMethod(AbstractSelector.class, sniffySelector, "cancel", SelectionKey.class, this);
+            } catch (Exception e) {
+                throw ExceptionUtil.processException(e);
+            }
+        }
     }
 
     @Override

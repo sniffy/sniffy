@@ -1,5 +1,6 @@
 package io.sniffy.tls;
 
+import io.qameta.allure.Issue;
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.Polyglog;
@@ -79,10 +80,11 @@ public class DecryptLocalhostHttpsTrafficXNIOTest {
 
     @SuppressWarnings("CharsetObjectCanBeUsed")
     @Test
+    @Issue("issues/539")
     public void testLocalhostHttpsTraffic() throws Exception {
 
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
-
+        //try {
             final Charset charset = Charset.forName("utf-8");
             final Xnio xnio = Xnio.getInstance();
             final XnioWorker worker = xnio.createWorker(OptionMap.EMPTY);
