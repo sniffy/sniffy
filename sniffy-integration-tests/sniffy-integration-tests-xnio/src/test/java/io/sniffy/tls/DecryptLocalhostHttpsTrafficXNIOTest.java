@@ -81,6 +81,7 @@ public class DecryptLocalhostHttpsTrafficXNIOTest {
     @SuppressWarnings("CharsetObjectCanBeUsed")
     @Test
     @Issue("issues/539")
+    // TODO: run this test in repeat mode; it was reproducing https://github.com/sniffy/sniffy/issues/539 only 1 in 50 runs
     public void testLocalhostHttpsTraffic() throws Exception {
 
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
