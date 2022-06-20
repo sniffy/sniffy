@@ -16,15 +16,18 @@ public class ScheduledThreadDump {
                     e.printStackTrace();
                 }
 
+                System.err.flush();
+                System.err.println("Printing Java ThreadDump!");
+
                 for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
-                    System.out.println(entry.getKey() + " " + entry.getKey().getState());
+                    System.err.println(entry.getKey() + " " + entry.getKey().getState());
                     for (StackTraceElement ste : entry.getValue()) {
-                        System.out.println("\tat " + ste);
+                        System.err.println("\tat " + ste);
                     }
-                    System.out.println();
+                    System.err.println();
                 }
 
-                System.out.flush();
+                System.err.flush();
 
             }
         };

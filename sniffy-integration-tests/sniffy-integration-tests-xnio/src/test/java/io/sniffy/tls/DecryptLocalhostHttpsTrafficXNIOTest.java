@@ -39,7 +39,7 @@ import static org.mockserver.model.HttpResponse.response;
 public class DecryptLocalhostHttpsTrafficXNIOTest {
 
     static {
-        ScheduledThreadDump.scheduleThreadDump(30); // last mile resort for troubleshooting
+        ScheduledThreadDump.scheduleThreadDump(10); // last mile resort for troubleshooting
     }
 
     private static final Polyglog LOG = PolyglogFactory.log(DecryptLocalhostHttpsTrafficXNIOTest.class);
