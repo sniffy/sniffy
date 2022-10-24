@@ -154,6 +154,7 @@ public class SniffySelector extends AbstractSelector {
     @Override
     public int selectNow() throws IOException {
         try {
+            // TODO: call delegate.processDeregisterQueue and update selection keys from delegate first
             return delegate.selectNow();
         } finally {
             updateSelectionKeysFromDelegate();
@@ -165,9 +166,11 @@ public class SniffySelector extends AbstractSelector {
      */
     private void updateSelectionKeysFromDelegate() {
 
-        if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
+
+        // TODO: evaluate condition below
+        /*if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
             return; // Before Java 14 is updating attachment in delegate from SniffySelectionKey
-        }
+        }*/
 
         Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap;
         synchronized (this.channelToSniffyChannelMap) {
@@ -201,6 +204,8 @@ public class SniffySelector extends AbstractSelector {
                             ReflectionUtil.setField(AbstractSelectableChannel.class, delegate, "keyCount"
                                     ,ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount"));
 
+                            // TODO: shall we copy other fields as well?
+
                         }
                     }
 
@@ -219,6 +224,7 @@ public class SniffySelector extends AbstractSelector {
     @Override
     public int select(long timeout) throws IOException {
         try {
+            // TODO: call delegate.processDeregisterQueue and update selection keys from delegate
             return delegate.select(timeout);
         } finally {
             updateSelectionKeysFromDelegate();
@@ -232,6 +238,7 @@ public class SniffySelector extends AbstractSelector {
     @Override
     public int select() throws IOException {
         try {
+            // TODO: call delegate.processDeregisterQueue and update selection keys from delegate
             return delegate.select();
         } finally {
             updateSelectionKeysFromDelegate();
@@ -249,6 +256,7 @@ public class SniffySelector extends AbstractSelector {
     @SuppressWarnings("RedundantThrows")
     public int select(Consumer<SelectionKey> action, long timeout) throws IOException {
         try {
+            // TODO: call delegate.processDeregisterQueue and update selection keys from delegate
             return invokeMethod(Selector.class, delegate, "select",
                     Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Long.TYPE, timeout,
@@ -266,6 +274,7 @@ public class SniffySelector extends AbstractSelector {
     @SuppressWarnings("RedundantThrows")
     public int select(Consumer<SelectionKey> action) throws IOException {
         try {
+            // TODO: call delegate.processDeregisterQueue and update selection keys from delegate
             return invokeMethod(Selector.class, delegate, "select",
                     Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Integer.TYPE
@@ -282,6 +291,7 @@ public class SniffySelector extends AbstractSelector {
     @SuppressWarnings("RedundantThrows")
     public int selectNow(Consumer<SelectionKey> action) throws IOException {
         try {
+            // TODO: call delegate.processDeregisterQueue and update selection keys from delegate
             return invokeMethod(Selector.class, delegate, "selectNow",
                     Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Integer.TYPE
