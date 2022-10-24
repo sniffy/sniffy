@@ -95,7 +95,7 @@ public class DecryptLocalhostHttpsTrafficXNIOTest {
                 final ConnectedStreamChannel channel = futureConnection.get(); // throws exceptions
                 try {
                     // Send the greeting
-                    Channels.writeBlocking(channel, ByteBuffer.wrap("GET / HTTP/1.1\nHost: localhost\n\n".getBytes(charset)));
+                    Channels.writeBlocking(channel, ByteBuffer.wrap("GET / HTTP/1.1\nHost: localhost\nConnection: Close\n\n".getBytes(charset)));
                     // Make sure all data is written
                     Channels.flushBlocking(channel);
                     // And send EOF
