@@ -44,7 +44,7 @@ public class ReflectionUtil {
                 e.printStackTrace();
             }
 
-        } else if (JVMUtil.getVersion() == 19) {
+        } else if (JVMUtil.getVersion() >= 19) {
 
             // todo: code below seems useless
             try {
@@ -286,7 +286,7 @@ public class ReflectionUtil {
     }
 
     private static <T,V> void set(Field instanceField, T instance, V value) throws IllegalAccessException {
-        if (JVMUtil.getVersion() == 19 && nonAccessibleFields.contains(instanceField)) {
+        if (JVMUtil.getVersion() >= 19 && nonAccessibleFields.contains(instanceField)) {
 
             long offset = null == instance ?
                     UNSAFE.staticFieldOffset(instanceField) :
