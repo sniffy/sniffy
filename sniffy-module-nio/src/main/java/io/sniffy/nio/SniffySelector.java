@@ -59,8 +59,11 @@ public class SniffySelector extends AbstractSelector {
     @Override
     protected void implCloseSelector() throws IOException {
         try {
+            // TODO: document
             setField(AbstractSelector.class, delegate, "closed", true);
             invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
+            // TODO: copy keys for related channels
+            updateSelectionKeysFromDelegate();
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -123,6 +126,7 @@ public class SniffySelector extends AbstractSelector {
      * This method adds a selection key to provided AbstractSelectableChannel, hence we're doing the same here manually
      */
     @Override
+    // TODO: document
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att) {
         try {
 
