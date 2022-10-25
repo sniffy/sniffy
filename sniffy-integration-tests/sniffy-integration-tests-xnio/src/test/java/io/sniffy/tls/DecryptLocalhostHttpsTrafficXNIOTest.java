@@ -49,7 +49,7 @@ public class DecryptLocalhostHttpsTrafficXNIOTest {
         HttpsURLConnection.setDefaultSSLSocketFactory(new KeyStoreFactory(new MockServerLogger()).sslContext().getSocketFactory());
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
-        //SniffyConfiguration.INSTANCE.setMonitorNio(true);
+        SniffyConfiguration.INSTANCE.setMonitorNio(true);
         SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
         SniffyConfiguration.INSTANCE.setPacketMergeThreshold(10000);
         Sniffy.initialize();
