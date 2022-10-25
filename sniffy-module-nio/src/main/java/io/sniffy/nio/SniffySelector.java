@@ -185,9 +185,9 @@ public class SniffySelector extends AbstractSelector {
 
 
         // TODO: evaluate condition below
-        /*if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
+        if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
             return; // Before Java 14 is updating attachment in delegate from SniffySelectionKey
-        }*/
+        }
 
         Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap;
         synchronized (this.channelToSniffyChannelMap) {
