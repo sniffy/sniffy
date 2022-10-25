@@ -26,6 +26,9 @@ public class SniffySelector extends AbstractSelector {
 
     private final AbstractSelector delegate;
 
+    private volatile Set<SelectionKey> keysWrapper = null;
+    private volatile Set<SelectionKey> selectedKeysWrapper = null;
+
     private final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
             Collections.synchronizedMap(new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>());
 
@@ -63,22 +66,36 @@ public class SniffySelector extends AbstractSelector {
         }
     }
 
-    private Set<SelectionKey> wrapSelectionKeys(final Set<SelectionKey> delegates) {
-        if (null == delegates) {
-            return null;
-        } else if (delegates.isEmpty()) {
-            return Collections.<SelectionKey>emptySet();
-        } else {
-            return new SetWrapper<SniffySelectionKey, SelectionKey>(delegates, new WrapperFactory<SelectionKey, SniffySelectionKey>() {
-
-                @Override
-                public SniffySelectionKey wrap(SelectionKey delegate) {
-                    //noinspection SuspiciousMethodCalls
-                    return SniffySelector.this.wrap(delegate, SniffySelector.this, channelToSniffyChannelMap.get(delegate.channel()));
+    private Set<SelectionKey> wrapKeys(final Set<SelectionKey> delegates) {
+        if (null == keysWrapper) {
+            synchronized (this) {
+                if (null == keysWrapper && null != delegates) {
+                    keysWrapper = createSelectionKeysWrapper(delegates);
                 }
-
-            });
+            }
         }
+        return keysWrapper;
+    }
+
+    private Set<SelectionKey> wrapSelectedKeys(final Set<SelectionKey> delegates) {
+        if (null == selectedKeysWrapper) {
+            synchronized (this) {
+                if (null == selectedKeysWrapper && null != delegates) {
+                    selectedKeysWrapper = createSelectionKeysWrapper(delegates);
+                }
+            }
+        }
+        return selectedKeysWrapper;
+    }
+
+    private SetWrapper<SniffySelectionKey, SelectionKey> createSelectionKeysWrapper(Set<SelectionKey> delegates) {
+        return new SetWrapper<SniffySelectionKey, SelectionKey>(delegates, new WrapperFactory<SelectionKey, SniffySelectionKey>() {
+            @Override
+            public SniffySelectionKey wrap(SelectionKey delegate) {
+                //noinspection SuspiciousMethodCalls
+                return SniffySelector.this.wrap(delegate, SniffySelector.this, channelToSniffyChannelMap.get(delegate.channel()));
+            }
+        });
     }
 
     private class SelectionKeyConsumerWrapper implements Consumer<SelectionKey> {
@@ -139,12 +156,12 @@ public class SniffySelector extends AbstractSelector {
 
     @Override
     public Set<SelectionKey> keys() {
-        return wrapSelectionKeys(delegate.keys());
+        return wrapKeys(delegate.keys());
     }
 
     @Override
     public Set<SelectionKey> selectedKeys() {
-        return wrapSelectionKeys(delegate.selectedKeys());
+        return wrapSelectedKeys(delegate.selectedKeys());
     }
 
     /**
