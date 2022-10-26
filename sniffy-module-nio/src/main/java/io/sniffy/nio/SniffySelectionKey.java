@@ -3,6 +3,7 @@ package io.sniffy.nio;
 import io.sniffy.util.*;
 
 import java.lang.reflect.InvocationTargetException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;

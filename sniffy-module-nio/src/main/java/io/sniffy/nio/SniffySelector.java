@@ -175,6 +175,7 @@ public class SniffySelector extends AbstractSelector {
     @Override
     public int selectNow() throws IOException {
         try {
+            updateCancelledKeysToDelegate();
             // TODO: call delegate.processDeregisterQueue and update selection keys from delegate first
             return delegate.selectNow();
         } finally {
@@ -184,6 +185,8 @@ public class SniffySelector extends AbstractSelector {
 
     /**
      * select method can remove cancelled selection keys from delegate so we need to update them in sniffy channels as well
+     *
+     * copies "keys" from delegate channels bound to this selector to sniffy wrappers
      */
     private void updateSelectionKeysFromDelegate() {
 
@@ -236,6 +239,64 @@ public class SniffySelector extends AbstractSelector {
             }
         }
 
+    }
+
+    /**
+     *copy canncelled keys from sniffy to delegate
+     */
+    private void updateCancelledKeysToDelegate() {
+
+/*
+
+
+        // TODO: evaluate condition below
+        if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
+            return; // Before Java 14 is updating attachment in delegate from SniffySelectionKey
+        }
+
+        Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap;
+        synchronized (this.channelToSniffyChannelMap) {
+            channelToSniffyChannelMap = new HashMap<AbstractSelectableChannel, AbstractSelectableChannel>(this.channelToSniffyChannelMap);
+        }
+
+        for (Map.Entry<AbstractSelectableChannel, AbstractSelectableChannel> entry : channelToSniffyChannelMap.entrySet()) {
+            AbstractSelectableChannel sniffyChannel = entry.getValue();
+
+            if (sniffyChannel instanceof SelectableChannelWrapper) {
+                AbstractSelectableChannel delegate = ((SelectableChannelWrapper<?>) sniffyChannel).getDelegate();
+                try {
+
+                    Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyLock");
+                    Object delegateKeyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keyLock");
+
+                    // We're always obtaining monitor of wrapper (SniffySelector) first in order to avoid dead locks
+
+                    //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                    synchronized (keyLock) {
+                        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                        synchronized (delegateKeyLock) {
+
+                            SelectionKey[] delegateKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "keys");
+                            List<SelectionKey> sniffyKeys = new ArrayList<SelectionKey>(delegateKeys.length);
+                            for (SelectionKey delegateKey : delegateKeys) {
+                                sniffyKeys.add(null == delegateKey ? null : wrap(delegateKey, this, sniffyChannel));
+                            }
+                            ReflectionUtil.setField(AbstractSelectableChannel.class, sniffyChannel, "keys", sniffyKeys.toArray(new SelectionKey[0]));
+
+                            ReflectionUtil.setField(AbstractSelectableChannel.class, delegate, "keyCount"
+                                    ,ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount"));
+
+                            // TODO: shall we copy other fields as well?
+
+                        }
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+*/
     }
 
     /**
