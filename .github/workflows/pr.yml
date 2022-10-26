@@ -391,16 +391,16 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 6
-        if: matrix.os != 'macOS-10.15'
+        if: matrix.os != 'macOS-12'
       # No Java 6 on MacOS
       - name: Run compatibility tests using Maven 3.2.5 and Java 6
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
         shell: bash
-        if: matrix.os != 'macOS-10.15'
+        if: matrix.os != 'macOS-12'
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-        if: matrix.os != 'macOS-10.15'
+        if: matrix.os != 'macOS-12'
   analyze:
     needs:
       - smoke-test
