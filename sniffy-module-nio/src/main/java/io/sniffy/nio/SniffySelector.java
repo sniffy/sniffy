@@ -191,7 +191,7 @@ public class SniffySelector extends AbstractSelector {
     private void updateSelectionKeysFromDelegate() {
 
 
-        // TODO: evaluate condition below
+        /*// TODO: evaluate condition below
         if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
             return; // Before Java 14 is updating attachment in delegate from SniffySelectionKey
         }
@@ -237,7 +237,7 @@ public class SniffySelector extends AbstractSelector {
                     e.printStackTrace();
                 }
             }
-        }
+        }*/
 
     }
 
