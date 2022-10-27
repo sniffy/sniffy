@@ -21,15 +21,27 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
 /**
  * @since 3.1.7
  */
-public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate {
+public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate implements SelectableChannelWrapper<SocketChannel> {
 
     private static final ReflectionCopier<SocketChannel> socketChannelFieldsCopier = new ReflectionCopier<SocketChannel>(SocketChannel.class, "provider");
 
     protected final SocketChannel delegate;
 
+    private volatile boolean hasCancelledKeys;
+
     protected CompatSniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider, delegate);
         this.delegate = delegate;
+    }
+
+    @Override
+    public SocketChannel getDelegate() {
+        return delegate;
+    }
+
+    @Override
+    public void keyCancelled() {
+        hasCancelledKeys = true;
     }
 
     private void copyToDelegate() {
