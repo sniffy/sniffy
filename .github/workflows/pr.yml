@@ -34,7 +34,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -120,7 +120,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -168,7 +168,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -211,7 +211,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -294,7 +294,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -420,7 +420,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
