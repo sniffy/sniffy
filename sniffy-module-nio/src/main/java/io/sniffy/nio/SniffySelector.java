@@ -5,7 +5,6 @@ import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.*;
 
 import java.io.IOException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
@@ -29,11 +28,11 @@ public class SniffySelector extends AbstractSelector {
     private volatile Set<SelectionKey> keysWrapper = null;
     private volatile Set<SelectionKey> selectedKeysWrapper = null;
 
-    private final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
-            Collections.synchronizedMap(new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>());
+    private final Map<AbstractSelectableChannel, SniffySocketChannel> channelToSniffyChannelMap =
+            new WeakHashMap<AbstractSelectableChannel, SniffySocketChannel>();
 
-    private final Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
-            new WeakHashMap<SelectionKey, SniffySelectionKey>();
+    private final Map<SelectionKey, SniffySelectionKey<SniffySocketChannel>> sniffySelectionKeyCache =
+            new WeakHashMap<SelectionKey, SniffySelectionKey<SniffySocketChannel>>();
 
     public SniffySelector(SelectorProvider provider, AbstractSelector delegate) {
         super(provider);
@@ -41,13 +40,13 @@ public class SniffySelector extends AbstractSelector {
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
     }
 
-    public SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
-        SniffySelectionKey sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
+    public SniffySelectionKey<SniffySocketChannel> wrap(SelectionKey delegate, SniffySelector sniffySelector, SniffySocketChannel sniffySocketChannel) {
+        SniffySelectionKey<SniffySocketChannel> sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
         if (null == sniffySelectionKey) {
             synchronized (sniffySelectionKeyCache) {
                 sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
                 if (null == sniffySelectionKey) {
-                    sniffySelectionKey = new SniffySelectionKey(delegate, sniffySelector, sniffyChannel);
+                    sniffySelectionKey = new SniffySelectionKey<SniffySocketChannel>(delegate, sniffySelector, sniffySocketChannel);
                     sniffySelectionKeyCache.put(delegate, sniffySelectionKey);
                 }
             }
@@ -102,13 +101,13 @@ public class SniffySelector extends AbstractSelector {
     private class SelectionKeyConsumerWrapper implements Consumer<SelectionKey> {
 
         private final Consumer<SelectionKey> delegate;
-        private final AbstractSelectableChannel sniffyChannel;
+        private final SniffySocketChannel sniffyChannel;
 
         public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate) {
             this(delegate, null);
         }
 
-        public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate, AbstractSelectableChannel sniffyChannel) {
+        public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate, SniffySocketChannel sniffyChannel) {
             this.delegate = delegate;
             this.sniffyChannel = sniffyChannel;
         }
@@ -129,10 +128,13 @@ public class SniffySelector extends AbstractSelector {
         try {
 
             AbstractSelectableChannel chDelegate = ch;
+            SniffySocketChannel sniffySocketChannel = null;
 
-            if (ch instanceof SelectableChannelWrapper) {
-                chDelegate = ((SelectableChannelWrapper<?>) ch).getDelegate();
-                channelToSniffyChannelMap.put(chDelegate, ch);
+
+            if (ch instanceof SniffySocketChannel) {
+                sniffySocketChannel = (SniffySocketChannel) ch;
+                chDelegate = sniffySocketChannel.getDelegate();
+                channelToSniffyChannelMap.put(chDelegate, sniffySocketChannel);
             }
 
             SelectionKey selectionKeyDelegate = invokeMethod(AbstractSelector.class, delegate, "register",
@@ -148,8 +150,11 @@ public class SniffySelector extends AbstractSelector {
                 invokeMethod(AbstractSelectableChannel.class, chDelegate, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
             }
 
-            return wrap(selectionKeyDelegate, this, ch);
-
+            if (null != sniffySocketChannel) {
+                return wrap(selectionKeyDelegate, this, sniffySocketChannel);
+            } else {
+                return selectionKeyDelegate;
+            }
 
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
@@ -164,6 +169,13 @@ public class SniffySelector extends AbstractSelector {
     @Override
     public Set<SelectionKey> selectedKeys() {
         return wrapSelectedKeys(delegate.selectedKeys());
+    }
+
+    private void copyKeysFromDelegate() {
+
+        // TODO: copy keys from delegate channels to sniffy channels
+        // TODO: consider doing in background?
+
     }
 
     /**
@@ -201,7 +213,7 @@ public class SniffySelector extends AbstractSelector {
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("RedundantThrows")
+    @SuppressWarnings({"RedundantThrows", "Since15"})
     public int select(Consumer<SelectionKey> action, long timeout) throws IOException {
         try {
             // TODO: call delegate.processDeregisterQueue and update selection keys from delegate
@@ -217,7 +229,7 @@ public class SniffySelector extends AbstractSelector {
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("RedundantThrows")
+    @SuppressWarnings({"RedundantThrows", "Since15"})
     public int select(Consumer<SelectionKey> action) throws IOException {
         try {
             return invokeMethod(Selector.class, delegate, "select",
@@ -231,7 +243,7 @@ public class SniffySelector extends AbstractSelector {
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("RedundantThrows")
+    @SuppressWarnings({"RedundantThrows", "Since15"})
     public int selectNow(Consumer<SelectionKey> action) throws IOException {
         try {
             return invokeMethod(Selector.class, delegate, "selectNow",

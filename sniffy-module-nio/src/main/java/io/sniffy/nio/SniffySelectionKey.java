@@ -8,6 +8,7 @@ import io.sniffy.util.StackTraceExtractor;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelector;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
@@ -15,13 +16,13 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
 /**
  * @since 3.1.7
  */
-public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
+public class SniffySelectionKey<SniffyChannel extends SelectableChannel & SelectableChannelWrapper<SocketChannel>> extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
     private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
-    private final SelectableChannel sniffyChannel;
+    private final SniffyChannel sniffyChannel;
 
-    protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
+    protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SniffyChannel sniffyChannel) {
         this.delegate = delegate;
 
         if (null != delegate) {
@@ -58,7 +59,10 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public void cancel() {
-        synchronized (this) {
+        delegate.cancel();
+        sniffyChannel.keyCancelled();
+        // TODO: seems that code below is safe to be removed on Java 17; is it the same on older Java?
+        /*synchronized (this) {
             delegate.cancel();
             try {
                 // TODO: reevaluate copying other fields across NIO stack
@@ -66,7 +70,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
-        }
+        }*/
     }
 
     @Override
@@ -87,6 +91,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     // No @Override annotation here because this method is available in Java 11+ only
     //@Override
+    @SuppressWarnings("Since15")
     public int interestOpsOr(int ops) {
         try {
             return invokeMethod(SelectionKey.class, delegate, "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
@@ -97,6 +102,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     // No @Override annotation here because this method is available in Java 11+ only
     //@Override
+    @SuppressWarnings("Since15")
     public int interestOpsAnd(int ops) {
         try {
             return invokeMethod(SelectionKey.class, delegate, "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
