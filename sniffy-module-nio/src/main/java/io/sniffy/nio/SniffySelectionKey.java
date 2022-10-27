@@ -1,14 +1,14 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.*;
+import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.ObjectWrapper;
+import io.sniffy.util.ReflectionUtil;
+import io.sniffy.util.StackTraceExtractor;
 
-import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelector;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
@@ -16,24 +16,6 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
  * @since 3.1.7
  */
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
-
-    static {
-
-        // TODO: do we need this code at all?
-
-        if (JVMUtil.getVersion() < 14 /*&& !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")*/) {
-
-            try {
-                AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater = ReflectionUtil.getField(SelectionKey.class, null, "attachmentUpdater");
-                AtomicReferenceFieldUpdater<SelectionKey, Object> attachmentFieldUpdater = new ObjectWrapperFieldUpdater<SelectionKey, Object>(defaultFieldUpdater);
-                ReflectionUtil.setField(SelectionKey.class, null, "attachmentUpdater", attachmentFieldUpdater);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-
-    }
 
     private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
