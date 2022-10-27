@@ -19,6 +19,8 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     static {
 
+        // TODO: do we need this code at all?
+
         if (JVMUtil.getVersion() < 14 /*&& !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")*/) {
 
             try {
@@ -60,7 +62,11 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public Selector selector() {
-        return sniffySelector;
+        if (!isValid() && StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey")) {
+            return NoOpSelector.INSTANCE; // TODO: cleanup this and other collections
+        } else {
+            return sniffySelector;
+        }
     }
 
     @Override
