@@ -19,7 +19,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     static {
 
-        if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
+        if (JVMUtil.getVersion() < 14 /*&& !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")*/) {
 
             try {
                 AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater = ReflectionUtil.getField(SelectionKey.class, null, "attachmentUpdater");
