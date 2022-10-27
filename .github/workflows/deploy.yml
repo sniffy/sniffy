@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - java: 8
-            os: ubuntu-20.04
+            os: ubuntu-22.04
           - java: 11
             os: windows-2022
           - java: 17
@@ -72,7 +72,7 @@ jobs:
         if: matrix.os != 'macos-12'
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os == 'ubuntu-20.04'
+        if: matrix.os == 'ubuntu-22.04'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -86,7 +86,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - smoke-test
     strategy:
@@ -143,8 +143,8 @@ jobs:
   test-ibm-j9:
     needs:
       - smoke-test
-    runs-on: ubuntu-20.04
-    name: Test JDK IBM J9 1.8, ubuntu-20.04
+    runs-on: ubuntu-22.04
+    name: Test JDK IBM J9 1.8, ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Pull IBM JDK J9 1.8 Docker Image
@@ -188,10 +188,10 @@ jobs:
       matrix:
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
         java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20-ea ]
-        os: [ ubuntu-20.04, windows-2022, macos-12 ]
+        os: [ ubuntu-22.04, windows-2022, macos-12 ]
         exclude:
           - java: 8
-            os: ubuntu-20.04
+            os: ubuntu-22.04
           - java: 11
             os: windows-2022
           - java: 17
@@ -251,7 +251,7 @@ jobs:
 # Might be caused by https://openjdk.java.net/jeps/416 or just regression issue in 32-bit windows builds
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: ${{ matrix.os == 'ubuntu-20.04'}}
+        if: ${{ matrix.os == 'ubuntu-22.04'}}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -276,7 +276,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2022, macos-12 ]
+        os: [ ubuntu-22.04, windows-2022, macos-12 ]
     name: Legacy JDK, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -389,7 +389,7 @@ jobs:
     needs:
       - smoke-test
     name: Analyze
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
