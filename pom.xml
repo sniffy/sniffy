@@ -32,7 +32,7 @@
         <sniffy.ui.version>3.1.8</sniffy.ui.version>
         <spring.version>4.3.30.RELEASE</spring.version>
         <spring.boot.version>1.5.22.RELEASE</spring.boot.version>
-        <jacoco.version>0.8.8</jacoco.version>
+        <jacoco.version>0.8.9-SNAPSHOT</jacoco.version>
         <graalvm.version>20.3.6.1</graalvm.version>
 
         <skip.java7.compatibility.tests>true</skip.java7.compatibility.tests>
