@@ -248,7 +248,7 @@ public class ReflectionUtil {
                     setAccessible(lockField);
                 }
 
-                Object lockObject = lockField.get(instance);
+                Object lockObject = get(lockField, instance);
 
                 if (lockObject instanceof Lock) {
 
@@ -285,7 +285,7 @@ public class ReflectionUtil {
 
     }
 
-    private static <T,V> void set(Field instanceField, T instance, V value) throws IllegalAccessException {
+    protected static <T,V> void set(Field instanceField, T instance, V value) throws IllegalAccessException {
         if (JVMUtil.getVersion() >= 19 && nonAccessibleFields.contains(instanceField)) {
 
             long offset = null == instance ?
@@ -419,6 +419,9 @@ public class ReflectionUtil {
 
         }*/
 
+        if (!nonAccessibleFields.contains(instanceField) && !instanceField.isAccessible()) {
+            nonAccessibleFields.add(instanceField);
+        }
         if (!instanceField.isAccessible()) {
             setAccessible(instanceField);
         }
@@ -443,7 +446,7 @@ public class ReflectionUtil {
                 lockField.setAccessible(true);
             }
 
-            Object lockObject = lockField.get(instance);
+            Object lockObject = get(lockField, instance);
 
             if (lockObject instanceof Lock) {
 
@@ -452,7 +455,7 @@ public class ReflectionUtil {
                 try {
                     lock.lock();
                     //noinspection unchecked
-                    return (V) instanceField.get(instance);
+                    return (V) get(instanceField, instance);
                 } finally {
                     lock.unlock();
                 }
@@ -462,16 +465,86 @@ public class ReflectionUtil {
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (lockObject) {
                     //noinspection unchecked
-                    return (V) instanceField.get(instance);
+                    return (V) get(instanceField, instance);
                 }
 
             }
 
         } else {
             //noinspection unchecked
-            return (V) instanceField.get(instance);
+            return (V) get(instanceField, instance);
         }
 
+    }
+
+    protected static <T> Object get(Field instanceField, Object instance) throws IllegalAccessException {
+        if (JVMUtil.getVersion() >= 19 && nonAccessibleFields.contains(instanceField)) {
+
+            long offset = null == instance ?
+                    UNSAFE.staticFieldOffset(instanceField) :
+                    UNSAFE.objectFieldOffset(instanceField);
+
+            Object object = null == instance ? instanceField.getDeclaringClass() : instance;
+
+            if (instanceField.getType() == Boolean.TYPE) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    return UNSAFE.getBooleanVolatile(object, offset);
+                } else {
+                    return UNSAFE.getBoolean(object, offset);
+                }
+            } else if (instanceField.getType() == Integer.TYPE) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    return UNSAFE.getIntVolatile(object, offset);
+                } else {
+                    return UNSAFE.getInt(object, offset);
+                }
+            } else if (instanceField.getType() == Long.TYPE) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    return UNSAFE.getLongVolatile(object, offset);
+                } else {
+                    return UNSAFE.getLong(object, offset);
+                }
+            } else if (instanceField.getType() == Short.TYPE) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    return UNSAFE.getShortVolatile(object, offset);
+                } else {
+                    return UNSAFE.getShort(object, offset);
+                }
+            } else if (instanceField.getType() == Byte.TYPE) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    return UNSAFE.getByteVolatile(object, offset);
+                } else {
+                    return UNSAFE.getByte(object, offset);
+                }
+            } else if (instanceField.getType() == Double.TYPE) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    return UNSAFE.getDoubleVolatile(object, offset);
+                } else {
+                    return UNSAFE.getDouble(object, offset);
+                }
+            } else if (instanceField.getType() == Float.TYPE) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    return UNSAFE.getFloatVolatile(object, offset);
+                } else {
+                    return UNSAFE.getFloat(object, offset);
+                }
+            } else if (instanceField.getType() == Character.TYPE) {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    return UNSAFE.getCharVolatile(object, offset);
+                } else {
+                    return UNSAFE.getChar(object, offset);
+                }
+            } else {
+                if (Modifier.isVolatile(instanceField.getModifiers())) {
+                    return UNSAFE.getObjectVolatile(object, offset);
+                } else {
+                    return UNSAFE.getObject(object, offset);
+                }
+            }
+
+        } else {
+            return instanceField.get(instance);
+        }
     }
 
     private static Field getModifiersField() throws NoSuchFieldException {
