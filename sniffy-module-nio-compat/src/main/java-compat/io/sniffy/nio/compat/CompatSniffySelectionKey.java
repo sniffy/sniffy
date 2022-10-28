@@ -45,7 +45,10 @@ public class CompatSniffySelectionKey<SniffyChannel extends SelectableChannel & 
 
     @Override
     public Selector selector() {
-        if (!isValid() && StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey")) {
+        if (!isValid() &&
+                StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey") &&
+                sniffyChannel instanceof SocketChannel
+        ) {
             return NoOpSelector.INSTANCE; // TODO: cleanup this and other collections
         } else {
             return sniffySelector;
