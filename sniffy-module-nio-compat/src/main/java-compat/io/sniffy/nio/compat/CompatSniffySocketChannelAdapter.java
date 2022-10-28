@@ -1,5 +1,6 @@
 package io.sniffy.nio.compat;
 
+import io.sniffy.nio.SelectableChannelWrapper;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionCopier;
 import io.sniffy.util.StackTraceExtractor;
