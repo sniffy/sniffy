@@ -19,11 +19,11 @@ jobs:
       matrix:
         include:
           - java: 8
-            os: ubuntu-20.04
+            os: ubuntu-22.04
           - java: 11
-            os: windows-2019
+            os: windows-2022
           - java: 17
-            os: macos-10.15
+            os: macos-12
     name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -34,7 +34,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -43,20 +43,20 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -74,16 +74,16 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           architecture: x86
-        if: matrix.os != 'macos-10.15'
+        if: matrix.os != 'macos-12'
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os == 'ubuntu-20.04'
+        if: matrix.os == 'ubuntu-22.04'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -91,7 +91,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - smoke-test
     strategy:
@@ -120,7 +120,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -148,8 +148,8 @@ jobs:
   test-ibm-j9:
     needs:
       - smoke-test
-    runs-on: ubuntu-20.04
-    name: Test JDK IBM J9 1.8, ubuntu-20.04
+    runs-on: ubuntu-22.04
+    name: Test JDK IBM J9 1.8, ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Pull IBM JDK J9 1.8 Docker Image
@@ -168,7 +168,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -192,15 +192,15 @@ jobs:
     strategy:
       matrix:
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
-        java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19-ea ]
-        os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+        java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20-ea ]
+        os: [ ubuntu-22.04, windows-2022, macos-12 ]
         exclude:
           - java: 8
-            os: ubuntu-20.04
+            os: ubuntu-22.04
           - java: 11
-            os: windows-2019
+            os: windows-2022
           - java: 17
-            os: macos-10.15
+            os: macos-12
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -211,7 +211,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -220,20 +220,20 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -249,7 +249,7 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           architecture: x86
-        if: ${{ matrix.os != 'macos-10.15' && matrix.java != '18' && matrix.java != '19' && matrix.java != '19-ea' && matrix.java != '20-ea' }}
+        if: ${{ matrix.os != 'macos-12'}}
 # https://issues.apache.org/jira/projects/MNG/issues/MNG-7399
 # Had to disable x86 windows builds on java 18 and 19-ea due to strange errors like these:
 # The parameters 'isOffline' for goal org.apache.maven.plugins:maven-javadoc-plugin:3.3.1:jar are missing or invalid
@@ -257,13 +257,13 @@ jobs:
 # Might be caused by https://openjdk.java.net/jeps/416 or just regression issue in 32-bit windows builds
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: ${{ matrix.os == 'ubuntu-20.04' && matrix.java != '18' && matrix.java != '19' && matrix.java != '19-ea' && matrix.java != '20-ea' }}
+        if: ${{ matrix.os == 'ubuntu-22.04'}}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: ${{ matrix.os == 'windows-2019' && matrix.java != '18' && matrix.java != '19' && matrix.java != '19-ea' && matrix.java != '20-ea' }}
+        if: ${{ matrix.os == 'windows-2022'}}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -283,7 +283,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+        os: [ ubuntu-22.04, windows-2022, macos-12 ]
     name: Legacy JDK, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -294,7 +294,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -303,30 +303,30 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
       - name: Build with Maven
         run: mvn -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1C -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Resolve dependencies for compatibility tests
         run: mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os != 'windows-2019'
+        if: matrix.os != 'windows-2022'
       - name: Resolve dependencies for compatibility tests
         shell: cmd
         run: .\mvnretry.bat -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
       - name: Run compatibility tests using Java 8
         run: mvn -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 11
@@ -341,28 +341,6 @@ jobs:
           java-version: 17
       - name: Run compatibility tests using Java 17
         run: mvn -f sniffy-compatibility-tests/pom.xml test
-
-      - name: Set up JDK 18 32-bit
-        uses: actions/setup-java@v2
-        with:
-          distribution: zulu
-          java-version: 18
-          architecture: x86
-        if: matrix.os == 'windows-2019'
-      - name: Run compatibility tests using Java 18 32 bit
-        run: mvn -f sniffy-compatibility-tests/pom.xml test
-        if: matrix.os == 'windows-2019'
-      - name: Set up JDK 19-ea 32-bit
-        uses: actions/setup-java@v2
-        with:
-          distribution: zulu
-          java-version: 19-ea
-          architecture: x86
-        if: matrix.os == 'windows-2019'
-      - name: Run compatibility tests using Java 19-ea 32 bit
-        run: mvn -f sniffy-compatibility-tests/pom.xml test
-        if: matrix.os == 'windows-2019'
-
       - name: Set up JDK 7
         uses: actions/setup-java@v1
         with:
@@ -376,26 +354,27 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+      # TODO: add 32 bit compatibility tests execution on old Javas
       # No Java 6 on MacOS
       - name: Set up JDK 6
         uses: actions/setup-java@v1
         with:
           java-version: 6
-        if: matrix.os != 'macOS-10.15'
+        if: matrix.os != 'macOS-12'
       # No Java 6 on MacOS
       - name: Run compatibility tests using Maven 3.2.5 and Java 6
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
         shell: bash
-        if: matrix.os != 'macOS-10.15'
+        if: matrix.os != 'macOS-12'
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-        if: matrix.os != 'macOS-10.15'
+        if: matrix.os != 'macOS-12'
   analyze:
     needs:
       - smoke-test
     name: Analyze
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -410,7 +389,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
-          maven-version: 3.8.1
+          maven-version: 3.8.6
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
