@@ -2,27 +2,26 @@ package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractSelector;
+import java.nio.channels.spi.AbstractSelectableChannel;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * @since 3.1.7
  */
-public class SniffySelectionKey<SniffyChannel extends SelectableChannel & SelectableChannelWrapper<SocketChannel>> extends SelectionKey implements ObjectWrapper<SelectionKey> {
+public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
     private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
-    private final SniffyChannel sniffyChannel;
+    private final SelectableChannel sniffyChannel;
 
-    protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SniffyChannel sniffyChannel) {
+    protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
         this.delegate = delegate;
 
         if (null != delegate) {
@@ -63,7 +62,10 @@ public class SniffySelectionKey<SniffyChannel extends SelectableChannel & Select
     @Override
     public void cancel() {
         delegate.cancel();
-        sniffyChannel.keyCancelled();
+        if (sniffyChannel instanceof SelectableChannelWrapper) {
+            //noinspection unchecked
+            ((SelectableChannelWrapper<AbstractSelectableChannel>) sniffyChannel).keyCancelled();
+        }
         // TODO: seems that code below is safe to be removed on Java 17; is it the same on older Java?
         /*synchronized (this) {
             delegate.cancel();

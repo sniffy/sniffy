@@ -5,6 +5,7 @@ import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.*;
 
 import java.io.IOException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
@@ -28,11 +29,11 @@ public class SniffySelector extends AbstractSelector {
     private volatile Set<SelectionKey> keysWrapper = null;
     private volatile Set<SelectionKey> selectedKeysWrapper = null;
 
-    private final Map<AbstractSelectableChannel, SniffySocketChannel> channelToSniffyChannelMap =
-            new WeakHashMap<AbstractSelectableChannel, SniffySocketChannel>();
+    private final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
+            new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();
 
-    private final Map<SelectionKey, SniffySelectionKey<SniffySocketChannel>> sniffySelectionKeyCache =
-            new WeakHashMap<SelectionKey, SniffySelectionKey<SniffySocketChannel>>();
+    private final Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
+            new WeakHashMap<SelectionKey, SniffySelectionKey>();
 
     public SniffySelector(SelectorProvider provider, AbstractSelector delegate) {
         super(provider);
@@ -40,13 +41,13 @@ public class SniffySelector extends AbstractSelector {
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
     }
 
-    public SniffySelectionKey<SniffySocketChannel> wrap(SelectionKey delegate, SniffySelector sniffySelector, SniffySocketChannel sniffySocketChannel) {
-        SniffySelectionKey<SniffySocketChannel> sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
+    public SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffySocketChannel) {
+        SniffySelectionKey sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
         if (null == sniffySelectionKey) {
             synchronized (sniffySelectionKeyCache) {
                 sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
                 if (null == sniffySelectionKey) {
-                    sniffySelectionKey = new SniffySelectionKey<SniffySocketChannel>(delegate, sniffySelector, sniffySocketChannel);
+                    sniffySelectionKey = new SniffySelectionKey(delegate, sniffySelector, sniffySocketChannel);
                     sniffySelectionKeyCache.put(delegate, sniffySelectionKey);
                 }
             }
@@ -128,13 +129,10 @@ public class SniffySelector extends AbstractSelector {
         try {
 
             AbstractSelectableChannel chDelegate = ch;
-            SniffySocketChannel sniffySocketChannel = null;
 
-
-            if (ch instanceof SniffySocketChannel) {
-                sniffySocketChannel = (SniffySocketChannel) ch;
-                chDelegate = sniffySocketChannel.getDelegate();
-                channelToSniffyChannelMap.put(chDelegate, sniffySocketChannel);
+            if (ch instanceof SelectableChannelWrapper) {
+                chDelegate = ((SelectableChannelWrapper<?>) ch).getDelegate();
+                channelToSniffyChannelMap.put(chDelegate, ch);
             }
 
             SelectionKey selectionKeyDelegate = invokeMethod(AbstractSelector.class, delegate, "register",
@@ -150,11 +148,7 @@ public class SniffySelector extends AbstractSelector {
                 invokeMethod(AbstractSelectableChannel.class, chDelegate, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
             }
 
-            if (null != sniffySocketChannel) {
-                return wrap(selectionKeyDelegate, this, sniffySocketChannel);
-            } else {
-                return selectionKeyDelegate;
-            }
+            return wrap(selectionKeyDelegate, this, ch);
 
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);

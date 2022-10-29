@@ -10,19 +10,20 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractSelectableChannel;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * @since 3.1.7
  */
-public class CompatSniffySelectionKey<SniffyChannel extends SelectableChannel & SelectableChannelWrapper<SocketChannel>> extends SelectionKey implements ObjectWrapper<SelectionKey> {
+public class CompatSniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
     private final SelectionKey delegate;
     private final CompatSniffySelector sniffySelector;
-    private final SniffyChannel sniffyChannel;
+    private final SelectableChannel sniffyChannel;
 
-    protected CompatSniffySelectionKey(SelectionKey delegate, CompatSniffySelector sniffySelector, SniffyChannel sniffyChannel) {
+    protected CompatSniffySelectionKey(SelectionKey delegate, CompatSniffySelector sniffySelector, SelectableChannel sniffyChannel) {
         this.delegate = delegate;
 
         if (null != delegate) {
@@ -63,7 +64,10 @@ public class CompatSniffySelectionKey<SniffyChannel extends SelectableChannel & 
     @Override
     public void cancel() {
         delegate.cancel();
-        sniffyChannel.keyCancelled();
+        if (sniffyChannel instanceof SelectableChannelWrapper) {
+            //noinspection unchecked
+            ((SelectableChannelWrapper<AbstractSelectableChannel>) sniffyChannel).keyCancelled();
+        }
         // TODO: seems that code below is safe to be removed on Java 17; is it the same on older Java?
         /*synchronized (this) {
             delegate.cancel();
