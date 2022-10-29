@@ -15,7 +15,7 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
- * @since 3.1.7
+ * @since 3.1.14
  */
 public class CompatSniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 

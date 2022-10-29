@@ -8,6 +8,9 @@ import java.nio.channels.spi.AbstractSelector;
 import java.util.Collections;
 import java.util.Set;
 
+/**
+ * @since 3.1.14
+ */
 public class NoOpSelector extends AbstractSelector {
 
     public final static NoOpSelector INSTANCE = new NoOpSelector();

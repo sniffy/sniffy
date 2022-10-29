@@ -63,7 +63,6 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
             if (JVMUtil.getVersion() < 7) {
-                // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (networkPackets) {
                     networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
@@ -105,7 +104,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
 
     public C reset() {
         resetExecutedStatements();
-        resetSocketOpertions();
+        resetSocketOperations();
         return self();
     }
 
@@ -125,7 +124,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
                         build();
     }
 
-    protected void resetSocketOpertions() {
+    protected void resetSocketOperations() {
         socketOperations = new ConcurrentLinkedHashMap.Builder<SocketMetaData, SocketStats>().
                 maximumWeightedCapacity(Long.MAX_VALUE).
                 build();
