@@ -341,38 +341,6 @@ jobs:
           java-version: 17
       - name: Run compatibility tests using Java 17
         run: mvn -f sniffy-compatibility-tests/pom.xml test
-# Remove runs on Java 18-20 if other builds are successful
-      - name: Set up JDK 18 32-bit
-        uses: actions/setup-java@v2
-        with:
-          distribution: zulu
-          java-version: 18
-          architecture: x86
-        if: matrix.os == 'windows-2022'
-      - name: Run compatibility tests using Java 18 32 bit
-        run: mvn -f sniffy-compatibility-tests/pom.xml test
-        if: matrix.os == 'windows-2022'
-      - name: Set up JDK 19 32-bit
-        uses: actions/setup-java@v2
-        with:
-          distribution: zulu
-          java-version: 19
-          architecture: x86
-        if: matrix.os == 'windows-2022'
-      - name: Run compatibility tests using Java 19 32 bit
-        run: mvn -f sniffy-compatibility-tests/pom.xml test
-        if: matrix.os == 'windows-2022'
-      - name: Set up JDK 20-ea 32-bit
-        uses: actions/setup-java@v2
-        with:
-          distribution: zulu
-          java-version: 20-ea
-          architecture: x86
-        if: matrix.os == 'windows-2022'
-      - name: Run compatibility tests using Java 20-ea 32 bit
-        run: mvn -f sniffy-compatibility-tests/pom.xml test
-        if: matrix.os == 'windows-2022'
-
       - name: Set up JDK 7
         uses: actions/setup-java@v1
         with:
@@ -386,6 +354,7 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+      # TODO: add 32 bit compatibility tests execution on old Javas
       # No Java 6 on MacOS
       - name: Set up JDK 6
         uses: actions/setup-java@v1
