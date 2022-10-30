@@ -201,6 +201,13 @@ jobs:
             os: windows-2022
           - java: 17
             os: macos-12
+          # https://github.com/sniffy/sniffy/issues/546
+          - java: 10
+            os: ubuntu-22.04
+        include:
+          # https://github.com/sniffy/sniffy/issues/546
+          - java: 10
+            os: ubuntu-20.04
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
