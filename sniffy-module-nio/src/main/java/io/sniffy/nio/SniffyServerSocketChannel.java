@@ -26,10 +26,14 @@ import static io.sniffy.util.ReflectionUtil.setField;
 /**
  * @since 3.1.7
  */
+// TODO: test properly and come up with a strategy for server sockets and server channels
 public class SniffyServerSocketChannel extends ServerSocketChannel implements SelChImpl, SelectableChannelWrapper<ServerSocketChannel> {
 
     private final ServerSocketChannel delegate;
     private final SelChImpl selChImplDelegate;
+
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
+    private volatile boolean hasCancelledKeys;
 
     public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) {
         super(provider);
@@ -40,6 +44,11 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     @Override
     public ServerSocketChannel getDelegate() {
         return delegate;
+    }
+
+    @Override
+    public void keyCancelled() {
+        hasCancelledKeys = true;
     }
 
     @Override

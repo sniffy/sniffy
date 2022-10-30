@@ -1,7 +1,8 @@
-package io.sniffy.nio;
+package io.sniffy.nio.compat;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.nio.SelectableChannelWrapper;
 import io.sniffy.util.*;
 
 import java.io.IOException;
@@ -18,11 +19,11 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
 import static io.sniffy.util.ReflectionUtil.setField;
 
 /**
- * @since 3.1.7
+ * @since 3.1.14
  */
-public class SniffySelector extends AbstractSelector {
+public class CompatSniffySelector extends AbstractSelector {
 
-    private static final Polyglog LOG = PolyglogFactory.log(SniffySelector.class);
+    private static final Polyglog LOG = PolyglogFactory.log(CompatSniffySelector.class);
 
     private final AbstractSelector delegate;
 
@@ -32,22 +33,22 @@ public class SniffySelector extends AbstractSelector {
     private final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
             new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();
 
-    private final Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
-            new WeakHashMap<SelectionKey, SniffySelectionKey>();
+    private final Map<SelectionKey, CompatSniffySelectionKey> sniffySelectionKeyCache =
+            new WeakHashMap<SelectionKey, CompatSniffySelectionKey>();
 
-    public SniffySelector(SelectorProvider provider, AbstractSelector delegate) {
+    public CompatSniffySelector(SelectorProvider provider, AbstractSelector delegate) {
         super(provider);
         this.delegate = delegate;
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
     }
 
-    public SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffySocketChannel) {
-        SniffySelectionKey sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
+    public CompatSniffySelectionKey wrap(SelectionKey delegate, CompatSniffySelector sniffySelector, SelectableChannel sniffySocketChannel) {
+        CompatSniffySelectionKey sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
         if (null == sniffySelectionKey) {
             synchronized (sniffySelectionKeyCache) {
                 sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
                 if (null == sniffySelectionKey) {
-                    sniffySelectionKey = new SniffySelectionKey(delegate, sniffySelector, sniffySocketChannel);
+                    sniffySelectionKey = new CompatSniffySelectionKey(delegate, sniffySelector, sniffySocketChannel);
                     sniffySelectionKeyCache.put(delegate, sniffySelectionKey);
                 }
             }
@@ -89,12 +90,12 @@ public class SniffySelector extends AbstractSelector {
         return selectedKeysWrapper;
     }
 
-    private SetWrapper<SniffySelectionKey, SelectionKey> createSelectionKeysWrapper(Set<SelectionKey> delegates) {
-        return new SetWrapper<SniffySelectionKey, SelectionKey>(delegates, new WrapperFactory<SelectionKey, SniffySelectionKey>() {
+    private SetWrapper<CompatSniffySelectionKey, SelectionKey> createSelectionKeysWrapper(Set<SelectionKey> delegates) {
+        return new SetWrapper<CompatSniffySelectionKey, SelectionKey>(delegates, new WrapperFactory<SelectionKey, CompatSniffySelectionKey>() {
             @Override
-            public SniffySelectionKey wrap(SelectionKey delegate) {
+            public CompatSniffySelectionKey wrap(SelectionKey delegate) {
                 //noinspection SuspiciousMethodCalls
-                return SniffySelector.this.wrap(delegate, SniffySelector.this, channelToSniffyChannelMap.get(delegate.channel()));
+                return CompatSniffySelector.this.wrap(delegate, CompatSniffySelector.this, channelToSniffyChannelMap.get(delegate.channel()));
             }
         });
     }
@@ -102,20 +103,20 @@ public class SniffySelector extends AbstractSelector {
     private class SelectionKeyConsumerWrapper implements Consumer<SelectionKey> {
 
         private final Consumer<SelectionKey> delegate;
-        private final SniffySocketChannel sniffyChannel;
+        private final CompatSniffySocketChannel sniffyChannel;
 
         public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate) {
             this(delegate, null);
         }
 
-        public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate, SniffySocketChannel sniffyChannel) {
+        public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate, CompatSniffySocketChannel sniffyChannel) {
             this.delegate = delegate;
             this.sniffyChannel = sniffyChannel;
         }
 
         @Override
         public void accept(SelectionKey selectionKey) {
-            delegate.accept(wrap(selectionKey, SniffySelector.this, sniffyChannel));
+            delegate.accept(wrap(selectionKey, CompatSniffySelector.this, sniffyChannel));
         }
 
     }

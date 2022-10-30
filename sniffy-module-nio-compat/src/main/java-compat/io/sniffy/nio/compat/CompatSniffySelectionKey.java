@@ -1,5 +1,7 @@
-package io.sniffy.nio;
+package io.sniffy.nio.compat;
 
+import io.sniffy.nio.NoOpSelector;
+import io.sniffy.nio.SelectableChannelWrapper;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.StackTraceExtractor;
@@ -13,15 +15,15 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
- * @since 3.1.7
+ * @since 3.1.14
  */
-public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
+public class CompatSniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
     private final SelectionKey delegate;
-    private final SniffySelector sniffySelector;
+    private final CompatSniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
 
-    protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
+    protected CompatSniffySelectionKey(SelectionKey delegate, CompatSniffySelector sniffySelector, SelectableChannel sniffyChannel) {
         this.delegate = delegate;
 
         if (null != delegate) {

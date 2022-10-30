@@ -26,8 +26,13 @@ import static io.sniffy.util.ReflectionUtil.setField;
  */
 public class SniffySocketChannelAdapter extends SocketChannel implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
 
+    // TODO: replace delegate.interruptor as well
+
     private final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
+
+    // TODO: based on this property, refresh keys from delegate after invoking select* calls
+    private volatile boolean hasCancelledKeys;
 
     protected SniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider);
@@ -38,6 +43,11 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @Override
     public SocketChannel getDelegate() {
         return delegate;
+    }
+
+    @Override
+    public void keyCancelled() {
+        hasCancelledKeys = true;
     }
 
     @SuppressWarnings("Since15")
@@ -138,7 +148,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (delegateCloseLock) {
                 setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
+                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseChannel", Void.class);
             }
 
         } catch (Exception e) {

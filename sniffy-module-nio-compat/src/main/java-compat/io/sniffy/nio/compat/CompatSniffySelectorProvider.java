@@ -174,7 +174,7 @@ public class CompatSniffySelectorProvider extends SelectorProvider {
 
     @Override
     public AbstractSelector openSelector() throws IOException {
-        return new SniffySelector(this, delegate.openSelector()); // TODO: make CompatSniffySelector
+        return new CompatSniffySelector(this, delegate.openSelector());
     }
 
     @Override

@@ -6,6 +6,7 @@ import io.sniffy.socket.*;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.JVMUtil;
 import io.sniffy.util.StringUtil;
 
 import java.io.Closeable;
@@ -173,48 +174,14 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
             if (addressMatcher.matches(socketMetaData.getAddress()) &&
                     (null == socketMetaData.getThreadMetaData() || threadMatcher.matches(socketMetaData.getThreadMetaData()))) {
 
-                for (NetworkPacket networkPacket : networkPackets) {
-
-                    if (threadMatcher.matches(networkPacket.getThreadMetaData())) {
-
-                        SocketMetaData reducedSocketMetaData = new SocketMetaData(
-                                socketMetaData.getProtocol(),
-                                socketMetaData.getAddress(),
-                                groupingOptions.isGroupByConnection() ? socketMetaData.getConnectionId() : -1,
-                                groupingOptions.isGroupByStackTrace() ? networkPacket.getStackTrace() : null,
-                                groupingOptions.isGroupByThread() ? networkPacket.getThreadMetaData() : null
-                        );
-
-                        List<NetworkPacket> reducedNetworkPackets = reducedTraffic.get(reducedSocketMetaData);
-                        //noinspection Java8MapApi
-                        if (null == reducedNetworkPackets) {
-                            reducedNetworkPackets = new ArrayList<NetworkPacket>();
-                            reducedTraffic.put(reducedSocketMetaData, reducedNetworkPackets);
-                        }
-
-                        if ((getSpyConfiguration().isCaptureStackTraces() && !groupingOptions.isGroupByStackTrace())
-                                || !groupingOptions.isGroupByThread()) {
-                            byte[] bytes = networkPacket.getBytes();
-                            networkPacket = new NetworkPacket(
-                                    networkPacket.isSent(),
-                                    networkPacket.getTimestamp(),
-                                    groupingOptions.isGroupByStackTrace() ? networkPacket.getStackTrace() : null,
-                                    groupingOptions.isGroupByThread() ? networkPacket.getThreadMetaData() : null,
-                                    bytes, 0, bytes.length
-                            );
-                        }
-
-                        if (reducedNetworkPackets.isEmpty()) {
-                            reducedNetworkPackets.add(networkPacket);
-                        } else {
-                            NetworkPacket lastPacket = reducedNetworkPackets.get(reducedNetworkPackets.size() - 1);
-                            if (!lastPacket.combine(networkPacket, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-                                reducedNetworkPackets.add(networkPacket);
-                            }
-                        }
-
+                if (JVMUtil.getVersion() < 7) {
+                    // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
+                    //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                    synchronized (networkPackets) {
+                        filterNetworkPackets(threadMatcher, groupingOptions, reducedTraffic, socketMetaData, networkPackets);
                     }
-
+                } else {
+                    filterNetworkPackets(threadMatcher, groupingOptions, reducedTraffic, socketMetaData, networkPackets);
                 }
 
             }
@@ -222,6 +189,52 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
         }
 
         return reducedTraffic;
+    }
+
+    private void filterNetworkPackets(ThreadMatcher threadMatcher, GroupingOptions groupingOptions, Map<SocketMetaData, List<NetworkPacket>> reducedTraffic, SocketMetaData socketMetaData, Deque<NetworkPacket> networkPackets) {
+        for (NetworkPacket networkPacket : networkPackets) {
+
+            if (threadMatcher.matches(networkPacket.getThreadMetaData())) {
+
+                SocketMetaData reducedSocketMetaData = new SocketMetaData(
+                        socketMetaData.getProtocol(),
+                        socketMetaData.getAddress(),
+                        groupingOptions.isGroupByConnection() ? socketMetaData.getConnectionId() : -1,
+                        groupingOptions.isGroupByStackTrace() ? networkPacket.getStackTrace() : null,
+                        groupingOptions.isGroupByThread() ? networkPacket.getThreadMetaData() : null
+                );
+
+                List<NetworkPacket> reducedNetworkPackets = reducedTraffic.get(reducedSocketMetaData);
+                //noinspection Java8MapApi
+                if (null == reducedNetworkPackets) {
+                    reducedNetworkPackets = new ArrayList<NetworkPacket>();
+                    reducedTraffic.put(reducedSocketMetaData, reducedNetworkPackets);
+                }
+
+                if ((getSpyConfiguration().isCaptureStackTraces() && !groupingOptions.isGroupByStackTrace())
+                        || !groupingOptions.isGroupByThread()) {
+                    byte[] bytes = networkPacket.getBytes();
+                    networkPacket = new NetworkPacket(
+                            networkPacket.isSent(),
+                            networkPacket.getTimestamp(),
+                            groupingOptions.isGroupByStackTrace() ? networkPacket.getStackTrace() : null,
+                            groupingOptions.isGroupByThread() ? networkPacket.getThreadMetaData() : null,
+                            bytes, 0, bytes.length
+                    );
+                }
+
+                if (reducedNetworkPackets.isEmpty()) {
+                    reducedNetworkPackets.add(networkPacket);
+                } else {
+                    NetworkPacket lastPacket = reducedNetworkPackets.get(reducedNetworkPackets.size() - 1);
+                    if (!lastPacket.combine(networkPacket, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
+                        reducedNetworkPackets.add(networkPacket);
+                    }
+                }
+
+            }
+
+        }
     }
 
     // Expect and verify methods
