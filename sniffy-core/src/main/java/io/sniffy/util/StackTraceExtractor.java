@@ -27,8 +27,7 @@ public class StackTraceExtractor {
                     location = location.substring(location.lastIndexOf('/') + 1);
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
-                // ignore
+                // ignore - could be exception like "java.lang.ClassNotFoundException: jdk.internal.reflect.GeneratedMethodAccessor197"
             }
             if (i > 2) {
                 sb.append('\t');
