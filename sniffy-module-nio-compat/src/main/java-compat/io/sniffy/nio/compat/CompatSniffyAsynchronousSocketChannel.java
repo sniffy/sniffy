@@ -29,9 +29,9 @@ import java.util.concurrent.TimeoutException;
 /**
  * @since 3.1.7
  */
-public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel implements SniffyNetworkConnection {
+public class CompatSniffyAsynchronousSocketChannel extends AsynchronousSocketChannel implements SniffyNetworkConnection {
 
-    private static final Polyglog LOG = PolyglogFactory.log(SniffyAsynchronousSocketChannel.class);
+    private static final Polyglog LOG = PolyglogFactory.log(CompatSniffyAsynchronousSocketChannel.class);
 
     private final AsynchronousSocketChannel delegate;
 
@@ -48,7 +48,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
     private boolean firstChunk = true;
 
-    public SniffyAsynchronousSocketChannel(AsynchronousChannelProvider provider, AsynchronousSocketChannel delegate) {
+    public CompatSniffyAsynchronousSocketChannel(AsynchronousChannelProvider provider, AsynchronousSocketChannel delegate) {
         super(provider);
         this.delegate = delegate;
     }
@@ -93,7 +93,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
 
     /**
-     * Adds a delay as defined for current {@link SniffyAsynchronousSocketChannel} in {@link ConnectionsRegistry#discoveredDataSources}
+     * Adds a delay as defined for current {@link CompatSniffyAsynchronousSocketChannel} in {@link ConnectionsRegistry#discoveredDataSources}
      * <p>
      * Delay is added for each <b>N</b> bytes received where <b>N</b> is the value of {@link SocketOptions#SO_RCVBUF}
      * <p>
@@ -122,7 +122,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
     }
 
     /**
-     * Adds a delay as defined for current {@link SniffyAsynchronousSocketChannel} in {@link ConnectionsRegistry#discoveredDataSources}
+     * Adds a delay as defined for current {@link CompatSniffyAsynchronousSocketChannel} in {@link ConnectionsRegistry#discoveredDataSources}
      * <p>
      * Delay is added for each <b>N</b> bytes sent where <b>N</b> is the value of {@link SocketOptions#SO_SNDBUF}
      * <p>

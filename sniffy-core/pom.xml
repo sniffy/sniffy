@@ -88,6 +88,8 @@
                                         <ignore>java.nio.channels.NetworkChannel</ignore>
                                         <ignore>java.nio.channels.AsynchronousChannelGroup</ignore>
                                         <ignore>sun.misc.Unsafe</ignore>
+                                        <ignore>sun.nio.ch.DatagramChannelDelegate</ignore>
+                                        <ignore>sun.nio.ch.ServerSocketChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
@@ -101,6 +103,8 @@
                                     <ignores>
                                         <ignore>sun.nio.ch.SelChImpl</ignore>
                                         <ignore>sun.misc.Unsafe</ignore>
+                                        <ignore>sun.nio.ch.DatagramChannelDelegate</ignore>
+                                        <ignore>sun.nio.ch.ServerSocketChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>

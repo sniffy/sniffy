@@ -5,7 +5,7 @@ import io.sniffy.util.JVMUtil;
 /**
  * @since 3.1.7
  */
-public class SniffyCompatSelectorProviderModule {
+public class CompatSniffySelectorProviderModule {
 
     public static void initialize() {
 
