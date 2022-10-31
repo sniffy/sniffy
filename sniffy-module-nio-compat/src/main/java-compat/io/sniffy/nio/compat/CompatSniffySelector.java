@@ -143,10 +143,14 @@ public class CompatSniffySelector extends AbstractSelector {
                     SelectionKey.class
             );
 
+            Object regLock = ReflectionUtil.getField(AbstractSelectableChannel.class, chDelegate, "regLock");
             Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, chDelegate, "keyLock");
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (keyLock) {
-                invokeMethod(AbstractSelectableChannel.class, chDelegate, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
+            synchronized (regLock) {
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (keyLock) {
+                    invokeMethod(AbstractSelectableChannel.class, chDelegate, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
+                }
             }
 
             return wrap(selectionKeyDelegate, this, ch);
