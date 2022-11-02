@@ -14,8 +14,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.sniffy.servlet.SniffyFilter.*;
 
@@ -247,6 +249,39 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         wrapper.setIntHeader(HEADER_NUMBER_OF_QUERIES, requestStats.executedStatements() + spy.executedStatements());
         wrapper.setHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
         // TODO: store startTime of first request processor somewhere
+
+        {
+            StringBuilder sb = new StringBuilder();
+
+            long sqlTime = 0;
+            long sqlQueries = 0;
+            long sqlRows = 0;
+
+            for (SqlStats sqlStats : requestStats.getExecutedStatements().values()) {
+                sqlTime += sqlStats.elapsedTime.longValue();
+                sqlQueries++;
+                sqlRows += sqlStats.rows.longValue();
+            }
+
+            sb.append("SQL; desc=\"").append(sqlQueries).append(" queries with ").append(sqlRows).append(" rows\"").append("; dur=").append(sqlTime);
+
+            Map<String, AtomicLong> networkMap = new HashMap<String, AtomicLong>(requestStats.getSocketOperations().size());
+
+            for (Map.Entry<SocketMetaData, SocketStats> entry : requestStats.getSocketOperations().entrySet()) {
+                String key = entry.getKey().getAddress().getHostName() + ":" + entry.getKey().getAddress().getPort();
+                if (networkMap.containsKey(key)) {
+                    networkMap.get(key).addAndGet(entry.getValue().elapsedTime.longValue());
+                } else {
+                    networkMap.put(key, new AtomicLong(entry.getValue().elapsedTime.longValue()));
+                }
+            }
+
+            for (Map.Entry<String, AtomicLong> entry : networkMap.entrySet()) {
+                sb.append(",Network; desc=\"").append(entry.getKey()).append("\"").append("; dur=").append(entry.getValue());
+            }
+
+            wrapper.setHeader("Server-Timing", sb.toString());
+        }
 
         StringBuilder sb = new StringBuilder();
         String contextRelativePath;
