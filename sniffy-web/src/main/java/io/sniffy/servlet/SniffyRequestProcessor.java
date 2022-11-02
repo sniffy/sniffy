@@ -5,6 +5,7 @@ import io.sniffy.Sniffy;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
@@ -253,24 +254,31 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         {
             StringBuilder sb = new StringBuilder();
 
-            if (null != requestStats.getExecutedStatements()) {
+            // TODO: use requestStats instead of spy
+            if (null != spy.getExecutedStatements() && !spy.getExecutedStatements().isEmpty()) {
                 long sqlTime = 0;
                 long sqlQueries = 0;
                 long sqlRows = 0;
 
-                for (SqlStats sqlStats : requestStats.getExecutedStatements().values()) {
+
+
+                for (Map.Entry<StatementMetaData, SqlStats> entry : spy.getExecutedStatements().entrySet()) {
+                    SqlStats sqlStats = entry.getValue();
+                    StatementMetaData statementMetaData = entry.getKey();
                     sqlTime += sqlStats.elapsedTime.longValue();
-                    sqlQueries++;
+                    if (statementMetaData.query != SqlStatement.SYSTEM) {
+                        sqlQueries++;
+                    }
                     sqlRows += sqlStats.rows.longValue();
                 }
 
                 sb.append("SQL; desc=\"").append(sqlQueries).append(" queries with ").append(sqlRows).append(" rows\"").append("; dur=").append(sqlTime);
             }
 
-            if (null != requestStats.getSocketOperations()) {
-                Map<String, AtomicLong> networkMap = new HashMap<String, AtomicLong>(requestStats.getSocketOperations().size());
+            if (null != spy.getSocketOperations() && !spy.getSocketOperations().isEmpty()) {
+                Map<String, AtomicLong> networkMap = new HashMap<String, AtomicLong>(spy.getSocketOperations().size());
 
-                for (Map.Entry<SocketMetaData, SocketStats> entry : requestStats.getSocketOperations().entrySet()) {
+                for (Map.Entry<SocketMetaData, SocketStats> entry : spy.getSocketOperations().entrySet()) {
                     String key = entry.getKey().getAddress().getHostName() + ":" + entry.getKey().getAddress().getPort();
                     if (networkMap.containsKey(key)) {
                         networkMap.get(key).addAndGet(entry.getValue().elapsedTime.longValue());
