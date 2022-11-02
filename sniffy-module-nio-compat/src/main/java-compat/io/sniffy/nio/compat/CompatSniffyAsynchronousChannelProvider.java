@@ -17,18 +17,18 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @since 3.1.7
  */
-public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvider {
+public class CompatSniffyAsynchronousChannelProvider extends AsynchronousChannelProvider {
 
     private final AsynchronousChannelProvider delegate;
 
-    public SniffyAsynchronousChannelProvider(AsynchronousChannelProvider delegate) {
+    public CompatSniffyAsynchronousChannelProvider(AsynchronousChannelProvider delegate) {
         this.delegate = delegate;
     }
 
     public static void install() {
         AsynchronousChannelProvider delegate = AsynchronousChannelProvider.provider();
 
-        if (null != delegate && SniffyAsynchronousChannelProvider.class.equals(delegate.getClass())) {
+        if (null != delegate && CompatSniffyAsynchronousChannelProvider.class.equals(delegate.getClass())) {
             return;
         }
 
@@ -42,7 +42,7 @@ public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvid
             modifiersField.setAccessible(true);
             modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
 
-            instanceField.set(null, new SniffyAsynchronousChannelProvider(delegate));
+            instanceField.set(null, new CompatSniffyAsynchronousChannelProvider(delegate));
 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -116,6 +116,6 @@ public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvid
 
     @Override
     public AsynchronousSocketChannel openAsynchronousSocketChannel(AsynchronousChannelGroup group) throws IOException {
-        return new SniffyAsynchronousSocketChannel(this, delegate.openAsynchronousSocketChannel(group));
+        return new CompatSniffyAsynchronousSocketChannel(this, delegate.openAsynchronousSocketChannel(group));
     }
 }

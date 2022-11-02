@@ -10,10 +10,7 @@ import io.sniffy.socket.*;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -230,6 +227,17 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     private static void sleepImpl(int millis) throws InterruptedException {
         Thread.sleep(millis);
+    }
+
+    @Override
+    public boolean connect(SocketAddress remote) throws IOException {
+        long start = System.currentTimeMillis();
+        try {
+            checkConnectionAllowed((InetSocketAddress) remote, 1);
+            return super.connect(remote);
+        } finally {
+            logSocket(System.currentTimeMillis() - start);
+        }
     }
 
     @Override

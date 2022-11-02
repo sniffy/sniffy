@@ -375,23 +375,6 @@
                             </configuration>
                         </execution>
                         <execution>
-                            <id>JUnit-execution-java14-compatibility</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>test</goal>
-                            </goals>
-                            <configuration>
-                                <skip>false</skip>
-                                <systemPropertyVariables>
-                                    <io.sniffy.forceJava14Compatibility>true</io.sniffy.forceJava14Compatibility>
-                                </systemPropertyVariables>
-                                <testNGArtifactName>dev:null</testNGArtifactName>
-                                <excludes>
-                                    <exclude>%regex[.*TestNg.*]</exclude>
-                                </excludes>
-                            </configuration>
-                        </execution>
-                        <execution>
                             <id>JUnit-execution-java7-compatibility</id>
                             <phase>test</phase>
                             <goals>
