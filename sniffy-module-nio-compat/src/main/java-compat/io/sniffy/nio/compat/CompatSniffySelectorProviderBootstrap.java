@@ -115,6 +115,60 @@ public class CompatSniffySelectorProviderBootstrap {
             Class.forName("sun.nio.ch.ServerSocketChannelDelegate");
         }
 
+        {
+            InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/PipeSinkChannelDelegate.class");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            int i = 0;
+            while ((i = is.read()) != -1) {
+                baos.write(i);
+            }
+
+            is.close();
+
+            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            Unsafe unsafe = (Unsafe) f.get(null);
+
+            unsafe.defineClass(
+                    "sun.nio.ch.PipeSinkChannelDelegate",
+                    baos.toByteArray(),
+                    0,
+                    baos.size(),
+                    null,
+                    null
+            );
+
+            Class.forName("sun.nio.ch.PipeSinkChannelDelegate");
+        }
+
+        {
+            InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/PipeSourceChannelDelegate.class");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            int i = 0;
+            while ((i = is.read()) != -1) {
+                baos.write(i);
+            }
+
+            is.close();
+
+            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            Unsafe unsafe = (Unsafe) f.get(null);
+
+            unsafe.defineClass(
+                    "sun.nio.ch.PipeSourceChannelDelegate",
+                    baos.toByteArray(),
+                    0,
+                    baos.size(),
+                    null,
+                    null
+            );
+
+            Class.forName("sun.nio.ch.PipeSourceChannelDelegate");
+        }
+
         if (getVersion() < 7) {
 
             {
