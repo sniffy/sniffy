@@ -1,17 +1,13 @@
 package io.sniffy.nio.compat;
 
 import io.sniffy.nio.SelectableChannelWrapper;
-import io.sniffy.nio.SniffySocketChannelAdapter;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.OSUtil;
 import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
-import sun.nio.ch.SelChImpl;
-import sun.nio.ch.SelectionKeyImpl;
 import sun.nio.ch.ServerSocketChannelDelegate;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
@@ -30,10 +26,9 @@ import static io.sniffy.util.ReflectionUtil.setField;
  * @since 3.1.7
  */
 // TODO: test properly and come up with a strategy for server sockets and server channels
-public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate implements SelChImpl, SelectableChannelWrapper<ServerSocketChannel> {
+public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate implements SelectableChannelWrapper<ServerSocketChannel> {
 
     private final ServerSocketChannel delegate;
-    private final SelChImpl selChImplDelegate;
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private volatile boolean hasCancelledKeys;
@@ -41,7 +36,6 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
     public CompatSniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) {
         super(provider, delegate);
         this.delegate = delegate;
-        this.selChImplDelegate = (SelChImpl) delegate;
     }
 
     @Override
@@ -82,7 +76,7 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
             return null;
         }
 
-        // Windows Selector is implemented using pair of sockets which are explicitly casted and do not work with Sniffy
+        // Windows Selector is implemented using a pair of sockets which are explicitly cast and do not work with Sniffy
         return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
                 socketChannel :
                 new CompatSniffySocketChannelAdapter(provider(), socketChannel);
@@ -140,75 +134,6 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
     @IgnoreJRERequirement
     public Set<SocketOption<?>> supportedOptions() {
         return delegate.supportedOptions();
-    }
-
-    // Modern SelChImpl
-
-    @Override
-    public FileDescriptor getFD() {
-        return selChImplDelegate.getFD();
-    }
-
-    @Override
-    public int getFDVal() {
-        return selChImplDelegate.getFDVal();
-    }
-
-    @Override
-    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski) {
-        return selChImplDelegate.translateAndUpdateReadyOps(ops, ski);
-    }
-
-    @Override
-    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski) {
-        return selChImplDelegate.translateAndSetReadyOps(ops, ski);
-    }
-
-    @Override
-    public void kill() throws IOException {
-        selChImplDelegate.kill();
-    }
-
-    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
-    // @Override
-    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
-        try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        }
-    }
-
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
-    //@Override
-    public int translateInterestOps(int ops) {
-        try {
-            return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        }
-    }
-
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
-    //@Override
-    @SuppressWarnings("RedundantThrows")
-    public void park(int event, long nanos) throws IOException {
-        try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
-        }
-    }
-
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
-    //@Override
-    @SuppressWarnings("RedundantThrows")
-    public void park(int event) throws IOException {
-        try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
-        }
     }
 
 }
