@@ -267,7 +267,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                     StatementMetaData statementMetaData = entry.getKey();
                     sqlTime += sqlStats.elapsedTime.longValue();
                     if (statementMetaData.query != SqlStatement.SYSTEM) {
-                        sqlQueries++;
+                        sqlQueries += sqlStats.queries.longValue();
                     }
                     sqlRows += sqlStats.rows.longValue();
                 }
@@ -276,22 +276,28 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             }
 
             if (null != spy.getSocketOperations() && !spy.getSocketOperations().isEmpty()) {
-                Map<String, AtomicLong> networkMap = new HashMap<String, AtomicLong>(spy.getSocketOperations().size());
+                Map<String, SocketStats> networkMap = new HashMap<String, SocketStats>(spy.getSocketOperations().size());
 
                 for (Map.Entry<SocketMetaData, SocketStats> entry : spy.getSocketOperations().entrySet()) {
                     String key = entry.getKey().getAddress().getHostName() + ":" + entry.getKey().getAddress().getPort();
                     if (networkMap.containsKey(key)) {
-                        networkMap.get(key).addAndGet(entry.getValue().elapsedTime.longValue());
+                        networkMap.get(key).accumulate(entry.getValue());
                     } else {
-                        networkMap.put(key, new AtomicLong(entry.getValue().elapsedTime.longValue()));
+                        networkMap.put(key, new SocketStats(entry.getValue()));
                     }
                 }
 
-                for (Map.Entry<String, AtomicLong> entry : networkMap.entrySet()) {
+                for (Map.Entry<String, SocketStats> entry : networkMap.entrySet()) {
                     if (sb.length() > 0) {
                         sb.append(",");
                     }
-                    sb.append("Network; desc=\"").append(entry.getKey()).append("\"").append("; dur=").append(entry.getValue());
+                    sb.
+                            append("Network; desc=\"").
+                            append(entry.getKey()).
+                            append(" ").
+                            append(entry.getValue().bytesDown.longValue() + entry.getValue().bytesUp.longValue()).
+                            append(" bytes\"").
+                            append("; dur=").append(entry.getValue().elapsedTime);
                 }
             }
 
