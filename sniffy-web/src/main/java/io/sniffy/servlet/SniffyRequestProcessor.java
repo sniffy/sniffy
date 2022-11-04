@@ -272,7 +272,8 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                     sqlRows += sqlStats.rows.longValue();
                 }
 
-                sb.append("SQL; desc=\"").append(sqlQueries).append(" queries with ").append(sqlRows).append(" rows\"").append("; dur=").append(sqlTime);
+                //noinspection SpellCheckingInspection
+                sb.append("SQL; desc=\"").append(sqlQueries).append(" quer").append(sqlQueries == 1 ? "y" : "ies").append(" with ").append(sqlRows).append(" rows\"").append("; dur=").append(sqlTime);
             }
 
             if (null != spy.getSocketOperations() && !spy.getSocketOperations().isEmpty()) {
@@ -301,7 +302,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
                 }
             }
 
-            wrapper.setHeader("Server-Timing", sb.toString());
+            wrapper.setHeader(HEADER_SERVER_TIMING, sb.toString());
         }
 
         StringBuilder sb = new StringBuilder();

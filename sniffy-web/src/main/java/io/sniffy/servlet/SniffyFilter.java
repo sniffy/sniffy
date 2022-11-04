@@ -69,6 +69,7 @@ public class SniffyFilter implements Filter {
     public static final String HEADER_NUMBER_OF_QUERIES = "Sniffy-Sql-Queries";
     public static final String HEADER_TIME_TO_FIRST_BYTE = "Sniffy-Time-To-First-Byte";
     public static final String HEADER_REQUEST_DETAILS = "Sniffy-Request-Details";
+    public static final String HEADER_SERVER_TIMING = "Server-Timing";
 
     public static final String SNIFFY_URI_PREFIX = "sniffy";
     public static final String SNIFFY_RESOURCE_URI_PREFIX =
