@@ -2,7 +2,15 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.13...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.14...develop)
+
+## v3.1.14 - November 5th, 2022
+
+* [Implement Server Timing API](https://github.com/sniffy/sniffy/issues/465)
+* [ClassNotFoundException when building stack trace](https://github.com/sniffy/sniffy/issues/540)
+* [sniffy traffic capture breaks xnio](https://github.com/sniffy/sniffy/issues/536)
+* [Java 20 Support](https://github.com/sniffy/sniffy/pull/544)
+* [ConcurrentModificationException while getting captured network traffic](https://github.com/sniffy/sniffy/issues/538)
 
 ## v3.1.13 - June 15th, 2022
 
