@@ -6,6 +6,7 @@ import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelector;
 import java.util.HashMap;
@@ -22,7 +23,9 @@ public class SniffySelectorTest {
         Map<String, Field> fieldsMap = new HashMap<String, Field>();
 
         for (Field field : ReflectionUtil.getDeclaredFieldsHierarchy(AbstractSelector.class)) {
-            fieldsMap.put(field.getName(), field);
+            if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
+                fieldsMap.put(field.getName(), field);
+            }
         }
 
         fieldsMap.remove("closed");

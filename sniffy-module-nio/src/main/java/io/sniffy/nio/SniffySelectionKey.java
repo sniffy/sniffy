@@ -13,6 +13,11 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
+ * properties:
+ * attachment
+ *
+ * attach() and attachment() are final
+ *
  * @since 3.1.7
  */
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
