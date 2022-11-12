@@ -6,6 +6,7 @@ import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.ReflectionUtil;
 import org.junit.Assert;
 import org.junit.Test;
+import sun.nio.ch.SelectorImpl;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -17,10 +18,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -227,14 +225,20 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
 
                 Set<SelectionKey> cancelledKeysInDelegate =
                         ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
-                assertTrue(cancelledKeysInDelegate.contains(delegate));
+
+                Collection<SelectionKey> cancelledKeysInDelegateImpl =
+                        ReflectionUtil.getField(SelectorImpl.class, (SelectorImpl) delegateSelector, "cancelledKeys");
+                assertTrue(cancelledKeysInDelegate.contains(delegate) || cancelledKeysInDelegateImpl.contains(delegate));
 
                 selector.selectNow(); // trigger process deregister queue / AKA process cancelled keys
 
                 cancelledKeysInDelegate =
                         ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
+                cancelledKeysInDelegateImpl =
+                        ReflectionUtil.getField(SelectorImpl.class, (SelectorImpl) delegateSelector, "cancelledKeys");
 
                 assertTrue(cancelledKeysInDelegate.isEmpty());
+                assertTrue(cancelledKeysInDelegateImpl.isEmpty());
 
                 assertTrue(selector instanceof AbstractSelector);
 
