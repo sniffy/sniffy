@@ -1,9 +1,36 @@
 package io.sniffy.util;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * @since 3.1.7
  */
 public class JVMUtil {
+
+    private final static Map<String, Boolean> CLASS_CACHE = new ConcurrentHashMap<String, Boolean>();
+
+    public static boolean hasJUnitOnClassPath() {
+        return hasClassAvailable("org.junit.Test");
+    }
+
+    public static boolean hasClassAvailable(String className) {
+        Boolean available = CLASS_CACHE.get(className);
+        if (null != available) {
+            return available;
+        } else {
+            synchronized (CLASS_CACHE) {
+                available = true;
+                try {
+                    Class.forName(className);
+                } catch (ClassNotFoundException e) {
+                    available = false;
+                }
+                CLASS_CACHE.put(className, available);
+            }
+        }
+        return available;
+    }
 
     public static int getVersion() {
         String version = System.getProperty("java.version");

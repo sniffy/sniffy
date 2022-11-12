@@ -4,11 +4,8 @@ import sun.misc.Unsafe;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.Lock;
 
 public class ReflectionUtil {
@@ -547,14 +544,27 @@ public class ReflectionUtil {
         }
     }
 
+    public static Field[] getDeclaredFieldsHierarchy(Class<?> clazz) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        List<Field> fields = new ArrayList<Field>();
+        while (!clazz.isAssignableFrom(Object.class)) {
+            fields.addAll(Arrays.asList(getDeclaredFields(clazz)));
+            clazz = clazz.getSuperclass();
+        }
+        return fields.toArray(new Field[0]);
+    }
+
+    public static Field[] getDeclaredFields(Class<?> clazz) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        setAccessible(getDeclaredFields0);
+        return (Field[]) getDeclaredFields0.invoke(clazz, false);
+    }
+
     private static Field getModifiersField() throws NoSuchFieldException {
         try {
             return Field.class.getDeclaredField("modifiers");
         } catch (NoSuchFieldException e) {
             try {
-                Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-                setAccessible(getDeclaredFields0);
-                Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+                Field[] fields = getDeclaredFields(Field.class);
                 for (Field field : fields) {
                     if ("modifiers".equals(field.getName())) {
                         return field;

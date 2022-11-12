@@ -19,10 +19,23 @@ import static io.sniffy.util.ReflectionUtil.*;
 
 /**
  * parent class AbstractSelector contains following properties:
- * cancelledKeys - TODO
- * interruptor - TODO
+ * cancelledKeys - not used; it's filled in delegate selector only
+ * interruptor - this is used in delegate only
  * provider - immutable, set in constructor
  * selectorOpen - called "closed" on some JDKs; default is true, set to false in final close method; handled inside implCloseSelector method
+ *
+ * following methods cannot be delegated since they're final or due to modifiers:
+ *
+ * void cancel(SelectionKey k)
+ * - adds key to cancelledKeys
+ * - invoked by AbstractSelectionKey cancel in delegate; not used in SniffySelector
+ *
+ * protected final void deregister(AbstractSelectionKey key)
+ * protected final Set<SelectionKey> cancelledKeys()
+ * public final void close()
+ * void cancel(SelectionKey k)
+ * public final boolean isOpen()
+ *
  *
  * @since 3.1.7
  */
@@ -45,6 +58,10 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         super(provider);
         this.delegate = delegate;
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
+        // install some assertions
+        if (JVMUtil.hasJUnitOnClassPath()) {
+            ReflectionUtil.setField(AbstractSelector.class, this, "cancelledKeys", null); // trigger NPE in case it is used (it shouldn't be)
+        }
     }
 
     public SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffySocketChannel) {
