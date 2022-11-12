@@ -222,6 +222,9 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     }
 
     private void updateKeysFromDelegate() {
+
+        //if (true) return;
+
         try {
             for (Map.Entry<AbstractSelectableChannel, AbstractSelectableChannel> entry : channelToSniffyChannelMap.entrySet()) {
                 AbstractSelectableChannel delegateChannel = entry.getKey();
@@ -253,7 +256,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                                 if (null != sk && !sk.isValid()) {
                                     sniffyCount--;
                                     sniffyKeys[i] = null;
-                                    assert null == delegateKeys[i];
+                                    //assert null == delegateKeys[i]; // doesn't always work due to defragmentation
                                 }
 
                             }
@@ -269,8 +272,10 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
             }
         } catch (NoSuchFieldException e) {
+            e.printStackTrace();
             // TODO: log exception
         } catch (IllegalAccessException e) {
+            e.printStackTrace();
             // TODO: log exception
         }
 
