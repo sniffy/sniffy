@@ -225,17 +225,15 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
 
                 Set<SelectionKey> cancelledKeysInDelegate =
                         ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
+                Collection<SelectionKey> cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl((SelectorImpl) delegateSelector);
 
-                Collection<SelectionKey> cancelledKeysInDelegateImpl =
-                        ReflectionUtil.getField(SelectorImpl.class, (SelectorImpl) delegateSelector, "cancelledKeys");
                 assertTrue(cancelledKeysInDelegate.contains(delegate) || cancelledKeysInDelegateImpl.contains(delegate));
 
                 selector.selectNow(); // trigger process deregister queue / AKA process cancelled keys
 
                 cancelledKeysInDelegate =
                         ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
-                cancelledKeysInDelegateImpl =
-                        ReflectionUtil.getField(SelectorImpl.class, (SelectorImpl) delegateSelector, "cancelledKeys");
+                cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl((SelectorImpl) delegateSelector);
 
                 assertTrue(cancelledKeysInDelegate.isEmpty());
                 assertTrue(cancelledKeysInDelegateImpl.isEmpty());
@@ -278,6 +276,14 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
         } finally {
             SnifferSocketImplFactory.uninstall();
             SniffySelectorProvider.uninstall();
+        }
+    }
+
+    private static Collection<SelectionKey> getCancelledKeysFromSelectorImpl(SelectorImpl delegateSelector) throws NoSuchFieldException, IllegalAccessException {
+        try {
+            return ReflectionUtil.getField(SelectorImpl.class, delegateSelector, "cancelledKeys");
+        } catch (NoSuchFieldException e) {
+            return Collections.emptySet();
         }
     }
 
