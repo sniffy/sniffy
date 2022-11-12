@@ -15,9 +15,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.AbstractSelector;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -53,6 +56,10 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
 
         try {
             Selector selector = Selector.open();
+
+            assertTrue(selector instanceof ObjectWrapper);
+            //noinspection unchecked
+            AbstractSelector delegateSelector = ((ObjectWrapper<AbstractSelector>) selector).getDelegate();
 
             try (SocketChannel socketChannel = SocketChannel.open()) {
                 socketChannel.configureBlocking(false);
@@ -198,6 +205,16 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
                 //noinspection unchecked
                 SelectionKey delegate = ((ObjectWrapper<SelectionKey>) sniffySelectionKey).getDelegate();
 
+                //noinspection unchecked
+                SocketChannel delegateSocketChannel = ((ObjectWrapper<SocketChannel>) socketChannel).getDelegate();
+                {
+                    SelectionKey sk = socketChannel.keyFor(selector);
+                    SelectionKey originalSk = delegateSocketChannel.keyFor(delegateSelector);
+
+                    assertNotNull(sk);
+                    assertNotNull(originalSk);
+                }
+
                 assertTrue(sniffySelectionKey.isValid());
                 assertTrue(delegate.isValid());
 
@@ -208,7 +225,49 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
 
                 // TODO: add more assertions
 
+                Set<SelectionKey> cancelledKeysInDelegate =
+                        ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
+                assertTrue(cancelledKeysInDelegate.contains(delegate));
 
+                selector.selectNow(); // trigger process deregister queue / AKA process cancelled keys
+
+                cancelledKeysInDelegate =
+                        ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
+
+                assertTrue(cancelledKeysInDelegate.isEmpty());
+
+                assertTrue(selector instanceof AbstractSelector);
+
+                Set<SelectionKey> cancelledKeysInSniffySelector =
+                        ReflectionUtil.getField(AbstractSelector.class, (AbstractSelector) selector, "cancelledKeys");
+
+                assertTrue(null == cancelledKeysInSniffySelector || cancelledKeysInSniffySelector.isEmpty());
+
+                // now test channel
+
+                {
+                    SelectionKey sk = socketChannel.keyFor(selector);
+                    SelectionKey originalSk = delegateSocketChannel.keyFor(delegateSelector);
+
+                    assertNull(sk);
+                    assertNull(originalSk);
+                }
+
+                // not-mandatory test for SniffySocketChannel not containing canceled key
+
+                {
+                    int keyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateSocketChannel, "keyCount");
+
+                    assertEquals(0, keyCount);
+                }
+
+                {
+                    int keyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, socketChannel, "keyCount");
+
+                    assertEquals(0, keyCount);
+                }
+
+                // TODO: test cancelledKeys
 
             }
 

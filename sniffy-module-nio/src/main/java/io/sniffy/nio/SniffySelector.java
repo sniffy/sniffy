@@ -204,21 +204,75 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         return wrapSelectedKeys(delegate.selectedKeys());
     }
 
-    private void copyKeysFromDelegate() {
-
-        // TODO: copy keys from delegate channels to sniffy channels
-        // TODO: consider doing in background?
-
-    }
-
     /**
      * This methods processes de-register queue (filled-in using selectionKey.cancel() method)
      * As a result it modifies the cancelledKeys field and also removes selectionKeys from associated channels
      */
     @Override
     public int selectNow() throws IOException {
-        return delegate.selectNow();
+        try {
+            return delegate.selectNow();
+        } finally {
+            // update keys on related channels
+            updateKeysFromDelegate();
+        }
     }
+
+    private void updateKeysFromDelegate() {
+        try {
+            for (Map.Entry<AbstractSelectableChannel, AbstractSelectableChannel> entry : channelToSniffyChannelMap.entrySet()) {
+                AbstractSelectableChannel delegateChannel = entry.getKey();
+                AbstractSelectableChannel sniffyChannel = entry.getValue();
+
+                int delegateCount = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "keyCount");
+                int sniffyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount");
+
+                if (delegateCount != sniffyCount) {
+
+                    Object delegateKeyLock  = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "keyLock");
+                    Object sniffyKeyLock  = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyLock");
+
+                    //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                    synchronized (sniffyKeyLock) {
+                        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                        synchronized (delegateKeyLock) {
+
+                            delegateCount = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "keyCount");
+                            sniffyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount");
+
+                            SelectionKey[] sniffyKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keys");
+                            SelectionKey[] delegateKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "keys");
+
+                            for (int i = 0; i < sniffyKeys.length; i++) {
+
+                                SelectionKey sk = sniffyKeys[i];
+
+                                if (null != sk && !sk.isValid()) {
+                                    sniffyCount--;
+                                    sniffyKeys[i] = null;
+                                    assert null == delegateKeys[i];
+                                }
+
+                            }
+
+                            assert sniffyCount == delegateCount; // TODO: do not asert always but only in sniffy own tests
+
+                            ReflectionUtil.setField(AbstractSelectableChannel.class, sniffyChannel, "keyCount", sniffyCount);
+
+                        }
+                    }
+
+                }
+
+            }
+        } catch (NoSuchFieldException e) {
+            // TODO: log exception
+        } catch (IllegalAccessException e) {
+            // TODO: log exception
+        }
+
+    }
+
 
     /**
      * This methods processes de-register queue (filled-in using selectionKey.cancel() method)
@@ -226,7 +280,12 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
      */
     @Override
     public int select(long timeout) throws IOException {
-        return delegate.select(timeout);
+        try {
+            return delegate.select(timeout);
+        } finally {
+            // update keys on related channels
+            updateKeysFromDelegate();
+        }
     }
 
     /**
@@ -235,7 +294,12 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
      */
     @Override
     public int select() throws IOException {
-        return delegate.select();
+        try {
+            return delegate.select();
+        } finally {
+            // update keys on related channels
+            updateKeysFromDelegate();
+        }
     }
 
     @Override
@@ -257,6 +321,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
             );
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
+        } finally {
+            updateKeysFromDelegate();
         }
     }
 
@@ -271,6 +337,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
             );
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
+        } finally {
+            updateKeysFromDelegate();
         }
     }
 
@@ -285,6 +353,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
             );
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
+        } finally {
+            updateKeysFromDelegate();
         }
     }
 
