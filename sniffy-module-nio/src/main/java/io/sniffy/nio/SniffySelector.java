@@ -19,6 +19,8 @@ import static io.sniffy.util.ReflectionUtil.*;
 
 /**
  * parent class AbstractSelector contains following properties:
+ * <pre>
+ * {@code
  * cancelledKeys - not used; it's filled in delegate selector only
  * interruptor - this is used in delegate only
  * provider - immutable, set in constructor
@@ -36,7 +38,8 @@ import static io.sniffy.util.ReflectionUtil.*;
  * void cancel(SelectionKey k)
  * public final boolean isOpen()
  *
- *
+ * }
+ * </pre>
  * @since 3.1.7
  */
 public class SniffySelector extends AbstractSelector implements ObjectWrapper<AbstractSelector> {
