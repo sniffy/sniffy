@@ -33,6 +33,7 @@ public class SniffySocketChannelTest extends BaseSocketTest {
 
         fieldsMap.remove("regLock");
         fieldsMap.remove("nonBlocking");
+        fieldsMap.remove("blocking"); // TODO: check if it's processed correctly; it's present5 on JDK 10
 
         fieldsMap.remove("closeLock");
         fieldsMap.remove("open");
