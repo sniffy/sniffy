@@ -6,7 +6,6 @@ import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.ReflectionUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.nio.ch.SelectorImpl;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -225,7 +224,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
 
                 Set<SelectionKey> cancelledKeysInDelegate =
                         ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
-                Collection<SelectionKey> cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl((SelectorImpl) delegateSelector);
+                Collection<SelectionKey> cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl(delegateSelector);
 
                 assertTrue(cancelledKeysInDelegate.contains(delegate) || cancelledKeysInDelegateImpl.contains(delegate));
 
@@ -233,7 +232,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
 
                 cancelledKeysInDelegate =
                         ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
-                cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl((SelectorImpl) delegateSelector);
+                cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl(delegateSelector);
 
                 assertTrue(cancelledKeysInDelegate.isEmpty());
                 assertTrue(cancelledKeysInDelegateImpl.isEmpty());
@@ -279,11 +278,13 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
         }
     }
 
-    private static Collection<SelectionKey> getCancelledKeysFromSelectorImpl(SelectorImpl delegateSelector) throws NoSuchFieldException, IllegalAccessException {
+    private static Collection<SelectionKey> getCancelledKeysFromSelectorImpl(AbstractSelector delegateSelector) throws NoSuchFieldException, IllegalAccessException {
         try {
-            return ReflectionUtil.getField(SelectorImpl.class, delegateSelector, "cancelledKeys");
+            return ReflectionUtil.getField("sun.nio.ch.SelectorImpl", delegateSelector, "cancelledKeys");
         } catch (NoSuchFieldException e) {
             return Collections.emptySet();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
