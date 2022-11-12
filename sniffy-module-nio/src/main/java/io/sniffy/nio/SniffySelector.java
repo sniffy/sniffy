@@ -12,15 +12,21 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
+import static io.sniffy.util.ReflectionUtil.*;
 
 /**
+ * parent class AbstractSelector contains following properties:
+ * cancelledKeys - TODO
+ * interruptor - TODO
+ * provider - immutable, set in constructor
+ * selectorOpen - called "closed" on some JDKs; default is true, set to false in final close method; handled inside implCloseSelector method
+ *
  * @since 3.1.7
  */
-public class SniffySelector extends AbstractSelector {
+public class SniffySelector extends AbstractSelector implements ObjectWrapper<AbstractSelector> {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelector.class);
 
@@ -55,12 +61,24 @@ public class SniffySelector extends AbstractSelector {
         return sniffySelectionKey;
     }
 
+    @Override
+    public AbstractSelector getDelegate() {
+        return delegate;
+    }
+
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void implCloseSelector() throws IOException {
         try {
             // TODO: document
-            setField(AbstractSelector.class, delegate, "closed", true);
+            if (!setField(AbstractSelector.class, delegate, "closed", true)) {
+                AtomicBoolean delegateSelectorOpen = getField(AbstractSelector.class, delegate, "selectorOpen");
+                if (null != delegateSelectorOpen) {
+                    delegateSelectorOpen.set(false);
+                } else {
+                    // TODO: log warning?
+                }
+            } // TODO: it's called 'selectorOpen' in Java 1.8
             invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
