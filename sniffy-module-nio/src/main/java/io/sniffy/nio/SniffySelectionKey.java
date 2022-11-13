@@ -1,6 +1,9 @@
 package io.sniffy.nio;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.StackTraceExtractor;
 
@@ -16,12 +19,14 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
 /**
  * properties:
  * attachment
- *
+ * methods:
  * attach() and attachment() are final
  *
  * @since 3.1.7
  */
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
+
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySelectionKey.class);
 
     private final WeakReference<SelectionKey> delegateReference;
     private final SniffySelector sniffySelector;
@@ -68,43 +73,78 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public void cancel() {
-        delegateReference.get().cancel();
-        if (sniffyChannel instanceof SelectableChannelWrapper) {
-            //noinspection unchecked
-            ((SelectableChannelWrapper<AbstractSelectableChannel>) sniffyChannel).keyCancelled();
-        }
-        // TODO: seems that code below is safe to be removed on Java 17; is it the same on older Java?
-        /*synchronized (this) {
-            delegate.cancel();
-            try {
-                // TODO: reevaluate copying other fields across NIO stack
-                ReflectionUtil.invokeMethod(AbstractSelector.class, sniffySelector, "cancel", SelectionKey.class, this);
-            } catch (Exception e) {
-                throw ExceptionUtil.processException(e);
+        SelectionKey delegateKey = delegateReference.get();
+        if (null == delegateKey) {
+            LOG.error("Trying to invoke SniffySelectionKey.cancel() on null delegate");
+            if (JVMUtil.isTestingSniffy()) {
+                throw new NullPointerException();
             }
-        }*/
+        } else {
+            delegateKey.cancel();
+            if (sniffyChannel instanceof SelectableChannelWrapper) {
+                //noinspection unchecked
+                ((SelectableChannelWrapper<AbstractSelectableChannel>) sniffyChannel).keyCancelled();
+            }
+            // TODO: seems that code below is safe to be removed on Java 17; is it the same on older Java?
+            /*synchronized (this) {
+                delegate.cancel();
+                try {
+                    // TODO: reevaluate copying other fields across NIO stack
+                    ReflectionUtil.invokeMethod(AbstractSelector.class, sniffySelector, "cancel", SelectionKey.class, this);
+                } catch (Exception e) {
+                    throw ExceptionUtil.processException(e);
+                }
+            }*/
+        }
     }
 
     @Override
     public int interestOps() {
-        return delegateReference.get().interestOps();
+        SelectionKey delegateKey = delegateReference.get();
+        if (null == delegateKey) {
+            LOG.error("Trying to invoke SniffySelectionKey.interestOps() on null delegate");
+            if (JVMUtil.isTestingSniffy()) {
+                throw new NullPointerException();
+            }
+            return 0;
+        } else {
+            return delegateKey.interestOps();
+        }
     }
 
     @Override
     public SelectionKey interestOps(int ops) {
-        delegateReference.get().interestOps(ops);
+        SelectionKey delegateKey = delegateReference.get();
+        if (null == delegateKey) {
+            LOG.error("Trying to invoke SniffySelectionKey.interestOps(int ops) on null delegate");
+            if (JVMUtil.isTestingSniffy()) {
+                throw new NullPointerException();
+            }
+        } else {
+            delegateKey.interestOps(ops);
+        }
         return this;
     }
 
     @Override
     public int readyOps() {
-        return delegateReference.get().readyOps();
+        SelectionKey delegateKey = delegateReference.get();
+        if (null == delegateKey) {
+            LOG.error("Trying to invoke SniffySelectionKey.readyOps() on null delegate");
+            if (JVMUtil.isTestingSniffy()) {
+                throw new NullPointerException();
+            }
+            return 0;
+        } else {
+            return delegateKey.readyOps();
+        }
     }
 
     // No @Override annotation here because this method is available in Java 11+ only
     //@Override
     @SuppressWarnings("Since15")
     public int interestOpsOr(int ops) {
+        // TODO: handle NPE
         try {
             return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
         } catch (Exception e) {
@@ -116,6 +156,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     //@Override
     @SuppressWarnings("Since15")
     public int interestOpsAnd(int ops) {
+        // TODO: handle NPE
         try {
             return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
         } catch (Exception e) {
