@@ -62,7 +62,8 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public boolean isValid() {
-        return delegateReference.get().isValid();
+        SelectionKey delegate = delegateReference.get();
+        return null != delegate && delegate.isValid();
     }
 
     @Override

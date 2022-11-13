@@ -100,11 +100,14 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         return delegate;
     }
 
+    /**
+     * close() method is final - hence we need to do similar work in implCloseSelector() method
+     * Specifically set the closed (or selectorOpen depending on JDK version) flag
+     */
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void implCloseSelector() throws IOException {
         try {
-            // TODO: document
             if (!setField(AbstractSelector.class, delegate, "closed", true)) {
                 AtomicBoolean delegateSelectorOpen = getField(AbstractSelector.class, delegate, "selectorOpen");
                 if (null != delegateSelectorOpen) {
