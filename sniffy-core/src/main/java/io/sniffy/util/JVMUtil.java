@@ -10,6 +10,13 @@ public class JVMUtil {
 
     private final static Map<String, Boolean> CLASS_CACHE = new ConcurrentHashMap<String, Boolean>();
 
+    /**
+     * @return true if code is running inside sniffy tests; return false when used in other projects
+     */
+    public static boolean isTestingSniffy() {
+        return null != System.getProperty("io.sniffy.test");
+    }
+
     public static boolean hasJUnitOnClassPath() {
         return hasClassAvailable("org.junit.Test");
     }

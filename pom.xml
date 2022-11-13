@@ -340,6 +340,9 @@
                         <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                         <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
                         <argLine>-Xmx1024m ${argLine}</argLine>
+                        <systemPropertyVariables>
+                            <io.sniffy.test>true</io.sniffy.test>
+                        </systemPropertyVariables>
                         <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                     </configuration>
                     <executions>
@@ -352,6 +355,9 @@
                             <configuration>
                                 <skip>false</skip>
                                 <junitArtifactName>dev:null</junitArtifactName>
+                                <systemPropertyVariables>
+                                    <io.sniffy.test>true</io.sniffy.test>
+                                </systemPropertyVariables>
                                 <includes>
                                     <include>%regex[.*TestNg.*]</include>
                                 </includes>
@@ -368,6 +374,9 @@
                             <configuration>
                                 <forkCount>1</forkCount>
                                 <skip>false</skip>
+                                <systemPropertyVariables>
+                                    <io.sniffy.test>true</io.sniffy.test>
+                                </systemPropertyVariables>
                                 <testNGArtifactName>dev:null</testNGArtifactName>
                                 <excludes>
                                     <exclude>%regex[.*TestNg.*]</exclude>
@@ -384,6 +393,7 @@
                                 <skip>${skip.java7.compatibility.tests}</skip>
                                 <systemPropertyVariables>
                                     <io.sniffy.forceJava7Compatibility>true</io.sniffy.forceJava7Compatibility>
+                                    <io.sniffy.test>true</io.sniffy.test>
                                 </systemPropertyVariables>
                                 <testNGArtifactName>dev:null</testNGArtifactName>
                                 <excludes>

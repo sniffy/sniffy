@@ -51,9 +51,11 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     private volatile Set<SelectionKey> keysWrapper = null;
     private volatile Set<SelectionKey> selectedKeysWrapper = null;
 
+    // TODO: check that values do not have strong references to keys
     private final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
             new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();
 
+    // TODO: clear sniffySelectionKeyCache when channel, key or selector are closed or cancelled
     private final Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
             new WeakHashMap<SelectionKey, SniffySelectionKey>();
 
@@ -61,14 +63,24 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         super(provider);
         this.delegate = delegate;
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
-        // install some assertions
-        if (JVMUtil.hasJUnitOnClassPath()) {
+        // install some assertions when testing Sniffy
+        if (JVMUtil.isTestingSniffy()) {
             ReflectionUtil.setField(AbstractSelector.class, this, "cancelledKeys", null); // trigger NPE in case it is used (it shouldn't be)
         }
     }
 
-    public SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffySocketChannel) {
-        SniffySelectionKey sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
+    private SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffySocketChannel) {
+
+        SniffySelectionKey sniffySelectionKey;
+
+        try {
+            sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
+        } catch (Exception e) {
+            synchronized (sniffySelectionKeyCache) {
+                sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
+            }
+        }
+
         if (null == sniffySelectionKey) {
             synchronized (sniffySelectionKeyCache) {
                 sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
@@ -78,7 +90,9 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 }
             }
         }
+
         return sniffySelectionKey;
+
     }
 
     @Override
@@ -96,9 +110,9 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 if (null != delegateSelectorOpen) {
                     delegateSelectorOpen.set(false);
                 } else {
-                    // TODO: log warning?
+                    LOG.trace("Neither AbstractSelector.closed nor AbstractSelector.selectorOpen fields found");
                 }
-            } // TODO: it's called 'selectorOpen' in Java 1.8
+            }
             invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);

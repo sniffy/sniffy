@@ -4,6 +4,7 @@ import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.StackTraceExtractor;
 
+import java.lang.ref.WeakReference;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -22,12 +23,12 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
  */
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
-    private final SelectionKey delegate;
+    private final WeakReference<SelectionKey> delegateReference;
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
 
     protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
-        this.delegate = delegate;
+        this.delegateReference = new WeakReference<SelectionKey>(delegate);
 
         if (null != delegate) {
             attach(delegate.attachment());
@@ -39,7 +40,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public SelectionKey getDelegate() {
-        return delegate;
+        return delegateReference.get();
     }
 
     @Override
@@ -61,12 +62,12 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public boolean isValid() {
-        return delegate.isValid();
+        return delegateReference.get().isValid();
     }
 
     @Override
     public void cancel() {
-        delegate.cancel();
+        delegateReference.get().cancel();
         if (sniffyChannel instanceof SelectableChannelWrapper) {
             //noinspection unchecked
             ((SelectableChannelWrapper<AbstractSelectableChannel>) sniffyChannel).keyCancelled();
@@ -85,18 +86,18 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public int interestOps() {
-        return delegate.interestOps();
+        return delegateReference.get().interestOps();
     }
 
     @Override
     public SelectionKey interestOps(int ops) {
-        delegate.interestOps(ops);
+        delegateReference.get().interestOps(ops);
         return this;
     }
 
     @Override
     public int readyOps() {
-        return delegate.readyOps();
+        return delegateReference.get().readyOps();
     }
 
     // No @Override annotation here because this method is available in Java 11+ only
@@ -104,7 +105,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     @SuppressWarnings("Since15")
     public int interestOpsOr(int ops) {
         try {
-            return invokeMethod(SelectionKey.class, delegate, "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
+            return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -115,7 +116,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     @SuppressWarnings("Since15")
     public int interestOpsAnd(int ops) {
         try {
-            return invokeMethod(SelectionKey.class, delegate, "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
+            return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
