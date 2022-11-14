@@ -118,6 +118,8 @@ public class SniffySelectorTest {
             }
         }
 
+        assertTrue(fieldsMap.containsKey("closed") || fieldsMap.containsKey("selectorOpen"));
+
         fieldsMap.remove("closed");
         fieldsMap.remove("selectorOpen");
 
