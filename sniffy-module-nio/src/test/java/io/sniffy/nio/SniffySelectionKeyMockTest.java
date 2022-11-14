@@ -6,7 +6,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 
@@ -49,7 +48,7 @@ public class SniffySelectionKeyMockTest {
     private SniffySelectionKey sniffySelectionKey;
 
     @Before
-    public void createSniffySocket() throws Exception {
+    public void createSniffySelectionKey() throws Exception {
         sniffySelectionKey = new SniffySelectionKey(delegate, sniffySelectorMock, sniffyAbstractSelectableChannelMock);
     }
 

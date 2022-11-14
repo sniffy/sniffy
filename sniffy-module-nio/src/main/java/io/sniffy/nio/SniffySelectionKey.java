@@ -31,13 +31,25 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelectionKey.class);
 
-    private final WeakReference<SelectionKey> delegateReference;
+    private final WeakReference<? extends SelectionKey> delegateReference;
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
 
     protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
         this.delegateReference = new WeakReference<SelectionKey>(delegate);
 
+        if (null != delegate) {
+            attach(delegate.attachment());
+        }
+
+        this.sniffySelector = sniffySelector;
+        this.sniffyChannel = sniffyChannel;
+    }
+
+    protected SniffySelectionKey(WeakReference<? extends SelectionKey> delegateReference, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
+        this.delegateReference = delegateReference;
+
+        SelectionKey delegate = delegateReference.get();
         if (null != delegate) {
             attach(delegate.attachment());
         }
