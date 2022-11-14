@@ -28,9 +28,6 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
 
     protected final SocketChannel delegate;
 
-    // TODO: based on this property, refresh keys from delegate after invoking select* calls
-    private volatile boolean hasCancelledKeys;
-
     protected CompatSniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider, delegate);
         this.delegate = delegate;
@@ -39,11 +36,6 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
     @Override
     public SocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public void keyCancelled() {
-        hasCancelledKeys = true;
     }
 
     @SuppressWarnings("Since15")

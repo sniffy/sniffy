@@ -30,9 +30,6 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
 
     private final ServerSocketChannel delegate;
 
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private volatile boolean hasCancelledKeys;
-
     public CompatSniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) {
         super(provider, delegate);
         this.delegate = delegate;
@@ -41,11 +38,6 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
     @Override
     public ServerSocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public void keyCancelled() {
-        hasCancelledKeys = true;
     }
 
     @Override
