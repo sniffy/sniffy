@@ -6,8 +6,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.io.IOException;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -21,13 +23,23 @@ public class SniffySelectorMockTest {
     @Mock
     private AbstractSelector abstractSelectorMock;
 
+    private AtomicInteger implCloseSelectorInvocationCounter;
     private AbstractSelector delegate;
 
     private SniffySelector sniffySelector;
 
     @Before
     public void createSniffySelector() throws Exception {
-        delegate = new SniffySelector(selectorProviderMock, abstractSelectorMock);
+        implCloseSelectorInvocationCounter = new AtomicInteger();
+        delegate = new SniffySelector(selectorProviderMock, abstractSelectorMock) {
+
+            @Override
+            protected void implCloseSelector() throws IOException {
+                implCloseSelectorInvocationCounter.incrementAndGet();
+                super.implCloseSelector();
+            }
+
+        };
         sniffySelector = new SniffySelector(selectorProviderMock, delegate);
     }
 
@@ -36,6 +48,7 @@ public class SniffySelectorMockTest {
         assertTrue(sniffySelector.isOpen());
         assertTrue(delegate.isOpen());
         sniffySelector.close();
+        assertEquals(1, implCloseSelectorInvocationCounter.get());
         assertFalse(sniffySelector.isOpen());
         assertFalse(delegate.isOpen());
     }

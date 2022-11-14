@@ -25,6 +25,16 @@ public class SniffySocketChannelTest extends BaseSocketTest {
             }
         }
 
+        assertTrue(fieldsMap.containsKey("keys"));
+        assertTrue(fieldsMap.containsKey("keyCount"));
+        assertTrue(fieldsMap.containsKey("keyLock"));
+
+        assertTrue(fieldsMap.containsKey("nonBlocking") || fieldsMap.containsKey("blocking"));
+        assertTrue(fieldsMap.containsKey("regLock"));
+
+        assertTrue(fieldsMap.containsKey("open") || fieldsMap.containsKey("closed"));
+        assertTrue(fieldsMap.containsKey("closeLock"));
+
         fieldsMap.remove("provider");
 
         fieldsMap.remove("keys");
