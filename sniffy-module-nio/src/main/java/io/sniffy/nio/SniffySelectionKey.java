@@ -12,18 +12,21 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
- * properties:
+ * Following properties and methods are local to Sniffy wrapper and do not affect delegate:
  * attachment
- * methods:
- * attach() and attachment() are final
+ * attach() and attachment()
+ * Following final methods might not be handled correctly:
+ * public final boolean AbstractSelectableChannel.isRegistered()
+ * Following final methods are taken care of using some hacks:
+ * public final SelectionKey AbstractSelectableChannel.register(Selector sel, int ops, Object att)
  *
  * @since 3.1.7
  */
+@SuppressWarnings("Convert2Diamond")
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelectionKey.class);
@@ -53,13 +56,24 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         return sniffyChannel;
     }
 
+    /**
+     * AbstractSelectableChannel holds a collection of keys which are added inside
+     * 'SelectionKey register(Selector sel, int ops, Object att)' method
+     * and removed using removeKey() method which is called only in delegate from following method
+     * 'void deregister(AbstractSelectionKey key)'
+     * Workaround is to copy the 'keys' array from delegate to sniffy wrapper after 'select*' operations are invoked
+     * deregister method is invoked from Selector implementation classes during select operations as well as in onclose
+     * 'void implCloseSelector() throws IOException'
+     *
+     * @return sniffy selector wrapper for given key or hardcoded NoOpSelector in case of invalid (or null) delegate key
+     */
     @Override
     public Selector selector() {
         if (!isValid() &&
                 StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey") &&
                 sniffyChannel instanceof SocketChannel
         ) {
-            return NoOpSelector.INSTANCE; // TODO: cleanup this and other collections
+            return NoOpSelector.INSTANCE;
         } else {
             return sniffySelector;
         }
@@ -81,20 +95,6 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             }
         } else {
             delegateKey.cancel();
-            if (sniffyChannel instanceof SelectableChannelWrapper) {
-                //noinspection unchecked
-                ((SelectableChannelWrapper<AbstractSelectableChannel>) sniffyChannel).keyCancelled();
-            }
-            // TODO: seems that code below is safe to be removed on Java 17; is it the same on older Java?
-            /*synchronized (this) {
-                delegate.cancel();
-                try {
-                    // TODO: reevaluate copying other fields across NIO stack
-                    ReflectionUtil.invokeMethod(AbstractSelector.class, sniffySelector, "cancel", SelectionKey.class, this);
-                } catch (Exception e) {
-                    throw ExceptionUtil.processException(e);
-                }
-            }*/
         }
     }
 
@@ -142,25 +142,41 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     // No @Override annotation here because this method is available in Java 11+ only
     //@Override
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression", "unused"})
     public int interestOpsOr(int ops) {
-        // TODO: handle NPE
-        try {
-            return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+        SelectionKey delegateKey = delegateReference.get();
+        if (null == delegateKey) {
+            LOG.error("Trying to invoke SniffySelectionKey.interestOpsOr(int ops) on null delegate");
+            if (JVMUtil.isTestingSniffy()) {
+                throw new NullPointerException();
+            }
+            return 0;
+        } else {
+            try {
+                return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
+            } catch (Exception e) {
+                throw ExceptionUtil.processException(e);
+            }
         }
     }
 
     // No @Override annotation here because this method is available in Java 11+ only
     //@Override
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression", "unused"})
     public int interestOpsAnd(int ops) {
-        // TODO: handle NPE
-        try {
-            return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+        SelectionKey delegateKey = delegateReference.get();
+        if (null == delegateKey) {
+            LOG.error("Trying to invoke SniffySelectionKey.interestOpsAnd(int ops) on null delegate");
+            if (JVMUtil.isTestingSniffy()) {
+                throw new NullPointerException();
+            }
+            return 0;
+        } else {
+            try {
+                return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
+            } catch (Exception e) {
+                throw ExceptionUtil.processException(e);
+            }
         }
     }
 

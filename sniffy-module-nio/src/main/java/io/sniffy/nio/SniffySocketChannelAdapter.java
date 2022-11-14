@@ -31,9 +31,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     private final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
 
-    // TODO: based on this property, refresh keys from delegate after invoking select* calls
-    private volatile boolean hasCancelledKeys;
-
     protected SniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider);
         this.delegate = delegate;
@@ -43,11 +40,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @Override
     public SocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public void keyCancelled() {
-        hasCancelledKeys = true;
     }
 
     @SuppressWarnings("Since15")

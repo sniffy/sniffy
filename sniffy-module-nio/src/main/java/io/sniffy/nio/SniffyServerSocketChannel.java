@@ -32,9 +32,6 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     private final ServerSocketChannel delegate;
     private final SelChImpl selChImplDelegate;
 
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private volatile boolean hasCancelledKeys;
-
     public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) {
         super(provider);
         this.delegate = delegate;
@@ -44,11 +41,6 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     @Override
     public ServerSocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public void keyCancelled() {
-        hasCancelledKeys = true;
     }
 
     @Override

@@ -117,6 +117,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 }
             }
             invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
+            updateKeysFromDelegate();
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -240,8 +241,6 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
     private void updateKeysFromDelegate() {
 
-        //if (true) return;
-
         try {
             for (Map.Entry<AbstractSelectableChannel, AbstractSelectableChannel> entry : channelToSniffyChannelMap.entrySet()) {
                 AbstractSelectableChannel delegateChannel = entry.getKey();
@@ -278,7 +277,13 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
                             }
 
-                            assert sniffyCount == delegateCount; // TODO: do not asert always but only in sniffy own tests
+                            if (sniffyCount != delegateCount) {
+                                if (JVMUtil.isTestingSniffy()) {
+                                    throw new IllegalStateException("Count of keys in Sniffy and delegate channel are different");
+                                } else {
+                                    LOG.error("Count of keys in Sniffy and delegate channel are different");
+                                }
+                            }
 
                             ReflectionUtil.setField(AbstractSelectableChannel.class, sniffyChannel, "keyCount", sniffyCount);
 
