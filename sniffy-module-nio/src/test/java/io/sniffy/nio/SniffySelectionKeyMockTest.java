@@ -6,6 +6,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 
@@ -16,8 +17,28 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class SniffySelectionKeyMockTest {
 
+    public static abstract class Java11SelectionKey extends SelectionKey {
+
+        public int interestOpsOr(int ops) {
+            synchronized (this) {
+                int oldVal = interestOps();
+                interestOps(oldVal | ops);
+                return oldVal;
+            }
+        }
+
+        public int interestOpsAnd(int ops) {
+            synchronized (this) {
+                int oldVal = interestOps();
+                interestOps(oldVal & ops);
+                return oldVal;
+            }
+        }
+
+    }
+
     @Mock
-    private SelectionKey delegate;
+    private Java11SelectionKey delegate;
 
     @Mock
     private SniffySelector sniffySelectorMock;
@@ -86,7 +107,22 @@ public class SniffySelectionKeyMockTest {
         verifyNoMoreInteractions(delegate);
     }
 
-    // TODO: test Java 11+ method
+    @Test
+    public void testInterestOpsAnd() {
+        doReturn(SelectionKey.OP_CONNECT).when(delegate).interestOpsAnd(eq(SelectionKey.OP_READ));
+        assertEquals(SelectionKey.OP_CONNECT, sniffySelectionKey.interestOpsAnd(SelectionKey.OP_READ));
+        verify(delegate).interestOpsAnd(SelectionKey.OP_READ);
+        verifyNoMoreInteractions(delegate);
+    }
+
+    @Test
+    public void testInterestOpsOr() {
+        doReturn(SelectionKey.OP_CONNECT).when(delegate).interestOpsOr(eq(SelectionKey.OP_READ));
+        assertEquals(SelectionKey.OP_CONNECT, sniffySelectionKey.interestOpsOr(SelectionKey.OP_READ));
+        verify(delegate).interestOpsOr(SelectionKey.OP_READ);
+        verifyNoMoreInteractions(delegate);
+    }
+
     // TODO: test weak reference handling
 
 }
