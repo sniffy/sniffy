@@ -28,16 +28,14 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
 
         private final String methodName;
         private final Object[] parameterTypes;
-        private final Object[] exceptionTypes;
 
         public MethodDescriptor(Method method) {
-            this(method.getName(), method.getParameterTypes(), method.getExceptionTypes());
+            this(method.getName(), method.getParameterTypes());
         }
 
-        public MethodDescriptor(String methodName, Object[] parameterTypes, Object[] exceptionTypes) {
+        public MethodDescriptor(String methodName, Object[] parameterTypes) {
             this.methodName = methodName;
             this.parameterTypes = parameterTypes;
-            this.exceptionTypes = exceptionTypes;
         }
 
         @Override
@@ -49,16 +47,13 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
 
             if (!methodName.equals(that.methodName)) return false;
             // Probably incorrect - comparing Object[] arrays with Arrays.equals
-            if (!Arrays.equals(parameterTypes, that.parameterTypes)) return false;
-            // Probably incorrect - comparing Object[] arrays with Arrays.equals
-            return Arrays.equals(exceptionTypes, that.exceptionTypes);
+            return Arrays.equals(parameterTypes, that.parameterTypes);
         }
 
         @Override
         public int hashCode() {
             int result = methodName.hashCode();
             result = 31 * result + Arrays.hashCode(parameterTypes);
-            result = 31 * result + Arrays.hashCode(exceptionTypes);
             return result;
         }
 
@@ -67,7 +62,6 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
             return "MethodDescriptor{" +
                     "methodName='" + methodName + '\'' +
                     ", parameterTypes=" + Arrays.toString(parameterTypes) +
-                    ", exceptionTypes=" + Arrays.toString(exceptionTypes) +
                     '}';
         }
     }
@@ -76,25 +70,30 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
     public void testAllAvailableMethodsAreOverridden() {
 
         Set<MethodDescriptor> overrideableMethods = new HashSet<MethodDescriptor>();
+        Set<MethodDescriptor> nonOverrideableMethods = new HashSet<MethodDescriptor>();
 
         List<Class<?>> classesToProcess = new LinkedList<Class<?>>();
         classesToProcess.add(SelectionKey.class);
 
         while (!classesToProcess.isEmpty()) {
             Class<?> clazz = classesToProcess.remove(0);
-            if (clazz.getSuperclass() != Object.class) {
+            if (clazz.getSuperclass() != Object.class && !clazz.isInterface()) {
                 classesToProcess.add(clazz.getSuperclass());
             }
             classesToProcess.addAll(Arrays.asList(clazz.getInterfaces()));
 
             for (Method method : clazz.getDeclaredMethods()) {
                 if (
-                        !Modifier.isFinal(method.getModifiers()) &&
                         !Modifier.isStatic(method.getModifiers()) &&
-                        !Modifier.isPrivate(method.getModifiers()) &&
+                        (Modifier.isProtected(method.getModifiers()) ||
+                                Modifier.isPublic(method.getModifiers())) &&
                                 !method.isSynthetic()
                 ) {
-                    overrideableMethods.add(new MethodDescriptor(method));
+                    if (Modifier.isFinal(method.getModifiers())) {
+                        nonOverrideableMethods.add(new MethodDescriptor(method));
+                    } else {
+                        overrideableMethods.add(new MethodDescriptor(method));
+                    }
                 }
             }
         }

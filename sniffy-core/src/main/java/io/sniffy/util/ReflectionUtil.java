@@ -593,7 +593,7 @@ public class ReflectionUtil {
 
     @SuppressWarnings("unchecked")
     public static <R, T, P1> R invokeMethod(
-            Class<T> clazz, T instance,
+            Class<? extends T> clazz, T instance,
             String methodName,
             Class<P1> argument1Type, P1 argument1,
             @SuppressWarnings("unused") Class<R> returnClass

@@ -153,7 +153,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             return 0;
         } else {
             try {
-                return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
+                return invokeMethod(delegateKey.getClass(), delegateReference.get(), "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
@@ -173,7 +173,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             return 0;
         } else {
             try {
-                return invokeMethod(SelectionKey.class, delegateReference.get(), "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
+                return invokeMethod(delegateKey.getClass(), delegateReference.get(), "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
