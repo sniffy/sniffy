@@ -7,7 +7,6 @@ import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.StackTraceExtractor;
 
-import java.lang.ref.WeakReference;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -26,41 +25,32 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
  *
  * @since 3.1.7
  */
-@SuppressWarnings("Convert2Diamond")
+@SuppressWarnings({"Convert2Diamond", "RedundantSuppression"})
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
-
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelectionKey.class);
 
-    private final WeakReference<? extends SelectionKey> delegateReference;
+    private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
 
     protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
-        this.delegateReference = new WeakReference<SelectionKey>(delegate);
+        this.delegate = delegate;
 
-        if (null != delegate) {
+        if (null == delegate) {
+            LOG.error("Trying to create SniffySelectionKey with null delegate");
+            if (JVMUtil.isTestingSniffy()) {
+                throw new NullPointerException();
+            }
+        } else {
             attach(delegate.attachment());
         }
 
         this.sniffySelector = sniffySelector;
         this.sniffyChannel = sniffyChannel;
     }
-
-    protected SniffySelectionKey(WeakReference<? extends SelectionKey> delegateReference, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
-        this.delegateReference = delegateReference;
-
-        SelectionKey delegate = delegateReference.get();
-        if (null != delegate) {
-            attach(delegate.attachment());
-        }
-
-        this.sniffySelector = sniffySelector;
-        this.sniffyChannel = sniffyChannel;
-    }
-
     @Override
     public SelectionKey getDelegate() {
-        return delegateReference.get();
+        return delegate;
     }
 
     @Override
@@ -93,82 +83,37 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public boolean isValid() {
-        SelectionKey delegate = delegateReference.get();
-        return null != delegate && delegate.isValid();
+        return delegate.isValid();
     }
 
     @Override
     public void cancel() {
-        SelectionKey delegateKey = delegateReference.get();
-        if (null == delegateKey) {
-            LOG.error("Trying to invoke SniffySelectionKey.cancel() on null delegate");
-            if (JVMUtil.isTestingSniffy()) {
-                throw new NullPointerException();
-            }
-        } else {
-            delegateKey.cancel();
-        }
+        delegate.cancel();
     }
 
     @Override
     public int interestOps() {
-        SelectionKey delegateKey = delegateReference.get();
-        if (null == delegateKey) {
-            LOG.error("Trying to invoke SniffySelectionKey.interestOps() on null delegate");
-            if (JVMUtil.isTestingSniffy()) {
-                throw new NullPointerException();
-            }
-            return 0;
-        } else {
-            return delegateKey.interestOps();
-        }
+        return delegate.interestOps();
     }
 
     @Override
     public SelectionKey interestOps(int ops) {
-        SelectionKey delegateKey = delegateReference.get();
-        if (null == delegateKey) {
-            LOG.error("Trying to invoke SniffySelectionKey.interestOps(int ops) on null delegate");
-            if (JVMUtil.isTestingSniffy()) {
-                throw new NullPointerException();
-            }
-        } else {
-            delegateKey.interestOps(ops);
-        }
-        return this;
+        return delegate.interestOps(ops);
     }
 
     @Override
     public int readyOps() {
-        SelectionKey delegateKey = delegateReference.get();
-        if (null == delegateKey) {
-            LOG.error("Trying to invoke SniffySelectionKey.readyOps() on null delegate");
-            if (JVMUtil.isTestingSniffy()) {
-                throw new NullPointerException();
-            }
-            return 0;
-        } else {
-            return delegateKey.readyOps();
-        }
+        return delegate.readyOps();
     }
 
     // No @Override annotation here because this method is available in Java 11+ only
     //@Override
     @SuppressWarnings({"Since15", "RedundantSuppression", "unused"})
     public int interestOpsOr(int ops) {
-        SelectionKey delegateKey = delegateReference.get();
-        if (null == delegateKey) {
-            LOG.error("Trying to invoke SniffySelectionKey.interestOpsOr(int ops) on null delegate");
-            if (JVMUtil.isTestingSniffy()) {
-                throw new NullPointerException();
-            }
-            return 0;
-        } else {
-            try {
-                return invokeMethod(delegateKey.getClass(), delegateReference.get(), "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
-            } catch (Exception e) {
-                throw ExceptionUtil.processException(e);
-            }
+        try {
+            return invokeMethod(delegate.getClass(), delegate, "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
+        } catch (Exception e) {
+            throw ExceptionUtil.processException(e);
         }
     }
 
@@ -176,19 +121,10 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     //@Override
     @SuppressWarnings({"Since15", "RedundantSuppression", "unused"})
     public int interestOpsAnd(int ops) {
-        SelectionKey delegateKey = delegateReference.get();
-        if (null == delegateKey) {
-            LOG.error("Trying to invoke SniffySelectionKey.interestOpsAnd(int ops) on null delegate");
-            if (JVMUtil.isTestingSniffy()) {
-                throw new NullPointerException();
-            }
-            return 0;
-        } else {
-            try {
-                return invokeMethod(delegateKey.getClass(), delegateReference.get(), "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
-            } catch (Exception e) {
-                throw ExceptionUtil.processException(e);
-            }
+        try {
+            return invokeMethod(delegate.getClass(), delegate, "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
+        } catch (Exception e) {
+            throw ExceptionUtil.processException(e);
         }
     }
 

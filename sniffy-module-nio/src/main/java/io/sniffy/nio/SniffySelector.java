@@ -11,7 +11,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.*;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -42,6 +42,7 @@ import static io.sniffy.util.ReflectionUtil.*;
  * </pre>
  * @since 3.1.7
  */
+@SuppressWarnings({"Convert2Diamond", "Convert2Lambda", "TryWithIdenticalCatches"})
 public class SniffySelector extends AbstractSelector implements ObjectWrapper<AbstractSelector> {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelector.class);
@@ -52,12 +53,22 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     private volatile Set<SelectionKey> selectedKeysWrapper = null;
 
     // TODO: check that values do not have strong references to keys
-    protected final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
-            new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();
-
     // TODO: clear sniffySelectionKeyCache when channel, key or selector are closed or cancelled
-    protected final Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
-            new WeakHashMap<SelectionKey, SniffySelectionKey>();
+
+    // map <SniffySelectionKey
+
+
+    /*protected final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
+            new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();*/
+
+    /*protected final Map<SniffySelectionKey, SelectionKey> sniffySelectionKeyCache =
+            new WeakHashMap<SniffySelectionKey, SelectionKey>();*/
+
+    protected final WrapperWeakHashMap<SelectableChannel, SniffySocketChannel> sniffyChannelCache =
+            new WrapperWeakHashMap<SelectableChannel, SniffySocketChannel>();
+
+    protected final WrapperWeakHashMap<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
+            new WrapperWeakHashMap<SelectionKey, SniffySelectionKey>();
 
     public SniffySelector(SelectorProvider provider, AbstractSelector delegate) {
         super(provider);
@@ -70,29 +81,14 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     }
 
     private SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffySocketChannel) {
-
-        SniffySelectionKey sniffySelectionKey;
-
-        try {
-            sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
-        } catch (Exception e) {
-            synchronized (sniffySelectionKeyCache) {
-                sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
-            }
-        }
-
-        if (null == sniffySelectionKey) {
-            synchronized (sniffySelectionKeyCache) {
-                sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
-                if (null == sniffySelectionKey) {
-                    sniffySelectionKey = new SniffySelectionKey(delegate, sniffySelector, sniffySocketChannel);
-                    sniffySelectionKeyCache.put(delegate, sniffySelectionKey);
+        return sniffySelectionKeyCache.getOrWrap(
+                delegate, new WrapperFactory<SelectionKey, SniffySelectionKey>() {
+                    @Override
+                    public SniffySelectionKey wrap(SelectionKey delegate) {
+                        return new SniffySelectionKey(delegate, sniffySelector, sniffySocketChannel);
+                    }
                 }
-            }
-        }
-
-        return sniffySelectionKey;
-
+        );
     }
 
     @Override
@@ -149,8 +145,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         return new SetWrapper<SniffySelectionKey, SelectionKey>(delegates, new WrapperFactory<SelectionKey, SniffySelectionKey>() {
             @Override
             public SniffySelectionKey wrap(SelectionKey delegate) {
-                //noinspection SuspiciousMethodCalls
-                return SniffySelector.this.wrap(delegate, SniffySelector.this, channelToSniffyChannelMap.get(delegate.channel()));
+                return SniffySelector.this.wrap(delegate, SniffySelector.this, sniffyChannelCache.get(delegate.channel()));
             }
         });
     }
@@ -181,34 +176,41 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
      */
     @Override
     // TODO: document
-    protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att) {
+    protected SelectionKey register(AbstractSelectableChannel sniffyChannel, int ops, Object att) {
         try {
 
-            AbstractSelectableChannel chDelegate = ch;
+            AbstractSelectableChannel delegateChannel = null;
 
-            if (ch instanceof SelectableChannelWrapper) {
-                chDelegate = ((SelectableChannelWrapper<?>) ch).getDelegate();
-                channelToSniffyChannelMap.put(chDelegate, ch);
+            if (sniffyChannel instanceof SniffySocketChannel) {
+                sniffyChannelCache.put((SniffySocketChannel) sniffyChannel);
+                delegateChannel = ((SniffySocketChannel) sniffyChannel).getDelegate();
+            } else {
+                if (JVMUtil.isTestingSniffy()) {
+                    //noinspection ConstantConditions
+                    sniffyChannelCache.put((SniffySocketChannel) sniffyChannel);
+                } else {
+                    LOG.error("Suspicious channel " + sniffyChannel + " is passed to SniffySelector.register() method");
+                }
             }
 
             SelectionKey selectionKeyDelegate = invokeMethod(AbstractSelector.class, delegate, "register",
-                    AbstractSelectableChannel.class, chDelegate,
+                    AbstractSelectableChannel.class, delegateChannel,
                     Integer.TYPE, ops,
                     Object.class, att,
                     SelectionKey.class
             );
 
-            Object regLock = ReflectionUtil.getField(AbstractSelectableChannel.class, chDelegate, "regLock");
-            Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, chDelegate, "keyLock");
+            Object regLock = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "regLock");
+            Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyLock");
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (regLock) {
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (keyLock) {
-                    invokeMethod(AbstractSelectableChannel.class, chDelegate, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
+                    invokeMethod(AbstractSelectableChannel.class, delegateChannel, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
                 }
             }
 
-            return wrap(selectionKeyDelegate, this, ch);
+            return wrap(selectionKeyDelegate, this, sniffyChannel);
 
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
@@ -242,9 +244,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     private void updateKeysFromDelegate() {
 
         try {
-            for (Map.Entry<AbstractSelectableChannel, AbstractSelectableChannel> entry : channelToSniffyChannelMap.entrySet()) {
-                AbstractSelectableChannel delegateChannel = entry.getKey();
-                AbstractSelectableChannel sniffyChannel = entry.getValue();
+            for (SniffySocketChannel sniffyChannel : sniffyChannelCache.values()) {
+                AbstractSelectableChannel delegateChannel = sniffyChannel.getDelegate();
 
                 int delegateCount = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "keyCount");
                 int sniffyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount");
@@ -294,11 +295,9 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
             }
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-            // TODO: log exception
+            LOG.error(e);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
-            // TODO: log exception
+            LOG.error(e);
         }
 
     }
@@ -342,7 +341,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings({"RedundantThrows", "Since15"})
+    @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression"})
     public int select(Consumer<SelectionKey> action, long timeout) throws IOException {
         try {
             return invokeMethod(Selector.class, delegate, "select",
@@ -359,7 +358,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings({"RedundantThrows", "Since15"})
+    @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression"})
     public int select(Consumer<SelectionKey> action) throws IOException {
         try {
             return invokeMethod(Selector.class, delegate, "select",
@@ -375,7 +374,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings({"RedundantThrows", "Since15"})
+    @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression"})
     public int selectNow(Consumer<SelectionKey> action) throws IOException {
         try {
             return invokeMethod(Selector.class, delegate, "selectNow",

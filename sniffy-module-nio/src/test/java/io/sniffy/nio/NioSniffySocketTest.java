@@ -4,6 +4,7 @@ import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SnifferSocketImplFactory;
+import io.sniffy.util.JVMUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,8 +26,6 @@ import static org.junit.Assert.*;
 
 public class NioSniffySocketTest extends BaseSocketTest {
 
-    public Map<String, Object> mapForGC = new HashMap<String,Object>();
-
     @Test
     public void testComplexLogic() throws Exception {
 
@@ -37,17 +36,10 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SniffySelectorProvider.uninstall();
         SniffySelectorProvider.install();
 
-        try {
-            Selector selector = Selector.open();
-
-            SniffySocketChannel sniffySocketChannel1 = (SniffySocketChannel) connectToLocalHost(selector);
-            SniffySocketChannel sniffySocketChannel2 = (SniffySocketChannel) connectToLocalHost(selector);
+        try (Selector selector = Selector.open()) {
 
             assertTrue(selector instanceof SniffySelector);
             SniffySelector sniffySelector = (SniffySelector) selector;
-
-            SocketChannel delegateSocketChannel1 = sniffySocketChannel1.getDelegate();
-            SocketChannel delegateSocketChannel2 = sniffySocketChannel2.getDelegate();
 
             AbstractSelector delegateSelector = sniffySelector.getDelegate();
 
@@ -60,36 +52,10 @@ public class NioSniffySocketTest extends BaseSocketTest {
             assertEquals(0, sniffySelector.keys().size());
             assertEquals(0, sniffySelector.selectedKeys().size());
 
-            Runtime runtime = Runtime.getRuntime();
-
-            int attempts = 0;
-            long totalMemory;
-
-            for (int j = 1; j < 10; j++) {
-                for (int i = 0; i < 1000; i++) {
-
-                    attempts++;
-
-                    totalMemory = runtime.totalMemory();
-
-                    System.gc();
-                    System.gc();
-
-                    assertEquals(0, selector.selectNow());
-
-                    if (runtime.totalMemory() != totalMemory) {
-                        break;
-                    } else {
-                        mapForGC.put("io.sniffy.testing.dummy." + i, new byte[1024 * 1024]);
-                        if (i > j) {
-                            mapForGC.remove("io.sniffy.testing.dummy." + (i - j));
-                        }
-                    }
-                }
-            }
+            int attempts = JVMUtil.invokeGarbageCollector();
 
             assertEquals("Failed to clear WeakHashMap in SniffySelector after " + attempts + " attempts", 0, sniffySelector.sniffySelectionKeyCache.size());
-            assertEquals(0, sniffySelector.channelToSniffyChannelMap.size());
+            assertEquals("Failed to clear WeakHashMap in SniffySelector after " + attempts + " attempts", 0, sniffySelector.sniffyChannelCache.size());
 
         } finally {
             SnifferSocketImplFactory.uninstall();
