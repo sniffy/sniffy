@@ -80,7 +80,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         }
     }
 
-    private SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffySocketChannel) {
+    private SniffySelectionKey wrap(SelectionKey delegate, final SniffySelector sniffySelector, final SelectableChannel sniffySocketChannel) {
         return sniffySelectionKeyCache.getOrWrap(
                 delegate, new WrapperFactory<SelectionKey, SniffySelectionKey>() {
                     @Override
@@ -374,7 +374,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression"})
+    @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression", "unused"})
     public int selectNow(Consumer<SelectionKey> action) throws IOException {
         try {
             return invokeMethod(Selector.class, delegate, "selectNow",
