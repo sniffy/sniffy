@@ -52,11 +52,11 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     private volatile Set<SelectionKey> selectedKeysWrapper = null;
 
     // TODO: check that values do not have strong references to keys
-    private final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
+    protected final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
             new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();
 
     // TODO: clear sniffySelectionKeyCache when channel, key or selector are closed or cancelled
-    private final Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
+    protected final Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
             new WeakHashMap<SelectionKey, SniffySelectionKey>();
 
     public SniffySelector(SelectorProvider provider, AbstractSelector delegate) {
@@ -345,7 +345,6 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     @SuppressWarnings({"RedundantThrows", "Since15"})
     public int select(Consumer<SelectionKey> action, long timeout) throws IOException {
         try {
-            // TODO: call delegate.processDeregisterQueue and update selection keys from delegate
             return invokeMethod(Selector.class, delegate, "select",
                     Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Long.TYPE, timeout,
