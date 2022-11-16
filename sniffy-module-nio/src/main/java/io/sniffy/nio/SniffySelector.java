@@ -55,17 +55,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     // TODO: check that values do not have strong references to keys
     // TODO: clear sniffySelectionKeyCache when channel, key or selector are closed or cancelled
 
-    // map <SniffySelectionKey
-
-
-    /*protected final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
-            new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();*/
-
-    /*protected final Map<SniffySelectionKey, SelectionKey> sniffySelectionKeyCache =
-            new WeakHashMap<SniffySelectionKey, SelectionKey>();*/
-
-    protected final WrapperWeakHashMap<SelectableChannel, SniffySocketChannel> sniffyChannelCache =
-            new WrapperWeakHashMap<SelectableChannel, SniffySocketChannel>();
+    protected final WrapperWeakHashMap<SelectableChannel, SelectableChannelWrapper<? extends AbstractSelectableChannel>> sniffyChannelCache =
+            new WrapperWeakHashMap<SelectableChannel, SelectableChannelWrapper<? extends AbstractSelectableChannel>>();
 
     protected final WrapperWeakHashMap<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
             new WrapperWeakHashMap<SelectionKey, SniffySelectionKey>();
@@ -145,7 +136,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         return new SetWrapper<SniffySelectionKey, SelectionKey>(delegates, new WrapperFactory<SelectionKey, SniffySelectionKey>() {
             @Override
             public SniffySelectionKey wrap(SelectionKey delegate) {
-                return SniffySelector.this.wrap(delegate, SniffySelector.this, sniffyChannelCache.get(delegate.channel()));
+                SelectableChannelWrapper<? extends AbstractSelectableChannel> sniffySocketChannel = sniffyChannelCache.get(delegate.channel());
+                return SniffySelector.this.wrap(delegate, SniffySelector.this, null == sniffySocketChannel ? null : sniffySocketChannel.asSelectableChannel());
             }
         });
     }
@@ -181,13 +173,13 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
             AbstractSelectableChannel delegateChannel = null;
 
-            if (sniffyChannel instanceof SniffySocketChannel) {
-                sniffyChannelCache.put((SniffySocketChannel) sniffyChannel);
-                delegateChannel = ((SniffySocketChannel) sniffyChannel).getDelegate();
+            if (sniffyChannel instanceof SelectableChannelWrapper) {
+                sniffyChannelCache.put((SelectableChannelWrapper<? extends AbstractSelectableChannel>) sniffyChannel);
+                delegateChannel = ((SelectableChannelWrapper<? extends AbstractSelectableChannel>) sniffyChannel).getDelegate();
             } else {
                 if (JVMUtil.isTestingSniffy()) {
                     //noinspection ConstantConditions
-                    sniffyChannelCache.put((SniffySocketChannel) sniffyChannel);
+                    sniffyChannelCache.put((SelectableChannelWrapper<? extends AbstractSelectableChannel>) sniffyChannel);
                 } else {
                     LOG.error("Suspicious channel " + sniffyChannel + " is passed to SniffySelector.register() method");
                 }
@@ -244,8 +236,9 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     private void updateKeysFromDelegate() {
 
         try {
-            for (SniffySocketChannel sniffyChannel : sniffyChannelCache.values()) {
-                AbstractSelectableChannel delegateChannel = sniffyChannel.getDelegate();
+            for (SelectableChannelWrapper sniffyChannelWrapper : sniffyChannelCache.values()) {
+                AbstractSelectableChannel delegateChannel = sniffyChannelWrapper.getDelegate();
+                AbstractSelectableChannel sniffyChannel = sniffyChannelWrapper.asSelectableChannel();
 
                 int delegateCount = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "keyCount");
                 int sniffyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount");

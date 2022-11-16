@@ -38,6 +38,11 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
         return delegate;
     }
 
+    @Override
+    public AbstractSelectableChannel asSelectableChannel() {
+        return this;
+    }
+
     @SuppressWarnings("Since15")
     @Override
     @IgnoreJRERequirement

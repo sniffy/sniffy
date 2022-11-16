@@ -1,6 +1,9 @@
 package io.sniffy.util;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,28 +20,35 @@ public class JVMUtil {
 
     protected static Map<String, Object> MAP_FOR_GC = new HashMap<String,Object>();
 
+    private static int getGarbageCollectionCount() {
+        List<GarbageCollectorMXBean> garbageCollectorMXBeans = ManagementFactory.getGarbageCollectorMXBeans();
+        int count = 0;
+        for (GarbageCollectorMXBean garbageCollectorMXBean : garbageCollectorMXBeans) {
+            count += garbageCollectorMXBean.getCollectionCount();
+        }
+        return count;
+    }
+
     public static int invokeGarbageCollector() {
 
         int attempts = 0;
 
         try {
-            Runtime runtime = Runtime.getRuntime();
 
-            long totalMemory;
+            int numGCs;
 
-            outer:
-            for (int j = 1; j < 10; j++) {
-                for (int i = 0; i < 1000; i++) {
+            for (int j = 1; j < 50; j++) {
+                for (int i = 0; i < 100; i++) {
 
                     attempts++;
 
-                    totalMemory = runtime.totalMemory();
+                    numGCs = getGarbageCollectionCount();
 
                     System.gc();
                     System.gc();
 
-                    if (runtime.totalMemory() != totalMemory) {
-                        break outer;
+                    if (numGCs != getGarbageCollectionCount()) {
+                        return attempts;
                     } else {
                         MAP_FOR_GC.put("io.sniffy.testing.dummy." + i, new byte[1024 * 1024]);
                         if (i > j) {

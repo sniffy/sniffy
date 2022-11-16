@@ -44,6 +44,11 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     }
 
     @Override
+    public AbstractSelectableChannel asSelectableChannel() {
+        return this;
+    }
+
+    @Override
     @IgnoreJRERequirement
     public ServerSocketChannel bind(SocketAddress local, int backlog) throws IOException {
         delegate.bind(local, backlog);
