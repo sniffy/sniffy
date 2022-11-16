@@ -25,6 +25,8 @@ import static org.junit.Assert.*;
 
 public class NioSniffySocketTest extends BaseSocketTest {
 
+    public Map<String, Object> mapForGC = new HashMap<String,Object>();
+
     @Test
     public void testComplexLogic() throws Exception {
 
@@ -58,34 +60,35 @@ public class NioSniffySocketTest extends BaseSocketTest {
             assertEquals(0, sniffySelector.keys().size());
             assertEquals(0, sniffySelector.selectedKeys().size());
 
-            //assertEquals(0, selector.selectNow());
-
             Runtime runtime = Runtime.getRuntime();
 
-            Map<String, Object> mapForGC = new HashMap<String,Object>();
-
+            int attempts = 0;
             long totalMemory;
 
-            for (int i = 0; i < 1000; i++) {
+            for (int j = 1; j < 100; j++) {
+                for (int i = 0; i < 1000; i++) {
 
-                totalMemory = runtime.totalMemory();
+                    attempts++;
 
-                System.gc();
-                System.gc();
+                    totalMemory = runtime.totalMemory();
 
-                assertEquals(0, selector.selectNow());
+                    System.gc();
+                    System.gc();
 
-                if (runtime.totalMemory() != totalMemory) {
-                    break;
-                } else {
-                    mapForGC.put("io.sniffy.testing.dummy" + i, new byte[1024*1024]);
-                    if (i > 1) {
-                        mapForGC.remove("io.sniffy.testing.dummy" + (i - 1));
+                    assertEquals(0, selector.selectNow());
+
+                    if (runtime.totalMemory() != totalMemory) {
+                        break;
+                    } else {
+                        mapForGC.put("io.sniffy.testing.dummy." + i, new byte[1024 * 1024]);
+                        if (i > j) {
+                            mapForGC.remove("io.sniffy.testing.dummy." + (i - j));
+                        }
                     }
                 }
             }
 
-            assertEquals(0, sniffySelector.sniffySelectionKeyCache.size());
+            assertEquals("Failed to clear weakhasmap in SniffySelector after " + attempts + " attempts", 0, sniffySelector.sniffySelectionKeyCache.size());
             //assertEquals(0, sniffySelector.channelToSniffyChannelMap.size());
 
         } finally {
