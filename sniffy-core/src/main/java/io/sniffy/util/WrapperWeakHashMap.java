@@ -2,13 +2,13 @@ package io.sniffy.util;
 
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
 
 @SuppressWarnings({"Convert2Diamond", "ConstantConditions"})
 public class WrapperWeakHashMap<K, V extends ObjectWrapper<? extends K>> { // V extends K and ObjectWrapper<K>
 
+    @SuppressWarnings("EqualsReplaceableByObjectsCall")
     private static class Entry<T> {
 
         private final T object;
@@ -25,9 +25,10 @@ public class WrapperWeakHashMap<K, V extends ObjectWrapper<? extends K>> { // V 
         public int hashCode() {
             if (null == object) return 0;
             if (object instanceof ObjectWrapper) {
-                return Objects.hashCode(((ObjectWrapper<?>) object).getDelegate());
+                Object delegate = ((ObjectWrapper<?>) object).getDelegate();
+                return null == delegate ? 0 : delegate.hashCode();
             } else {
-                return Objects.hashCode(object);
+                return object.hashCode();
             }
         }
 
@@ -46,7 +47,7 @@ public class WrapperWeakHashMap<K, V extends ObjectWrapper<? extends K>> { // V 
                     obj2 = ((ObjectWrapper<?>) obj2).getDelegate();
                 }
 
-                return Objects.equals(obj1, obj2);
+                return (obj1 == obj2) || (obj1 != null && obj1.equals(obj2));
             } else {
                 return false;
             }
