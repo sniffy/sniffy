@@ -21,7 +21,7 @@ public class SniffySelectorMockTest {
     private SelectorProvider selectorProviderMock;
 
     @Mock
-    private AbstractSelector abstractSelectorMock;
+    private AbstractSelector selectorMock;
 
     private AtomicInteger implCloseSelectorInvocationCounter;
     private AbstractSelector delegate;
@@ -31,7 +31,7 @@ public class SniffySelectorMockTest {
     @Before
     public void createSniffySelector() throws Exception {
         implCloseSelectorInvocationCounter = new AtomicInteger();
-        delegate = new SniffySelector(selectorProviderMock, abstractSelectorMock) {
+        delegate = new SniffySelector(selectorProviderMock, selectorMock) {
 
             @Override
             protected void implCloseSelector() throws IOException {
@@ -61,8 +61,21 @@ public class SniffySelectorMockTest {
     @Test
     public void testWakeUp() throws Exception {
         assertEquals(sniffySelector, sniffySelector.wakeup());
-        verify(abstractSelectorMock).wakeup();
-        verifyNoMoreInteractions(abstractSelectorMock);
+        verify(selectorMock).wakeup();
+        verifyNoMoreInteractions(selectorMock);
+    }
+
+    @Test
+    public void testSelectNow() throws Exception {
+        doReturn(1).when(selectorMock).selectNow();
+        assertEquals(1, sniffySelector.selectNow());
+        verify(selectorMock).selectNow();
+        verifyNoMoreInteractions(selectorMock);
+    }
+
+    @Test
+    public void testSelectNowUpdatesKeysForRelatedChannels() throws Exception {
+        // TODO: implement
     }
 
 }
