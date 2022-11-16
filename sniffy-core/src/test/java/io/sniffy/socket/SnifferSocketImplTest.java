@@ -105,7 +105,7 @@ public class SnifferSocketImplTest {
 
         Set<MethodDescriptor> sniffySocketImplMethods = new HashSet<MethodDescriptor>();
 
-        for (Method method : SniffySocket.class.getDeclaredMethods()) {
+        for (Method method : SnifferSocketImpl.class.getDeclaredMethods()) {
             sniffySocketImplMethods.add(new MethodDescriptor(method));
         }
         for (Method method : CompatSnifferSocketImpl.class.getDeclaredMethods()) {
