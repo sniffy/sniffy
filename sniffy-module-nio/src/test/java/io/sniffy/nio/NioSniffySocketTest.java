@@ -64,9 +64,12 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
             Map<String, Object> mapForGC = new HashMap<String,Object>();
 
-            long totalMemory = runtime.totalMemory();
+            long totalMemory;
 
             for (int i = 0; i < 1000; i++) {
+
+                totalMemory = runtime.totalMemory();
+
                 System.gc();
                 System.gc();
 
@@ -76,8 +79,9 @@ public class NioSniffySocketTest extends BaseSocketTest {
                     break;
                 } else {
                     mapForGC.put("io.sniffy.testing.dummy" + i, new byte[1024*1024]);
-                    mapForGC.remove("io.sniffy.testing.dummy" + i);
-                    totalMemory = runtime.totalMemory();
+                    if (i > 1) {
+                        mapForGC.remove("io.sniffy.testing.dummy" + (i - 1));
+                    }
                 }
             }
 
