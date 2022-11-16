@@ -65,7 +65,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
             int attempts = 0;
             long totalMemory;
 
-            for (int j = 1; j < 100; j++) {
+            for (int j = 1; j < 10; j++) {
                 for (int i = 0; i < 1000; i++) {
 
                     attempts++;
@@ -88,8 +88,8 @@ public class NioSniffySocketTest extends BaseSocketTest {
                 }
             }
 
-            assertEquals("Failed to clear weakhasmap in SniffySelector after " + attempts + " attempts", 0, sniffySelector.sniffySelectionKeyCache.size());
-            //assertEquals(0, sniffySelector.channelToSniffyChannelMap.size());
+            assertEquals("Failed to clear WeakHashMap in SniffySelector after " + attempts + " attempts", 0, sniffySelector.sniffySelectionKeyCache.size());
+            assertEquals(0, sniffySelector.channelToSniffyChannelMap.size());
 
         } finally {
             SnifferSocketImplFactory.uninstall();
