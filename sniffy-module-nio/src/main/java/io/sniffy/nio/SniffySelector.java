@@ -226,7 +226,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 Object attachment = key.attachment();
                 if (null == attachment) {
                     LOG.error("Couldn't determine SniffySelectionKey counterpart for key " + key);
-                    Exception e = selectionKeyMap.get(attachment);
+                    Exception e = selectionKeyMap.get(key);
                     if (e != null) {
                         LOG.error(e);
                     }
