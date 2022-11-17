@@ -5,6 +5,7 @@ import io.sniffy.Spy;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.util.JVMUtil;
+import io.sniffy.util.ReflectionUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,6 +16,7 @@ import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -59,6 +61,16 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
             assertNotNull(socketChannel1);
             assertNotNull(socketChannel2);
+
+            SelectionKey[] channel1Keys = ReflectionUtil.getField(AbstractSelectableChannel.class, socketChannel1, "keys");
+            for (int i = 0; i < channel1Keys.length; i++) {
+                assertNull(channel1Keys[i]);
+            }
+
+            SelectionKey[] channel2Keys = ReflectionUtil.getField(AbstractSelectableChannel.class, socketChannel2, "keys");
+            for (int i = 0; i < channel2Keys.length; i++) {
+                assertNull(channel2Keys[i]);
+            }
 
             //assertEquals("Failed to clear WeakHashMap in SniffySelector after " + attempts + " attempts", 0, sniffySelector.sniffySelectionKeyCache.size());
             //assertEquals("Failed to clear WeakHashMap in SniffySelector after " + attempts + " attempts", 0, sniffySelector.sniffyChannelCache.size());
