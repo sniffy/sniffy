@@ -11,6 +11,7 @@ import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.emptySet;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -68,8 +69,10 @@ public class SniffySelectorMockTest {
     @Test
     public void testSelectNow() throws Exception {
         doReturn(1).when(selectorMock).selectNow();
+        doReturn(emptySet()).when(selectorMock).keys(); // TODO: test it
         assertEquals(1, sniffySelector.selectNow());
         verify(selectorMock).selectNow();
+        verify(selectorMock, times(2)).keys(); // TODO: this is for cleaning up channels
         verifyNoMoreInteractions(selectorMock);
     }
 
