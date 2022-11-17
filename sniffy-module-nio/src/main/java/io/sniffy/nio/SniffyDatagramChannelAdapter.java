@@ -25,6 +25,8 @@ import static io.sniffy.util.ReflectionUtil.setField;
  */
 public class SniffyDatagramChannelAdapter extends DatagramChannel implements SelectableChannelWrapper<DatagramChannel>, SelChImpl {
 
+    // TODO add proper tests for SniffyDatagramChannelAdapter as well
+
     private final DatagramChannel delegate;
     private final SelChImpl selChImplDelegate;
 
