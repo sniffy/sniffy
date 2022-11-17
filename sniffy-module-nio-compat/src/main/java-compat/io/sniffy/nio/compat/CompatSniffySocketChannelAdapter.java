@@ -140,9 +140,13 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
 
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (delegateCloseLock) {
-                setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
+                if (!setField(AbstractInterruptibleChannel.class, delegate, "closed", true)) {
+                    setField(AbstractInterruptibleChannel.class, delegate, "open", false); // TODO: handle false response
+                }
                 invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseChannel", Void.class);
             }
+
+            // todo: shall we copy keys from delegate to sniffy here ?
 
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);

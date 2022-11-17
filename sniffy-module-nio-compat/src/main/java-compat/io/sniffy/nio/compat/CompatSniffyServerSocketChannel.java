@@ -8,6 +8,7 @@ import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.ServerSocketChannelDelegate;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketAddress;

@@ -32,7 +32,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- https://mvnrepository.com/artifact/org.springframework.roo/org.springframework.roo.annotations -->
+            <!-- https://issues.apache.org/jira/browse/MENFORCER-413 -->
             <dependency>
                 <groupId>org.springframework.roo</groupId>
                 <artifactId>org.springframework.roo.annotations</artifactId>

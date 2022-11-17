@@ -1,5 +1,6 @@
 package io.sniffy.nio.compat;
 
+import io.sniffy.nio.SelectableChannelWrapper;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
@@ -24,7 +25,7 @@ import static io.sniffy.util.ReflectionUtil.setField;
 /**
  * @since 3.1.7
  */
-public class CompatSniffyDatagramChannelAdapter extends DatagramChannelDelegate {
+public class CompatSniffyDatagramChannelAdapter extends DatagramChannelDelegate implements SelectableChannelWrapper<DatagramChannel>, SelChImpl {
 
     private final DatagramChannel delegate;
     private final SelChImpl selChImplDelegate;
@@ -33,6 +34,16 @@ public class CompatSniffyDatagramChannelAdapter extends DatagramChannelDelegate 
         super(provider, delegate);
         this.delegate = delegate;
         this.selChImplDelegate = (SelChImpl) delegate;
+    }
+
+    @Override
+    public DatagramChannel getDelegate() {
+        return delegate;
+    }
+
+    @Override
+    public AbstractSelectableChannel asSelectableChannel() {
+        return this;
     }
 
     @Override
