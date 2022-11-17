@@ -215,7 +215,12 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         try {
 
             for (SelectionKey key : delegate.keys()) { // throws ClosedSelectorException: null
-                AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) ((SelectionKey) (key.attachment())).channel();
+                Object attachment = key.attachment();
+                if (null == attachment) {
+                    LOG.error("Couldn't determine SniffySelectionKey counterpart for key " + key);
+                }
+                SniffySelectionKey sniffySelectionKey = (SniffySelectionKey) attachment;
+                AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) sniffySelectionKey.channel();
 
                 Object sniffyKeyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyLock");
 
