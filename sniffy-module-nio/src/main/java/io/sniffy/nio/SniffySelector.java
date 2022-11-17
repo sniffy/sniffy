@@ -11,7 +11,9 @@ import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -137,6 +139,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
     }
 
+    private static Map<SelectionKey, Exception> selectionKeyMap = new ConcurrentHashMap<SelectionKey, Exception>();
+
     /**
      * This method adds a selection key to provided AbstractSelectableChannel, hence we're doing the same here manually
      */
@@ -164,6 +168,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                     Object.class, att,
                     SelectionKey.class
             );
+
+            selectionKeyMap.put(selectionKeyDelegate, new Exception());
 
             SniffySelectionKey sniffySelectionKey = new SniffySelectionKey(selectionKeyDelegate, this, sniffyChannel);
 
@@ -214,10 +220,16 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
         try {
 
+            if (!isOpen()) return;
+
             for (SelectionKey key : delegate.keys()) { // throws ClosedSelectorException: null
                 Object attachment = key.attachment();
                 if (null == attachment) {
                     LOG.error("Couldn't determine SniffySelectionKey counterpart for key " + key);
+                    Exception e = selectionKeyMap.get(attachment);
+                    if (e != null) {
+                        LOG.error(e);
+                    }
                 }
                 SniffySelectionKey sniffySelectionKey = (SniffySelectionKey) attachment;
                 AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) sniffySelectionKey.channel();
