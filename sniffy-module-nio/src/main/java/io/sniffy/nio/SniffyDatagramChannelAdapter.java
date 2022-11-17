@@ -1,7 +1,6 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionCopier;
 import io.sniffy.util.ReflectionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
@@ -13,7 +12,6 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.MembershipKey;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -25,7 +23,7 @@ import static io.sniffy.util.ReflectionUtil.setField;
 /**
  * @since 3.1.7
  */
-public class SniffyDatagramChannelAdapter extends DatagramChannel implements SelChImpl {
+public class SniffyDatagramChannelAdapter extends DatagramChannel implements SelectableChannelWrapper<DatagramChannel>, SelChImpl {
 
     private final DatagramChannel delegate;
     private final SelChImpl selChImplDelegate;
@@ -34,6 +32,16 @@ public class SniffyDatagramChannelAdapter extends DatagramChannel implements Sel
         super(provider);
         this.delegate = delegate;
         this.selChImplDelegate = (SelChImpl) delegate;
+    }
+
+    @Override
+    public DatagramChannel getDelegate() {
+        return delegate;
+    }
+
+    @Override
+    public AbstractSelectableChannel asSelectableChannel() {
+        return this;
     }
 
     @Override
