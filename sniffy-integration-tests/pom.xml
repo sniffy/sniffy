@@ -42,6 +42,18 @@
                 <configuration>
                     <skip>true</skip>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
