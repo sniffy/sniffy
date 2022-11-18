@@ -3,7 +3,6 @@ package io.sniffy.nio;
 import java.io.IOException;
 import java.net.*;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Set;
 
 public class SniffyServerSocketAdapter extends ServerSocket {
 
@@ -87,11 +86,6 @@ public class SniffyServerSocketAdapter extends ServerSocket {
     @Override
     public String toString() {
         return delegate.toString();
-    }
-
-    @Deprecated(since = "17")
-    public static void setSocketFactory(SocketImplFactory fac) throws IOException {
-        ServerSocket.setSocketFactory(fac);
     }
 
     @Override
