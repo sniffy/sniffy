@@ -136,6 +136,9 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     @Override
     public void implCloseSelectableChannel() {
+
+        // TODO: reevaluate side effects
+
         try {
 
             Object delegateCloseLock = getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
@@ -211,6 +214,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
         if (StackTraceExtractor.hasClassAndMethodInStackTrace("sun.nio.ch.FileChannelImpl", "transferToDirectly")) {
             return null; // disable zero-copy in order to intercept traffic
+            // TODO: investigate enabling zero-copy but keeping traffic capture
         } else {
             return selChImplDelegate.getFD();
         }

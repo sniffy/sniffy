@@ -5,6 +5,7 @@ import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.*;
 
 import java.io.IOException;
+import java.lang.invoke.VarHandle;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -77,16 +78,27 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     protected void implCloseSelector() throws IOException {
         try {
             LOG.trace("Closing SniffySelector(" + provider() + ", " + delegate + ") = " + this);
-            if (!setField(AbstractSelector.class, delegate, "closed", true)) {
-                AtomicBoolean delegateSelectorOpen = getField(AbstractSelector.class, delegate, "selectorOpen");
-                if (null != delegateSelectorOpen) {
-                    delegateSelectorOpen.set(false);
-                } else {
-                    LOG.trace("Neither AbstractSelector.closed nor AbstractSelector.selectorOpen fields found");
+
+            try {
+                VarHandle closedVH = getField(AbstractSelector.class, null, "CLOSED"); // TODO: check it's present on all Java versions
+                boolean changed = (boolean) closedVH.compareAndSet(delegate, false, true);
+                if (changed) {
+                    invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
+                    updateKeysFromDelegate();
+                    // TODO: lock on selector (and publicSelectedKeys) and grab list of keys BEFORE calling implCloseSelector on delegate; remove them from sniffy channels after that
                 }
+            } catch (NoSuchFieldException e) {
+                if (!setField(AbstractSelector.class, delegate, "closed", true)) {
+                    AtomicBoolean delegateSelectorOpen = getField(AbstractSelector.class, delegate, "selectorOpen");
+                    if (null != delegateSelectorOpen) {
+                        delegateSelectorOpen.set(false);
+                    } else {
+                        LOG.trace("Neither AbstractSelector.closed nor AbstractSelector.selectorOpen fields found");
+                    }
+                }
+                invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
+                updateKeysFromDelegate();
             }
-            invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
-            updateKeysFromDelegate();
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
