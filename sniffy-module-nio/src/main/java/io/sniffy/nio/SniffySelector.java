@@ -78,6 +78,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     @Override
     protected void implCloseSelector() throws IOException {
         try {
+            LOG.trace("Closing SniffySelector(" + provider() + ", " + delegate + ") = " + this);
             if (!setField(AbstractSelector.class, delegate, "closed", true)) {
                 AtomicBoolean delegateSelectorOpen = getField(AbstractSelector.class, delegate, "selectorOpen");
                 if (null != delegateSelectorOpen) {

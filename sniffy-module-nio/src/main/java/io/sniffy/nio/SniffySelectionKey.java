@@ -103,7 +103,12 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public SelectionKey interestOps(int ops) {
-        return delegate.interestOps(ops);
+        try {
+            return delegate.interestOps(ops);
+        } catch (Exception e) {
+            LOG.error("Error when trying to call interestOps(int) on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
     @Override
