@@ -33,6 +33,11 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
 
+    protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
+        this(sniffySelector, sniffyChannel, delegate.attachment());
+        setDelegate(delegate);
+    }
+
     protected SniffySelectionKey(SniffySelector sniffySelector, SelectableChannel sniffyChannel, Object attachment) {
         if (null != attachment) {
             attach(attachment);
