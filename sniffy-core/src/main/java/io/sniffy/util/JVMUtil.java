@@ -20,22 +20,22 @@ public class JVMUtil {
 
     protected static Map<String, Object> MAP_FOR_GC = new HashMap<String,Object>();
 
-    private static int getGarbageCollectionCount() {
+    private static long getGarbageCollectionCount() {
         List<GarbageCollectorMXBean> garbageCollectorMXBeans = ManagementFactory.getGarbageCollectorMXBeans();
-        int count = 0;
+        long count = 0;
         for (GarbageCollectorMXBean garbageCollectorMXBean : garbageCollectorMXBeans) {
             count += garbageCollectorMXBean.getCollectionCount();
         }
         return count;
     }
 
-    public static int invokeGarbageCollector() {
+    public static long invokeGarbageCollector() {
 
         int attempts = 0;
 
         try {
 
-            int numGCs;
+            long numGCs;
 
             for (int j = 1; j < 50; j++) {
                 for (int i = 0; i < 100; i++) {

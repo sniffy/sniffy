@@ -18,9 +18,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.sniffy.Threads.*;
@@ -57,23 +55,20 @@ public class NioSniffySocketTest extends BaseSocketTest {
             assertEquals(0, sniffySelector.keys().size());
             assertEquals(0, sniffySelector.selectedKeys().size());
 
-            int attempts = JVMUtil.invokeGarbageCollector();
+            long attempts = JVMUtil.invokeGarbageCollector();
 
             assertNotNull(socketChannel1);
             assertNotNull(socketChannel2);
 
             SelectionKey[] channel1Keys = ReflectionUtil.getField(AbstractSelectableChannel.class, socketChannel1, "keys");
-            for (int i = 0; i < channel1Keys.length; i++) {
-                assertNull(channel1Keys[i]);
+            for (SelectionKey channel1Key : channel1Keys) {
+                assertNull("Failed to clear keys in SniffySocketChannel after " + attempts + " attempts", channel1Key);
             }
 
             SelectionKey[] channel2Keys = ReflectionUtil.getField(AbstractSelectableChannel.class, socketChannel2, "keys");
-            for (int i = 0; i < channel2Keys.length; i++) {
-                assertNull(channel2Keys[i]);
+            for (SelectionKey channel2Key : channel2Keys) {
+                assertNull("Failed to clear keys in SniffySocketChannel after " + attempts + " attempts", channel2Key);
             }
-
-            //assertEquals("Failed to clear WeakHashMap in SniffySelector after " + attempts + " attempts", 0, sniffySelector.sniffySelectionKeyCache.size());
-            //assertEquals("Failed to clear WeakHashMap in SniffySelector after " + attempts + " attempts", 0, sniffySelector.sniffyChannelCache.size());
 
         } finally {
             SnifferSocketImplFactory.uninstall();
@@ -235,7 +230,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
                 // Other threads socket operations
 
-                assertEquals(1, s.getSocketOperations(OTHERS, true).entrySet().stream().count());
+                assertEquals(1, s.getSocketOperations(OTHERS, true).entrySet().size());
 
                 s.getSocketOperations(OTHERS, true).values().stream().findAny().ifPresent((socketStats) -> {
                     Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
@@ -244,7 +239,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
                 // Any threads socket operations
 
-                assertEquals(2, s.getSocketOperations(ANY, true).entrySet().stream().count());
+                assertEquals(2, s.getSocketOperations(ANY, true).entrySet().size());
 
                 s.getSocketOperations(OTHERS, true).values().stream().forEach((socketStats) -> {
                     Assert.assertEquals(BaseSocketTest.REQUEST.length, socketStats.bytesUp.intValue());
