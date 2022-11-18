@@ -47,6 +47,9 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
         this.sniffySelector = sniffySelector;
         this.sniffyChannel = sniffyChannel;
+
+        LOG.trace("Created new SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
+
     }
     @Override
     public SelectionKey getDelegate() {
