@@ -109,18 +109,24 @@ public class SniffyServerSocketAdapter extends ServerSocket {
         delegate.setPerformancePreferences(connectionTime, latency, bandwidth);
     }
 
-    @Override
-    public <T> ServerSocket setOption(SocketOption<T> name, T value) throws IOException {
-        return delegate.setOption(name, value);
+    // TODO: evaluate other methods
+
+    // TODO: move methods below to JAva8+ only implementation
+
+    /*@Override
+    public <T> Socket setOption(SocketOption<T> name, T value) throws IOException {
+        return super.setOption(name, value);
     }
 
     @Override
     public <T> T getOption(SocketOption<T> name) throws IOException {
-        return delegate.getOption(name);
+        return super.getOption(name);
     }
 
     @Override
     public Set<SocketOption<?>> supportedOptions() {
-        return delegate.supportedOptions();
-    }
+        return super.supportedOptions();
+    }*/
+
+
 }
