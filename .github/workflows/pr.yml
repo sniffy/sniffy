@@ -14,7 +14,7 @@ on:
 
 jobs:
   smoke-test:
-    timeout-minutes: 20
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -92,7 +92,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
-    timeout-minutes: 20
+    timeout-minutes: 30
     runs-on: ubuntu-22.04
     needs:
       - smoke-test
@@ -150,7 +150,7 @@ jobs:
           #https://github.com/multiarch/qemu-user-static/issues/128
           push: false
   test-ibm-j9:
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs:
       - smoke-test
     runs-on: ubuntu-22.04
@@ -191,7 +191,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   test-matrix:
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs:
       - smoke-test
     runs-on: ${{ matrix.os }}
@@ -291,7 +291,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   compatibility-matrix:
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs:
       - smoke-test
     runs-on: ${{ matrix.os }}
@@ -385,7 +385,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
         if: matrix.os != 'macOS-12'
   analyze:
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs:
       - smoke-test
     name: Analyze

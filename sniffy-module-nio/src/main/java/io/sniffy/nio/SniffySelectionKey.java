@@ -29,20 +29,13 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelectionKey.class);
 
-    private final SelectionKey delegate;
+    private SelectionKey delegate;
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
 
-    protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
-        this.delegate = delegate;
-
-        if (null == delegate) {
-            LOG.error("Trying to create SniffySelectionKey with null delegate");
-            if (JVMUtil.isTestingSniffy()) {
-                throw new NullPointerException();
-            }
-        } else {
-            attach(delegate.attachment());
+    protected SniffySelectionKey(SniffySelector sniffySelector, SelectableChannel sniffyChannel, Object attachment) {
+        if (null != attachment) {
+            attach(attachment);
         }
 
         this.sniffySelector = sniffySelector;
@@ -51,6 +44,13 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         LOG.trace("Created new SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
 
     }
+
+    public void setDelegate(SelectionKey delegate) {
+        if (null == this.delegate) {
+            this.delegate = delegate;
+        }
+    }
+
     @Override
     public SelectionKey getDelegate() {
         return delegate;

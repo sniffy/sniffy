@@ -167,14 +167,16 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (keyLock) {
 
+                    SniffySelectionKey sniffySelectionKey = new SniffySelectionKey(this, sniffyChannel, att);
+
                     SelectionKey selectionKeyDelegate = invokeMethod(AbstractSelector.class, delegate, "register",
                             AbstractSelectableChannel.class, delegateChannel,
                             Integer.TYPE, ops,
-                            Object.class, att,
+                            Object.class, sniffySelectionKey,
                             SelectionKey.class
                     );
 
-                    SniffySelectionKey sniffySelectionKey = new SniffySelectionKey(selectionKeyDelegate, this, sniffyChannel);
+                    sniffySelectionKey.setDelegate(selectionKeyDelegate);
 
                     selectionKeyDelegate.attach(sniffySelectionKey);
 
@@ -218,6 +220,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
         try {
 
+            // TODO: synchronize on delegate and delegate.publicSelectedKeys or rather switch to cancelledkeys queue
+
             if (!isOpen()) return;
 
             for (SelectionKey key : delegate.keys()) { // throws ClosedSelectorException: null
@@ -232,28 +236,38 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) sniffySelectionKey.channel();
 
                 Object sniffyKeyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyLock");
+                Object delegateKeyLock = ReflectionUtil.getField(
+                        AbstractSelectableChannel.class,
+                        ((SelectableChannelWrapper<? extends AbstractSelectableChannel>) sniffyChannel).getDelegate(),
+                        "keyLock"
+                );
 
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (sniffyKeyLock) {
+                    //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                    synchronized (delegateKeyLock) {
+                        // without this lock we can get a SniffySelectionKey without actual selection key delegate
+                        // TODO: if we stay with this method - we need to refactor it
 
-                    int sniffyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount");
+                        int sniffyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyCount");
 
-                    SelectionKey[] sniffyKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keys");
+                        SelectionKey[] sniffyKeys = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keys");
 
-                    for (int i = 0; i < sniffyKeys.length; i++) {
+                        for (int i = 0; i < sniffyKeys.length; i++) {
 
-                        SelectionKey sk = sniffyKeys[i];
+                            SelectionKey sk = sniffyKeys[i];
 
-                        if (null != sk && !sk.isValid()) {
-                            sniffyCount--;
-                            sniffyKeys[i] = null;
-                            //assert null == delegateKeys[i]; // doesn't always work due to defragmentation
+                            if (null != sk && !sk.isValid()) {
+                                sniffyCount--;
+                                sniffyKeys[i] = null;
+                                //assert null == delegateKeys[i]; // doesn't always work due to defragmentation
+                            }
+
                         }
 
+                        ReflectionUtil.setField(AbstractSelectableChannel.class, sniffyChannel, "keyCount", sniffyCount);
+
                     }
-
-                    ReflectionUtil.setField(AbstractSelectableChannel.class, sniffyChannel, "keyCount", sniffyCount);
-
                 }
 
             }
