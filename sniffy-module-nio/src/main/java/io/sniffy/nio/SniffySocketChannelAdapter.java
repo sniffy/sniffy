@@ -1,7 +1,6 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
@@ -18,8 +17,7 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
+import static io.sniffy.util.ReflectionUtil.*;
 
 /**
  * @since 3.1.7
@@ -47,7 +45,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public SocketChannel bind(SocketAddress local) throws IOException {
@@ -55,7 +53,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public <T> SocketChannel setOption(java.net.SocketOption<T> name, T value) throws IOException {
@@ -63,7 +61,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public SocketChannel shutdownInput() throws IOException {
@@ -71,7 +69,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public SocketChannel shutdownOutput() throws IOException {
@@ -104,7 +102,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return delegate.finishConnect();
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public SocketAddress getRemoteAddress() throws IOException {
@@ -140,14 +138,27 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     public void implCloseSelectableChannel() {
         try {
 
-            Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
+            Object delegateCloseLock = getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
 
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (delegateCloseLock) {
-                if (!setField(AbstractInterruptibleChannel.class, delegate, "closed", true)) {
-                    setField(AbstractInterruptibleChannel.class, delegate, "open", false); // TODO: handle false response
+
+                boolean closed;
+                try {
+                    closed = getField(AbstractInterruptibleChannel.class, delegate, "closed");
+                } catch (NoSuchFieldException e) {
+                    // TODO: somehow remember which field is used in order to speedup stuff
+                    closed = getField(AbstractInterruptibleChannel.class, delegate, "open");
+                    closed = !closed;
                 }
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseChannel", Void.class);
+
+                if (!closed) {
+                    if (!setField(AbstractInterruptibleChannel.class, delegate, "closed", true)) {
+                        setField(AbstractInterruptibleChannel.class, delegate, "open", false);
+                    }
+                    invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseChannel", Void.class);
+                }
+
             }
 
             // todo: shall we copy keys from delegate to sniffy here ?
@@ -161,7 +172,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     public void implConfigureBlocking(boolean block) {
         try {
 
-            Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
+            Object delegateRegLock = getField(AbstractSelectableChannel.class, delegate, "regLock");
 
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (delegateRegLock) {
@@ -178,12 +189,12 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     @Override
     @IgnoreJRERequirement
-    @SuppressWarnings({"Since15"})
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     public <T> T getOption(java.net.SocketOption<T> name) throws IOException {
         return delegate.getOption(name);
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public Set<java.net.SocketOption<?>> supportedOptions() {
@@ -225,6 +236,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     // Note: this method is absent in newer JDKs so we cannot use @Override annotation
     // @Override
+    @SuppressWarnings("unused")
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
             invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
