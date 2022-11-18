@@ -43,20 +43,20 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+        run: mvn -X -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os != 'windows-2022'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os == 'windows-2022'
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -X -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true -verbose:gc"
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -X -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -77,13 +77,13 @@ jobs:
           architecture: x86
         if: matrix.os != 'macos-12'
       - name: Build with Maven x86
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -X -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os == 'ubuntu-22.04'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true -verbose:gc"
       - name: Build with Maven x86
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -X -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -130,16 +130,16 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qemu || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qemu
+        run: mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qemu || mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qemu
       - name: Build with Maven
-        run: mvn -T 1C -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -X -T 1C -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Resolve dependencies for compatibility tests
-        run: mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qemu || mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qeumu
+        run: mvn -X -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qemu || mvn -X -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qeumu
       - name: Build with x64 AdoptOpenJDK 11
-        run: mvn -f sniffy-compatibility-tests/pom.xml test -P ci,qemu
+        run: mvn -X -f sniffy-compatibility-tests/pom.xml test -P ci,qemu
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
         uses: docker/build-push-action@v2
@@ -181,9 +181,9 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+        run: mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -X -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -232,20 +232,20 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+        run: mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os != 'windows-2022'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os == 'windows-2022'
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -X -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -X -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -269,13 +269,13 @@ jobs:
 # Cannot invoke "org.apache.maven.artifact.Artifact.getFile()" because "jacocoAgentArtifact" is null
 # Might be caused by https://openjdk.java.net/jeps/416 or just regression issue in 32-bit windows builds
       - name: Build with Maven x86
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -X -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: ${{ matrix.os == 'ubuntu-22.04'}}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -X -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: ${{ matrix.os == 'windows-2022'}}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -316,45 +316,45 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+        run: mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os != 'windows-2022'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os == 'windows-2022'
       - name: Build with Maven
-        run: mvn -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -X -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
-        run: mvn -T 1C -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -X -T 1C -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Resolve dependencies for compatibility tests
-        run: mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+        run: mvn -X -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os != 'windows-2022'
       - name: Resolve dependencies for compatibility tests
         shell: cmd
         run: .\mvnretry.bat -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os == 'windows-2022'
       - name: Run compatibility tests using Java 8
-        run: mvn -f sniffy-compatibility-tests/pom.xml test
+        run: mvn -X -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 11
         uses: actions/setup-java@v1
         with:
           java-version: 11
       - name: Run compatibility tests using Java 11
-        run: mvn -f sniffy-compatibility-tests/pom.xml test
+        run: mvn -X -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 17
         uses: actions/setup-java@v1
         with:
           java-version: 17
       - name: Run compatibility tests using Java 17
-        run: mvn -f sniffy-compatibility-tests/pom.xml test
+        run: mvn -X -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 7
         uses: actions/setup-java@v1
         with:
@@ -363,7 +363,7 @@ jobs:
         run: mkdir -p /tmp && cd /tmp && curl https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz -o apache-maven-3.2.5-bin.tar.gz && tar -xzvf apache-maven-3.2.5-bin.tar.gz && export M2_HOME=/tmp/apache-maven-3.2.5 && export MAVEN_HOME=/tmp/apache-maven-3.2.5 && export PATH=${M2_HOME}/bin:${PATH}
         shell: bash
       - name: Run compatibility tests using Maven 3.2.5 and Java 7
-        run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
+        run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -X -f sniffy-compatibility-tests/pom.xml clean verify
         shell: bash
       - uses: codecov/codecov-action@v1
         with:
@@ -377,7 +377,7 @@ jobs:
         if: matrix.os != 'macOS-12'
       # No Java 6 on MacOS
       - name: Run compatibility tests using Maven 3.2.5 and Java 6
-        run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
+        run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -X -f sniffy-compatibility-tests/pom.xml clean verify
         shell: bash
         if: matrix.os != 'macOS-12'
       - uses: codecov/codecov-action@v1
@@ -412,9 +412,9 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+        run: mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
       - name: Build with Maven
-        run: mvn -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -X -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
