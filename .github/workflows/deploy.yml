@@ -19,7 +19,7 @@ jobs:
           - java: 11
             os: windows-2022
           - java: 17
-            os: macos-11
+            os: macos-12
     name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -70,7 +70,7 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           architecture: x86
-        if: matrix.os != 'macos-11'
+        if: matrix.os != 'macos-12'
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os == 'ubuntu-22.04'
@@ -191,14 +191,14 @@ jobs:
       matrix:
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
         java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20-ea ]
-        os: [ ubuntu-22.04, windows-2022, macos-11 ]
+        os: [ ubuntu-22.04, windows-2022, macos-12 ]
         exclude:
           - java: 8
             os: ubuntu-22.04
           - java: 11
             os: windows-2022
           - java: 17
-            os: macos-11
+            os: macos-12
           # https://github.com/sniffy/sniffy/issues/546
           - java: 10
             os: ubuntu-22.04
@@ -254,7 +254,7 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           architecture: x86
-        if: ${{ matrix.os != 'macos-11'}}
+        if: ${{ matrix.os != 'macos-12'}}
 # https://issues.apache.org/jira/projects/MNG/issues/MNG-7399
 # Had to disable x86 windows builds on java 18 and 19-ea due to strange errors like these:
 # The parameters 'isOffline' for goal org.apache.maven.plugins:maven-javadoc-plugin:3.3.1:jar are missing or invalid
@@ -288,7 +288,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-22.04, windows-2022, macos-11 ]
+        os: [ ubuntu-22.04, windows-2022, macos-12 ]
     name: Legacy JDK, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -365,16 +365,16 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 6
-        if: matrix.os != 'macos-11'
+        if: matrix.os != 'macOS-12'
       # No Java 6 on MacOS
       - name: Run compatibility tests using Maven 3.2.5 and Java 6
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
         shell: bash
-        if: matrix.os != 'macos-11'
+        if: matrix.os != 'macOS-12'
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-        if: matrix.os != 'macos-11'
+        if: matrix.os != 'macOS-12'
   analyze:
     needs:
       - smoke-test
