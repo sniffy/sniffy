@@ -176,6 +176,9 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (delegateRegLock) {
+
+                // TODO: check current status first
+
                 invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
                 if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
                     setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking

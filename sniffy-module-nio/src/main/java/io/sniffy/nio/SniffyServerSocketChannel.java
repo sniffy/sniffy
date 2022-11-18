@@ -2,7 +2,6 @@ package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.OSUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
@@ -20,8 +19,8 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
+import static io.sniffy.util.ReflectionUtil.*;
+import static io.sniffy.util.ReflectionUtil.getField;
 
 /**
  * @since 3.1.7
@@ -64,7 +63,12 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     @Override
     public ServerSocket socket() {
-        return delegate.socket();
+        try {
+            return new SniffyServerSocket(delegate.socket(), this);
+        } catch (IOException e) {
+            // LOG.error(e); // TODO: uncomment
+            return delegate.socket();
+        }
     }
 
     @Override
@@ -92,13 +96,30 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     public void implCloseSelectableChannel() {
         try {
 
-            Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
+            Object delegateCloseLock = getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
 
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (delegateCloseLock) {
-                setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
+
+                boolean closed;
+                try {
+                    closed = getField(AbstractInterruptibleChannel.class, delegate, "closed");
+                } catch (NoSuchFieldException e) {
+                    // TODO: somehow remember which field is used in order to speedup stuff
+                    closed = getField(AbstractInterruptibleChannel.class, delegate, "open");
+                    closed = !closed;
+                }
+
+                if (!closed) {
+                    if (!setField(AbstractInterruptibleChannel.class, delegate, "closed", true)) {
+                        setField(AbstractInterruptibleChannel.class, delegate, "open", false);
+                    }
+                    invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseChannel", Void.class);
+                }
+
             }
+
+            // todo: shall we copy keys from delegate to sniffy here ?
 
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
@@ -109,10 +130,13 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     public void implConfigureBlocking(boolean block) {
         try {
 
-            Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
+            Object delegateRegLock = getField(AbstractSelectableChannel.class, delegate, "regLock");
 
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (delegateRegLock) {
+
+                // TODO: check current status first
+
                 invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
                 if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
                     setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
