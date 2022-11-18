@@ -140,8 +140,6 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
     }
 
-    private static Map<SelectionKey, Exception> selectionKeyMap = new ConcurrentHashMap<SelectionKey, Exception>();
-
     /**
      * This method adds a selection key to provided AbstractSelectableChannel, hence we're doing the same here manually
      */
@@ -163,30 +161,31 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 }
             }
 
-            SelectionKey selectionKeyDelegate = invokeMethod(AbstractSelector.class, delegate, "register",
-                    AbstractSelectableChannel.class, delegateChannel,
-                    Integer.TYPE, ops,
-                    Object.class, att,
-                    SelectionKey.class
-            );
+            Object regLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "regLock");
+            Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "keyLock");
 
-            selectionKeyMap.put(selectionKeyDelegate, new Exception());
-
-            SniffySelectionKey sniffySelectionKey = new SniffySelectionKey(selectionKeyDelegate, this, sniffyChannel);
-
-            selectionKeyDelegate.attach(sniffySelectionKey);
-
-            Object regLock = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "regLock");
-            Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, sniffyChannel, "keyLock");
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (regLock) {
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (keyLock) {
+
+                    SelectionKey selectionKeyDelegate = invokeMethod(AbstractSelector.class, delegate, "register",
+                            AbstractSelectableChannel.class, delegateChannel,
+                            Integer.TYPE, ops,
+                            Object.class, att,
+                            SelectionKey.class
+                    );
+
+                    SniffySelectionKey sniffySelectionKey = new SniffySelectionKey(selectionKeyDelegate, this, sniffyChannel);
+
+                    selectionKeyDelegate.attach(sniffySelectionKey);
+
                     invokeMethod(AbstractSelectableChannel.class, delegateChannel, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
+
+                    return sniffySelectionKey;
+
                 }
             }
-
-            return sniffySelectionKey;
 
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
@@ -227,9 +226,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 Object attachment = key.attachment();
                 if (null == attachment) {
                     LOG.error("Couldn't determine SniffySelectionKey counterpart for key " + key);
-                    Exception e = selectionKeyMap.get(key);
-                    if (e != null) {
-                        LOG.error(e);
+                    if (JVMUtil.isTestingSniffy()) {
+                        throw new NullPointerException();
                     }
                 }
                 SniffySelectionKey sniffySelectionKey = (SniffySelectionKey) attachment;
