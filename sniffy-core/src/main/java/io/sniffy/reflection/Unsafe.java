@@ -42,6 +42,12 @@ public final class Unsafe {
     }
 
     @SuppressWarnings("Convert2Diamond")
+    public static <C> ClassRef<C> $(Class<C> clazz) {
+        return new ClassRef<C>(clazz);
+    }
+
+
+    /*@SuppressWarnings("Convert2Diamond")
     public static <C, T> FieldRef<C,T> $(String className, String fieldName) {
         try {
             //noinspection unchecked
@@ -81,6 +87,6 @@ public final class Unsafe {
         } catch (Throwable e) {
             return new FieldRef<C,T>(null, e);
         }
-    }
+    }*/
 
 }

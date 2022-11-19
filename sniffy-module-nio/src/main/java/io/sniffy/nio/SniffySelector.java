@@ -8,12 +8,12 @@ import io.sniffy.util.*;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
@@ -88,9 +88,9 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
             LOG.trace("Closing SniffySelector(" + provider() + ", " + delegate + ") = " + this);
             if (isSelectorClosing()) { // reimplement logic in Selector.close() against delegate selector
                 delegate.wakeup(); // wake up all other channels waiting in select*() calls
-                synchronized (getFirstLockForSelectorClose()) { // obtain first lock as defined in SelectorImpl.implCloseSelector()
-                    synchronized (getSecondLockForSelectorClose()) {
-                        synchronized (getThirdLockForSelectorClose()) {
+                synchronized (delegate) { // obtain first lock as defined in SelectorImpl.implCloseSelector()
+                    synchronized ($(delegateClass).firstField("publicKeys").getNotNullOrDefault(delegate, delegate)) {
+                        synchronized ($(delegateClass).firstField("publicSelectedKeys").getNotNullOrDefault(delegate, delegate)) {
                             Set<SelectionKey> delegateSelectionKeys = getPublicKeysFromDelegate();
                             invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
                             removeSniffyInvalidSelectionKeysForGivenDelegates(delegateSelectionKeys);
@@ -103,51 +103,19 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         }
     }
 
-    private Object getThirdLockForSelectorClose() throws UnsafeException {
-        Object thirdLock = delegate;
-
-        {
-            FieldRef<? super AbstractSelector, Object> publicSelectedKeysFieldRef = $(delegateClass, "publicSelectedKeys", true);
-
-            if (publicSelectedKeysFieldRef.isResolved()) {
-                Object publicSelectedKeysLock = publicSelectedKeysFieldRef.getValue(delegate);
-                if (null != publicSelectedKeysLock) {
-                    thirdLock = publicSelectedKeysLock;
-                }
-            }
-        }
-        return thirdLock;
-    }
-
-    private Object getSecondLockForSelectorClose() throws UnsafeException {
-        Object secondLock = delegate;
-
-        {
-            FieldRef<? super AbstractSelector, Object> publicKeysFieldRef = $(delegateClass, "publicKeys", true);
-
-            if (publicKeysFieldRef.isResolved()) {
-                Object delegatePublicKeysLock = publicKeysFieldRef.getValue(delegate);
-                if (null != delegatePublicKeysLock) {
-                    secondLock = delegatePublicKeysLock;
-                }
-            }
-        }
-        return secondLock;
-    }
-
-    private AbstractSelector getFirstLockForSelectorClose() {
-        return delegate;
-    }
-
+    /**
+     * @return true if this invocation actually closes the delegate selector
+     * Implemented using CAS on delegate selector fields "closed" or "selectorOpen" depending on JVM
+     */
     private boolean isSelectorClosing() throws UnsafeException {
         boolean changed = false;
-        FieldRef<? super AbstractSelector, Object> closedFieldRef = $(AbstractSelector.class, "closed");
+        FieldRef<AbstractSelector, Object> closedFieldRef = $(AbstractSelector.class).field("closed");
         if (closedFieldRef.isResolved()) {
             changed = closedFieldRef.compareAndSet(delegate, false, true);
         } else {
-            FieldRef<? super AbstractSelector, AtomicBoolean> selectorOpenFieldRef = $(AbstractSelector.class, "selectorOpen");
+            FieldRef<AbstractSelector, AtomicBoolean> selectorOpenFieldRef = $(AbstractSelector.class).field("selectorOpen");
             if (selectorOpenFieldRef.isResolved()) {
-                AtomicBoolean selectorOpen = selectorOpenFieldRef.getValue(delegate);
+                AtomicBoolean selectorOpen = selectorOpenFieldRef.get(delegate);
                 if (null != selectorOpen) {
                     changed = selectorOpen.getAndSet(false);
                 } else {
@@ -160,64 +128,48 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         return changed;
     }
 
+    @SuppressWarnings("RedundantTypeArguments")
     private Set<SelectionKey> getPublicKeysFromDelegate() throws UnsafeException {
-        Set<SelectionKey> delegateSelectionKeys = null;
-        FieldRef<? super AbstractSelector, ? extends Set<? extends SelectionKey>> publicKeysFieldRef = $(delegateClass, "publicKeys", true);
-        if (publicKeysFieldRef.isResolved()) {
-            Set<? extends SelectionKey> delegatePublicKeys = publicKeysFieldRef.getValue(delegate);
-            if (null != delegatePublicKeys) {
-                LOG.trace("Public keys before closing = " + delegatePublicKeys.size());
-                delegateSelectionKeys = new HashSet<SelectionKey>(delegatePublicKeys);
-            }
-        }
-        return delegateSelectionKeys;
+        FieldRef<? super AbstractSelector, Set<SelectionKey>> publicKeys = $(delegateClass).firstField("publicKeys");
+        return new HashSet<SelectionKey>(publicKeys.getNotNullOrDefault(delegate, Collections.<SelectionKey>emptySet()));
     }
 
     private static void removeSniffyInvalidSelectionKeysForGivenDelegates(Set<SelectionKey> delegateSelectionKeys) throws UnsafeException {
         if (null != delegateSelectionKeys) {
             for (SelectionKey delegateSelectionKey : delegateSelectionKeys) {
-                SelectableChannel delegateChannel = delegateSelectionKey.channel();
+                if (delegateSelectionKey.channel() instanceof AbstractSelectableChannel) {
+                    synchronized ($(AbstractSelectableChannel.class).field("keyLock").getNotNullOrDefault(
+                            (AbstractSelectableChannel) delegateSelectionKey.channel(),
+                            delegateSelectionKey.channel()))
+                    {
+                        Object attachment = delegateSelectionKey.attachment();
+                        if (attachment instanceof SniffySelectionKey &&
+                                ((SniffySelectionKey) attachment).channel() instanceof AbstractSelectableChannel
+                        ) {
+                            AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) ((SniffySelectionKey) attachment).channel();
 
-                Object keyLock = null;
+                            FieldRef<AbstractSelectableChannel, Integer> keyCountFieldRef = $(AbstractSelectableChannel.class).field("keyCount");
+                            FieldRef<AbstractSelectableChannel, SelectionKey[]> keysFieldRef = $(AbstractSelectableChannel.class).field("keys");
 
-                FieldRef<Object, Object> keyLockFieldRef = $(AbstractSelectableChannel.class, "keyLock");
-                if (keyLockFieldRef.isResolved()) {
-                    keyLock = keyLockFieldRef.getValue(delegateChannel);
-                }
+                            if (keyCountFieldRef.isResolved() && keysFieldRef.isResolved()) {
+                                int keyCount = keyCountFieldRef.get(sniffyChannel);
+                                SelectionKey[] sniffyKeys = keysFieldRef.get(sniffyChannel);
 
-                if (null == keyLock) {
-                    keyLock = delegateChannel;
-                }
+                                for (int i = 0; i < sniffyKeys.length; i++) {
 
-                //noinspection ReassignedVariable,SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (keyLock) {
-                    Object attachment = delegateSelectionKey.attachment();
-                    if (attachment instanceof SniffySelectionKey) {
-                        SniffySelectionKey sniffySelectionKey = (SniffySelectionKey) attachment;
-                        SelectableChannel sniffyChannel = sniffySelectionKey.channel();
-                        //invokeMethod(AbstractSelectableChannel.class, sniffyChannel, "removeKey", SelectionKey.class, sniffySelectionKey, Void.class);
+                                    SelectionKey sk = sniffyKeys[i];
 
-                        FieldRef<SelectableChannel, Integer> keyCountFieldRef = $(AbstractSelectableChannel.class, "keyCount");
-                        FieldRef<SelectableChannel, SelectionKey[]> keysFieldRef = $(AbstractSelectableChannel.class, "keys");
+                                    if (null != sk && !sk.isValid()) {
+                                        keyCount--;
+                                        sniffyKeys[i] = null;
+                                    }
 
-                        if (keyCountFieldRef.isResolved() && keysFieldRef.isResolved()) {
-                            int keyCount = keyCountFieldRef.getValue(sniffyChannel);
-                            SelectionKey[] sniffyKeys = keysFieldRef.getValue(sniffyChannel);
-
-                            for (int i = 0; i < sniffyKeys.length; i++) {
-
-                                SelectionKey sk = sniffyKeys[i];
-
-                                if (null != sk && !sk.isValid()) {
-                                    keyCount--;
-                                    sniffyKeys[i] = null;
                                 }
 
+                                keyCountFieldRef.set(sniffyChannel, keyCount);
                             }
 
-                            keyCountFieldRef.setValue(sniffyChannel, keyCount);
                         }
-
                     }
                 }
             }

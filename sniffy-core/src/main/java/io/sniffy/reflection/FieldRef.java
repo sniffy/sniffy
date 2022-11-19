@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 // TODO: extract ClassRef and MethodRef instead
+// TODO: get should return Optional class but how it can work on Java 1.8- ?
 public class FieldRef<C,T> {
     
     private final Field field;
@@ -65,7 +66,7 @@ public class FieldRef<C,T> {
 
     }
 
-    public void setValue(C instance, T value) throws UnsafeException {
+    public void set(C instance, T value) throws UnsafeException {
         try {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
@@ -137,7 +138,21 @@ public class FieldRef<C,T> {
         }
     }
 
-    public <C1 extends C> T getValue(C1 instance) throws UnsafeException {
+    public T getOrDefault(C instance, T defaultValue) throws UnsafeException {
+        if (!isResolved()) return defaultValue;
+        else return get(instance);
+    }
+
+    public T getNotNullOrDefault(C instance, T defaultValue) throws UnsafeException {
+        if (!isResolved()) {
+            return defaultValue;
+        } else {
+            T value = get(instance);
+            return (null == value) ? defaultValue : value;
+        }
+    }
+
+    public T get(C instance) throws UnsafeException {
         try {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();

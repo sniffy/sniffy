@@ -22,15 +22,15 @@ public class UnsafeTest {
         ClassWithDifferentFields objectWithDifferentFields = new ClassWithDifferentFields(objectField, intField, booleanField);
 
         FieldRef<ClassWithDifferentFields, Object> privateObjectFieldRef =
-                $(ClassWithDifferentFields.class, "privateObjectField");
+                $(ClassWithDifferentFields.class).field("privateObjectField");
 
         assertNotNull(privateObjectFieldRef);
 
-        assertEquals(objectField, privateObjectFieldRef.getValue(objectWithDifferentFields));
+        assertEquals(objectField, privateObjectFieldRef.get(objectWithDifferentFields));
 
         objectField = new Object();
-        privateObjectFieldRef.setValue(objectWithDifferentFields, objectField);
-        assertEquals(objectField, privateObjectFieldRef.getValue(objectWithDifferentFields));
+        privateObjectFieldRef.set(objectWithDifferentFields, objectField);
+        assertEquals(objectField, privateObjectFieldRef.get(objectWithDifferentFields));
     }
 
     @Test
@@ -43,15 +43,15 @@ public class UnsafeTest {
         ClassWithDifferentFields objectWithDifferentFields = new ClassWithDifferentFields(objectField, intField, booleanField);
 
         FieldRef<ClassWithDifferentFields, Boolean> privateBooleanFieldRef =
-                $(ClassWithDifferentFields.class, "privateBooleanField");
+                $(ClassWithDifferentFields.class).field("privateBooleanField");
 
         assertNotNull(privateBooleanFieldRef);
 
         assertFalse(privateBooleanFieldRef.compareAndSet(objectWithDifferentFields, true, true));
-        assertFalse(privateBooleanFieldRef.getValue(objectWithDifferentFields));
+        assertFalse(privateBooleanFieldRef.get(objectWithDifferentFields));
 
         assertTrue(privateBooleanFieldRef.compareAndSet(objectWithDifferentFields, false, true));
-        assertTrue(privateBooleanFieldRef.getValue(objectWithDifferentFields));
+        assertTrue(privateBooleanFieldRef.get(objectWithDifferentFields));
     }
 
     @Test
@@ -64,15 +64,15 @@ public class UnsafeTest {
         ClassWithDifferentFinalFields objectWithDifferentFields = new ClassWithDifferentFinalFields(objectField, intField, booleanField);
 
         FieldRef<ClassWithDifferentFinalFields, Object> privateObjectFieldRef =
-                $(ClassWithDifferentFinalFields.class, "privateObjectField");
+                $(ClassWithDifferentFinalFields.class).field("privateObjectField");
 
         assertNotNull(privateObjectFieldRef);
 
-        assertEquals(objectField, privateObjectFieldRef.getValue(objectWithDifferentFields));
+        assertEquals(objectField, privateObjectFieldRef.get(objectWithDifferentFields));
 
         objectField = new Object();
-        privateObjectFieldRef.setValue(objectWithDifferentFields, objectField);
-        assertEquals(objectField, privateObjectFieldRef.getValue(objectWithDifferentFields));
+        privateObjectFieldRef.set(objectWithDifferentFields, objectField);
+        assertEquals(objectField, privateObjectFieldRef.get(objectWithDifferentFields));
     }
 
 }
