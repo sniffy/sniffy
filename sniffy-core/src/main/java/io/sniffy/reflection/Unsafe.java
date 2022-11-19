@@ -53,10 +53,31 @@ public final class Unsafe {
     }
 
     @SuppressWarnings("Convert2Diamond")
-    public static <C, T> FieldRef<C,T> $(Class<C> clazz, String fieldName) {
+    public static <C, T> FieldRef<C,T> $(Class<?> clazz, String fieldName) {
         try {
             Field declaredField = clazz.getDeclaredField(fieldName);
             return new FieldRef<C,T>(declaredField, null);
+        } catch (Throwable e) {
+            return new FieldRef<C,T>(null, e);
+        }
+    }
+
+    @SuppressWarnings("Convert2Diamond")
+    public static <C, T> FieldRef<C,T> $(Class<?> clazz, String fieldName, boolean recursive) {
+        try {
+            Exception firstException = null;
+            while (recursive && clazz != Object.class) {
+                try {
+                    Field declaredField = clazz.getDeclaredField(fieldName);
+                    return new FieldRef<C, T>(declaredField, null);
+                } catch (NoSuchFieldException e) {
+                    if (null == firstException) {
+                        firstException = e;
+                    }
+                    clazz = clazz.getSuperclass();
+                }
+            }
+            return new FieldRef<C,T>(null, firstException);
         } catch (Throwable e) {
             return new FieldRef<C,T>(null, e);
         }

@@ -34,6 +34,27 @@ public class UnsafeTest {
     }
 
     @Test
+    public void testCompareAndSetBooleanField() throws UnsafeException {
+
+        Object objectField = new Object();
+        int intField = 42;
+        boolean booleanField = false;
+
+        ClassWithDifferentFields objectWithDifferentFields = new ClassWithDifferentFields(objectField, intField, booleanField);
+
+        FieldRef<ClassWithDifferentFields, Boolean> privateBooleanFieldRef =
+                $(ClassWithDifferentFields.class, "privateBooleanField");
+
+        assertNotNull(privateBooleanFieldRef);
+
+        assertFalse(privateBooleanFieldRef.compareAndSet(objectWithDifferentFields, true, true));
+        assertFalse(privateBooleanFieldRef.getValue(objectWithDifferentFields));
+
+        assertTrue(privateBooleanFieldRef.compareAndSet(objectWithDifferentFields, false, true));
+        assertTrue(privateBooleanFieldRef.getValue(objectWithDifferentFields));
+    }
+
+    @Test
     public void testModifyPrivateFinalFields() throws UnsafeException {
 
         Object objectField = new Object();

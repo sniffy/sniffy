@@ -2,6 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.FieldRef;
 import io.sniffy.util.*;
 
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static io.sniffy.util.ReflectionUtil.*;
 
 /**
@@ -82,50 +84,60 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
             boolean changed = false;
 
-            try {
-                boolean oldValue = getField(AbstractSelector.class, delegate, "closed");
-                setField(AbstractSelector.class, delegate, "closed", true);
-                changed = !oldValue;
-            } catch (Exception e) {
-                AtomicBoolean delegateSelectorOpen = getField(AbstractSelector.class, delegate, "selectorOpen");
-                if (null != delegateSelectorOpen) {
-                    changed = delegateSelectorOpen.getAndSet(false);
-                } else {
-                    LOG.trace("Neither AbstractSelector.closed nor AbstractSelector.selectorOpen fields found");
-                }
-            }
+            Class<? extends AbstractSelector> delegateClass = delegate.getClass();
+            FieldRef<? super AbstractSelector, ? extends Set<? extends SelectionKey>> publicKeysFieldRef = $(delegateClass, "publicKeys", true);
 
-            if (changed) {
+            synchronized (delegate) {
 
-                synchronized (delegate) {
-                    Object publicKeysLock = null;
-                    try {
-                        //noinspection unchecked
-                        publicKeysLock = getFieldRecursively((Class<AbstractSelector>) delegate.getClass(), delegate, "publicKeys");
-                    } catch (Exception e) {
-                        LOG.error("Couldn't get publicKeysLock from " + delegate);
-                        if (JVMUtil.isTestingSniffy()) {
-                            throw e;
-                        }
+                Object secondLock = delegate;
 
+                if (publicKeysFieldRef.isResolved()) {
+                    Set<? extends SelectionKey> delegatePublicKeys = publicKeysFieldRef.getValue(delegate);
+                    if (null != delegatePublicKeys) {
+                        secondLock = delegatePublicKeys;
                     }
+                }
 
-                    if (null != publicKeysLock) {
-                        //noinspection ReassignedVariable,SynchronizationOnLocalVariableOrMethodParameter
-                        synchronized (publicKeysLock) {
-                            LOG.trace("Public keys before closing = " + (Set<SelectionKey>) publicKeysLock);
-                            invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
-                            updateKeysFromDelegate();
-                        }
+                //noinspection ReassignedVariable,SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (secondLock) {
+
+                    FieldRef<? super AbstractSelector, Object> closedFieldRef = $(AbstractSelector.class, "closed");
+                    if (closedFieldRef.isResolved()) {
+                        changed = closedFieldRef.compareAndSet(delegate, false, true);
                     } else {
-                        LOG.trace("Public keys before closing = " + (Set<SelectionKey>) publicKeysLock);
+                        FieldRef<? super AbstractSelector, AtomicBoolean> selectorOpenFieldRef = $(AbstractSelector.class, "selectorOpen");
+                        if (selectorOpenFieldRef.isResolved()) {
+                            AtomicBoolean selectorOpen = selectorOpenFieldRef.getValue(delegate);
+                            if (null != selectorOpen) {
+                                changed = selectorOpen.getAndSet(false);
+                            } else {
+                                LOG.error("AbstractSelector.selectorOpen is null");
+                            }
+                        } else {
+                            LOG.error("Neither AbstractSelector.closed nor AbstractSelector.selectorOpen fields found");
+                        }
+                    }
+
+                    if (changed) {
+
+                        if (publicKeysFieldRef.isResolved()) {
+                            Set<? extends SelectionKey> delegatePublicKeys = publicKeysFieldRef.getValue(delegate);
+                            if (null != delegatePublicKeys) {
+                                LOG.trace("Public keys before closing = " + delegatePublicKeys.size());
+                                // TODO: store them
+                            }
+                        }
+
                         invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
+
                         updateKeysFromDelegate();
+                        // TODO: remove stored keys from sniffy channels
+
                     }
 
                 }
-
             }
+
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }

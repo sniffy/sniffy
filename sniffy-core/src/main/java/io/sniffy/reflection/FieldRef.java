@@ -136,7 +136,7 @@ public class FieldRef<C,T> {
         }
     }
 
-    public T getValue(C instance) throws UnsafeException {
+    public <C1 extends C> T getValue(C1 instance) throws UnsafeException {
         try {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
