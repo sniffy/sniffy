@@ -4,6 +4,7 @@ import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
+import sun.nio.ch.SelectorImpl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -130,7 +131,20 @@ public class SniffySelectorTest {
 
     }
 
-    // TODO: add a test for fields in SelectorImpl class
+    @Test
+    public void testSelectorImplFields() throws Exception {
+
+        Map<String, Field> fieldsMap = new HashMap<String, Field>();
+
+        for (Field field : ReflectionUtil.getDeclaredFields(SelectorImpl.class)) {
+            if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
+                fieldsMap.put(field.getName(), field);
+            }
+        }
+
+        assertTrue(fieldsMap.containsKey("publicKeys"));
+
+    }
 
     @Test
     public void testCloseSelector() throws Exception {
