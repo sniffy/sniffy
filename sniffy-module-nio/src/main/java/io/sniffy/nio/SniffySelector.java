@@ -5,7 +5,6 @@ import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.*;
 
 import java.io.IOException;
-import java.lang.invoke.VarHandle;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -79,25 +78,45 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         try {
             LOG.trace("Closing SniffySelector(" + provider() + ", " + delegate + ") = " + this);
 
-            try {
-                VarHandle closedVH = getField(AbstractSelector.class, null, "CLOSED"); // TODO: check it's present on all Java versions
-                boolean changed = (boolean) closedVH.compareAndSet(delegate, false, true);
-                if (changed) {
-                    invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
-                    updateKeysFromDelegate();
-                    // TODO: lock on selector (and publicSelectedKeys) and grab list of keys BEFORE calling implCloseSelector on delegate; remove them from sniffy channels after that
+            boolean changed = false;
+            boolean checked = false;
+
+            if (JVMUtil.getVersion() >= 9) {
+                try {
+                    Object closedVH = getField(AbstractSelector.class, null, "CLOSED"); // TODO: check it's present on all Java versions
+                    changed = ReflectionUtil.invokeMethod(Class.forName(
+                                    "java.lang.invoke.VarHandle"), closedVH,
+                            "compareAndSet",
+                            Object.class, delegate,
+                            Boolean.TYPE, false,
+                            Boolean.TYPE, true,
+                            Boolean.TYPE
+                    );
+                    checked = true;
+                } catch (Exception e) {
+                    LOG.trace("Couldn't set delegateSelector.closed using VarHandle due to " + e);
                 }
-            } catch (NoSuchFieldException e) {
+            }
+
+            if (!checked) {
+                // TODO: add actual check if state was changed
                 if (!setField(AbstractSelector.class, delegate, "closed", true)) {
                     AtomicBoolean delegateSelectorOpen = getField(AbstractSelector.class, delegate, "selectorOpen");
                     if (null != delegateSelectorOpen) {
-                        delegateSelectorOpen.set(false);
+                        changed = !delegateSelectorOpen.getAndSet(false);
                     } else {
                         LOG.trace("Neither AbstractSelector.closed nor AbstractSelector.selectorOpen fields found");
                     }
+                } else {
+                    changed = true;
                 }
+
+            }
+
+            if (changed) {
                 invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
                 updateKeysFromDelegate();
+                // TODO: lock on selector (and publicSelectedKeys) and grab list of keys BEFORE calling implCloseSelector on delegate; remove them from sniffy channels after that
             }
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);

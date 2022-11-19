@@ -633,7 +633,7 @@ public class ReflectionUtil {
 
     @SuppressWarnings("unchecked")
     public static <R, T, P1, P2, P3> R invokeMethod(
-            Class<T> clazz, T instance,
+            Class<T> clazz, Object instance,
             String methodName,
             Class<P1> argument1Type, P1 argument1,
             Class<P2> argument2Type, P2 argument2,
