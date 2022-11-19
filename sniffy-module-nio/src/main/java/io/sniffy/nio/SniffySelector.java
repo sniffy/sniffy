@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static io.sniffy.reflection.Unsafe.$;
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * parent class AbstractSelector contains following properties:
@@ -223,10 +222,17 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     }
 
     /**
-     * This method adds a selection key to provided AbstractSelectableChannel, hence we're doing the same here manually
+     * This method is only invoked from (Sniffy)AbstractSelectableChannel.register(Selector sel, int ops, Object att)
+     * which also adds the result (Sniffy)SelectionKey to keys array
+     * <p>
+     * That method in AbstractSelectableChannel is final - hence we're recreating similar logic here, by adding the
+     * delegate selection key to delegate selectable channel manually using reflection
+     * </p>
+     * <p>
+     * Also storing SniffySelectionKey as an attachment in original / delegate SelectionKey
+     * </p>
      */
     @Override
-    // TODO: document
     protected SelectionKey register(AbstractSelectableChannel sniffyChannel, int ops, Object att) {
         try {
 
@@ -243,28 +249,21 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 }
             }
 
-            Object regLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "regLock");
-            Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateChannel, "keyLock");
+            synchronized ($(AbstractSelectableChannel.class).field("regLock").getNotNullOrDefault(delegateChannel, delegateChannel)) {
+                synchronized ($(AbstractSelectableChannel.class).field("keyLock").getNotNullOrDefault(delegateChannel, delegateChannel)) {
 
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (regLock) {
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (keyLock) {
-
+                    // SniffySelectionKey has a reference to delegate SelectionKey and original attachment
+                    // Delegate SelectionKey stores SniffySelectionKey as an attachment
                     SniffySelectionKey sniffySelectionKey = new SniffySelectionKey(this, sniffyChannel, att);
-
-                    SelectionKey selectionKeyDelegate = invokeMethod(AbstractSelector.class, delegate, "register",
-                            AbstractSelectableChannel.class, delegateChannel,
-                            Integer.TYPE, ops,
-                            Object.class, sniffySelectionKey,
-                            SelectionKey.class
+                    SelectionKey selectionKeyDelegate = $(AbstractSelector.class).method(SelectionKey.class, "register",
+                            AbstractSelectableChannel.class, Integer.TYPE, Object.class).invoke(
+                            delegate,
+                            delegateChannel, ops, sniffySelectionKey
                     );
-
                     sniffySelectionKey.setDelegate(selectionKeyDelegate);
 
-                    selectionKeyDelegate.attach(sniffySelectionKey);
-
-                    invokeMethod(AbstractSelectableChannel.class, delegateChannel, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
+                    // Add delegate selection key to delegate selectable channel
+                    $(AbstractSelectableChannel.class).method("addKey", SelectionKey.class).invoke(delegateChannel, selectionKeyDelegate);
 
                     return sniffySelectionKey;
 
@@ -416,10 +415,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression"})
     public int select(Consumer<SelectionKey> action, long timeout) throws IOException {
         try {
-            return invokeMethod(Selector.class, delegate, "select",
-                    Consumer.class, new SelectionKeyConsumerWrapper(action),
-                    Long.TYPE, timeout,
-                    Integer.TYPE
+            return $(Selector.class).method(Integer.TYPE, "select", Consumer.class, Long.TYPE).invoke(
+                    delegate, new SelectionKeyConsumerWrapper(action), timeout
             );
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
@@ -433,9 +430,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression"})
     public int select(Consumer<SelectionKey> action) throws IOException {
         try {
-            return invokeMethod(Selector.class, delegate, "select",
-                    Consumer.class, new SelectionKeyConsumerWrapper(action),
-                    Integer.TYPE
+            return $(Selector.class).method(Integer.TYPE, "select", Consumer.class).invoke(
+                    delegate, new SelectionKeyConsumerWrapper(action)
             );
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
@@ -449,9 +445,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression", "unused"})
     public int selectNow(Consumer<SelectionKey> action) throws IOException {
         try {
-            return invokeMethod(Selector.class, delegate, "selectNow",
-                    Consumer.class, new SelectionKeyConsumerWrapper(action),
-                    Integer.TYPE
+            return $(Selector.class).method(Integer.TYPE, "selectNow", Consumer.class).invoke(
+                    delegate, new SelectionKeyConsumerWrapper(action)
             );
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);

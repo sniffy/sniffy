@@ -5,15 +5,17 @@ import io.sniffy.util.ExceptionUtil;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class VoidTwoArgsMethodRef<C, P1, P2> extends AbstractMethodRef<C> {
+public class NonVoidTwoArgsMethodRef<T, C, P1, P2> extends AbstractMethodRef<C> {
 
-    public VoidTwoArgsMethodRef(Method method, Throwable throwable) {
+    public NonVoidTwoArgsMethodRef(Method method, Throwable throwable) {
         super(method, throwable);
     }
 
-    public void invoke(C instance, P1 p1, P2 p2) throws UnsafeException {
+    public T invoke(C instance, P1 p1, P2 p2) throws UnsafeException {
         try {
-            method.invoke(instance, p1, p2);
+            Object result = method.invoke(instance, p1, p2);
+            //noinspection unchecked
+            return (T) result;
         } catch (IllegalAccessException e) {
             throw new UnsafeException(e);
         } catch (InvocationTargetException e) {
