@@ -55,6 +55,17 @@ public class SniffySelectorMockTest {
     }
 
     @Test
+    public void testCloseWorksJustOnce() throws Exception {
+        assertTrue(sniffySelector.isOpen());
+        assertTrue(delegate.isOpen());
+        delegate.close();
+        sniffySelector.close();
+        assertEquals(1, implCloseSelectorInvocationCounter.get());
+        assertFalse(sniffySelector.isOpen());
+        assertFalse(delegate.isOpen());
+    }
+
+    @Test
     public void testCloseUpdatesKeysForRelatedChannels() throws Exception {
         // TODO: implement
     }

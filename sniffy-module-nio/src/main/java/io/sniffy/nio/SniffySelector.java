@@ -11,7 +11,10 @@ import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -100,17 +103,16 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
             if (!checked) {
                 // TODO: add actual check if state was changed
-                if (!setField(AbstractSelector.class, delegate, "closed", true)) {
+                if (setField(AbstractSelector.class, delegate, "closed", true)) {
+                    changed = true;
+                } else {
                     AtomicBoolean delegateSelectorOpen = getField(AbstractSelector.class, delegate, "selectorOpen");
                     if (null != delegateSelectorOpen) {
-                        changed = !delegateSelectorOpen.getAndSet(false);
+                        changed = delegateSelectorOpen.getAndSet(false);
                     } else {
                         LOG.trace("Neither AbstractSelector.closed nor AbstractSelector.selectorOpen fields found");
                     }
-                } else {
-                    changed = true;
                 }
-
             }
 
             if (changed) {
@@ -245,6 +247,16 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
             // update keys on related channels
             updateKeysFromDelegate();
         }
+    }
+
+    private final Queue<SelectionKey> cancelledKeys = new LinkedBlockingQueue<SelectionKey>();
+
+    protected void addCancelledKey(SelectionKey selectionKey) {
+        cancelledKeys.add(selectionKey);
+    }
+
+    protected void processCancelledQueue() {
+
     }
 
     protected void updateKeysFromDelegate() {
