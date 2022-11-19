@@ -4,7 +4,6 @@ import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
-import sun.nio.ch.SelectorImpl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -136,7 +135,7 @@ public class SniffySelectorTest {
 
         Map<String, Field> fieldsMap = new HashMap<String, Field>();
 
-        for (Field field : ReflectionUtil.getDeclaredFields(SelectorImpl.class)) {
+        for (Field field : ReflectionUtil.getDeclaredFields(Class.forName("sun.nio.ch.SelectorImpl"))) {
             if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
                 fieldsMap.put(field.getName(), field);
             }
