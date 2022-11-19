@@ -3,6 +3,7 @@ package io.sniffy.reflection;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+// TODO: extract ClassRef and MethodRef instead
 public class FieldRef<C,T> {
     
     private final Field field;
