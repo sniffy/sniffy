@@ -18,8 +18,47 @@ public class FieldRef<C,T> {
     public Field getField() {
         return field;
     }
-    
-    void setValue(C instance, T value) throws UnsafeException {
+
+    public boolean compareAndSet(C instance, T oldValue, T newValue) throws UnsafeException {
+        try {
+
+            sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
+
+            long offset = null == instance ?
+                    UNSAFE.staticFieldOffset(field) :
+                    UNSAFE.objectFieldOffset(field);
+
+            Object object = null == instance ? field.getDeclaringClass() : instance;
+
+            // TODO: validate conversion below
+
+            if (field.getType() == Integer.TYPE && oldValue instanceof Number && newValue instanceof Number) {
+                return UNSAFE.compareAndSwapInt(object, offset, ((Number) oldValue).intValue(), ((Number) newValue).intValue());
+            } else if (field.getType() == Short.TYPE && oldValue instanceof Number && newValue instanceof Number) {
+                return UNSAFE.compareAndSwapInt(object, offset, ((Number) oldValue).intValue(), ((Number) newValue).intValue());
+            } else if (field.getType() == Byte.TYPE && oldValue instanceof Character && newValue instanceof Character) {
+                return UNSAFE.compareAndSwapInt(object, offset, (int) oldValue, (int) newValue);
+            } else if (field.getType() == Character.TYPE && oldValue instanceof Number && newValue instanceof Number) {
+                return UNSAFE.compareAndSwapInt(object, offset, ((Number) oldValue).intValue(), ((Number) newValue).intValue());
+            } else if (field.getType() == Float.TYPE && oldValue instanceof Number && newValue instanceof Number) {
+                return UNSAFE.compareAndSwapInt(object, offset, Float.floatToIntBits(((Number) oldValue).floatValue()), Float.floatToIntBits(((Number) newValue).floatValue()));
+            } else if (field.getType() == Long.TYPE && oldValue instanceof Number && newValue instanceof Number) {
+                return UNSAFE.compareAndSwapLong(object, offset, ((Number) oldValue).longValue(), ((Number) newValue).longValue());
+            } else if (field.getType() == Double.TYPE && oldValue instanceof Number && newValue instanceof Number) {
+                return UNSAFE.compareAndSwapLong(object, offset, Double.doubleToLongBits(((Number) oldValue).doubleValue()), Double.doubleToLongBits(((Number) newValue).doubleValue()));
+            } else if (field.getType() == Boolean.TYPE && oldValue instanceof Boolean && newValue instanceof Boolean) {
+                return UNSAFE.compareAndSwapInt(object, offset, (int) oldValue, (int) newValue);
+            } else {
+                return UNSAFE.compareAndSwapObject(object, offset, oldValue, newValue);
+            }
+
+        } catch (Throwable e) {
+            throw new UnsafeException(e);
+        }
+
+    }
+
+    public void setValue(C instance, T value) throws UnsafeException {
         try {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
@@ -90,8 +129,8 @@ public class FieldRef<C,T> {
             throw new UnsafeException(e);
         }
     }
-    
-    T getValue(C instance) throws UnsafeException {
+
+    public T getValue(C instance) throws UnsafeException {
         try {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
