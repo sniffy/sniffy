@@ -3,6 +3,7 @@ package io.sniffy.reflection;
 import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
 import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.reflection.method.*;
+import io.sniffy.util.JVMUtil;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -59,9 +60,12 @@ public class ClassRef<C> implements ResolvableRef {
 
     // esoteric
 
+    @SuppressWarnings("RedundantSuppression")
     public ZeroArgsConstructorRef<C> constructor() throws UnsafeException {
 
         try {
+            MethodHandles.publicLookup();
+
             FieldRef<MethodHandles.Lookup, MethodHandles.Lookup> implLookupFieldRef = $(MethodHandles.Lookup.class).field("IMPL_LOOKUP");
             MethodHandles.Lookup implLookup = implLookupFieldRef.get(null);
 
@@ -78,23 +82,46 @@ public class ClassRef<C> implements ResolvableRef {
 
             memberNameFlagsFieldRef.set(initMemberName, flags);
 
-            MethodHandle getDirectMethodHandle = implLookup.findVirtual(
-                    MethodHandles.Lookup.class,
-                    "getDirectMethod",
-                    MethodType.methodType(
-                            MethodHandle.class,
-                            byte.class,
-                            Class.class,
-                            Class.forName("java.lang.invoke.MemberName"),
-                            MethodHandles.Lookup.class
-                    )
-            );
+            MethodHandle handle;
 
-            MethodHandle handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, implLookup);
+            if (JVMUtil.getVersion() > 8) {
+
+                //noinspection JavaLangInvokeHandleSignatur /*e*/
+                MethodHandle getDirectMethodHandle = implLookup.findVirtual(
+                        MethodHandles.Lookup.class,
+                        "getDirectMethod",
+                        MethodType.methodType(
+                                MethodHandle.class,
+                                byte.class,
+                                Class.class,
+                                Class.forName("java.lang.invoke.MemberName"),
+                                MethodHandles.Lookup.class
+                        )
+                );
+
+                handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, implLookup);
+            } else {
+
+                //noinspection JavaLangInvokeHandleSignatur /*e*/
+                MethodHandle getDirectMethodHandle = implLookup.findVirtual(
+                        MethodHandles.Lookup.class,
+                        "getDirectMethod",
+                        MethodType.methodType(
+                                MethodHandle.class,
+                                byte.class,
+                                Class.class,
+                                Class.forName("java.lang.invoke.MemberName"),
+                                Class.class
+                        )
+                );
+
+                handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, MethodHandles.class);
+            }
 
             return new ZeroArgsConstructorRef<C>(handle, null);
 
         } catch (Throwable e) {
+            e.printStackTrace();
             return new ZeroArgsConstructorRef<C>(null, e);
         }
 
