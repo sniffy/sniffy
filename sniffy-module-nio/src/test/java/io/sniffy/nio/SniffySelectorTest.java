@@ -130,6 +130,8 @@ public class SniffySelectorTest {
 
     }
 
+    // TODO: add a test for fields in SelectorImpl class
+
     @Test
     public void testCloseSelector() throws Exception {
 

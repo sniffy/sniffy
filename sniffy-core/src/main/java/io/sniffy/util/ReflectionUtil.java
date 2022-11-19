@@ -362,6 +362,27 @@ public class ReflectionUtil {
         return getField((Class<T>) Class.forName(className), instance, fieldName, lockFieldName);
     }
 
+    public static <T, V> V getFieldRecursively(Class<? super T> clazz, T instance, String fieldName) throws NoSuchFieldException, IllegalAccessException {
+
+        Throwable t = null;
+
+        while (clazz != Object.class) {
+
+            Object field;
+            try {
+                field = getField(clazz, instance, fieldName, null);
+                //noinspection unchecked
+                return (V) field;
+            } catch (Exception e) {
+                t = e;
+                clazz = clazz.getSuperclass();
+            }
+
+        }
+
+        throw ExceptionUtil.throwException(t);
+    }
+
     public static <T, V> V getField(Class<T> clazz, T instance, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         Object field = getField(clazz, instance, fieldName, null);
         //noinspection unchecked

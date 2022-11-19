@@ -5,10 +5,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import sun.nio.ch.Util;
 
 import java.io.IOException;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.emptySet;
@@ -22,25 +27,37 @@ public class SniffySelectorMockTest {
     private SelectorProvider selectorProviderMock;
 
     @Mock
-    private AbstractSelector selectorMock;
-
-    private AtomicInteger implCloseSelectorInvocationCounter;
-    private AbstractSelector delegate;
+    private SniffySelectorDelegate selectorMock;
+    private SniffySelectorDelegate delegate;
 
     private SniffySelector sniffySelector;
 
+    @SuppressWarnings({"NewClassNamingConvention", "FieldMayBeFinal", "unused", "Convert2Diamond"})
+    public static class SniffySelectorDelegate extends SniffySelector {
+
+        private final AtomicInteger implCloseSelectorInvocationCounter = new AtomicInteger();
+
+        // Same fields are present in SelectorImpl class - we need to replicate them for testing
+        protected Set<SelectionKey> selectedKeys = new HashSet<SelectionKey>();
+        protected HashSet<SelectionKey> keys = new HashSet<SelectionKey>();
+        private Set<SelectionKey> publicKeys = new HashSet<SelectionKey>();
+        private Set<SelectionKey> publicSelectedKeys = new HashSet<SelectionKey>();
+
+        public SniffySelectorDelegate(SelectorProvider provider, AbstractSelector delegate) {
+            super(provider, delegate);
+        }
+
+        @Override
+        protected void implCloseSelector() throws IOException {
+            implCloseSelectorInvocationCounter.incrementAndGet();
+            super.implCloseSelector();
+        }
+
+    }
+
     @Before
     public void createSniffySelector() throws Exception {
-        implCloseSelectorInvocationCounter = new AtomicInteger();
-        delegate = new SniffySelector(selectorProviderMock, selectorMock) {
-
-            @Override
-            protected void implCloseSelector() throws IOException {
-                implCloseSelectorInvocationCounter.incrementAndGet();
-                super.implCloseSelector();
-            }
-
-        };
+        delegate = new SniffySelectorDelegate(selectorProviderMock, selectorMock);
         sniffySelector = new SniffySelector(selectorProviderMock, delegate);
     }
 
@@ -49,7 +66,7 @@ public class SniffySelectorMockTest {
         assertTrue(sniffySelector.isOpen());
         assertTrue(delegate.isOpen());
         sniffySelector.close();
-        assertEquals(1, implCloseSelectorInvocationCounter.get());
+        assertEquals(1, delegate.implCloseSelectorInvocationCounter.get());
         assertFalse(sniffySelector.isOpen());
         assertFalse(delegate.isOpen());
     }
@@ -60,7 +77,7 @@ public class SniffySelectorMockTest {
         assertTrue(delegate.isOpen());
         delegate.close();
         sniffySelector.close();
-        assertEquals(1, implCloseSelectorInvocationCounter.get());
+        assertEquals(1, delegate.implCloseSelectorInvocationCounter.get());
         assertFalse(sniffySelector.isOpen());
         assertFalse(delegate.isOpen());
     }
