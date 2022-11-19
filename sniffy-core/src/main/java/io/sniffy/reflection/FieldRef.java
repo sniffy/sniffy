@@ -53,7 +53,7 @@ public class FieldRef<C,T> {
             } else if (field.getType() == Double.TYPE && oldValue instanceof Number && newValue instanceof Number) {
                 return UNSAFE.compareAndSwapLong(object, offset, Double.doubleToLongBits(((Number) oldValue).doubleValue()), Double.doubleToLongBits(((Number) newValue).doubleValue()));
             } else if (field.getType() == Boolean.TYPE && oldValue instanceof Boolean && newValue instanceof Boolean) {
-                return UNSAFE.compareAndSwapInt(object, offset, (int) oldValue, (int) newValue);
+                return UNSAFE.compareAndSwapInt(object, offset, (Boolean) oldValue ? 1 : 0, (Boolean) newValue ? 1 : 0);
             } else {
                 return UNSAFE.compareAndSwapObject(object, offset, oldValue, newValue);
             }
