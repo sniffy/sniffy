@@ -3,15 +3,18 @@ package io.sniffy.nio;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.reflection.FieldRef;
+import io.sniffy.reflection.UnsafeException;
 import io.sniffy.util.*;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static io.sniffy.reflection.Unsafe.$;
-import static io.sniffy.util.ReflectionUtil.*;
+import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * parent class AbstractSelector contains following properties:
@@ -82,8 +85,6 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         try {
             LOG.trace("Closing SniffySelector(" + provider() + ", " + delegate + ") = " + this);
 
-            boolean changed = false;
-
             Class<? extends AbstractSelector> delegateClass = delegate.getClass();
             FieldRef<? super AbstractSelector, ? extends Set<? extends SelectionKey>> publicKeysFieldRef = $(delegateClass, "publicKeys", true);
 
@@ -101,37 +102,15 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 //noinspection ReassignedVariable,SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (secondLock) {
 
-                    FieldRef<? super AbstractSelector, Object> closedFieldRef = $(AbstractSelector.class, "closed");
-                    if (closedFieldRef.isResolved()) {
-                        changed = closedFieldRef.compareAndSet(delegate, false, true);
-                    } else {
-                        FieldRef<? super AbstractSelector, AtomicBoolean> selectorOpenFieldRef = $(AbstractSelector.class, "selectorOpen");
-                        if (selectorOpenFieldRef.isResolved()) {
-                            AtomicBoolean selectorOpen = selectorOpenFieldRef.getValue(delegate);
-                            if (null != selectorOpen) {
-                                changed = selectorOpen.getAndSet(false);
-                            } else {
-                                LOG.error("AbstractSelector.selectorOpen is null");
-                            }
-                        } else {
-                            LOG.error("Neither AbstractSelector.closed nor AbstractSelector.selectorOpen fields found");
-                        }
-                    }
+                    boolean changed = isSelectorClosing();
 
                     if (changed) {
 
-                        if (publicKeysFieldRef.isResolved()) {
-                            Set<? extends SelectionKey> delegatePublicKeys = publicKeysFieldRef.getValue(delegate);
-                            if (null != delegatePublicKeys) {
-                                LOG.trace("Public keys before closing = " + delegatePublicKeys.size());
-                                // TODO: store them
-                            }
-                        }
+                        Set<SelectionKey> delegateSelectionKeys = getPublicKeysFromDelegate(publicKeysFieldRef);
 
                         invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
 
-                        updateKeysFromDelegate();
-                        // TODO: remove stored keys from sniffy channels
+                        removeSniffyInvalidSelectionKEysForGivenDelegates(delegateSelectionKeys);
 
                     }
 
@@ -140,6 +119,91 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
 
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
+        }
+    }
+
+    private boolean isSelectorClosing() throws UnsafeException {
+        boolean changed = false;
+        FieldRef<? super AbstractSelector, Object> closedFieldRef = $(AbstractSelector.class, "closed");
+        if (closedFieldRef.isResolved()) {
+            changed = closedFieldRef.compareAndSet(delegate, false, true);
+        } else {
+            FieldRef<? super AbstractSelector, AtomicBoolean> selectorOpenFieldRef = $(AbstractSelector.class, "selectorOpen");
+            if (selectorOpenFieldRef.isResolved()) {
+                AtomicBoolean selectorOpen = selectorOpenFieldRef.getValue(delegate);
+                if (null != selectorOpen) {
+                    changed = selectorOpen.getAndSet(false);
+                } else {
+                    LOG.error("AbstractSelector.selectorOpen is null");
+                }
+            } else {
+                LOG.error("Neither AbstractSelector.closed nor AbstractSelector.selectorOpen fields found");
+            }
+        }
+        return changed;
+    }
+
+    private Set<SelectionKey> getPublicKeysFromDelegate(FieldRef<? super AbstractSelector, ? extends Set<? extends SelectionKey>> publicKeysFieldRef) throws UnsafeException {
+        Set<SelectionKey> delegateSelectionKeys = null;
+
+        if (publicKeysFieldRef.isResolved()) {
+            Set<? extends SelectionKey> delegatePublicKeys = publicKeysFieldRef.getValue(delegate);
+            if (null != delegatePublicKeys) {
+                LOG.trace("Public keys before closing = " + delegatePublicKeys.size());
+                delegateSelectionKeys = new HashSet<SelectionKey>(delegatePublicKeys);
+            }
+        }
+        return delegateSelectionKeys;
+    }
+
+    private static void removeSniffyInvalidSelectionKEysForGivenDelegates(Set<SelectionKey> delegateSelectionKeys) throws UnsafeException {
+        if (null != delegateSelectionKeys) {
+            for (SelectionKey delegateSelectionKey : delegateSelectionKeys) {
+                SelectableChannel delegateChannel = delegateSelectionKey.channel();
+
+                Object keyLock = null;
+
+                FieldRef<Object, Object> keyLockFieldRef = $(AbstractSelectableChannel.class, "keyLock");
+                if (keyLockFieldRef.isResolved()) {
+                    keyLock = keyLockFieldRef.getValue(delegateChannel);
+                }
+
+                if (null == keyLock) {
+                    keyLock = delegateChannel;
+                }
+
+                //noinspection ReassignedVariable,SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (keyLock) {
+                    Object attachment = delegateSelectionKey.attachment();
+                    if (attachment instanceof SniffySelectionKey) {
+                        SniffySelectionKey sniffySelectionKey = (SniffySelectionKey) attachment;
+                        SelectableChannel sniffyChannel = sniffySelectionKey.channel();
+                        //invokeMethod(AbstractSelectableChannel.class, sniffyChannel, "removeKey", SelectionKey.class, sniffySelectionKey, Void.class);
+
+                        FieldRef<SelectableChannel, Integer> keyCountFieldRef = $(AbstractSelectableChannel.class, "keyCount");
+                        FieldRef<SelectableChannel, SelectionKey[]> keysFieldRef = $(AbstractSelectableChannel.class, "keys");
+
+                        if (keyCountFieldRef.isResolved() && keysFieldRef.isResolved()) {
+                            int keyCount = keyCountFieldRef.getValue(sniffyChannel);
+                            SelectionKey[] sniffyKeys = keysFieldRef.getValue(sniffyChannel);
+
+                            for (int i = 0; i < sniffyKeys.length; i++) {
+
+                                SelectionKey sk = sniffyKeys[i];
+
+                                if (null != sk && !sk.isValid()) {
+                                    keyCount--;
+                                    sniffyKeys[i] = null;
+                                }
+
+                            }
+
+                            keyCountFieldRef.setValue(sniffyChannel, keyCount);
+                        }
+
+                    }
+                }
+            }
         }
     }
 

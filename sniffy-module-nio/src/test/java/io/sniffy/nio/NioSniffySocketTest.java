@@ -27,7 +27,7 @@ import static org.junit.Assert.*;
 public class NioSniffySocketTest extends BaseSocketTest {
 
     @Test
-    public void testComplexLogic() throws Exception {
+    public void testSelectClearsInvalidKeysFromChannels() throws Exception {
 
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
@@ -68,6 +68,45 @@ public class NioSniffySocketTest extends BaseSocketTest {
             SelectionKey[] channel2Keys = ReflectionUtil.getField(AbstractSelectableChannel.class, socketChannel2, "keys");
             for (SelectionKey channel2Key : channel2Keys) {
                 assertNull("Failed to clear keys in SniffySocketChannel after " + attempts + " attempts", channel2Key);
+            }
+
+        } finally {
+            SnifferSocketImplFactory.uninstall();
+            SniffySelectorProvider.uninstall();
+        }
+
+    }
+
+    @Test
+    public void testCloseSelectorClearsChannels() throws Exception {
+
+        SnifferSocketImplFactory.uninstall();
+        SnifferSocketImplFactory.install();
+
+        SniffySelectorProviderModule.initialize();
+        SniffySelectorProvider.uninstall();
+        SniffySelectorProvider.install();
+
+        try (Selector selector = Selector.open()) {
+
+            assertTrue(selector instanceof SniffySelector);
+            SniffySelector sniffySelector = (SniffySelector) selector;
+
+            try (SocketChannel socketChannel = SocketChannel.open()) {
+                socketChannel.configureBlocking(false);
+
+                socketChannel.connect(new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()));
+
+                socketChannel.register(selector, SelectionKey.OP_CONNECT);
+
+                sniffySelector.close();
+
+                assertNotNull(socketChannel);
+
+                SelectionKey[] channel1Keys = ReflectionUtil.getField(AbstractSelectableChannel.class, socketChannel, "keys");
+                for (SelectionKey channel1Key : channel1Keys) {
+                    assertNull(channel1Key);
+                }
             }
 
         } finally {
