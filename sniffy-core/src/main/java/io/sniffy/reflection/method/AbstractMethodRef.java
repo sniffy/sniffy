@@ -1,4 +1,6 @@
-package io.sniffy.reflection;
+package io.sniffy.reflection.method;
+
+import io.sniffy.reflection.ResolvableRef;
 
 import java.lang.reflect.Method;
 

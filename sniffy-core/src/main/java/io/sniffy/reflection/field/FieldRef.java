@@ -1,4 +1,7 @@
-package io.sniffy.reflection;
+package io.sniffy.reflection.field;
+
+import io.sniffy.reflection.Unsafe;
+import io.sniffy.reflection.UnsafeException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

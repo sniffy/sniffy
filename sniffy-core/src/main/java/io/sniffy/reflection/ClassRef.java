@@ -1,7 +1,16 @@
 package io.sniffy.reflection;
 
+import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
+import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.method.*;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+
+import static io.sniffy.reflection.Unsafe.$;
 
 public class ClassRef<C> implements ResolvableRef {
 
@@ -46,6 +55,49 @@ public class ClassRef<C> implements ResolvableRef {
         } catch (Throwable e) {
             return new FieldRef<C, T>(null, e);
         }
+    }
+
+    // esoteric
+
+    public ZeroArgsConstructorRef<C> constructor() throws UnsafeException {
+
+        try {
+            FieldRef<MethodHandles.Lookup, MethodHandles.Lookup> implLookupFieldRef = $(MethodHandles.Lookup.class).field("IMPL_LOOKUP");
+            MethodHandles.Lookup implLookup = implLookupFieldRef.get(null);
+
+            MethodType constructorMethodType = MethodType.methodType(Void.TYPE);
+            MethodHandle constructor = implLookup.findConstructor(clazz, constructorMethodType);
+
+            FieldRef<Object, Object> initMethodFieldRef = $("java.lang.invoke.DirectMethodHandle$Constructor").field("initMethod");
+            /* MemberName */ Object initMemberName = initMethodFieldRef.get(constructor);
+
+            FieldRef<Object, Integer> memberNameFlagsFieldRef = $("java.lang.invoke.MemberName").field("flags");
+            int flags = memberNameFlagsFieldRef.get(initMemberName);
+            flags &= ~0x00020000; // remove "is constructor"
+            flags |= 0x00010000; // add "is (non-constructor) method"
+
+            memberNameFlagsFieldRef.set(initMemberName, flags);
+
+            MethodHandle getDirectMethodHandle = implLookup.findVirtual(
+                    MethodHandles.Lookup.class,
+                    "getDirectMethod",
+                    MethodType.methodType(
+                            MethodHandle.class,
+                            byte.class,
+                            Class.class,
+                            Class.forName("java.lang.invoke.MemberName"),
+                            MethodHandles.Lookup.class
+                    )
+            );
+
+            MethodHandle handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, implLookup);
+
+            return new ZeroArgsConstructorRef<C>(handle, null);
+
+        } catch (Throwable e) {
+            return new ZeroArgsConstructorRef<C>(null, e);
+        }
+
     }
 
     // void method factories

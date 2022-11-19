@@ -1,19 +1,20 @@
-package io.sniffy.reflection;
+package io.sniffy.reflection.method;
 
+import io.sniffy.reflection.UnsafeException;
 import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class VoidOneArgMethodRef<C, P1> extends AbstractMethodRef<C> {
+public class VoidTwoArgsMethodRef<C, P1, P2> extends AbstractMethodRef<C> {
 
-    public VoidOneArgMethodRef(Method method, Throwable throwable) {
+    public VoidTwoArgsMethodRef(Method method, Throwable throwable) {
         super(method, throwable);
     }
 
-    public void invoke(C instance, P1 p1) throws UnsafeException {
+    public void invoke(C instance, P1 p1, P2 p2) throws UnsafeException {
         try {
-            method.invoke(instance, p1);
+            method.invoke(instance, p1, p2);
         } catch (IllegalAccessException e) {
             throw new UnsafeException(e);
         } catch (InvocationTargetException e) {

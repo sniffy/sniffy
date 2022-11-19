@@ -1,5 +1,6 @@
-package io.sniffy.reflection;
+package io.sniffy.reflection.method;
 
+import io.sniffy.reflection.UnsafeException;
 import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.InvocationTargetException;

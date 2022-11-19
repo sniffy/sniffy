@@ -1,5 +1,7 @@
 package io.sniffy.reflection;
 
+import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
+import io.sniffy.reflection.field.FieldRef;
 import org.junit.Test;
 
 import static io.sniffy.reflection.Unsafe.$;
@@ -73,6 +75,29 @@ public class UnsafeTest {
         objectField = new Object();
         privateObjectFieldRef.set(objectWithDifferentFields, objectField);
         assertEquals(objectField, privateObjectFieldRef.get(objectWithDifferentFields));
+    }
+
+    private static int counter = 0;
+
+    private static class TestClass {
+
+        public TestClass() {
+            counter++;
+        }
+    }
+
+    @Test
+    public void testConstructorInvocation() throws Exception {
+
+        TestClass tc = new TestClass();
+
+        ZeroArgsConstructorRef<TestClass> constructor = $(TestClass.class).constructor();
+        constructor.invoke(tc);
+        constructor.invoke(tc);
+        constructor.invoke(tc);
+
+        assertEquals(4, counter);
+
     }
 
 }

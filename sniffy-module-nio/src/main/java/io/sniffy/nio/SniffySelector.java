@@ -2,7 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.FieldRef;
+import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.reflection.UnsafeException;
 import io.sniffy.util.*;
 

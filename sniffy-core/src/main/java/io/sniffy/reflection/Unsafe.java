@@ -48,6 +48,17 @@ public final class Unsafe {
     }
 
     @SuppressWarnings("Convert2Diamond")
+    public static <C> ClassRef<C> $(String className) throws UnsafeException {
+        try {
+            Class<?> clazz = Class.forName(className);
+            //noinspection unchecked
+            return new ClassRef<C>((Class<C>) clazz);
+        } catch (ClassNotFoundException e) {
+            throw new UnsafeException(e); // TODO: return unresolved instance instead
+        }
+    }
+
+    @SuppressWarnings("Convert2Diamond")
     public static <C> ClassRef<C> $(Class<C> clazz) {
         return new ClassRef<C>(clazz);
     }
