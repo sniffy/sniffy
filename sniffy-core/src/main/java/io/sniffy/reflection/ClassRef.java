@@ -64,9 +64,20 @@ public class ClassRef<C> implements ResolvableRef {
     public ZeroArgsConstructorRef<C> constructor() throws UnsafeException {
 
         try {
+            /*
+             * Step 0: invoke MethodHandles.publicLookup() and ignore result
+             * If not done, on certain JVMs the IMPL_LOOKUP field below might be null
+             */
             //noinspection ResultOfMethodCallIgnored
-            MethodHandles.publicLookup(); // if not called, IMPL_LOOKUP field below might be null
+            MethodHandles.publicLookup();
 
+            /*
+             * Step 1: Obtaining a trusted MethodHandles.Lookup
+             * Next, a java.lang.invoke.MethodHandles$Lookup is needed to get the actual method handle for the constructor.
+             * This class has a permission system which works through the allowedModes property in Lookup, which is set to a bunch of Flags. There is a special TRUSTED flag that circumvents all permission checks.
+             * Unfortunately, the allowedModes field is filtered from reflection, so we cannot simply bypass the permissions by setting that value through reflection.
+             * Even though reflection filters can be circumvented as well, there is a simpler way: Lookup contains a static field IMPL_LOOKUP, which holds a Lookup with those TRUSTED permissions. We can get this instance by using reflection and Unsafe:
+             */
             FieldRef<MethodHandles.Lookup, MethodHandles.Lookup> implLookupFieldRef = $(MethodHandles.Lookup.class).field("IMPL_LOOKUP");
             MethodHandles.Lookup implLookup = implLookupFieldRef.get(null);
 
@@ -92,6 +103,22 @@ public class ClassRef<C> implements ResolvableRef {
                         invoke(
                                 implLookup, (byte) 5, clazz, initMemberName, implLookup
                         );
+                /*
+                //noinspection JavaLangInvokeHandleSignatur e
+                MethodHandle getDirectMethodHandle = implLookup.findVirtual(
+                        MethodHandles.Lookup.class,
+                        "getDirectMethod",
+                        MethodType.methodType(
+                                MethodHandle.class,
+                                byte.class,
+                                Class.class,
+                                Class.forName("java.lang.invoke.MemberName"),
+                                MethodHandles.Lookup.class
+                        )
+                );
+
+                handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, implLookup);
+                 */
             } else {
                 //noinspection unchecked
                 handle = $(MethodHandles.Lookup.class).method(MethodHandle.class, "getDirectMethod",
@@ -99,6 +126,22 @@ public class ClassRef<C> implements ResolvableRef {
                         invoke(
                                 implLookup, (byte) 5, clazz, initMemberName, MethodHandles.class
                         );
+                /*
+                //noinspection JavaLangInvokeHandleSignatur e
+                MethodHandle getDirectMethodHandle = implLookup.findVirtual(
+                        MethodHandles.Lookup.class,
+                        "getDirectMethod",
+                        MethodType.methodType(
+                                MethodHandle.class,
+                                byte.class,
+                                Class.class,
+                                Class.forName("java.lang.invoke.MemberName"),
+                                Class.class
+                        )
+                );
+
+                handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, MethodHandles.class);
+                 */
             }
 
             return new ZeroArgsConstructorRef<C>(handle, null);
