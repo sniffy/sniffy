@@ -64,7 +64,8 @@ public class ClassRef<C> implements ResolvableRef {
     public ZeroArgsConstructorRef<C> constructor() throws UnsafeException {
 
         try {
-            MethodHandles.publicLookup();
+            //noinspection ResultOfMethodCallIgnored
+            MethodHandles.publicLookup(); // if not called, IMPL_LOOKUP field below might be null
 
             FieldRef<MethodHandles.Lookup, MethodHandles.Lookup> implLookupFieldRef = $(MethodHandles.Lookup.class).field("IMPL_LOOKUP");
             MethodHandles.Lookup implLookup = implLookupFieldRef.get(null);
@@ -85,37 +86,19 @@ public class ClassRef<C> implements ResolvableRef {
             MethodHandle handle;
 
             if (JVMUtil.getVersion() > 8) {
-
-                //noinspection JavaLangInvokeHandleSignatur /*e*/
-                MethodHandle getDirectMethodHandle = implLookup.findVirtual(
-                        MethodHandles.Lookup.class,
-                        "getDirectMethod",
-                        MethodType.methodType(
-                                MethodHandle.class,
-                                byte.class,
-                                Class.class,
-                                Class.forName("java.lang.invoke.MemberName"),
-                                MethodHandles.Lookup.class
-                        )
-                );
-
-                handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, implLookup);
+                //noinspection unchecked
+                handle = $(MethodHandles.Lookup.class).method(MethodHandle.class, "getDirectMethod",
+                        Byte.TYPE, Class.class, (Class<Object>) Class.forName("java.lang.invoke.MemberName"), MethodHandles.Lookup.class).
+                        invoke(
+                                implLookup, (byte) 5, clazz, initMemberName, implLookup
+                        );
             } else {
-
-                //noinspection JavaLangInvokeHandleSignatur /*e*/
-                MethodHandle getDirectMethodHandle = implLookup.findVirtual(
-                        MethodHandles.Lookup.class,
-                        "getDirectMethod",
-                        MethodType.methodType(
-                                MethodHandle.class,
-                                byte.class,
-                                Class.class,
-                                Class.forName("java.lang.invoke.MemberName"),
-                                Class.class
-                        )
-                );
-
-                handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, MethodHandles.class);
+                //noinspection unchecked
+                handle = $(MethodHandles.Lookup.class).method(MethodHandle.class, "getDirectMethod",
+                                Byte.TYPE, Class.class, (Class<Object>) Class.forName("java.lang.invoke.MemberName"), Class.class).
+                        invoke(
+                                implLookup, (byte) 5, clazz, initMemberName, MethodHandles.class
+                        );
             }
 
             return new ZeroArgsConstructorRef<C>(handle, null);
@@ -243,6 +226,20 @@ public class ClassRef<C> implements ResolvableRef {
             }
         } catch (Throwable e) {
             return new NonVoidThreeArgsMethodRef<T, C, P1, P2, P3>(null, e);
+        }
+    }
+
+    @SuppressWarnings("Convert2Diamond")
+    public <T, P1, P2, P3, P4> NonVoidFourArgsMethodRef<T, C, P1, P2, P3, P4> method(@SuppressWarnings("unused") Class<T> tClass, String methodName, Class<P1> p1Class, Class<P2> p2Class, Class<P3> p3Class, Class<P4> p4Class) {
+        try {
+            Method declaredMethod = clazz.getDeclaredMethod(methodName, p1Class, p2Class, p3Class, p4Class);
+            if (Unsafe.setAccessible(declaredMethod)) {
+                return new NonVoidFourArgsMethodRef<T, C, P1, P2, P3, P4>(declaredMethod, null);
+            } else {
+                return new NonVoidFourArgsMethodRef<T, C, P1, P2, P3, P4>(null, new UnsafeException("Method " + clazz.getName() + "." + methodName + "(" + p1Class + ") is not accessible"));
+            }
+        } catch (Throwable e) {
+            return new NonVoidFourArgsMethodRef<T, C, P1, P2, P3, P4>(null, e);
         }
     }
 
