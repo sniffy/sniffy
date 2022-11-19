@@ -3,7 +3,6 @@ package io.sniffy.reflection;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-// TODO: extract ClassRef and MethodRef instead
 // TODO: get should return Optional class but how it can work on Java 1.8- ?
 public class FieldRef<C,T> {
     

@@ -92,7 +92,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                     synchronized ($(delegateClass).firstField("publicKeys").getNotNullOrDefault(delegate, delegate)) {
                         synchronized ($(delegateClass).firstField("publicSelectedKeys").getNotNullOrDefault(delegate, delegate)) {
                             Set<SelectionKey> delegateSelectionKeys = getPublicKeysFromDelegate();
-                            invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
+                            $(AbstractSelector.class).method("implCloseSelector").invoke(delegate);
                             removeSniffyInvalidSelectionKeysForGivenDelegates(delegateSelectionKeys);
                         }
                     }
