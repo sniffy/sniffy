@@ -6,17 +6,23 @@ import java.lang.reflect.Modifier;
 public class FieldRef<C,T> {
     
     private final Field field;
+    private final Throwable throwable;
 
-    public FieldRef(Field field) {
+    public FieldRef(Field field, Throwable throwable) {
         this.field = field;
+        this.throwable = throwable;
     }
-    
-    public boolean isPresent() {
+
+    public boolean isResolved() {
         return null != field;
     }
     
     public Field getField() {
         return field;
+    }
+
+    public Throwable getException() {
+        return throwable;
     }
 
     public boolean compareAndSet(C instance, T oldValue, T newValue) throws UnsafeException {
@@ -36,10 +42,10 @@ public class FieldRef<C,T> {
                 return UNSAFE.compareAndSwapInt(object, offset, ((Number) oldValue).intValue(), ((Number) newValue).intValue());
             } else if (field.getType() == Short.TYPE && oldValue instanceof Number && newValue instanceof Number) {
                 return UNSAFE.compareAndSwapInt(object, offset, ((Number) oldValue).intValue(), ((Number) newValue).intValue());
-            } else if (field.getType() == Byte.TYPE && oldValue instanceof Character && newValue instanceof Character) {
-                return UNSAFE.compareAndSwapInt(object, offset, (int) oldValue, (int) newValue);
-            } else if (field.getType() == Character.TYPE && oldValue instanceof Number && newValue instanceof Number) {
+            } else if (field.getType() == Byte.TYPE && oldValue instanceof Number && newValue instanceof Number) {
                 return UNSAFE.compareAndSwapInt(object, offset, ((Number) oldValue).intValue(), ((Number) newValue).intValue());
+            } else if (field.getType() == Character.TYPE && oldValue instanceof Character && newValue instanceof Character) {
+                return UNSAFE.compareAndSwapInt(object, offset, (int) (Character) oldValue, (int) (Character) newValue);
             } else if (field.getType() == Float.TYPE && oldValue instanceof Number && newValue instanceof Number) {
                 return UNSAFE.compareAndSwapInt(object, offset, Float.floatToIntBits(((Number) oldValue).floatValue()), Float.floatToIntBits(((Number) newValue).floatValue()));
             } else if (field.getType() == Long.TYPE && oldValue instanceof Number && newValue instanceof Number) {
