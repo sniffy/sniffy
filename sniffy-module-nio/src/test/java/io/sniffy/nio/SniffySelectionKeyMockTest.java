@@ -49,7 +49,8 @@ public class SniffySelectionKeyMockTest {
 
     @Before
     public void createSniffySelectionKey() throws Exception {
-        sniffySelectionKey = new SniffySelectionKey(delegate, sniffySelectorMock, sniffyAbstractSelectableChannelMock);
+        sniffySelectionKey = new SniffySelectionKey(sniffySelectorMock, sniffyAbstractSelectableChannelMock, null);
+        sniffySelectionKey.setDelegate(delegate);
     }
 
     @Test

@@ -2,21 +2,22 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.ClassRef;
+import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
-import io.sniffy.util.StackTraceExtractor;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
- * Following properties and methods are local to Sniffy wrapper and do not affect delegate:
- * attachment
- * attach() and attachment()
+ * delegate field is not final, since it's set *after* SniffySelectionKey creation in SniffySelector.register() method
+ * At first we're creating SniffySelectionKey without delegate, passing it as an attachment to delegate SelectionKey
+ * And setting up the back reference link SniffySelectionKey.delegate after wards
+ * These operations are done with locks on regLock and keyLock in relevant delegate Channel
  * @since 3.1.7
  */
 @SuppressWarnings({"Convert2Diamond", "RedundantSuppression"})
@@ -24,13 +25,9 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelectionKey.class);
 
     private SelectionKey delegate;
+    private ClassRef<SelectionKey> classRef;
     private final SniffySelector sniffySelector;
     private final SelectableChannel sniffyChannel;
-
-    protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
-        this(sniffySelector, sniffyChannel, delegate.attachment());
-        setDelegate(delegate);
-    }
 
     protected SniffySelectionKey(SniffySelector sniffySelector, SelectableChannel sniffyChannel, Object attachment) {
         if (null != attachment) {
@@ -45,8 +42,13 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     }
 
     public void setDelegate(SelectionKey delegate) {
-        if (null == this.delegate) {
+        if (null != this.delegate) {
+            if (!AssertUtil.logAndThrowException(LOG, "Trying to set SniffySelectionKey.delegate twice", new IllegalStateException())) {
+                LOG.info("Trying to set SniffySelectionKey.delegate twice");
+            }
+        } else {
             this.delegate = delegate;
+            this.classRef = $(delegate.getClass());
         }
     }
 
@@ -71,23 +73,31 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
      *
      * @return sniffy selector wrapper for given key or hardcoded NoOpSelector in case of invalid (or null) delegate key
      */
+    @SuppressWarnings("CommentedOutCode")
     @Override
     public Selector selector() {
         return sniffySelector;
-        // Workaround below is no longer required
-        /*if (!isValid() &&
+        // Workaround below shouldn't be required but can be handy in case AbstractSelectableChannel.register() gets an invalid key
+        /*
+        if (!isValid() &&
                 StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey") &&
                 sniffyChannel instanceof SocketChannel
         ) {
             return NoOpSelector.INSTANCE;
         } else {
             return sniffySelector;
-        }*/
+        }
+        */
     }
 
     @Override
     public boolean isValid() {
-        return delegate.isValid();
+        try {
+            return delegate.isValid();
+        } catch (Exception e) {
+            LOG.trace("Error when trying to call isValid() on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
     /**
@@ -95,13 +105,28 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
      */
     @Override
     public void cancel() {
-        delegate.cancel();
-        sniffySelector.addCancelledKey(this);
+        boolean wasValid = false;
+        try {
+            wasValid = delegate.isValid();
+            delegate.cancel();
+        } catch (Exception e) {
+            LOG.trace("Error when trying to call cancel() on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
+            throw ExceptionUtil.throwException(e);
+        } finally {
+            if (wasValid) {
+                sniffySelector.addCancelledKey(this);
+            }
+        }
     }
 
     @Override
     public int interestOps() {
-        return delegate.interestOps();
+        try {
+            return delegate.interestOps();
+        } catch (Exception e) {
+            LOG.trace("Error when trying to call interestOps() on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
     @Override
@@ -109,14 +134,19 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         try {
             return delegate.interestOps(ops);
         } catch (Exception e) {
-            LOG.error("Error when trying to call interestOps(int) on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
+            LOG.trace("Error when trying to call interestOps(int) on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
             throw ExceptionUtil.throwException(e);
         }
     }
 
     @Override
     public int readyOps() {
-        return delegate.readyOps();
+        try {
+            return delegate.readyOps();
+        } catch (Exception e) {
+            LOG.trace("Error when trying to call readyOps() on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
+            throw ExceptionUtil.throwException(e);
+        }
     }
 
     // No @Override annotation here because this method is available in Java 11+ only
@@ -124,8 +154,9 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     @SuppressWarnings({"Since15", "RedundantSuppression", "unused"})
     public int interestOpsOr(int ops) {
         try {
-            return invokeMethod(delegate.getClass(), delegate, "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
+            return classRef.method(Integer.TYPE, "interestOpsOr", Integer.TYPE).invoke(delegate, ops);
         } catch (Exception e) {
+            LOG.trace("Error when trying to call interestOpsOr(int) on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
             throw ExceptionUtil.processException(e);
         }
     }
@@ -135,8 +166,9 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     @SuppressWarnings({"Since15", "RedundantSuppression", "unused"})
     public int interestOpsAnd(int ops) {
         try {
-            return invokeMethod(delegate.getClass(), delegate, "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);
+            return classRef.method(Integer.TYPE, "interestOpsAnd", Integer.TYPE).invoke(delegate, ops);
         } catch (Exception e) {
+            LOG.trace("Error when trying to call interestOpsAnd(int) on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
             throw ExceptionUtil.processException(e);
         }
     }

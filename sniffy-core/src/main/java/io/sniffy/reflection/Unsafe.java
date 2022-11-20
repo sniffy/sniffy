@@ -59,8 +59,9 @@ public final class Unsafe {
     }
 
     @SuppressWarnings("Convert2Diamond")
-    public static <C> ClassRef<C> $(Class<C> clazz) {
-        return new ClassRef<C>(clazz);
+    public static <C,C1 extends C> ClassRef<C> $(Class<C1> clazz) {
+        //noinspection unchecked
+        return (ClassRef<C>) new ClassRef<C1>(clazz);
     }
 
     public static boolean setAccessible(AccessibleObject ao) throws UnsafeException {

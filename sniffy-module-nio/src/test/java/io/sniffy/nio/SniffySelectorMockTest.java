@@ -97,12 +97,7 @@ public class SniffySelectorMockTest {
     @Test
     public void testSelectNow() throws Exception {
         // TODO: fix
-        /*doReturn(1).when(selectorMock).selectNow();
-        doReturn(emptySet()).when(selectorMock).keys(); // TODO: test it
-        assertEquals(1, sniffySelector.selectNow());
-        verify(selectorMock).selectNow();
-        verify(selectorMock, times(2)).keys(); // TODO: this is for cleaning up channels
-        verifyNoMoreInteractions(selectorMock);*/
+
     }
 
     @Test

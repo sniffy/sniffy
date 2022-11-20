@@ -7,7 +7,6 @@ import io.sniffy.reflection.UnsafeException;
 import io.sniffy.util.*;
 
 import java.io.IOException;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
@@ -45,7 +44,7 @@ import static io.sniffy.reflection.Unsafe.$;
  *
  * @since 3.1.7
  */
-@SuppressWarnings({"Convert2Diamond", "Convert2Lambda", "TryWithIdenticalCatches"})
+@SuppressWarnings({"Convert2Diamond", "Convert2Lambda"})
 public class SniffySelector extends AbstractSelector implements ObjectWrapper<AbstractSelector> {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelector.class);
@@ -175,8 +174,14 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     }
 
     protected void addCancelledKey(SniffySelectionKey selectionKey) {
-        synchronized (cancelledKeys) {
-            cancelledKeys.add(selectionKey);
+        try {
+            synchronized (cancelledKeys) {
+                cancelledKeys.add(selectionKey);
+            }
+        } catch (Exception e) {
+            if (!AssertUtil.logAndThrowException(LOG, "Couldn't add selection key to SniffySelector.cancelledKeys set", e)) {
+                LOG.trace("Couldn't add selection key to SniffySelector.cancelledKeys set");
+            }
         }
     }
 
