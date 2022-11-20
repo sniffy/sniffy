@@ -94,11 +94,18 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         return delegate.isValid();
     }
 
+    /**
+     * Delegate SelectionKey.cancel() removed this key from channel upon next select operation
+     */
     @Override
     public void cancel() {
         delegate.cancel();
-        sniffySelector.updateKeysFromDelegate(); // TODO: this is nice but doesn't work exactly as without sniffy
+        sniffySelector.addCancelledKey(this);
+
+        //sniffySelector.updateKeysFromDelegate(); // TODO: this is nice but doesn't work exactly as without sniffy
         // TODO: put the cancelled key to set and process it after select calls; ONLY if it was really changed
+
+
     }
 
     @Override

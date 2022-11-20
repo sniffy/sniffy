@@ -111,6 +111,11 @@ public final class Unsafe {
         boolean override;
 
         @Override
+        public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+            return false;
+        }
+
+        @Override
         public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
             return null;
         }
