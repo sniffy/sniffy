@@ -3,7 +3,6 @@ package io.sniffy.nio;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ObjectWrapper;
 import io.sniffy.util.StackTraceExtractor;
 
@@ -18,11 +17,6 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
  * Following properties and methods are local to Sniffy wrapper and do not affect delegate:
  * attachment
  * attach() and attachment()
- * Following final methods might not be handled correctly:
- * public final boolean AbstractSelectableChannel.isRegistered()
- * Following final methods are taken care of using some hacks:
- * public final SelectionKey AbstractSelectableChannel.register(Selector sel, int ops, Object att)
- *
  * @since 3.1.7
  */
 @SuppressWarnings({"Convert2Diamond", "RedundantSuppression"})
@@ -70,23 +64,25 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
      * AbstractSelectableChannel holds a collection of keys which are added inside
      * 'SelectionKey register(Selector sel, int ops, Object att)' method
      * and removed using removeKey() method which is called only in delegate from following method
-     * 'void deregister(AbstractSelectionKey key)'
+     * 'void deregister(AbstractSelectionKey key)' as a result of key.cancel() followed by selector.select*() calls
      * Workaround is to copy the 'keys' array from delegate to sniffy wrapper after 'select*' operations are invoked
-     * deregister method is invoked from Selector implementation classes during select operations as well as in onclose
+     * deregister method is invoked from Selector implementation classes during select operations as well as in on close
      * 'void implCloseSelector() throws IOException'
      *
      * @return sniffy selector wrapper for given key or hardcoded NoOpSelector in case of invalid (or null) delegate key
      */
     @Override
     public Selector selector() {
-        if (!isValid() &&
+        return sniffySelector;
+        // Workaround below is no longer required
+        /*if (!isValid() &&
                 StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey") &&
                 sniffyChannel instanceof SocketChannel
         ) {
             return NoOpSelector.INSTANCE;
         } else {
             return sniffySelector;
-        }
+        }*/
     }
 
     @Override
@@ -101,11 +97,6 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     public void cancel() {
         delegate.cancel();
         sniffySelector.addCancelledKey(this);
-
-        //sniffySelector.updateKeysFromDelegate(); // TODO: this is nice but doesn't work exactly as without sniffy
-        // TODO: put the cancelled key to set and process it after select calls; ONLY if it was really changed
-
-
     }
 
     @Override
