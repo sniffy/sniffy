@@ -1,5 +1,9 @@
 package io.sniffy.nio;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.ClassRef;
+import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
@@ -17,6 +21,7 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static io.sniffy.util.ReflectionUtil.*;
 
 /**
@@ -24,7 +29,7 @@ import static io.sniffy.util.ReflectionUtil.*;
  */
 public class SniffySocketChannelAdapter extends SocketChannel implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
 
-    // TODO: replace delegate.interruptor as well
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySocketChannelAdapter.class);
 
     private final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
@@ -136,40 +141,34 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     @Override
     public void implCloseSelectableChannel() {
-
-        // TODO: using closeLock on delegate change it's state to closed using CAS (closeLock / open)
-        // TODO: for all keys invoke .cancel() (need to add to cancelled keys set)
-
-        // TODO: reevaluate side effects
-
         try {
 
-            Object delegateCloseLock = getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
+            //Object delegateCloseLock = getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
 
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateCloseLock) {
+            boolean changed = false;
 
-                boolean closed;
-                try {
-                    closed = getField(AbstractInterruptibleChannel.class, delegate, "closed");
-                } catch (NoSuchFieldException e) {
-                    // TODO: somehow remember which field is used in order to speedup stuff
-                    closed = getField(AbstractInterruptibleChannel.class, delegate, "open");
-                    closed = !closed;
-                }
+            synchronized ($(AbstractInterruptibleChannel.class).field("closedLock").getNotNullOrDefault(delegate, delegate)) {
 
-                if (!closed) {
-                    if (!setField(AbstractInterruptibleChannel.class, delegate, "closed", true)) {
-                        setField(AbstractInterruptibleChannel.class, delegate, "open", false);
+                if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
+                    changed = $(AbstractInterruptibleChannel.class).field("closed").compareAndSet(delegate, false, true);
+                } else {
+                    if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
+                        changed = $(AbstractInterruptibleChannel.class).field("open").compareAndSet(delegate, true, false);
+                    } else {
+                        AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
                     }
-                    invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseChannel", Void.class);
                 }
 
+            }
+
+            if (changed) {
+                $(AbstractSelectableChannel.class).method("implCloseSelectableChannel").invoke(delegate); // or selectable
             }
 
             // todo: shall we copy keys from delegate to sniffy here ?
 
         } catch (Exception e) {
+            LOG.error(e);
             throw ExceptionUtil.processException(e);
         }
     }
@@ -177,21 +176,9 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @Override
     public void implConfigureBlocking(boolean block) {
         try {
-
-            Object delegateRegLock = getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateRegLock) {
-
-                // TODO: check current status first
-
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                    setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                }
-            }
-
+            delegate.configureBlocking(block);
         } catch (Exception e) {
+            LOG.error(e);
             throw ExceptionUtil.processException(e);
         }
     }

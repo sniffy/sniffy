@@ -80,6 +80,7 @@ public class SniffySelectionKeyMockTest {
     public void testCancel() {
         sniffySelectionKey.cancel();
         verify(delegate).cancel();
+        verify(delegate).isValid();
         verifyNoMoreInteractions(delegate);
     }
 
