@@ -1,5 +1,6 @@
 package io.sniffy.reflection.constructor;
 
+import io.sniffy.reflection.ClassRef;
 import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.util.JVMUtil;
 
@@ -10,7 +11,7 @@ import java.lang.invoke.MethodType;
 import static io.sniffy.reflection.Unsafe.$;
 
 /**
- * https://stackoverflow.com/questions/48616630/is-it-possible-to-call-constructor-on-existing-instance
+ * <a href="https://stackoverflow.com/questions/48616630/is-it-possible-to-call-constructor-on-existing-instance">See stackoverflow discussion</a>
  */
 public class ConstructorRefBuilder {
 
@@ -30,7 +31,8 @@ public class ConstructorRefBuilder {
              * Unfortunately, the allowedModes field is filtered from reflection, so we cannot simply bypass the permissions by setting that value through reflection.
              * Even though reflection filters can be circumvented as well, there is a simpler way: Lookup contains a static field IMPL_LOOKUP, which holds a Lookup with those TRUSTED permissions. We can get this instance by using reflection and Unsafe:
              */
-            FieldRef<MethodHandles.Lookup, MethodHandles.Lookup> implLookupFieldRef = $(MethodHandles.Lookup.class).field("IMPL_LOOKUP");
+            ClassRef<MethodHandles.Lookup> lookupClassRef = $(MethodHandles.Lookup.class);
+            FieldRef<MethodHandles.Lookup, MethodHandles.Lookup> implLookupFieldRef = lookupClassRef.field("IMPL_LOOKUP");
             MethodHandles.Lookup implLookup = implLookupFieldRef.get(null);
 
             MethodType constructorMethodType = MethodType.methodType(Void.TYPE);

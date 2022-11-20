@@ -137,6 +137,9 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @Override
     public void implCloseSelectableChannel() {
 
+        // TODO: using closeLock on delegate change it's state to closed using CAS (closeLock / open)
+        // TODO: for all keys invoke .cancel() (need to add to cancelled keys set)
+
         // TODO: reevaluate side effects
 
         try {
