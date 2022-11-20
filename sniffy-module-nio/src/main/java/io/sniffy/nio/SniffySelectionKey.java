@@ -48,7 +48,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             }
         } else {
             this.delegate = delegate;
-            this.classRef = $(delegate.getClass());
+            this.classRef = $(delegate.getClass(), SelectionKey.class);
         }
     }
 
