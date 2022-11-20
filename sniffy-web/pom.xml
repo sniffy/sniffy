@@ -109,6 +109,9 @@
                                         <ignore>sun.nio.ch.DatagramChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.ServerSocketChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
+
+                                        <ignore>java.lang.invoke.MethodHandle</ignore>
+                                        <ignore>java.lang.invoke.MethodHandle$PolymorphicSignature</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>
