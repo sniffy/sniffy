@@ -21,6 +21,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collections;
@@ -45,6 +46,7 @@ public class SimpleKafkaTest {
     @Rule public final SniffyRule sniffy = new SniffyRule(PolyglogLevel.TRACE);
 
     @Test
+    @DirtiesContext
     public void testReceivingKafkaEvents() {
         Consumer<Integer, String> consumer = configureConsumer();
         Producer<Integer, String> producer = configureProducer();
@@ -62,6 +64,7 @@ public class SimpleKafkaTest {
 
     @Test
     @DisableSockets
+    @DirtiesContext
     public void testSniffyDisabledKafkaProducer() throws Exception {
         Producer<Integer, String> producer = configureProducer();
 

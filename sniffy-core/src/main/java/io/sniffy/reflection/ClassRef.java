@@ -8,12 +8,22 @@ import io.sniffy.reflection.method.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import static io.sniffy.reflection.Unsafe.$;
+
 public class ClassRef<C> implements ResolvableRef {
 
     private final Class<C> clazz;
 
     public ClassRef(Class<C> clazz) {
         this.clazz = clazz;
+    }
+
+    public <T> ClassRef<T> superClassRef(Class<T> clazz) throws UnsafeException {
+        if (clazz.isAssignableFrom(this.clazz)) {
+            return $(clazz);
+        } else {
+            throw new UnsafeException("Cannot cast " + this.clazz + " to " + clazz);
+        }
     }
 
     @Override

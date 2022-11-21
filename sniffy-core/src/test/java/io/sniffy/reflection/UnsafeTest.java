@@ -140,4 +140,28 @@ public class UnsafeTest {
 
     }
 
+    @Test
+    public void testGenerics() throws Exception {
+
+        Object object = 42L;
+
+        Number number = 42L;
+
+        Long longNumber = 42L;
+
+        //noinspection unchecked
+        ClassRef<Number> cr1 = $((Class<Number>) number.getClass());
+        ClassRef<Number> cr2 = $(number.getClass(), Number.class);
+
+        cr1.superClassRef(Object.class).method(String.class, "toString").invoke(object);
+        cr2.superClassRef(Object.class).method(String.class, "toString").invoke(object);
+
+        cr1.method(String.class, "toString").invoke(number);
+        cr2.method(String.class, "toString").invoke(number);
+
+        cr1.method(String.class, "toString").invoke(longNumber);
+        cr2.method(String.class, "toString").invoke(longNumber);
+
+    }
+
 }
