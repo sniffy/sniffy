@@ -78,9 +78,9 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     @SuppressWarnings("CommentedOutCode")
     @Override
     public Selector selector() {
-        //return sniffySelector;
+        return sniffySelector;
         // Workaround below shouldn't be required but can be handy in case AbstractSelectableChannel.register() gets an invalid key
-
+        /*
         // TODO: code below shouldn't be required if everything else is configured properly (key removal from channels)
         if (!isValid() &&
                 StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey") &&
@@ -90,7 +90,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         } else {
             return sniffySelector;
         }
-
+        */
     }
 
     @Override

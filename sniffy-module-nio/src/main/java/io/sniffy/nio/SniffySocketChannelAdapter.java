@@ -141,9 +141,9 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     @Override
     public void implCloseSelectableChannel() {
-        try {
+        // TODO: reevaluate side effects
 
-            //Object delegateCloseLock = getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
+        try {
 
             boolean changed = false;
 
@@ -163,6 +163,22 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
             if (changed) {
                 $(AbstractSelectableChannel.class).method("implCloseSelectableChannel").invoke(delegate); // or selectable
+            } else {
+                if (AssertUtil.isTestingSniffy()) {
+                    if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
+                        if (!$(AbstractInterruptibleChannel.class).<Boolean>field("closed").get(delegate)) {
+                            AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
+                        }
+                    } else {
+                        if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
+                            if ($(AbstractInterruptibleChannel.class).<Boolean>field("open").get(delegate)) {
+                                AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
+                            }
+                        } else {
+                            AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
+                        }
+                    }
+                }
             }
 
             // todo: shall we copy keys from delegate to sniffy here ?

@@ -174,6 +174,9 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     }
 
     protected void addCancelledKey(SniffySelectionKey selectionKey) {
+        if (selectionKey.isValid()) {
+            AssertUtil.logAndThrowException(LOG, "Adding valid key to cancelled keys set", new IllegalStateException());
+        }
         try {
             synchronized (cancelledKeys) {
                 cancelledKeys.add(selectionKey);
@@ -191,6 +194,9 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
             while (iterator.hasNext()) {
                 SniffySelectionKey sniffySelectionKey = iterator.next();
                 iterator.remove();
+                if (sniffySelectionKey.isValid()) {
+                    AssertUtil.logAndThrowException(LOG, "Found valid key to cancelled keys set", new IllegalStateException());
+                }
                 try {
                     AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) sniffySelectionKey.channel();
                     synchronized ($(AbstractSelectableChannel.class).field("keyLock").getNotNullOrDefault(

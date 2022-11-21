@@ -37,7 +37,7 @@ public class UnsafeTest {
     }
 
     @Test
-    public void testCompareAndSetBooleanField() throws UnsafeException {
+    public void testCompareAndSetBooleanFieldFailure() throws UnsafeException {
 
         Object objectField = new Object();
         int intField = 42;
@@ -52,9 +52,47 @@ public class UnsafeTest {
 
         assertFalse(privateBooleanFieldRef.compareAndSet(objectWithDifferentFields, true, true));
         assertFalse(privateBooleanFieldRef.get(objectWithDifferentFields));
+    }
+
+    @Test
+    public void testCompareAndSetBooleanFieldSuccess() throws UnsafeException {
+
+        Object objectField = new Object();
+        int intField = 42;
+        boolean booleanField = false;
+
+        ClassWithDifferentFields objectWithDifferentFields = new ClassWithDifferentFields(objectField, intField, booleanField);
+
+        FieldRef<ClassWithDifferentFields, Boolean> privateBooleanFieldRef =
+                $(ClassWithDifferentFields.class).field("privateBooleanField");
+
+        assertNotNull(privateBooleanFieldRef);
 
         assertTrue(privateBooleanFieldRef.compareAndSet(objectWithDifferentFields, false, true));
         assertTrue(privateBooleanFieldRef.get(objectWithDifferentFields));
+    }
+
+    @Test
+    public void testBooleanReflection() throws UnsafeException {
+
+        JavaClassWithManyBooleanFields obj = new JavaClassWithManyBooleanFields();
+
+        obj.field5 = true;
+
+        $(JavaClassWithManyBooleanFields.class).field("field2").set(obj, true);
+
+        assertTrue(obj.field2);
+        assertTrue($(JavaClassWithManyBooleanFields.class).<Boolean>field("field2").get(obj));
+
+        $(JavaClassWithManyBooleanFields.class).field("field1").compareAndSet(obj, false, true);
+
+        assertTrue(obj.field1);
+        assertTrue($(JavaClassWithManyBooleanFields.class).<Boolean>field("field1").get(obj));
+
+        assertTrue($(JavaClassWithManyBooleanFields.class).<Boolean>field("field2").get(obj));
+
+        assertFalse(obj.field3);
+        assertFalse($(JavaClassWithManyBooleanFields.class).<Boolean>field("field3").get(obj));
     }
 
     @Test
