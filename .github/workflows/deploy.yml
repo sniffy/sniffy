@@ -114,7 +114,7 @@ jobs:
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 11
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
@@ -215,7 +215,7 @@ jobs:
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: ${{ matrix.java }}
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
@@ -256,7 +256,7 @@ jobs:
       - name: Set up JDK ${{ matrix.java }} x86
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: ${{ matrix.java }}
           architecture: x86
         if: ${{ matrix.os != 'macos-12'}}
@@ -300,7 +300,7 @@ jobs:
       - name: Set up JDK 8
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 8
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
@@ -343,21 +343,21 @@ jobs:
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 11
       - name: Run compatibility tests using Java 11
         run: mvn -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 17
       - name: Run compatibility tests using Java 17
         run: mvn -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 7
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 7
       - name: Set up Maven 3.2.5
         run: mkdir -p /tmp && cd /tmp && curl https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz -o apache-maven-3.2.5-bin.tar.gz && tar -xzvf apache-maven-3.2.5-bin.tar.gz && export M2_HOME=/tmp/apache-maven-3.2.5 && export MAVEN_HOME=/tmp/apache-maven-3.2.5 && export PATH=${M2_HOME}/bin:${PATH}
@@ -373,7 +373,7 @@ jobs:
       - name: Set up JDK 6
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 6
         if: matrix.os != 'macOS-12'
       # No Java 6 on MacOS
@@ -400,7 +400,7 @@ jobs:
       - name: Set up JDK 8
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 8
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
@@ -434,7 +434,7 @@ jobs:
       - name: Set up Java for publishing to Maven Central Repository
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 1.8
           server-id: sonatype-nexus-snapshots
           server-username: MAVEN_USERNAME
@@ -473,7 +473,7 @@ jobs:
       - name: Set up Java for publishing to GitHub Packages
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 1.8
       - name: Publish to GitHub Packages
         run: mvn -P github,ci -B clean deploy -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3 -X
