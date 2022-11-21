@@ -4,8 +4,11 @@ import io.sniffy.reflection.constructor.ConstructorRefBuilder;
 import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
 import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.reflection.method.*;
+import io.sniffy.reflection.module.ModuleRef;
+import io.sniffy.util.ReflectionUtil;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -36,6 +39,20 @@ public class ClassRef<C> implements ResolvableRef {
     @Override
     public boolean isResolved() {
         return null != clazz;
+    }
+
+    public ModuleRef moduleRef() {
+        try {
+            Class<?> moduleClass = Class.forName("java.lang.Module");
+            //noinspection rawtypes
+            ClassRef<Class> classClassRef = $(Class.class);
+            //noinspection rawtypes
+            NonVoidZeroArgsMethodRef<?, Class> getModuleMethodRef = classClassRef.method(moduleClass, "getModule");
+            Object module = getModuleMethodRef.invoke(clazz);
+            return new ModuleRef(module, null);
+        } catch (Throwable e) {
+            return new ModuleRef(null, e);
+        }
     }
 
     @SuppressWarnings("Convert2Diamond")

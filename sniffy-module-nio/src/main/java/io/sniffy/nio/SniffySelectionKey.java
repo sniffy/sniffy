@@ -6,12 +6,10 @@ import io.sniffy.reflection.ClassRef;
 import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
-import io.sniffy.util.StackTraceExtractor;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 
 import static io.sniffy.reflection.Unsafe.$;
 

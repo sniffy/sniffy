@@ -143,33 +143,40 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                         if (attachment instanceof SniffySelectionKey &&
                                 ((SniffySelectionKey) attachment).channel() instanceof AbstractSelectableChannel
                         ) {
-                            AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) ((SniffySelectionKey) attachment).channel();
-
-                            FieldRef<AbstractSelectableChannel, Integer> keyCountFieldRef = $(AbstractSelectableChannel.class).field("keyCount");
-                            FieldRef<AbstractSelectableChannel, SelectionKey[]> keysFieldRef = $(AbstractSelectableChannel.class).field("keys");
-
-                            if (keyCountFieldRef.isResolved() && keysFieldRef.isResolved()) {
-                                int keyCount = keyCountFieldRef.get(sniffyChannel);
-                                SelectionKey[] sniffyKeys = keysFieldRef.get(sniffyChannel);
-
-                                for (int i = 0; i < sniffyKeys.length; i++) {
-
-                                    SelectionKey sk = sniffyKeys[i];
-
-                                    if (null != sk && !sk.isValid()) {
-                                        keyCount--;
-                                        sniffyKeys[i] = null;
-                                    }
-
-                                }
-
-                                keyCountFieldRef.set(sniffyChannel, keyCount);
-                            }
-
+                            removeSelectionKeyFromChannel((SniffySelectionKey) attachment);
                         }
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Removed SelectionKey from keys array of relevant AbstractSelectableChannel
+     * Works for any SelectionKey but contract specifically requires SniffySelectionKey sine we only need to do it for Sniffy
+     */
+    private static void removeSelectionKeyFromChannel(SniffySelectionKey sniffySelectionKey) throws UnsafeException {
+        AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) sniffySelectionKey.channel();
+
+        FieldRef<AbstractSelectableChannel, Integer> keyCountFieldRef = $(AbstractSelectableChannel.class).field("keyCount");
+        FieldRef<AbstractSelectableChannel, SelectionKey[]> keysFieldRef = $(AbstractSelectableChannel.class).field("keys");
+
+        if (keyCountFieldRef.isResolved() && keysFieldRef.isResolved()) {
+            int keyCount = keyCountFieldRef.get(sniffyChannel);
+            SelectionKey[] sniffyKeys = keysFieldRef.get(sniffyChannel);
+
+            for (int i = 0; i < sniffyKeys.length; i++) {
+
+                SelectionKey sk = sniffyKeys[i];
+
+                if (sk == sniffySelectionKey) {
+                    keyCount--;
+                    sniffyKeys[i] = null;
+                }
+
+            }
+
+            keyCountFieldRef.set(sniffyChannel, keyCount);
         }
     }
 
@@ -198,29 +205,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                     AssertUtil.logAndThrowException(LOG, "Found valid key to cancelled keys set", new IllegalStateException());
                 }
                 try {
-                    AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) sniffySelectionKey.channel();
-                    synchronized ($(AbstractSelectableChannel.class).field("keyLock").getNotNullOrDefault(
-                            sniffyChannel, sniffyChannel)) {
-
-                        FieldRef<AbstractSelectableChannel, Integer> keyCountFieldRef = $(AbstractSelectableChannel.class).field("keyCount");
-                        FieldRef<AbstractSelectableChannel, SelectionKey[]> keysFieldRef = $(AbstractSelectableChannel.class).field("keys");
-
-                        if (keyCountFieldRef.isResolved() && keysFieldRef.isResolved()) {
-                            int keyCount = keyCountFieldRef.get(sniffyChannel);
-                            SelectionKey[] sniffyKeys = keysFieldRef.get(sniffyChannel);
-
-                            for (int i = 0; i < sniffyKeys.length; i++) {
-                                SelectionKey sk = sniffyKeys[i];
-                                if (sk == sniffySelectionKey) {
-                                    keyCount--;
-                                    sniffyKeys[i] = null;
-                                }
-                            }
-
-                            keyCountFieldRef.set(sniffyChannel, keyCount);
-                        }
-
-                    }
+                    removeSelectionKeyFromChannel(sniffySelectionKey);
                 } catch (UnsafeException e) {
                     throw ExceptionUtil.processException(e); // TODO: change the behaviour
                 }
