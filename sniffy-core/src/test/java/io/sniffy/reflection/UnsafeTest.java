@@ -152,15 +152,35 @@ public class UnsafeTest {
         //noinspection unchecked
         ClassRef<Number> cr1 = $((Class<Number>) number.getClass());
         ClassRef<Number> cr2 = $(number.getClass(), Number.class);
+        ClassRef<Number> cr3 = $(Number.class);
 
         cr1.superClassRef(Object.class).method(String.class, "toString").invoke(object);
         cr2.superClassRef(Object.class).method(String.class, "toString").invoke(object);
+        cr3.superClassRef(Object.class).method(String.class, "toString").invoke(object);
+
+        cr1.cast(Object.class).method(String.class, "toString").invoke(object);
+        cr2.cast(Object.class).method(String.class, "toString").invoke(object);
+        cr3.cast(Object.class).method(String.class, "toString").invoke(object);
 
         cr1.method(String.class, "toString").invoke(number);
         cr2.method(String.class, "toString").invoke(number);
+        cr3.method(String.class, "toString").invoke(number);
 
         cr1.method(String.class, "toString").invoke(longNumber);
         cr2.method(String.class, "toString").invoke(longNumber);
+        cr3.method(String.class, "toString").invoke(longNumber);
+
+        {
+            cr1.method(Integer.TYPE, "intValue").invoke(number);
+            cr1.method(Integer.TYPE, "intValue").invoke(number);
+            cr1.cast(Object.class).method(Integer.TYPE, "intValue").invoke(number);
+            try {
+                cr1.superClassRef(Object.class).method(Integer.TYPE, "intValue").invoke(number);
+                fail("Should have thrown an exception");
+            } catch (Exception e) {
+                assertTrue(e instanceof NoSuchMethodException);
+            }
+        }
 
     }
 

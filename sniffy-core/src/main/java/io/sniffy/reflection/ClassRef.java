@@ -7,9 +7,11 @@ import io.sniffy.reflection.method.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 import static io.sniffy.reflection.Unsafe.$;
 
+// TODO: use declaredFields0 and declaredMethods0 to also cover super system methods
 public class ClassRef<C> implements ResolvableRef {
 
     private final Class<C> clazz;
@@ -24,6 +26,11 @@ public class ClassRef<C> implements ResolvableRef {
         } else {
             throw new UnsafeException("Cannot cast " + this.clazz + " to " + clazz);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> ClassRef<T> cast(@SuppressWarnings("unused") Class<T> unused) throws UnsafeException {
+        return (ClassRef<T>) this;
     }
 
     @Override
@@ -70,12 +77,31 @@ public class ClassRef<C> implements ResolvableRef {
         return ConstructorRefBuilder.constructor(clazz);
     }
 
+    // methods
+
+    private Method getDeclaredMethod(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
+        Class<?> clazz = this.clazz;
+        while (null != clazz) {
+            for (Method method : clazz.getDeclaredMethods()) {
+                if (method.getName().equals(methodName) && Arrays.equals(method.getParameterTypes(), parameterTypes)) {
+                    return method;
+                }
+            }
+            if (clazz == clazz.getSuperclass()) {
+                clazz = null;
+            } else {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        throw new NoSuchMethodException();
+    }
+    
     // void method factories
 
     @SuppressWarnings("Convert2Diamond")
     public VoidZeroArgsMethodRef<C> method(String methodName) {
         try {
-            Method declaredMethod = clazz.getDeclaredMethod(methodName);
+            Method declaredMethod = getDeclaredMethod(methodName);
             if (Unsafe.setAccessible(declaredMethod)) {
                 return new VoidZeroArgsMethodRef<C>(declaredMethod, null);
             } else {
@@ -89,7 +115,7 @@ public class ClassRef<C> implements ResolvableRef {
     @SuppressWarnings("Convert2Diamond")
     public <P1> VoidOneArgMethodRef<C, P1> method(String methodName, Class<P1> p1Class) {
         try {
-            Method declaredMethod = clazz.getDeclaredMethod(methodName, p1Class);
+            Method declaredMethod = getDeclaredMethod(methodName, p1Class);
             if (Unsafe.setAccessible(declaredMethod)) {
                 return new VoidOneArgMethodRef<C, P1>(declaredMethod, null);
             } else {
@@ -103,7 +129,7 @@ public class ClassRef<C> implements ResolvableRef {
     @SuppressWarnings("Convert2Diamond")
     public <P1, P2> VoidTwoArgsMethodRef<C, P1, P2> method(String methodName, Class<P1> p1Class, Class<P2> p2Class) {
         try {
-            Method declaredMethod = clazz.getDeclaredMethod(methodName, p1Class, p2Class);
+            Method declaredMethod = getDeclaredMethod(methodName, p1Class, p2Class);
             if (Unsafe.setAccessible(declaredMethod)) {
                 return new VoidTwoArgsMethodRef<C, P1, P2>(declaredMethod, null);
             } else {
@@ -117,7 +143,7 @@ public class ClassRef<C> implements ResolvableRef {
     @SuppressWarnings("Convert2Diamond")
     public <P1, P2, P3> VoidThreeArgsMethodRef<C, P1, P2, P3> method(String methodName, Class<P1> p1Class, Class<P2> p2Class, Class<P3> p3Class) {
         try {
-            Method declaredMethod = clazz.getDeclaredMethod(methodName, p1Class, p2Class, p3Class);
+            Method declaredMethod = getDeclaredMethod(methodName, p1Class, p2Class, p3Class);
             if (Unsafe.setAccessible(declaredMethod)) {
                 return new VoidThreeArgsMethodRef<C, P1, P2, P3>(declaredMethod, null);
             } else {
@@ -136,7 +162,7 @@ public class ClassRef<C> implements ResolvableRef {
     @SuppressWarnings("Convert2Diamond")
     public <T> NonVoidZeroArgsMethodRef<T, C> method(@SuppressWarnings("unused") Class<T> tClass, String methodName) {
         try {
-            Method declaredMethod = clazz.getDeclaredMethod(methodName);
+            Method declaredMethod = getDeclaredMethod(methodName);
             if (Unsafe.setAccessible(declaredMethod)) {
                 return new NonVoidZeroArgsMethodRef<T, C>(declaredMethod, null);
             } else {
@@ -150,7 +176,7 @@ public class ClassRef<C> implements ResolvableRef {
     @SuppressWarnings("Convert2Diamond")
     public <T, P1> NonVoidOneArgMethodRef<T, C, P1> method(@SuppressWarnings("unused") Class<T> tClass, String methodName, Class<P1> p1Class) {
         try {
-            Method declaredMethod = clazz.getDeclaredMethod(methodName, p1Class);
+            Method declaredMethod = getDeclaredMethod(methodName, p1Class);
             if (Unsafe.setAccessible(declaredMethod)) {
                 return new NonVoidOneArgMethodRef<T, C, P1>(declaredMethod, null);
             } else {
@@ -164,7 +190,7 @@ public class ClassRef<C> implements ResolvableRef {
     @SuppressWarnings("Convert2Diamond")
     public <T, P1, P2> NonVoidTwoArgsMethodRef<T, C, P1, P2> method(@SuppressWarnings("unused") Class<T> tClass, String methodName, Class<P1> p1Class, Class<P2> p2Class) {
         try {
-            Method declaredMethod = clazz.getDeclaredMethod(methodName, p1Class, p2Class);
+            Method declaredMethod = getDeclaredMethod(methodName, p1Class, p2Class);
             if (Unsafe.setAccessible(declaredMethod)) {
                 return new NonVoidTwoArgsMethodRef<T, C, P1, P2>(declaredMethod, null);
             } else {
@@ -178,7 +204,7 @@ public class ClassRef<C> implements ResolvableRef {
     @SuppressWarnings("Convert2Diamond")
     public <T, P1, P2, P3> NonVoidThreeArgsMethodRef<T, C, P1, P2, P3> method(@SuppressWarnings("unused") Class<T> tClass, String methodName, Class<P1> p1Class, Class<P2> p2Class, Class<P3> p3Class) {
         try {
-            Method declaredMethod = clazz.getDeclaredMethod(methodName, p1Class, p2Class, p3Class);
+            Method declaredMethod = getDeclaredMethod(methodName, p1Class, p2Class, p3Class);
             if (Unsafe.setAccessible(declaredMethod)) {
                 return new NonVoidThreeArgsMethodRef<T, C, P1, P2, P3>(declaredMethod, null);
             } else {
@@ -192,7 +218,7 @@ public class ClassRef<C> implements ResolvableRef {
     @SuppressWarnings("Convert2Diamond")
     public <T, P1, P2, P3, P4> NonVoidFourArgsMethodRef<T, C, P1, P2, P3, P4> method(@SuppressWarnings("unused") Class<T> tClass, String methodName, Class<P1> p1Class, Class<P2> p2Class, Class<P3> p3Class, Class<P4> p4Class) {
         try {
-            Method declaredMethod = clazz.getDeclaredMethod(methodName, p1Class, p2Class, p3Class, p4Class);
+            Method declaredMethod = getDeclaredMethod(methodName, p1Class, p2Class, p3Class, p4Class);
             if (Unsafe.setAccessible(declaredMethod)) {
                 return new NonVoidFourArgsMethodRef<T, C, P1, P2, P3, P4>(declaredMethod, null);
             } else {

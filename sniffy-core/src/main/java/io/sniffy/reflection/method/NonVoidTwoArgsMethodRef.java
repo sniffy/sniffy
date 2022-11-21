@@ -14,9 +14,13 @@ public class NonVoidTwoArgsMethodRef<T, C, P1, P2> extends AbstractMethodRef<C> 
 
     public T invoke(C instance, P1 p1, P2 p2) throws UnsafeException {
         try {
-            Object result = method.invoke(instance, p1, p2);
-            //noinspection unchecked
-            return (T) result;
+            if (null != throwable) {
+                throw ExceptionUtil.throwException(throwable);
+            } else {
+                Object result = method.invoke(instance, p1, p2);
+                //noinspection unchecked
+                return (T) result;
+            }
         } catch (IllegalAccessException e) {
             throw new UnsafeException(e);
         } catch (InvocationTargetException e) {

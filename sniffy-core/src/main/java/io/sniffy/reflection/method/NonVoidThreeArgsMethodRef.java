@@ -14,9 +14,13 @@ public class NonVoidThreeArgsMethodRef<T, C, P1, P2, P3> extends AbstractMethodR
 
     public T invoke(C instance, P1 p1, P2 p2, P3 p3) throws UnsafeException {
         try {
-            Object result = method.invoke(instance, p1, p2, p3);
-            //noinspection unchecked
-            return (T) result;
+            if (null != throwable) {
+                throw ExceptionUtil.throwException(throwable);
+            } else {
+                Object result = method.invoke(instance, p1, p2, p3);
+                //noinspection unchecked
+                return (T) result;
+            }
         } catch (IllegalAccessException e) {
             throw new UnsafeException(e);
         } catch (InvocationTargetException e) {

@@ -14,7 +14,11 @@ public class VoidZeroArgsMethodRef<C> extends AbstractMethodRef<C> {
 
     public void invoke(C instance) throws UnsafeException {
         try {
-            method.invoke(instance);
+            if (null != throwable) {
+                throw ExceptionUtil.throwException(throwable);
+            } else {
+                method.invoke(instance);
+            }
         } catch (IllegalAccessException e) {
             throw new UnsafeException(e);
         } catch (InvocationTargetException e) {

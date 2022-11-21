@@ -14,7 +14,11 @@ public class VoidTwoArgsMethodRef<C, P1, P2> extends AbstractMethodRef<C> {
 
     public void invoke(C instance, P1 p1, P2 p2) throws UnsafeException {
         try {
-            method.invoke(instance, p1, p2);
+            if (null != throwable) {
+                throw ExceptionUtil.throwException(throwable);
+            } else {
+                method.invoke(instance, p1, p2);
+            }
         } catch (IllegalAccessException e) {
             throw new UnsafeException(e);
         } catch (InvocationTargetException e) {

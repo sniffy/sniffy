@@ -14,9 +14,13 @@ public class NonVoidOneArgMethodRef<T, C, P1> extends AbstractMethodRef<C> {
 
     public T invoke(C instance, P1 p1) throws UnsafeException {
         try {
-            Object result = method.invoke(instance, p1);
-            //noinspection unchecked
-            return (T) result;
+            if (null != throwable) {
+                throw ExceptionUtil.throwException(throwable);
+            } else {
+                Object result = method.invoke(instance, p1);
+                //noinspection unchecked
+                return (T) result;
+            }
         } catch (IllegalAccessException e) {
             throw new UnsafeException(e);
         } catch (InvocationTargetException e) {

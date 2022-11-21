@@ -15,7 +15,11 @@ public class ZeroArgsConstructorRef<C> extends AbstractConstructorRef<C> {
     @SuppressWarnings("TryWithIdenticalCatches")
     public void invoke(C instance) throws UnsafeException {
         try {
-            methodHandle.invoke(instance);
+            if (null != throwable) {
+                throw ExceptionUtil.throwException(throwable);
+            } else {
+                methodHandle.invoke(instance);
+            }
         } catch (WrongMethodTypeException e) {
             throw new UnsafeException(e);
         } catch (ClassCastException e) {

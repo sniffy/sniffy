@@ -14,7 +14,11 @@ public class VoidOneArgMethodRef<C, P1> extends AbstractMethodRef<C> {
 
     public void invoke(C instance, P1 p1) throws UnsafeException {
         try {
-            method.invoke(instance, p1);
+            if (null != throwable) {
+                throw ExceptionUtil.throwException(throwable);
+            } else {
+                method.invoke(instance, p1);
+            }
         } catch (IllegalAccessException e) {
             throw new UnsafeException(e);
         } catch (InvocationTargetException e) {

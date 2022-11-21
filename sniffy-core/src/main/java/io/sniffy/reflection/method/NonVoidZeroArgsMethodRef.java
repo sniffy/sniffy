@@ -14,9 +14,13 @@ public class NonVoidZeroArgsMethodRef<T, C> extends AbstractMethodRef<C> {
 
     public T invoke(C instance) throws UnsafeException {
         try {
-            Object result = method.invoke(instance);
-            //noinspection unchecked
-            return (T) result;
+            if (null != throwable) {
+                throw ExceptionUtil.throwException(throwable);
+            } else {
+                Object result = method.invoke(instance);
+                //noinspection unchecked
+                return (T) result;
+            }
         } catch (IllegalAccessException e) {
             throw new UnsafeException(e);
         } catch (InvocationTargetException e) {
