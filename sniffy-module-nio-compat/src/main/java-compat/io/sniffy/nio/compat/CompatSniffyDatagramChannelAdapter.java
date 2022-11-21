@@ -42,11 +42,6 @@ public class CompatSniffyDatagramChannelAdapter extends DatagramChannelDelegate 
     }
 
     @Override
-    public AbstractSelectableChannel asSelectableChannel() {
-        return this;
-    }
-
-    @Override
     @IgnoreJRERequirement
     public DatagramChannel bind(SocketAddress local) throws IOException {
         delegate.bind(local);

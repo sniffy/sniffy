@@ -1,7 +1,9 @@
 package io.sniffy.nio;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -17,8 +19,7 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1.7
@@ -26,6 +27,7 @@ import static io.sniffy.util.ReflectionUtil.setField;
 public class SniffyDatagramChannelAdapter extends DatagramChannel implements SelectableChannelWrapper<DatagramChannel>, SelChImpl {
 
     // TODO add proper tests for SniffyDatagramChannelAdapter as well
+    private static final Polyglog LOG = PolyglogFactory.log(SniffyDatagramChannelAdapter.class);
 
     private final DatagramChannel delegate;
     private final SelChImpl selChImplDelegate;
@@ -39,11 +41,6 @@ public class SniffyDatagramChannelAdapter extends DatagramChannel implements Sel
     @Override
     public DatagramChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public AbstractSelectableChannel asSelectableChannel() {
-        return this;
     }
 
     @Override
@@ -131,15 +128,44 @@ public class SniffyDatagramChannelAdapter extends DatagramChannel implements Sel
     public void implCloseSelectableChannel() {
         try {
 
-            Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
+            boolean changed = false;
 
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateCloseLock) {
-                setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
+            synchronized ($(AbstractInterruptibleChannel.class).field("closedLock").getNotNullOrDefault(delegate, delegate)) {
+
+                if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
+                    changed = $(AbstractInterruptibleChannel.class).field("closed").compareAndSet(delegate, false, true);
+                } else {
+                    if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
+                        changed = $(AbstractInterruptibleChannel.class).field("open").compareAndSet(delegate, true, false);
+                    } else {
+                        AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
+                    }
+                }
+
+            }
+
+            if (changed) {
+                $(AbstractSelectableChannel.class).method("implCloseSelectableChannel").invoke(delegate); // or selectable
+            } else {
+                if (AssertUtil.isTestingSniffy()) {
+                    if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
+                        if (!$(AbstractInterruptibleChannel.class).<Boolean>field("closed").get(delegate)) {
+                            AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
+                        }
+                    } else {
+                        if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
+                            if ($(AbstractInterruptibleChannel.class).<Boolean>field("open").get(delegate)) {
+                                AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
+                            }
+                        } else {
+                            AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
+                        }
+                    }
+                }
             }
 
         } catch (Exception e) {
+            LOG.error(e);
             throw ExceptionUtil.processException(e);
         }
     }
@@ -147,17 +173,7 @@ public class SniffyDatagramChannelAdapter extends DatagramChannel implements Sel
     @Override
     public void implConfigureBlocking(boolean block) {
         try {
-
-            Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateRegLock) {
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                    setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                }
-            }
-
+            delegate.configureBlocking(block);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -217,43 +233,44 @@ public class SniffyDatagramChannelAdapter extends DatagramChannel implements Sel
         selChImplDelegate.kill();
     }
 
-    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
+    // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
     // @Override
+    @SuppressWarnings("unused")
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+            $(SelChImpl.class).method("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(selChImplDelegate, ops, sk);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
     public int translateInterestOps(int ops) {
         try {
-            return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+            return $(SelChImpl.class).method(Integer.TYPE, "translateInterestOps", Integer.TYPE).invoke(selChImplDelegate, ops);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
     @SuppressWarnings("RedundantThrows")
     public void park(int event, long nanos) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+            $(SelChImpl.class).method("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
     @SuppressWarnings("RedundantThrows")
     public void park(int event) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+            $(SelChImpl.class).method("park", Integer.TYPE).invoke(selChImplDelegate, event);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }

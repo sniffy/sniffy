@@ -1,5 +1,8 @@
 package io.sniffy.nio;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.OSUtil;
 import io.sniffy.util.StackTraceExtractor;
@@ -19,14 +22,15 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
-import static io.sniffy.util.ReflectionUtil.*;
-import static io.sniffy.util.ReflectionUtil.getField;
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1.7
  */
 // TODO: test properly and come up with a strategy for server sockets and server channels
 public class SniffyServerSocketChannel extends ServerSocketChannel implements SelChImpl, SelectableChannelWrapper<ServerSocketChannel> {
+
+    private static final Polyglog LOG = PolyglogFactory.log(SniffyServerSocketChannel.class);
 
     private final ServerSocketChannel delegate;
     private final SelChImpl selChImplDelegate;
@@ -40,11 +44,6 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     @Override
     public ServerSocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public AbstractSelectableChannel asSelectableChannel() {
-        return this;
     }
 
     @Override
@@ -80,7 +79,8 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
             return null;
         }
 
-        // Windows Selector is implemented using pair of sockets which are explicitly casted and do not work with Sniffy
+        // Windows Selector is implemented using a pair of sockets which are explicitly cast and do not work with Sniffy
+        // TODO: come up with something better
         return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
                 socketChannel :
                 new SniffySocketChannelAdapter(provider(), socketChannel);
@@ -96,32 +96,45 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     public void implCloseSelectableChannel() {
         try {
 
-            Object delegateCloseLock = getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
+            // TODO: extract code below so it could be reused
+            boolean changed = false;
 
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateCloseLock) {
+            synchronized ($(AbstractInterruptibleChannel.class).field("closedLock").getNotNullOrDefault(delegate, delegate)) {
 
-                boolean closed;
-                try {
-                    closed = getField(AbstractInterruptibleChannel.class, delegate, "closed");
-                } catch (NoSuchFieldException e) {
-                    // TODO: somehow remember which field is used in order to speedup stuff
-                    closed = getField(AbstractInterruptibleChannel.class, delegate, "open");
-                    closed = !closed;
-                }
-
-                if (!closed) {
-                    if (!setField(AbstractInterruptibleChannel.class, delegate, "closed", true)) {
-                        setField(AbstractInterruptibleChannel.class, delegate, "open", false);
+                if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
+                    changed = $(AbstractInterruptibleChannel.class).field("closed").compareAndSet(delegate, false, true);
+                } else {
+                    if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
+                        changed = $(AbstractInterruptibleChannel.class).field("open").compareAndSet(delegate, true, false);
+                    } else {
+                        AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
                     }
-                    invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseChannel", Void.class);
                 }
 
             }
 
-            // todo: shall we copy keys from delegate to sniffy here ?
+            if (changed) {
+                $(AbstractSelectableChannel.class).method("implCloseSelectableChannel").invoke(delegate); // or selectable
+            } else {
+                if (AssertUtil.isTestingSniffy()) {
+                    if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
+                        if (!$(AbstractInterruptibleChannel.class).<Boolean>field("closed").get(delegate)) {
+                            AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
+                        }
+                    } else {
+                        if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
+                            if ($(AbstractInterruptibleChannel.class).<Boolean>field("open").get(delegate)) {
+                                AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
+                            }
+                        } else {
+                            AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
+                        }
+                    }
+                }
+            }
 
         } catch (Exception e) {
+            LOG.error(e);
             throw ExceptionUtil.processException(e);
         }
     }
@@ -129,20 +142,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     @Override
     public void implConfigureBlocking(boolean block) {
         try {
-
-            Object delegateRegLock = getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateRegLock) {
-
-                // TODO: check current status first
-
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                    setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                }
-            }
-
+            delegate.configureBlocking(block);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -187,43 +187,44 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
         selChImplDelegate.kill();
     }
 
-    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
+    // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
     // @Override
+    @SuppressWarnings("unused")
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+            $(SelChImpl.class).method("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(selChImplDelegate, ops, sk);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
     public int translateInterestOps(int ops) {
         try {
-            return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+            return $(SelChImpl.class).method(Integer.TYPE, "translateInterestOps", Integer.TYPE).invoke(selChImplDelegate, ops);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
     @SuppressWarnings("RedundantThrows")
     public void park(int event, long nanos) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+            $(SelChImpl.class).method("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
     @SuppressWarnings("RedundantThrows")
     public void park(int event) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+            $(SelChImpl.class).method("park", Integer.TYPE).invoke(selChImplDelegate, event);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }

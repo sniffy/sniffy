@@ -43,11 +43,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return delegate;
     }
 
-    @Override
-    public AbstractSelectableChannel asSelectableChannel() {
-        return this;
-    }
-
     @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement

@@ -42,11 +42,6 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
     }
 
     @Override
-    public AbstractSelectableChannel asSelectableChannel() {
-        return this;
-    }
-
-    @Override
     @IgnoreJRERequirement
     public ServerSocketChannel bind(SocketAddress local, int backlog) throws IOException {
         delegate.bind(local, backlog);
