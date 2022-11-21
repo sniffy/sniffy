@@ -5,10 +5,8 @@ import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
 import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.reflection.method.*;
 import io.sniffy.reflection.module.ModuleRef;
-import io.sniffy.util.ReflectionUtil;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -18,9 +16,19 @@ import static io.sniffy.reflection.Unsafe.$;
 public class ClassRef<C> implements ResolvableRef {
 
     private final Class<C> clazz;
+    private final Throwable throwable;
 
-    public ClassRef(Class<C> clazz) {
+    public Class<C> getEnclosedClass() {
+        return clazz;
+    }
+
+    public Throwable getException() {
+        return throwable;
+    }
+
+    public ClassRef(Class<C> clazz, Throwable throwable) {
         this.clazz = clazz;
+        this.throwable = throwable;
     }
 
     public <T> ClassRef<T> superClassRef(Class<T> clazz) throws UnsafeException {

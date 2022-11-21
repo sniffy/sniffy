@@ -52,20 +52,20 @@ public final class Unsafe {
         try {
             Class<?> clazz = Class.forName(className);
             //noinspection unchecked
-            return new ClassRef<C>((Class<C>) clazz);
-        } catch (ClassNotFoundException e) {
-            throw new UnsafeException(e); // TODO: return unresolved instance instead
+            return new ClassRef<C>((Class<C>) clazz, null);
+        } catch (Exception e) {
+            return new ClassRef<C>(null, e);
         }
     }
 
     @SuppressWarnings({"Convert2Diamond", "unchecked"})
     public static <C,C1 extends C> ClassRef<C> $(Class<C1> clazz, Class<C> ignore) {
-        return (ClassRef<C>) new ClassRef<C1>(clazz);
+        return (ClassRef<C>) new ClassRef<C1>(clazz, null);
     }
 
     @SuppressWarnings("Convert2Diamond")
     public static <C> ClassRef<C> $(Class<C> clazz) {
-        return new ClassRef<C>(clazz);
+        return new ClassRef<C>(clazz, null);
     }
 
     public static boolean setAccessible(AccessibleObject ao) throws UnsafeException {

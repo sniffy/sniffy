@@ -2,7 +2,6 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.ClassRef;
 import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.StackTraceExtractor;
@@ -22,7 +21,6 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
 import static io.sniffy.reflection.Unsafe.$;
-import static io.sniffy.util.ReflectionUtil.*;
 
 /**
  * @since 3.1.7
@@ -139,9 +137,16 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return delegate.getLocalAddress();
     }
 
+    /**
+     * SniffySocketChannelAdapter extends SocketChannel
+     * extends AbstractSelectableChannel extends SelectableChannel
+     * extends AbstractInterruptibleChannel
+     * final AbstractInterruptibleChannel.close() = if (!closed) { close = true; implCloseChannel() }
+     * final AbstractSelectableChannel.implCloseChannel() = { implCloseSelectableChannel(); cancelAllKeysInChannel() }
+     * Sniffy invokes implCloseSelectableChannel() on delegate, and after that cancels the keys from implCloseChannel()
+     */
     @Override
     public void implCloseSelectableChannel() {
-        // TODO: reevaluate side effects
 
         try {
 
@@ -180,8 +185,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
                     }
                 }
             }
-
-            // todo: shall we copy keys from delegate to sniffy here ?
 
         } catch (Exception e) {
             LOG.error(e);
@@ -247,44 +250,44 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         selChImplDelegate.kill();
     }
 
-    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
+    // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
     // @Override
     @SuppressWarnings("unused")
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+            $(SelChImpl.class).method("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(selChImplDelegate, ops, sk);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
     public int translateInterestOps(int ops) {
         try {
-            return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+            return $(SelChImpl.class).method(Integer.TYPE, "translateInterestOps", Integer.TYPE).invoke(selChImplDelegate, ops);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
     @SuppressWarnings("RedundantThrows")
     public void park(int event, long nanos) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+            $(SelChImpl.class).method("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
     @SuppressWarnings("RedundantThrows")
     public void park(int event) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+            $(SelChImpl.class).method("park", Integer.TYPE).invoke(selChImplDelegate, event);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
