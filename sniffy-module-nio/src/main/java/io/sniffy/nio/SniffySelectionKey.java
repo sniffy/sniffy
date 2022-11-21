@@ -6,10 +6,12 @@ import io.sniffy.reflection.ClassRef;
 import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
+import io.sniffy.util.StackTraceExtractor;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 
 import static io.sniffy.reflection.Unsafe.$;
 
@@ -76,9 +78,10 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     @SuppressWarnings("CommentedOutCode")
     @Override
     public Selector selector() {
-        return sniffySelector;
+        //return sniffySelector;
         // Workaround below shouldn't be required but can be handy in case AbstractSelectableChannel.register() gets an invalid key
-        /*
+
+        // TODO: code below shouldn't be required if everything else is configured properly (key removal from channels)
         if (!isValid() &&
                 StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey") &&
                 sniffyChannel instanceof SocketChannel
@@ -87,7 +90,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         } else {
             return sniffySelector;
         }
-        */
+
     }
 
     @Override
