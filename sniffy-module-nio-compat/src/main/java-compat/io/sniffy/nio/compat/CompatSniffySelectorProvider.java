@@ -122,7 +122,7 @@ public class CompatSniffySelectorProvider extends SelectorProvider {
     @Override
     public Pipe openPipe() throws IOException {
         // TODO: can we handle it better?
-        return OSUtil.isWindows() && StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.SniffySelectorProvider", "openSelector") ?
+        return OSUtil.isWindows() && StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.compat.CompatSniffySelectorProvider", "openSelector") ?
                 delegate.openPipe() :
                 new CompatSniffyPipe(this, delegate.openPipe());
     }
