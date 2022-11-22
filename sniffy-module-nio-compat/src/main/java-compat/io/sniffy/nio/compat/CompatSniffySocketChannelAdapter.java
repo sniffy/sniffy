@@ -1,8 +1,10 @@
 package io.sniffy.nio.compat;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.nio.NioDelegateHelper;
 import io.sniffy.nio.SelectableChannelWrapper;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SocketChannelDelegate;
@@ -13,18 +15,15 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
-
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
 
 /**
  * @since 3.1.7
  */
 public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate implements SelectableChannelWrapper<SocketChannel> {
+
+    private static final Polyglog LOG = PolyglogFactory.log(CompatSniffySocketChannelAdapter.class);
 
     protected final SocketChannel delegate;
 
@@ -38,7 +37,7 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
         return delegate;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings("Since17")
     @Override
     @IgnoreJRERequirement
     public SocketChannel bind(SocketAddress local) throws IOException {
@@ -46,7 +45,7 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings("Since17")
     @Override
     @IgnoreJRERequirement
     public <T> SocketChannel setOption(java.net.SocketOption<T> name, T value) throws IOException {
@@ -54,7 +53,7 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings("Since17")
     @Override
     @IgnoreJRERequirement
     public SocketChannel shutdownInput() throws IOException {
@@ -62,7 +61,7 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings("Since17")
     @Override
     @IgnoreJRERequirement
     public SocketChannel shutdownOutput() throws IOException {
@@ -95,7 +94,7 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
         return delegate.finishConnect();
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings("Since17")
     @Override
     @IgnoreJRERequirement
     public SocketAddress getRemoteAddress() throws IOException {
@@ -127,54 +126,37 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
         return delegate.getLocalAddress();
     }
 
+    /**
+     * SniffySocketChannelAdapter extends SocketChannel
+     * extends AbstractSelectableChannel extends SelectableChannel
+     * extends AbstractInterruptibleChannel
+     * final AbstractInterruptibleChannel.close() = if (!closed) { close = true; implCloseChannel() }
+     * final AbstractSelectableChannel.implCloseChannel() = { implCloseSelectableChannel(); cancelAllKeysInChannel() }
+     * Sniffy invokes implCloseSelectableChannel() on delegate, and after that cancels the keys from implCloseChannel()
+     */
     @Override
     public void implCloseSelectableChannel() {
-        try {
-
-            Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateCloseLock) {
-                if (!setField(AbstractInterruptibleChannel.class, delegate, "closed", true)) {
-                    setField(AbstractInterruptibleChannel.class, delegate, "open", false); // TODO: handle false response
-                }
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseChannel", Void.class);
-            }
-
-            // todo: shall we copy keys from delegate to sniffy here ?
-
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        }
+        NioDelegateHelper.implCloseSelectableChannel(delegate);
     }
 
     @Override
     public void implConfigureBlocking(boolean block) {
         try {
-
-            Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateRegLock) {
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                    setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                }
-            }
-
+            delegate.configureBlocking(block);
         } catch (Exception e) {
+            LOG.error(e);
             throw ExceptionUtil.processException(e);
         }
     }
 
     @Override
     @IgnoreJRERequirement
-    @SuppressWarnings({"Since15"})
+    @SuppressWarnings({"Since17"})
     public <T> T getOption(java.net.SocketOption<T> name) throws IOException {
         return delegate.getOption(name);
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings("Since17")
     @Override
     @IgnoreJRERequirement
     public Set<java.net.SocketOption<?>> supportedOptions() {
@@ -186,6 +168,7 @@ public class CompatSniffySocketChannelAdapter extends SocketChannelDelegate impl
 
         if (StackTraceExtractor.hasClassAndMethodInStackTrace("sun.nio.ch.FileChannelImpl", "transferToDirectly")) {
             return null; // disable zero-copy in order to intercept traffic
+            // TODO: investigate enabling zero-copy but keeping traffic capture
         } else {
             return super.getFD();
         }
