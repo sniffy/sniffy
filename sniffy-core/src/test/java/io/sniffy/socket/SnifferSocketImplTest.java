@@ -5,7 +5,6 @@ import io.qameta.allure.Issue;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.PolyglogLevel;
 import io.sniffy.registry.ConnectionsRegistry;
-import io.sniffy.util.ReflectionUtil;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -14,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.*;
@@ -27,6 +25,7 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class SnifferSocketImplTest {
 
+    @Deprecated
     private static class MethodDescriptor {
 
         private final String methodName;
@@ -122,31 +121,6 @@ public class SnifferSocketImplTest {
         }
 
     }
-
-    @Test
-    public void testFields() throws Exception {
-
-        Map<String, Field> fieldsMap = new HashMap<String, Field>();
-
-        for (Field field : ReflectionUtil.getDeclaredFieldsHierarchy(SocketImpl.class)) {
-            if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
-                fieldsMap.put(field.getName(), field);
-            }
-        }
-
-        fieldsMap.remove("socket");
-        fieldsMap.remove("serverSocket");
-
-        fieldsMap.remove("fd");
-
-        fieldsMap.remove("address");
-        fieldsMap.remove("port");
-        fieldsMap.remove("localport");
-
-        assertTrue(fieldsMap + " should be empty",fieldsMap.isEmpty());
-
-    }
-
 
     @Mock
     private PublicSocketImpl delegate;

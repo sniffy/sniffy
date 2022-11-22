@@ -3,7 +3,6 @@ package io.sniffy.socket;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.sniffy.Threads.*;
+import static io.sniffy.reflection.Unsafe.$;
 import static org.junit.Assert.*;
 
 public class SnifferSocketImplFactoryTest extends BaseSocketTest {
@@ -173,7 +173,7 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
             final ServerSocket boundServerSocket = serverSocket;
 
-            SocketImpl boundServerSocketImpl = ReflectionUtil.getField(ServerSocket.class, boundServerSocket, "impl");
+            SocketImpl boundServerSocketImpl = $(ServerSocket.class).<SocketImpl>field("impl").get(boundServerSocket);
             assertFalse(boundServerSocketImpl instanceof SnifferSocketImpl);
 
             Thread serverThread = new Thread(new Runnable() {
@@ -202,13 +202,13 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
             latch.await(10, TimeUnit.SECONDS);
 
-            SocketImpl clientSocketImpl = ReflectionUtil.getField(Socket.class, clientSocket, "impl");
+            SocketImpl clientSocketImpl = $(Socket.class).<SocketImpl>field("impl").get(clientSocket);
             assertTrue(clientSocketImpl instanceof SnifferSocketImpl);
 
             assertNull(exceptionHolder.get());
 
             Socket socket = socketHolder.get();
-            SocketImpl socketImpl = ReflectionUtil.getField(Socket.class, socket, "impl");
+            SocketImpl socketImpl = $(Socket.class).<SocketImpl>field("impl").get(socket);
             assertFalse(socketImpl instanceof SnifferSocketImpl);
 
             clientSocket.close();
