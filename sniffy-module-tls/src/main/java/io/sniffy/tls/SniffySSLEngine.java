@@ -7,19 +7,24 @@ import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySSLNetworkConnection;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.StringUtil;
 
 import javax.net.ssl.*;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
 import static javax.net.ssl.SSLEngineResult.Status.OK;
 
+/**
+ * TODO: extract SniffySSLEngineAdapter class
+ * TODO: extract some common code
+ * Wrapper around SSLEngine which delegates all invocations to another engine
+ * Provides two additional functionalities as part of wrap/unwrap methods
+ */
 public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnection {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySSLSocketFactory.class);
@@ -95,6 +100,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
             return sslEngineResult;
         } finally {
 
+            // If this is the first invocation of this SniffySSLEngine.wrap() and result is not empty
             if (firstWrap && dstLength > 0) {
                 firstWrap = false;
 
@@ -102,10 +108,12 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
                 byte[] dstBuff = new byte[dstLength]; // TODO: limit it if it's bigger than say 512
                 dst.get(dstBuff, 0, dstLength);
 
+                // Store the result bytes and this engine to map, so we could resolve it later
                 Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(dstBuff), this);
 
             }
 
+            // handshake is finished and data was encrypted - log it to bound sniffyNetworkConnection
             if (!handshaking && srcLength > 0 && dstLength > 0) {
 
                 if (null == sniffyNetworkConnection) {
@@ -168,6 +176,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
             return sslEngineResult;
         } finally {
 
+            // If this is the first invocation of this SniffySSLEngine.wrap() and result is not empty
             if (firstWrap && dstLength > 0) {
                 firstWrap = false;
 
@@ -179,6 +188,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
 
             }
 
+            // handshake is finished and data was encrypted - log it to bound sniffyNetworkConnection
             if (!handshaking && srcLength > 0 && dstLength > 0) {
 
                 if (null == sniffyNetworkConnection) {
@@ -225,6 +235,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
             return sslEngineResult;
         } finally {
 
+            // handshake is finished and data was decrypted - log it to bound sniffyNetworkConnection
             if (!handshaking && srcLength > 0 && dstLength > 0) {
 
                 if (null == sniffyNetworkConnection) {
@@ -283,6 +294,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
             return sslEngineResult;
         } finally {
 
+            // handshake is finished and data was decrypted - log it to bound sniffyNetworkConnection
             if (!handshaking && srcLength > 0 && dstLength > 0) {
 
                 if (null == sniffyNetworkConnection) {
@@ -431,58 +443,48 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         delegate.setSSLParameters(params);
     }
 
-    //@Override
-    @SuppressWarnings("TryWithIdenticalCatches")
+    // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
+    // @Override
+    @SuppressWarnings("unused")
     public String getApplicationProtocol() {
         try {
-            return ReflectionUtil.invokeMethod(SSLEngine.class, delegate, "getApplicationProtocol", String.class);
-        } catch (NoSuchMethodException e) {
-            throw ExceptionUtil.throwException(e);
-        } catch (InvocationTargetException e) {
-            throw ExceptionUtil.throwException(e);
-        } catch (IllegalAccessException e) {
+            return $(SSLEngine.class).method(String.class, "getApplicationProtocol").invoke(delegate);
+        } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
     }
 
-    //@Override
-    @SuppressWarnings("TryWithIdenticalCatches")
+    // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
+    // @Override
+    @SuppressWarnings("unused")
     public String getHandshakeApplicationProtocol() {
         try {
-            return ReflectionUtil.invokeMethod(SSLEngine.class, delegate, "getHandshakeApplicationProtocol", String.class);
-        } catch (NoSuchMethodException e) {
-            throw ExceptionUtil.throwException(e);
-        } catch (InvocationTargetException e) {
-            throw ExceptionUtil.throwException(e);
-        } catch (IllegalAccessException e) {
+            return $(SSLEngine.class).method(String.class, "getHandshakeApplicationProtocol").invoke(delegate);
+        } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
     }
 
     // TODO: wrap methods below on JVMS where it is supported
-    @SuppressWarnings("TryWithIdenticalCatches")
+    // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
+    // @Override
+    @SuppressWarnings("unused")
     public void setHandshakeApplicationProtocolSelector(BiFunction<SSLEngine, List<String>, String> selector) {
         try {
-            ReflectionUtil.invokeMethod(SSLEngine.class, delegate, "setHandshakeApplicationProtocolSelector", BiFunction.class, selector, Void.class);
-        } catch (NoSuchMethodException e) {
-            throw ExceptionUtil.throwException(e);
-        } catch (InvocationTargetException e) {
-            throw ExceptionUtil.throwException(e);
-        } catch (IllegalAccessException e) {
+            $(SSLEngine.class).method("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(delegate, selector);
+        } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
     }
 
-    @SuppressWarnings({"unchecked", "TryWithIdenticalCatches"})
+    // TODO: wrap methods below on JVMS where it is supported
+    // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
+    // @Override
+    @SuppressWarnings({"unchecked","unchecked"})
     public BiFunction<SSLEngine, List<String>, String> getHandshakeApplicationProtocolSelector() {
         try {
-            return (BiFunction<SSLEngine, List<String>, String>)
-                    ReflectionUtil.invokeMethod(SSLEngine.class, delegate, "getHandshakeApplicationProtocolSelector", BiFunction.class);
-        } catch (NoSuchMethodException e) {
-            throw ExceptionUtil.throwException(e);
-        } catch (InvocationTargetException e) {
-            throw ExceptionUtil.throwException(e);
-        } catch (IllegalAccessException e) {
+            return $(SSLEngine.class).method(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate);
+        } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
     }

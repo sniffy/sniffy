@@ -363,7 +363,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
     }
 
     private static Collection<SelectionKey> getCancelledKeysFromSelectorImpl(AbstractSelector delegateSelector) throws UnsafeException {
-        return $("sun.nio.ch.SelectorImpl").<Collection<SelectionKey>>field("cancelledKeys").get(delegateSelector);
+        return $("sun.nio.ch.SelectorImpl").<Collection<SelectionKey>>field("cancelledKeys").getOrDefault(delegateSelector, Collections.emptySet());
     }
 
 }

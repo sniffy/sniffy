@@ -2,6 +2,7 @@ package io.sniffy.reflection.field;
 
 import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.UnsafeException;
+import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -27,6 +28,15 @@ public class FieldRef<C,T> {
 
     public Throwable getException() {
         return throwable;
+    }
+
+    // TODO: follow the same approach eveywhere
+    public FieldRef<C, T> resolve() {
+        if (null != throwable) {
+            throw ExceptionUtil.throwException(throwable);
+        } else {
+            return this;
+        }
     }
 
     public boolean compareAndSet(C instance, T oldValue, T newValue) throws UnsafeException {
@@ -168,6 +178,7 @@ public class FieldRef<C,T> {
     }
 
     public T get(C instance) throws UnsafeException {
+        resolve();
         try {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();

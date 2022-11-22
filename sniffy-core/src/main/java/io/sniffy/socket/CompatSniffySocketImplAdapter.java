@@ -12,7 +12,6 @@ import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketImpl;
-import java.util.Set;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 

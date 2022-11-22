@@ -67,6 +67,7 @@ public class SniffySecurityUtil {
 
                         Security.removeProvider(originalProviderName);
 
+                        // TODO: why do we add it twice? is it because of name? document it!
                         Security.insertProviderAt(new SniffySSLContextSpiProvider(originalSecurityProvider), i + j + 1);
                         Security.insertProviderAt(sniffySSLContextSpiProvider, i + j + 1);
 
