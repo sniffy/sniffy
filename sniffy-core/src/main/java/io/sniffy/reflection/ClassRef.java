@@ -249,6 +249,19 @@ public class ClassRef<C> implements ResolvableRef {
 
     // non-void method factories
 
+    public AbstractMethodRef<C> method(String methodName, Class<?>... parameterTypes) {
+        try {
+            Method declaredMethod = getDeclaredMethod(methodName, parameterTypes);
+            if (Unsafe.setAccessible(declaredMethod)) {
+                return new AbstractMethodRef<C>(declaredMethod, null);
+            } else {
+                return new AbstractMethodRef<C>(null, new UnsafeException("Method " + clazz.getName() + "." + methodName + "() is not accessible"));
+            }
+        } catch (Throwable e) {
+            return new AbstractMethodRef<C>(null, e);
+        }
+
+    }
 
     @SuppressWarnings("Convert2Diamond")
     public <T> NonVoidZeroArgsMethodRef<T, C> method(@SuppressWarnings("unused") Class<T> tClass, String methodName) {

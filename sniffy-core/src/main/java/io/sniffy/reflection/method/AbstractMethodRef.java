@@ -29,6 +29,7 @@ public class AbstractMethodRef<C> implements ResolvableRef {
         return throwable;
     }
 
+    // TODO: keep current class abstract and move this method (along with void version) somewhere
     public <T> T invoke(C instance, Object... parameters) throws UnsafeException {
         try {
             if (null != throwable) {

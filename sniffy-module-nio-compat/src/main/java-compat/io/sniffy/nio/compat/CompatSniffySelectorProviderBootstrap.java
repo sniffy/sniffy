@@ -3,6 +3,7 @@ package io.sniffy.nio.compat;
 import sun.misc.Unsafe;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 
@@ -24,27 +25,8 @@ public class CompatSniffySelectorProviderBootstrap {
         //if (getVersion() >= 9) return;
 
         {
-            InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/DatagramChannelDelegate.class");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            int i;
-            while ((i = is.read()) != -1) {
-                baos.write(i);
-            }
-
-            is.close();
-
-            Unsafe unsafe = io.sniffy.reflection.Unsafe.getSunMiscUnsafe();
-
-            unsafe.defineClass(
-                    "sun.nio.ch.DatagramChannelDelegate",
-                    baos.toByteArray(),
-                    0,
-                    baos.size(),
-                    null,
-                    null
-            );
-
+            byte[] bytes = loadResource("META-INF/bytecode/sun/nio/ch/DatagramChannelDelegate.class");
+            io.sniffy.reflection.Unsafe.defineSystemClass("sun.nio.ch.DatagramChannelDelegate", bytes);
             Class.forName("sun.nio.ch.DatagramChannelDelegate");
         }
 
@@ -241,6 +223,20 @@ public class CompatSniffySelectorProviderBootstrap {
 
         }
 
+    }
+
+    private static byte[] loadResource(String path) throws IOException {
+        InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream(path);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        int i;
+        while ((i = is.read()) != -1) {
+            baos.write(i);
+        }
+
+        is.close();
+        byte[] bytes = baos.toByteArray();
+        return bytes;
     }
 
     public static void initialize() {

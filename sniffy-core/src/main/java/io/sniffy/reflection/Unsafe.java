@@ -7,6 +7,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.ReflectPermission;
+import java.security.ProtectionDomain;
 
 /**
  * List of ideas
@@ -45,6 +46,12 @@ public final class Unsafe {
 
     public static sun.misc.Unsafe getSunMiscUnsafe() {
         return SunMiscUnsafeHolder.UNSAFE;
+    }
+
+    public static void defineSystemClass(String className, byte[] bytes) throws UnsafeException {
+        $(sun.misc.Unsafe.class).
+                method("defineClass", String.class, byte[].class, Integer.TYPE, Integer.TYPE, ClassLoader.class, ProtectionDomain.class).
+                invoke(getSunMiscUnsafe(), className, bytes, 0, bytes.length, null, null);
     }
 
     @SuppressWarnings("Convert2Diamond")
