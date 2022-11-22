@@ -133,7 +133,7 @@ public class ClassRef<C> implements ResolvableRef {
         // TODO: introduce caching here
 
         try {
-            for (FieldRef<C, ?> fieldRef : getDeclaredFields().values()) {
+            for (FieldRef<C, ?> fieldRef : getDeclaredFields(false, false).values()) {
                 fieldRef.copy(from, to);
             }
         } catch (Exception e) {
