@@ -1,14 +1,14 @@
-package io.sniffy.nio;
+package io.sniffy.nio.compat;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.channels.ServerSocketChannel;
 
-public class SniffyServerSocketAdapter extends ServerSocket {
+public class CompatSniffyServerSocketAdapter extends ServerSocket {
 
     private final ServerSocket delegate;
 
-    public SniffyServerSocketAdapter(ServerSocket delegate) throws IOException {
+    public CompatSniffyServerSocketAdapter(ServerSocket delegate) throws IOException {
         super();
         this.delegate = delegate;
     }

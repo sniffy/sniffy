@@ -7,6 +7,7 @@ import static io.sniffy.reflection.Unsafe.$;
 /**
  * @since 3.1.7
  */
+@SuppressWarnings("unused")
 public class CompatSniffySelectorProviderModule {
 
     public static void initialize() {
