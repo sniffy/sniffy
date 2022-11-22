@@ -1,12 +1,13 @@
 package io.sniffy.socket;
 
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 
 import java.io.IOException;
 import java.net.SocketImpl;
 import java.net.SocketOption;
 import java.util.Set;
+
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1
@@ -28,7 +29,7 @@ class SnifferSocketImpl extends CompatSnifferSocketImpl {
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
         long start = System.currentTimeMillis();
         try {
-            ReflectionUtil.invokeMethod(SocketImpl.class, delegate, "setOption", SocketOption.class, name, Object.class, value, Void.TYPE);
+            $(SocketImpl.class).method("setOption", SocketOption.class, Object.class).invoke(delegate, name, value);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -41,7 +42,7 @@ class SnifferSocketImpl extends CompatSnifferSocketImpl {
     protected <T> T getOption(SocketOption<T> name) throws IOException {
         long start = System.currentTimeMillis();
         try {
-            return (T) ReflectionUtil.invokeMethod(SocketImpl.class, delegate, "getOption", SocketOption.class, name, Object.class);
+            return (T) $(SocketImpl.class).method(Object.class, "getOption", SocketOption.class).invoke(delegate, name);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -54,7 +55,7 @@ class SnifferSocketImpl extends CompatSnifferSocketImpl {
     protected Set<SocketOption<?>> supportedOptions() {
         long start = System.currentTimeMillis();
         try {
-            return (Set<SocketOption<?>>) ReflectionUtil.invokeMethod(SocketImpl.class, delegate, "supportedOptions", Set.class);
+            return $(SocketImpl.class).method(Set.class, "supportedOptions").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {

@@ -88,6 +88,22 @@ public class ClassRef<C> implements ResolvableRef {
         }
     }
 
+    public Map<MethodKey, AbstractMethodRef<C>> getMethods(Class<? super C> upperBound, MethodFilter methodFilter) {
+        Map<MethodKey, AbstractMethodRef<C>> methodRefs = new HashMap<MethodKey, AbstractMethodRef<C>>();
+        Class<? super C> clazz = this.clazz;
+        while (clazz != (null == upperBound ? Object.class : upperBound)) {
+            for (Method method : clazz.getDeclaredMethods()) {
+                MethodKey methodKey = new MethodKey(method);
+                if (null == methodFilter || methodFilter.include(methodKey, method)) {
+                    methodRefs.put(methodKey, new AbstractMethodRef<C>(method, null));
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+
+        return methodRefs;
+    }
+
     public Map<String, FieldRef<C, ?>> getDeclaredFields() {
         return getDeclaredFields(true, true);
     }
@@ -101,7 +117,7 @@ public class ClassRef<C> implements ResolvableRef {
             for (Field field : declaredFields) {
                 if (
                         (includeSynthetic || !field.isSynthetic()) &&
-                        (includeStatic || !Modifier.isStatic(field.getModifiers()))
+                                (includeStatic || !Modifier.isStatic(field.getModifiers()))
                 ) {
                     fields.put(field.getName(), new FieldRef<C, Object>(field, null));
                 }
@@ -146,7 +162,7 @@ public class ClassRef<C> implements ResolvableRef {
         }
         throw new NoSuchMethodException();
     }
-    
+
     // void method factories
 
     @SuppressWarnings("Convert2Diamond")
