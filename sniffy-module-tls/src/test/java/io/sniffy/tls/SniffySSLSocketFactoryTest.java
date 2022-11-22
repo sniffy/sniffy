@@ -28,12 +28,15 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
         Map<String, FieldRef<SSLSocketFactory, ?>> fieldsMap = $(SSLSocketFactory.class).getDeclaredFields(false, true);
 
         assertTrue(fieldsMap.containsKey("theFactory"));
-        assertTrue(fieldsMap.containsKey("propertyChecked"));
         assertTrue(fieldsMap.containsKey("DEBUG"));
 
         fieldsMap.remove("theFactory");
-        fieldsMap.remove("propertyChecked");
         fieldsMap.remove("DEBUG");
+
+        if (JVMUtil.getVersion() <= 12) {
+            assertTrue(fieldsMap.containsKey("propertyChecked"));
+            fieldsMap.remove("propertyChecked");
+        }
 
         assertTrue(fieldsMap + " should be empty",fieldsMap.isEmpty());
 
