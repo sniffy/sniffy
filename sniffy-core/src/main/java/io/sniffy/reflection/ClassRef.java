@@ -5,6 +5,7 @@ import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
 import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.reflection.method.*;
 import io.sniffy.reflection.module.ModuleRef;
+import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -125,6 +126,20 @@ public class ClassRef<C> implements ResolvableRef {
             clazz = clazz.getSuperclass();
         }
         return fields;
+    }
+
+    public void copyFields(C from, C to) {
+
+        // TODO: introduce caching here
+
+        try {
+            for (FieldRef<C, ?> fieldRef : getDeclaredFields().values()) {
+                fieldRef.copy(from, to);
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.throwException(e); // TODO: unify exception handling
+        }
+
     }
 
     @SuppressWarnings("Convert2Diamond")

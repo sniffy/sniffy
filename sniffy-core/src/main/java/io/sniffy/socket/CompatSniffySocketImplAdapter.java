@@ -1,8 +1,7 @@
 package io.sniffy.socket;
 
+import io.sniffy.reflection.ClassRef;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionCopier;
-import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -13,6 +12,7 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketImpl;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
@@ -20,7 +20,7 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
  */
 class CompatSniffySocketImplAdapter extends SocketImpl {
 
-    private static final ReflectionCopier<SocketImpl> socketChannelFieldsCopier = new ReflectionCopier<SocketImpl>(SocketImpl.class);
+    private static final ClassRef<SocketImpl> socketImplClassRef = $(SocketImpl.class);
 
     protected final SocketImpl delegate;
 
@@ -29,11 +29,11 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     }
 
     private void copyToDelegate() {
-        socketChannelFieldsCopier.copy(this, delegate);
+        socketImplClassRef.copyFields(this, delegate);
     }
 
     private void copyFromDelegate() {
-        socketChannelFieldsCopier.copy(delegate, this);
+        socketImplClassRef.copyFields(delegate, this);
     }
 
     @SuppressWarnings("RedundantThrows")

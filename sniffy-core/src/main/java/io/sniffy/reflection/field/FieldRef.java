@@ -248,5 +248,8 @@ public class FieldRef<C,T> {
             throw new UnsafeException(e);
         } 
     }
-    
+
+    public void copy(C from, C to) throws UnsafeException {
+        set(to, get(from));
+    }
 }
