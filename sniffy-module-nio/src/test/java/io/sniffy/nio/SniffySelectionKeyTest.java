@@ -1,14 +1,14 @@
 package io.sniffy.nio;
 
+import io.sniffy.reflection.UnsafeException;
+import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.util.ObjectWrapper;
-import io.sniffy.util.ReflectionUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.InetSocketAddress;
@@ -20,6 +20,7 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.util.*;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static org.junit.Assert.*;
 
 public class SniffySelectionKeyTest extends BaseSocketTest {
@@ -115,13 +116,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
     @Test
     public void testNoUnknownFields() throws Exception {
 
-        Map<String, Field> fieldsMap = new HashMap<String, Field>();
-
-        for (Field field : ReflectionUtil.getDeclaredFieldsHierarchy(SelectionKey.class)) {
-            if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
-                fieldsMap.put(field.getName(), field);
-            }
-        }
+        Map<String, FieldRef<SelectionKey, ?>> fieldsMap = $(SelectionKey.class).getDeclaredFields(false, false);
 
         fieldsMap.remove("attachment");
         fieldsMap.remove("attachmentUpdater");
@@ -312,7 +307,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
                 // TODO: add more assertions
 
                 Set<SelectionKey> cancelledKeysInDelegate =
-                        ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
+                        $(AbstractSelector.class).<Set<SelectionKey>>field("cancelledKeys").get(delegateSelector);
                 Collection<SelectionKey> cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl(delegateSelector);
 
                 assertTrue(cancelledKeysInDelegate.contains(delegate) || cancelledKeysInDelegateImpl.contains(delegate));
@@ -320,7 +315,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
                 selector.selectNow(); // trigger process deregister queue / AKA process cancelled keys
 
                 cancelledKeysInDelegate =
-                        ReflectionUtil.getField(AbstractSelector.class, delegateSelector, "cancelledKeys");
+                        $(AbstractSelector.class).<Set<SelectionKey>>field("cancelledKeys").get(delegateSelector);
                 cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl(delegateSelector);
 
                 assertTrue(cancelledKeysInDelegate.isEmpty());
@@ -329,7 +324,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
                 assertTrue(selector instanceof AbstractSelector);
 
                 Set<SelectionKey> cancelledKeysInSniffySelector =
-                        ReflectionUtil.getField(AbstractSelector.class, (AbstractSelector) selector, "cancelledKeys");
+                        $(AbstractSelector.class).<Set<SelectionKey>>field("cancelledKeys").get((AbstractSelector) selector);
 
                 assertTrue(null == cancelledKeysInSniffySelector || cancelledKeysInSniffySelector.isEmpty());
 
@@ -346,13 +341,13 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
                 // not-mandatory test for SniffySocketChannel not containing canceled key
 
                 {
-                    int keyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, delegateSocketChannel, "keyCount");
+                    int keyCount = $(AbstractSelectableChannel.class).<Integer>field("keyCount").get(delegateSocketChannel);
 
                     assertEquals(0, keyCount);
                 }
 
                 {
-                    int keyCount = ReflectionUtil.getField(AbstractSelectableChannel.class, socketChannel, "keyCount");
+                    int keyCount = $(AbstractSelectableChannel.class).<Integer>field("keyCount").get(socketChannel);
 
                     assertEquals(0, keyCount);
                 }
@@ -367,14 +362,8 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
         }
     }
 
-    private static Collection<SelectionKey> getCancelledKeysFromSelectorImpl(AbstractSelector delegateSelector) throws NoSuchFieldException, IllegalAccessException {
-        try {
-            return ReflectionUtil.getField("sun.nio.ch.SelectorImpl", delegateSelector, "cancelledKeys");
-        } catch (NoSuchFieldException e) {
-            return Collections.emptySet();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    private static Collection<SelectionKey> getCancelledKeysFromSelectorImpl(AbstractSelector delegateSelector) throws UnsafeException {
+        return $("sun.nio.ch.SelectorImpl").<Collection<SelectionKey>>field("cancelledKeys").get(delegateSelector);
     }
 
 }

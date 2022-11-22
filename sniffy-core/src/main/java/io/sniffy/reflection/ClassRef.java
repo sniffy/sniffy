@@ -8,7 +8,10 @@ import io.sniffy.reflection.module.ModuleRef;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import static io.sniffy.reflection.Unsafe.$;
 
@@ -83,6 +86,29 @@ public class ClassRef<C> implements ResolvableRef {
         } catch (Throwable e) {
             return new FieldRef<C1, T>(null, e);
         }
+    }
+
+    public Map<String, FieldRef<C, ?>> getDeclaredFields() {
+        return getDeclaredFields(true, true);
+    }
+
+    // TODO: return fields from java.lang.Object as well
+    public Map<String, FieldRef<C, ?>> getDeclaredFields(boolean includeSynthetic, boolean includeStatic) {
+        Map<String, FieldRef<C, ?>> fields = new HashMap<String, FieldRef<C, ?>>();
+        Class<? super C> clazz = this.clazz;
+        while (clazz != Object.class) {
+            Field[] declaredFields = clazz.getDeclaredFields();
+            for (Field field : declaredFields) {
+                if (
+                        (includeSynthetic || !field.isSynthetic()) &&
+                        (includeStatic || !Modifier.isStatic(field.getModifiers()))
+                ) {
+                    fields.put(field.getName(), new FieldRef<C, Object>(field, null));
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return fields;
     }
 
     @SuppressWarnings("Convert2Diamond")

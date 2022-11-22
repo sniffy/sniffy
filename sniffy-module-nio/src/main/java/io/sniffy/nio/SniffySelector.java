@@ -2,8 +2,8 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.reflection.UnsafeException;
+import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.util.*;
 
 import java.io.IOException;
@@ -12,7 +12,10 @@ import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -63,8 +66,13 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         this.delegateClass = delegate.getClass();
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
         // install some assertions when testing Sniffy
-        if (JVMUtil.isTestingSniffy()) {
-            ReflectionUtil.setField(AbstractSelector.class, this, "cancelledKeys", null); // trigger NPE in case it is used (it shouldn't be)
+        if (AssertUtil.isTestingSniffy()) {
+            try {
+                // trigger NPE in case it is used (it shouldn't be)
+                $(AbstractSelector.class).field("cancelledKeys").set(this, null);
+            } catch (UnsafeException e) {
+                throw ExceptionUtil.throwException(e);
+            }
         }
     }
 

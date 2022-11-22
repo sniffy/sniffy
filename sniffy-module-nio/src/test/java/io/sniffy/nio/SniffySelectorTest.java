@@ -1,17 +1,17 @@
 package io.sniffy.nio;
 
+import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.util.ObjectWrapper;
-import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelector;
 import java.util.*;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static org.junit.Assert.*;
 
 public class SniffySelectorTest {
@@ -109,13 +109,7 @@ public class SniffySelectorTest {
     @Test
     public void testFields() throws Exception {
 
-        Map<String, Field> fieldsMap = new HashMap<String, Field>();
-
-        for (Field field : ReflectionUtil.getDeclaredFieldsHierarchy(AbstractSelector.class)) {
-            if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
-                fieldsMap.put(field.getName(), field);
-            }
-        }
+        Map<String, FieldRef<AbstractSelector, ?>> fieldsMap = $(AbstractSelector.class).getDeclaredFields(false, false);
 
         assertTrue(fieldsMap.containsKey("closed") || fieldsMap.containsKey("selectorOpen"));
 
@@ -133,13 +127,7 @@ public class SniffySelectorTest {
     @Test
     public void testSelectorImplFields() throws Exception {
 
-        Map<String, Field> fieldsMap = new HashMap<String, Field>();
-
-        for (Field field : ReflectionUtil.getDeclaredFields(Class.forName("sun.nio.ch.SelectorImpl"))) {
-            if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
-                fieldsMap.put(field.getName(), field);
-            }
-        }
+        Map<String, FieldRef<Object, ?>> fieldsMap = $("sun.nio.ch.SelectorImpl").getDeclaredFields(false, false);
 
         assertTrue(fieldsMap.containsKey("publicKeys"));
 

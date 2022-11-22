@@ -1,15 +1,13 @@
 package io.sniffy.nio;
 
+import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.socket.BaseSocketTest;
-import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.Map;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static org.junit.Assert.assertTrue;
 
 public class SniffySocketChannelTest extends BaseSocketTest {
@@ -17,13 +15,7 @@ public class SniffySocketChannelTest extends BaseSocketTest {
     @Test
     public void testFields() throws Exception {
 
-        Map<String, Field> fieldsMap = new HashMap<String, Field>();
-
-        for (Field field : ReflectionUtil.getDeclaredFieldsHierarchy(SocketChannel.class)) {
-            if (!Modifier.isStatic(field.getModifiers()) && !field.isSynthetic()) {
-                fieldsMap.put(field.getName(), field);
-            }
-        }
+        Map<String, FieldRef<SocketChannel, ?>> fieldsMap = $(SocketChannel.class).getDeclaredFields(false, false);
 
         assertTrue(fieldsMap.containsKey("keys"));
         assertTrue(fieldsMap.containsKey("keyCount"));

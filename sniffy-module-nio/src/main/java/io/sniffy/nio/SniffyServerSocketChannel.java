@@ -94,49 +94,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     @Override
     public void implCloseSelectableChannel() {
-        try {
-
-            // TODO: extract code below so it could be reused
-            boolean changed = false;
-
-            synchronized ($(AbstractInterruptibleChannel.class).field("closedLock").getNotNullOrDefault(delegate, delegate)) {
-
-                if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
-                    changed = $(AbstractInterruptibleChannel.class).field("closed").compareAndSet(delegate, false, true);
-                } else {
-                    if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
-                        changed = $(AbstractInterruptibleChannel.class).field("open").compareAndSet(delegate, true, false);
-                    } else {
-                        AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
-                    }
-                }
-
-            }
-
-            if (changed) {
-                $(AbstractSelectableChannel.class).method("implCloseSelectableChannel").invoke(delegate); // or selectable
-            } else {
-                if (AssertUtil.isTestingSniffy()) {
-                    if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
-                        if (!$(AbstractInterruptibleChannel.class).<Boolean>field("closed").get(delegate)) {
-                            AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
-                        }
-                    } else {
-                        if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
-                            if ($(AbstractInterruptibleChannel.class).<Boolean>field("open").get(delegate)) {
-                                AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
-                            }
-                        } else {
-                            AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
-                        }
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            LOG.error(e);
-            throw ExceptionUtil.processException(e);
-        }
+        NioDelegateHelper.implCloseSelectableChannel(delegate);
     }
 
     @Override
