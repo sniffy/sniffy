@@ -7,18 +7,18 @@ import java.lang.reflect.Constructor;
 
 public abstract class AbstractConstructorRef<C> implements ResolvableRef {
 
-    protected final Constructor constructor;
+    protected final Constructor<C> constructor;
     protected final MethodHandle methodHandle;
     protected final Throwable throwable;
 
-    public AbstractConstructorRef(Constructor constructor, MethodHandle methodHandle, Throwable throwable) {
+    public AbstractConstructorRef(Constructor<C> constructor, MethodHandle methodHandle, Throwable throwable) {
         this.constructor = constructor;
         this.methodHandle = methodHandle;
         this.throwable = throwable;
     }
 
     public boolean isResolved() {
-        return null != methodHandle;
+        return null != methodHandle || null != constructor;
     }
 
     public MethodHandle getMethodHandle() {

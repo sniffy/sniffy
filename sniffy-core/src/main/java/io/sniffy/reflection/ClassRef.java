@@ -1,6 +1,5 @@
 package io.sniffy.reflection;
 
-import io.sniffy.reflection.constructor.ConstructorRefBuilder;
 import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
 import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.reflection.method.*;

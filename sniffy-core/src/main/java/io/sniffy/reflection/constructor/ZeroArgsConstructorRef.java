@@ -10,14 +10,13 @@ import java.lang.reflect.InvocationTargetException;
 
 public class ZeroArgsConstructorRef<C> extends AbstractConstructorRef<C> {
 
-    public ZeroArgsConstructorRef(Constructor constructor, MethodHandle methodHandle, Throwable throwable) {
+    public ZeroArgsConstructorRef(Constructor<C> constructor, MethodHandle methodHandle, Throwable throwable) {
         super(constructor, methodHandle, throwable);
     }
 
     @SuppressWarnings("TryWithIdenticalCatches")
     public C invoke() throws UnsafeException {
         try {
-            //noinspection unchecked
             return (C) constructor.newInstance();
         } catch (InstantiationException e) {
             throw new UnsafeException(e);
