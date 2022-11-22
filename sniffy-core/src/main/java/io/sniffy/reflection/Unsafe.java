@@ -53,7 +53,7 @@ public final class Unsafe {
             Class<?> clazz = Class.forName(className);
             //noinspection unchecked
             return new ClassRef<C>((Class<C>) clazz, null);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return new ClassRef<C>(null, e);
         }
     }

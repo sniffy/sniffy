@@ -49,6 +49,9 @@ public class SniffySocketCompatibilityTest {
             fail("Should have been blocked by Sniffy");
         } catch (ConnectException e) {
             assertTrue(e.getMessage().contains("refused by Sniffy"));
+        } catch (Throwable e) {
+            e.printStackTrace();
+            fail(e.getMessage());
         } finally {
             ConnectionsRegistry.INSTANCE.clear();
             SnifferSocketImplFactory.uninstall();

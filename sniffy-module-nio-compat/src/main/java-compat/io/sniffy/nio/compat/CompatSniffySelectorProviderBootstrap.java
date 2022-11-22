@@ -6,25 +6,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 
+import static io.sniffy.util.JVMUtil.getVersion;
+
 /**
  * @since 3.1.7
  */
 public class CompatSniffySelectorProviderBootstrap {
 
     private static boolean publicSelChImplLoadedInBootstrapClassLoader = false;
-
-    private static int getVersion() {
-        String version = System.getProperty("java.version");
-        if (version.startsWith("1.")) {
-            version = version.substring(2, 3);
-        } else {
-            int dot = version.indexOf(".");
-            if (dot != -1) {
-                version = version.substring(0, dot);
-            }
-        }
-        return Integer.parseInt(version);
-    }
 
     public static void loadPublicSelChImplInBootstrapClassLoader() throws Exception {
 
@@ -38,16 +27,14 @@ public class CompatSniffySelectorProviderBootstrap {
             InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/DatagramChannelDelegate.class");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-            int i = 0;
+            int i;
             while ((i = is.read()) != -1) {
                 baos.write(i);
             }
 
             is.close();
 
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            Unsafe unsafe = (Unsafe) f.get(null);
+            Unsafe unsafe = io.sniffy.reflection.Unsafe.getSunMiscUnsafe();
 
             unsafe.defineClass(
                     "sun.nio.ch.DatagramChannelDelegate",

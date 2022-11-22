@@ -2,6 +2,8 @@ package io.sniffy.nio.compat;
 
 import io.sniffy.util.JVMUtil;
 
+import static io.sniffy.reflection.Unsafe.$;
+
 /**
  * @since 3.1.7
  */
@@ -15,8 +17,8 @@ public class CompatSniffySelectorProviderModule {
 
 
         try {
-            Class.forName("io.sniffy.nio.compat.CompatSniffySelectorProviderBootstrap").getMethod("initialize").invoke(null);
-            Class.forName("io.sniffy.nio.compat.CompatSniffySelectorProvider").getMethod("install").invoke(null);
+            $("io.sniffy.nio.compat.CompatSniffySelectorProviderBootstrap").method("initialize").invoke(null);
+            $("io.sniffy.nio.compat.CompatSniffySelectorProvider").method("initialize").invoke(null);
         } catch (Exception e) {
             e.printStackTrace();
         }

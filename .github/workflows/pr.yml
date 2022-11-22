@@ -380,6 +380,12 @@ jobs:
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
         shell: bash
         if: matrix.os != 'macOS-12'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: surefire-test-report-compatibility-test-Java1.6-${{ matrix.os }}
+          path: |
+            **/target/surefire-reports/
+            **/target/hs_err*.*
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
