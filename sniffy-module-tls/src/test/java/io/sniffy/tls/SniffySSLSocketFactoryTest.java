@@ -1,6 +1,7 @@
 package io.sniffy.tls;
 
 import io.qameta.allure.Issue;
+import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ReflectionUtil;
@@ -11,12 +12,32 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.channels.SocketChannel;
 import java.security.Security;
+import java.util.Map;
 import java.util.Properties;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static org.junit.Assert.*;
 
 public class SniffySSLSocketFactoryTest extends BaseSocketTest {
+
+    @Test
+    public void testFields() throws Exception {
+
+        Map<String, FieldRef<SSLSocketFactory, ?>> fieldsMap = $(SSLSocketFactory.class).getDeclaredFields(false, true);
+
+        assertTrue(fieldsMap.containsKey("theFactory"));
+        assertTrue(fieldsMap.containsKey("propertyChecked"));
+        assertTrue(fieldsMap.containsKey("DEBUG"));
+
+        fieldsMap.remove("theFactory");
+        fieldsMap.remove("propertyChecked");
+        fieldsMap.remove("DEBUG");
+
+        assertTrue(fieldsMap + " should be empty",fieldsMap.isEmpty());
+
+    }
 
     public static class TestSSLSocketFactory extends SSLSocketFactory {
 
