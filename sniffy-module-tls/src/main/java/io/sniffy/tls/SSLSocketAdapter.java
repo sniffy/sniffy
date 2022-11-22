@@ -2,8 +2,8 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.UnsafeException;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLParameters;
@@ -12,13 +12,14 @@ import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.function.BiFunction;
+
+import static io.sniffy.reflection.Unsafe.$;
 
 public class SSLSocketAdapter extends SSLSocket {
 
@@ -143,14 +144,8 @@ public class SSLSocketAdapter extends SSLSocket {
     @SuppressWarnings("TryWithIdenticalCatches")
     public String getApplicationProtocol() {
         try {
-            return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getApplicationProtocol", String.class);
-        } catch (NoSuchMethodException e) {
-            LOG.error(e);
-            throw ExceptionUtil.throwException(e);
-        } catch (InvocationTargetException e) {
-            LOG.error(e);
-            throw ExceptionUtil.throwException(e);
-        } catch (IllegalAccessException e) {
+            return $(SSLSocket.class).method(String.class, "getApplicationProtocol").invoke(delegate);
+        } catch (UnsafeException e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
@@ -161,14 +156,8 @@ public class SSLSocketAdapter extends SSLSocket {
     @SuppressWarnings("TryWithIdenticalCatches")
     public String getHandshakeApplicationProtocol() {
         try {
-            return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocol", String.class);
-        } catch (NoSuchMethodException e) {
-            LOG.error(e);
-            throw ExceptionUtil.throwException(e);
-        } catch (InvocationTargetException e) {
-            LOG.error(e);
-            throw ExceptionUtil.throwException(e);
-        } catch (IllegalAccessException e) {
+            return $(SSLSocket.class).method(String.class, "getHandshakeApplicationProtocol").invoke(delegate);
+        } catch (UnsafeException e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
@@ -179,14 +168,8 @@ public class SSLSocketAdapter extends SSLSocket {
     @SuppressWarnings("TryWithIdenticalCatches")
     public void setHandshakeApplicationProtocolSelector(BiFunction<SSLSocket, List<String>, String> selector) {
         try {
-            ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "setHandshakeApplicationProtocolSelector", BiFunction.class, selector, Void.class);
-        } catch (NoSuchMethodException e) {
-            LOG.error(e);
-            throw ExceptionUtil.throwException(e);
-        } catch (InvocationTargetException e) {
-            LOG.error(e);
-            throw ExceptionUtil.throwException(e);
-        } catch (IllegalAccessException e) {
+            $(SSLSocket.class).method("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(delegate, selector);
+        } catch (UnsafeException e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
@@ -197,14 +180,8 @@ public class SSLSocketAdapter extends SSLSocket {
     @SuppressWarnings({"TryWithIdenticalCatches", "unchecked"})
     public BiFunction<SSLSocket, List<String>, String> getHandshakeApplicationProtocolSelector() {
         try {
-            return ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocolSelector", BiFunction.class);
-        } catch (NoSuchMethodException e) {
-            LOG.error(e);
-            throw ExceptionUtil.throwException(e);
-        } catch (InvocationTargetException e) {
-            LOG.error(e);
-            throw ExceptionUtil.throwException(e);
-        } catch (IllegalAccessException e) {
+            return $(SSLSocket.class).method(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate);
+        } catch (UnsafeException e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
