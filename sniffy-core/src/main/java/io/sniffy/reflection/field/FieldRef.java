@@ -91,11 +91,69 @@ public class FieldRef<C,T> {
 
     }
 
+    /*private static Field getModifiersField() throws UnsafeException {
+        try {
+            return Field.class.getDeclaredField("modifiers");
+        } catch (NoSuchFieldException e) {
+            try {
+                Field[] fields = getDeclaredFields(Field.class);
+                for (Field field : fields) {
+                    if ("modifiers".equals(field.getName())) {
+                        return field;
+                    }
+                }
+            } catch (Exception ex) {
+                ExceptionUtil.addSuppressed(e, ex);
+            }
+            throw new UnsafeException(e);
+        }
+    }
+
+    public static Field[] getDeclaredFields(Class<?> clazz) throws UnsafeException {
+        try {
+            Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+            Unsafe.setAccessible(getDeclaredFields0);
+            return (Field[]) getDeclaredFields0.invoke(clazz, false);
+        } catch (Exception e) {
+            throw new UnsafeException(e);
+        }
+    }
+
+    public void removeFinalFlag() throws UnsafeException {
+
+        Field modifiersField = getModifiersField();
+        Unsafe.setAccessible(modifiersField);
+
+        try {
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+        } catch (IllegalAccessException e) {
+            throw new UnsafeException();
+        }
+    }*/
+
     public void set(C instance, T value) throws UnsafeException {
         try {
 
+            /*if (!field.isAccessible()) {
+                Unsafe.setAccessible(field);
+            }
+
+            if (Modifier.isFinal(field.getModifiers())) {
+                removeFinalFlag();
+            }
+
+            if (field.isAccessible()) {
+                field.set(instance, value);
+                return;
+            }*/
+
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
-            
+
+            /*
+            Ensure the given class has been initialized. This is often needed in conjunction with obtaining the static field base of a class.
+             */
+            UNSAFE.ensureClassInitialized(field.getDeclaringClass());
+
             long offset = null == instance ?
                     UNSAFE.staticFieldOffset(field) :
                     UNSAFE.objectFieldOffset(field);
@@ -152,9 +210,10 @@ public class FieldRef<C,T> {
                 }
             } else {
                 if (Modifier.isVolatile(field.getModifiers())) {
+                    // TODO: switch to putReferenceVolatile from jdk.internal.reflect.Unsafe since it provdies better object visibility
                     UNSAFE.putObjectVolatile(object, offset, value);
                 } else {
-                    UNSAFE.putObject(object, offset, value);
+                    UNSAFE.putObjectVolatile(object, offset, value);
                 }
             }
             

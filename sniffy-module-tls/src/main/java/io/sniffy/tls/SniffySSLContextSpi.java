@@ -3,13 +3,14 @@ package io.sniffy.tls;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.StringUtil;
 
 import javax.net.ssl.*;
 import java.security.KeyManagementException;
 import java.security.SecureRandom;
+
+import static io.sniffy.reflection.Unsafe.$;
 
 public class SniffySSLContextSpi extends SSLContextSpi {
 
@@ -30,7 +31,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     @Override
     public void engineInit(KeyManager[] km, TrustManager[] tm, SecureRandom sr) throws KeyManagementException {
         try {
-            ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineInit", KeyManager[].class, km, TrustManager[].class, tm, SecureRandom.class, sr, Void.class);
+            $(SSLContextSpi.class).method("engineInit", KeyManager[].class, TrustManager[].class, SecureRandom.class).invoke(delegate, km, tm,sr);
         } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
@@ -41,7 +42,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     public SSLSocketFactory engineGetSocketFactory() {
         try {
             return new SniffySSLSocketFactory(
-                    ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineGetSocketFactory", SSLSocketFactory.class)
+                    $(SSLContextSpi.class).method(SSLSocketFactory.class, "engineGetSocketFactory").invoke(delegate)
             );
         } catch (Exception e) {
             LOG.error(e);
@@ -52,7 +53,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     @Override
     public SSLServerSocketFactory engineGetServerSocketFactory() {
         try {
-            return ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineGetServerSocketFactory", SSLServerSocketFactory.class);
+            return $(SSLContextSpi.class).method(SSLServerSocketFactory.class, "engineGetServerSocketFactory").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
@@ -64,7 +65,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     public SSLEngine engineCreateSSLEngine() {
         try {
             return new SniffySSLEngine(
-                    ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineCreateSSLEngine", SSLEngine.class)
+                $(SSLContextSpi.class).method(SSLEngine.class, "engineCreateSSLEngine").invoke(delegate)
             );
         } catch (Exception e) {
             LOG.error(e);
@@ -77,7 +78,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     public SSLEngine engineCreateSSLEngine(String host, int port) {
         try {
             return new SniffySSLEngine(
-                    ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineCreateSSLEngine", String.class, host, Integer.TYPE, port, SSLEngine.class),
+                    $(SSLContextSpi.class).method(SSLEngine.class, "engineCreateSSLEngine", String.class, Integer.TYPE).invoke(delegate, host, port),
                     host, port
             );
         } catch (Exception e) {
@@ -89,7 +90,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     @Override
     public SSLSessionContext engineGetServerSessionContext() {
         try {
-            return ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineGetServerSessionContext", SSLSessionContext.class);
+            return $(SSLContextSpi.class).method(SSLSessionContext.class, "engineGetServerSessionContext").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
@@ -99,7 +100,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     @Override
     public SSLSessionContext engineGetClientSessionContext() {
         try {
-            return ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineGetClientSessionContext", SSLSessionContext.class);
+            return $(SSLContextSpi.class).method(SSLSessionContext.class, "engineGetClientSessionContext").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
@@ -109,7 +110,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     @Override
     public SSLParameters engineGetDefaultSSLParameters() {
         try {
-            return ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineGetDefaultSSLParameters", SSLParameters.class);
+            return $(SSLContextSpi.class).method(SSLParameters.class, "engineGetDefaultSSLParameters").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
@@ -119,7 +120,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
     @Override
     public SSLParameters engineGetSupportedSSLParameters() {
         try {
-            return ReflectionUtil.invokeMethod(SSLContextSpi.class, delegate, "engineGetSupportedSSLParameters", SSLParameters.class);
+            return $(SSLContextSpi.class).method(SSLParameters.class, "engineGetSupportedSSLParameters").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);

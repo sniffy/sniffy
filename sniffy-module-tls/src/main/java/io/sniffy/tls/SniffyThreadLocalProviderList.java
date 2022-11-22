@@ -3,6 +3,7 @@ package io.sniffy.tls;
 import io.sniffy.Constants;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.UnsafeException;
 import io.sniffy.util.JVMUtil;
 import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
@@ -44,7 +45,7 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
         return providerList;
     }
 
-    private static Map.Entry<ProviderList, SniffySSLContextSpiProvider> wrapProviderList(ProviderList value) throws IllegalAccessException, NoSuchFieldException, ClassNotFoundException {
+    private static Map.Entry<ProviderList, SniffySSLContextSpiProvider> wrapProviderList(ProviderList value) throws UnsafeException {
 
         List<Provider> wrappedProviderList = new ArrayList<Provider>();
 

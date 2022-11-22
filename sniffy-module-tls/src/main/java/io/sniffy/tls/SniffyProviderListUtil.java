@@ -2,11 +2,15 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ReflectionUtil;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
 
 import java.lang.reflect.InvocationTargetException;
+
+import static io.sniffy.reflection.Unsafe.$;
 
 public class SniffyProviderListUtil {
 
@@ -16,7 +20,13 @@ public class SniffyProviderListUtil {
 
         LOG.info("Setting Providers.threadLists to SniffyThreadLocalProviderList");
         SniffyThreadLocalProviderList sniffyThreadLocalProviderList = new SniffyThreadLocalProviderList();
-        ReflectionUtil.setField(Providers.class, null, "threadLists", sniffyThreadLocalProviderList);
+        //ReflectionUtil.setField(Providers.class, null, "threadLists", sniffyThreadLocalProviderList);
+        try {
+            FieldRef<Providers, Object> threadLists = $(Providers.class).field("threadLists");
+            threadLists.set(null, sniffyThreadLocalProviderList);
+        } catch (Exception e) {
+            throw ExceptionUtil.throwException(e);
+        }
 
         LOG.info("Setting Providers.threadListsUsed to 1");
         ReflectionUtil.setField(Providers.class, null, "threadListsUsed", 1);

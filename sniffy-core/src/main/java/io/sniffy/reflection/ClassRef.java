@@ -89,6 +89,25 @@ public class ClassRef<C> implements ResolvableRef {
         }
     }
 
+    @SuppressWarnings("Convert2Diamond")
+    public <T, C1> FieldRef<? super C1, T> firstField(Class<T> fieldType) {
+        try {
+            Exception firstException = null;
+            Class<? super C> clazz = this.clazz;
+            while (clazz != Object.class) {
+                for (Field field : clazz.getDeclaredFields()) {
+                    if (field.getType().equals(fieldType)) {
+                        return new FieldRef<C1, T>(field, null);
+                    }
+                }
+                clazz = clazz.getSuperclass();
+            }
+            return new FieldRef<C1, T>(null, new IllegalStateException());
+        } catch (Throwable e) {
+            return new FieldRef<C1, T>(null, e);
+        }
+    }
+
     public Map<MethodKey, AbstractMethodRef<C>> getMethods(Class<? super C> upperBound, MethodFilter methodFilter) {
         Map<MethodKey, AbstractMethodRef<C>> methodRefs = new HashMap<MethodKey, AbstractMethodRef<C>>();
         Class<? super C> clazz = this.clazz;
