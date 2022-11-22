@@ -4,8 +4,9 @@ import io.sniffy.Constants;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.reflection.UnsafeException;
+import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.JVMUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static io.sniffy.tls.SniffySecurityUtil.SSLCONTEXT;
 
 class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
@@ -115,11 +117,10 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
     @Override
     public void set(ProviderList value) {
 
-        //noinspection TryWithIdenticalCatches
         try {
             if (null == delegate.get() &&
                     Boolean.TRUE.equals(insideSetProviderList.get()) &&
-                    1 == ((Number) ReflectionUtil.getField(Providers.class, null, "threadListsUsed")).intValue()) {
+                    1 == ($(Providers.class).<Number>field("threadListsUsed").getOrDefault(null, 0)).intValue()) {
                 if (StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "setProviderList")) {
                     // call callback
                     try {
@@ -133,12 +134,12 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
 
                         if (value == tuple.getKey()) {
                             LOG.info("ProviderList wasn't changed - invoking original Providers.setSystemProviderList() method");
-                            ReflectionUtil.invokeMethod(Providers.class, null, "setSystemProviderList", ProviderList.class, value, Void.class);
+                            $(Providers.class).method("setSystemProviderList", ProviderList.class).invoke(null, value);
                         } else {
 
                             value = tuple.getKey();
                             LOG.info("ProviderList wasn't changed - invoking original Providers.setSystemProviderList() method with wrapped list");
-                            ReflectionUtil.invokeMethod(Providers.class, null, "setSystemProviderList", ProviderList.class, value, Void.class);
+                            $(Providers.class).method("setSystemProviderList", ProviderList.class).invoke(null, value);
 
                             SniffySSLContextSpiProvider firstSniffySSLContextSpiProviderWithDefaultSSLContextSpi = tuple.getValue();
 
@@ -153,33 +154,46 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                                                 "Default"
                                         );
                                         LOG.info("Setting SSLContext.default to " + defaultSniffySSLContext);
+                                        // TODO: why do we do it here? we already doing it in SniffySecurityUtil
                                         SSLContext.setDefault(defaultSniffySSLContext);
                                         if (JVMUtil.getVersion() >= 13) {
-                                            LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
-
-                                            SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder", null, SSLSocketFactory.class);
-                                            if (null != originalSSLSocketFactory) {
-                                                SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
-                                                LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
-                                                ReflectionUtil.setFields(
-                                                        "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
-                                                        null,
-                                                        SSLSocketFactory.class,
-                                                        sniffySSLSocketFactory);
+                                            try {
+                                                LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
+                                                FieldRef<? super Object, SSLSocketFactory> sslSocketFactoryFieldRef =
+                                                        $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").firstField(SSLSocketFactory.class);
+                                                if (sslSocketFactoryFieldRef.isResolved()) {
+                                                    SSLSocketFactory originalSSLSocketFactory = sslSocketFactoryFieldRef.get(null);
+                                                    if (null != originalSSLSocketFactory) {
+                                                        SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
+                                                        LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
+                                                        sslSocketFactoryFieldRef.set(null, sniffySSLSocketFactory);
+                                                    } else {
+                                                        LOG.error("Original SSLSocketFactory was null");
+                                                    }
+                                                }
+                                            } catch (UnsafeException e) {
+                                                throw ExceptionUtil.throwException(e);
                                             }
                                         } else {
                                             LOG.info("Java 12- detected - attempt to update singleton inside javax.net.ssl.SSLSocketFactory");
-
-                                            SSLSocketFactory originalSSLSocketFactory = ReflectionUtil.getFirstField(SSLSocketFactory.class, null, SSLSocketFactory.class);
-                                            if (null != originalSSLSocketFactory) {
-                                                SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
-                                                LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
-                                                ReflectionUtil.setFields(
-                                                        SSLSocketFactory.class,
-                                                        null,
-                                                        SSLSocketFactory.class,
-                                                        sniffySSLSocketFactory);
+                                            try {
+                                                LOG.info("Java 12- detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
+                                                FieldRef<? super Object, SSLSocketFactory> sslSocketFactoryFieldRef =
+                                                        $("javax.net.ssl.SSLSocketFactory").firstField(SSLSocketFactory.class);
+                                                if (sslSocketFactoryFieldRef.isResolved()) {
+                                                    SSLSocketFactory originalSSLSocketFactory = sslSocketFactoryFieldRef.get(null);
+                                                    if (null != originalSSLSocketFactory) {
+                                                        SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
+                                                        LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
+                                                        sslSocketFactoryFieldRef.set(null, sniffySSLSocketFactory);
+                                                    } else {
+                                                        LOG.error("Original SSLSocketFactory was null");
+                                                    }
+                                                }
+                                            } catch (UnsafeException e) {
+                                                throw ExceptionUtil.throwException(e);
                                             }
+                                            // TODO: warn if couldn't find all sslsocket factories
                                         }
                                     } catch (Throwable e) {
                                         // TODO: do the same in other dangerous places
@@ -202,9 +216,7 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                 LOG.info("Sniffy detected exit from Providers.setProviderList() - setting flag insideSetProviderList to false");
                 insideSetProviderList.set(false);
             }
-        } catch (NoSuchFieldException e) {
-            LOG.error(e);
-        } catch (IllegalAccessException e) {
+        } catch (UnsafeException e) {
             LOG.error(e);
         }
 
