@@ -209,11 +209,11 @@ public class FieldRef<C,T> {
                     UNSAFE.putChar(object, offset, (Character) value);
                 }
             } else {
-                if (Modifier.isVolatile(field.getModifiers())) {
+                if (Modifier.isVolatile(field.getModifiers()) || Modifier.isFinal(field.getModifiers())) { // TODO: use *volatile for other final fields as well
                     // TODO: switch to putReferenceVolatile from jdk.internal.reflect.Unsafe since it provdies better object visibility
                     UNSAFE.putObjectVolatile(object, offset, value);
                 } else {
-                    UNSAFE.putObjectVolatile(object, offset, value);
+                    UNSAFE.putObject(object, offset, value);
                 }
             }
             

@@ -2,9 +2,6 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.field.FieldRef;
-import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
 
@@ -18,18 +15,22 @@ public class SniffyProviderListUtil {
 
     public static void install() {
 
+        // TODO: add reflection based tests here to check if ThreadLocal and other fields are in place
         LOG.info("Setting Providers.threadLists to SniffyThreadLocalProviderList");
         SniffyThreadLocalProviderList sniffyThreadLocalProviderList = new SniffyThreadLocalProviderList();
-        //ReflectionUtil.setField(Providers.class, null, "threadLists", sniffyThreadLocalProviderList);
         try {
-            FieldRef<Providers, Object> threadLists = $(Providers.class).field("threadLists");
-            threadLists.set(null, sniffyThreadLocalProviderList);
+            $(Providers.class).<ThreadLocal<ProviderList>>field("threadLists").set(null, sniffyThreadLocalProviderList);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            LOG.error(e);
         }
 
         LOG.info("Setting Providers.threadListsUsed to 1");
-        ReflectionUtil.setField(Providers.class, null, "threadListsUsed", 1);
+        try {
+            // TODO: only do on success from step above
+            $(Providers.class).<Integer>field("threadListsUsed").set(null, 1);
+        } catch (Exception e) {
+            LOG.error(e);
+        }
 
         // now let us verify that Sniffy JSSE provider interceptor was installed correctly
 
@@ -46,10 +47,19 @@ public class SniffyProviderListUtil {
     public static void uninstall() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
         LOG.info("Setting Providers.threadListsUsed to 0");
-        ReflectionUtil.setField(Providers.class, null, "threadListsUsed", 0);
+        try {
+            // TODO: only do on success from step above
+            $(Providers.class).<Integer>field("threadListsUsed").set(null, 0);
+        } catch (Exception e) {
+            LOG.error(e);
+        }
 
         LOG.info("Setting Providers.threadLists to new ThreadLocal<ProviderList>()");
-        ReflectionUtil.setField(Providers.class, null, "threadLists", new ThreadLocal<ProviderList>());
+        try {
+            $(Providers.class).<ThreadLocal<ProviderList>>field("threadLists").set(null, new ThreadLocal<ProviderList>());
+        } catch (Exception e) {
+            LOG.error(e);
+        }
 
     }
 

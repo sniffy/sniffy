@@ -44,6 +44,7 @@ public final class Unsafe {
 
     }
 
+    // Consider also jdk.internal.misc.Unsafe and jdk.internal.reflect.Unsafe
     public static sun.misc.Unsafe getSunMiscUnsafe() {
         return SunMiscUnsafeHolder.UNSAFE;
     }
