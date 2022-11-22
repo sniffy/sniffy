@@ -16,6 +16,7 @@ public class ZeroArgsConstructorRef<C> extends AbstractConstructorRef<C> {
 
     @SuppressWarnings("TryWithIdenticalCatches")
     public C invoke() throws UnsafeException {
+        // resolve(); // TODO: introduce AbstractResolvable class
         try {
             return (C) constructor.newInstance();
         } catch (InstantiationException e) {

@@ -139,7 +139,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
             }
         }
 
-        if (null != defaultSocksSocketImplClassConstructor) {
+        if (defaultSocksSocketImplClassConstructor.isResolved()) {
             try {
                 LOG.trace("Creating SocketImpl delegate using original SocketImpl constructor " + defaultSocksSocketImplClassConstructor);
                 originalSocketImpl = defaultSocksSocketImplClassConstructor.invoke();
