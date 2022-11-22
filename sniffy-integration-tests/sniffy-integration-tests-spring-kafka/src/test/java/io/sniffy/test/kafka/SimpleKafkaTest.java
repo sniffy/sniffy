@@ -1,7 +1,7 @@
 package io.sniffy.test.kafka;
 
 import io.sniffy.log.PolyglogLevel;
-import io.sniffy.socket.DisableSockets;
+import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.test.junit.SniffyRule;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -20,8 +20,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.core.BrokerAddress;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collections;
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@EmbeddedKafka(partitions = 1, topics = { "testTopic" })
+@EmbeddedKafka(partitions = 1, topics = {"testTopic"})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SimpleKafkaTest {
 
@@ -43,32 +43,29 @@ public class SimpleKafkaTest {
     @Autowired
     EmbeddedKafkaBroker embeddedKafkaBroker;
 
-    @Rule public final SniffyRule sniffy = new SniffyRule(PolyglogLevel.TRACE);
+    @Rule
+    public final SniffyRule sniffy = new SniffyRule(PolyglogLevel.TRACE);
 
     @Test
-    @DirtiesContext
-    public void testReceivingKafkaEvents() {
+    public void testSniffyDisabledKafkaProducer() throws Exception {
         Consumer<Integer, String> consumer = configureConsumer();
         Producer<Integer, String> producer = configureProducer();
 
-        producer.send(new ProducerRecord<>(TEST_TOPIC, 123, "my-test-value"));
+        producer.send(new ProducerRecord<>(TEST_TOPIC, 123, "my-test-value-1"));
 
-        ConsumerRecord<Integer, String> singleRecord = KafkaTestUtils.getSingleRecord(consumer, TEST_TOPIC);
-        assertNotNull(singleRecord);
-        assertEquals(Integer.valueOf(123), singleRecord.key());
-        assertEquals("my-test-value", singleRecord.value());
+        {
+            ConsumerRecord<Integer, String> singleRecord = KafkaTestUtils.getSingleRecord(consumer, TEST_TOPIC);
+            assertNotNull(singleRecord);
+            assertEquals(Integer.valueOf(123), singleRecord.key());
+            assertEquals("my-test-value-1", singleRecord.value());
+        }
 
-        consumer.close();
-        producer.close();
-    }
+        BrokerAddress brokerAddress = embeddedKafkaBroker.getBrokerAddresses()[0];
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus(brokerAddress.getHost(), brokerAddress.getPort(), -1);
 
-    @Test
-    @DisableSockets
-    @DirtiesContext
-    public void testSniffyDisabledKafkaProducer() throws Exception {
-        Producer<Integer, String> producer = configureProducer();
+        System.out.println(ConnectionsRegistry.INSTANCE.getDiscoveredAddresses());
 
-        Future<RecordMetadata> recordMetadataFuture = producer.send(new ProducerRecord<>(TEST_TOPIC, 123, "my-test-value"));
+        Future<RecordMetadata> recordMetadataFuture = producer.send(new ProducerRecord<>(TEST_TOPIC, 1234, "my-test-value-2"));
 
         try {
             recordMetadataFuture.get(3000, TimeUnit.MILLISECONDS);
@@ -78,6 +75,18 @@ public class SimpleKafkaTest {
             assertTrue(e.getCause() instanceof TimeoutException);
         }
 
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus(brokerAddress.getHost(), brokerAddress.getPort(), 0);
+
+        producer.send(new ProducerRecord<>(TEST_TOPIC, 12345, "my-test-value-3"));
+
+        {
+            ConsumerRecord<Integer, String> singleRecord = KafkaTestUtils.getSingleRecord(consumer, TEST_TOPIC);
+            assertNotNull(singleRecord);
+            assertEquals(Integer.valueOf(12345), singleRecord.key());
+            assertEquals("my-test-value-3", singleRecord.value());
+        }
+
+        consumer.close();
         producer.close();
     }
 

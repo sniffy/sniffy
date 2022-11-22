@@ -412,6 +412,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     @Override
     public Socket socket() {
         try {
+            // TODO: minor - do not call getInetSocketAddress() here since it changes the default behaviour
             SniffySocket sniffySocket = new SniffySocket(super.socket(), this, connectionId, getInetSocketAddress());
             LOG.trace("Getting SniffySocket " + sniffySocket + " from SniffySocketChannel " + this);
             return sniffySocket;
