@@ -36,13 +36,13 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
             }
 
             try {
-                if (null != SnifferSocketImplFactory.defaultSocksSocketImplClassConstructor) {
+                if (SnifferSocketImplFactory.defaultSocksSocketImplClassConstructor.isResolved()) {
                     return SnifferSocketImplFactory.defaultSocksSocketImplClassConstructor.invoke();
                 }
                 /*if (null != SnifferSocketImplFactory.defaultSocketImplFactoryMethod) {
                     return (SocketImpl) SnifferSocketImplFactory.defaultSocketImplFactoryMethod.invoke(null, serverSocket);
                 }*/
-                if (null != SnifferSocketImplFactory.createPlatformSocketImplMethodRef) {
+                if (SnifferSocketImplFactory.createPlatformSocketImplMethodRef.isResolved()) {
                     return SnifferSocketImplFactory.createPlatformSocketImplMethodRef.invoke(null, serverSocket);
                 }
                 return null;
