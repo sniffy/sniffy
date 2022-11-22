@@ -7,6 +7,7 @@ import io.sniffy.reflection.method.*;
 import io.sniffy.reflection.module.ModuleRef;
 import io.sniffy.util.ExceptionUtil;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -154,9 +155,18 @@ public class ClassRef<C> implements ResolvableRef {
 
     // esoteric
 
-    @SuppressWarnings("RedundantSuppression")
-    public ZeroArgsConstructorRef<C> constructor() throws UnsafeException {
-        return ConstructorRefBuilder.constructor(clazz);
+    public ZeroArgsConstructorRef<C> constructor() {
+        try {
+            Constructor<C> declaredConstructor = clazz.getDeclaredConstructor();
+            if (Unsafe.setAccessible(declaredConstructor)) {
+                return new ZeroArgsConstructorRef<C>(declaredConstructor, null, null);
+            } else {
+                return new ZeroArgsConstructorRef<C>(null, null, new UnsafeException("Constructor " + clazz.getName() + "." + declaredConstructor.getName() + "() is not accessible"));
+            }
+        } catch (Throwable e) {
+            return new ZeroArgsConstructorRef<C>(null, null, e);
+        }
+        //return ConstructorRefBuilder.constructor(clazz);
     }
 
     // methods

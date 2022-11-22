@@ -5,11 +5,27 @@ import io.sniffy.util.ExceptionUtil;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.WrongMethodTypeException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 public class ZeroArgsConstructorRef<C> extends AbstractConstructorRef<C> {
 
-    public ZeroArgsConstructorRef(MethodHandle method, Throwable throwable) {
-        super(method, throwable);
+    public ZeroArgsConstructorRef(Constructor constructor, MethodHandle methodHandle, Throwable throwable) {
+        super(constructor, methodHandle, throwable);
+    }
+
+    @SuppressWarnings("TryWithIdenticalCatches")
+    public C invoke() throws UnsafeException {
+        try {
+            //noinspection unchecked
+            return (C) constructor.newInstance();
+        } catch (InstantiationException e) {
+            throw new UnsafeException(e);
+        } catch (IllegalAccessException e) {
+            throw new UnsafeException(e);
+        } catch (InvocationTargetException e) {
+            throw new UnsafeException(e);
+        }
     }
 
     @SuppressWarnings("TryWithIdenticalCatches")

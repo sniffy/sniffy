@@ -7,7 +7,6 @@ import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -30,20 +29,21 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
             boolean serverSocket = false;
 
-            if (null != stackTrace) {
-                for (StackTraceElement ste : stackTrace) {
-                    if (ste.getClassName().startsWith("java.net.ServerSocket")) {
-                        serverSocket = true;
-                    }
+            for (StackTraceElement ste : stackTrace) {
+                if (ste.getClassName().startsWith("java.net.ServerSocket")) {
+                    serverSocket = true;
                 }
             }
 
             try {
-                if (null != SnifferSocketImplFactory.defaultSocketImplClassConstructor) {
-                    return SnifferSocketImplFactory.defaultSocketImplClassConstructor.newInstance();
+                if (null != SnifferSocketImplFactory.defaultSocksSocketImplClassConstructor) {
+                    return SnifferSocketImplFactory.defaultSocksSocketImplClassConstructor.invoke();
                 }
-                if (null != SnifferSocketImplFactory.defaultSocketImplFactoryMethod) {
+                /*if (null != SnifferSocketImplFactory.defaultSocketImplFactoryMethod) {
                     return (SocketImpl) SnifferSocketImplFactory.defaultSocketImplFactoryMethod.invoke(null, serverSocket);
+                }*/
+                if (null != SnifferSocketImplFactory.createPlatformSocketImplMethodRef) {
+                    return SnifferSocketImplFactory.createPlatformSocketImplMethodRef.invoke(null, serverSocket);
                 }
                 return null;
             } catch (Exception e) {

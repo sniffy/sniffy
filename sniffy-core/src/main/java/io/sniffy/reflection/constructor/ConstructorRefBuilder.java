@@ -12,6 +12,7 @@ import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * <a href="https://stackoverflow.com/questions/48616630/is-it-possible-to-call-constructor-on-existing-instance">See stackoverflow discussion</a>
+ * TODO: doesn't compile on both Java 8 and higher - consider using multi version jars
  */
 public class ConstructorRefBuilder {
 
@@ -48,17 +49,16 @@ public class ConstructorRefBuilder {
 
             memberNameFlagsFieldRef.set(initMemberName, flags);
 
-            MethodHandle handle;
+            MethodHandle handle = null;
 
-            if (JVMUtil.getVersion() > 8) {
+            /*if (JVMUtil.getVersion() > 8) {
                 //noinspection unchecked
                 handle = $(MethodHandles.Lookup.class).method(MethodHandle.class, "getDirectMethod",
                                 Byte.TYPE, Class.class, (Class<Object>) Class.forName("java.lang.invoke.MemberName"), MethodHandles.Lookup.class).
                         invoke(
                                 implLookup, (byte) 5, clazz, initMemberName, implLookup
                         );
-                /*
-                //noinspection JavaLangInvokeHandleSignatur e
+
                 MethodHandle getDirectMethodHandle = implLookup.findVirtual(
                         MethodHandles.Lookup.class,
                         "getDirectMethod",
@@ -72,16 +72,9 @@ public class ConstructorRefBuilder {
                 );
 
                 handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, implLookup);
-                 */
+
             } else {
-                //noinspection unchecked
-                handle = $(MethodHandles.Lookup.class).method(MethodHandle.class, "getDirectMethod",
-                                Byte.TYPE, Class.class, (Class<Object>) Class.forName("java.lang.invoke.MemberName"), Class.class).
-                        invoke(
-                                implLookup, (byte) 5, clazz, initMemberName, MethodHandles.class
-                        );
-                /*
-                //noinspection JavaLangInvokeHandleSignatur e
+
                 MethodHandle getDirectMethodHandle = implLookup.findVirtual(
                         MethodHandles.Lookup.class,
                         "getDirectMethod",
@@ -95,14 +88,14 @@ public class ConstructorRefBuilder {
                 );
 
                 handle = (MethodHandle) getDirectMethodHandle.invoke(implLookup, (byte) 5, clazz, initMemberName, MethodHandles.class);
-                 */
-            }
 
-            return new ZeroArgsConstructorRef<C>(handle, null);
+            }*/
+
+            return new ZeroArgsConstructorRef<C>(null, handle, null);
 
         } catch (Throwable e) {
             e.printStackTrace();
-            return new ZeroArgsConstructorRef<C>(null, e);
+            return new ZeroArgsConstructorRef<C>(null, null, e);
         }
     }
 

@@ -48,7 +48,7 @@ public final class Unsafe {
     }
 
     @SuppressWarnings("Convert2Diamond")
-    public static <C> ClassRef<C> $(String className) throws UnsafeException {
+    public static <C> ClassRef<C> $(String className) {
         try {
             Class<?> clazz = Class.forName(className);
             //noinspection unchecked
@@ -58,9 +58,13 @@ public final class Unsafe {
         }
     }
 
-    @SuppressWarnings({"Convert2Diamond", "unchecked"})
+    @SuppressWarnings("unchecked")
     public static <C,C1 extends C> ClassRef<C> $(Class<C1> clazz, Class<C> ignore) {
-        return (ClassRef<C>) new ClassRef<C1>(clazz, null);
+        return (ClassRef<C>) $(clazz);
+    }
+
+    public static <C> ClassRef<C> $(String className, Class<C> ignore) {
+        return $(className);
     }
 
     @SuppressWarnings("Convert2Diamond")
