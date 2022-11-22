@@ -78,7 +78,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
         try {
             FieldRef<Socket, SocketImplFactory> factoryFieldRef = $(Socket.class).field("factory");
-            factoryFieldRef.set(null, null);
+            factoryFieldRef.set(null, previousSocketImplFactory);
         } catch (UnsafeException e) {
             LOG.error(e);
             throw new IOException("Failed to uninstall SnifferSocketImplFactory", e);

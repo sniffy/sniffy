@@ -13,7 +13,6 @@ import java.net.SocketException;
 import java.net.SocketImpl;
 
 import static io.sniffy.reflection.Unsafe.$;
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * @since 3.1.9
@@ -41,7 +40,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void sendUrgentData(int data) throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "sendUrgentData", int.class, data, Void.TYPE);
+            $(SocketImpl.class).method("sendUrgentData", Integer.TYPE).invoke(delegate, data);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -54,7 +53,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void shutdownInput() throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "shutdownInput", Void.TYPE);
+            $(SocketImpl.class).method("shutdownInput").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -67,7 +66,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void shutdownOutput() throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "shutdownOutput", Void.TYPE);
+            $(SocketImpl.class).method("shutdownOutput").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -79,7 +78,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected FileDescriptor getFileDescriptor() {
         copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getFileDescriptor", FileDescriptor.class);
+            return $(SocketImpl.class).method(FileDescriptor.class, "getFileDescriptor").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -91,7 +90,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected InetAddress getInetAddress() {
         copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getInetAddress", InetAddress.class);
+            return $(SocketImpl.class).method(InetAddress.class, "getInetAddress").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -103,7 +102,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected int getPort() {
         copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getPort", Integer.TYPE);
+            return $(SocketImpl.class).method(Integer.TYPE, "getPort").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -115,7 +114,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected boolean supportsUrgentData() {
         copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "supportsUrgentData", Boolean.TYPE);
+            return $(SocketImpl.class).method(Boolean.TYPE, "supportsUrgentData").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -127,7 +126,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected int getLocalPort() {
         copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getLocalPort", Integer.TYPE);
+            return $(SocketImpl.class).method(Integer.TYPE, "getLocalPort").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -151,7 +150,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "setPerformancePreferences", Integer.TYPE, connectionTime, Integer.TYPE, latency, Integer.TYPE, bandwidth, Void.TYPE);
+            $(SocketImpl.class).method(Integer.TYPE, "setPerformancePreferences", Integer.TYPE, Integer.TYPE, Integer.TYPE).invoke(delegate, connectionTime, latency, bandwidth);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -164,7 +163,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void create(boolean stream) throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "create", Boolean.TYPE, stream, Void.TYPE);
+            $(SocketImpl.class).method(Integer.TYPE, "create", Boolean.TYPE).invoke(delegate, stream);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -177,7 +176,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void connect(String host, int port) throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "connect", String.class, host, Integer.TYPE, port, Void.TYPE);
+            $(SocketImpl.class).method(Integer.TYPE, "connect", String.class, Integer.TYPE).invoke(delegate, host, port);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -190,7 +189,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void connect(InetAddress address, int port) throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "connect", InetAddress.class, address, Integer.TYPE, port, Void.TYPE);
+            $(SocketImpl.class).method(Integer.TYPE, "connect", InetAddress.class, Integer.TYPE).invoke(delegate, address, port);
         } catch (Exception e) {
             ExceptionUtil.processException(e);
         } finally {
@@ -203,7 +202,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void connect(SocketAddress address, int timeout) throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "connect", SocketAddress.class, address, Integer.TYPE, timeout, Void.TYPE);
+            $(SocketImpl.class).method(Integer.TYPE, "connect", SocketAddress.class, Integer.TYPE).invoke(delegate, address, timeout);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -216,7 +215,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void bind(InetAddress host, int port) throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "bind", InetAddress.class, host, Integer.TYPE, port, Void.TYPE);
+            $(SocketImpl.class).method(Integer.TYPE, "bind", InetAddress.class, Integer.TYPE).invoke(delegate, host, port);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -229,7 +228,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void listen(int backlog) throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "listen", Integer.TYPE, backlog, Void.TYPE);
+            $(SocketImpl.class).method(Integer.TYPE, "listen", Integer.TYPE).invoke(delegate, backlog);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -242,7 +241,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void accept(SocketImpl s) throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "accept", SocketImpl.class, s, Void.TYPE);
+            $(SocketImpl.class).method(Integer.TYPE, "accept", SocketImpl.class).invoke(delegate, s);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -255,7 +254,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected InputStream getInputStream() throws IOException {
         copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getInputStream", InputStream.class);
+            return $(SocketImpl.class).method(InputStream.class, "getInputStream").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -268,7 +267,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected OutputStream getOutputStream() throws IOException {
         copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getOutputStream", OutputStream.class);
+            return $(SocketImpl.class).method(OutputStream.class, "getOutputStream").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -281,7 +280,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected int available() throws IOException {
         copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "available", Integer.TYPE);
+            return $(SocketImpl.class).method(Integer.TYPE, "available").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -294,7 +293,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void close() throws IOException {
         copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "close", Void.TYPE);
+            $(SocketImpl.class).method("close").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
