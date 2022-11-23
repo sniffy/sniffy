@@ -1,6 +1,7 @@
 package io.sniffy.reflection;
 
 import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
+import io.sniffy.reflection.field.FieldFilter;
 import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.reflection.method.*;
 import io.sniffy.reflection.module.ModuleRef;
@@ -65,6 +66,45 @@ public class ClassRef<C> implements ResolvableRef {
         } catch (Throwable e) {
             return new ModuleRef(null, e);
         }
+    }
+
+    // TODO: should it be C instead of C1 here?
+    public <T, C1> FieldRef<? super C1, T> findFirstField(FieldFilter fieldFilter, boolean recursive) {
+        try {
+            Class<? super C> clazz = this.clazz;
+            while (clazz != Object.class) {
+                Field[] declaredFields = clazz.getDeclaredFields();
+                for (Field declaredField : declaredFields) {
+                    if (fieldFilter.include(declaredField.getName(), declaredField)) {
+                        return new FieldRef<C1, T>(declaredField, null);
+                    }
+                }
+                clazz = recursive ? clazz.getSuperclass() : Object.class;
+            }
+            return new FieldRef<C1, T>(null, new NoSuchFieldError());
+        } catch (Throwable e) {
+            return new FieldRef<C1, T>(null, e);
+        }
+    }
+
+    // TODO: return fields from java.lang.Object as well
+    public Map<String, FieldRef<C,Object>> findFields(FieldFilter fieldFilter, boolean recursive) {
+        Map<String, FieldRef<C, Object>> fields = new HashMap<String, FieldRef<C, Object>>();
+        try {
+            Class<? super C> clazz = this.clazz;
+            while (clazz != Object.class) {
+                Field[] declaredFields = clazz.getDeclaredFields();
+                for (Field field : declaredFields) {
+                    if (fieldFilter.include(field.getName(), field)) {
+                        fields.put(field.getName(), new FieldRef<C, Object>(field, null));
+                    }
+                }
+                clazz = recursive ? clazz.getSuperclass() : Object.class;
+            }
+        } catch (Exception e) {
+            e.printStackTrace(); // TODO: do something different; change API around resolving references, like getOrDefault...
+        }
+        return fields;
     }
 
     @SuppressWarnings("Convert2Diamond")

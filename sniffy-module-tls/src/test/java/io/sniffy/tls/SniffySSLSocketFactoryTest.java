@@ -1,10 +1,10 @@
 package io.sniffy.tls;
 
 import io.qameta.allure.Issue;
+import io.sniffy.reflection.field.FieldFilters;
 import io.sniffy.reflection.field.FieldRef;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.util.JVMUtil;
-import io.sniffy.util.ReflectionUtil;
 import org.junit.Test;
 
 import javax.net.ssl.SSLSocketFactory;
@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.nio.channels.SocketChannel;
 import java.security.Security;
 import java.util.Map;
 import java.util.Properties;
@@ -91,15 +90,27 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
     public void testExistingSSLSocketFactoryWasCreateViaSecurityProperties() throws Exception {
 
         if (JVMUtil.getVersion() >= 13) {
-            ReflectionUtil.setFields(
-                    "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
-                    null,
-                    SSLSocketFactory.class,
-                    new TestSSLSocketFactory()
-            ); // cannot test "ssl.SocketFactory.provider" on Java 14+ since this property is used in static initializer
+            for (FieldRef<Object, Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
+                    findFields(
+                            FieldFilters.and(
+                                    FieldFilters.staticField(),
+                                    FieldFilters.ofType(SSLSocketFactory.class)
+                            )
+                            , true).values()) {
+                fieldRef.set(null, new TestSSLSocketFactory());
+            }
+            // cannot test "ssl.SocketFactory.provider" on Java 14+ since this property is used in static initializer
         } else {
-            ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
-            ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
+            for (FieldRef<SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
+                    findFields(
+                            FieldFilters.and(
+                                    FieldFilters.staticField(),
+                                    FieldFilters.ofType(SSLSocketFactory.class)
+                            )
+                            , true).values()) {
+                fieldRef.set(null, null);
+            }
+            $(SSLSocketFactory.class).field("propertyChecked").set(null, false);
 
             Security.setProperty("ssl.SocketFactory.provider", TestSSLSocketFactory.class.getName());
             SSLSocketFactory.getDefault();
@@ -127,17 +138,28 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
         } finally {
 
             if (JVMUtil.getVersion() >= 13) {
-                ReflectionUtil.setFields(
-                        "javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder",
-                        null,
-                        SSLSocketFactory.class,
-                        null
-                );
+                for (FieldRef<Object, Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
+                        findFields(
+                                FieldFilters.and(
+                                        FieldFilters.staticField(),
+                                        FieldFilters.ofType(SSLSocketFactory.class)
+                                )
+                                , true).values()) {
+                    fieldRef.set(null, null);
+                }
             } else {
-                ReflectionUtil.setFields(SSLSocketFactory.class, null, SSLSocketFactory.class, null);
-                ReflectionUtil.setFirstField(SSLSocketFactory.class, null, Boolean.TYPE, false);
+                for (FieldRef<SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
+                        findFields(
+                                FieldFilters.and(
+                                        FieldFilters.staticField(),
+                                        FieldFilters.ofType(SSLSocketFactory.class)
+                                )
+                                , true).values()) {
+                    fieldRef.set(null, null);
+                }
+                $(SSLSocketFactory.class).field("propertyChecked").set(null, false);
 
-                Properties properties = ReflectionUtil.getFirstField(Security.class, null, Properties.class);
+                Properties properties = $(Security.class).<Properties, Security>findFirstField(FieldFilters.ofType(Properties.class), false).getOrDefault(null, new Properties());
                 if (null != properties) {
                     properties.remove("ssl.SocketFactory.provider");
                 }

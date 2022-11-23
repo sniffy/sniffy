@@ -44,13 +44,18 @@ public class FieldRef<C,T> {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
 
+            /*
+            Ensure the given class has been initialized. This is often needed in conjunction with obtaining the static field base of a class.
+             */
+            UNSAFE.ensureClassInitialized(field.getDeclaringClass());
+
             long offset = null == instance ?
                     UNSAFE.staticFieldOffset(field) :
                     UNSAFE.objectFieldOffset(field);
 
             Object object = null == instance ? field.getDeclaringClass() : instance;
 
-            // TODO: validate conversion below
+            // TODO: validate conversion below; use new Unsafe on modern JDK
 
             if (field.getType() == Integer.TYPE && oldValue instanceof Number && newValue instanceof Number) {
                 return UNSAFE.compareAndSwapInt(object, offset, ((Number) oldValue).intValue(), ((Number) newValue).intValue());
@@ -241,6 +246,11 @@ public class FieldRef<C,T> {
         try {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
+
+            /*
+            Ensure the given class has been initialized. This is often needed in conjunction with obtaining the static field base of a class.
+             */
+            UNSAFE.ensureClassInitialized(field.getDeclaringClass());
             
             long offset = null == instance ?
                     UNSAFE.staticFieldOffset(field) :
