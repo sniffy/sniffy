@@ -27,6 +27,7 @@ import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
@@ -210,16 +211,16 @@ public class SSLSocketAdapterMockitoTest {
     @Test
     public void testGetApplicationProtocol() throws Exception {
         if (JVMUtil.getVersion() >= 9) {
-            when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getApplicationProtocol", String.class)).thenReturn("TLS");
-            assertEquals("TLS", ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getApplicationProtocol", String.class));
+            when($(SSLSocket.class).method(String.class, "getApplicationProtocol").invoke(delegate)).thenReturn("TLS");
+            assertEquals("TLS", sslSocketAdapter.getApplicationProtocol());
         }
     }
 
     @Test
     public void testGetHandshakeApplicationProtocol() throws Exception {
         if (JVMUtil.getVersion() >= 9) {
-            when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocol", String.class)).thenReturn("TLS");
-            assertEquals("TLS", ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getHandshakeApplicationProtocol", String.class));
+            when($(SSLSocket.class).method(String.class, "getHandshakeApplicationProtocol").invoke(delegate)).thenReturn("TLS");
+            assertEquals("TLS", sslSocketAdapter.getHandshakeApplicationProtocol());
         }
     }
 
