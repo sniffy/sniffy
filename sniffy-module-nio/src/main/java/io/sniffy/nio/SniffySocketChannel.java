@@ -8,7 +8,9 @@ import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.*;
 import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.StackTraceExtractor;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
@@ -462,6 +464,16 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     @Override
     public void setLastWriteThreadId(long lastWriteThreadId) {
         this.lastWriteThreadId = lastWriteThreadId;
+    }
+
+    @Override
+    public FileDescriptor getFD() {
+        if (StackTraceExtractor.hasClassAndMethodInStackTrace("sun.nio.ch.FileChannelImpl", "transferToDirectly")) {
+            return null; // disable zero-copy in order to intercept traffic
+            // TODO: investigate enabling zero-copy but keeping traffic capture
+        } else {
+            return super.getFD();
+        }
     }
 
 }

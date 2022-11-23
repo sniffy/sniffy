@@ -36,12 +36,15 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
         this.sniffySelector = sniffySelector;
         this.sniffyChannel = sniffyChannel;
 
+        assert sniffyChannel instanceof SelectableChannelWrapper<?>;
+
         LOG.trace("Created new SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
 
     }
 
     public void setDelegate(SelectionKey delegate) {
         assert null == this.delegate;
+        assert this == delegate.attachment();
 
         this.delegate = delegate;
         this.classRef = $(delegate.getClass(), SelectionKey.class);

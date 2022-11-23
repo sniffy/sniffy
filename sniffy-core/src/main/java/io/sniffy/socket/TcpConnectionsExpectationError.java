@@ -1,7 +1,6 @@
 package io.sniffy.socket;
 
 import io.sniffy.SniffyAssertionError;
-import io.sniffy.Threads;
 
 import java.util.Map;
 

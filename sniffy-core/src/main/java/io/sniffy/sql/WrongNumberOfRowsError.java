@@ -5,7 +5,7 @@ import io.sniffy.Threads;
 
 import java.util.*;
 
-import static io.sniffy.sql.SqlStatement.*;
+import static io.sniffy.sql.SqlStatement.ANY;
 import static io.sniffy.util.StringUtil.LINE_SEPARATOR;
 
 /**

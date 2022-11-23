@@ -2,8 +2,10 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.clazz.ClassRef;
+import io.sniffy.reflection.method.UnresolvedNonStaticMethodRef;
+import io.sniffy.reflection.method.UnresolvedNonStaticNonVoidMethodRef;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -25,6 +27,15 @@ import static io.sniffy.reflection.Unsafe.$;
 public class SniffySocketChannelAdapter extends SocketChannel implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySocketChannelAdapter.class);
+    public static final ClassRef<SelChImpl> SEL_CH_CLASS_REF = $(SelChImpl.class);
+    public static final UnresolvedNonStaticMethodRef<SelChImpl> PARK =
+            SEL_CH_CLASS_REF.getNonStaticMethod("park", Integer.TYPE);
+    public static final UnresolvedNonStaticMethodRef<SelChImpl> PARK_NANOS =
+            SEL_CH_CLASS_REF.getNonStaticMethod("park", Integer.TYPE, Long.TYPE);
+    public static final UnresolvedNonStaticNonVoidMethodRef<SelChImpl, Integer> TRANSLATE_INTEREST_OPS =
+            SEL_CH_CLASS_REF.getNonStaticMethod(Integer.TYPE, "translateInterestOps", Integer.TYPE);
+    public static final UnresolvedNonStaticMethodRef<SelChImpl> TRANSLATE_AND_SET_INTEREST_OPS =
+            SEL_CH_CLASS_REF.getNonStaticMethod("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class);
 
     private final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
@@ -170,14 +181,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     @Override
     public FileDescriptor getFD() {
-
-        if (StackTraceExtractor.hasClassAndMethodInStackTrace("sun.nio.ch.FileChannelImpl", "transferToDirectly")) {
-            return null; // disable zero-copy in order to intercept traffic
-            // TODO: investigate enabling zero-copy but keeping traffic capture
-        } else {
-            return selChImplDelegate.getFD();
-        }
-
+        return selChImplDelegate.getFD();
     }
 
     @Override
@@ -205,7 +209,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @SuppressWarnings("unused")
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            $(SelChImpl.class).getNonStaticMethod("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(selChImplDelegate, ops, sk);
+            TRANSLATE_AND_SET_INTEREST_OPS.invoke(selChImplDelegate, ops, sk);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -216,7 +220,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @SuppressWarnings("unused")
     public int translateInterestOps(int ops) {
         try {
-            return $(SelChImpl.class).getNonStaticMethod(Integer.TYPE, "translateInterestOps", Integer.TYPE).invoke(selChImplDelegate, ops);
+            return TRANSLATE_INTEREST_OPS.invoke(selChImplDelegate, ops);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -227,7 +231,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @SuppressWarnings({"RedundantThrows", "unused"})
     public void park(int event, long nanos) throws IOException {
         try {
-            $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
+            PARK_NANOS.invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
@@ -238,7 +242,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @SuppressWarnings({"RedundantThrows", "unused"})
     public void park(int event) throws IOException {
         try {
-            $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
+            PARK.invoke(selChImplDelegate, event);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
