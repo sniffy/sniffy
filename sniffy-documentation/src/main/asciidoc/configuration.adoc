@@ -23,7 +23,7 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |IO_SNIFFY_MONITOR_SOCKET
 |N/A
 |Monitor socket connections
-|false (enabled implicitly by Sniffy javaagent or SniffyFiler)
+|true
 
 |-Dio.sniffy.interceptProxyConnections
 |IO_SNIFFY_INTERCEPT_PROXY_CONNECTIONS
@@ -35,7 +35,7 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |IO_SNIFFY_MONITOR_NIO
 |monitorNio
 |Monitor NIO socket connections
-|false (enabled implicitly by Sniffy javaagent or SniffyFiler)
+|true
 
 |-Dio.sniffy.topSqlCapacity
 |IO_SNIFFY_TOP_SQL_CAPACITY

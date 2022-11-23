@@ -21,7 +21,7 @@ public class NioDelegateHelper {
     public static final UnresolvedNonStaticFieldRef<AbstractInterruptibleChannel, Boolean> CLOSED =
             ABSTRACT_INTERRUPTIBLE_CHANNEL.getNonStaticField("closed");
     public static final UnresolvedNonStaticFieldRef<AbstractInterruptibleChannel, Object> CLOSED_LOCK =
-            ABSTRACT_INTERRUPTIBLE_CHANNEL.getNonStaticField("closedLock");
+            ABSTRACT_INTERRUPTIBLE_CHANNEL.getNonStaticField("closeLock");
     public static final ClassRef<AbstractSelectableChannel> ABSTRACT_SELECTABLE_CHANNEL = $(AbstractSelectableChannel.class);
     public static final UnresolvedNonStaticMethodRef<AbstractSelectableChannel> IMPL_CLOSE_SELECTABLE_CHANNEL =
             ABSTRACT_SELECTABLE_CHANNEL.getNonStaticMethod("implCloseSelectableChannel");
@@ -32,7 +32,7 @@ public class NioDelegateHelper {
 
             boolean changed = false;
 
-            assert CLOSED_LOCK.isResolved();
+            assert CLOSED_LOCK.isResolved() : CLOSED_LOCK.getResolveException();
 
             synchronized (CLOSED_LOCK.getNotNullOrDefault(delegate, delegate)) {
 
