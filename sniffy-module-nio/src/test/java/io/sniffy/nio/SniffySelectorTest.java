@@ -128,7 +128,7 @@ public class SniffySelectorTest {
     @Test
     public void testSelectorImplFields() throws Exception {
 
-        Map<String, NonStaticFieldRef<? super Object, Object>> fieldsMap = $("sun.nio.ch.SelectorImpl").findNonStaticFields(null, true);
+        Map<String, NonStaticFieldRef<Object, Object>> fieldsMap = $("sun.nio.ch.SelectorImpl").findNonStaticFields(null, true);
 
         assertTrue(fieldsMap.containsKey("publicKeys"));
 

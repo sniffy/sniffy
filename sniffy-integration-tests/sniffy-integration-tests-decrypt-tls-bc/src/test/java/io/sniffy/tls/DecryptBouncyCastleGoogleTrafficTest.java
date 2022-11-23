@@ -2,10 +2,10 @@ package io.sniffy.tls;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
-import io.sniffy.util.JVMUtil;
 import io.sniffy.util.OSUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -66,13 +66,13 @@ public class DecryptBouncyCastleGoogleTrafficTest {
                     if ((
                             e.getMessage().contains("An established connection was aborted by the software in your host machine") ||
                                     e.getMessage().contains("handshake_failure(40)")
-                    ) && OSUtil.isWindows() && (JVMUtil.getVersion() == 14 || JVMUtil.getVersion() == 13)) {
+                    ) && OSUtil.isWindows() && (Unsafe.getJavaVersion() == 14 || Unsafe.getJavaVersion() == 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Windows; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.getJavaVersion() + " running on Windows; retrying in 2 seconds");
                         Thread.sleep(2000);
-                    } else if (e.getMessage().contains("Broken pipe") && OSUtil.isMac() && (JVMUtil.getVersion() >= 13)) {
+                    } else if (e.getMessage().contains("Broken pipe") && OSUtil.isMac() && (Unsafe.getJavaVersion() >= 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Mac OS; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.getJavaVersion() + " running on Mac OS; retrying in 2 seconds");
                         Thread.sleep(2000);
                     } else {
                         throw e;

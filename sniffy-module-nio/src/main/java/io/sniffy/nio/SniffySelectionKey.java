@@ -3,7 +3,6 @@ package io.sniffy.nio;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.reflection.clazz.ClassRef;
-import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
 
@@ -42,14 +41,10 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     }
 
     public void setDelegate(SelectionKey delegate) {
-        if (null != this.delegate) {
-            if (!AssertUtil.logAndThrowException(LOG, "Trying to set SniffySelectionKey.delegate twice", new IllegalStateException())) {
-                LOG.info("Trying to set SniffySelectionKey.delegate twice");
-            }
-        } else {
-            this.delegate = delegate;
-            this.classRef = $(delegate.getClass(), SelectionKey.class);
-        }
+        assert null == this.delegate;
+
+        this.delegate = delegate;
+        this.classRef = $(delegate.getClass(), SelectionKey.class);
     }
 
     @Override

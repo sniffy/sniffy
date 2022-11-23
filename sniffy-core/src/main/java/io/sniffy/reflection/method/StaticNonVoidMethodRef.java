@@ -16,7 +16,7 @@ public class StaticNonVoidMethodRef<T> {
     public T invoke(Object... parameters) throws UnsafeInvocationException, InvocationTargetException {
         try {
             //noinspection unchecked
-            return (T) method.invoke(parameters);
+            return (T) method.invoke(null, parameters);
         } catch (InvocationTargetException e) {
             throw e;
         } catch (Exception e) {

@@ -1,6 +1,6 @@
 package io.sniffy.nio.compat;
 
-import io.sniffy.util.JVMUtil;
+import io.sniffy.reflection.Unsafe;
 
 import static io.sniffy.reflection.Unsafe.$;
 
@@ -12,9 +12,9 @@ public class CompatSniffySelectorProviderModule {
 
     public static void initialize() {
 
-        if (JVMUtil.getVersion() >= 9) return;
+        if (Unsafe.getJavaVersion() >= 9) return;
 
-        if (JVMUtil.getVersion() == 8 && !Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
+        if (Unsafe.getJavaVersion() == 8 && !Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
 
 
         try {

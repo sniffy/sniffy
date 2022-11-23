@@ -4,11 +4,11 @@ import io.sniffy.Constants;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.reflection.UnresolvedRefException;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.field.FieldFilters;
 import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.JVMUtil;
 import io.sniffy.util.StackTraceExtractor;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
@@ -158,7 +158,7 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                                         LOG.info("Setting SSLContext.default to " + defaultSniffySSLContext);
                                         // TODO: why do we do it here? we already doing it in SniffySecurityUtil
                                         SSLContext.setDefault(defaultSniffySSLContext);
-                                        if (JVMUtil.getVersion() >= 13) {
+                                        if (Unsafe.getJavaVersion() >= 13) {
                                             try {
                                                 LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
                                                 UnresolvedStaticFieldRef<SSLSocketFactory> sslSocketFactoryFieldRef =

@@ -43,7 +43,7 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
                     return (SocketImpl) SnifferSocketImplFactory.defaultSocketImplFactoryMethod.invoke(null, serverSocket);
                 }*/
                 if (SnifferSocketImplFactory.createPlatformSocketImplMethodRef.isResolved()) {
-                    return SnifferSocketImplFactory.createPlatformSocketImplMethodRef.invoke(null, serverSocket);
+                    return SnifferSocketImplFactory.createPlatformSocketImplMethodRef.invoke(serverSocket);
                 }
                 return null;
             } catch (Exception e) {

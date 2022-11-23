@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static io.sniffy.util.JVMUtil.getVersion;
+import static io.sniffy.reflection.Unsafe.getJavaVersion;
 
 /**
  * @since 3.1.7
@@ -52,7 +52,7 @@ public class CompatSniffySelectorProviderBootstrap {
             Class.forName("sun.nio.ch.PipeSourceChannelDelegate");
         }
 
-        if (getVersion() < 7) {
+        if (getJavaVersion() < 7) {
 
             {
                 byte[] bytes = loadResource("META-INF/bytecode/java/net/SocketOption.class");

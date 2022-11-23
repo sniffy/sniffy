@@ -66,8 +66,8 @@ public class ClassRef<C> {
         }
     }
 
-    public Map<String, NonStaticFieldRef<? super C,Object>> findNonStaticFields(FieldFilter fieldFilter, boolean recursive) {
-        Map<String, NonStaticFieldRef<? super C, Object>> fields = new HashMap<String, NonStaticFieldRef<? super C, Object>>();
+    public Map<String, NonStaticFieldRef<C,Object>> findNonStaticFields(FieldFilter fieldFilter, boolean recursive) {
+        Map<String, NonStaticFieldRef<C, Object>> fields = new HashMap<String, NonStaticFieldRef<C, Object>>();
         Class<? super C> clazz = this.clazz;
         while (clazz != Object.class) {
             Field[] declaredFields = clazz.getDeclaredFields();
@@ -129,18 +129,16 @@ public class ClassRef<C> {
     public void copyFields(C from, C to) throws UnsafeInvocationException {
 
         // TODO: introduce caching here
-        for (NonStaticFieldRef<? super C,Object> fieldRef : findNonStaticFields(null, true).values()) {
+        for (NonStaticFieldRef<C,Object> fieldRef : findNonStaticFields(null, true).values()) {
             fieldRef.copy(from, to);
         }
 
     }
 
-    @SuppressWarnings("Convert2Diamond")
     public <T> UnresolvedStaticFieldRef<T> getStaticField(String fieldName) {
         return findFirstStaticField(FieldFilters.byName(fieldName), true);
     }
 
-    @SuppressWarnings("Convert2Diamond")
     public <T> UnresolvedNonStaticFieldRef<C,T> getNonStaticField(String fieldName) {
         return findFirstNonStaticField(FieldFilters.byName(fieldName), true);
     }

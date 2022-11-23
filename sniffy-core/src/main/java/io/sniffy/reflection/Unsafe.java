@@ -2,7 +2,6 @@ package io.sniffy.reflection;
 
 import io.sniffy.reflection.clazz.ClassRef;
 import io.sniffy.reflection.clazz.UnresolvedClassRef;
-import io.sniffy.util.JVMUtil;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
@@ -26,6 +25,25 @@ import java.security.ProtectionDomain;
 public final class Unsafe {
 
     private Unsafe() {
+    }
+
+    public static int getJavaVersion() {
+        String version = System.getProperty("java.version");
+        if (null == version) {
+            return 8; // TODO: log it
+        }
+        if (version.startsWith("1.")) {
+            version = version.substring(2, 3);
+        } else {
+            int dot = version.indexOf(".");
+            if (dot != -1) {
+                version = version.substring(0, dot);
+            }
+        }
+        if (version.contains("-")) {
+            version = version.substring(0, version.indexOf("-"));
+        }
+        return Integer.parseInt(version);
     }
 
     private static class SunMiscUnsafeHolder {
@@ -94,7 +112,7 @@ public final class Unsafe {
             return true;
         }
 
-        if (JVMUtil.getVersion() >= 16) {
+        if (getJavaVersion() >= 16) {
 
             try {
                 long overrideOffset = getSunMiscUnsafe().objectFieldOffset(FakeAccessibleObject.class.getDeclaredField("override"));

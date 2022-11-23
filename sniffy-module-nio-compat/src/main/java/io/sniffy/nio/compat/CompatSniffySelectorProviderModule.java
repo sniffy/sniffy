@@ -1,7 +1,5 @@
 package io.sniffy.nio.compat;
 
-import io.sniffy.util.JVMUtil;
-
 import static io.sniffy.reflection.Unsafe.$;
 
 /**

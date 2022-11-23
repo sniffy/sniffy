@@ -2,7 +2,6 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 
 import java.nio.channels.spi.AbstractInterruptibleChannel;
@@ -28,7 +27,7 @@ public class NioDelegateHelper {
                     if ($(AbstractInterruptibleChannel.class).getNonStaticField("open").isResolved()) {
                         changed = $(AbstractInterruptibleChannel.class).getNonStaticField("open").compareAndSet(delegate, true, false);
                     } else {
-                        AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
+                        assert false : "Couldn't find neither closed nor open field in AbstractInterruptibleChannel";
                     }
                 }
 
@@ -37,21 +36,8 @@ public class NioDelegateHelper {
             if (changed) {
                 $(AbstractSelectableChannel.class).getNonStaticMethod("implCloseSelectableChannel").invoke(delegate); // or selectable
             } else {
-                if (AssertUtil.isTestingSniffy()) {
-                    if ($(AbstractInterruptibleChannel.class).getNonStaticField("closed").isResolved()) {
-                        if (!$(AbstractInterruptibleChannel.class).<Boolean>getNonStaticField("closed").get(delegate)) {
-                            AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
-                        }
-                    } else {
-                        if ($(AbstractInterruptibleChannel.class).getNonStaticField("open").isResolved()) {
-                            if ($(AbstractInterruptibleChannel.class).<Boolean>getNonStaticField("open").get(delegate)) {
-                                AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
-                            }
-                        } else {
-                            AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
-                        }
-                    }
-                }
+                assert $(AbstractInterruptibleChannel.class).<Boolean>getNonStaticField("closed").getOrDefault(delegate, false) ||
+                        !$(AbstractInterruptibleChannel.class).<Boolean>getNonStaticField("open").getOrDefault(delegate, true);
             }
 
         } catch (Exception e) {

@@ -20,7 +20,7 @@ public class SnifferSocketImplReflectionTest {
     @Test
     public void testNoUnknownFields() {
 
-        Map<String, NonStaticFieldRef<? super SocketImpl, Object>> fieldsMap = $(SocketImpl.class).findNonStaticFields(null, true);
+        Map<String, NonStaticFieldRef<SocketImpl, Object>> fieldsMap = $(SocketImpl.class).findNonStaticFields(null, true);
 
         fieldsMap.remove("socket"); // TODO: can we handle it nicely ?
         fieldsMap.remove("serverSocket");

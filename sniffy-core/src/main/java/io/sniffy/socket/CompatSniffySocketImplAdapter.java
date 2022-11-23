@@ -1,8 +1,9 @@
 package io.sniffy.socket;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.clazz.ClassRef;
-import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.FileDescriptor;
@@ -21,6 +22,8 @@ import static io.sniffy.reflection.Unsafe.$;
  */
 class CompatSniffySocketImplAdapter extends SocketImpl {
 
+    private static final Polyglog LOG = PolyglogFactory.log(CompatSniffySocketImplAdapter.class);
+
     private static final ClassRef<SocketImpl> socketImplClassRef = $(SocketImpl.class);
 
     protected final SocketImpl delegate;
@@ -33,7 +36,8 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         try {
             socketImplClassRef.copyFields(this, delegate);
         } catch (UnsafeInvocationException e) {
-            AssertUtil.throwException(e);
+            LOG.error("Couldn't copy fields from Sniffy SocketImpl to delegate", e);
+            assert false : "Couldn't copy fields from Sniffy SocketImpl to delegate";
         }
     }
 
@@ -41,7 +45,8 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         try {
             socketImplClassRef.copyFields(delegate, this);
         } catch (UnsafeInvocationException e) {
-            AssertUtil.throwException(e);
+            LOG.error("Couldn't copy fields from delegate to Sniffy SocketImpl", e);
+            assert false : "Couldn't copy fields from delegate to Sniffy SocketImpl";
         }
     }
 

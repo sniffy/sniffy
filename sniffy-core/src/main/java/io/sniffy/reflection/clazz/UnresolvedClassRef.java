@@ -66,11 +66,11 @@ public class UnresolvedClassRef<C> extends UnresolvedRef<ClassRef<C>> {
         return resolve().getNonStaticField(fieldName);
     }
 
-    public <T> UnresolvedNonStaticFieldRef<? super C, T> findFirstNonStaticField(FieldFilter fieldFilter, boolean recursive) throws UnresolvedRefException {
+    public <T> UnresolvedNonStaticFieldRef<C, T> findFirstNonStaticField(FieldFilter fieldFilter, boolean recursive) throws UnresolvedRefException {
         return resolve().findFirstNonStaticField(fieldFilter, recursive);
     }
 
-    public Map<String, NonStaticFieldRef<? super C, Object>> findNonStaticFields(FieldFilter fieldFilter, boolean recursive) throws UnresolvedRefException {
+    public Map<String, NonStaticFieldRef<C, Object>> findNonStaticFields(FieldFilter fieldFilter, boolean recursive) throws UnresolvedRefException {
         return resolve().findNonStaticFields(fieldFilter, recursive);
     }
 

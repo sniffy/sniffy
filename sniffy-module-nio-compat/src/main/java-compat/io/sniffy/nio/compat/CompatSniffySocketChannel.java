@@ -5,10 +5,10 @@ import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.*;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.JVMUtil;
 
 import java.io.IOException;
 import java.net.*;
@@ -49,7 +49,7 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     @Override
     public InetSocketAddress getInetSocketAddress() {
         try {
-            if (JVMUtil.getVersion() > 6) {
+            if (Unsafe.getJavaVersion() > 6) {
                 return (InetSocketAddress) getRemoteAddress();
             } else {
                 return (InetSocketAddress) socket().getRemoteSocketAddress();
@@ -448,7 +448,7 @@ public class CompatSniffySocketChannel extends CompatSniffySocketChannelAdapter 
     public Socket socket() {
         try {
             SniffySocket sniffySocket = new SniffySocket(super.socket(), this, connectionId,
-                JVMUtil.getVersion() > 6 ? getInetSocketAddress() : null);
+                Unsafe.getJavaVersion() > 6 ? getInetSocketAddress() : null);
             LOG.trace("Getting SniffySocket " + sniffySocket + " from CompatSniffySocketChannel " + this);
             return sniffySocket;
         } catch (SocketException e) {

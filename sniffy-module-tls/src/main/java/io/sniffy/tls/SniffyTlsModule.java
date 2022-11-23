@@ -2,7 +2,7 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.util.JVMUtil;
+import io.sniffy.reflection.Unsafe;
 
 import static io.sniffy.reflection.Unsafe.$;
 
@@ -12,7 +12,7 @@ public class SniffyTlsModule {
 
     public static void initialize() {
 
-        if (JVMUtil.getVersion() >= 16) {
+        if (Unsafe.getJavaVersion() >= 16) {
             if (!$("sun.security.jca.Providers").tryGetModuleRef().tryAddOpens("sun.security.jca")) {
                 LOG.error("Couldn't open module with sun.security.jca.Providers class");
             }

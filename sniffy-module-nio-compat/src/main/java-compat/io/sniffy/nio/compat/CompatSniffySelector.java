@@ -6,7 +6,10 @@ import io.sniffy.nio.SelectableChannelWrapper;
 import io.sniffy.reflection.UnresolvedRefException;
 import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.field.UnresolvedNonStaticFieldRef;
-import io.sniffy.util.*;
+import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.ObjectWrapper;
+import io.sniffy.util.SetWrapper;
+import io.sniffy.util.WrapperFactory;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -68,10 +71,8 @@ public class CompatSniffySelector extends AbstractSelector implements ObjectWrap
         this.delegateClass = delegate.getClass();
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
         // install some assertions when testing Sniffy
-        if (AssertUtil.isTestingSniffy()) {
-            // trigger NPE in case it is used (it shouldn't be)
-            $(AbstractSelector.class).getNonStaticField("cancelledKeys").trySet(this, null);
-        }
+        assert $(AbstractSelector.class).getNonStaticField("cancelledKeys").trySet(this, null);
+
     }
 
     @Override
@@ -189,17 +190,14 @@ public class CompatSniffySelector extends AbstractSelector implements ObjectWrap
     }
 
     protected void addCancelledKey(CompatSniffySelectionKey selectionKey) {
-        if (selectionKey.isValid()) {
-            AssertUtil.logAndThrowException(LOG, "Adding valid key to cancelled keys set", new IllegalStateException());
-        }
+        assert !selectionKey.isValid();
         try {
             synchronized (cancelledKeys) {
                 cancelledKeys.add(selectionKey);
             }
         } catch (Exception e) {
-            if (!AssertUtil.logAndThrowException(LOG, "Couldn't add selection key to SniffySelector.cancelledKeys set", e)) {
-                LOG.trace("Couldn't add selection key to SniffySelector.cancelledKeys set");
-            }
+            LOG.error("Couldn't add selection key to SniffySelector.cancelledKeys set", e);
+            assert false : "Couldn't add selection key to SniffySelector.cancelledKeys set";
         }
     }
 
@@ -209,9 +207,7 @@ public class CompatSniffySelector extends AbstractSelector implements ObjectWrap
             while (iterator.hasNext()) {
                 CompatSniffySelectionKey sniffySelectionKey = iterator.next();
                 iterator.remove();
-                if (sniffySelectionKey.isValid()) {
-                    AssertUtil.logAndThrowException(LOG, "Found valid key to cancelled keys set", new IllegalStateException());
-                }
+                assert !sniffySelectionKey.isValid();
                 try {
                     removeSelectionKeyFromChannel(sniffySelectionKey);
                 } catch (UnresolvedRefException e) {
@@ -289,12 +285,9 @@ public class CompatSniffySelector extends AbstractSelector implements ObjectWrap
             if (sniffyChannel instanceof SelectableChannelWrapper) {
                 delegateChannel = ((SelectableChannelWrapper<? extends AbstractSelectableChannel>) sniffyChannel).getDelegate();
             } else {
-                if (JVMUtil.isTestingSniffy()) {
-                    //noinspection ConstantConditions
-                    delegateChannel = ((SelectableChannelWrapper<? extends AbstractSelectableChannel>) sniffyChannel).getDelegate();
-                } else {
-                    LOG.error("Suspicious channel " + sniffyChannel + " is passed to SniffySelector.register() method");
-                }
+                LOG.error("Suspicious channel " + sniffyChannel + " is passed to SniffySelector.register() method");
+                //noinspection ConstantConditions
+                assert sniffyChannel instanceof SelectableChannelWrapper : "Non Sniffy channel passed to Sniffy Selector";
             }
 
             synchronized ($(AbstractSelectableChannel.class).getNonStaticField("regLock").getNotNullOrDefault(delegateChannel, delegateChannel)) {

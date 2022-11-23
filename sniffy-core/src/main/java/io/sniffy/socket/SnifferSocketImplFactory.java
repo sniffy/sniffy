@@ -3,12 +3,12 @@ package io.sniffy.socket;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.reflection.UnresolvedRefException;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.constructor.UnresolvedZeroArgsClassConstructorRef;
 import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
 import io.sniffy.reflection.method.UnresolvedStaticNonVoidMethodRef;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.JVMUtil;
 import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.StringUtil;
 
@@ -100,7 +100,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
     public SocketImpl createSocketImpl() {
         SocketImpl socketImpl = isServerSocketAccept() ? newSocketImpl(false) :
                 isServerSocket() ? newSocketImpl(true) :
-                        JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
+                        Unsafe.getJavaVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
                                 new CompatSnifferSocketImpl(newSocketImpl(false));
         LOG.trace("Created SocketImpl " + socketImpl);
         // TODO: optimize polyglog to support lazy evaluation in order not to call StackTraceExtractor.getStackTraceAsString() each time
@@ -142,7 +142,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         if (createPlatformSocketImplMethodRef.isResolved()) {
             try {
                 LOG.trace("Creating SocketImpl delegate using original SocketImpl factory method " + createPlatformSocketImplMethodRef + " with argument serverSocket=" + serverSocket);
-                originalSocketImpl = createPlatformSocketImplMethodRef.invoke(null, serverSocket);
+                originalSocketImpl = createPlatformSocketImplMethodRef.invoke(serverSocket);
             } catch (Exception e) {
                 LOG.error(e);
                 throw ExceptionUtil.throwException(e);
