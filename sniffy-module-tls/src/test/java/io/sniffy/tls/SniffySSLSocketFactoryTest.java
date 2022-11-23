@@ -92,25 +92,15 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
     public void testExistingSSLSocketFactoryWasCreateViaSecurityProperties() throws Exception {
 
         if (Unsafe.getJavaVersion() >= 13) {
-            for (NonStaticFieldRef<Object, Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
-                    findNonStaticFields(
-                            FieldFilters.and(
-                                    FieldFilters.staticField(),
-                                    FieldFilters.ofType(SSLSocketFactory.class)
-                            )
-                            , true).values()) {
-                fieldRef.set(null, new TestSSLSocketFactory());
+            for (StaticFieldRef<Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
+                    findStaticFields(FieldFilters.ofType(SSLSocketFactory.class), true).values()) {
+                fieldRef.set(new TestSSLSocketFactory());
             }
             // cannot test "ssl.SocketFactory.provider" on Java 14+ since this property is used in static initializer
         } else {
-            for (NonStaticFieldRef<? super SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
-                    findNonStaticFields(
-                            FieldFilters.and(
-                                    FieldFilters.staticField(),
-                                    FieldFilters.ofType(SSLSocketFactory.class)
-                            )
-                            , true).values()) {
-                fieldRef.set(null, null);
+            for (StaticFieldRef<Object> fieldRef : $(SSLSocketFactory.class).
+                    findStaticFields(FieldFilters.ofType(SSLSocketFactory.class), true).values()) {
+                fieldRef.set(null);
             }
             $(SSLSocketFactory.class).getStaticField("propertyChecked").set(false);
 
