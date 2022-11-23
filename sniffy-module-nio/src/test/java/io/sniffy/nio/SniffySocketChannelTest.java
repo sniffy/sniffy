@@ -13,9 +13,9 @@ import static org.junit.Assert.assertTrue;
 public class SniffySocketChannelTest extends BaseSocketTest {
 
     @Test
-    public void testFields() throws Exception {
+    public void testFields() {
 
-        Map<String, NonStaticFieldRef<? super SocketChannel,Object>> fieldsMap = $(SocketChannel.class).findNonStaticFields(null, true);
+        Map<String, NonStaticFieldRef<SocketChannel,Object>> fieldsMap = $(SocketChannel.class).findNonStaticFields(null, true);
 
 
         assertTrue(fieldsMap.containsKey("keys"));

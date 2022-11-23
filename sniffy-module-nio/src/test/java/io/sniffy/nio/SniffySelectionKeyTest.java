@@ -115,7 +115,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
     @Test
     public void testNoUnknownFields() throws Exception {
 
-        Map<String, NonStaticFieldRef<? super SelectionKey,Object>> fieldsMap = $(SelectionKey.class).findNonStaticFields(null, true);
+        Map<String, NonStaticFieldRef<SelectionKey,Object>> fieldsMap = $(SelectionKey.class).findNonStaticFields(null, true);
 
 
         fieldsMap.remove("attachment");
