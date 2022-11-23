@@ -109,7 +109,7 @@ public class SniffySelectorTest {
     @Test
     public void testFields() throws Exception {
 
-        Map<String, NonStaticFieldRef<? super AbstractSelector,Object>> fieldsMap = $(AbstractSelector.class).findNonStaticFields(null, true);
+        Map<String, NonStaticFieldRef<AbstractSelector,Object>> fieldsMap = $(AbstractSelector.class).findNonStaticFields(null, true);
 
 
         assertTrue(fieldsMap.containsKey("closed") || fieldsMap.containsKey("selectorOpen"));
