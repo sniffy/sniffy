@@ -129,7 +129,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
      * @return true if this invocation actually closes the delegate selector
      * Implemented using CAS on delegate selector fields "closed" or "selectorOpen" depending on JVM
      */
-    private boolean isSelectorClosing() throws UnresolvedRefException, UnsafeInvocationException {
+    protected boolean isSelectorClosing() throws UnresolvedRefException, UnsafeInvocationException {
         boolean changed = false;
         if (CLOSED_FIELD_REF.isResolved()) {
             changed = CLOSED_FIELD_REF.compareAndSet(delegate, false, true);

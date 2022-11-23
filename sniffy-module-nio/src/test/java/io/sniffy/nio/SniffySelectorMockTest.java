@@ -1,24 +1,24 @@
 package io.sniffy.nio;
 
+import io.sniffy.reflection.UnresolvedRefException;
+import io.sniffy.reflection.UnsafeInvocationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import sun.nio.ch.Util;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.util.Collections.emptySet;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SniffySelectorMockTest {
@@ -53,6 +53,14 @@ public class SniffySelectorMockTest {
             super.implCloseSelector();
         }
 
+        /**
+         * This method relies on fields in delegate and as a result doesn't play well with mocks
+         * Hence replacing with true here
+         */
+        @Override
+        protected boolean isSelectorClosing() throws UnresolvedRefException, UnsafeInvocationException {
+            return true;
+        }
     }
 
     @Before
