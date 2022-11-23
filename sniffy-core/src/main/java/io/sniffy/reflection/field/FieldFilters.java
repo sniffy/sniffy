@@ -5,7 +5,7 @@ import java.lang.reflect.Modifier;
 
 public class FieldFilters {
 
-    public static FieldFilter ofType(Class<?> type) {
+    public static FieldFilter ofType(final Class<?> type) {
         return new FieldFilter() {
             @Override
             public boolean include(String name, Field field) {
@@ -23,7 +23,7 @@ public class FieldFilters {
         };
     }
 
-    public static FieldFilter and(FieldFilter filter1, FieldFilter filter2) {
+    public static FieldFilter and(final FieldFilter filter1, final FieldFilter filter2) {
         return new FieldFilter() {
             @Override
             public boolean include(String name, Field field) {

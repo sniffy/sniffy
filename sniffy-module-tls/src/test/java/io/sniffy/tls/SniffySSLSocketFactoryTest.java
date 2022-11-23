@@ -101,7 +101,7 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
             }
             // cannot test "ssl.SocketFactory.provider" on Java 14+ since this property is used in static initializer
         } else {
-            for (FieldRef<SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
+            for (FieldRef<? super SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
                     findFields(
                             FieldFilters.and(
                                     FieldFilters.staticField(),
@@ -148,7 +148,7 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
                     fieldRef.set(null, null);
                 }
             } else {
-                for (FieldRef<SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
+                for (FieldRef<? super SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
                         findFields(
                                 FieldFilters.and(
                                         FieldFilters.staticField(),
@@ -159,7 +159,7 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
                 }
                 $(SSLSocketFactory.class).field("propertyChecked").set(null, false);
 
-                Properties properties = $(Security.class).<Properties, Security>findFirstField(FieldFilters.ofType(Properties.class), false).getOrDefault(null, new Properties());
+                Properties properties = $(Security.class).<Properties>findFirstField(FieldFilters.ofType(Properties.class), false).getOrDefault(null, new Properties());
                 if (null != properties) {
                     properties.remove("ssl.SocketFactory.provider");
                 }

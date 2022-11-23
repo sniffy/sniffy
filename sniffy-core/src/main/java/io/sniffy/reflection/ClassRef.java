@@ -69,27 +69,31 @@ public class ClassRef<C> implements ResolvableRef {
     }
 
     // TODO: should it be C instead of C1 here?
-    public <T, C1> FieldRef<? super C1, T> findFirstField(FieldFilter fieldFilter, boolean recursive) {
+    public <T> FieldRef<? super C, T> findFirstField(FieldFilter fieldFilter, boolean recursive) {
         try {
             Class<? super C> clazz = this.clazz;
             while (clazz != Object.class) {
                 Field[] declaredFields = clazz.getDeclaredFields();
                 for (Field declaredField : declaredFields) {
                     if (fieldFilter.include(declaredField.getName(), declaredField)) {
-                        return new FieldRef<C1, T>(declaredField, null);
+                        return new FieldRef<C, T>(declaredField, null);
                     }
                 }
-                clazz = recursive ? clazz.getSuperclass() : Object.class;
+                if (recursive) {
+                    clazz = clazz.getSuperclass();
+                } else {
+                    break;
+                }
             }
-            return new FieldRef<C1, T>(null, new NoSuchFieldError());
+            return new FieldRef<C, T>(null, new NoSuchFieldError());
         } catch (Throwable e) {
-            return new FieldRef<C1, T>(null, e);
+            return new FieldRef<C, T>(null, e);
         }
     }
 
     // TODO: return fields from java.lang.Object as well
-    public Map<String, FieldRef<C,Object>> findFields(FieldFilter fieldFilter, boolean recursive) {
-        Map<String, FieldRef<C, Object>> fields = new HashMap<String, FieldRef<C, Object>>();
+    public Map<String, FieldRef<? super C,Object>> findFields(FieldFilter fieldFilter, boolean recursive) {
+        Map<String, FieldRef<? super C, Object>> fields = new HashMap<String, FieldRef<? super C, Object>>();
         try {
             Class<? super C> clazz = this.clazz;
             while (clazz != Object.class) {
@@ -99,7 +103,11 @@ public class ClassRef<C> implements ResolvableRef {
                         fields.put(field.getName(), new FieldRef<C, Object>(field, null));
                     }
                 }
-                clazz = recursive ? clazz.getSuperclass() : Object.class;
+                if (recursive) {
+                    clazz = clazz.getSuperclass();
+                } else {
+                    break;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace(); // TODO: do something different; change API around resolving references, like getOrDefault...
