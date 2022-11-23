@@ -7,7 +7,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.nio.channels.SelectionKey;
-import java.nio.channels.spi.AbstractSelectableChannel;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,13 +42,14 @@ public class SniffySelectionKeyMockTest {
     private SniffySelector sniffySelectorMock;
 
     @Mock
-    private AbstractSelectableChannel sniffyAbstractSelectableChannelMock;
+    private SocketChannelWrapper sniffyAbstractSelectableChannelMock;
 
     private SniffySelectionKey sniffySelectionKey;
 
     @Before
     public void createSniffySelectionKey() throws Exception {
         sniffySelectionKey = new SniffySelectionKey(sniffySelectorMock, sniffyAbstractSelectableChannelMock, null);
+        delegate.attach(sniffySelectionKey);
         sniffySelectionKey.setDelegate(delegate);
     }
 

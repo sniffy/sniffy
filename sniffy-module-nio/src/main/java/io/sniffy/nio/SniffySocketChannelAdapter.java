@@ -24,7 +24,7 @@ import static io.sniffy.reflection.Unsafe.$;
 /**
  * @since 3.1.7
  */
-public class SniffySocketChannelAdapter extends SocketChannel implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
+public class SniffySocketChannelAdapter extends SocketChannelWrapper implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySocketChannelAdapter.class);
     public static final ClassRef<SelChImpl> SEL_CH_CLASS_REF = $(SelChImpl.class);
