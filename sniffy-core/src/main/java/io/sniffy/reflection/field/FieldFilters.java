@@ -5,6 +5,14 @@ import java.lang.reflect.Modifier;
 
 public class FieldFilters {
 
+    public static FieldFilter byName(final String fieldName) {
+        return new FieldFilter() {
+            @Override
+            public boolean include(String name, Field field) {
+                return name.equals(fieldName);
+            }
+        };
+    }
     public static FieldFilter ofType(final Class<?> type) {
         return new FieldFilter() {
             @Override

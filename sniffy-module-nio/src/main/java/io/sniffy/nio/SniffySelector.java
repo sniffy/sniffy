@@ -2,8 +2,9 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.UnsafeException;
-import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.UnresolvedRefException;
+import io.sniffy.reflection.UnsafeInvocationException;
+import io.sniffy.reflection.field.UnresolvedNonStaticFieldRef;
 import io.sniffy.util.*;
 
 import java.io.IOException;
@@ -67,12 +68,8 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
         // install some assertions when testing Sniffy
         if (AssertUtil.isTestingSniffy()) {
-            try {
-                // trigger NPE in case it is used (it shouldn't be)
-                $(AbstractSelector.class).field("cancelledKeys").set(this, null);
-            } catch (UnsafeException e) {
-                throw ExceptionUtil.throwException(e);
-            }
+            // trigger NPE in case it is used (it shouldn't be)
+            $(AbstractSelector.class).getNonStaticField("cancelledKeys").trySet(this, null);
         }
     }
 
@@ -94,10 +91,10 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
             if (isSelectorClosing()) { // reimplement logic in Selector.close() against delegate selector
                 delegate.wakeup(); // wake up all other channels waiting in select*() calls
                 synchronized (delegate) { // obtain first lock as defined in SelectorImpl.implCloseSelector()
-                    synchronized ($(delegateClass).firstField("publicKeys").getNotNullOrDefault(delegate, delegate)) {
-                        synchronized ($(delegateClass).firstField("publicSelectedKeys").getNotNullOrDefault(delegate, delegate)) {
+                    synchronized ($(delegateClass, AbstractSelector.class).getNonStaticField("publicKeys").getNotNullOrDefault(delegate, delegate)) {
+                        synchronized ($(delegateClass, AbstractSelector.class).getNonStaticField("publicSelectedKeys").getNotNullOrDefault(delegate, delegate)) {
                             Set<SelectionKey> delegateSelectionKeys = getPublicKeysFromDelegate();
-                            $(AbstractSelector.class).method("implCloseSelector").invoke(delegate);
+                            $(AbstractSelector.class).getNonStaticMethod("implCloseSelector").invoke(delegate);
                             removeSniffyInvalidSelectionKeysForGivenDelegates(delegateSelectionKeys);
                         }
                     }
@@ -112,13 +109,13 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
      * @return true if this invocation actually closes the delegate selector
      * Implemented using CAS on delegate selector fields "closed" or "selectorOpen" depending on JVM
      */
-    private boolean isSelectorClosing() throws UnsafeException {
+    private boolean isSelectorClosing() throws UnresolvedRefException, UnsafeInvocationException {
         boolean changed = false;
-        FieldRef<AbstractSelector, Object> closedFieldRef = $(AbstractSelector.class).field("closed");
+        UnresolvedNonStaticFieldRef<AbstractSelector, Object> closedFieldRef = $(AbstractSelector.class).getNonStaticField("closed");
         if (closedFieldRef.isResolved()) {
             changed = closedFieldRef.compareAndSet(delegate, false, true);
         } else {
-            FieldRef<AbstractSelector, AtomicBoolean> selectorOpenFieldRef = $(AbstractSelector.class).field("selectorOpen");
+            UnresolvedNonStaticFieldRef<AbstractSelector, AtomicBoolean> selectorOpenFieldRef = $(AbstractSelector.class).getNonStaticField("selectorOpen");
             if (selectorOpenFieldRef.isResolved()) {
                 AtomicBoolean selectorOpen = selectorOpenFieldRef.get(delegate);
                 if (null != selectorOpen) {
@@ -134,16 +131,18 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     }
 
     @SuppressWarnings("RedundantTypeArguments")
-    private Set<SelectionKey> getPublicKeysFromDelegate() throws UnsafeException {
-        FieldRef<? super AbstractSelector, Set<SelectionKey>> publicKeys = $(delegateClass).firstField("publicKeys");
-        return new HashSet<SelectionKey>(publicKeys.getNotNullOrDefault(delegate, Collections.<SelectionKey>emptySet()));
+    private Set<SelectionKey> getPublicKeysFromDelegate() {
+        return new HashSet<SelectionKey>(
+                $(delegateClass, AbstractSelector.class).<Set<SelectionKey>>getNonStaticField("publicKeys").
+                        getNotNullOrDefault(delegate, Collections.<SelectionKey>emptySet())
+        );
     }
 
-    private static void removeSniffyInvalidSelectionKeysForGivenDelegates(Set<SelectionKey> delegateSelectionKeys) throws UnsafeException {
+    private static void removeSniffyInvalidSelectionKeysForGivenDelegates(Set<SelectionKey> delegateSelectionKeys) throws UnresolvedRefException, UnsafeInvocationException {
         if (null != delegateSelectionKeys) {
             for (SelectionKey delegateSelectionKey : delegateSelectionKeys) {
                 if (delegateSelectionKey.channel() instanceof AbstractSelectableChannel) {
-                    synchronized ($(AbstractSelectableChannel.class).field("keyLock").getNotNullOrDefault(
+                    synchronized ($(AbstractSelectableChannel.class).getNonStaticField("keyLock").getNotNullOrDefault(
                             (AbstractSelectableChannel) delegateSelectionKey.channel(),
                             delegateSelectionKey.channel()))
                     {
@@ -163,11 +162,11 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
      * Removed SelectionKey from keys array of relevant AbstractSelectableChannel
      * Works for any SelectionKey but contract specifically requires SniffySelectionKey sine we only need to do it for Sniffy
      */
-    private static void removeSelectionKeyFromChannel(SniffySelectionKey sniffySelectionKey) throws UnsafeException {
+    private static void removeSelectionKeyFromChannel(SniffySelectionKey sniffySelectionKey) throws UnresolvedRefException, UnsafeInvocationException {
         AbstractSelectableChannel sniffyChannel = (AbstractSelectableChannel) sniffySelectionKey.channel();
 
-        FieldRef<AbstractSelectableChannel, Integer> keyCountFieldRef = $(AbstractSelectableChannel.class).field("keyCount");
-        FieldRef<AbstractSelectableChannel, SelectionKey[]> keysFieldRef = $(AbstractSelectableChannel.class).field("keys");
+        UnresolvedNonStaticFieldRef<AbstractSelectableChannel, Integer> keyCountFieldRef = $(AbstractSelectableChannel.class).getNonStaticField("keyCount");
+        UnresolvedNonStaticFieldRef<AbstractSelectableChannel, SelectionKey[]> keysFieldRef = $(AbstractSelectableChannel.class).getNonStaticField("keys");
 
         if (keyCountFieldRef.isResolved() && keysFieldRef.isResolved()) {
             int keyCount = keyCountFieldRef.get(sniffyChannel);
@@ -214,7 +213,9 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 }
                 try {
                     removeSelectionKeyFromChannel(sniffySelectionKey);
-                } catch (UnsafeException e) {
+                } catch (UnresolvedRefException e) {
+                    throw ExceptionUtil.processException(e); // TODO: change the behaviour
+                } catch (UnsafeInvocationException e) {
                     throw ExceptionUtil.processException(e); // TODO: change the behaviour
                 }
             }
@@ -295,13 +296,13 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                 }
             }
 
-            synchronized ($(AbstractSelectableChannel.class).field("regLock").getNotNullOrDefault(delegateChannel, delegateChannel)) {
-                synchronized ($(AbstractSelectableChannel.class).field("keyLock").getNotNullOrDefault(delegateChannel, delegateChannel)) {
+            synchronized ($(AbstractSelectableChannel.class).getNonStaticField("regLock").getNotNullOrDefault(delegateChannel, delegateChannel)) {
+                synchronized ($(AbstractSelectableChannel.class).getNonStaticField("keyLock").getNotNullOrDefault(delegateChannel, delegateChannel)) {
 
                     // SniffySelectionKey has a reference to delegate SelectionKey and original attachment
                     // Delegate SelectionKey stores SniffySelectionKey as an attachment
                     SniffySelectionKey sniffySelectionKey = new SniffySelectionKey(this, sniffyChannel, att);
-                    SelectionKey selectionKeyDelegate = $(AbstractSelector.class).method(SelectionKey.class, "register",
+                    SelectionKey selectionKeyDelegate = $(AbstractSelector.class).getNonStaticMethod(SelectionKey.class, "register",
                             AbstractSelectableChannel.class, Integer.TYPE, Object.class).invoke(
                             delegate,
                             delegateChannel, ops, sniffySelectionKey
@@ -309,7 +310,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
                     sniffySelectionKey.setDelegate(selectionKeyDelegate);
 
                     // Add delegate selection key to delegate selectable channel
-                    $(AbstractSelectableChannel.class).method("addKey", SelectionKey.class).invoke(delegateChannel, selectionKeyDelegate);
+                    $(AbstractSelectableChannel.class).getNonStaticMethod("addKey", SelectionKey.class).invoke(delegateChannel, selectionKeyDelegate);
 
                     return sniffySelectionKey;
 
@@ -386,7 +387,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression"})
     public int select(Consumer<SelectionKey> action, long timeout) throws IOException {
         try {
-            return $(Selector.class).method(Integer.TYPE, "select", Consumer.class, Long.TYPE).invoke(
+            return $(Selector.class).getNonStaticMethod(Integer.TYPE, "select", Consumer.class, Long.TYPE).invoke(
                     delegate, new SelectionKeyConsumerWrapper(action), timeout
             );
         } catch (Exception e) {
@@ -402,7 +403,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression"})
     public int select(Consumer<SelectionKey> action) throws IOException {
         try {
-            return $(Selector.class).method(Integer.TYPE, "select", Consumer.class).invoke(
+            return $(Selector.class).getNonStaticMethod(Integer.TYPE, "select", Consumer.class).invoke(
                     delegate, new SelectionKeyConsumerWrapper(action)
             );
         } catch (Exception e) {
@@ -418,7 +419,7 @@ public class SniffySelector extends AbstractSelector implements ObjectWrapper<Ab
     @SuppressWarnings({"RedundantThrows", "Since15", "RedundantSuppression", "unused"})
     public int selectNow(Consumer<SelectionKey> action) throws IOException {
         try {
-            return $(Selector.class).method(Integer.TYPE, "selectNow", Consumer.class).invoke(
+            return $(Selector.class).getNonStaticMethod(Integer.TYPE, "selectNow", Consumer.class).invoke(
                     delegate, new SelectionKeyConsumerWrapper(action)
             );
         } catch (Exception e) {

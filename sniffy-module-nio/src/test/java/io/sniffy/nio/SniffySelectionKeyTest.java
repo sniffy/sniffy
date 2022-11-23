@@ -1,7 +1,6 @@
 package io.sniffy.nio;
 
-import io.sniffy.reflection.UnsafeException;
-import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.field.NonStaticFieldRef;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.util.ObjectWrapper;
@@ -116,7 +115,8 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
     @Test
     public void testNoUnknownFields() throws Exception {
 
-        Map<String, FieldRef<SelectionKey, ?>> fieldsMap = $(SelectionKey.class).getDeclaredFields(false, false);
+        Map<String, NonStaticFieldRef<? super SelectionKey,Object>> fieldsMap = $(SelectionKey.class).findNonStaticFields(null, true);
+
 
         fieldsMap.remove("attachment");
         fieldsMap.remove("attachmentUpdater");
@@ -307,7 +307,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
                 // TODO: add more assertions
 
                 Set<SelectionKey> cancelledKeysInDelegate =
-                        $(AbstractSelector.class).<Set<SelectionKey>>field("cancelledKeys").get(delegateSelector);
+                        $(AbstractSelector.class).<Set<SelectionKey>>getNonStaticField("cancelledKeys").get(delegateSelector);
                 Collection<SelectionKey> cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl(delegateSelector);
 
                 assertTrue(cancelledKeysInDelegate.contains(delegate) || cancelledKeysInDelegateImpl.contains(delegate));
@@ -315,7 +315,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
                 selector.selectNow(); // trigger process deregister queue / AKA process cancelled keys
 
                 cancelledKeysInDelegate =
-                        $(AbstractSelector.class).<Set<SelectionKey>>field("cancelledKeys").get(delegateSelector);
+                        $(AbstractSelector.class).<Set<SelectionKey>>getNonStaticField("cancelledKeys").get(delegateSelector);
                 cancelledKeysInDelegateImpl = getCancelledKeysFromSelectorImpl(delegateSelector);
 
                 assertTrue(cancelledKeysInDelegate.isEmpty());
@@ -324,7 +324,7 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
                 assertTrue(selector instanceof AbstractSelector);
 
                 Set<SelectionKey> cancelledKeysInSniffySelector =
-                        $(AbstractSelector.class).<Set<SelectionKey>>field("cancelledKeys").get((AbstractSelector) selector);
+                        $(AbstractSelector.class).<Set<SelectionKey>>getNonStaticField("cancelledKeys").get((AbstractSelector) selector);
 
                 assertTrue(null == cancelledKeysInSniffySelector || cancelledKeysInSniffySelector.isEmpty());
 
@@ -341,13 +341,13 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
                 // not-mandatory test for SniffySocketChannel not containing canceled key
 
                 {
-                    int keyCount = $(AbstractSelectableChannel.class).<Integer>field("keyCount").get(delegateSocketChannel);
+                    int keyCount = $(AbstractSelectableChannel.class).<Integer>getNonStaticField("keyCount").get(delegateSocketChannel);
 
                     assertEquals(0, keyCount);
                 }
 
                 {
-                    int keyCount = $(AbstractSelectableChannel.class).<Integer>field("keyCount").get(socketChannel);
+                    int keyCount = $(AbstractSelectableChannel.class).<Integer>getNonStaticField("keyCount").get(socketChannel);
 
                     assertEquals(0, keyCount);
                 }
@@ -362,8 +362,10 @@ public class SniffySelectionKeyTest extends BaseSocketTest {
         }
     }
 
-    private static Collection<SelectionKey> getCancelledKeysFromSelectorImpl(AbstractSelector delegateSelector) throws UnsafeException {
-        return $("sun.nio.ch.SelectorImpl").<Collection<SelectionKey>>field("cancelledKeys").getOrDefault(delegateSelector, Collections.emptySet());
+    private static Collection<SelectionKey> getCancelledKeysFromSelectorImpl(AbstractSelector delegateSelector) {
+        return $("sun.nio.ch.SelectorImpl", AbstractSelector.class).
+                <Collection<SelectionKey>>tryGetNonStaticField("cancelledKeys").
+                getOrDefault(delegateSelector, Collections.emptySet());
     }
 
 }

@@ -2,8 +2,7 @@ package io.sniffy.nio.compat;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.UnsafeException;
-import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;
@@ -47,17 +46,12 @@ public class CompatSniffyAsynchronousChannelProvider extends AsynchronousChannel
 
         CompatSniffyAsynchronousChannelProvider sniffyAsynchronousSelectorProvider = new CompatSniffyAsynchronousChannelProvider(delegate);
 
-        try {
-            FieldRef<Object, Object> instanceFieldRef = $("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder").field("provider");
-            if (instanceFieldRef.isResolved()) {
-                instanceFieldRef.set(null, sniffyAsynchronousSelectorProvider);
-                return true;
-            } else {
-                LOG.error("Couldn't initialize SniffyAsynchronousChannelProvider since java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder.provider is unavailable");
-                return false;
-            }
-        } catch (UnsafeException e) {
-            LOG.error(e);
+        UnresolvedStaticFieldRef<AsynchronousChannelProvider> instanceFieldRef =
+                $("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder").tryGetStaticField("provider");
+        if (instanceFieldRef.isResolved()) {
+            return instanceFieldRef.trySet(sniffyAsynchronousSelectorProvider);
+        } else {
+            LOG.error("Couldn't initialize SniffyAsynchronousChannelProvider since java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder.provider is unavailable");
             return false;
         }
 
@@ -71,17 +65,12 @@ public class CompatSniffyAsynchronousChannelProvider extends AsynchronousChannel
             return false;
         }
 
-        try {
-            FieldRef<Object, Object> instanceFieldRef = $("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder").field("provider");
-            if (instanceFieldRef.isResolved()) {
-                instanceFieldRef.set(null, previousAsynchronousSelectorProvider);
-                return true;
-            } else {
-                LOG.error("Couldn't initialize SniffyAsynchronousChannelProvider since java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder.provider is unavailable");
-                return false;
-            }
-        } catch (UnsafeException e) {
-            LOG.error(e);
+        UnresolvedStaticFieldRef<AsynchronousChannelProvider> instanceFieldRef =
+                $("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder").tryGetStaticField("provider");
+        if (instanceFieldRef.isResolved()) {
+            return instanceFieldRef.trySet(previousAsynchronousSelectorProvider);
+        } else {
+            LOG.error("Couldn't initialize SniffyAsynchronousChannelProvider since java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder.provider is unavailable");
             return false;
         }
 

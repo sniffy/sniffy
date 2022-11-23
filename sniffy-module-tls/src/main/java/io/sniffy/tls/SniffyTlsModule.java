@@ -13,11 +13,8 @@ public class SniffyTlsModule {
     public static void initialize() {
 
         if (JVMUtil.getVersion() >= 16) {
-
-            try {
-                $("sun.security.jca.Providers").moduleRef().addOpens("sun.security.jca");
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (!$("sun.security.jca.Providers").tryGetModuleRef().tryAddOpens("sun.security.jca")) {
+                LOG.error("Couldn't open module with sun.security.jca.Providers class");
             }
         }
 

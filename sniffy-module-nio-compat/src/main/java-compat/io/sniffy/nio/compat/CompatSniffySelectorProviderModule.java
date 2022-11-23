@@ -18,8 +18,8 @@ public class CompatSniffySelectorProviderModule {
 
 
         try {
-            $("io.sniffy.nio.compat.CompatSniffySelectorProviderBootstrap").method("initialize").invoke(null);
-            $("io.sniffy.nio.compat.CompatSniffySelectorProvider").method("install").invoke(null);
+            $("io.sniffy.nio.compat.CompatSniffySelectorProviderBootstrap").getStaticMethod("initialize").invoke();
+            $("io.sniffy.nio.compat.CompatSniffySelectorProvider").getStaticMethod("install").invoke();
         } catch (Exception e) {
             e.printStackTrace();
         }

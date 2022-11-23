@@ -29,7 +29,7 @@ class SnifferSocketImpl extends CompatSnifferSocketImpl {
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
         long start = System.currentTimeMillis();
         try {
-            $(SocketImpl.class).method("setOption", SocketOption.class, Object.class).invoke(delegate, name, value);
+            $(SocketImpl.class).getNonStaticMethod("setOption", SocketOption.class, Object.class).invoke(delegate, name, value);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -42,7 +42,7 @@ class SnifferSocketImpl extends CompatSnifferSocketImpl {
     protected <T> T getOption(SocketOption<T> name) throws IOException {
         long start = System.currentTimeMillis();
         try {
-            return (T) $(SocketImpl.class).method(Object.class, "getOption", SocketOption.class).invoke(delegate, name);
+            return (T) $(SocketImpl.class).getNonStaticMethod(Object.class, "getOption", SocketOption.class).invoke(delegate, name);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {
@@ -55,7 +55,7 @@ class SnifferSocketImpl extends CompatSnifferSocketImpl {
     protected Set<SocketOption<?>> supportedOptions() {
         long start = System.currentTimeMillis();
         try {
-            return $(SocketImpl.class).method(Set.class, "supportedOptions").invoke(delegate);
+            return $(SocketImpl.class).getNonStaticMethod(Set.class, "supportedOptions").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         } finally {

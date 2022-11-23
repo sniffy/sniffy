@@ -1,45 +1,24 @@
 package io.sniffy.reflection.field;
 
 import io.sniffy.reflection.Unsafe;
-import io.sniffy.reflection.UnsafeException;
-import io.sniffy.util.ExceptionUtil;
+import io.sniffy.reflection.UnsafeInvocationException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-// TODO: get should return Optional class but how it can work on Java 1.8- ?
-public class FieldRef<C,T> {
-    
+public class StaticFieldRef<T> {
+
     private final Field field;
-    private final Throwable throwable;
 
-    public FieldRef(Field field, Throwable throwable) {
+    public StaticFieldRef(Field field) {
         this.field = field;
-        this.throwable = throwable;
     }
 
-    public boolean isResolved() {
-        return null != field;
-    }
-    
     public Field getField() {
         return field;
     }
 
-    public Throwable getException() {
-        return throwable;
-    }
-
-    // TODO: follow the same approach eveywhere
-    public FieldRef<C, T> resolve() {
-        if (null != throwable) {
-            throw ExceptionUtil.throwException(throwable);
-        } else {
-            return this;
-        }
-    }
-
-    public boolean compareAndSet(C instance, T oldValue, T newValue) throws UnsafeException {
+    public boolean compareAndSet(T oldValue, T newValue) throws UnsafeInvocationException {
         try {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
@@ -49,11 +28,9 @@ public class FieldRef<C,T> {
              */
             UNSAFE.ensureClassInitialized(field.getDeclaringClass());
 
-            long offset = null == instance ?
-                    UNSAFE.staticFieldOffset(field) :
-                    UNSAFE.objectFieldOffset(field);
+            long offset = UNSAFE.staticFieldOffset(field);
 
-            Object object = null == instance ? field.getDeclaringClass() : instance;
+            Object object = field.getDeclaringClass();
 
             // TODO: validate conversion below; use new Unsafe on modern JDK
 
@@ -91,7 +68,7 @@ public class FieldRef<C,T> {
             }
 
         } catch (Throwable e) {
-            throw new UnsafeException(e);
+            throw new UnsafeInvocationException(e);
         }
 
     }
@@ -136,7 +113,7 @@ public class FieldRef<C,T> {
         }
     }*/
 
-    public void set(C instance, T value) throws UnsafeException {
+    public void set(T value) throws UnsafeInvocationException {
         try {
 
             /*if (!field.isAccessible()) {
@@ -159,11 +136,9 @@ public class FieldRef<C,T> {
              */
             UNSAFE.ensureClassInitialized(field.getDeclaringClass());
 
-            long offset = null == instance ?
-                    UNSAFE.staticFieldOffset(field) :
-                    UNSAFE.objectFieldOffset(field);
+            long offset = UNSAFE.staticFieldOffset(field);
 
-            Object object = null == instance ? field.getDeclaringClass() : instance;
+            Object object = field.getDeclaringClass();
 
             if (field.getType() == Boolean.TYPE && value instanceof Boolean) {
                 if (Modifier.isVolatile(field.getModifiers())) {
@@ -223,26 +198,11 @@ public class FieldRef<C,T> {
             }
             
         } catch (Throwable e) {
-            throw new UnsafeException(e);
+            throw new UnsafeInvocationException(e);
         }
     }
 
-    public T getOrDefault(C instance, T defaultValue) throws UnsafeException {
-        if (!isResolved()) return defaultValue;
-        else return get(instance);
-    }
-
-    public T getNotNullOrDefault(C instance, T defaultValue) throws UnsafeException {
-        if (!isResolved()) {
-            return defaultValue;
-        } else {
-            T value = get(instance);
-            return (null == value) ? defaultValue : value;
-        }
-    }
-
-    public T get(C instance) throws UnsafeException {
-        resolve();
+    public T get() throws UnsafeInvocationException {
         try {
 
             sun.misc.Unsafe UNSAFE = Unsafe.getSunMiscUnsafe();
@@ -252,11 +212,9 @@ public class FieldRef<C,T> {
              */
             UNSAFE.ensureClassInitialized(field.getDeclaringClass());
             
-            long offset = null == instance ?
-                    UNSAFE.staticFieldOffset(field) :
-                    UNSAFE.objectFieldOffset(field);
+            long offset = UNSAFE.staticFieldOffset(field);
 
-            Object object = null == instance ? field.getDeclaringClass() : instance;
+            Object object = field.getDeclaringClass();
             if (field.getType() == Boolean.TYPE) {
                 if (Modifier.isVolatile(field.getModifiers())) {
                     return (T) (Boolean) UNSAFE.getBooleanVolatile(object, offset);
@@ -314,11 +272,8 @@ public class FieldRef<C,T> {
             }
             
         } catch (Throwable e) {
-            throw new UnsafeException(e);
+            throw new UnsafeInvocationException(e);
         } 
     }
 
-    public void copy(C from, C to) throws UnsafeException {
-        set(to, get(from));
-    }
 }

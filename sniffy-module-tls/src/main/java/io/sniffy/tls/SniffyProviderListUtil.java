@@ -19,7 +19,7 @@ public class SniffyProviderListUtil {
         LOG.info("Setting Providers.threadLists to SniffyThreadLocalProviderList");
         SniffyThreadLocalProviderList sniffyThreadLocalProviderList = new SniffyThreadLocalProviderList();
         try {
-            $(Providers.class).<ThreadLocal<ProviderList>>field("threadLists").set(null, sniffyThreadLocalProviderList);
+            $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").set(sniffyThreadLocalProviderList);
         } catch (Exception e) {
             LOG.error(e);
         }
@@ -27,7 +27,7 @@ public class SniffyProviderListUtil {
         LOG.info("Setting Providers.threadListsUsed to 1");
         try {
             // TODO: only do on success from step above
-            $(Providers.class).<Integer>field("threadListsUsed").set(null, 1);
+            $(Providers.class).<Integer>getStaticField("threadListsUsed").set(1);
         } catch (Exception e) {
             LOG.error(e);
         }
@@ -49,14 +49,14 @@ public class SniffyProviderListUtil {
         LOG.info("Setting Providers.threadListsUsed to 0");
         try {
             // TODO: only do on success from step above
-            $(Providers.class).<Integer>field("threadListsUsed").set(null, 0);
+            $(Providers.class).<Integer>getStaticField("threadListsUsed").set(0);
         } catch (Exception e) {
             LOG.error(e);
         }
 
         LOG.info("Setting Providers.threadLists to new ThreadLocal<ProviderList>()");
         try {
-            $(Providers.class).<ThreadLocal<ProviderList>>field("threadLists").set(null, new ThreadLocal<ProviderList>());
+            $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").set(new ThreadLocal<ProviderList>());
         } catch (Exception e) {
             LOG.error(e);
         }

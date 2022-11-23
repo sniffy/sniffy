@@ -1,5 +1,7 @@
 package io.sniffy.reflection;
 
+import io.sniffy.reflection.clazz.ClassRef;
+import io.sniffy.reflection.clazz.UnresolvedClassRef;
 import io.sniffy.util.JVMUtil;
 
 import java.lang.annotation.Annotation;
@@ -50,19 +52,23 @@ public final class Unsafe {
     }
 
     public static void defineSystemClass(String className, byte[] bytes) throws UnsafeException {
-        $(sun.misc.Unsafe.class).
-                method("defineClass", String.class, byte[].class, Integer.TYPE, Integer.TYPE, ClassLoader.class, ProtectionDomain.class).
-                invoke(getSunMiscUnsafe(), className, bytes, 0, bytes.length, null, null);
+        try {
+            $(sun.misc.Unsafe.class).
+                    getNonStaticMethod("defineClass", String.class, byte[].class, Integer.TYPE, Integer.TYPE, ClassLoader.class, ProtectionDomain.class).
+                    invoke(getSunMiscUnsafe(), className, bytes, 0, bytes.length, null, null);
+        } catch (Exception e) {
+            throw new UnsafeException(e);
+        }
     }
 
     @SuppressWarnings("Convert2Diamond")
-    public static <C> ClassRef<C> $(String className) {
+    public static <C> UnresolvedClassRef<C> $(String className) {
         try {
-            Class<?> clazz = Class.forName(className);
             //noinspection unchecked
-            return new ClassRef<C>((Class<C>) clazz, null);
+            Class<C> clazz = (Class<C>)Class.forName(className);
+            return new UnresolvedClassRef<C>(new ClassRef<C>( clazz), null);
         } catch (Throwable e) {
-            return new ClassRef<C>(null, e);
+            return new UnresolvedClassRef<C>(null, e);
         }
     }
 
@@ -71,13 +77,14 @@ public final class Unsafe {
         return (ClassRef<C>) $(clazz);
     }
 
-    public static <C> ClassRef<C> $(String className, Class<C> ignore) {
+    public static <C> UnresolvedClassRef<C> $(String className, Class<C> ignore) {
         return $(className);
     }
 
+    // TODO: introduce cacheing
     @SuppressWarnings("Convert2Diamond")
     public static <C> ClassRef<C> $(Class<C> clazz) {
-        return new ClassRef<C>(clazz, null);
+        return new ClassRef<C>(clazz);
     }
 
     public static boolean setAccessible(AccessibleObject ao) throws UnsafeException {

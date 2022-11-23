@@ -2,11 +2,15 @@ package io.sniffy.socket;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.UnsafeException;
-import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
-import io.sniffy.reflection.field.FieldRef;
-import io.sniffy.reflection.method.NonVoidOneArgMethodRef;
-import io.sniffy.util.*;
+import io.sniffy.reflection.UnresolvedRefException;
+import io.sniffy.reflection.UnsafeInvocationException;
+import io.sniffy.reflection.constructor.UnresolvedZeroArgsClassConstructorRef;
+import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
+import io.sniffy.reflection.method.UnresolvedStaticNonVoidMethodRef;
+import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.JVMUtil;
+import io.sniffy.util.StackTraceExtractor;
+import io.sniffy.util.StringUtil;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -25,12 +29,12 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
     private static final Polyglog CONSTRUCTOR_VERBOSE_LOG = PolyglogFactory.oneTimeLog(SnifferSocketImplFactory.class);
 
     // @VisibleForTesting
-    protected final static ZeroArgsConstructorRef<? extends SocketImpl> defaultSocksSocketImplClassConstructor =
-            $("java.net.SocksSocketImpl", SocketImpl.class).constructor();
+    protected final static UnresolvedZeroArgsClassConstructorRef<? extends SocketImpl> defaultSocksSocketImplClassConstructor =
+            $("java.net.SocksSocketImpl", SocketImpl.class).tryGetConstructor();
 
     // @VisibleForTesting
-    protected final static NonVoidOneArgMethodRef<SocketImpl, SocketImpl, Boolean> createPlatformSocketImplMethodRef =
-            $(SocketImpl.class).method(SocketImpl.class, "createPlatformSocketImpl", Boolean.TYPE);
+    protected final static UnresolvedStaticNonVoidMethodRef<SocketImpl> createPlatformSocketImplMethodRef =
+            $(SocketImpl.class).getStaticMethod(SocketImpl.class, "createPlatformSocketImpl", Boolean.TYPE);
 
     private volatile static SocketImplFactory previousSocketImplFactory;
 
@@ -44,13 +48,13 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
     public static void install() throws IOException {
         try {
 
-            FieldRef<Socket, SocketImplFactory> factoryFieldRef = $(Socket.class).field("factory");
-            SocketImplFactory currentSocketImplFactory = factoryFieldRef.get(null);
+            UnresolvedStaticFieldRef<SocketImplFactory> factoryFieldRef = $(Socket.class).getStaticField("factory");
+            SocketImplFactory currentSocketImplFactory = factoryFieldRef.get();
 
             LOG.info("Original SocketImplFactory was " + currentSocketImplFactory);
 
             if (null == currentSocketImplFactory || !SnifferSocketImplFactory.class.equals(currentSocketImplFactory.getClass())) {
-                factoryFieldRef.set(null, null);
+                factoryFieldRef.set(null);
                 SnifferSocketImplFactory snifferSocketImplFactory = new SnifferSocketImplFactory();
                 Socket.setSocketImplFactory(snifferSocketImplFactory);
 
@@ -58,7 +62,10 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
                 previousSocketImplFactory = currentSocketImplFactory;
             }
-        } catch (UnsafeException e) {
+        } catch (UnresolvedRefException e) {
+            LOG.error(e);
+            throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
+        } catch (UnsafeInvocationException e) {
             LOG.error(e);
             throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
         }
@@ -77,9 +84,12 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         LOG.info("Uninstalling SniffySocketImplFactory - replacing with " + previousSocketImplFactory);
 
         try {
-            FieldRef<Socket, SocketImplFactory> factoryFieldRef = $(Socket.class).field("factory");
-            factoryFieldRef.set(null, previousSocketImplFactory);
-        } catch (UnsafeException e) {
+            UnresolvedStaticFieldRef<SocketImplFactory> factoryFieldRef = $(Socket.class).getStaticField("factory");
+            factoryFieldRef.set(previousSocketImplFactory);
+        } catch (UnresolvedRefException e) {
+            LOG.error(e);
+            throw new IOException("Failed to uninstall SnifferSocketImplFactory", e);
+        } catch (UnsafeInvocationException e) {
             LOG.error(e);
             throw new IOException("Failed to uninstall SnifferSocketImplFactory", e);
         }
@@ -133,7 +143,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
             try {
                 LOG.trace("Creating SocketImpl delegate using original SocketImpl factory method " + createPlatformSocketImplMethodRef + " with argument serverSocket=" + serverSocket);
                 originalSocketImpl = createPlatformSocketImplMethodRef.invoke(null, serverSocket);
-            } catch (UnsafeException e) {
+            } catch (Exception e) {
                 LOG.error(e);
                 throw ExceptionUtil.throwException(e);
             }
@@ -142,8 +152,11 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
         if (defaultSocksSocketImplClassConstructor.isResolved()) {
             try {
                 LOG.trace("Creating SocketImpl delegate using original SocketImpl constructor " + defaultSocksSocketImplClassConstructor);
-                originalSocketImpl = defaultSocksSocketImplClassConstructor.invoke();
-            } catch (UnsafeException e) {
+                originalSocketImpl = defaultSocksSocketImplClassConstructor.newInstance();
+            } catch (UnresolvedRefException e) {
+                LOG.error(e);
+                throw ExceptionUtil.throwException(e);
+            } catch (UnsafeInvocationException e) {
                 LOG.error(e);
                 throw ExceptionUtil.throwException(e);
             }

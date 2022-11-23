@@ -205,7 +205,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @SuppressWarnings("unused")
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            $(SelChImpl.class).method("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(selChImplDelegate, ops, sk);
+            $(SelChImpl.class).getNonStaticMethod("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(selChImplDelegate, ops, sk);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -213,9 +213,10 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
+    @SuppressWarnings("unused")
     public int translateInterestOps(int ops) {
         try {
-            return $(SelChImpl.class).method(Integer.TYPE, "translateInterestOps", Integer.TYPE).invoke(selChImplDelegate, ops);
+            return $(SelChImpl.class).getNonStaticMethod(Integer.TYPE, "translateInterestOps", Integer.TYPE).invoke(selChImplDelegate, ops);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -223,10 +224,10 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("RedundantThrows")
+    @SuppressWarnings({"RedundantThrows", "unused"})
     public void park(int event, long nanos) throws IOException {
         try {
-            $(SelChImpl.class).method("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
+            $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
@@ -234,10 +235,10 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("RedundantThrows")
+    @SuppressWarnings({"RedundantThrows", "unused"})
     public void park(int event) throws IOException {
         try {
-            $(SelChImpl.class).method("park", Integer.TYPE).invoke(selChImplDelegate, event);
+            $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }

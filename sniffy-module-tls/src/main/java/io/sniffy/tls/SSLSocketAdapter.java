@@ -2,7 +2,6 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.UnsafeException;
 import io.sniffy.util.ExceptionUtil;
 
 import javax.net.ssl.HandshakeCompletedListener;
@@ -144,8 +143,8 @@ public class SSLSocketAdapter extends SSLSocket {
     @SuppressWarnings("TryWithIdenticalCatches")
     public String getApplicationProtocol() {
         try {
-            return $(SSLSocket.class).method(String.class, "getApplicationProtocol").invoke(delegate);
-        } catch (UnsafeException e) {
+            return $(SSLSocket.class).getNonStaticMethod(String.class, "getApplicationProtocol").invoke(delegate);
+        } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
@@ -156,8 +155,8 @@ public class SSLSocketAdapter extends SSLSocket {
     @SuppressWarnings("TryWithIdenticalCatches")
     public String getHandshakeApplicationProtocol() {
         try {
-            return $(SSLSocket.class).method(String.class, "getHandshakeApplicationProtocol").invoke(delegate);
-        } catch (UnsafeException e) {
+            return $(SSLSocket.class).getNonStaticMethod(String.class, "getHandshakeApplicationProtocol").invoke(delegate);
+        } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
@@ -168,8 +167,8 @@ public class SSLSocketAdapter extends SSLSocket {
     @SuppressWarnings("TryWithIdenticalCatches")
     public void setHandshakeApplicationProtocolSelector(BiFunction<SSLSocket, List<String>, String> selector) {
         try {
-            $(SSLSocket.class).method("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(delegate, selector);
-        } catch (UnsafeException e) {
+            $(SSLSocket.class).getNonStaticMethod("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(delegate, selector);
+        } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }
@@ -180,8 +179,8 @@ public class SSLSocketAdapter extends SSLSocket {
     @SuppressWarnings({"TryWithIdenticalCatches", "unchecked"})
     public BiFunction<SSLSocket, List<String>, String> getHandshakeApplicationProtocolSelector() {
         try {
-            return $(SSLSocket.class).method(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate);
-        } catch (UnsafeException e) {
+            return $(SSLSocket.class).getNonStaticMethod(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate);
+        } catch (Exception e) {
             LOG.error(e);
             throw ExceptionUtil.throwException(e);
         }

@@ -1,6 +1,6 @@
 package io.sniffy.nio;
 
-import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.field.NonStaticFieldRef;
 import io.sniffy.socket.BaseSocketTest;
 import org.junit.Test;
 
@@ -15,7 +15,8 @@ public class SniffySocketChannelTest extends BaseSocketTest {
     @Test
     public void testFields() throws Exception {
 
-        Map<String, FieldRef<SocketChannel, ?>> fieldsMap = $(SocketChannel.class).getDeclaredFields(false, false);
+        Map<String, NonStaticFieldRef<? super SocketChannel,Object>> fieldsMap = $(SocketChannel.class).findNonStaticFields(null, true);
+
 
         assertTrue(fieldsMap.containsKey("keys"));
         assertTrue(fieldsMap.containsKey("keyCount"));

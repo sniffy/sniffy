@@ -1,7 +1,7 @@
 package io.sniffy.util;
 
-import io.sniffy.reflection.ClassRef;
-import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.clazz.ClassRef;
+import io.sniffy.reflection.field.UnresolvedNonStaticFieldRef;
 import org.junit.Test;
 
 import static io.sniffy.reflection.Unsafe.$;
@@ -25,7 +25,7 @@ public class ReflectionFieldCopierTest {
     public void availableField() throws Exception {
 
         ClassRef<Bean> classRef = $(Bean.class);
-        FieldRef<Bean, Object> fooFieldRef = classRef.field("foo");
+        UnresolvedNonStaticFieldRef<Bean, Object> fooFieldRef = classRef.getNonStaticField("foo");
 
         assertTrue(fooFieldRef.isResolved());
 
@@ -42,7 +42,7 @@ public class ReflectionFieldCopierTest {
     public void notAvailableField() throws Exception {
 
         ClassRef<Bean> classRef = $(Bean.class);
-        FieldRef<Bean, Object> bazFieldRef = classRef.field("baz");
+        UnresolvedNonStaticFieldRef<Bean, Object> bazFieldRef = classRef.getNonStaticField("baz");
 
         assertFalse(bazFieldRef.isResolved());
 

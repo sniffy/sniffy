@@ -3,8 +3,10 @@ package io.sniffy.tls;
 import io.sniffy.Constants;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.UnsafeException;
-import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.UnresolvedRefException;
+import io.sniffy.reflection.UnsafeInvocationException;
+import io.sniffy.reflection.field.FieldFilters;
+import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.JVMUtil;
 
@@ -77,7 +79,9 @@ public class SniffySecurityUtil {
                             Security.insertProviderAt(sniffySSLContextSpiProvider, i + j + 1);
 
                             j++;
-                        } catch (UnsafeException e) {
+                        } catch (UnresolvedRefException e) {
+                            throw ExceptionUtil.throwException(e);
+                        } catch (UnsafeInvocationException e) {
                             throw ExceptionUtil.throwException(e);
                         }
 
@@ -102,38 +106,42 @@ public class SniffySecurityUtil {
                     if (JVMUtil.getVersion() >= 13) {
                         try {
                             LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
-                            FieldRef<? super Object, SSLSocketFactory> sslSocketFactoryFieldRef =
-                                    $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").firstField(SSLSocketFactory.class);
+                            UnresolvedStaticFieldRef<SSLSocketFactory> sslSocketFactoryFieldRef =
+                                    $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").tryFindFirstStaticField(FieldFilters.ofType(SSLSocketFactory.class), true);
                             if (sslSocketFactoryFieldRef.isResolved()) {
-                                SSLSocketFactory originalSSLSocketFactory = sslSocketFactoryFieldRef.get(null);
+                                SSLSocketFactory originalSSLSocketFactory = sslSocketFactoryFieldRef.get();
                                 if (null != originalSSLSocketFactory) {
                                     SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
                                     LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
-                                    sslSocketFactoryFieldRef.set(null, sniffySSLSocketFactory);
+                                    sslSocketFactoryFieldRef.set(sniffySSLSocketFactory);
                                 } else {
                                     LOG.error("Original SSLSocketFactory was null");
                                 }
                             }
-                        } catch (UnsafeException e) {
+                        } catch (UnresolvedRefException e) {
+                            throw ExceptionUtil.throwException(e);
+                        } catch (UnsafeInvocationException e) {
                             throw ExceptionUtil.throwException(e);
                         }
                     } else {
                         LOG.info("Java 12- detected - attempt to update singleton inside javax.net.ssl.SSLSocketFactory");
                         try {
                             LOG.info("Java 12- detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
-                            FieldRef<? super Object, SSLSocketFactory> sslSocketFactoryFieldRef =
-                                    $("javax.net.ssl.SSLSocketFactory").firstField(SSLSocketFactory.class);
+                            UnresolvedStaticFieldRef<SSLSocketFactory> sslSocketFactoryFieldRef =
+                                    $(SSLSocketFactory.class).findFirstStaticField(FieldFilters.ofType(SSLSocketFactory.class), true);
                             if (sslSocketFactoryFieldRef.isResolved()) {
-                                SSLSocketFactory originalSSLSocketFactory = sslSocketFactoryFieldRef.get(null);
+                                SSLSocketFactory originalSSLSocketFactory = sslSocketFactoryFieldRef.get();
                                 if (null != originalSSLSocketFactory) {
                                     SniffySSLSocketFactory sniffySSLSocketFactory = new SniffySSLSocketFactory(originalSSLSocketFactory);
                                     LOG.info("Replacing " + originalSSLSocketFactory + " with " + sniffySSLSocketFactory);
-                                    sslSocketFactoryFieldRef.set(null, sniffySSLSocketFactory);
+                                    sslSocketFactoryFieldRef.set(sniffySSLSocketFactory);
                                 } else {
                                     LOG.error("Original SSLSocketFactory was null");
                                 }
                             }
-                        } catch (UnsafeException e) {
+                        } catch (UnresolvedRefException e) {
+                            throw ExceptionUtil.throwException(e);
+                        } catch (UnsafeInvocationException e) {
                             throw ExceptionUtil.throwException(e);
                         }
                         // TODO: warn if couldn't find all sslsocket factories
@@ -207,43 +215,47 @@ public class SniffySecurityUtil {
                         LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
                         try {
                             LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
-                            FieldRef<? super Object, SSLSocketFactory> sslSocketFactoryFieldRef =
-                                    $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").firstField(SSLSocketFactory.class);
+                            UnresolvedStaticFieldRef<SSLSocketFactory> sslSocketFactoryFieldRef =
+                                    $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").tryFindFirstStaticField(FieldFilters.ofType(SSLSocketFactory.class), true);
                             if (sslSocketFactoryFieldRef.isResolved()) {
-                                SSLSocketFactory sniffySSLSocketFactory = sslSocketFactoryFieldRef.get(null);
+                                SSLSocketFactory sniffySSLSocketFactory = sslSocketFactoryFieldRef.get();
                                 if (sniffySSLSocketFactory instanceof SniffySSLSocketFactory) {
                                     SSLSocketFactory originalSSLSocketFactory = ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate();
                                     LOG.info("Replacing " + sniffySSLSocketFactory + " with " + originalSSLSocketFactory);
-                                    sslSocketFactoryFieldRef.set(null, originalSSLSocketFactory);
+                                    sslSocketFactoryFieldRef.set(originalSSLSocketFactory);
                                 } else {
                                     LOG.error("Original SSLSocketFactory was null");
-                                    sslSocketFactoryFieldRef.set(null, null);
+                                    sslSocketFactoryFieldRef.set(null);
                                 }
                             }
-                        } catch (UnsafeException e) {
+                        } catch (UnresolvedRefException e) {
+                            throw ExceptionUtil.throwException(e);
+                        } catch (UnsafeInvocationException e) {
                             throw ExceptionUtil.throwException(e);
                         }
                     } else {
                         LOG.info("Java 12- detected - attempt to update singleton inside javax.net.ssl.SSLSocketFactory");
                         try {
-                            FieldRef<? super Object, SSLSocketFactory> sslSocketFactoryFieldRef =
-                                    $("javax.net.ssl.SSLSocketFactory").firstField(SSLSocketFactory.class);
+                            UnresolvedStaticFieldRef<SSLSocketFactory> sslSocketFactoryFieldRef =
+                                    $(SSLSocketFactory.class).findFirstStaticField(FieldFilters.ofType(SSLSocketFactory.class), true);
                             if (sslSocketFactoryFieldRef.isResolved()) {
-                                SSLSocketFactory sniffySSLSocketFactory = sslSocketFactoryFieldRef.get(null);
+                                SSLSocketFactory sniffySSLSocketFactory = sslSocketFactoryFieldRef.get();
                                 if (sniffySSLSocketFactory instanceof SniffySSLSocketFactory) {
                                     SSLSocketFactory originalSSLSocketFactory = ((SniffySSLSocketFactory) sniffySSLSocketFactory).getDelegate();
                                     LOG.info("Replacing " + sniffySSLSocketFactory + " with " + originalSSLSocketFactory);
-                                    sslSocketFactoryFieldRef.set(null, originalSSLSocketFactory);
+                                    sslSocketFactoryFieldRef.set(originalSSLSocketFactory);
                                 } else {
                                     LOG.info("Removing javax.net.ssl.SSLSocketFactory static fields of type SSLSocketFactory");
-                                    sslSocketFactoryFieldRef.set(null, null);
-                                    FieldRef<SSLSocketFactory, Object> propertyCheckedFieldRef = $(SSLSocketFactory.class).field("propertyChecked");
+                                    sslSocketFactoryFieldRef.set(null);
+                                    UnresolvedStaticFieldRef<Object> propertyCheckedFieldRef = $(SSLSocketFactory.class).getStaticField("propertyChecked");
                                     if (propertyCheckedFieldRef.isResolved()) {
-                                        propertyCheckedFieldRef.set(null, null);
+                                        propertyCheckedFieldRef.set(null);
                                     }
                                 }
                             }
-                        } catch (UnsafeException e) {
+                        } catch (UnresolvedRefException e) {
+                            throw ExceptionUtil.throwException(e);
+                        } catch (UnsafeInvocationException e) {
                             throw ExceptionUtil.throwException(e);
                         }
 

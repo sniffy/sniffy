@@ -1,8 +1,6 @@
 package io.sniffy.reflection;
 
-import io.sniffy.reflection.constructor.ZeroArgsConstructorRef;
-import io.sniffy.reflection.field.FieldRef;
-import org.junit.Ignore;
+import io.sniffy.reflection.field.UnresolvedNonStaticFieldRef;
 import org.junit.Test;
 
 import static io.sniffy.reflection.Unsafe.$;
@@ -16,7 +14,7 @@ public class UnsafeTest {
     }
 
     @Test
-    public void testModifyPrivateFields() throws UnsafeException {
+    public void testModifyPrivateFields() throws Exception {
 
         Object objectField = new Object();
         int intField = 42;
@@ -24,8 +22,8 @@ public class UnsafeTest {
 
         ClassWithDifferentFields objectWithDifferentFields = new ClassWithDifferentFields(objectField, intField, booleanField);
 
-        FieldRef<ClassWithDifferentFields, Object> privateObjectFieldRef =
-                $(ClassWithDifferentFields.class).field("privateObjectField");
+        UnresolvedNonStaticFieldRef<ClassWithDifferentFields, Object> privateObjectFieldRef =
+                $(ClassWithDifferentFields.class).getNonStaticField("privateObjectField");
 
         assertNotNull(privateObjectFieldRef);
 
@@ -37,7 +35,7 @@ public class UnsafeTest {
     }
 
     @Test
-    public void testCompareAndSetBooleanFieldFailure() throws UnsafeException {
+    public void testCompareAndSetBooleanFieldFailure() throws Exception {
 
         Object objectField = new Object();
         int intField = 42;
@@ -45,8 +43,8 @@ public class UnsafeTest {
 
         ClassWithDifferentFields objectWithDifferentFields = new ClassWithDifferentFields(objectField, intField, booleanField);
 
-        FieldRef<ClassWithDifferentFields, Boolean> privateBooleanFieldRef =
-                $(ClassWithDifferentFields.class).field("privateBooleanField");
+        UnresolvedNonStaticFieldRef<ClassWithDifferentFields, Boolean> privateBooleanFieldRef =
+                $(ClassWithDifferentFields.class).getNonStaticField("privateBooleanField");
 
         assertNotNull(privateBooleanFieldRef);
 
@@ -55,7 +53,7 @@ public class UnsafeTest {
     }
 
     @Test
-    public void testCompareAndSetBooleanFieldSuccess() throws UnsafeException {
+    public void testCompareAndSetBooleanFieldSuccess() throws Exception {
 
         Object objectField = new Object();
         int intField = 42;
@@ -63,8 +61,8 @@ public class UnsafeTest {
 
         ClassWithDifferentFields objectWithDifferentFields = new ClassWithDifferentFields(objectField, intField, booleanField);
 
-        FieldRef<ClassWithDifferentFields, Boolean> privateBooleanFieldRef =
-                $(ClassWithDifferentFields.class).field("privateBooleanField");
+        UnresolvedNonStaticFieldRef<ClassWithDifferentFields, Boolean> privateBooleanFieldRef =
+                $(ClassWithDifferentFields.class).getNonStaticField("privateBooleanField");
 
         assertNotNull(privateBooleanFieldRef);
 
@@ -73,30 +71,30 @@ public class UnsafeTest {
     }
 
     @Test
-    public void testBooleanReflection() throws UnsafeException {
+    public void testBooleanReflection() throws Exception {
 
         JavaClassWithManyBooleanFields obj = new JavaClassWithManyBooleanFields();
 
         obj.field5 = true;
 
-        $(JavaClassWithManyBooleanFields.class).field("field2").set(obj, true);
+        $(JavaClassWithManyBooleanFields.class).getNonStaticField("field2").set(obj, true);
 
         assertTrue(obj.field2);
-        assertTrue($(JavaClassWithManyBooleanFields.class).<Boolean>field("field2").get(obj));
+        assertTrue($(JavaClassWithManyBooleanFields.class).<Boolean>getNonStaticField("field2").get(obj));
 
-        $(JavaClassWithManyBooleanFields.class).field("field1").compareAndSet(obj, false, true);
+        $(JavaClassWithManyBooleanFields.class).getNonStaticField("field1").compareAndSet(obj, false, true);
 
         assertTrue(obj.field1);
-        assertTrue($(JavaClassWithManyBooleanFields.class).<Boolean>field("field1").get(obj));
+        assertTrue($(JavaClassWithManyBooleanFields.class).<Boolean>getNonStaticField("field1").get(obj));
 
-        assertTrue($(JavaClassWithManyBooleanFields.class).<Boolean>field("field2").get(obj));
+        assertTrue($(JavaClassWithManyBooleanFields.class).<Boolean>getNonStaticField("field2").get(obj));
 
         assertFalse(obj.field3);
-        assertFalse($(JavaClassWithManyBooleanFields.class).<Boolean>field("field3").get(obj));
+        assertFalse($(JavaClassWithManyBooleanFields.class).<Boolean>getNonStaticField("field3").get(obj));
     }
 
     @Test
-    public void testModifyPrivateFinalFields() throws UnsafeException {
+    public void testModifyPrivateFinalFields() throws Exception {
 
         Object objectField = new Object();
         int intField = 42;
@@ -104,8 +102,8 @@ public class UnsafeTest {
 
         ClassWithDifferentFinalFields objectWithDifferentFields = new ClassWithDifferentFinalFields(objectField, intField, booleanField);
 
-        FieldRef<ClassWithDifferentFinalFields, Object> privateObjectFieldRef =
-                $(ClassWithDifferentFinalFields.class).field("privateObjectField");
+        UnresolvedNonStaticFieldRef<ClassWithDifferentFinalFields, Object> privateObjectFieldRef =
+                $(ClassWithDifferentFinalFields.class).getNonStaticField("privateObjectField");
 
         assertNotNull(privateObjectFieldRef);
 
@@ -114,74 +112,6 @@ public class UnsafeTest {
         objectField = new Object();
         privateObjectFieldRef.set(objectWithDifferentFields, objectField);
         assertEquals(objectField, privateObjectFieldRef.get(objectWithDifferentFields));
-    }
-
-    private static int counter = 0;
-
-    private static class TestClass {
-
-        public TestClass() {
-            counter++;
-        }
-    }
-
-    @Test
-    @Ignore("Constructor magic doesn't work unless we introduce multi-release JARs")
-    public void testConstructorInvocation() throws Exception {
-
-        TestClass tc = new TestClass();
-
-        ZeroArgsConstructorRef<TestClass> constructor = $(TestClass.class).constructor();
-        constructor.invoke(tc);
-        constructor.invoke(tc);
-        constructor.invoke(tc);
-
-        assertEquals(4, counter);
-
-    }
-
-    @Test
-    public void testGenerics() throws Exception {
-
-        Object object = 42L;
-
-        Number number = 42L;
-
-        Long longNumber = 42L;
-
-        //noinspection unchecked
-        ClassRef<Number> cr1 = $((Class<Number>) number.getClass());
-        ClassRef<Number> cr2 = $(number.getClass(), Number.class);
-        ClassRef<Number> cr3 = $(Number.class);
-
-        cr1.superClassRef(Object.class).method(String.class, "toString").invoke(object);
-        cr2.superClassRef(Object.class).method(String.class, "toString").invoke(object);
-        cr3.superClassRef(Object.class).method(String.class, "toString").invoke(object);
-
-        cr1.cast(Object.class).method(String.class, "toString").invoke(object);
-        cr2.cast(Object.class).method(String.class, "toString").invoke(object);
-        cr3.cast(Object.class).method(String.class, "toString").invoke(object);
-
-        cr1.method(String.class, "toString").invoke(number);
-        cr2.method(String.class, "toString").invoke(number);
-        cr3.method(String.class, "toString").invoke(number);
-
-        cr1.method(String.class, "toString").invoke(longNumber);
-        cr2.method(String.class, "toString").invoke(longNumber);
-        cr3.method(String.class, "toString").invoke(longNumber);
-
-        {
-            cr1.method(Integer.TYPE, "intValue").invoke(number);
-            cr1.method(Integer.TYPE, "intValue").invoke(number);
-            cr1.cast(Object.class).method(Integer.TYPE, "intValue").invoke(number);
-            try {
-                cr1.superClassRef(Object.class).method(Integer.TYPE, "intValue").invoke(number);
-                fail("Should have thrown an exception");
-            } catch (Exception e) {
-                assertTrue(e instanceof NoSuchMethodException);
-            }
-        }
-
     }
 
 }

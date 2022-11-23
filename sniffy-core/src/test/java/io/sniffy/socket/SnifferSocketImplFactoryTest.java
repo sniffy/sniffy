@@ -37,7 +37,7 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
             try {
                 if (SnifferSocketImplFactory.defaultSocksSocketImplClassConstructor.isResolved()) {
-                    return SnifferSocketImplFactory.defaultSocksSocketImplClassConstructor.invoke();
+                    return SnifferSocketImplFactory.defaultSocksSocketImplClassConstructor.newInstanceOrNull();
                 }
                 /*if (null != SnifferSocketImplFactory.defaultSocketImplFactoryMethod) {
                     return (SocketImpl) SnifferSocketImplFactory.defaultSocketImplFactoryMethod.invoke(null, serverSocket);
@@ -173,7 +173,7 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
             final ServerSocket boundServerSocket = serverSocket;
 
-            SocketImpl boundServerSocketImpl = $(ServerSocket.class).<SocketImpl>field("impl").get(boundServerSocket);
+            SocketImpl boundServerSocketImpl = $(ServerSocket.class).<SocketImpl>getNonStaticField("impl").get(boundServerSocket);
             assertFalse(boundServerSocketImpl instanceof SnifferSocketImpl);
 
             Thread serverThread = new Thread(new Runnable() {
@@ -202,13 +202,13 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
 
             latch.await(10, TimeUnit.SECONDS);
 
-            SocketImpl clientSocketImpl = $(Socket.class).<SocketImpl>field("impl").get(clientSocket);
+            SocketImpl clientSocketImpl = $(Socket.class).<SocketImpl>getNonStaticField("impl").get(clientSocket);
             assertTrue(clientSocketImpl instanceof SnifferSocketImpl);
 
             assertNull(exceptionHolder.get());
 
             Socket socket = socketHolder.get();
-            SocketImpl socketImpl = $(Socket.class).<SocketImpl>field("impl").get(socket);
+            SocketImpl socketImpl = $(Socket.class).<SocketImpl>getNonStaticField("impl").get(socket);
             assertFalse(socketImpl instanceof SnifferSocketImpl);
 
             clientSocket.close();

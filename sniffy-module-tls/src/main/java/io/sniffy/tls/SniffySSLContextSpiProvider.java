@@ -2,7 +2,8 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.UnsafeException;
+import io.sniffy.reflection.UnresolvedRefException;
+import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.util.StackTraceExtractor;
 
 import java.security.Provider;
@@ -18,11 +19,11 @@ public class SniffySSLContextSpiProvider extends Provider {
 
     private final Provider originalProvider;
 
-    public SniffySSLContextSpiProvider(Provider delegate) throws UnsafeException {
+    public SniffySSLContextSpiProvider(Provider delegate) throws UnresolvedRefException, UnsafeInvocationException {
         this(delegate, delegate.getName(), delegate.getVersion(), delegate.getInfo());
     }
 
-    public SniffySSLContextSpiProvider(Provider delegate, String providerName, double providerVersion, String providerInfo) throws UnsafeException {
+    public SniffySSLContextSpiProvider(Provider delegate, String providerName, double providerVersion, String providerInfo) throws UnresolvedRefException, UnsafeInvocationException {
         super(providerName, providerVersion, providerInfo);
         LOG.trace("Created SniffySSLContextSpiProvider(" + delegate + ", " + providerName + ", " + providerVersion + ", " + providerInfo + ")");
 
@@ -58,15 +59,15 @@ public class SniffySSLContextSpiProvider extends Provider {
         }
     }
 
-    public static List<String> extractAliases(Service service) throws UnsafeException {
-        return $(Service.class).<List<String>>field("aliases").get(service);
+    public static List<String> extractAliases(Service service) throws UnresolvedRefException, UnsafeInvocationException {
+        return $(Service.class).<List<String>>getNonStaticField("aliases").get(service);
     }
 
-    public static Map<String, String> extractAttributes(Service service) throws UnsafeException {
+    public static Map<String, String> extractAttributes(Service service) throws UnresolvedRefException, UnsafeInvocationException {
         Map<String, String> resultAttributes = new HashMap<String, String>();
-        Map<?, String> attributes = $(Service.class).<Map<?, String>>field("attributes").get(service);
+        Map<?, String> attributes = $(Service.class).<Map<?, String>>getNonStaticField("attributes").get(service);
         for (Map.Entry<?, String> entry : attributes.entrySet()) {
-            String key = $("java.security.Provider$UString").<String>field("string").get(entry.getKey());
+            String key = $("java.security.Provider$UString").<String>tryGetNonStaticField("string").get(entry.getKey());
             String value = entry.getValue();
             resultAttributes.put(key, value);
         }

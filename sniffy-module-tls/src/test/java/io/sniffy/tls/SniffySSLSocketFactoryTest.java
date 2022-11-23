@@ -2,7 +2,8 @@ package io.sniffy.tls;
 
 import io.qameta.allure.Issue;
 import io.sniffy.reflection.field.FieldFilters;
-import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.field.NonStaticFieldRef;
+import io.sniffy.reflection.field.StaticFieldRef;
 import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.util.JVMUtil;
 import org.junit.Test;
@@ -24,7 +25,8 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
     @Test
     public void testFields() throws Exception {
 
-        Map<String, FieldRef<SSLSocketFactory, ?>> fieldsMap = $(SSLSocketFactory.class).getDeclaredFields(false, true);
+        Map<String, StaticFieldRef<Object>> fieldsMap = $(SSLSocketFactory.class).findStaticFields(null, true);
+
 
         assertTrue(fieldsMap.containsKey("theFactory"));
         assertTrue(fieldsMap.containsKey("DEBUG"));
@@ -90,8 +92,8 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
     public void testExistingSSLSocketFactoryWasCreateViaSecurityProperties() throws Exception {
 
         if (JVMUtil.getVersion() >= 13) {
-            for (FieldRef<Object, Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
-                    findFields(
+            for (NonStaticFieldRef<Object, Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
+                    findNonStaticFields(
                             FieldFilters.and(
                                     FieldFilters.staticField(),
                                     FieldFilters.ofType(SSLSocketFactory.class)
@@ -101,8 +103,8 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
             }
             // cannot test "ssl.SocketFactory.provider" on Java 14+ since this property is used in static initializer
         } else {
-            for (FieldRef<? super SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
-                    findFields(
+            for (NonStaticFieldRef<? super SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
+                    findNonStaticFields(
                             FieldFilters.and(
                                     FieldFilters.staticField(),
                                     FieldFilters.ofType(SSLSocketFactory.class)
@@ -110,7 +112,7 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
                             , true).values()) {
                 fieldRef.set(null, null);
             }
-            $(SSLSocketFactory.class).field("propertyChecked").set(null, false);
+            $(SSLSocketFactory.class).getStaticField("propertyChecked").set(false);
 
             Security.setProperty("ssl.SocketFactory.provider", TestSSLSocketFactory.class.getName());
             SSLSocketFactory.getDefault();
@@ -138,8 +140,8 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
         } finally {
 
             if (JVMUtil.getVersion() >= 13) {
-                for (FieldRef<Object, Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
-                        findFields(
+                for (NonStaticFieldRef<Object, Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
+                        findNonStaticFields(
                                 FieldFilters.and(
                                         FieldFilters.staticField(),
                                         FieldFilters.ofType(SSLSocketFactory.class)
@@ -148,8 +150,8 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
                     fieldRef.set(null, null);
                 }
             } else {
-                for (FieldRef<? super SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
-                        findFields(
+                for (NonStaticFieldRef<? super SSLSocketFactory, Object> fieldRef : $(SSLSocketFactory.class).
+                        findNonStaticFields(
                                 FieldFilters.and(
                                         FieldFilters.staticField(),
                                         FieldFilters.ofType(SSLSocketFactory.class)
@@ -157,9 +159,9 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
                                 , true).values()) {
                     fieldRef.set(null, null);
                 }
-                $(SSLSocketFactory.class).field("propertyChecked").set(null, false);
+                $(SSLSocketFactory.class).getStaticField("propertyChecked").set(false);
 
-                Properties properties = $(Security.class).<Properties>findFirstField(FieldFilters.ofType(Properties.class), false).getOrDefault(null, new Properties());
+                Properties properties = $(Security.class).<Properties>findFirstNonStaticField(FieldFilters.ofType(Properties.class), false).getOrDefault(null, new Properties());
                 if (null != properties) {
                     properties.remove("ssl.SocketFactory.provider");
                 }

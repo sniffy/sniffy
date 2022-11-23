@@ -448,7 +448,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
     @SuppressWarnings("unused")
     public String getApplicationProtocol() {
         try {
-            return $(SSLEngine.class).method(String.class, "getApplicationProtocol").invoke(delegate);
+            return $(SSLEngine.class).getNonStaticMethod(String.class, "getApplicationProtocol").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
@@ -459,7 +459,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
     @SuppressWarnings("unused")
     public String getHandshakeApplicationProtocol() {
         try {
-            return $(SSLEngine.class).method(String.class, "getHandshakeApplicationProtocol").invoke(delegate);
+            return $(SSLEngine.class).getNonStaticMethod(String.class, "getHandshakeApplicationProtocol").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
@@ -471,7 +471,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
     @SuppressWarnings("unused")
     public void setHandshakeApplicationProtocolSelector(BiFunction<SSLEngine, List<String>, String> selector) {
         try {
-            $(SSLEngine.class).method("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(delegate, selector);
+            $(SSLEngine.class).getNonStaticMethod("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(delegate, selector);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
@@ -483,7 +483,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
     @SuppressWarnings({"unchecked","unchecked"})
     public BiFunction<SSLEngine, List<String>, String> getHandshakeApplicationProtocolSelector() {
         try {
-            return $(SSLEngine.class).method(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate);
+            return $(SSLEngine.class).getNonStaticMethod(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }

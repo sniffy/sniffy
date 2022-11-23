@@ -2,7 +2,7 @@ package io.sniffy.nio.compat;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.ClassRef;
+import io.sniffy.reflection.clazz.ClassRef;
 import io.sniffy.util.AssertUtil;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
@@ -154,7 +154,7 @@ public class CompatSniffySelectionKey extends SelectionKey implements ObjectWrap
     @SuppressWarnings({"Since15", "RedundantSuppression", "unused"})
     public int interestOpsOr(int ops) {
         try {
-            return classRef.method(Integer.TYPE, "interestOpsOr", Integer.TYPE).invoke(delegate, ops);
+            return classRef.getNonStaticMethod(Integer.TYPE, "interestOpsOr", Integer.TYPE).invoke(delegate, ops);
         } catch (Exception e) {
             LOG.trace("Error when trying to call interestOpsOr(int) on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
             throw ExceptionUtil.processException(e);
@@ -166,7 +166,7 @@ public class CompatSniffySelectionKey extends SelectionKey implements ObjectWrap
     @SuppressWarnings({"Since15", "RedundantSuppression", "unused"})
     public int interestOpsAnd(int ops) {
         try {
-            return classRef.method(Integer.TYPE, "interestOpsAnd", Integer.TYPE).invoke(delegate, ops);
+            return classRef.getNonStaticMethod(Integer.TYPE, "interestOpsAnd", Integer.TYPE).invoke(delegate, ops);
         } catch (Exception e) {
             LOG.trace("Error when trying to call interestOpsAnd(int) on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
             throw ExceptionUtil.processException(e);

@@ -1,6 +1,6 @@
 package io.sniffy.nio;
 
-import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.field.NonStaticFieldRef;
 import io.sniffy.socket.SnifferSocketImplFactory;
 import io.sniffy.util.ObjectWrapper;
 import org.junit.Test;
@@ -109,7 +109,8 @@ public class SniffySelectorTest {
     @Test
     public void testFields() throws Exception {
 
-        Map<String, FieldRef<AbstractSelector, ?>> fieldsMap = $(AbstractSelector.class).getDeclaredFields(false, false);
+        Map<String, NonStaticFieldRef<? super AbstractSelector,Object>> fieldsMap = $(AbstractSelector.class).findNonStaticFields(null, true);
+
 
         assertTrue(fieldsMap.containsKey("closed") || fieldsMap.containsKey("selectorOpen"));
 
@@ -127,7 +128,7 @@ public class SniffySelectorTest {
     @Test
     public void testSelectorImplFields() throws Exception {
 
-        Map<String, FieldRef<Object, ?>> fieldsMap = $("sun.nio.ch.SelectorImpl").getDeclaredFields(false, false);
+        Map<String, NonStaticFieldRef<? super Object, Object>> fieldsMap = $("sun.nio.ch.SelectorImpl").findNonStaticFields(null, true);
 
         assertTrue(fieldsMap.containsKey("publicKeys"));
 

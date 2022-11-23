@@ -1,8 +1,8 @@
 package io.sniffy.socket;
 
-import io.sniffy.reflection.field.FieldRef;
-import io.sniffy.reflection.method.AbstractMethodRef;
+import io.sniffy.reflection.field.NonStaticFieldRef;
 import io.sniffy.reflection.method.MethodKey;
+import io.sniffy.reflection.method.NonStaticMethodRef;
 import org.junit.Test;
 
 import java.lang.reflect.Modifier;
@@ -20,7 +20,7 @@ public class SnifferSocketImplReflectionTest {
     @Test
     public void testNoUnknownFields() {
 
-        Map<String, FieldRef<SocketImpl, ?>> fieldsMap = $(SocketImpl.class).getDeclaredFields(false, false);
+        Map<String, NonStaticFieldRef<? super SocketImpl, Object>> fieldsMap = $(SocketImpl.class).findNonStaticFields(null, true);
 
         fieldsMap.remove("socket"); // TODO: can we handle it nicely ?
         fieldsMap.remove("serverSocket");
@@ -41,14 +41,12 @@ public class SnifferSocketImplReflectionTest {
 
         final Set<MethodKey> nonOverrideableMethods = new HashSet<>();
 
-        Map<MethodKey, AbstractMethodRef<SocketImpl>> overrideableMethods = $(SocketImpl.class).getMethods(
+        Map<MethodKey, NonStaticMethodRef<SocketImpl>> overrideableMethods = $(SocketImpl.class).getNonStaticMethods(
                 null,
                 (methodKey, method) -> {
                     if (
-                            !Modifier.isStatic(method.getModifiers()) &&
-                                    (Modifier.isProtected(method.getModifiers()) ||
-                                            Modifier.isPublic(method.getModifiers())) &&
-                                    !method.isSynthetic()
+                            (Modifier.isProtected(method.getModifiers()) ||
+                                    Modifier.isPublic(method.getModifiers()))
                     ) {
                         if (Modifier.isFinal(method.getModifiers())) {
                             nonOverrideableMethods.add(methodKey);
@@ -61,10 +59,8 @@ public class SnifferSocketImplReflectionTest {
         );
 
         Class<? extends SocketImpl> sniffySocketImplClass = (new SnifferSocketImplFactory().createSocketImpl()).getClass();
-        Map<MethodKey, ? extends AbstractMethodRef<? extends SocketImpl>> declaredMethods = $(sniffySocketImplClass).getMethods(
-                SocketImpl.class,
-                (methodKey, method) -> (!method.isSynthetic() && !Modifier.isStatic(method.getModifiers()))
-        );
+        Map<MethodKey, ? extends NonStaticMethodRef<? extends SocketImpl>> declaredMethods =
+                $(sniffySocketImplClass).getNonStaticMethods(SocketImpl.class, null);
 
         overrideableMethods.forEach((methodKey, methodRef) -> {
             if (!declaredMethods.containsKey(methodKey)) {

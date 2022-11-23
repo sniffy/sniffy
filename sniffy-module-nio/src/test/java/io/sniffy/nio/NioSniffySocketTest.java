@@ -60,12 +60,12 @@ public class NioSniffySocketTest extends BaseSocketTest {
             assertNotNull(socketChannel1);
             assertNotNull(socketChannel2);
 
-            SelectionKey[] channel1Keys = $(AbstractSelectableChannel.class).<SelectionKey[]>field("keys").get(socketChannel1);
+            SelectionKey[] channel1Keys = $(AbstractSelectableChannel.class).<SelectionKey[]>getNonStaticField("keys").get(socketChannel1);
             for (SelectionKey channel1Key : channel1Keys) {
                 assertNull("Failed to clear keys in SniffySocketChannel after " + attempts + " attempts", channel1Key);
             }
 
-            SelectionKey[] channel2Keys = $(AbstractSelectableChannel.class).<SelectionKey[]>field("keys").get(socketChannel2);
+            SelectionKey[] channel2Keys = $(AbstractSelectableChannel.class).<SelectionKey[]>getNonStaticField("keys").get(socketChannel2);
             for (SelectionKey channel2Key : channel2Keys) {
                 assertNull("Failed to clear keys in SniffySocketChannel after " + attempts + " attempts", channel2Key);
             }
@@ -103,7 +103,7 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
                 assertNotNull(socketChannel);
 
-                SelectionKey[] channel1Keys = $(AbstractSelectableChannel.class).<SelectionKey[]>field("keys").get(socketChannel);
+                SelectionKey[] channel1Keys = $(AbstractSelectableChannel.class).<SelectionKey[]>getNonStaticField("keys").get(socketChannel);
                 for (SelectionKey channel1Key : channel1Keys) {
                     assertNull(channel1Key);
                 }

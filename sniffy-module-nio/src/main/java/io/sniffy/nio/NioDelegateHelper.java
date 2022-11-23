@@ -20,13 +20,13 @@ public class NioDelegateHelper {
 
             boolean changed = false;
 
-            synchronized ($(AbstractInterruptibleChannel.class).field("closedLock").getNotNullOrDefault(delegate, delegate)) {
+            synchronized ($(AbstractInterruptibleChannel.class).getNonStaticField("closedLock").getNotNullOrDefault(delegate, delegate)) {
 
-                if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
-                    changed = $(AbstractInterruptibleChannel.class).field("closed").compareAndSet(delegate, false, true);
+                if ($(AbstractInterruptibleChannel.class).getNonStaticField("closed").isResolved()) {
+                    changed = $(AbstractInterruptibleChannel.class).getNonStaticField("closed").compareAndSet(delegate, false, true);
                 } else {
-                    if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
-                        changed = $(AbstractInterruptibleChannel.class).field("open").compareAndSet(delegate, true, false);
+                    if ($(AbstractInterruptibleChannel.class).getNonStaticField("open").isResolved()) {
+                        changed = $(AbstractInterruptibleChannel.class).getNonStaticField("open").compareAndSet(delegate, true, false);
                     } else {
                         AssertUtil.logAndThrowException(LOG, "Couldn't find neither closed nor open field in AbstractInterruptibleChannel", new IllegalStateException());
                     }
@@ -35,16 +35,16 @@ public class NioDelegateHelper {
             }
 
             if (changed) {
-                $(AbstractSelectableChannel.class).method("implCloseSelectableChannel").invoke(delegate); // or selectable
+                $(AbstractSelectableChannel.class).getNonStaticMethod("implCloseSelectableChannel").invoke(delegate); // or selectable
             } else {
                 if (AssertUtil.isTestingSniffy()) {
-                    if ($(AbstractInterruptibleChannel.class).field("closed").isResolved()) {
-                        if (!$(AbstractInterruptibleChannel.class).<Boolean>field("closed").get(delegate)) {
+                    if ($(AbstractInterruptibleChannel.class).getNonStaticField("closed").isResolved()) {
+                        if (!$(AbstractInterruptibleChannel.class).<Boolean>getNonStaticField("closed").get(delegate)) {
                             AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
                         }
                     } else {
-                        if ($(AbstractInterruptibleChannel.class).field("open").isResolved()) {
-                            if ($(AbstractInterruptibleChannel.class).<Boolean>field("open").get(delegate)) {
+                        if ($(AbstractInterruptibleChannel.class).getNonStaticField("open").isResolved()) {
+                            if ($(AbstractInterruptibleChannel.class).<Boolean>getNonStaticField("open").get(delegate)) {
                                 AssertUtil.logAndThrowException(LOG, "Failed to close delegate selector", new IllegalStateException());
                             }
                         } else {

@@ -15,6 +15,14 @@ public class AssertUtil {
         }
     }
 
+    public static boolean throwException(Throwable throwable) {
+        if (isTestingSniffy()) {
+            throw ExceptionUtil.throwException(throwable);
+        } else {
+            return false;
+        }
+    }
+
     public static boolean isTestingSniffy() {
         return null != System.getProperty("io.sniffy.test");
     }

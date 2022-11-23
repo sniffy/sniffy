@@ -2,8 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.UnsafeException;
-import io.sniffy.reflection.field.FieldRef;
+import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
 import io.sniffy.util.OSUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
@@ -54,24 +53,17 @@ public class SniffySelectorProvider extends SelectorProvider {
 
         LOG.info("Setting SelectorProvider to " + sniffySelectorProvider);
 
-        try {
-            FieldRef<Object, Object> instanceFieldRef = $("java.nio.channels.spi.SelectorProvider$Holder").field("INSTANCE");
-            if (instanceFieldRef.isResolved()) {
-                instanceFieldRef.set(null, sniffySelectorProvider);
-                return true;
+        UnresolvedStaticFieldRef<SelectorProvider> instanceFieldRef = $("java.nio.channels.spi.SelectorProvider$Holder").tryGetStaticField("INSTANCE");
+        if (instanceFieldRef.isResolved()) {
+            return instanceFieldRef.trySet(sniffySelectorProvider);
+        } else {
+            UnresolvedStaticFieldRef<SelectorProvider> providerFieldRef = $(SelectorProvider.class).getStaticField("provider");
+            if (providerFieldRef.isResolved()) {
+                return providerFieldRef.trySet(sniffySelectorProvider);
             } else {
-                FieldRef<SelectorProvider, Object> providerFieldRef = $(SelectorProvider.class).field("provider");
-                if (providerFieldRef.isResolved()) {
-                    providerFieldRef.set(null, sniffySelectorProvider);
-                    return true;
-                } else {
-                    LOG.error("Couldn't initialize SniffySelectorProvider since both java.nio.channels.spi.SelectorProvider$Holder.INSTANCE and java.nio.channels.spi.SelectorProvider.provider are unavailable");
-                    return false;
-                }
+                LOG.error("Couldn't initialize SniffySelectorProvider since both java.nio.channels.spi.SelectorProvider$Holder.INSTANCE and java.nio.channels.spi.SelectorProvider.provider are unavailable");
+                return false;
             }
-        } catch (UnsafeException e) {
-            LOG.error(e);
-            return false;
         }
 
     }
@@ -84,24 +76,17 @@ public class SniffySelectorProvider extends SelectorProvider {
             return false;
         }
 
-        try {
-            FieldRef<Object, Object> instanceFieldRef = $("java.nio.channels.spi.SelectorProvider$Holder").field("INSTANCE");
-            if (instanceFieldRef.isResolved()) {
-                instanceFieldRef.set(null, previousSelectorProvider);
-                return true;
+        UnresolvedStaticFieldRef<SelectorProvider> instanceFieldRef = $("java.nio.channels.spi.SelectorProvider$Holder").tryGetStaticField("INSTANCE");
+        if (instanceFieldRef.isResolved()) {
+            return instanceFieldRef.trySet(previousSelectorProvider);
+        } else {
+            UnresolvedStaticFieldRef<SelectorProvider> providerFieldRef = $(SelectorProvider.class).getStaticField("provider");
+            if (providerFieldRef.isResolved()) {
+                return providerFieldRef.trySet(previousSelectorProvider);
             } else {
-                FieldRef<SelectorProvider, Object> providerFieldRef = $(SelectorProvider.class).field("provider");
-                if (providerFieldRef.isResolved()) {
-                    providerFieldRef.set(null, previousSelectorProvider);
-                    return true;
-                } else {
-                    LOG.error("Couldn't restore original SelectorProvider since both java.nio.channels.spi.SelectorProvider$Holder.INSTANCE and java.nio.channels.spi.SelectorProvider.provider are unavailable");
-                    return false;
-                }
+                LOG.error("Couldn't restore original SelectorProvider since both java.nio.channels.spi.SelectorProvider$Holder.INSTANCE and java.nio.channels.spi.SelectorProvider.provider are unavailable");
+                return false;
             }
-        } catch (UnsafeException e) {
-            LOG.error(e);
-            return false;
         }
 
     }
@@ -176,11 +161,11 @@ public class SniffySelectorProvider extends SelectorProvider {
         try {
             // TODO: can we handle it better?
             return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
-                    $(SelectorProvider.class).method(SocketChannel.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
+                    $(SelectorProvider.class).getNonStaticMethod(SocketChannel.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
                     :
                     new SniffySocketChannel(
                             this,
-                            $(SelectorProvider.class).method(SocketChannel.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
+                            $(SelectorProvider.class).getNonStaticMethod(SocketChannel.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
                     );
         } catch (Exception e) {
             throw processException(e);
@@ -194,7 +179,7 @@ public class SniffySelectorProvider extends SelectorProvider {
         try {
             // TODO: shall we check for Pipe in stacktrace as well?
             return new SniffyServerSocketChannel(this,
-                $(SelectorProvider.class).method(ServerSocketChannel.class, "openServerSocketChannel", ProtocolFamily.class).invoke(delegate, family)
+                $(SelectorProvider.class).getNonStaticMethod(ServerSocketChannel.class, "openServerSocketChannel", ProtocolFamily.class).invoke(delegate, family)
             );
         } catch (Exception e) {
             throw processException(e);
