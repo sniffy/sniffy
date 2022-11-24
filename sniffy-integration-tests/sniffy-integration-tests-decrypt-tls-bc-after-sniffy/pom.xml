@@ -35,9 +35,6 @@
                     <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                     <argLine>-Xmx1024m ${argLine}</argLine>
                     <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
-                    <systemPropertyVariables>
-                        <io.sniffy.test>true</io.sniffy.test>
-                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
