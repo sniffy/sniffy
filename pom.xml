@@ -65,6 +65,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>animal-sniffer-annotations</artifactId>
             <optional>true</optional>
@@ -125,6 +131,9 @@
                         </goals>
                         <configuration>
                             <append>true</append>
+                            <includes>
+                                <include>io/sniffy/**/*.class</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>
