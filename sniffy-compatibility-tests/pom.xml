@@ -104,7 +104,7 @@
         </dependency>
     </dependencies>
 
-    <profiles>
+    <!--<profiles>
         <profile>
             <id>qemu</id>
             <build>
@@ -134,7 +134,7 @@
                 </plugins>
             </build>
         </profile>
-    </profiles>
+    </profiles>-->
 
     <pluginRepositories>
         <pluginRepository>
