@@ -1,7 +1,7 @@
 package io.sniffy.reflection.constructor;
 
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.UnsafeInvocationException;
-import io.sniffy.util.ExceptionUtil;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -27,7 +27,7 @@ public class ZeroArgsClassConstructorRef<C> {
         try {
             return constructor.newInstance();
         } catch (InvocationTargetException e) {
-            throw ExceptionUtil.throwException(e.getTargetException());
+            throw Unsafe.throwException(e.getTargetException());
         } catch (Throwable e) {
             throw new UnsafeInvocationException(e);
         }

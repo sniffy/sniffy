@@ -2,6 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.clazz.ClassRef;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
@@ -95,7 +96,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             return delegate.isValid();
         } catch (Exception e) {
             LOG.trace("Error when trying to call isValid() on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -110,7 +111,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             delegate.cancel();
         } catch (Exception e) {
             LOG.trace("Error when trying to call cancel() on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         } finally {
             if (wasValid) {
                 sniffySelector.addCancelledKey(this);
@@ -124,7 +125,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             return delegate.interestOps();
         } catch (Exception e) {
             LOG.trace("Error when trying to call interestOps() on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -134,7 +135,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             return delegate.interestOps(ops);
         } catch (Exception e) {
             LOG.trace("Error when trying to call interestOps(int) on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -144,7 +145,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
             return delegate.readyOps();
         } catch (Exception e) {
             LOG.trace("Error when trying to call readyOps() on SniffySelectionKey(" + delegate + ", " + sniffySelector + ", " + sniffyChannel + ") = " + this);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

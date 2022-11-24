@@ -14,7 +14,7 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static io.sniffy.util.ExceptionUtil.throwException;
+import static io.sniffy.reflection.Unsafe.throwException;
 
 /**
  * Spy holds a number of queries which were executed at some point of time and uses it as a base for further assertions

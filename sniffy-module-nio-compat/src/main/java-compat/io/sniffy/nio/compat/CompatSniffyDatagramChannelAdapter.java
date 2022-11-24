@@ -2,6 +2,7 @@ package io.sniffy.nio.compat;
 
 import io.sniffy.nio.NioDelegateHelper;
 import io.sniffy.nio.SelectableChannelWrapper;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.util.ExceptionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.DatagramChannelDelegate;
@@ -215,7 +216,7 @@ public class CompatSniffyDatagramChannelAdapter extends DatagramChannelDelegate 
         try {
             $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -226,7 +227,7 @@ public class CompatSniffyDatagramChannelAdapter extends DatagramChannelDelegate 
         try {
             $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

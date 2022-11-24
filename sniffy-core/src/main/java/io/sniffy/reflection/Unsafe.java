@@ -46,6 +46,17 @@ public final class Unsafe {
         return Integer.parseInt(version);
     }
 
+    @SuppressWarnings("RedundantTypeArguments")
+    public static RuntimeException throwException(Throwable e) {
+        Unsafe.<RuntimeException>throwAny(e);
+        return new RuntimeException(e);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E extends Throwable> void throwAny(Throwable e) throws E {
+        throw (E)e;
+    }
+
     private static class SunMiscUnsafeHolder {
 
         private final static sun.misc.Unsafe UNSAFE;

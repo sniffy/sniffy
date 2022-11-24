@@ -2,6 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.util.ExceptionUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
@@ -218,7 +219,7 @@ public class SniffyDatagramChannelAdapter extends DatagramChannel implements Sel
         try {
             $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -229,7 +230,7 @@ public class SniffyDatagramChannelAdapter extends DatagramChannel implements Sel
         try {
             $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

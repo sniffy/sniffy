@@ -8,7 +8,6 @@ import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.constructor.UnresolvedZeroArgsClassConstructorRef;
 import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
 import io.sniffy.reflection.method.UnresolvedStaticNonVoidMethodRef;
-import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.StringUtil;
 
@@ -145,7 +144,7 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
                 originalSocketImpl = createPlatformSocketImplMethodRef.invoke(serverSocket);
             } catch (Exception e) {
                 LOG.error(e);
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 
@@ -155,10 +154,10 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
                 originalSocketImpl = defaultSocksSocketImplClassConstructor.newInstance();
             } catch (UnresolvedRefException e) {
                 LOG.error(e);
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             } catch (UnsafeInvocationException e) {
                 LOG.error(e);
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 

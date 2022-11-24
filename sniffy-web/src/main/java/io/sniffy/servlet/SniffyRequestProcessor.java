@@ -3,12 +3,12 @@ package io.sniffy.servlet;
 import io.sniffy.CurrentThreadSpy;
 import io.sniffy.Sniffy;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.util.ExceptionUtil;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletContext;
@@ -193,7 +193,7 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
             chain.doFilter(httpServletRequest, responseWrapper);
         } catch (Throwable t) {
             requestStats.addException(t);
-            ExceptionUtil.throwException(t);
+            Unsafe.throwException(t);
         } finally {
             try {
                 requestStats.setTimeToFirstByte(getTimeToFirstByte());

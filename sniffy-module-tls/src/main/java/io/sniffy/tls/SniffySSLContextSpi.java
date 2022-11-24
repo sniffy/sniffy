@@ -2,7 +2,7 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.util.ExceptionUtil;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.StringUtil;
 
@@ -34,7 +34,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
             $(SSLContextSpi.class).getNonStaticMethod("engineInit", KeyManager[].class, TrustManager[].class, SecureRandom.class).invoke(delegate, km, tm,sr);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -46,7 +46,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
             );
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -56,7 +56,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
             return $(SSLContextSpi.class).getNonStaticMethod(SSLServerSocketFactory.class, "engineGetServerSocketFactory").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -69,7 +69,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
             );
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -83,7 +83,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
             );
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -93,7 +93,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
             return $(SSLContextSpi.class).getNonStaticMethod(SSLSessionContext.class, "engineGetServerSessionContext").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -103,7 +103,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
             return $(SSLContextSpi.class).getNonStaticMethod(SSLSessionContext.class, "engineGetClientSessionContext").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -113,7 +113,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
             return $(SSLContextSpi.class).getNonStaticMethod(SSLParameters.class, "engineGetDefaultSSLParameters").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -123,7 +123,7 @@ public class SniffySSLContextSpi extends SSLContextSpi {
             return $(SSLContextSpi.class).getNonStaticMethod(SSLParameters.class, "engineGetSupportedSSLParameters").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

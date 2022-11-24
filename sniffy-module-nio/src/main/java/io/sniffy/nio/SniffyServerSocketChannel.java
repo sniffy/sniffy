@@ -2,6 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.OSUtil;
 import io.sniffy.util.StackTraceExtractor;
@@ -171,7 +172,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
         try {
             $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -182,7 +183,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
         try {
             $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

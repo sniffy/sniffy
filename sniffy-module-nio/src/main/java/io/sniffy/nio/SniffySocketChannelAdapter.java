@@ -2,6 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.clazz.ClassRef;
 import io.sniffy.reflection.method.UnresolvedNonStaticMethodRef;
 import io.sniffy.reflection.method.UnresolvedNonStaticNonVoidMethodRef;
@@ -233,7 +234,7 @@ public class SniffySocketChannelAdapter extends SocketChannelWrapper implements 
         try {
             PARK_NANOS.invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -244,7 +245,7 @@ public class SniffySocketChannelAdapter extends SocketChannelWrapper implements 
         try {
             PARK.invoke(selChImplDelegate, event);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

@@ -8,7 +8,6 @@ import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.field.FieldFilters;
 import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
-import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
@@ -174,9 +173,9 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                                                     }
                                                 }
                                             } catch (UnresolvedRefException e) {
-                                                throw ExceptionUtil.throwException(e);
+                                                throw Unsafe.throwException(e);
                                             } catch (UnsafeInvocationException e) {
-                                                throw ExceptionUtil.throwException(e);
+                                                throw Unsafe.throwException(e);
                                             }
                                         } else {
                                             LOG.info("Java 12- detected - attempt to update singleton inside javax.net.ssl.SSLSocketFactory");
@@ -195,9 +194,9 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                                                     }
                                                 }
                                             } catch (UnresolvedRefException e) {
-                                                throw ExceptionUtil.throwException(e);
+                                                throw Unsafe.throwException(e);
                                             } catch (UnsafeInvocationException e) {
-                                                throw ExceptionUtil.throwException(e);
+                                                throw Unsafe.throwException(e);
                                             }
                                             // TODO: warn if couldn't find all sslsocket factories
                                         }

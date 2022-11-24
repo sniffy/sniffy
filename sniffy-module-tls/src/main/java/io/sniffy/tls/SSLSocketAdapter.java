@@ -2,7 +2,7 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.util.ExceptionUtil;
+import io.sniffy.reflection.Unsafe;
 
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLParameters;
@@ -146,7 +146,7 @@ public class SSLSocketAdapter extends SSLSocket {
             return $(SSLSocket.class).getNonStaticMethod(String.class, "getApplicationProtocol").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -158,7 +158,7 @@ public class SSLSocketAdapter extends SSLSocket {
             return $(SSLSocket.class).getNonStaticMethod(String.class, "getHandshakeApplicationProtocol").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -170,7 +170,7 @@ public class SSLSocketAdapter extends SSLSocket {
             $(SSLSocket.class).getNonStaticMethod("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(delegate, selector);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -182,7 +182,7 @@ public class SSLSocketAdapter extends SSLSocket {
             return $(SSLSocket.class).getNonStaticMethod(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate);
         } catch (Exception e) {
             LOG.error(e);
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

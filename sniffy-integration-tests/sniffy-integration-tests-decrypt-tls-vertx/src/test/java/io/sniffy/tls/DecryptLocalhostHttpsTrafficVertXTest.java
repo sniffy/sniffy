@@ -5,10 +5,10 @@ import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.log.PolyglogLevel;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
-import io.sniffy.util.ExceptionUtil;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.client.HttpRequest;
@@ -102,7 +102,7 @@ public class DecryptLocalhostHttpsTrafficVertXTest {
                 try {
                     cb.await();
                 } catch (InterruptedException | BrokenBarrierException e) {
-                    throw ExceptionUtil.throwException(e);
+                    throw Unsafe.throwException(e);
                 }
             });
 

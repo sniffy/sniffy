@@ -8,7 +8,6 @@ import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.field.FieldFilters;
 import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
-import io.sniffy.util.ExceptionUtil;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLContextSpi;
@@ -80,9 +79,9 @@ public class SniffySecurityUtil {
 
                             j++;
                         } catch (UnresolvedRefException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         } catch (UnsafeInvocationException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         }
 
                     }
@@ -119,9 +118,9 @@ public class SniffySecurityUtil {
                                 }
                             }
                         } catch (UnresolvedRefException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         } catch (UnsafeInvocationException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         }
                     } else {
                         LOG.info("Java 12- detected - attempt to update singleton inside javax.net.ssl.SSLSocketFactory");
@@ -140,9 +139,9 @@ public class SniffySecurityUtil {
                                 }
                             }
                         } catch (UnresolvedRefException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         } catch (UnsafeInvocationException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         }
                         // TODO: warn if couldn't find all sslsocket factories
                     }
@@ -229,9 +228,9 @@ public class SniffySecurityUtil {
                                 }
                             }
                         } catch (UnresolvedRefException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         } catch (UnsafeInvocationException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         }
                     } else {
                         LOG.info("Java 12- detected - attempt to update singleton inside javax.net.ssl.SSLSocketFactory");
@@ -254,9 +253,9 @@ public class SniffySecurityUtil {
                                 }
                             }
                         } catch (UnresolvedRefException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         } catch (UnsafeInvocationException e) {
-                            throw ExceptionUtil.throwException(e);
+                            throw Unsafe.throwException(e);
                         }
 
                     }

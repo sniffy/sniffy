@@ -3,10 +3,10 @@ package io.sniffy.tls;
 import io.sniffy.Sniffy;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySSLNetworkConnection;
-import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import io.sniffy.util.StringUtil;
 
@@ -450,7 +450,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         try {
             return $(SSLEngine.class).getNonStaticMethod(String.class, "getApplicationProtocol").invoke(delegate);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -461,7 +461,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         try {
             return $(SSLEngine.class).getNonStaticMethod(String.class, "getHandshakeApplicationProtocol").invoke(delegate);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -473,7 +473,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         try {
             $(SSLEngine.class).getNonStaticMethod("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(delegate, selector);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
@@ -485,7 +485,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         try {
             return $(SSLEngine.class).getNonStaticMethod(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

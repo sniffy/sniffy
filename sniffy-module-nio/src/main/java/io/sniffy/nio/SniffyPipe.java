@@ -2,6 +2,7 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.util.ExceptionUtil;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -136,7 +137,7 @@ public class SniffyPipe extends Pipe {
             try {
                 $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
             } catch (Exception e) {
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 
@@ -147,7 +148,7 @@ public class SniffyPipe extends Pipe {
             try {
                 $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
             } catch (Exception e) {
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 
@@ -252,7 +253,7 @@ public class SniffyPipe extends Pipe {
             try {
                 $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
             } catch (Exception e) {
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 
@@ -263,7 +264,7 @@ public class SniffyPipe extends Pipe {
             try {
                 $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
             } catch (Exception e) {
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 

@@ -2,7 +2,7 @@ package io.sniffy.socket;
 
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
-import io.sniffy.util.ExceptionUtil;
+import io.sniffy.reflection.Unsafe;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -47,7 +47,7 @@ public class SnifferSocketImplFactoryTest extends BaseSocketTest {
                 }
                 return null;
             } catch (Exception e) {
-                ExceptionUtil.throwException(e);
+                Unsafe.throwException(e);
                 return null;
             } finally {
                 if (!serverSocket) {
