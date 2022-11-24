@@ -48,9 +48,9 @@ public class DecryptGoogleTrafficTest {
                     break;
                 } catch (IOException e) {
                     if (e.getMessage().contains("An established connection was aborted by the software in your host machine") || e.getMessage().contains("Remote host terminated the handshake")
-                            && OSUtil.isWindows() && (Unsafe.getJavaVersion() == 14 || Unsafe.getJavaVersion() == 13)) {
+                            && OSUtil.isWindows() && (Unsafe.tryGetJavaVersion() == 14 || Unsafe.tryGetJavaVersion() == 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + Unsafe.getJavaVersion() + " running on Windows; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.tryGetJavaVersion() + " running on Windows; retrying in 2 seconds");
                         Thread.sleep(2000);
                     } else {
                         throw e;

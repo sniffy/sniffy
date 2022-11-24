@@ -10,6 +10,8 @@ import io.sniffy.reflection.method.*;
 import io.sniffy.reflection.module.ModuleRef;
 import io.sniffy.reflection.module.UnresolvedModuleRef;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -21,15 +23,21 @@ import java.util.Map;
 import static io.sniffy.reflection.Unsafe.$;
 
 // TODO: use declaredFields0 and declaredMethods0 to also cover super system methods
+
+/**
+ * Provides a set of convenient methods for working with classes via reflection
+ * @param <C>
+ */
+@SuppressWarnings("Convert2Diamond")
 public class ClassRef<C> {
 
-    private final Class<C> clazz;
+    private final @Nonnull Class<C> clazz;
 
-    public ClassRef(Class<C> clazz) {
+    public ClassRef(@Nonnull Class<C> clazz) {
         this.clazz = clazz;
     }
 
-    public UnresolvedModuleRef getModuleRef() {
+    public @Nonnull UnresolvedModuleRef getModuleRef() {
         try {
             Class<?> moduleClass = Class.forName("java.lang.Module");
             //noinspection rawtypes
@@ -43,8 +51,7 @@ public class ClassRef<C> {
         }
     }
 
-    // TODO: should it be C instead of C1 here?
-    public <T> UnresolvedNonStaticFieldRef<C, T> findFirstNonStaticField(FieldFilter fieldFilter, boolean recursive) {
+    public <T> @Nonnull UnresolvedNonStaticFieldRef<C, T> findFirstNonStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) {
         try {
             Class<? super C> clazz = this.clazz;
             while (clazz != Object.class) {
@@ -66,7 +73,7 @@ public class ClassRef<C> {
         }
     }
 
-    public Map<String, NonStaticFieldRef<C,Object>> findNonStaticFields(FieldFilter fieldFilter, boolean recursive) {
+    public @Nonnull Map<String, NonStaticFieldRef<C,Object>> findNonStaticFields(@Nullable FieldFilter fieldFilter, boolean recursive) {
         Map<String, NonStaticFieldRef<C, Object>> fields = new HashMap<String, NonStaticFieldRef<C, Object>>();
         Class<? super C> clazz = this.clazz;
         while (clazz != Object.class) {
@@ -85,7 +92,7 @@ public class ClassRef<C> {
         return fields;
     }
 
-    public <T> UnresolvedStaticFieldRef<T> findFirstStaticField(FieldFilter fieldFilter, boolean recursive) {
+    public <T> @Nonnull UnresolvedStaticFieldRef<T> findFirstStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) {
         try {
             Class<? super C> clazz = this.clazz;
             while (clazz != Object.class) {
@@ -107,12 +114,13 @@ public class ClassRef<C> {
         }
     }
 
-    public Map<String, StaticFieldRef<Object>> findStaticFields(FieldFilter fieldFilter, boolean recursive) {
+    public @Nonnull Map<String, StaticFieldRef<Object>> findStaticFields(@Nullable FieldFilter fieldFilter, boolean recursive) {
         Map<String, StaticFieldRef<Object>> fields = new HashMap<String, StaticFieldRef<Object>>();
         Class<? super C> clazz = this.clazz;
         while (clazz != Object.class) {
             Field[] declaredFields = clazz.getDeclaredFields();
             for (Field field : declaredFields) {
+                // TODO: filter out synthetic members here and everywhere
                 if (Modifier.isStatic(field.getModifiers()) && (null == fieldFilter || fieldFilter.include(field.getName(), field))) {
                     fields.put(field.getName(), new StaticFieldRef<Object>(field));
                 }
@@ -126,7 +134,7 @@ public class ClassRef<C> {
         return fields;
     }
 
-    public void copyFields(C from, C to) throws UnsafeInvocationException {
+    public void copyFields(@Nonnull C from, @Nonnull C to) throws UnsafeInvocationException {
 
         // TODO: introduce caching here
         for (NonStaticFieldRef<C,Object> fieldRef : findNonStaticFields(null, true).values()) {
@@ -135,19 +143,19 @@ public class ClassRef<C> {
 
     }
 
-    public <T> UnresolvedStaticFieldRef<T> getStaticField(String fieldName) {
+    public <T> @Nonnull UnresolvedStaticFieldRef<T> getStaticField(@Nonnull String fieldName) {
         return findFirstStaticField(FieldFilters.byName(fieldName), true);
     }
 
-    public <T> UnresolvedNonStaticFieldRef<C,T> getNonStaticField(String fieldName) {
+    public <T> @Nonnull UnresolvedNonStaticFieldRef<C,T> getNonStaticField(@Nonnull String fieldName) {
         return findFirstNonStaticField(FieldFilters.byName(fieldName), true);
     }
 
-    // TODO: add "field" method which would act as a synonym for getNonStaticField or return something generic
+    // TODO: add "field" and "method" method which would return generic ref working with both static and non static members
 
     // TODO: add helper methods for getting constructors with arguments
 
-    public UnresolvedZeroArgsClassConstructorRef<C> getConstructor() {
+    public @Nonnull UnresolvedZeroArgsClassConstructorRef<C> getConstructor() {
         try {
             Constructor<C> declaredConstructor = clazz.getDeclaredConstructor();
             if (Unsafe.setAccessible(declaredConstructor)) {
@@ -166,7 +174,7 @@ public class ClassRef<C> {
     // methods
 
 
-    public Map<MethodKey, NonStaticMethodRef<C>> getNonStaticMethods(Class<? super C> upperBound, MethodFilter methodFilter) {
+    public @Nonnull Map<MethodKey, NonStaticMethodRef<C>> getNonStaticMethods(@Nullable Class<? super C> upperBound, @Nullable MethodFilter methodFilter) {
         Map<MethodKey, NonStaticMethodRef<C>> methodRefs = new HashMap<MethodKey, NonStaticMethodRef<C>>();
         Class<? super C> clazz = this.clazz;
         while (clazz != (null == upperBound ? Object.class : upperBound)) {
@@ -184,7 +192,7 @@ public class ClassRef<C> {
         return methodRefs;
     }
 
-    private Method getDeclaredMethod(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
+    private @Nonnull Method getDeclaredMethod(@Nonnull String methodName, @Nonnull Class<?>... parameterTypes) throws NoSuchMethodException {
         Class<?> clazz = this.clazz;
         while (null != clazz) {
             for (Method method : clazz.getDeclaredMethods()) {
@@ -206,7 +214,7 @@ public class ClassRef<C> {
 
 
     @SuppressWarnings("Convert2Diamond")
-    public UnresolvedNonStaticMethodRef<C> getNonStaticMethod(String methodName, Class<?>... parameterTypes) {
+    public @Nonnull UnresolvedNonStaticMethodRef<C> getNonStaticMethod(@Nonnull String methodName, @Nonnull Class<?>... parameterTypes) {
         try {
             Method declaredMethod = getDeclaredMethod(methodName, parameterTypes);
             if (Unsafe.setAccessible(declaredMethod)) {
@@ -220,7 +228,9 @@ public class ClassRef<C> {
     }
 
     @SuppressWarnings("Convert2Diamond")
-    public <T> UnresolvedNonStaticNonVoidMethodRef<C,T> getNonStaticMethod(Class<T> returnType, String methodName, Class<?>... parameterTypes) {
+    public <T> @Nonnull UnresolvedNonStaticNonVoidMethodRef<C,T> getNonStaticMethod(
+            @SuppressWarnings("unused") @Nullable Class<T> returnType,
+            @Nonnull String methodName, @Nonnull Class<?>... parameterTypes) {
         try {
             Method declaredMethod = getDeclaredMethod(methodName, parameterTypes);
             if (Unsafe.setAccessible(declaredMethod)) {
@@ -232,8 +242,7 @@ public class ClassRef<C> {
             return new UnresolvedNonStaticNonVoidMethodRef<C,T>(null, e);
         }
     }
-    @SuppressWarnings("Convert2Diamond")
-    public UnresolvedStaticMethodRef getStaticMethod(String methodName, Class<?>... parameterTypes) {
+    public @Nonnull UnresolvedStaticMethodRef getStaticMethod(@Nonnull String methodName, @Nonnull Class<?>... parameterTypes) {
         try {
             Method declaredMethod = getDeclaredMethod(methodName, parameterTypes);
             if (Unsafe.setAccessible(declaredMethod)) {
@@ -247,7 +256,9 @@ public class ClassRef<C> {
     }
 
     @SuppressWarnings("Convert2Diamond")
-    public <T> UnresolvedStaticNonVoidMethodRef<T> getStaticMethod(Class<T> returnType, String methodName, Class<?>... parameterTypes) {
+    public <T> @Nonnull UnresolvedStaticNonVoidMethodRef<T> getStaticMethod(
+            @SuppressWarnings("unused") @Nullable Class<T> returnType,
+            @Nonnull String methodName, @Nonnull Class<?>... parameterTypes) {
         try {
             Method declaredMethod = getDeclaredMethod(methodName, parameterTypes);
             if (Unsafe.setAccessible(declaredMethod)) {

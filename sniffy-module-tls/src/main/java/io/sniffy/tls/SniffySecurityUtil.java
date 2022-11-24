@@ -102,7 +102,7 @@ public class SniffySecurityUtil {
                     );
                     LOG.info("Setting SSLContext.default to " + defaultSniffySSLContext);
                     SSLContext.setDefault(defaultSniffySSLContext);
-                    if (Unsafe.getJavaVersion() >= 13) {
+                    if (Unsafe.tryGetJavaVersion() >= 13) {
                         try {
                             LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
                             UnresolvedStaticFieldRef<SSLSocketFactory> sslSocketFactoryFieldRef =
@@ -210,7 +210,7 @@ public class SniffySecurityUtil {
                     );
                     LOG.info("Setting SSLContext.default to " + defaultSSLContext);
                     SSLContext.setDefault(defaultSSLContext);
-                    if (Unsafe.getJavaVersion() >= 13) {
+                    if (Unsafe.tryGetJavaVersion() >= 13) {
                         LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
                         try {
                             LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");

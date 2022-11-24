@@ -208,7 +208,7 @@ public class SSLSocketAdapterMockitoTest {
 
     @Test
     public void testGetApplicationProtocol() throws Exception {
-        if (Unsafe.getJavaVersion() >= 9) {
+        if (Unsafe.tryGetJavaVersion() >= 9) {
             when($(SSLSocket.class).getNonStaticMethod(String.class, "getApplicationProtocol").invoke(delegate)).thenReturn("TLS");
             assertEquals("TLS", sslSocketAdapter.getApplicationProtocol());
         }
@@ -216,7 +216,7 @@ public class SSLSocketAdapterMockitoTest {
 
     @Test
     public void testGetHandshakeApplicationProtocol() throws Exception {
-        if (Unsafe.getJavaVersion() >= 9) {
+        if (Unsafe.tryGetJavaVersion() >= 9) {
             when($(SSLSocket.class).getNonStaticMethod(String.class, "getHandshakeApplicationProtocol").invoke(delegate)).thenReturn("TLS");
             assertEquals("TLS", sslSocketAdapter.getHandshakeApplicationProtocol());
         }
@@ -230,7 +230,7 @@ public class SSLSocketAdapterMockitoTest {
 
     @Test
     public void testSetHandshakeApplicationProtocolSelector() throws Exception {
-        if (Unsafe.getJavaVersion() >= 9) {
+        if (Unsafe.tryGetJavaVersion() >= 9) {
             sslSocketAdapter.setHandshakeApplicationProtocolSelector(selectorMock);
             $(SSLSocket.class).getNonStaticMethod("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(verify(delegate), selectorCaptor.capture());
             assertEquals(selectorMock, selectorCaptor.getValue());
@@ -239,7 +239,7 @@ public class SSLSocketAdapterMockitoTest {
 
     @Test
     public void testGetHandshakeApplicationProtocolSelector() throws Exception {
-        if (Unsafe.getJavaVersion() >= 9) {
+        if (Unsafe.tryGetJavaVersion() >= 9) {
             when($(SSLSocket.class).getNonStaticMethod(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate)).thenReturn(selectorMock);
             assertEquals(selectorMock, sslSocketAdapter.getHandshakeApplicationProtocolSelector());
         }

@@ -3,6 +3,8 @@ package io.sniffy.reflection;
 import io.sniffy.reflection.clazz.ClassRef;
 import io.sniffy.reflection.clazz.UnresolvedClassRef;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.AnnotatedElement;
@@ -12,7 +14,7 @@ import java.security.ProtectionDomain;
 
 /**
  * List of ideas
- * - Convenient way to access sun.misc.Unsafe
+ * - Convenient way to access sun.misc.Unsafe and other "Unsafe"s
  * - Safe wrapper (or multiple implementations) around sun.misc.Unsafe
  * - Reflection library based on Unsafe (or on safe wrapper above)
  * - Tooling for attaching agent to self
@@ -27,11 +29,24 @@ public final class Unsafe {
     private Unsafe() {
     }
 
+    @Deprecated
+    public static final int FALLBACK_JAVA_VERSION = 8;
+
+    public static int tryGetJavaVersion() {
+        return tryGetJavaVersion(FALLBACK_JAVA_VERSION);
+    }
+
+    public static int tryGetJavaVersion(int fallbackJavaVersion) {
+        try {
+            return getJavaVersion();
+        } catch (Exception e) {
+            return fallbackJavaVersion;
+        }
+    }
+
     public static int getJavaVersion() {
         String version = System.getProperty("java.version");
-        if (null == version) {
-            return 8; // TODO: log it
-        }
+
         if (version.startsWith("1.")) {
             version = version.substring(2, 3);
         } else {
@@ -47,19 +62,19 @@ public final class Unsafe {
     }
 
     @SuppressWarnings("RedundantTypeArguments")
-    public static RuntimeException throwException(Throwable e) {
+    public static @Nonnull RuntimeException throwException(@Nonnull Throwable e) {
         Unsafe.<RuntimeException>throwAny(e);
         return new RuntimeException(e);
     }
 
     @SuppressWarnings("unchecked")
-    private static <E extends Throwable> void throwAny(Throwable e) throws E {
+    private static <E extends Throwable> void throwAny(@Nonnull Throwable e) throws E {
         throw (E)e;
     }
 
     private static class SunMiscUnsafeHolder {
 
-        private final static sun.misc.Unsafe UNSAFE;
+        private final static @Nonnull sun.misc.Unsafe UNSAFE;
 
         static {
             sun.misc.Unsafe unsafe = null;
@@ -69,6 +84,7 @@ public final class Unsafe {
                 unsafe = (sun.misc.Unsafe) f.get(null);
             } catch (Throwable e) {
                 e.printStackTrace();
+                assert false : e;
             }
             UNSAFE = unsafe;
         }
@@ -76,11 +92,12 @@ public final class Unsafe {
     }
 
     // Consider also jdk.internal.misc.Unsafe and jdk.internal.reflect.Unsafe
-    public static sun.misc.Unsafe getSunMiscUnsafe() {
+    public static @Nonnull sun.misc.Unsafe getSunMiscUnsafe() {
         return SunMiscUnsafeHolder.UNSAFE;
     }
 
-    public static void defineSystemClass(String className, byte[] bytes) throws UnsafeException {
+    @SuppressWarnings("unused")
+    public static void defineSystemClass(@Nonnull @Deprecated String className, @Nonnull byte[] bytes) throws UnsafeException {
         try {
             $(sun.misc.Unsafe.class).
                     getNonStaticMethod("defineClass", String.class, byte[].class, Integer.TYPE, Integer.TYPE, ClassLoader.class, ProtectionDomain.class).
@@ -91,7 +108,7 @@ public final class Unsafe {
     }
 
     @SuppressWarnings("Convert2Diamond")
-    public static <C> UnresolvedClassRef<C> $(String className) {
+    public static @Nonnull <C> UnresolvedClassRef<C> $(@Nonnull String className) {
         try {
             //noinspection unchecked
             Class<C> clazz = (Class<C>)Class.forName(className);
@@ -102,28 +119,29 @@ public final class Unsafe {
     }
 
     @SuppressWarnings("unchecked")
-    public static <C,C1 extends C> ClassRef<C> $(Class<C1> clazz, Class<C> ignore) {
+    public static <C,C1 extends C> @Nonnull ClassRef<C> $(@Nonnull Class<C1> clazz, @SuppressWarnings("unused") @Nullable Class<C> cast) {
         return (ClassRef<C>) $(clazz);
     }
 
-    public static <C> UnresolvedClassRef<C> $(String className, Class<C> ignore) {
+    public static <C> @Nonnull UnresolvedClassRef<C> $(@Nonnull String className, @SuppressWarnings("unused") @Nullable Class<C> cast) {
         return $(className);
     }
 
-    // TODO: introduce cacheing
+    // TODO: introduce caching
     @SuppressWarnings("Convert2Diamond")
-    public static <C> ClassRef<C> $(Class<C> clazz) {
+    public static <C> @Nonnull ClassRef<C> $(@Nonnull Class<C> clazz) {
         return new ClassRef<C>(clazz);
     }
 
-    public static boolean setAccessible(AccessibleObject ao) throws UnsafeException {
+    @SuppressWarnings("RedundantSuppression")
+    public static boolean setAccessible(@Nonnull AccessibleObject ao) throws UnsafeException {
 
         //noinspection deprecation
         if (ao.isAccessible()) {
             return true;
         }
 
-        if (getJavaVersion() >= 16) {
+        if (tryGetJavaVersion() >= 16) {
 
             try {
                 long overrideOffset = getSunMiscUnsafe().objectFieldOffset(FakeAccessibleObject.class.getDeclaredField("override"));

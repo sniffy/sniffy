@@ -34,7 +34,7 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
         fieldsMap.remove("theFactory");
         fieldsMap.remove("DEBUG");
 
-        if (Unsafe.getJavaVersion() <= 12) {
+        if (Unsafe.tryGetJavaVersion() <= 12) {
             assertTrue(fieldsMap.containsKey("propertyChecked"));
             fieldsMap.remove("propertyChecked");
         }
@@ -91,7 +91,7 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
     @Issue("issues/439")
     public void testExistingSSLSocketFactoryWasCreateViaSecurityProperties() throws Exception {
 
-        if (Unsafe.getJavaVersion() >= 13) {
+        if (Unsafe.tryGetJavaVersion() >= 13) {
             for (StaticFieldRef<Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
                     findStaticFields(FieldFilters.ofType(SSLSocketFactory.class), true).values()) {
                 fieldRef.set(new TestSSLSocketFactory());
@@ -129,7 +129,7 @@ public class SniffySSLSocketFactoryTest extends BaseSocketTest {
 
         } finally {
 
-            if (Unsafe.getJavaVersion() >= 13) {
+            if (Unsafe.tryGetJavaVersion() >= 13) {
                 for (NonStaticFieldRef<Object, Object> fieldRef : $("javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder").
                         findNonStaticFields(
                                 FieldFilters.and(

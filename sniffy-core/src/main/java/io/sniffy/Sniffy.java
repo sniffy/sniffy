@@ -143,7 +143,7 @@ public class Sniffy {
         }
 
         LOG.info("OS is " + OSUtil.getOsName());
-        LOG.info("Java version is " + Unsafe.getJavaVersion());
+        LOG.info("Java version is " + Unsafe.tryGetJavaVersion());
 
         if (LOG.isLevelEnabled(PolyglogLevel.INFO)) {
             Properties properties = System.getProperties();

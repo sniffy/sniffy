@@ -15,11 +15,11 @@ public class SniffySelectorProviderModule {
 
     public static void initialize() {
 
-        if (Unsafe.getJavaVersion() <= 7) return;
+        if (Unsafe.tryGetJavaVersion() <= 7) return;
 
-        if (Unsafe.getJavaVersion() == 8 && Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
+        if (Unsafe.tryGetJavaVersion() == 8 && Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
 
-        if (Unsafe.getJavaVersion() >= 16) {
+        if (Unsafe.tryGetJavaVersion() >= 16) {
             if (!$("sun.nio.ch.SelChImpl").tryGetModuleRef().tryAddOpens("sun.nio.ch")) {
                 LOG.error("Couldn't open module with sun.nio.ch.SelChImpl class");
             }

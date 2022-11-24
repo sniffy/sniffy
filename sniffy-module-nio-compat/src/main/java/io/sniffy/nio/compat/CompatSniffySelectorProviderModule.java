@@ -11,9 +11,9 @@ public class CompatSniffySelectorProviderModule {
 
     public static void initialize() {
 
-        if (Unsafe.getJavaVersion() >= 9) return;
+        if (Unsafe.tryGetJavaVersion() >= 9) return;
 
-        if (Unsafe.getJavaVersion() == 8 && !Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
+        if (Unsafe.tryGetJavaVersion() == 8 && !Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
 
 
         try {

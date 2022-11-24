@@ -34,9 +34,9 @@ public class SniffySocketCompatibilityTest {
 
                     break;
                 } catch (IOException e) {
-                    if (e.getMessage().contains("An established connection was aborted by the software in your host machine") && OSUtil.isWindows() && (Unsafe.getJavaVersion() == 14 || Unsafe.getJavaVersion() == 13)) {
+                    if (e.getMessage().contains("An established connection was aborted by the software in your host machine") && OSUtil.isWindows() && (Unsafe.tryGetJavaVersion() == 14 || Unsafe.tryGetJavaVersion() == 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + Unsafe.getJavaVersion() + " running on Windows; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.tryGetJavaVersion() + " running on Windows; retrying in 2 seconds");
                         Thread.sleep(2000);
                     } else {
                         throw e;

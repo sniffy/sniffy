@@ -157,7 +157,7 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
                                         LOG.info("Setting SSLContext.default to " + defaultSniffySSLContext);
                                         // TODO: why do we do it here? we already doing it in SniffySecurityUtil
                                         SSLContext.setDefault(defaultSniffySSLContext);
-                                        if (Unsafe.getJavaVersion() >= 13) {
+                                        if (Unsafe.tryGetJavaVersion() >= 13) {
                                             try {
                                                 LOG.info("Java 13+ detected - attempt to update javax.net.ssl.SSLSocketFactory$DefaultFactoryHolder");
                                                 UnresolvedStaticFieldRef<SSLSocketFactory> sslSocketFactoryFieldRef =

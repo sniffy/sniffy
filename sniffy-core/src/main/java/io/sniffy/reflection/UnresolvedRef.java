@@ -22,8 +22,7 @@ public class UnresolvedRef<T> {
         this.ref = ref;
     }
 
-    @Nonnull
-    public T resolve() throws UnresolvedRefException {
+    public @Nonnull T resolve() throws UnresolvedRefException {
         if (isResolved()) {
             //noinspection ConstantConditions
             return ref;
@@ -36,8 +35,7 @@ public class UnresolvedRef<T> {
         return null == throwable;
     }
 
-    @Nullable
-    public Throwable getResolveException() {
+    public @Nullable Throwable getResolveException() {
         return throwable;
     }
 

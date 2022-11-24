@@ -44,7 +44,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
     // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
     @IgnoreJRERequirement
     private static <T> Deque<T> createConcurrentDeque() {
-        if (Unsafe.getJavaVersion() < 7) {
+        if (Unsafe.tryGetJavaVersion() < 7) {
             return new LinkedList<T>();
         } else {
             return new ConcurrentLinkedDeque<T>();
@@ -62,7 +62,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-            if (Unsafe.getJavaVersion() < 7) {
+            if (Unsafe.tryGetJavaVersion() < 7) {
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (networkPackets) {
                     networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
@@ -85,7 +85,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-            if (Unsafe.getJavaVersion() < 7) {
+            if (Unsafe.tryGetJavaVersion() < 7) {
                 // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (networkPackets) {

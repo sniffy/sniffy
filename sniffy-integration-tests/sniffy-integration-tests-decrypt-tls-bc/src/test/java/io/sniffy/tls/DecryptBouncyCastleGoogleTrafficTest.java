@@ -66,13 +66,13 @@ public class DecryptBouncyCastleGoogleTrafficTest {
                     if ((
                             e.getMessage().contains("An established connection was aborted by the software in your host machine") ||
                                     e.getMessage().contains("handshake_failure(40)")
-                    ) && OSUtil.isWindows() && (Unsafe.getJavaVersion() == 14 || Unsafe.getJavaVersion() == 13)) {
+                    ) && OSUtil.isWindows() && (Unsafe.tryGetJavaVersion() == 14 || Unsafe.tryGetJavaVersion() == 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + Unsafe.getJavaVersion() + " running on Windows; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.tryGetJavaVersion() + " running on Windows; retrying in 2 seconds");
                         Thread.sleep(2000);
-                    } else if (e.getMessage().contains("Broken pipe") && OSUtil.isMac() && (Unsafe.getJavaVersion() >= 13)) {
+                    } else if (e.getMessage().contains("Broken pipe") && OSUtil.isMac() && (Unsafe.tryGetJavaVersion() >= 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + Unsafe.getJavaVersion() + " running on Mac OS; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.tryGetJavaVersion() + " running on Mac OS; retrying in 2 seconds");
                         Thread.sleep(2000);
                     } else {
                         throw e;
