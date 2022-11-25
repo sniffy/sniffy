@@ -2,7 +2,6 @@ package io.sniffy.socket;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.clazz.ClassRef;
 import io.sniffy.util.ExceptionUtil;
 
@@ -32,22 +31,24 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         this.delegate = delegate;
     }
 
+    @SuppressWarnings("CommentedOutCode")
     private void copyToDelegate() {
-        try {
+        /*try {
             socketImplClassRef.copyFields(this, delegate);
         } catch (UnsafeInvocationException e) {
             LOG.error("Couldn't copy fields from Sniffy SocketImpl to delegate", e);
             assert false : "Couldn't copy fields from Sniffy SocketImpl to delegate";
-        }
+        }*/
     }
 
+    @SuppressWarnings("CommentedOutCode")
     private void copyFromDelegate() {
-        try {
+        /*try {
             socketImplClassRef.copyFields(delegate, this);
         } catch (UnsafeInvocationException e) {
             LOG.error("Couldn't copy fields from delegate to Sniffy SocketImpl", e);
             assert false : "Couldn't copy fields from delegate to Sniffy SocketImpl";
-        }
+        }*/
     }
 
     // now delegate methods
@@ -259,6 +260,17 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
     protected void accept(SocketImpl s) throws IOException {
         copyToDelegate();
         try {
+            /*
+             * After Sniffy supports ServerSockets, we might need to add call to delegate.reset() here
+             * And in general check the implementation of ServerSocket.implAccept(Socket s) method
+             * for side effects
+             *
+             * s.reset();
+             * s.fd = new FileDescriptor();
+             * s.address = new InetAddress();
+             *
+             * Also consider implementing PlatformSocket interface
+             */
             socketImplClassRef.getNonStaticMethod(Integer.TYPE, "accept", SocketImpl.class).invoke(delegate, s);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
