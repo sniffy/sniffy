@@ -138,7 +138,6 @@ public class SnifferSocketImplTest {
     @Before
     public void createSniffySocket() throws Exception {
         sniffySocket = new SnifferSocketImpl(delegate, sleep);
-        sniffySocket.setFileDescriptor(new FileDescriptor());
 
         ConnectionsRegistry.INSTANCE.clear();
     }
@@ -170,26 +169,6 @@ public class SnifferSocketImplTest {
 
         verify(delegate).sendUrgentData(1);
         verifyNoMoreInteractions(delegate);
-
-    }
-
-    @Test
-    public void testSendUrgentDataThrowsAssertionErrorOnNullFD() throws Exception {
-
-        boolean assertOn = false;
-        //noinspection AssertWithSideEffects
-        assert assertOn = true;
-
-        assertTrue("Java assertions MUST be enabled for this test to succeed; please rerun with '-ea' parameter", assertOn);
-
-        sniffySocket.setFileDescriptor(null);
-
-        try {
-            sniffySocket.sendUrgentData(1);
-            fail();
-        } catch (AssertionError assertionError) {
-            assertNotNull(assertionError);
-        }
 
     }
 

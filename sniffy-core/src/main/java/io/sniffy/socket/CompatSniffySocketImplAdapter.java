@@ -2,7 +2,6 @@ package io.sniffy.socket;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.clazz.ClassRef;
 import io.sniffy.util.ExceptionUtil;
@@ -11,7 +10,6 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -52,34 +50,16 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         }
     }
 
-    protected void processException(Exception exception) {
-        if (exception instanceof InvocationTargetException) {
-            InvocationTargetException invocationTargetException = (InvocationTargetException) exception;
-            throw Unsafe.throwException(invocationTargetException.getTargetException());
-        } else {
-            LOG.error(exception);
-            assert false : exception;
-        }
-    }
-
-    // visible for testing
-    protected void setFileDescriptor(FileDescriptor fd) {
-        this.fd = fd;
-    }
-
     // now delegate methods
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void sendUrgentData(int data) throws IOException {
-
-        assert null != fd;
-
         copyToDelegate();
         try {
             socketImplClassRef.getNonStaticMethod("sendUrgentData", Integer.TYPE).invoke(delegate, data);
         } catch (Exception e) {
-            processException(e);
+            throw ExceptionUtil.processException(e);
         } finally {
             copyFromDelegate();
         }
@@ -93,7 +73,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         try {
             socketImplClassRef.getNonStaticMethod("shutdownInput").invoke(delegate);
         } catch (Exception e) {
-            processException(e);
+            throw ExceptionUtil.processException(e);
         } finally {
             copyFromDelegate();
         }
@@ -106,7 +86,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         try {
             socketImplClassRef.getNonStaticMethod("shutdownOutput").invoke(delegate);
         } catch (Exception e) {
-            processException(e);
+            throw ExceptionUtil.processException(e);
         } finally {
             copyFromDelegate();
         }
