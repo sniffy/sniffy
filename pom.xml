@@ -131,6 +131,9 @@
                         </goals>
                         <configuration>
                             <append>true</append>
+                            <includes>
+                                <include>io.sniffy.*</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>
