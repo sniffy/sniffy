@@ -50,7 +50,7 @@ public class UnresolvedClassRef<C> extends UnresolvedRef<ClassRef<C>> {
         return resolve().getConstructor();
     }
 
-    public <T> @Nonnull UnresolvedStaticFieldRef<T> tryGetStaticField(@Nonnull String fieldName) {
+    public @Nonnull <T> UnresolvedStaticFieldRef<T> tryGetStaticField(@Nonnull String fieldName) {
         try {
             return getStaticField(fieldName);
         } catch (Throwable e) {
@@ -58,11 +58,13 @@ public class UnresolvedClassRef<C> extends UnresolvedRef<ClassRef<C>> {
         }
     }
 
-    public <T> @Nonnull UnresolvedStaticFieldRef<T> getStaticField(@Nonnull String fieldName) throws UnresolvedRefException {
+    @Nonnull
+    public <T> UnresolvedStaticFieldRef<T> getStaticField(@Nonnull String fieldName) throws UnresolvedRefException {
         return resolve().getStaticField(fieldName);
     }
 
-    public <T> @Nonnull UnresolvedNonStaticFieldRef<C, T> tryGetNonStaticField(@Nonnull String fieldName) {
+    @Nonnull
+    public <T> UnresolvedNonStaticFieldRef<C, T> tryGetNonStaticField(@Nonnull String fieldName) {
         try {
             return getNonStaticField(fieldName);
         } catch (Throwable e) {
@@ -70,11 +72,11 @@ public class UnresolvedClassRef<C> extends UnresolvedRef<ClassRef<C>> {
         }
     }
 
-    public <T> @Nonnull UnresolvedNonStaticFieldRef<C, T> getNonStaticField(@Nonnull String fieldName) throws UnresolvedRefException {
+    public @Nonnull <T> UnresolvedNonStaticFieldRef<C, T> getNonStaticField(@Nonnull String fieldName) throws UnresolvedRefException {
         return resolve().getNonStaticField(fieldName);
     }
 
-    public <T> @Nonnull UnresolvedNonStaticFieldRef<C, T> findFirstNonStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) throws UnresolvedRefException {
+    public @Nonnull <T> UnresolvedNonStaticFieldRef<C, T> findFirstNonStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) throws UnresolvedRefException {
         return resolve().findFirstNonStaticField(fieldFilter, recursive);
     }
 
@@ -82,7 +84,7 @@ public class UnresolvedClassRef<C> extends UnresolvedRef<ClassRef<C>> {
         return resolve().findNonStaticFields(fieldFilter, recursive);
     }
 
-    public <T> @Nonnull UnresolvedStaticFieldRef<T> tryFindFirstStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) {
+    public @Nonnull <T> UnresolvedStaticFieldRef<T> tryFindFirstStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) {
         try {
             return findFirstStaticField(fieldFilter, recursive);
         } catch (Throwable e) {
@@ -90,7 +92,7 @@ public class UnresolvedClassRef<C> extends UnresolvedRef<ClassRef<C>> {
         }
     }
 
-    public <T> @Nonnull UnresolvedStaticFieldRef<T> findFirstStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) throws UnresolvedRefException {
+    public @Nonnull <T> UnresolvedStaticFieldRef<T> findFirstStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) throws UnresolvedRefException {
         return resolve().findFirstStaticField(fieldFilter, recursive);
     }
 
@@ -104,7 +106,7 @@ public class UnresolvedClassRef<C> extends UnresolvedRef<ClassRef<C>> {
         return resolve().getNonStaticMethod(methodName, parameterTypes);
     }
 
-    public <T> @Nonnull UnresolvedNonStaticNonVoidMethodRef<C,T> getNonStaticMethod(@Nullable Class<T> returnType, @Nonnull String methodName, @Nonnull Class<?>... parameterTypes) throws UnresolvedRefException {
+    public @Nonnull <T> UnresolvedNonStaticNonVoidMethodRef<C,T> getNonStaticMethod(@Nullable Class<T> returnType, @Nonnull String methodName, @Nonnull Class<?>... parameterTypes) throws UnresolvedRefException {
         return resolve().getNonStaticMethod(returnType, methodName, parameterTypes);
     }
 
@@ -112,7 +114,7 @@ public class UnresolvedClassRef<C> extends UnresolvedRef<ClassRef<C>> {
         return resolve().getStaticMethod(methodName, parameterTypes);
     }
 
-    public <T> @Nonnull UnresolvedStaticNonVoidMethodRef<T> getStaticMethod(@Nullable Class<T> returnType, @Nonnull String methodName, @Nonnull Class<?>... parameterTypes) throws UnresolvedRefException {
+    public @Nonnull <T> UnresolvedStaticNonVoidMethodRef<T> getStaticMethod(@Nullable Class<T> returnType, @Nonnull String methodName, @Nonnull Class<?>... parameterTypes) throws UnresolvedRefException {
         return resolve().getStaticMethod(returnType, methodName, parameterTypes);
     }
 

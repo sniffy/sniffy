@@ -51,7 +51,7 @@ public class ClassRef<C> {
         }
     }
 
-    public <T> @Nonnull UnresolvedNonStaticFieldRef<C, T> findFirstNonStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) {
+    public @Nonnull <T> UnresolvedNonStaticFieldRef<C, T> findFirstNonStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) {
         try {
             Class<? super C> clazz = this.clazz;
             while (clazz != Object.class) {
@@ -92,7 +92,7 @@ public class ClassRef<C> {
         return fields;
     }
 
-    public <T> @Nonnull UnresolvedStaticFieldRef<T> findFirstStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) {
+    public @Nonnull <T> UnresolvedStaticFieldRef<T> findFirstStaticField(@Nullable FieldFilter fieldFilter, boolean recursive) {
         try {
             Class<? super C> clazz = this.clazz;
             while (clazz != Object.class) {
@@ -143,11 +143,11 @@ public class ClassRef<C> {
 
     }
 
-    public <T> @Nonnull UnresolvedStaticFieldRef<T> getStaticField(@Nonnull String fieldName) {
+    public @Nonnull <T> UnresolvedStaticFieldRef<T> getStaticField(@Nonnull String fieldName) {
         return findFirstStaticField(FieldFilters.byName(fieldName), true);
     }
 
-    public <T> @Nonnull UnresolvedNonStaticFieldRef<C,T> getNonStaticField(@Nonnull String fieldName) {
+    public @Nonnull <T> UnresolvedNonStaticFieldRef<C,T> getNonStaticField(@Nonnull String fieldName) {
         return findFirstNonStaticField(FieldFilters.byName(fieldName), true);
     }
 
@@ -228,7 +228,7 @@ public class ClassRef<C> {
     }
 
     @SuppressWarnings("Convert2Diamond")
-    public <T> @Nonnull UnresolvedNonStaticNonVoidMethodRef<C,T> getNonStaticMethod(
+    public @Nonnull <T> UnresolvedNonStaticNonVoidMethodRef<C,T> getNonStaticMethod(
             @SuppressWarnings("unused") @Nullable Class<T> returnType,
             @Nonnull String methodName, @Nonnull Class<?>... parameterTypes) {
         try {
@@ -256,7 +256,7 @@ public class ClassRef<C> {
     }
 
     @SuppressWarnings("Convert2Diamond")
-    public <T> @Nonnull UnresolvedStaticNonVoidMethodRef<T> getStaticMethod(
+    public @Nonnull <T> UnresolvedStaticNonVoidMethodRef<T> getStaticMethod(
             @SuppressWarnings("unused") @Nullable Class<T> returnType,
             @Nonnull String methodName, @Nonnull Class<?>... parameterTypes) {
         try {

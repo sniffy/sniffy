@@ -119,17 +119,20 @@ public final class Unsafe {
     }
 
     @SuppressWarnings("unchecked")
-    public static <C,C1 extends C> @Nonnull ClassRef<C> $(@Nonnull Class<C1> clazz, @SuppressWarnings("unused") @Nullable Class<C> cast) {
+    @Nonnull
+    public static <C,C1 extends C> ClassRef<C> $(@Nonnull Class<C1> clazz, @SuppressWarnings("unused") @Nullable Class<C> cast) {
         return (ClassRef<C>) $(clazz);
     }
 
-    public static <C> @Nonnull UnresolvedClassRef<C> $(@Nonnull String className, @SuppressWarnings("unused") @Nullable Class<C> cast) {
+    @Nonnull
+    public static <C> UnresolvedClassRef<C> $(@Nonnull String className, @SuppressWarnings("unused") @Nullable Class<C> cast) {
         return $(className);
     }
 
     // TODO: introduce caching
     @SuppressWarnings("Convert2Diamond")
-    public static <C> @Nonnull ClassRef<C> $(@Nonnull Class<C> clazz) {
+    @Nonnull
+    public static <C> ClassRef<C> $(@Nonnull Class<C> clazz) {
         return new ClassRef<C>(clazz);
     }
 
