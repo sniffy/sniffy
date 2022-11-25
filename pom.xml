@@ -132,7 +132,7 @@
                         <configuration>
                             <append>true</append>
                             <includes>
-                                <include>**/io/sniffy/**/*.class</include>
+                                <include>**/io/sniffy/**/*</include>
                             </includes>
                         </configuration>
                     </execution>
