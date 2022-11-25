@@ -28,7 +28,7 @@ import static io.sniffy.reflection.Unsafe.$;
  * Provides a set of convenient methods for working with classes via reflection
  * @param <C>
  */
-@SuppressWarnings("Convert2Diamond")
+@SuppressWarnings({"Convert2Diamond"})
 public class ClassRef<C> {
 
     private final @Nonnull Class<C> clazz;
@@ -255,7 +255,6 @@ public class ClassRef<C> {
         }
     }
 
-    @SuppressWarnings("Convert2Diamond")
     public @Nonnull <T> UnresolvedStaticNonVoidMethodRef<T> getStaticMethod(
             @SuppressWarnings("unused") @Nullable Class<T> returnType,
             @Nonnull String methodName, @Nonnull Class<?>... parameterTypes) {

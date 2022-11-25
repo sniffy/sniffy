@@ -62,9 +62,19 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         }
     }
 
+    // visible for testing
+    protected void setFileDescriptor(FileDescriptor fd) {
+        this.fd = fd;
+    }
+
+    // now delegate methods
+
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void sendUrgentData(int data) throws IOException {
+
+        assert null != fd;
+
         copyToDelegate();
         try {
             socketImplClassRef.getNonStaticMethod("sendUrgentData", Integer.TYPE).invoke(delegate, data);
@@ -73,6 +83,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         } finally {
             copyFromDelegate();
         }
+
     }
 
     @SuppressWarnings("RedundantThrows")
@@ -82,7 +93,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         try {
             socketImplClassRef.getNonStaticMethod("shutdownInput").invoke(delegate);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            processException(e);
         } finally {
             copyFromDelegate();
         }
@@ -95,7 +106,7 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         try {
             socketImplClassRef.getNonStaticMethod("shutdownOutput").invoke(delegate);
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            processException(e);
         } finally {
             copyFromDelegate();
         }

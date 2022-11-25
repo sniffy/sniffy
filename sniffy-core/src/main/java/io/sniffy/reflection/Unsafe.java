@@ -24,6 +24,7 @@ import java.security.ProtectionDomain;
  * - Esoteric stuff (invoke constructor again, etc.)
  * - Whatever is required by other tools like caches (sizeof), mocks (power reflection), etc.
  */
+@SuppressWarnings({"Convert2Diamond"})
 public final class Unsafe {
 
     private Unsafe() {
@@ -61,7 +62,6 @@ public final class Unsafe {
         return Integer.parseInt(version);
     }
 
-    @SuppressWarnings("RedundantTypeArguments")
     public static @Nonnull RuntimeException throwException(@Nonnull Throwable e) {
         Unsafe.<RuntimeException>throwAny(e);
         return new RuntimeException(e);
@@ -107,7 +107,6 @@ public final class Unsafe {
         }
     }
 
-    @SuppressWarnings("Convert2Diamond")
     public static @Nonnull <C> UnresolvedClassRef<C> $(@Nonnull String className) {
         try {
             //noinspection unchecked
@@ -130,13 +129,11 @@ public final class Unsafe {
     }
 
     // TODO: introduce caching
-    @SuppressWarnings("Convert2Diamond")
     @Nonnull
     public static <C> ClassRef<C> $(@Nonnull Class<C> clazz) {
         return new ClassRef<C>(clazz);
     }
 
-    @SuppressWarnings("RedundantSuppression")
     public static boolean setAccessible(@Nonnull AccessibleObject ao) throws UnsafeException {
 
         //noinspection deprecation

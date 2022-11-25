@@ -23,6 +23,13 @@ Exception handling in Sniffy is based on next principles:
 4. Sniffy uses `Unsafe.throwException` functionality to throw original exception.
 5. Sniffy uses `Polyglog` for logging exception which also provides convenient "log once" functionality in addition to dependency-free facade over logging systems and facades.
 
+## Static Code Analysis
+
+Annotation from JSR305 (`@Nonnull` and `@Nullable` specifically) are used to facilitate static code analysis and achieve null-safety.
+Another useful annotations are `@SuppressWarnings({"Convert2Diamond"})` which are placed on majority of production classes since target platfrom is Java 1.6 while IDE will most likely work in Java 1.8 source mode.
+
+Adding static code analysis (for example for fighting NPE) is in the roadmap yet.
+
 ## Logging
 
 TBD

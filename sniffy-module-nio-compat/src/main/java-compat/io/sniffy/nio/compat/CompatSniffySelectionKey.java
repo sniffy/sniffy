@@ -20,7 +20,7 @@ import static io.sniffy.reflection.Unsafe.$;
  * These operations are done with locks on regLock and keyLock in relevant delegate Channel
  * @since 3.1.7
  */
-@SuppressWarnings({"Convert2Diamond", "RedundantSuppression"})
+@SuppressWarnings({"Convert2Diamond"})
 public class CompatSniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
     private static final Polyglog LOG = PolyglogFactory.log(CompatSniffySelectionKey.class);
 
