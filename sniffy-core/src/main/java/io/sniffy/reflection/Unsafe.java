@@ -13,15 +13,17 @@ import java.lang.reflect.ReflectPermission;
 import java.security.ProtectionDomain;
 
 /**
- * List of ideas
+ * List of ideas:
  * - Convenient way to access sun.misc.Unsafe and other "Unsafe"s
  * - Safe wrapper (or multiple implementations) around sun.misc.Unsafe
- * - Reflection library based on Unsafe (or on safe wrapper above)
+ * - Reflection library based on Unsafe (or on safe wrapper above):
+ * -- add support of Method (both static and non-static)
+ * -- add support of ObjectRef, ObjectFieldRef, ObjectMethodRef, etc.
  * - Tooling for attaching agent to self
  * - Tooling for disabling Jigsaw
  * - Tooling for obtaining Instrumentation instance
  * - SizeOf
- * - Esoteric stuff (invoke constructor again, etc.)
+ * - Esoteric stuff (invoke constructor again, invoke static constructors, etc.)
  * - Whatever is required by other tools like caches (sizeof), mocks (power reflection), etc.
  */
 @SuppressWarnings({"Convert2Diamond"})
