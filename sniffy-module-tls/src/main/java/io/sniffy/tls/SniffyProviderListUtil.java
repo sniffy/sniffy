@@ -68,7 +68,8 @@ public class SniffyProviderListUtil {
         try {
             StaticFieldRef<Integer> threadListsUsed = $(Providers.class).<Integer>getStaticField("threadListsUsed").resolve();
             synchronized (Providers.class) {
-                threadListsUsed.set(threadListsUsed.get() - 1);
+                // threadListsUsed.set(threadListsUsed.get() - 1); // TODO: it breaks SniffySSLContextSpiProviderTest.testUninstall()
+                threadListsUsed.set(0);
             }
         } catch (Exception e) {
             LOG.error(e);
@@ -76,7 +77,8 @@ public class SniffyProviderListUtil {
 
         LOG.info("Setting Providers.threadLists to new ThreadLocal<ProviderList>()");
         try {
-            $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").set(new ThreadLocal<ProviderList>());
+            StaticFieldRef<ThreadLocal<ProviderList>> threadLists = $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").resolve();
+            threadLists.set(new ThreadLocal<ProviderList>());
         } catch (Exception e) {
             LOG.error(e);
         }
