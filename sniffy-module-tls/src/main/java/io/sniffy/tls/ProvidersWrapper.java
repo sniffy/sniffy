@@ -23,7 +23,7 @@ public class ProvidersWrapper extends ThreadLocal<ProviderList> {
     private static final Polyglog LOG = PolyglogFactory.log(ProvidersWrapper.class);
 
     private static final ThreadLocal<ProviderList> threadLists =
-            new InheritableThreadLocal<>();
+            new InheritableThreadLocal<ProviderList>();
 
     // number of threads currently using thread-local provider lists
     // tracked to allow an optimization if == 0
