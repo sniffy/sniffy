@@ -1,11 +1,17 @@
 package io.sniffy.test.kafka;
 
+import io.sniffy.log.PolyglogLevel;
+import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.test.junit.SniffyRule;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.errors.TimeoutException;
 import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
@@ -14,15 +20,18 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.core.BrokerAddress;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @EmbeddedKafka(partitions = 1, topics = {"testTopic"})
@@ -34,8 +43,8 @@ public class SimpleKafkaTest {
     @Autowired
     EmbeddedKafkaBroker embeddedKafkaBroker;
 
-//    @Rule
-//    public final SniffyRule sniffy = new SniffyRule(PolyglogLevel.TRACE);
+    @Rule
+    public final SniffyRule sniffy = new SniffyRule(PolyglogLevel.TRACE);
 
     @Test
     public void testSniffyDisabledKafkaProducer() throws Exception {
@@ -51,8 +60,7 @@ public class SimpleKafkaTest {
             assertEquals("my-test-value-1", singleRecord.value());
         }
 
-        /*BrokerAddress brokerAddress = embeddedKafkaBroker.getBrokerAddresses()[0];
-
+        BrokerAddress brokerAddress = embeddedKafkaBroker.getBrokerAddresses()[0];
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus(brokerAddress.getHost(), brokerAddress.getPort(), -1);
 
         System.out.println(ConnectionsRegistry.INSTANCE.getDiscoveredAddresses());
@@ -67,7 +75,7 @@ public class SimpleKafkaTest {
             assertTrue(e.getCause() instanceof TimeoutException);
         }
 
-        ConnectionsRegistry.INSTANCE.setSocketAddressStatus(brokerAddress.getHost(), brokerAddress.getPort(), 0);*/
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus(brokerAddress.getHost(), brokerAddress.getPort(), 0);
 
         producer.send(new ProducerRecord<>(TEST_TOPIC, 12345, "my-test-value-3"));
 
