@@ -2,6 +2,7 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.field.StaticFieldRef;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
 
@@ -15,7 +16,7 @@ public class SniffyProviderListUtil {
 
     public static void install() {
 
-        // TODO: add reflection based tests here to check if ThreadLocal and other fields are in place
+        /*// TODO: add reflection based tests here to check if ThreadLocal and other fields are in place
         LOG.info("Setting Providers.threadLists to SniffyThreadLocalProviderList");
         SniffyThreadLocalProviderList sniffyThreadLocalProviderList = new SniffyThreadLocalProviderList();
         try {
@@ -30,6 +31,22 @@ public class SniffyProviderListUtil {
             $(Providers.class).<Integer>getStaticField("threadListsUsed").set(1);
         } catch (Exception e) {
             LOG.error(e);
+        }*/
+
+        try {
+            ProvidersWrapper providersWrapper = new ProvidersWrapper();
+            $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").set(providersWrapper);
+        } catch (Exception e) {
+            LOG.error(e);
+        }
+
+        try {
+            StaticFieldRef<Integer> threadListsUsed = $(Providers.class).<Integer>getStaticField("threadListsUsed").resolve();
+            synchronized (Providers.class) {
+                threadListsUsed.set(threadListsUsed.get() + 1);
+            }
+        } catch (Exception e) {
+            LOG.error(e);
         }
 
         // now let us verify that Sniffy JSSE provider interceptor was installed correctly
@@ -38,6 +55,7 @@ public class SniffyProviderListUtil {
         ProviderList threadProviderList = Providers.getThreadProviderList();
         LOG.trace("Providers.getThreadProviderList() = " + threadProviderList);
         if (null == threadProviderList) {
+            assert null != threadProviderList;
             LOG.error("SniffyThreadLocalProviderList doesn't work - probably because Providers.threadLists variable was inlined by JVM. Try loading Sniffy at earlier stage - see https://sniffy.io/docs/ for details");
         }
         Providers.endThreadProviderList(null);
@@ -48,8 +66,10 @@ public class SniffyProviderListUtil {
 
         LOG.info("Setting Providers.threadListsUsed to 0");
         try {
-            // TODO: only do on success from step above
-            $(Providers.class).<Integer>getStaticField("threadListsUsed").set(0);
+            StaticFieldRef<Integer> threadListsUsed = $(Providers.class).<Integer>getStaticField("threadListsUsed").resolve();
+            synchronized (Providers.class) {
+                threadListsUsed.set(threadListsUsed.get() - 1);
+            }
         } catch (Exception e) {
             LOG.error(e);
         }

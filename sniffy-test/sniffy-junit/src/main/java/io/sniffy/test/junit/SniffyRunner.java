@@ -12,6 +12,7 @@ import org.junit.runners.model.TestClass;
  *
  * @since 3.1.12
  */
+@Deprecated
 public class SniffyRunner extends BlockJUnit4ClassRunner {
 
     static {

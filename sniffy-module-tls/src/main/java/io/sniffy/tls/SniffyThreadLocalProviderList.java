@@ -48,7 +48,7 @@ class SniffyThreadLocalProviderList extends ThreadLocal<ProviderList> {
         return providerList;
     }
 
-    private static Map.Entry<ProviderList, SniffySSLContextSpiProvider> wrapProviderList(ProviderList value) throws UnresolvedRefException, UnsafeInvocationException {
+    protected static Map.Entry<ProviderList, SniffySSLContextSpiProvider> wrapProviderList(ProviderList value) throws UnresolvedRefException, UnsafeInvocationException {
 
         List<Provider> wrappedProviderList = new ArrayList<Provider>();
 
