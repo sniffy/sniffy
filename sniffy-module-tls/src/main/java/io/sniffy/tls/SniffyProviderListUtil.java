@@ -54,7 +54,19 @@ public class SniffyProviderListUtil {
 
         // now let us verify that Sniffy JSSE provider interceptor was installed correctly
 
+
+        try {
+            LOG.trace("Providers.threadListsUsed = " + $(Providers.class).getStaticField("threadListsUsed").get());
+            LOG.trace("Providers.threadLists = " + $(Providers.class).getStaticField("threadLists").get());
+            LOG.trace("Providers.threadLists.get() = " + $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").get().get());
+            LOG.trace("Providers.providerList = " + $(Providers.class).getStaticField("providerList").get());
+        } catch (Exception e) {
+            assert false : e;
+        }
+
+        LOG.trace("Providers.beginThreadProviderList(ProviderList.newList());");
         Providers.beginThreadProviderList(ProviderList.newList());
+
         try {
             LOG.trace("Providers.threadListsUsed = " + $(Providers.class).getStaticField("threadListsUsed").get());
             LOG.trace("Providers.threadLists = " + $(Providers.class).getStaticField("threadLists").get());
