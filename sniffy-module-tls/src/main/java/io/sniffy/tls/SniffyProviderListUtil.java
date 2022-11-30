@@ -6,6 +6,7 @@ import io.sniffy.reflection.field.StaticFieldRef;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
 
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
 
 import static io.sniffy.reflection.Unsafe.$;
@@ -79,6 +80,7 @@ public class SniffyProviderListUtil {
         ProviderList threadProviderList = Providers.getThreadProviderList();
         LOG.trace("Providers.getThreadProviderList() = " + threadProviderList);
         if (null == threadProviderList) {
+            ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
             assert null != threadProviderList;
             LOG.error("SniffyThreadLocalProviderList doesn't work - probably because Providers.threadLists variable was inlined by JVM. Try loading Sniffy at earlier stage - see https://sniffy.io/docs/ for details");
         }
