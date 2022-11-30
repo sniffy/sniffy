@@ -34,7 +34,7 @@ public class SniffyProviderListUtil {
         }*/
 
         try {
-            assert null == Providers.beginThreadProviderList(ProviderList.newList()); // trick JDK
+            //assert null == Providers.beginThreadProviderList(ProviderList.newList()); // trick JDK
 
             ProvidersWrapper providersWrapper = new ProvidersWrapper();
             $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").set(providersWrapper);

@@ -192,6 +192,7 @@ public class StaticFieldRef<T> {
                 if (Modifier.isVolatile(field.getModifiers()) || Modifier.isFinal(field.getModifiers())) { // TODO: use *volatile for other final fields as well
                     // TODO: switch to putReferenceVolatile from jdk.internal.reflect.Unsafe since it provdies better object visibility
                     UNSAFE.putObjectVolatile(object, offset, value);
+                    UNSAFE.fullFence();
                 } else {
                     UNSAFE.putObject(object, offset, value);
                 }

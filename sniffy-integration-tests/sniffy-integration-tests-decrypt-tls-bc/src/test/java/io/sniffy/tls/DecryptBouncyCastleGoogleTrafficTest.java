@@ -54,6 +54,22 @@ public class DecryptBouncyCastleGoogleTrafficTest {
         instance.init(null, null, new SecureRandom());
         assertTrue(instance.getSocketFactory() instanceof SniffySSLSocketFactory);
 
+        /*
+        2022-11-30 12:19:56.783+0100 [INFO] [main] [SniffySecurityUtil] Querying original security providers...
+2022-11-30 12:19:56.783+0100 [TRACE] [main] [SniffySecurityUtil] Providers.threadListsUsed = 1
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [SniffySecurityUtil] Providers.threadLists = io.sniffy.tls.ProvidersWrapper@6f1de4c7
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [ProvidersWrapper] ProvidersWrapper.get()
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [ProvidersWrapper] Returning original system provider list [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [SniffySecurityUtil] Providers.threadLists.get() = [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [SniffySecurityUtil] Providers.providerList = [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [ProvidersWrapper] ProvidersWrapper.get()
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [ProvidersWrapper] Returning original thread provider list null
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [SniffySecurityUtil] Providers.getThreadProviderList() = null
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [SniffySecurityUtil] Providers.getSystemProviderList() = [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [ProvidersWrapper] ProvidersWrapper.get()
+2022-11-30 12:19:56.786+0100 [TRACE] [main] [ProvidersWrapper] Returning original system provider list [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+
+         */
         Provider sniffyProvider = SSLContext.getInstance("Default").getProvider();
         assertEquals("Sniffy-BCJSSE", sniffyProvider.getName());
 

@@ -348,7 +348,7 @@
                         <skip>true</skip>
                         <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                         <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
-                        <argLine>-Xmx1024m ${argLine} -esa -ea</argLine>
+                        <argLine>-Xmx1024m ${argLine} -esa -ea -Djava.security.debug=jca</argLine>
                         <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                     </configuration>
                     <executions>

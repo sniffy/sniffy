@@ -41,6 +41,8 @@ public class SniffySecurityUtil {
                 LOG.trace("Providers.threadLists = " + $(Providers.class).getStaticField("threadLists").get());
                 LOG.trace("Providers.threadLists.get() = " + $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").get().get());
                 LOG.trace("Providers.providerList = " + $(Providers.class).getStaticField("providerList").get());
+                LOG.trace("Providers.getThreadProviderList() = " + $(Providers.class).getStaticMethod(ProviderList.class, "getThreadProviderList").invoke());
+                LOG.trace("Providers.getSystemProviderList() = " + $(Providers.class).getStaticMethod(ProviderList.class, "getSystemProviderList").invoke());
             } catch (Exception e) {
                 assert false : e;
             }

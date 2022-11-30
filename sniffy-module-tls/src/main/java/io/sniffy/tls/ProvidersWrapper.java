@@ -97,6 +97,7 @@ public class ProvidersWrapper extends ThreadLocal<ProviderList> {
         if (StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "endThreadProviderList")) {
             threadLists.remove();
             threadListsUsed--;
+            LOG.trace("Disabling thread provider list; setting threadListsUsed to " + threadListsUsed);
         }
     }
 
