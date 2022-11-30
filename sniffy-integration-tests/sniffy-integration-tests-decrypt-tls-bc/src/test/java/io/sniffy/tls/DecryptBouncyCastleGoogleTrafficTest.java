@@ -17,9 +17,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +44,12 @@ public class DecryptBouncyCastleGoogleTrafficTest {
         SniffyConfiguration.INSTANCE.setPacketMergeThreshold(10000);
         Sniffy.initialize();
 
-        SSLContext instance = SSLContext.getInstance("TLSv1", "BCJSSE");
+        SSLContext instance = null;
+        try {
+            instance = SSLContext.getInstance("TLSv1", "BCJSSE");
+        } catch (NoSuchProviderException e) {
+            assert false : "Couldn't find provider BCJSSE; actual list was " + Arrays.toString(Security.getProviders());
+        }
         instance.init(null, null, new SecureRandom());
         assertTrue(instance.getSocketFactory() instanceof SniffySSLSocketFactory);
 
