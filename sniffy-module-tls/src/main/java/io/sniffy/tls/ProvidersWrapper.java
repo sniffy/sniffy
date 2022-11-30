@@ -22,6 +22,9 @@ public class ProvidersWrapper extends ThreadLocal<ProviderList> {
 
     private static final Polyglog LOG = PolyglogFactory.log(ProvidersWrapper.class);
 
+    private static final Polyglog WRAP_PROVIDER_LIST_LOG = PolyglogFactory.oneTimeLog(SniffyProviderListUtil.class);
+
+
     private static final ThreadLocal<ProviderList> threadLists =
             new InheritableThreadLocal<ProviderList>();
 
@@ -39,20 +42,28 @@ public class ProvidersWrapper extends ThreadLocal<ProviderList> {
 
     @Override
     public synchronized ProviderList get() {
+        LOG.trace("ProvidersWrapper.get()");
         if (StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "beginThreadProviderList")) {
             threadListsUsed++;
-            return getThreadProviderList();
+            ProviderList threadProviderList = getThreadProviderList();
+            LOG.trace("Incrementing threadListsUsed to " + threadListsUsed + " and returning original thread provider list " + threadProviderList);
+            return threadProviderList;
         } else if (
                 StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "getThreadProviderList") &&
                 !StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "getProviderList") &&
                 !StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "setProviderList") &&
                 !StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "getFullProviderList")
         ) {
-            return getThreadProviderList();
+            ProviderList threadProviderList = getThreadProviderList();
+            LOG.trace("Returning original thread provider list " + threadProviderList);
+            return threadProviderList;
         } else {
             ProviderList list = getThreadProviderList();
             if (list == null) {
                 list = getSystemProviderList();
+                LOG.trace("Returning original system provider list " + list);
+            } else {
+                LOG.trace("Returning original thread provider list " + list);
             }
             assert null != list;
             return list;
@@ -64,14 +75,18 @@ public class ProvidersWrapper extends ThreadLocal<ProviderList> {
         LOG.trace("Intercepted Providers.changeThreadProviderList() call with " + newList);
         if (StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "beginThreadProviderList")) {
             changeThreadProviderList(newList);
+            LOG.trace("Setting original thread provider list to wrapper of " + newList);
         } else if (StackTraceExtractor.hasClassAndMethodInStackTrace(Providers.class.getName(), "endThreadProviderList")) {
             changeThreadProviderList(newList);
             threadListsUsed--;
+            LOG.trace("Decrementing threadListsUsed to " + threadListsUsed + " and setting original thread provider list to wrapper of " + newList);
         } else {
             if (getThreadProviderList() == null) {
                 setSystemProviderList(newList);
+                LOG.trace("Setting original system provider list to wrapper of " + newList);
             } else {
                 changeThreadProviderList(newList);
+                LOG.trace("Setting original thread provider list to wrapper of " + newList);
             }
         }
 

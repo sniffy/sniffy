@@ -8,6 +8,8 @@ import io.sniffy.reflection.Unsafe;
 import io.sniffy.reflection.UnsafeInvocationException;
 import io.sniffy.reflection.field.FieldFilters;
 import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
+import sun.security.jca.ProviderList;
+import sun.security.jca.Providers;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLContextSpi;
@@ -29,7 +31,21 @@ public class SniffySecurityUtil {
 
         synchronized (Security.class) {
 
-            Provider[] originalSecurityProviders = Security.getProviders();
+            assert null == Providers.beginThreadProviderList(ProviderList.newList()); // trick JDK
+            Providers.endThreadProviderList(null);
+
+            LOG.info("Querying original security providers...");
+
+            try {
+                LOG.trace("Providers.threadListsUsed = " + $(Providers.class).getStaticField("threadListsUsed").get());
+                LOG.trace("Providers.threadLists = " + $(Providers.class).getStaticField("threadLists").get());
+                LOG.trace("Providers.threadLists.get() = " + $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").get().get());
+                LOG.trace("Providers.providerList = " + $(Providers.class).getStaticField("providerList").get());
+            } catch (Exception e) {
+                assert false : e;
+            }
+
+            Provider[] originalSecurityProviders = Providers.getFullProviderList().toArray();
 
             LOG.info("Original security providers are " + Arrays.toString(originalSecurityProviders));
 

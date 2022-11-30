@@ -2,6 +2,7 @@ package io.sniffy.tls;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.PolyglogLevel;
 import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
@@ -35,6 +36,7 @@ public class DecryptBouncyCastleGoogleTrafficTest {
 
         assertEquals("BCJSSE", SSLContext.getInstance("Default").getProvider().getName());
 
+        SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setPacketMergeThreshold(10000);

@@ -16,8 +16,8 @@ public class SniffyProviderListUtil {
 
     public static void install() {
 
-        /*// TODO: add reflection based tests here to check if ThreadLocal and other fields are in place
-        LOG.info("Setting Providers.threadLists to SniffyThreadLocalProviderList");
+        // TODO: add reflection based tests here to check if ThreadLocal and other fields are in place
+        /*LOG.info("Setting Providers.threadLists to SniffyThreadLocalProviderList");
         SniffyThreadLocalProviderList sniffyThreadLocalProviderList = new SniffyThreadLocalProviderList();
         try {
             $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").set(sniffyThreadLocalProviderList);
@@ -34,6 +34,8 @@ public class SniffyProviderListUtil {
         }*/
 
         try {
+            assert null == Providers.beginThreadProviderList(ProviderList.newList()); // trick JDK
+
             ProvidersWrapper providersWrapper = new ProvidersWrapper();
             $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").set(providersWrapper);
         } catch (Exception e) {
@@ -43,7 +45,8 @@ public class SniffyProviderListUtil {
         try {
             StaticFieldRef<Integer> threadListsUsed = $(Providers.class).<Integer>getStaticField("threadListsUsed").resolve();
             synchronized (Providers.class) {
-                threadListsUsed.set(threadListsUsed.get() + 1);
+                threadListsUsed.set(1);
+                //threadListsUsed.set(threadListsUsed.get() + 1);
             }
         } catch (Exception e) {
             LOG.error(e);
@@ -52,6 +55,15 @@ public class SniffyProviderListUtil {
         // now let us verify that Sniffy JSSE provider interceptor was installed correctly
 
         Providers.beginThreadProviderList(ProviderList.newList());
+        try {
+            LOG.trace("Providers.threadListsUsed = " + $(Providers.class).getStaticField("threadListsUsed").get());
+            LOG.trace("Providers.threadLists = " + $(Providers.class).getStaticField("threadLists").get());
+            LOG.trace("Providers.threadLists.get() = " + $(Providers.class).<ThreadLocal<ProviderList>>getStaticField("threadLists").get().get());
+            LOG.trace("Providers.providerList = " + $(Providers.class).getStaticField("providerList").get());
+        } catch (Exception e) {
+            assert false : e;
+        }
+
         ProviderList threadProviderList = Providers.getThreadProviderList();
         LOG.trace("Providers.getThreadProviderList() = " + threadProviderList);
         if (null == threadProviderList) {
