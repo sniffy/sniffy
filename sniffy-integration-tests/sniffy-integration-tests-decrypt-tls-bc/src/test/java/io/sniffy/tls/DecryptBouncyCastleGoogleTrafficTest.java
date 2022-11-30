@@ -37,6 +37,7 @@ public class DecryptBouncyCastleGoogleTrafficTest {
         Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
 
         assertEquals("BCJSSE", SSLContext.getInstance("Default").getProvider().getName());
+        assertNotNull(SSLContext.getInstance("TLSv1", "BCJSSE"));
 
         SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
