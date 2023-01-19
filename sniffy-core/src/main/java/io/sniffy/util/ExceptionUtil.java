@@ -1,5 +1,7 @@
 package io.sniffy.util;
 
+import io.sniffy.reflection.Unsafe;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -28,7 +30,7 @@ public class ExceptionUtil {
             Class<Throwable> throwableClass = forName(className);
             Constructor<Throwable> constructor = throwableClass.getConstructor(String.class);
             Throwable throwable = constructor.newInstance(message);
-            throwException(throwable);
+            Unsafe.throwException(throwable);
             return true;
         } catch (ClassNotFoundException e) {
             return false;
@@ -48,15 +50,27 @@ public class ExceptionUtil {
         return (Class<Throwable>)Class.forName(className);
     }
 
-    // TODO: unwind InvocationTargetException
-    public static RuntimeException throwException(Throwable e) {
-        ExceptionUtil.<RuntimeException>throwAny(e);
-        return new RuntimeException(e);
+    public static RuntimeException throwTargetException(InvocationTargetException ite) {
+
+        Throwable targetException = ite.getTargetException();
+
+        if (null == targetException) {
+            targetException = ite;
+        }
+
+        throw Unsafe.throwException(targetException);
+
     }
 
-    @SuppressWarnings("unchecked")
-    private static <E extends Throwable> void throwAny(Throwable e) throws E {
-        throw (E)e;
+    public static RuntimeException processException(Throwable e) {
+        if (null != e) {
+            if (e instanceof InvocationTargetException) {
+                throw throwTargetException((InvocationTargetException) e);
+            } else {
+                throw Unsafe.throwException(e);
+            }
+        }
+        return new RuntimeException(e);
     }
 
     public static boolean addSuppressed(Throwable e, Throwable suppressed) {
@@ -80,29 +94,6 @@ public class ExceptionUtil {
             sb.append(LINE_SEPARATOR).append("\tat ").append(traceElement);
         }
         return sb.toString();
-    }
-
-    public static void throwTargetException(InvocationTargetException ite) {
-
-        Throwable targetException = ite.getTargetException();
-
-        if (null == targetException) {
-            targetException = ite;
-        }
-
-        throwException(targetException);
-
-    }
-
-    public static RuntimeException processException(Throwable e) {
-        if (null != e) {
-            if (e instanceof InvocationTargetException) {
-                throwTargetException((InvocationTargetException) e);
-            } else {
-                throwException(e);
-            }
-        }
-        return new RuntimeException(e);
     }
 
 }

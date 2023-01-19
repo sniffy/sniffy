@@ -5,7 +5,6 @@ import io.qameta.allure.Issue;
 import io.sniffy.BaseTest;
 import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
-import io.sniffy.socket.Protocol;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Before;
@@ -40,7 +39,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.sniffy.servlet.SniffyFilter.*;
-import static io.sniffy.servlet.SniffyRequestProcessor.SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

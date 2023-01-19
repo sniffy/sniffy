@@ -11,6 +11,7 @@ import java.util.Set;
 /**
  * @since 3.1.14
  */
+@Deprecated
 public class NoOpSelector extends AbstractSelector {
 
     public final static NoOpSelector INSTANCE = new NoOpSelector();

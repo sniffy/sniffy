@@ -1,12 +1,11 @@
 package io.sniffy;
 
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.SnifferSocketImplFactory;
-import io.sniffy.util.JVMUtil;
 import io.sniffy.util.OSUtil;
 import org.junit.Test;
 
-import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URL;
@@ -35,9 +34,9 @@ public class SniffySocketCompatibilityTest {
 
                     break;
                 } catch (IOException e) {
-                    if (e.getMessage().contains("An established connection was aborted by the software in your host machine") && OSUtil.isWindows() && (JVMUtil.getVersion() == 14 || JVMUtil.getVersion() == 13)) {
+                    if (e.getMessage().contains("An established connection was aborted by the software in your host machine") && OSUtil.isWindows() && (Unsafe.tryGetJavaVersion() == 14 || Unsafe.tryGetJavaVersion() == 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Windows; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.tryGetJavaVersion() + " running on Windows; retrying in 2 seconds");
                         Thread.sleep(2000);
                     } else {
                         throw e;

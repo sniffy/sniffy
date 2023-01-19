@@ -2,32 +2,38 @@ package io.sniffy.socket;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.util.*;
+import io.sniffy.reflection.Unsafe;
+import io.sniffy.reflection.constructor.UnresolvedZeroArgsClassConstructorRef;
+import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
+import io.sniffy.reflection.method.UnresolvedStaticNonVoidMethodRef;
+import io.sniffy.util.StackTraceExtractor;
+import io.sniffy.util.StringUtil;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketImpl;
 import java.net.SocketImplFactory;
+
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1
  */
 public class SnifferSocketImplFactory implements SocketImplFactory {
 
-    private static final Polyglog LOG = PolyglogFactory.log(SnifferSocketImplFactory.class);
+    private final static Polyglog LOG = PolyglogFactory.log(SnifferSocketImplFactory.class);
 
-    private static final Polyglog CONSTRUCTOR_VERBOSE_LOG = PolyglogFactory.oneTimeLog(SnifferSocketImplFactory.class);
+    private final static Polyglog CONSTRUCTOR_VERBOSE_LOG = PolyglogFactory.oneTimeLog(SnifferSocketImplFactory.class);
 
-    // @VisibleForTesting
-    protected final static Constructor<? extends SocketImpl> defaultSocketImplClassConstructor =
-            getDefaultSocketImplClassConstructor();
+    protected final static UnresolvedStaticFieldRef<SocketImplFactory> factoryFieldRef = $(Socket.class).getStaticField("factory");
 
     // @VisibleForTesting
-    protected final static Method defaultSocketImplFactoryMethod =
-            getDefaultSocketImplFactoryMethod();
+    protected final static UnresolvedZeroArgsClassConstructorRef<? extends SocketImpl> defaultSocksSocketImplClassConstructor =
+            $("java.net.SocksSocketImpl", SocketImpl.class).tryGetConstructor();
+
+    // @VisibleForTesting
+    protected final static UnresolvedStaticNonVoidMethodRef<SocketImpl> createPlatformSocketImplMethodRef =
+            $(SocketImpl.class).getStaticMethod(SocketImpl.class, "createPlatformSocketImpl", Boolean.TYPE);
 
     private volatile static SocketImplFactory previousSocketImplFactory;
 
@@ -39,29 +45,22 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
      * @since 3.1
      */
     public static void install() throws IOException {
-
-        //noinspection TryWithIdenticalCatches
         try {
 
-            SocketImplFactory currentSocketImplFactory = ReflectionUtil.getField(Socket.class, null, "factory");
+            assert createPlatformSocketImplMethodRef.isResolved() || defaultSocksSocketImplClassConstructor.isResolved();
+            assert factoryFieldRef.isResolved();
 
-            LOG.info("Original SocketImplFactory was " + currentSocketImplFactory);
-
-            if (null == currentSocketImplFactory || !SnifferSocketImplFactory.class.equals(currentSocketImplFactory.getClass())) {
-                if (!ReflectionUtil.setField(Socket.class, null, "factory", null)) {
-                    throw new IOException("Failed to uninstall SnifferSocketImplFactory");
+            synchronized (Socket.class) {
+                SocketImplFactory currentSocketImplFactory = factoryFieldRef.get();
+                LOG.info("Original SocketImplFactory was " + currentSocketImplFactory);
+                if (null == currentSocketImplFactory || !SnifferSocketImplFactory.class.equals(currentSocketImplFactory.getClass())) {
+                    SnifferSocketImplFactory snifferSocketImplFactory = new SnifferSocketImplFactory();
+                    LOG.info("SocketImplFactory set to " + snifferSocketImplFactory);
+                    factoryFieldRef.set(snifferSocketImplFactory);
+                    previousSocketImplFactory = currentSocketImplFactory;
                 }
-                SnifferSocketImplFactory snifferSocketImplFactory = new SnifferSocketImplFactory();
-                Socket.setSocketImplFactory(snifferSocketImplFactory);
-
-                LOG.info("SocketImplFactory set to " + snifferSocketImplFactory);
-
-                previousSocketImplFactory = currentSocketImplFactory;
             }
-        } catch (IllegalAccessException e) {
-            LOG.error(e);
-            throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
-        } catch (NoSuchFieldException e) {
+        } catch (Exception e) {
             LOG.error(e);
             throw new IOException("Failed to initialize SnifferSocketImplFactory", e);
         }
@@ -79,17 +78,22 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
         LOG.info("Uninstalling SniffySocketImplFactory - replacing with " + previousSocketImplFactory);
 
-        if (!ReflectionUtil.setField(Socket.class, null, "factory", previousSocketImplFactory)) {
-            LOG.error("Couldn't uninstall Sniffy SocketImplFactory");
-            throw new IOException("Failed to uninstall SnifferSocketImplFactory");
+        try {
+            synchronized (Socket.class) {
+                factoryFieldRef.set(previousSocketImplFactory);
+            }
+        } catch (Exception e) {
+            LOG.error(e);
+            throw new IOException("Failed to uninstall SnifferSocketImplFactory", e);
         }
+
     }
 
     @Override
     public SocketImpl createSocketImpl() {
         SocketImpl socketImpl = isServerSocketAccept() ? newSocketImpl(false) :
                 isServerSocket() ? newSocketImpl(true) :
-                        JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
+                        Unsafe.tryGetJavaVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
                                 new CompatSnifferSocketImpl(newSocketImpl(false));
         LOG.trace("Created SocketImpl " + socketImpl);
         // TODO: optimize polyglog to support lazy evaluation in order not to call StackTraceExtractor.getStackTraceAsString() each time
@@ -121,78 +125,29 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
 
     private static SocketImpl newSocketImpl(boolean serverSocket) {
 
-        SocketImpl originalSocketImpl = null;
-
         if (null != previousSocketImplFactory) {
             LOG.trace("Creating SocketImpl delegate using original SocketImplFactory " + previousSocketImplFactory);
-            originalSocketImpl = previousSocketImplFactory.createSocketImpl();
-        }
-
-        if (null != defaultSocketImplClassConstructor) {
+            return previousSocketImplFactory.createSocketImpl();
+        } else if (createPlatformSocketImplMethodRef.isResolved()) {
             try {
-                LOG.trace("Creating SocketImpl delegate using original SocketImpl constructor " + defaultSocketImplClassConstructor);
-                originalSocketImpl = defaultSocketImplClassConstructor.newInstance();
+                LOG.trace("Creating SocketImpl delegate using original SocketImpl factory method " + createPlatformSocketImplMethodRef + " with argument serverSocket=" + serverSocket);
+                return createPlatformSocketImplMethodRef.invoke(serverSocket);
             } catch (Exception e) {
                 LOG.error(e);
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
-        }
-
-        if (null != defaultSocketImplFactoryMethod) {
-            //noinspection TryWithIdenticalCatches
+        } else if (defaultSocksSocketImplClassConstructor.isResolved()) {
             try {
-                LOG.trace("Creating SocketImpl delegate using original SocketImpl factory method " + defaultSocketImplFactoryMethod + " with argument serverSocket=" + serverSocket);
-                originalSocketImpl = (SocketImpl) defaultSocketImplFactoryMethod.invoke(null, serverSocket);
-            } catch (IllegalAccessException e) {
+                LOG.trace("Creating SocketImpl delegate using original SocketImpl constructor " + defaultSocksSocketImplClassConstructor);
+                return defaultSocksSocketImplClassConstructor.newInstance();
+            } catch (Exception e) {
                 LOG.error(e);
-                throw ExceptionUtil.throwException(e);
-            } catch (InvocationTargetException e) {
-                LOG.error(e);
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
+        } else {
+            throw new AssertionError("Couldn't create original SocketImpl instance");
         }
 
-        return originalSocketImpl;
-
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends SocketImpl> getDefaultSocketImplClass() throws ClassNotFoundException {
-        return (Class<? extends SocketImpl>) Class.forName("java.net.SocksSocketImpl");
-    }
-
-    private static Constructor<? extends SocketImpl> getDefaultSocketImplClassConstructor() {
-        Constructor<? extends SocketImpl> constructor;
-        //noinspection TryWithIdenticalCatches
-        try {
-            constructor = getDefaultSocketImplClass().getDeclaredConstructor();
-        } catch (NoSuchMethodException e) {
-            return null;
-        } catch (ClassNotFoundException e) {
-            return null;
-        }
-
-        ReflectionUtil.setAccessible(constructor);
-
-        return constructor;
-    }
-
-    private static Class<?> getSocketImplClass() throws ClassNotFoundException {
-        return Class.forName("java.net.SocketImpl");
-    }
-
-    private static Method getDefaultSocketImplFactoryMethod() {
-        Method factoryMethod;
-        //noinspection TryWithIdenticalCatches
-        try {
-            factoryMethod = getSocketImplClass().getDeclaredMethod("createPlatformSocketImpl", Boolean.TYPE);
-        } catch (NoSuchMethodException e) {
-            return null;
-        } catch (ClassNotFoundException e) {
-            return null;
-        }
-        ReflectionUtil.setAccessible(factoryMethod);
-        return factoryMethod;
     }
 
 }

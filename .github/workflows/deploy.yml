@@ -10,6 +10,7 @@ on:
 
 jobs:
   smoke-test:
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -49,13 +50,13 @@ jobs:
         if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true -verbose:gc"
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true -verbose:gc"
       - uses: actions/upload-artifact@v2
         with:
           name: surefire-test-report-smoke-test-${{ matrix.java }}-${{ matrix.os }}
@@ -76,17 +77,18 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true -verbose:gc"
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true -verbose:gc"
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
+    timeout-minutes: 30
     runs-on: ubuntu-22.04
     needs:
       - smoke-test
@@ -131,7 +133,9 @@ jobs:
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Resolve dependencies for compatibility tests
-        run: mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+        run: mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qemu || mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qeumu
+      - name: Build with x64 AdoptOpenJDK 11
+        run: mvn -f sniffy-compatibility-tests/pom.xml test -P ci,qemu
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
         uses: docker/build-push-action@v2
@@ -142,6 +146,7 @@ jobs:
           #https://github.com/multiarch/qemu-user-static/issues/128
           push: false
   test-ibm-j9:
+    timeout-minutes: 30
     needs:
       - smoke-test
     runs-on: ubuntu-22.04
@@ -182,6 +187,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   test-matrix:
+    timeout-minutes: 30
     needs:
       - smoke-test
     runs-on: ${{ matrix.os }}
@@ -233,7 +239,7 @@ jobs:
         if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
-          MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
+          MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1C -B clean package --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3' '-Dhttp.keepAlive=false' '-Dmaven.wagon.http.pool=false'
         if: matrix.os == 'windows-2022'
@@ -281,6 +287,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   compatibility-matrix:
+    timeout-minutes: 30
     needs:
       - smoke-test
     runs-on: ${{ matrix.os }}
@@ -369,11 +376,18 @@ jobs:
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
         shell: bash
         if: matrix.os != 'macOS-12'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: surefire-test-report-compatibility-test-Java1.6-${{ matrix.os }}
+          path: |
+            **/target/surefire-reports/
+            **/target/hs_err*.*
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
         if: matrix.os != 'macOS-12'
   analyze:
+    timeout-minutes: 30
     needs:
       - smoke-test
     name: Analyze

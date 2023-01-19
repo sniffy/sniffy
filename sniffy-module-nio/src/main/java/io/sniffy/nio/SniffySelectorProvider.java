@@ -2,8 +2,8 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
 import io.sniffy.util.OSUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
@@ -13,8 +13,8 @@ import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static io.sniffy.util.ExceptionUtil.processException;
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * @since 3.1.7
@@ -53,10 +53,17 @@ public class SniffySelectorProvider extends SelectorProvider {
 
         LOG.info("Setting SelectorProvider to " + sniffySelectorProvider);
 
-        if (ReflectionUtil.setField("java.nio.channels.spi.SelectorProvider$Holder", null, "INSTANCE", sniffySelectorProvider)) {
-            return true;
+        UnresolvedStaticFieldRef<SelectorProvider> instanceFieldRef = $("java.nio.channels.spi.SelectorProvider$Holder").tryGetStaticField("INSTANCE");
+        if (instanceFieldRef.isResolved()) {
+            return instanceFieldRef.trySet(sniffySelectorProvider);
         } else {
-            return ReflectionUtil.setField(SelectorProvider.class, null, "provider", sniffySelectorProvider, "lock");
+            UnresolvedStaticFieldRef<SelectorProvider> providerFieldRef = $(SelectorProvider.class).getStaticField("provider");
+            if (providerFieldRef.isResolved()) {
+                return providerFieldRef.trySet(sniffySelectorProvider);
+            } else {
+                LOG.error("Couldn't initialize SniffySelectorProvider since both java.nio.channels.spi.SelectorProvider$Holder.INSTANCE and java.nio.channels.spi.SelectorProvider.provider are unavailable");
+                return false;
+            }
         }
 
     }
@@ -69,10 +76,17 @@ public class SniffySelectorProvider extends SelectorProvider {
             return false;
         }
 
-        if (ReflectionUtil.setField("java.nio.channels.spi.SelectorProvider$Holder", null, "INSTANCE", previousSelectorProvider)) {
-            return true;
+        UnresolvedStaticFieldRef<SelectorProvider> instanceFieldRef = $("java.nio.channels.spi.SelectorProvider$Holder").tryGetStaticField("INSTANCE");
+        if (instanceFieldRef.isResolved()) {
+            return instanceFieldRef.trySet(previousSelectorProvider);
         } else {
-            return ReflectionUtil.setField(SelectorProvider.class, null, "provider", previousSelectorProvider, "lock");
+            UnresolvedStaticFieldRef<SelectorProvider> providerFieldRef = $(SelectorProvider.class).getStaticField("provider");
+            if (providerFieldRef.isResolved()) {
+                return providerFieldRef.trySet(previousSelectorProvider);
+            } else {
+                LOG.error("Couldn't restore original SelectorProvider since both java.nio.channels.spi.SelectorProvider$Holder.INSTANCE and java.nio.channels.spi.SelectorProvider.provider are unavailable");
+                return false;
+            }
         }
 
     }
@@ -91,6 +105,7 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public Pipe openPipe() throws IOException {
+        // TODO: can we handle it better?
         return OSUtil.isWindows() && StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.SniffySelectorProvider", "openSelector") ?
                 delegate.openPipe() :
                 new SniffyPipe(this, delegate.openPipe());
@@ -107,6 +122,7 @@ public class SniffySelectorProvider extends SelectorProvider {
      */
     @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
+        // TODO: can we handle it better?
         return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
                 delegate.openServerSocketChannel() :
                 new SniffyServerSocketChannel(this, delegate.openServerSocketChannel());
@@ -118,6 +134,7 @@ public class SniffySelectorProvider extends SelectorProvider {
      */
     @Override
     public SocketChannel openSocketChannel() throws IOException {
+        // TODO: can we handle it better?
         return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
                 delegate.openSocketChannel() :
                 new SniffySocketChannel(this, delegate.openSocketChannel());
@@ -142,17 +159,13 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         try {
+            // TODO: can we handle it better?
             return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
-                    invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
-                            ProtocolFamily.class, family,
-                            SocketChannel.class
-                    ) :
+                    $(SelectorProvider.class).getNonStaticMethod(SocketChannel.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
+                    :
                     new SniffySocketChannel(
                             this,
-                            invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
-                                    ProtocolFamily.class, family,
-                                    SocketChannel.class
-                            )
+                            $(SelectorProvider.class).getNonStaticMethod(SocketChannel.class, "openSocketChannel", ProtocolFamily.class).invoke(delegate, family)
                     );
         } catch (Exception e) {
             throw processException(e);
@@ -164,11 +177,9 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
         try {
+            // TODO: shall we check for Pipe in stacktrace as well?
             return new SniffyServerSocketChannel(this,
-                    invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
-                        ProtocolFamily.class, family,
-                        ServerSocketChannel.class
-                )
+                $(SelectorProvider.class).getNonStaticMethod(ServerSocketChannel.class, "openServerSocketChannel", ProtocolFamily.class).invoke(delegate, family)
             );
         } catch (Exception e) {
             throw processException(e);

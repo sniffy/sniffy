@@ -1,7 +1,6 @@
 package io.sniffy.tls;
 
-import io.sniffy.util.JVMUtil;
-import io.sniffy.util.ReflectionUtil;
+import io.sniffy.reflection.Unsafe;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,7 +14,6 @@ import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,6 +25,7 @@ import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import static io.sniffy.reflection.Unsafe.$;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
@@ -209,17 +208,17 @@ public class SSLSocketAdapterMockitoTest {
 
     @Test
     public void testGetApplicationProtocol() throws Exception {
-        if (JVMUtil.getVersion() >= 9) {
-            when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getApplicationProtocol", String.class)).thenReturn("TLS");
-            assertEquals("TLS", ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getApplicationProtocol", String.class));
+        if (Unsafe.tryGetJavaVersion() >= 9) {
+            when($(SSLSocket.class).getNonStaticMethod(String.class, "getApplicationProtocol").invoke(delegate)).thenReturn("TLS");
+            assertEquals("TLS", sslSocketAdapter.getApplicationProtocol());
         }
     }
 
     @Test
     public void testGetHandshakeApplicationProtocol() throws Exception {
-        if (JVMUtil.getVersion() >= 9) {
-            when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocol", String.class)).thenReturn("TLS");
-            assertEquals("TLS", ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getHandshakeApplicationProtocol", String.class));
+        if (Unsafe.tryGetJavaVersion() >= 9) {
+            when($(SSLSocket.class).getNonStaticMethod(String.class, "getHandshakeApplicationProtocol").invoke(delegate)).thenReturn("TLS");
+            assertEquals("TLS", sslSocketAdapter.getHandshakeApplicationProtocol());
         }
     }
 
@@ -231,21 +230,18 @@ public class SSLSocketAdapterMockitoTest {
 
     @Test
     public void testSetHandshakeApplicationProtocolSelector() throws Exception {
-        if (JVMUtil.getVersion() >= 9) {
-            ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "setHandshakeApplicationProtocolSelector", BiFunction.class, selectorMock, Void.class);
-            ReflectionUtil.invokeMethod(SSLSocket.class, verify(delegate), "setHandshakeApplicationProtocolSelector", BiFunction.class, selectorCaptor.capture(), Void.class);
+        if (Unsafe.tryGetJavaVersion() >= 9) {
+            sslSocketAdapter.setHandshakeApplicationProtocolSelector(selectorMock);
+            $(SSLSocket.class).getNonStaticMethod("setHandshakeApplicationProtocolSelector", BiFunction.class).invoke(verify(delegate), selectorCaptor.capture());
             assertEquals(selectorMock, selectorCaptor.getValue());
         }
     }
 
     @Test
     public void testGetHandshakeApplicationProtocolSelector() throws Exception {
-        if (JVMUtil.getVersion() >= 9) {
-            when(ReflectionUtil.invokeMethod(SSLSocket.class, delegate, "getHandshakeApplicationProtocolSelector", BiFunction.class)).thenReturn(selectorMock);
-            //noinspection unchecked
-            BiFunction<SSLSocket, List<String>, String> selector = (BiFunction<SSLSocket, List<String>, String>)
-                    ReflectionUtil.invokeMethod(SSLSocket.class, sslSocketAdapter, "getHandshakeApplicationProtocolSelector", BiFunction.class);
-            assertEquals(selectorMock, selector);
+        if (Unsafe.tryGetJavaVersion() >= 9) {
+            when($(SSLSocket.class).getNonStaticMethod(BiFunction.class, "getHandshakeApplicationProtocolSelector").invoke(delegate)).thenReturn(selectorMock);
+            assertEquals(selectorMock, sslSocketAdapter.getHandshakeApplicationProtocolSelector());
         }
     }
 

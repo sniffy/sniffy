@@ -87,7 +87,7 @@ public class SniffyConfigurationTest {
         // default value
         System.getProperties().remove("io.sniffy.monitorSocket");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertFalse(sniffyConfiguration.isMonitorSocket());
+        assertTrue(sniffyConfiguration.isMonitorSocket());
 
     }
 
@@ -117,7 +117,7 @@ public class SniffyConfigurationTest {
         // default value
         System.getProperties().remove("io.sniffy.monitorNio");
         sniffyConfiguration.loadSniffyConfiguration();
-        assertFalse(sniffyConfiguration.isMonitorNio());
+        assertTrue(sniffyConfiguration.isMonitorNio());
 
     }
 

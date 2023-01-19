@@ -10,7 +10,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -131,7 +130,10 @@ public class EchoServerRule extends ExternalResource implements Runnable {
                 socketOutputStreamWriterThread.start();
             }
         } catch (SocketException e) {
-            if (null == e.getMessage() || !e.getMessage().toLowerCase().matches("socket.*closed")) {
+            if (null == e.getMessage() || (
+                    !e.getMessage().toLowerCase().matches("socket.*closed") &&
+                    !e.getMessage().toLowerCase().matches(".*interrupted.*accept.*")
+            )) {
                 e.printStackTrace();
             }
         } catch (IOException e) {

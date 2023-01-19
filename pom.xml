@@ -65,6 +65,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>animal-sniffer-annotations</artifactId>
             <optional>true</optional>
@@ -125,6 +131,9 @@
                         </goals>
                         <configuration>
                             <append>true</append>
+                            <includes>
+                                <include>io.sniffy.*</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>
@@ -286,13 +295,13 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-gpg-plugin</artifactId>
-                    <version>1.6</version>
+                    <version>3.0.1</version>
                 </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.1.0</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.codehaus.mojo</groupId>
@@ -339,7 +348,7 @@
                         <skip>true</skip>
                         <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                         <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
-                        <argLine>-Xmx1024m ${argLine}</argLine>
+                        <argLine>-Xmx1024m ${argLine} -esa -ea -Djava.security.debug=jca</argLine>
                         <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                     </configuration>
                     <executions>

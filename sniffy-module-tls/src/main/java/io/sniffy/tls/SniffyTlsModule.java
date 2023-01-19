@@ -2,10 +2,9 @@ package io.sniffy.tls;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.util.JVMUtil;
-import io.sniffy.util.ReflectionUtil;
+import io.sniffy.reflection.Unsafe;
 
-import java.lang.reflect.Method;
+import static io.sniffy.reflection.Unsafe.$;
 
 public class SniffyTlsModule {
 
@@ -13,24 +12,9 @@ public class SniffyTlsModule {
 
     public static void initialize() {
 
-        if (JVMUtil.getVersion() >= 16) {
-
-            LOG.debug("Java 16+ detected - opening module sun.security.jca");
-
-            try {
-                Class<?> moduleClass = Class.forName("java.lang.Module");
-                Method implAddOpensMethod = moduleClass.getDeclaredMethod("implAddOpens", String.class);
-                ReflectionUtil.setAccessible(implAddOpensMethod);
-
-                Class<?> selChImplClass = Class.forName("sun.security.jca.Providers");
-                //noinspection JavaReflectionMemberAccess
-                Method getModuleMethod = Class.class.getMethod("getModule");
-
-                Object module = getModuleMethod.invoke(selChImplClass);
-                implAddOpensMethod.invoke(module, "sun.security.jca");
-
-            } catch (Exception e) {
-                LOG.error(e);
+        if (Unsafe.tryGetJavaVersion() >= 16) {
+            if (!$("sun.security.jca.Providers").tryGetModuleRef().tryAddOpens("sun.security.jca")) {
+                LOG.error("Couldn't open module with sun.security.jca.Providers class");
             }
         }
 

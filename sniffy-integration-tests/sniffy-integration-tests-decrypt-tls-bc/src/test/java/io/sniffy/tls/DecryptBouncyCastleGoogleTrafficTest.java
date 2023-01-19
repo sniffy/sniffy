@@ -2,10 +2,11 @@ package io.sniffy.tls;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.log.PolyglogLevel;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
-import io.sniffy.util.JVMUtil;
 import io.sniffy.util.OSUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -16,9 +17,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -34,16 +37,39 @@ public class DecryptBouncyCastleGoogleTrafficTest {
         Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
 
         assertEquals("BCJSSE", SSLContext.getInstance("Default").getProvider().getName());
+        assertNotNull(SSLContext.getInstance("TLSv1", "BCJSSE"));
 
+        SniffyConfiguration.INSTANCE.setLogLevel(PolyglogLevel.TRACE);
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
         SniffyConfiguration.INSTANCE.setMonitorSocket(true);
         SniffyConfiguration.INSTANCE.setPacketMergeThreshold(10000);
         Sniffy.initialize();
 
-        SSLContext instance = SSLContext.getInstance("TLSv1", "BCJSSE");
+        SSLContext instance = null;
+        try {
+            instance = SSLContext.getInstance("TLSv1", "BCJSSE");
+        } catch (NoSuchProviderException e) {
+            assert false : "Couldn't find provider BCJSSE; actual list was " + Arrays.toString(Security.getProviders());
+        }
         instance.init(null, null, new SecureRandom());
         assertTrue(instance.getSocketFactory() instanceof SniffySSLSocketFactory);
 
+        /*
+        2022-11-30 12:19:56.783+0100 [INFO] [main] [SniffySecurityUtil] Querying original security providers...
+2022-11-30 12:19:56.783+0100 [TRACE] [main] [SniffySecurityUtil] Providers.threadListsUsed = 1
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [SniffySecurityUtil] Providers.threadLists = io.sniffy.tls.ProvidersWrapper@6f1de4c7
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [ProvidersWrapper] ProvidersWrapper.get()
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [ProvidersWrapper] Returning original system provider list [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [SniffySecurityUtil] Providers.threadLists.get() = [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+2022-11-30 12:19:56.784+0100 [TRACE] [main] [SniffySecurityUtil] Providers.providerList = [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [ProvidersWrapper] ProvidersWrapper.get()
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [ProvidersWrapper] Returning original thread provider list null
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [SniffySecurityUtil] Providers.getThreadProviderList() = null
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [SniffySecurityUtil] Providers.getSystemProviderList() = [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+2022-11-30 12:19:56.785+0100 [TRACE] [main] [ProvidersWrapper] ProvidersWrapper.get()
+2022-11-30 12:19:56.786+0100 [TRACE] [main] [ProvidersWrapper] Returning original system provider list [org.bouncycastle.jsse.provider.BouncyCastleJsseProvider, org.bouncycastle.jce.provider.BouncyCastleProvider, sun.security.provider.Sun, sun.security.rsa.SunRsaSign, sun.security.ec.SunEC, com.sun.net.ssl.internal.ssl.Provider, com.sun.crypto.provider.SunJCE, sun.security.jgss.SunProvider, com.sun.security.sasl.Provider, org.jcp.xml.dsig.internal.dom.XMLDSigRI, sun.security.smartcardio.SunPCSC, sun.security.mscapi.SunMSCAPI]
+
+         */
         Provider sniffyProvider = SSLContext.getInstance("Default").getProvider();
         assertEquals("Sniffy-BCJSSE", sniffyProvider.getName());
 
@@ -66,13 +92,13 @@ public class DecryptBouncyCastleGoogleTrafficTest {
                     if ((
                             e.getMessage().contains("An established connection was aborted by the software in your host machine") ||
                                     e.getMessage().contains("handshake_failure(40)")
-                    ) && OSUtil.isWindows() && (JVMUtil.getVersion() == 14 || JVMUtil.getVersion() == 13)) {
+                    ) && OSUtil.isWindows() && (Unsafe.tryGetJavaVersion() == 14 || Unsafe.tryGetJavaVersion() == 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Windows; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.tryGetJavaVersion() + " running on Windows; retrying in 2 seconds");
                         Thread.sleep(2000);
-                    } else if (e.getMessage().contains("Broken pipe") && OSUtil.isMac() && (JVMUtil.getVersion() >= 13)) {
+                    } else if (e.getMessage().contains("Broken pipe") && OSUtil.isMac() && (Unsafe.tryGetJavaVersion() >= 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Mac OS; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.tryGetJavaVersion() + " running on Mac OS; retrying in 2 seconds");
                         Thread.sleep(2000);
                     } else {
                         throw e;

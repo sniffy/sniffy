@@ -1,36 +1,27 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.JVMUtil;
-import io.sniffy.util.ReflectionUtil;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 
-import java.lang.reflect.Method;
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1.7
  */
 public class SniffySelectorProviderModule {
 
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySelectorProviderModule.class);
+
     public static void initialize() {
 
-        if (JVMUtil.getVersion() <= 7) return;
+        if (Unsafe.tryGetJavaVersion() <= 7) return;
 
-        if (JVMUtil.getVersion() == 8 && Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
+        if (Unsafe.tryGetJavaVersion() == 8 && Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
 
-        if (JVMUtil.getVersion() >= 16) {
-
-            try {
-                Class<?> moduleClass = Class.forName("java.lang.Module");
-                Method implAddOpensMethod = moduleClass.getDeclaredMethod("implAddOpens", String.class);
-                ReflectionUtil.setAccessible(implAddOpensMethod);
-
-                Class<?> selChImplClass = Class.forName("sun.nio.ch.SelChImpl");
-                Method getModuleMethod = Class.class.getMethod("getModule");
-
-                Object module = getModuleMethod.invoke(selChImplClass);
-                implAddOpensMethod.invoke(module, "sun.nio.ch");
-
-            } catch (Exception e) {
-                e.printStackTrace();
+        if (Unsafe.tryGetJavaVersion() >= 16) {
+            if (!$("sun.nio.ch.SelChImpl").tryGetModuleRef().tryAddOpens("sun.nio.ch")) {
+                LOG.error("Couldn't open module with sun.nio.ch.SelChImpl class");
             }
         }
 

@@ -1,5 +1,6 @@
 package io.sniffy.util;
 
+import io.sniffy.reflection.Unsafe;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ public class ExceptionUtilTest {
 
     @Test(expected = IOException.class)
     public void testThrowException() {
-        ExceptionUtil.throwException(new IOException());
+        Unsafe.throwException(new IOException());
     }
 
     @Test

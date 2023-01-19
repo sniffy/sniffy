@@ -1,9 +1,11 @@
 package io.sniffy.nio.compat;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.nio.NioDelegateHelper;
 import io.sniffy.nio.SelectableChannelWrapper;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.OSUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.ServerSocketChannelDelegate;
@@ -14,13 +16,8 @@ import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
-
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
 
 /**
  * @since 3.1.7
@@ -28,10 +25,9 @@ import static io.sniffy.util.ReflectionUtil.setField;
 // TODO: test properly and come up with a strategy for server sockets and server channels
 public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate implements SelectableChannelWrapper<ServerSocketChannel> {
 
-    private final ServerSocketChannel delegate;
+    private static final Polyglog LOG = PolyglogFactory.log(CompatSniffyServerSocketChannel.class);
 
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private volatile boolean hasCancelledKeys;
+    private final ServerSocketChannel delegate;
 
     public CompatSniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) {
         super(provider, delegate);
@@ -41,11 +37,6 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
     @Override
     public ServerSocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public void keyCancelled() {
-        hasCancelledKeys = true;
     }
 
     @Override
@@ -64,7 +55,12 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
 
     @Override
     public ServerSocket socket() {
-        return delegate.socket();
+        try {
+            return new CompatSniffyServerSocket(delegate.socket(), this);
+        } catch (IOException e) {
+            // LOG.error(e); // TODO: uncomment
+            return delegate.socket();
+        }
     }
 
     @Override
@@ -77,6 +73,7 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
         }
 
         // Windows Selector is implemented using a pair of sockets which are explicitly cast and do not work with Sniffy
+        // TODO: come up with something better
         return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
                 socketChannel :
                 new CompatSniffySocketChannelAdapter(provider(), socketChannel);
@@ -90,35 +87,13 @@ public class CompatSniffyServerSocketChannel extends ServerSocketChannelDelegate
 
     @Override
     public void implCloseSelectableChannel() {
-        try {
-
-            Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateCloseLock) {
-                setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
-            }
-
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        }
+        NioDelegateHelper.implCloseSelectableChannel(delegate);
     }
 
     @Override
     public void implConfigureBlocking(boolean block) {
         try {
-
-            Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateRegLock) {
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                    setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                }
-            }
-
+            delegate.configureBlocking(block);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }

@@ -1,19 +1,18 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.ReflectionUtil;
-import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.field.UnresolvedStaticFieldRef;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.spi.AsynchronousChannelProvider;
-import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+
+import static io.sniffy.reflection.Unsafe.$;
 
 // TODO: this functionality is available in java 1.7+ only - make sure it is safe
 // TODO: integrate with Sniffy; currently it is not used
@@ -22,87 +21,59 @@ import java.util.concurrent.ThreadFactory;
  */
 public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvider {
 
+    private static final Polyglog LOG = PolyglogFactory.log(SniffyAsynchronousChannelProvider.class);
+
+    private static volatile AsynchronousChannelProvider previousAsynchronousSelectorProvider;
+
     private final AsynchronousChannelProvider delegate;
 
     public SniffyAsynchronousChannelProvider(AsynchronousChannelProvider delegate) {
         this.delegate = delegate;
     }
 
-    public static void install() {
+    public static boolean install() {
         AsynchronousChannelProvider delegate = AsynchronousChannelProvider.provider();
 
+        LOG.info("Original AsynchronousChannelProvider was " + delegate);
+
         if (null != delegate && SniffyAsynchronousChannelProvider.class.equals(delegate.getClass())) {
-            return;
+            return true;
         }
 
-        try {
-            Class<?> holderClass = Class.forName("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder");
-
-            Field instanceField = holderClass.getDeclaredField("provider");
-            //instanceField.setAccessible(true);
-            ReflectionUtil.setAccessible(instanceField);
-
-            Field modifiersField = getModifiersField();
-            //modifiersField.setAccessible(true);
-            ReflectionUtil.setAccessible(modifiersField);
-            modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
-
-            instanceField.set(null, new SniffyAsynchronousChannelProvider(delegate));
-
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        if (null == previousAsynchronousSelectorProvider && !SniffyAsynchronousChannelProvider.class.equals(delegate.getClass())) {
+            previousAsynchronousSelectorProvider = delegate;
         }
+
+        SniffyAsynchronousChannelProvider sniffyAsynchronousSelectorProvider = new SniffyAsynchronousChannelProvider(delegate);
+
+        UnresolvedStaticFieldRef<AsynchronousChannelProvider> instanceFieldRef =
+                $("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder").tryGetStaticField("provider");
+        if (instanceFieldRef.isResolved()) {
+            return instanceFieldRef.trySet(sniffyAsynchronousSelectorProvider);
+        } else {
+            LOG.error("Couldn't initialize SniffyAsynchronousChannelProvider since java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder.provider is unavailable");
+            return false;
+        }
+
     }
 
-    public static void uninstall() {
+    public static boolean uninstall() {
 
-        // TODO: save default to static field and restore here
+        LOG.info("Restoring original SelectorProvider " + previousAsynchronousSelectorProvider);
 
-        /*try {
-            Class<?> holderClass = Class.forName("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder");
-
-            Field instanceField = holderClass.getDeclaredField("provider");
-            instanceField.setAccessible(true);
-
-            Field modifiersField = getModifiersField();
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
-
-            instanceField.set(null, delegate);
-
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }*/
-    }
-
-    @IgnoreJRERequirement
-    private static Field getModifiersField() throws NoSuchFieldException {
-        try {
-            return Field.class.getDeclaredField("modifiers");
-        } catch (NoSuchFieldException e) {
-            try {
-                Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-                //getDeclaredFields0.setAccessible(true);
-                ReflectionUtil.setAccessible(getDeclaredFields0);
-                Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
-                for (Field field : fields) {
-                    if ("modifiers".equals(field.getName())) {
-                        return field;
-                    }
-                }
-            } catch (ReflectiveOperationException ex) {
-                e.addSuppressed(ex);
-            }
-            throw e;
+        if (null == previousAsynchronousSelectorProvider) {
+            return false;
         }
+
+        UnresolvedStaticFieldRef<AsynchronousChannelProvider> instanceFieldRef =
+                $("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder").tryGetStaticField("provider");
+        if (instanceFieldRef.isResolved()) {
+            return instanceFieldRef.trySet(previousAsynchronousSelectorProvider);
+        } else {
+            LOG.error("Couldn't initialize SniffyAsynchronousChannelProvider since java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder.provider is unavailable");
+            return false;
+        }
+
     }
 
     @Override

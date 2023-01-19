@@ -1,8 +1,12 @@
 package io.sniffy.nio;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
+import io.sniffy.reflection.clazz.ClassRef;
+import io.sniffy.reflection.method.UnresolvedNonStaticMethodRef;
+import io.sniffy.reflection.method.UnresolvedNonStaticNonVoidMethodRef;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionUtil;
-import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -13,26 +17,29 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1.7
  */
-public class SniffySocketChannelAdapter extends SocketChannel implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
+public class SniffySocketChannelAdapter extends SocketChannelWrapper implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
 
-    // TODO: replace delegate.interruptor as well
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySocketChannelAdapter.class);
+    public static final ClassRef<SelChImpl> SEL_CH_CLASS_REF = $(SelChImpl.class);
+    public static final UnresolvedNonStaticMethodRef<SelChImpl> PARK =
+            SEL_CH_CLASS_REF.getNonStaticMethod("park", Integer.TYPE);
+    public static final UnresolvedNonStaticMethodRef<SelChImpl> PARK_NANOS =
+            SEL_CH_CLASS_REF.getNonStaticMethod("park", Integer.TYPE, Long.TYPE);
+    public static final UnresolvedNonStaticNonVoidMethodRef<SelChImpl, Integer> TRANSLATE_INTEREST_OPS =
+            SEL_CH_CLASS_REF.getNonStaticMethod(Integer.TYPE, "translateInterestOps", Integer.TYPE);
+    public static final UnresolvedNonStaticMethodRef<SelChImpl> TRANSLATE_AND_SET_INTEREST_OPS =
+            SEL_CH_CLASS_REF.getNonStaticMethod("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class);
 
     private final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
-
-    // TODO: based on this property, refresh keys from delegate after invoking select* calls
-    private volatile boolean hasCancelledKeys;
 
     protected SniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider);
@@ -45,12 +52,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return delegate;
     }
 
-    @Override
-    public void keyCancelled() {
-        hasCancelledKeys = true;
-    }
-
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public SocketChannel bind(SocketAddress local) throws IOException {
@@ -58,7 +60,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public <T> SocketChannel setOption(java.net.SocketOption<T> name, T value) throws IOException {
@@ -66,7 +68,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public SocketChannel shutdownInput() throws IOException {
@@ -74,7 +76,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return this;
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public SocketChannel shutdownOutput() throws IOException {
@@ -107,7 +109,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return delegate.finishConnect();
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public SocketAddress getRemoteAddress() throws IOException {
@@ -139,50 +141,37 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         return delegate.getLocalAddress();
     }
 
+    /**
+     * SniffySocketChannelAdapter extends SocketChannel
+     * extends AbstractSelectableChannel extends SelectableChannel
+     * extends AbstractInterruptibleChannel
+     * final AbstractInterruptibleChannel.close() = if (!closed) { close = true; implCloseChannel() }
+     * final AbstractSelectableChannel.implCloseChannel() = { implCloseSelectableChannel(); cancelAllKeysInChannel() }
+     * Sniffy invokes implCloseSelectableChannel() on delegate, and after that cancels the keys from implCloseChannel()
+     */
     @Override
     public void implCloseSelectableChannel() {
-        try {
-
-            Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateCloseLock) {
-                setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseChannel", Void.class);
-            }
-
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        }
+        NioDelegateHelper.implCloseSelectableChannel(delegate);
     }
 
     @Override
     public void implConfigureBlocking(boolean block) {
         try {
-
-            Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateRegLock) {
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                    setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                }
-            }
-
+            delegate.configureBlocking(block);
         } catch (Exception e) {
+            LOG.error(e);
             throw ExceptionUtil.processException(e);
         }
     }
 
     @Override
     @IgnoreJRERequirement
-    @SuppressWarnings({"Since15"})
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     public <T> T getOption(java.net.SocketOption<T> name) throws IOException {
         return delegate.getOption(name);
     }
 
-    @SuppressWarnings("Since15")
+    @SuppressWarnings({"Since15", "RedundantSuppression"})
     @Override
     @IgnoreJRERequirement
     public Set<java.net.SocketOption<?>> supportedOptions() {
@@ -193,13 +182,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     @Override
     public FileDescriptor getFD() {
-
-        if (StackTraceExtractor.hasClassAndMethodInStackTrace("sun.nio.ch.FileChannelImpl", "transferToDirectly")) {
-            return null; // disable zero-copy in order to intercept traffic
-        } else {
-            return selChImplDelegate.getFD();
-        }
-
+        return selChImplDelegate.getFD();
     }
 
     @Override
@@ -222,45 +205,47 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         selChImplDelegate.kill();
     }
 
-    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
+    // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
     // @Override
+    @SuppressWarnings("unused")
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+            TRANSLATE_AND_SET_INTEREST_OPS.invoke(selChImplDelegate, ops, sk);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
+    @SuppressWarnings("unused")
     public int translateInterestOps(int ops) {
         try {
-            return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+            return TRANSLATE_INTEREST_OPS.invoke(selChImplDelegate, ops);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("RedundantThrows")
+    @SuppressWarnings({"RedundantThrows", "unused"})
     public void park(int event, long nanos) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+            PARK_NANOS.invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("RedundantThrows")
+    @SuppressWarnings({"RedundantThrows", "unused"})
     public void park(int event) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+            PARK.invoke(selChImplDelegate, event);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

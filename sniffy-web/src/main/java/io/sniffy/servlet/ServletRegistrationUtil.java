@@ -2,7 +2,10 @@ package io.sniffy.servlet;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRegistration;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @since 3.1.1

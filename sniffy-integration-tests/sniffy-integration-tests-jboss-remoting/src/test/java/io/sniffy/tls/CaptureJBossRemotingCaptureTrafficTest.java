@@ -89,6 +89,8 @@ public class CaptureJBossRemotingCaptureTrafficTest {
     @Rule
     public TestName name = new TestName();
 
+    private static int port = 30123;
+
     @Before
     public void before() throws Exception {
         System.gc();
@@ -110,7 +112,7 @@ public class CaptureJBossRemotingCaptureTrafficTest {
         final SaslAuthenticationFactory saslAuthenticationFactory = builder.build();
         // TODO: iterate with retries on IOException (or SocketException) and store the port in a property
         server = networkServerProvider.createServer(
-                new InetSocketAddress("localhost", 30123),
+                new InetSocketAddress("localhost", port),
                 OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE),
                 saslAuthenticationFactory,
                 SSLContext.getDefault()
@@ -125,6 +127,7 @@ public class CaptureJBossRemotingCaptureTrafficTest {
         System.gc();
         System.runFinalization();
         Logger.getLogger("TEST").infof("Finished test %s", name.getMethodName());
+        port++;
     }
 
     private static final int IO_THREAD_COUNT = (int) (Runtime.getRuntime().availableProcessors() * 1.5);
@@ -156,7 +159,7 @@ public class CaptureJBossRemotingCaptureTrafficTest {
             final Connection connection = AuthenticationContext.empty().with(MatchRule.ALL, AuthenticationConfiguration.empty().useName("bob").usePassword("pass").setSaslMechanismSelector(SaslMechanismSelector.NONE.addMechanism("SCRAM-SHA-256"))).run(new PrivilegedAction<Connection>() {
                 public Connection run() {
                     try {
-                        return clientEndpoint.connect(new URI("remote://localhost:30123"), OptionMap.EMPTY).get();
+                        return clientEndpoint.connect(new URI("remote://localhost:" + port), OptionMap.EMPTY).get();
                     } catch (IOException | URISyntaxException e) {
                         throw new RuntimeException(e);
                     }

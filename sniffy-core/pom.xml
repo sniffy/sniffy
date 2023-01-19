@@ -63,6 +63,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>check-signatures</id>
@@ -91,6 +92,13 @@
                                         <ignore>sun.nio.ch.DatagramChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.ServerSocketChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
+
+                                        <ignore>java.lang.invoke.MethodHandles$Lookup</ignore>
+                                        <ignore>java.lang.invoke.MethodHandles</ignore>
+                                        <ignore>java.lang.invoke.MethodHandle</ignore>
+                                        <ignore>java.lang.invoke.MethodHandle$PolymorphicSignature</ignore>
+                                        <ignore>java.lang.invoke.MethodType</ignore>
+                                        <ignore>java.lang.invoke.WrongMethodTypeException</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>
@@ -106,6 +114,9 @@
                                         <ignore>sun.nio.ch.DatagramChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.ServerSocketChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
+
+                                        <ignore>java.lang.invoke.MethodHandle</ignore>
+                                        <ignore>java.lang.invoke.MethodHandle$PolymorphicSignature</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
                                 </checkSignatureRule>

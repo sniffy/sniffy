@@ -134,10 +134,10 @@ public enum SniffyConfiguration {
                 "io.sniffy.monitorJdbc", "IO_SNIFFY_MONITOR_JDBC", "true"
         ));
         monitorSocket = Boolean.parseBoolean(getProperty(
-                "io.sniffy.monitorSocket", "IO_SNIFFY_MONITOR_SOCKET", "false"
+                "io.sniffy.monitorSocket", "IO_SNIFFY_MONITOR_SOCKET", "true"
         ));
         monitorNio = Boolean.parseBoolean(getProperty(
-                "io.sniffy.monitorNio", "IO_SNIFFY_MONITOR_NIO", "false"
+                "io.sniffy.monitorNio", "IO_SNIFFY_MONITOR_NIO", "true"
         ));
         decryptTls = Boolean.parseBoolean(getProperty(
                 "io.sniffy.decryptTls", "IO_SNIFFY_DECRYPT_TLS", "false"

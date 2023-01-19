@@ -6,11 +6,11 @@ import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.log.PolyglogLevel;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.*;
 import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlUtil;
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.util.JVMUtil;
 import io.sniffy.util.OSUtil;
 
 import java.beans.PropertyChangeEvent;
@@ -143,7 +143,7 @@ public class Sniffy {
         }
 
         LOG.info("OS is " + OSUtil.getOsName());
-        LOG.info("Java version is " + JVMUtil.getVersion());
+        LOG.info("Java version is " + Unsafe.tryGetJavaVersion());
 
         if (LOG.isLevelEnabled(PolyglogLevel.INFO)) {
             Properties properties = System.getProperties();

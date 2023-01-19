@@ -2,12 +2,12 @@ package io.sniffy;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
-import io.sniffy.util.JVMUtil;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.util.Deque;
@@ -44,7 +44,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
     // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
     @IgnoreJRERequirement
     private static <T> Deque<T> createConcurrentDeque() {
-        if (JVMUtil.getVersion() < 7) {
+        if (Unsafe.tryGetJavaVersion() < 7) {
             return new LinkedList<T>();
         } else {
             return new ConcurrentLinkedDeque<T>();
@@ -62,7 +62,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-            if (JVMUtil.getVersion() < 7) {
+            if (Unsafe.tryGetJavaVersion() < 7) {
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (networkPackets) {
                     networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
@@ -85,7 +85,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-            if (JVMUtil.getVersion() < 7) {
+            if (Unsafe.tryGetJavaVersion() < 7) {
                 // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (networkPackets) {

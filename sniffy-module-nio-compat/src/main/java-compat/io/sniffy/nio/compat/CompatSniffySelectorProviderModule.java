@@ -1,22 +1,25 @@
 package io.sniffy.nio.compat;
 
-import io.sniffy.util.JVMUtil;
+import io.sniffy.reflection.Unsafe;
+
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1.7
  */
+@SuppressWarnings("unused")
 public class CompatSniffySelectorProviderModule {
 
     public static void initialize() {
 
-        if (JVMUtil.getVersion() >= 9) return;
+        if (Unsafe.getJavaVersion() >= 9) return;
 
-        if (JVMUtil.getVersion() == 8 && !Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
+        if (Unsafe.getJavaVersion() == 8 && !Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
 
 
         try {
-            Class.forName("io.sniffy.nio.compat.CompatSniffySelectorProviderBootstrap").getMethod("initialize").invoke(null);
-            Class.forName("io.sniffy.nio.compat.CompatSniffySelectorProvider").getMethod("install").invoke(null);
+            $("io.sniffy.nio.compat.CompatSniffySelectorProviderBootstrap").getStaticMethod("initialize").invoke();
+            $("io.sniffy.nio.compat.CompatSniffySelectorProvider").getStaticMethod("install").invoke();
         } catch (Exception e) {
             e.printStackTrace();
         }

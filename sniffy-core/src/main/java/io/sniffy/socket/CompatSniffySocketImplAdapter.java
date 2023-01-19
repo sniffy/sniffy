@@ -1,8 +1,7 @@
 package io.sniffy.socket;
 
+import io.sniffy.reflection.clazz.ClassRef;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionCopier;
-import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -12,16 +11,15 @@ import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketImpl;
-import java.util.Set;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1.9
  */
 class CompatSniffySocketImplAdapter extends SocketImpl {
 
-    private static final ReflectionCopier<SocketImpl> socketChannelFieldsCopier = new ReflectionCopier<SocketImpl>(SocketImpl.class);
+    private static final ClassRef<SocketImpl> socketImplClassRef = $(SocketImpl.class);
 
     protected final SocketImpl delegate;
 
@@ -29,277 +27,215 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
         this.delegate = delegate;
     }
 
-    private void copyToDelegate() {
-        socketChannelFieldsCopier.copy(this, delegate);
-    }
-
-    private void copyFromDelegate() {
-        socketChannelFieldsCopier.copy(delegate, this);
-    }
-
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void sendUrgentData(int data) throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "sendUrgentData", int.class, data, Void.TYPE);
+            socketImplClassRef.getNonStaticMethod("sendUrgentData", Integer.TYPE).invoke(delegate, data);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void shutdownInput() throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "shutdownInput", Void.TYPE);
+            socketImplClassRef.getNonStaticMethod("shutdownInput").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void shutdownOutput() throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "shutdownOutput", Void.TYPE);
+            socketImplClassRef.getNonStaticMethod("shutdownOutput").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @Override
     protected FileDescriptor getFileDescriptor() {
-        copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getFileDescriptor", FileDescriptor.class);
+            return socketImplClassRef.getNonStaticMethod(FileDescriptor.class, "getFileDescriptor").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @Override
     protected InetAddress getInetAddress() {
-        copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getInetAddress", InetAddress.class);
+            return socketImplClassRef.getNonStaticMethod(InetAddress.class, "getInetAddress").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @Override
     protected int getPort() {
-        copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getPort", Integer.TYPE);
+            return socketImplClassRef.getNonStaticMethod(Integer.TYPE, "getPort").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @Override
     protected boolean supportsUrgentData() {
-        copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "supportsUrgentData", Boolean.TYPE);
+            return socketImplClassRef.getNonStaticMethod(Boolean.TYPE, "supportsUrgentData").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @Override
     protected int getLocalPort() {
-        copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getLocalPort", Integer.TYPE);
+            return socketImplClassRef.getNonStaticMethod(Integer.TYPE, "getLocalPort").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @Override
     public String toString() {
-        copyToDelegate();
-        try {
-            return delegate.toString();
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.toString();
     }
 
     // TODO: wrap equals and hashCode methods
 
     @Override
     protected void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "setPerformancePreferences", Integer.TYPE, connectionTime, Integer.TYPE, latency, Integer.TYPE, bandwidth, Void.TYPE);
+            socketImplClassRef.getNonStaticMethod(Integer.TYPE, "setPerformancePreferences", Integer.TYPE, Integer.TYPE, Integer.TYPE).invoke(delegate, connectionTime, latency, bandwidth);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void create(boolean stream) throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "create", Boolean.TYPE, stream, Void.TYPE);
+            socketImplClassRef.getNonStaticMethod(Integer.TYPE, "create", Boolean.TYPE).invoke(delegate, stream);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void connect(String host, int port) throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "connect", String.class, host, Integer.TYPE, port, Void.TYPE);
+            socketImplClassRef.getNonStaticMethod(Integer.TYPE, "connect", String.class, Integer.TYPE).invoke(delegate, host, port);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void connect(InetAddress address, int port) throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "connect", InetAddress.class, address, Integer.TYPE, port, Void.TYPE);
+            socketImplClassRef.getNonStaticMethod(Integer.TYPE, "connect", InetAddress.class, Integer.TYPE).invoke(delegate, address, port);
         } catch (Exception e) {
-            ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
+            throw ExceptionUtil.processException(e);
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void connect(SocketAddress address, int timeout) throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "connect", SocketAddress.class, address, Integer.TYPE, timeout, Void.TYPE);
+            socketImplClassRef.getNonStaticMethod(Integer.TYPE, "connect", SocketAddress.class, Integer.TYPE).invoke(delegate, address, timeout);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void bind(InetAddress host, int port) throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "bind", InetAddress.class, host, Integer.TYPE, port, Void.TYPE);
+            socketImplClassRef.getNonStaticMethod(Integer.TYPE, "bind", InetAddress.class, Integer.TYPE).invoke(delegate, host, port);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void listen(int backlog) throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "listen", Integer.TYPE, backlog, Void.TYPE);
+            socketImplClassRef.getNonStaticMethod(Integer.TYPE, "listen", Integer.TYPE).invoke(delegate, backlog);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void accept(SocketImpl s) throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "accept", SocketImpl.class, s, Void.TYPE);
+            /*
+             * After Sniffy supports ServerSockets, we might need to add call to delegate.reset() here
+             * And in general check the implementation of ServerSocket.implAccept(Socket s) method
+             * for side effects
+             *
+             * s.reset();
+             * s.fd = new FileDescriptor();
+             * s.address = new InetAddress();
+             *
+             * Also consider implementing PlatformSocket interface
+             */
+            socketImplClassRef.getNonStaticMethod(Integer.TYPE, "accept", SocketImpl.class).invoke(delegate, s);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected InputStream getInputStream() throws IOException {
-        copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getInputStream", InputStream.class);
+            return socketImplClassRef.getNonStaticMethod(InputStream.class, "getInputStream").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected OutputStream getOutputStream() throws IOException {
-        copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "getOutputStream", OutputStream.class);
+            return socketImplClassRef.getNonStaticMethod(OutputStream.class, "getOutputStream").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected int available() throws IOException {
-        copyToDelegate();
         try {
-            return invokeMethod(SocketImpl.class, delegate, "available", Integer.TYPE);
+            return socketImplClassRef.getNonStaticMethod(Integer.TYPE, "available").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void close() throws IOException {
-        copyToDelegate();
         try {
-            invokeMethod(SocketImpl.class, delegate, "close", Void.TYPE);
+            socketImplClassRef.getNonStaticMethod("close").invoke(delegate);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
         }
     }
 
@@ -307,75 +243,12 @@ class CompatSniffySocketImplAdapter extends SocketImpl {
 
     @Override
     public void setOption(int optID, Object value) throws SocketException {
-        copyToDelegate();
-        try {
-            delegate.setOption(optID, value);
-        } finally {
-            copyFromDelegate();
-        }
+        delegate.setOption(optID, value);
     }
 
     @Override
     public Object getOption(int optID) throws SocketException {
-        copyToDelegate();
-        try {
-            return delegate.getOption(optID);
-        } finally {
-            copyFromDelegate();
-        }
+        return delegate.getOption(optID);
     }
-
-
-
-    // New methods in Java 9
-
-    // TODO: methods below are commented out because Java 6 doesn't have SocketOption class
-    /*
-
-    // @Override - available in Java 9+ only
-    @SuppressWarnings("Since15")
-    @IgnoreJRERequirement
-    protected <T> void setOption(java.net.SocketOption<T> name, T value) throws IOException {
-        try {
-            copyToDelegate();
-            invokeMethod(SocketImpl.class, delegate, "setOption", java.net.SocketOption.class, name, Object.class, value, Void.TYPE);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    // @Override - available in Java 9+ only
-    @SuppressWarnings("Since15")
-    @IgnoreJRERequirement
-    protected <T> T getOption(java.net.SocketOption<T> name) throws IOException {
-        try {
-            copyToDelegate();
-            //noinspection unchecked
-            return (T) invokeMethod(SocketImpl.class, delegate, "getOption", java.net.SocketOption.class, name, Object.class);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    // @Override - available in Java 9+ only
-    @SuppressWarnings("Since15")
-    @IgnoreJRERequirement
-    protected Set<java.net.SocketOption<?>> supportedOptions() {
-        try {
-            copyToDelegate();
-            //noinspection unchecked
-            return (Set<java.net.SocketOption<?>>) invokeMethod(SocketImpl.class, delegate, "supportedOptions", Set.class);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        } finally {
-            copyFromDelegate();
-        }
-    }
-
-    */
 
 }

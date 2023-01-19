@@ -1,8 +1,10 @@
 package io.sniffy.nio;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.OSUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
@@ -15,13 +17,10 @@ import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1.7
@@ -29,11 +28,10 @@ import static io.sniffy.util.ReflectionUtil.setField;
 // TODO: test properly and come up with a strategy for server sockets and server channels
 public class SniffyServerSocketChannel extends ServerSocketChannel implements SelChImpl, SelectableChannelWrapper<ServerSocketChannel> {
 
+    private static final Polyglog LOG = PolyglogFactory.log(SniffyServerSocketChannel.class);
+
     private final ServerSocketChannel delegate;
     private final SelChImpl selChImplDelegate;
-
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private volatile boolean hasCancelledKeys;
 
     public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) {
         super(provider);
@@ -44,11 +42,6 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     @Override
     public ServerSocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public void keyCancelled() {
-        hasCancelledKeys = true;
     }
 
     @Override
@@ -67,7 +60,12 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     @Override
     public ServerSocket socket() {
-        return delegate.socket();
+        try {
+            return new SniffyServerSocket(delegate.socket(), this);
+        } catch (IOException e) {
+            // LOG.error(e); // TODO: uncomment
+            return delegate.socket();
+        }
     }
 
     @Override
@@ -79,7 +77,8 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
             return null;
         }
 
-        // Windows Selector is implemented using pair of sockets which are explicitly casted and do not work with Sniffy
+        // Windows Selector is implemented using a pair of sockets which are explicitly cast and do not work with Sniffy
+        // TODO: come up with something better
         return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
                 socketChannel :
                 new SniffySocketChannelAdapter(provider(), socketChannel);
@@ -93,35 +92,13 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     @Override
     public void implCloseSelectableChannel() {
-        try {
-
-            Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateCloseLock) {
-                setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
-            }
-
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        }
+        NioDelegateHelper.implCloseSelectableChannel(delegate);
     }
 
     @Override
     public void implConfigureBlocking(boolean block) {
         try {
-
-            Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateRegLock) {
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                    setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                }
-            }
-
+            delegate.configureBlocking(block);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -166,45 +143,47 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
         selChImplDelegate.kill();
     }
 
-    // Note: this method is absent in newer JDKs so we cannot use @Override annotation
+    // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
     // @Override
+    @SuppressWarnings("unused")
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+            $(SelChImpl.class).getNonStaticMethod("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(selChImplDelegate, ops, sk);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
+    @SuppressWarnings("unused")
     public int translateInterestOps(int ops) {
         try {
-            return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+            return $(SelChImpl.class).getNonStaticMethod(Integer.TYPE, "translateInterestOps", Integer.TYPE).invoke(selChImplDelegate, ops);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("RedundantThrows")
+    @SuppressWarnings({"RedundantThrows", "unused"})
     public void park(int event, long nanos) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+            $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 
-    // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+    // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
     //@Override
-    @SuppressWarnings("RedundantThrows")
+    @SuppressWarnings({"RedundantThrows", "unused"})
     public void park(int event) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+            $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
         } catch (Exception e) {
-            throw ExceptionUtil.throwException(e);
+            throw Unsafe.throwException(e);
         }
     }
 

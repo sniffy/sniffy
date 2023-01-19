@@ -1,30 +1,18 @@
 package io.sniffy.nio.compat;
 
-import sun.misc.Unsafe;
-
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
+
+import static io.sniffy.reflection.Unsafe.getJavaVersion;
 
 /**
  * @since 3.1.7
  */
+@SuppressWarnings("unused")
 public class CompatSniffySelectorProviderBootstrap {
 
     private static boolean publicSelChImplLoadedInBootstrapClassLoader = false;
-
-    private static int getVersion() {
-        String version = System.getProperty("java.version");
-        if (version.startsWith("1.")) {
-            version = version.substring(2, 3);
-        } else {
-            int dot = version.indexOf(".");
-            if (dot != -1) {
-                version = version.substring(0, dot);
-            }
-        }
-        return Integer.parseInt(version);
-    }
 
     public static void loadPublicSelChImplInBootstrapClassLoader() throws Exception {
 
@@ -35,225 +23,71 @@ public class CompatSniffySelectorProviderBootstrap {
         //if (getVersion() >= 9) return;
 
         {
-            InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/DatagramChannelDelegate.class");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            int i = 0;
-            while ((i = is.read()) != -1) {
-                baos.write(i);
-            }
-
-            is.close();
-
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            Unsafe unsafe = (Unsafe) f.get(null);
-
-            unsafe.defineClass(
-                    "sun.nio.ch.DatagramChannelDelegate",
-                    baos.toByteArray(),
-                    0,
-                    baos.size(),
-                    null,
-                    null
-            );
-
+            byte[] bytes = loadResource("META-INF/bytecode/sun/nio/ch/DatagramChannelDelegate.class");
+            io.sniffy.reflection.Unsafe.defineSystemClass("sun.nio.ch.DatagramChannelDelegate", bytes);
             Class.forName("sun.nio.ch.DatagramChannelDelegate");
         }
 
         {
-            InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/SocketChannelDelegate.class");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            int i = 0;
-            while ((i = is.read()) != -1) {
-                baos.write(i);
-            }
-
-            is.close();
-
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            Unsafe unsafe = (Unsafe) f.get(null);
-
-            unsafe.defineClass(
-                    "sun.nio.ch.SocketChannelDelegate",
-                    baos.toByteArray(),
-                    0,
-                    baos.size(),
-                    null,
-                    null
-            );
-
+            byte[] bytes = loadResource("META-INF/bytecode/sun/nio/ch/SocketChannelDelegate.class");
+            io.sniffy.reflection.Unsafe.defineSystemClass("sun.nio.ch.SocketChannelDelegate", bytes);
             Class.forName("sun.nio.ch.SocketChannelDelegate");
         }
 
         {
-            InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/ServerSocketChannelDelegate.class");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            int i = 0;
-            while ((i = is.read()) != -1) {
-                baos.write(i);
-            }
-
-            is.close();
-
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            Unsafe unsafe = (Unsafe) f.get(null);
-
-            unsafe.defineClass(
-                    "sun.nio.ch.ServerSocketChannelDelegate",
-                    baos.toByteArray(),
-                    0,
-                    baos.size(),
-                    null,
-                    null
-            );
-
+            byte[] bytes = loadResource("META-INF/bytecode/sun/nio/ch/ServerSocketChannelDelegate.class");
+            io.sniffy.reflection.Unsafe.defineSystemClass("sun.nio.ch.ServerSocketChannelDelegate", bytes);
             Class.forName("sun.nio.ch.ServerSocketChannelDelegate");
         }
 
         {
-            InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/PipeSinkChannelDelegate.class");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            int i = 0;
-            while ((i = is.read()) != -1) {
-                baos.write(i);
-            }
-
-            is.close();
-
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            Unsafe unsafe = (Unsafe) f.get(null);
-
-            unsafe.defineClass(
-                    "sun.nio.ch.PipeSinkChannelDelegate",
-                    baos.toByteArray(),
-                    0,
-                    baos.size(),
-                    null,
-                    null
-            );
-
+            byte[] bytes = loadResource("META-INF/bytecode/sun/nio/ch/PipeSinkChannelDelegate.class");
+            io.sniffy.reflection.Unsafe.defineSystemClass("sun.nio.ch.PipeSinkChannelDelegate", bytes);
             Class.forName("sun.nio.ch.PipeSinkChannelDelegate");
         }
 
         {
-            InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/sun/nio/ch/PipeSourceChannelDelegate.class");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            int i = 0;
-            while ((i = is.read()) != -1) {
-                baos.write(i);
-            }
-
-            is.close();
-
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            Unsafe unsafe = (Unsafe) f.get(null);
-
-            unsafe.defineClass(
-                    "sun.nio.ch.PipeSourceChannelDelegate",
-                    baos.toByteArray(),
-                    0,
-                    baos.size(),
-                    null,
-                    null
-            );
-
+            byte[] bytes = loadResource("META-INF/bytecode/sun/nio/ch/PipeSourceChannelDelegate.class");
+            io.sniffy.reflection.Unsafe.defineSystemClass("sun.nio.ch.PipeSourceChannelDelegate", bytes);
             Class.forName("sun.nio.ch.PipeSourceChannelDelegate");
         }
 
-        if (getVersion() < 7) {
+        if (getJavaVersion() < 7) {
 
             {
-                InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/net/SocketOption.class");
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                int i = 0;
-                while ((i = is.read()) != -1) {
-                    baos.write(i);
-                }
-
-                is.close();
-
-                Field f = Unsafe.class.getDeclaredField("theUnsafe");
-                f.setAccessible(true);
-                Unsafe unsafe = (Unsafe) f.get(null);
-
-                unsafe.defineClass(
-                        "java.net.SocketOption",
-                        baos.toByteArray(),
-                        0,
-                        baos.size(),
-                        null,
-                        null
-                );
-
+                byte[] bytes = loadResource("META-INF/bytecode/java/net/SocketOption.class");
+                io.sniffy.reflection.Unsafe.defineSystemClass("java.net.SocketOption", bytes);
                 Class.forName("java.net.SocketOption");
             }
 
             {
-                InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/nio/channels/NetworkChannel.class");
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                int i = 0;
-                while ((i = is.read()) != -1) {
-                    baos.write(i);
-                }
-
-                is.close();
-
-                Field f = Unsafe.class.getDeclaredField("theUnsafe");
-                f.setAccessible(true);
-                Unsafe unsafe = (Unsafe) f.get(null);
-
-                unsafe.defineClass(
-                        "java.nio.channels.NetworkChannel",
-                        baos.toByteArray(),
-                        0,
-                        baos.size(),
-                        null,
-                        null
-                );
-
+                byte[] bytes = loadResource("META-INF/bytecode/java/nio/channels/NetworkChannel.class");
+                io.sniffy.reflection.Unsafe.defineSystemClass("java.nio.channels.NetworkChannel", bytes);
                 Class.forName("java.nio.channels.NetworkChannel");
             }
 
             {
-                InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream("META-INF/bytecode/java/net/ProtocolFamily.class");
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                int i = 0;
-                while ((i = is.read()) != -1) {
-                    baos.write(i);
-                }
-
-                is.close();
-
-                Field f = Unsafe.class.getDeclaredField("theUnsafe");
-                f.setAccessible(true);
-                Unsafe unsafe = (Unsafe) f.get(null);
-
-                unsafe.defineClass(
-                        "java.net.ProtocolFamily",
-                        baos.toByteArray(),
-                        0,
-                        baos.size(),
-                        null,
-                        null
-                );
-
+                byte[] bytes = loadResource("META-INF/bytecode/java/net/ProtocolFamily.class");
+                io.sniffy.reflection.Unsafe.defineSystemClass("java.net.ProtocolFamily", bytes);
                 Class.forName("java.net.ProtocolFamily");
             }
 
         }
 
+    }
+
+    private static byte[] loadResource(String path) throws IOException {
+        InputStream is = CompatSniffySelectorProviderBootstrap.class.getClassLoader().getResourceAsStream(path);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        int i;
+        while ((i = is.read()) != -1) {
+            baos.write(i);
+        }
+
+        is.close();
+        byte[] bytes = baos.toByteArray();
+        return bytes;
     }
 
     public static void initialize() {

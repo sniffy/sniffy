@@ -13,7 +13,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.*;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
@@ -21,6 +24,103 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SnifferSocketImplTest {
+
+    @Deprecated
+    private static class MethodDescriptor {
+
+        private final String methodName;
+        private final Object[] parameterTypes;
+
+        public MethodDescriptor(Method method) {
+            this(method.getName(), method.getParameterTypes());
+        }
+
+        public MethodDescriptor(String methodName, Object[] parameterTypes) {
+            this.methodName = methodName;
+            this.parameterTypes = parameterTypes;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MethodDescriptor that = (MethodDescriptor) o;
+
+            if (!methodName.equals(that.methodName)) return false;
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            return Arrays.equals(parameterTypes, that.parameterTypes);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = methodName.hashCode();
+            result = 31 * result + Arrays.hashCode(parameterTypes);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "MethodDescriptor{" +
+                    "methodName='" + methodName + '\'' +
+                    ", parameterTypes=" + Arrays.toString(parameterTypes) +
+                    '}';
+        }
+    }
+
+    @Test
+    public void testAllAvailableMethodsAreOverridden() {
+
+        Set<MethodDescriptor> overrideableMethods = new HashSet<MethodDescriptor>();
+        Set<MethodDescriptor> nonOverrideableMethods = new HashSet<MethodDescriptor>();
+
+        List<Class<?>> classesToProcess = new LinkedList<Class<?>>();
+        classesToProcess.add(SocketImpl.class);
+
+        while (!classesToProcess.isEmpty()) {
+            Class<?> clazz = classesToProcess.remove(0);
+            if (clazz.getSuperclass() != Object.class && !clazz.isInterface()) {
+                classesToProcess.add(clazz.getSuperclass());
+            }
+            classesToProcess.addAll(Arrays.asList(clazz.getInterfaces()));
+
+            for (Method method : clazz.getDeclaredMethods()) {
+                if (
+                        !Modifier.isStatic(method.getModifiers()) &&
+                                (Modifier.isProtected(method.getModifiers()) ||
+                                        Modifier.isPublic(method.getModifiers())) &&
+                                !method.isSynthetic()
+                ) {
+                    if (Modifier.isFinal(method.getModifiers())) {
+                        nonOverrideableMethods.add(new MethodDescriptor(method));
+                    } else {
+                        overrideableMethods.add(new MethodDescriptor(method));
+                    }
+                }
+            }
+        }
+
+        overrideableMethods.removeAll(nonOverrideableMethods);
+
+        Set<MethodDescriptor> sniffySocketImplMethods = new HashSet<MethodDescriptor>();
+
+        for (Method method : SnifferSocketImpl.class.getDeclaredMethods()) {
+            sniffySocketImplMethods.add(new MethodDescriptor(method));
+        }
+        for (Method method : CompatSnifferSocketImpl.class.getDeclaredMethods()) {
+            sniffySocketImplMethods.add(new MethodDescriptor(method));
+        }
+        for (Method method : CompatSniffySocketImplAdapter.class.getDeclaredMethods()) {
+            sniffySocketImplMethods.add(new MethodDescriptor(method));
+        }
+
+        for (MethodDescriptor method : overrideableMethods) {
+            if (!sniffySocketImplMethods.contains(method)) {
+                fail("Method " + method + " is not overridden in SniffySelector");
+            }
+        }
+
+    }
 
     @Mock
     private PublicSocketImpl delegate;

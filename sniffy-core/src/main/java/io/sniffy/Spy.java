@@ -2,11 +2,11 @@ package io.sniffy;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.*;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.JVMUtil;
 import io.sniffy.util.StringUtil;
 
 import java.io.Closeable;
@@ -14,7 +14,7 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static io.sniffy.util.ExceptionUtil.throwException;
+import static io.sniffy.reflection.Unsafe.throwException;
 
 /**
  * Spy holds a number of queries which were executed at some point of time and uses it as a base for further assertions
@@ -174,7 +174,7 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
             if (addressMatcher.matches(socketMetaData.getAddress()) &&
                     (null == socketMetaData.getThreadMetaData() || threadMatcher.matches(socketMetaData.getThreadMetaData()))) {
 
-                if (JVMUtil.getVersion() < 7) {
+                if (Unsafe.tryGetJavaVersion() < 7) {
                     // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
                     //noinspection SynchronizationOnLocalVariableOrMethodParameter
                     synchronized (networkPackets) {

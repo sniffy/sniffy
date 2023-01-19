@@ -1,8 +1,9 @@
 package io.sniffy.nio;
 
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.ReflectionCopier;
-import io.sniffy.util.ReflectionUtil;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
 
@@ -10,12 +11,9 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
+import static io.sniffy.reflection.Unsafe.$;
 
 /**
  * @since 3.1.7
@@ -43,6 +41,8 @@ public class SniffyPipe extends Pipe {
     @SuppressWarnings("RedundantThrows")
     public static class SniffySourceChannel extends SourceChannel implements SelChImpl {
 
+        private static final Polyglog LOG = PolyglogFactory.log(SniffySourceChannel.class);
+
         private final SourceChannel delegate;
         private final SelChImpl selChImplDelegate;
 
@@ -54,35 +54,13 @@ public class SniffyPipe extends Pipe {
 
         @Override
         public void implCloseSelectableChannel() {
-            try {
-
-                Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
-
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (delegateCloseLock) {
-                    setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
-                    invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
-                }
-
-            } catch (Exception e) {
-                throw ExceptionUtil.processException(e);
-            }
+            NioDelegateHelper.implCloseSelectableChannel(delegate);
         }
 
         @Override
         public void implConfigureBlocking(boolean block) {
             try {
-
-                Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (delegateRegLock) {
-                    invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                    if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                        setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                    }
-                }
-
+                delegate.configureBlocking(block);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
@@ -130,43 +108,47 @@ public class SniffyPipe extends Pipe {
             selChImplDelegate.kill();
         }
 
-        // Note: this method is absent in newer JDKs so we cannot use @Override annotation
+        // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
         // @Override
+        @SuppressWarnings("unused")
         public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+                $(SelChImpl.class).getNonStaticMethod("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(selChImplDelegate, ops, sk);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
         }
 
-        // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+        // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
         //@Override
+        @SuppressWarnings("unused")
         public int translateInterestOps(int ops) {
             try {
-                return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+                return $(SelChImpl.class).getNonStaticMethod(Integer.TYPE, "translateInterestOps", Integer.TYPE).invoke(selChImplDelegate, ops);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
         }
 
-        // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+        // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
         //@Override
+        @SuppressWarnings("unused")
         public void park(int event, long nanos) throws IOException {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+                $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
             } catch (Exception e) {
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 
-        // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+        // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
         //@Override
+        @SuppressWarnings("unused")
         public void park(int event) throws IOException {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+                $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
             } catch (Exception e) {
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 
@@ -174,6 +156,8 @@ public class SniffyPipe extends Pipe {
 
     @SuppressWarnings("RedundantThrows")
     public static class SniffySinkChannel extends SinkChannel implements SelChImpl {
+
+        private static final Polyglog LOG = PolyglogFactory.log(SniffySinkChannel.class);
 
         private final SinkChannel delegate;
         private final SelChImpl selChImplDelegate;
@@ -186,35 +170,13 @@ public class SniffyPipe extends Pipe {
 
         @Override
         public void implCloseSelectableChannel() {
-            try {
-
-                Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
-
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (delegateCloseLock) {
-                    setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
-                    invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
-                }
-
-            } catch (Exception e) {
-                throw ExceptionUtil.processException(e);
-            }
+            NioDelegateHelper.implCloseSelectableChannel(delegate);
         }
 
         @Override
         public void implConfigureBlocking(boolean block) {
             try {
-
-                Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (delegateRegLock) {
-                    invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                    if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                        setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                    }
-                }
-
+                delegate.configureBlocking(block);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
@@ -262,43 +224,47 @@ public class SniffyPipe extends Pipe {
             selChImplDelegate.kill();
         }
 
-        // Note: this method is absent in newer JDKs so we cannot use @Override annotation
+        // Note: this method is absent in newer JDKs, so we cannot use @Override annotation
         // @Override
+        @SuppressWarnings("unused")
         public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+                $(SelChImpl.class).getNonStaticMethod("translateAndSetInterestOps", Integer.TYPE, SelectionKeyImpl.class).invoke(selChImplDelegate, ops, sk);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
         }
 
-        // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+        // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
         //@Override
+        @SuppressWarnings("unused")
         public int translateInterestOps(int ops) {
             try {
-                return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+                return $(SelChImpl.class).getNonStaticMethod(Integer.TYPE, "translateInterestOps", Integer.TYPE).invoke(selChImplDelegate, ops);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
         }
 
-        // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+        // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
         //@Override
+        @SuppressWarnings("unused")
         public void park(int event, long nanos) throws IOException {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+                $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE, Long.TYPE).invoke(selChImplDelegate, event, nanos);
             } catch (Exception e) {
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 
-        // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
+        // Note: this method was absent in earlier JDKs, so we cannot use @Override annotation
         //@Override
+        @SuppressWarnings("unused")
         public void park(int event) throws IOException {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+                $(SelChImpl.class).getNonStaticMethod("park", Integer.TYPE).invoke(selChImplDelegate, event);
             } catch (Exception e) {
-                throw ExceptionUtil.throwException(e);
+                throw Unsafe.throwException(e);
             }
         }
 

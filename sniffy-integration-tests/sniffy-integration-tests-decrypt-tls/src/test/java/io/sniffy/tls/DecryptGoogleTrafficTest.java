@@ -2,15 +2,14 @@ package io.sniffy.tls;
 
 import io.sniffy.*;
 import io.sniffy.configuration.SniffyConfiguration;
+import io.sniffy.reflection.Unsafe;
 import io.sniffy.socket.AddressMatchers;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SocketMetaData;
-import io.sniffy.util.JVMUtil;
 import io.sniffy.util.OSUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -49,9 +48,9 @@ public class DecryptGoogleTrafficTest {
                     break;
                 } catch (IOException e) {
                     if (e.getMessage().contains("An established connection was aborted by the software in your host machine") || e.getMessage().contains("Remote host terminated the handshake")
-                            && OSUtil.isWindows() && (JVMUtil.getVersion() == 14 || JVMUtil.getVersion() == 13)) {
+                            && OSUtil.isWindows() && (Unsafe.tryGetJavaVersion() == 14 || Unsafe.tryGetJavaVersion() == 13)) {
                         e.printStackTrace();
-                        System.err.println("Caught " + e + " exception on Java " + JVMUtil.getVersion() + " running on Windows; retrying in 2 seconds");
+                        System.err.println("Caught " + e + " exception on Java " + Unsafe.tryGetJavaVersion() + " running on Windows; retrying in 2 seconds");
                         Thread.sleep(2000);
                     } else {
                         throw e;

@@ -1,5 +1,10 @@
 == Migration from 3.0.x to 3.1.x
 
+=== Socket Monitoring
+
+As of `3.1.14` socket monitoring (including both IO and NIO) isn't considered experimental anymore and enabled by default.
+You still can disable it explicitly.
+
 === Sniffy Filter
 
 Starting from version `3.1.0` injection of HTML is no longer considered experimental and enabled by default.
