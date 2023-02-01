@@ -11,7 +11,9 @@ on:
   pull_request:
     branches-ignore:
       - tag/*
-
+env:
+  MAVEN_OPTS: -Dkotlin.environment.keepalive=true
+# TODO: somehow grab test results from the github action
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
@@ -96,7 +98,7 @@ jobs:
       - smoke-test
     strategy:
       matrix:
-        platform: [ linux/arm, linux/arm64, linux/s390x ]
+        platform: [ linux/arm, linux/arm64, linux/s390x, linux/ppc64le ]
     name: Test with ${{ matrix.platform }} AdoptOpenJDK 11
     steps:
       - uses: actions/checkout@v2
