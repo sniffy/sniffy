@@ -21,7 +21,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
 
-import javax.servlet.DispatcherType;
+import jakarta.servlet.DispatcherType;
 import javax.sql.DataSource;
 import java.util.EnumSet;
 import java.util.Map;

@@ -14,7 +14,7 @@
         <module name="com.oracle.jdbc" optional="true"/>
         <!-- insert a reference to module with your JDBC driver here -->
 
-        <module name="javax.servlet.api" export="true"/>
+        <module name="jakarta.servlet.api" export="true"/>
         <module name="sun.jdk"/>
     </dependencies>
 </module>

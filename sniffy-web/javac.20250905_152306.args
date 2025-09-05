@@ -1,0 +1,5 @@
+-cp
+/dev/null
+src/main/java/io/sniffy/boot/SniffySpringConfiguration.java
+src/main/java/io/sniffy/boot/SniffyAdvancedConfiguration.java
+src/main/java/io/sniffy/boot/EnableSniffy.java
