@@ -19,25 +19,24 @@ jobs:
       matrix:
         include:
           - java: 8
-            os: ubuntu-24.04
+            os: ubuntu-22.04
           - java: 11
             os: windows-2022
           - java: 17
-            os: macos-13
+            os: macos-12
     name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'temurin'
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v2
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
@@ -61,25 +60,24 @@ jobs:
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v2
         with:
           name: surefire-test-report-smoke-test-${{ matrix.java }}-${{ matrix.os }}
           path: |
             **/target/surefire-reports/
             **/target/hs_err*.*
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Set up JDK ${{ matrix.java }} x86
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'temurin'
           architecture: x86
-        if: matrix.os != 'macos-13'
+        if: matrix.os != 'macos-12'
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os == 'ubuntu-24.04'
+        if: matrix.os == 'ubuntu-22.04'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -89,11 +87,11 @@ jobs:
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     needs:
       - smoke-test
     strategy:
@@ -101,10 +99,10 @@ jobs:
         platform: [ linux/arm, linux/arm64, linux/s390x ]
     name: Test with ${{ matrix.platform }} AdoptOpenJDK 11
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
       - name: Set up QEMU
         id: qemu
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v1
         with:
           image: tonistiigi/binfmt:latest
           platforms: all
@@ -112,20 +110,19 @@ jobs:
         run: echo ${{ steps.qemu.outputs.platforms }}
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v1
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
       - name: Set up JDK 11
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: 11
-          distribution: 'temurin'
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v2
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
@@ -141,7 +138,7 @@ jobs:
         run: mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v2
         with:
           context: .
           file: ./.github/workflows/Dockerfile.3.8.1-adoptopenjdk-11
@@ -151,10 +148,10 @@ jobs:
   test-ibm-j9:
     needs:
       - smoke-test
-    runs-on: ubuntu-24.04
-    name: Test JDK IBM J9 1.8, ubuntu-24.04
+    runs-on: ubuntu-22.04
+    name: Test JDK IBM J9 1.8, ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
       - name: Pull IBM JDK J9 1.8 Docker Image
         uses: addnab/docker-run-action@v3
         with:
@@ -173,7 +170,7 @@ jobs:
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v2
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
@@ -185,7 +182,7 @@ jobs:
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   test-matrix:
@@ -196,35 +193,34 @@ jobs:
       matrix:
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
         java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20-ea ]
-        os: [ ubuntu-24.04, windows-2022, macos-13 ]
+        os: [ ubuntu-22.04, windows-2022, macos-12 ]
         exclude:
           - java: 8
-            os: ubuntu-24.04
+            os: ubuntu-22.04
           - java: 11
             os: windows-2022
           - java: 17
-            os: macos-13
+            os: macos-12
           # https://github.com/sniffy/sniffy/issues/546
           - java: 10
-            os: ubuntu-24.04
+            os: ubuntu-22.04
         include:
           # https://github.com/sniffy/sniffy/issues/546
           - java: 10
             os: ubuntu-20.04
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'temurin'
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v2
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
@@ -248,7 +244,7 @@ jobs:
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: surefire-test-report-test-matrix-${{ matrix.java }}-${{ matrix.os }}
@@ -256,12 +252,11 @@ jobs:
             **/target/surefire-reports/
             **/target/hs_err*.*
       - name: Set up JDK ${{ matrix.java }} x86
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'temurin'
           architecture: x86
-        if: ${{ matrix.os != 'macos-13'}}
+        if: ${{ matrix.os != 'macos-12'}}
 # https://issues.apache.org/jira/projects/MNG/issues/MNG-7399
 # Had to disable x86 windows builds on java 18 and 19-ea due to strange errors like these:
 # The parameters 'isOffline' for goal org.apache.maven.plugins:maven-javadoc-plugin:3.3.1:jar are missing or invalid
@@ -269,7 +264,7 @@ jobs:
 # Might be caused by https://openjdk.java.net/jeps/416 or just regression issue in 32-bit windows builds
       - name: Build with Maven x86
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: ${{ matrix.os == 'ubuntu-24.04'}}
+        if: ${{ matrix.os == 'ubuntu-22.04'}}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -279,14 +274,14 @@ jobs:
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: surefire-test-report-test-matrix-x86-${{ matrix.java }}-${{ matrix.os }}
           path: |
             **/target/surefire-reports/
             **/target/hs_err*.*
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   compatibility-matrix:
@@ -295,21 +290,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-24.04, windows-2022, macos-13 ]
+        os: [ ubuntu-22.04, windows-2022, macos-12 ]
     name: Legacy JDK, ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
       - name: Set up JDK 8
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: 8
-          distribution: 'temurin'
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v2
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
@@ -343,47 +337,43 @@ jobs:
       - name: Run compatibility tests using Java 8
         run: mvn -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 11
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: 11
-          distribution: 'temurin'
       - name: Run compatibility tests using Java 11
         run: mvn -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: 17
-          distribution: 'temurin'
       - name: Run compatibility tests using Java 17
         run: mvn -f sniffy-compatibility-tests/pom.xml test
       - name: Set up JDK 7
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: 7
-          distribution: 'temurin'
       - name: Set up Maven 3.2.5
         run: mkdir -p /tmp && cd /tmp && curl https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz -o apache-maven-3.2.5-bin.tar.gz && tar -xzvf apache-maven-3.2.5-bin.tar.gz && export M2_HOME=/tmp/apache-maven-3.2.5 && export MAVEN_HOME=/tmp/apache-maven-3.2.5 && export PATH=${M2_HOME}/bin:${PATH}
         shell: bash
       - name: Run compatibility tests using Maven 3.2.5 and Java 7
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
         shell: bash
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       # TODO: add 32 bit compatibility tests execution on old Javas
       # No Java 6 on MacOS
       - name: Set up JDK 6
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: 6
-          distribution: 'temurin'
         if: matrix.os != 'macOS-12'
       # No Java 6 on MacOS
       - name: Run compatibility tests using Maven 3.2.5 and Java 6
         run: export MAVEN_SKIP_RC=true && export M2_HOME=/tmp/apache-maven-3.2.5 && /tmp/apache-maven-3.2.5/bin/mvn -f sniffy-compatibility-tests/pom.xml clean verify
         shell: bash
         if: matrix.os != 'macOS-12'
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
         if: matrix.os != 'macOS-12'
@@ -391,25 +381,24 @@ jobs:
     needs:
       - smoke-test
     name: Analyze
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v1
         with:
           languages: ${{ matrix.language }}
       - name: Set up JDK 8
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: 8
-          distribution: 'temurin'
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v2
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
@@ -422,4 +411,4 @@ jobs:
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v1

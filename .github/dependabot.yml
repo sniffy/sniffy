@@ -1,0 +1,91 @@
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "dmvk"
+    assignees:
+      - "dmvk"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # Maven dependencies
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "dmvk"
+    assignees:
+      - "dmvk"
+    labels:
+      - "dependencies"
+      - "maven"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    ignore:
+      # Ignore SNAPSHOT versions
+      - dependency-name: "*"
+        versions: ["*-SNAPSHOT"]
+
+  # Maven dependencies for compatibility tests
+  - package-ecosystem: "maven"
+    directory: "/sniffy-compatibility-tests"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "dmvk"
+    assignees:
+      - "dmvk"
+    labels:
+      - "dependencies"
+      - "maven"
+      - "compatibility-tests"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    ignore:
+      # Ignore SNAPSHOT versions
+      - dependency-name: "*"
+        versions: ["*-SNAPSHOT"]
+
+  # Maven dependencies for integration tests
+  - package-ecosystem: "maven"
+    directory: "/sniffy-integration-tests"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "dmvk"
+    assignees:
+      - "dmvk"
+    labels:
+      - "dependencies"
+      - "maven"
+      - "integration-tests"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    ignore:
+      # Ignore SNAPSHOT versions
+      - dependency-name: "*"
+        versions: ["*-SNAPSHOT"]
