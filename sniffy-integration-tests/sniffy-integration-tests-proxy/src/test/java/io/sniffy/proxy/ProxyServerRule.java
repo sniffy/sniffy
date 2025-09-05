@@ -7,6 +7,7 @@ import org.junit.runners.model.Statement;
 import org.littleshoot.proxy.Launcher;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,7 +16,7 @@ import static java.security.AccessController.doPrivileged;
 
 public class ProxyServerRule implements TestRule {
 
-    private static final AtomicInteger port = new AtomicInteger(8080);
+    private static final AtomicInteger port = new AtomicInteger();
 
     @Override
     public Statement apply(Statement base, Description description) {
@@ -77,18 +78,28 @@ public class ProxyServerRule implements TestRule {
         private void startProxy() {
 
             try {
+                // Find a free port to avoid conflicts in parallel execution
+                int freePort = findFreePort();
+                port.set(freePort);
+                
                 process = new ProcessBuilder(
                         doPrivileged(new GetSystemPropertyAction("java.home")) + "/bin/java",
                         "-classpath", System.getProperty("java.class.path"),
                         Launcher.class.getName(),
-                        "-port", Integer.toString(port.incrementAndGet()))
+                        "-port", Integer.toString(freePort))
                         .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                         .redirectError(ProcessBuilder.Redirect.INHERIT)
                         .start();
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> process.destroy()));
-                System.out.println("Started proxy server process");
+                System.out.println("Started proxy server process on port " + freePort);
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+        }
+
+        private int findFreePort() throws IOException {
+            try (ServerSocket socket = new ServerSocket(0)) {
+                return socket.getLocalPort();
             }
         }
 
