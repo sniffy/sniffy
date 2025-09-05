@@ -70,7 +70,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'temurin'
+          distribution: 'zulu'
           architecture: x86
         if: matrix.os != 'macos-13'
       - name: Build with Maven x86
