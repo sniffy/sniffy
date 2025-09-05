@@ -34,6 +34,7 @@ import javax.security.sasl.SaslServerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.PrivilegedAction;
@@ -61,6 +62,7 @@ public class CaptureJBossRemotingCaptureTrafficTest {
     protected final Endpoint serverEndpoint;
 
     private Closeable server;
+    private int port;
 
     private static String providerName;
 
@@ -108,13 +110,20 @@ public class CaptureJBossRemotingCaptureTrafficTest {
         builder.setFactory(saslServerFactory);
         builder.setMechanismConfigurationSelector(mechanismInformation -> SaslMechanismInformation.Names.SCRAM_SHA_256.equals(mechanismInformation.getMechanismName()) ? MechanismConfiguration.EMPTY : null);
         final SaslAuthenticationFactory saslAuthenticationFactory = builder.build();
-        // TODO: iterate with retries on IOException (or SocketException) and store the port in a property
+        // Use dynamic port allocation to avoid conflicts in parallel execution
+        port = findFreePort();
         server = networkServerProvider.createServer(
-                new InetSocketAddress("localhost", 30123),
+                new InetSocketAddress("localhost", port),
                 OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE),
                 saslAuthenticationFactory,
                 SSLContext.getDefault()
         );
+    }
+
+    private int findFreePort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
     }
 
     @After
@@ -156,7 +165,7 @@ public class CaptureJBossRemotingCaptureTrafficTest {
             final Connection connection = AuthenticationContext.empty().with(MatchRule.ALL, AuthenticationConfiguration.empty().useName("bob").usePassword("pass").setSaslMechanismSelector(SaslMechanismSelector.NONE.addMechanism("SCRAM-SHA-256"))).run(new PrivilegedAction<Connection>() {
                 public Connection run() {
                     try {
-                        return clientEndpoint.connect(new URI("remote://localhost:30123"), OptionMap.EMPTY).get();
+                        return clientEndpoint.connect(new URI("remote://localhost:" + port), OptionMap.EMPTY).get();
                     } catch (IOException | URISyntaxException e) {
                         throw new RuntimeException(e);
                     }
