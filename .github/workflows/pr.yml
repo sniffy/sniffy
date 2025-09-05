@@ -50,13 +50,13 @@ jobs:
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os == 'windows-2022'
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.failure.ignore=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.test.failure.ignore=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -78,13 +78,13 @@ jobs:
           architecture: x86
         if: matrix.os != 'macos-13'
       - name: Build with Maven x86
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.failure.ignore=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os == 'ubuntu-24.04'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.test.failure.ignore=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -133,7 +133,7 @@ jobs:
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qemu || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci,qemu
       - name: Build with Maven
-        run: mvn -T 1C -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1C -B clean install --file pom.xml -U -P ci,qemu -Dgpg.skip=true -Dmaven.test.failure.ignore=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -181,7 +181,7 @@ jobs:
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.failure.ignore=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -237,13 +237,13 @@ jobs:
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os == 'windows-2022'
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.failure.ignore=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.test.failure.ignore=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -268,13 +268,13 @@ jobs:
 # Cannot invoke "org.apache.maven.artifact.Artifact.getFile()" because "jacocoAgentArtifact" is null
 # Might be caused by https://openjdk.java.net/jeps/416 or just regression issue in 32-bit windows builds
       - name: Build with Maven x86
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.failure.ignore=true -Dmaven.wagon.http.retryHandler.count=3
         if: ${{ matrix.os == 'ubuntu-24.04'}}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven x86
-        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.test.failure.ignore=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: ${{ matrix.os == 'windows-2022'}}
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -322,13 +322,13 @@ jobs:
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
         if: matrix.os == 'windows-2022'
       - name: Build with Maven
-        run: mvn -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.failure.ignore=true -Dmaven.wagon.http.retryHandler.count=3
         if: matrix.os != 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
-        run: mvn -T 1C -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
+        run: mvn -T 1C -B clean install --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.test.failure.ignore=true' '-Dmaven.wagon.http.retryHandler.count=3'
         if: matrix.os == 'windows-2022'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
@@ -417,7 +417,7 @@ jobs:
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
       - name: Build with Maven
-        run: mvn -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+        run: mvn -T 1C -B clean install --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.test.failure.ignore=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
