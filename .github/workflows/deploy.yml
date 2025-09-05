@@ -190,8 +190,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # test against latest update of each major Java version, as well as specific updates of LTS versions:
-        java: [ 8.0.162, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20-ea ]
+        # test against LTS versions of JDK up to 21:
+        java: [ 8, 11, 17, 21 ]
         os: [ ubuntu-24.04, windows-2022, macos-13 ]
         exclude:
           - java: 8
@@ -200,13 +200,6 @@ jobs:
             os: windows-2022
           - java: 17
             os: macos-13
-          # https://github.com/sniffy/sniffy/issues/546
-          - java: 10
-            os: ubuntu-24.04
-        include:
-          # https://github.com/sniffy/sniffy/issues/546
-          - java: 10
-            os: ubuntu-20.04
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
