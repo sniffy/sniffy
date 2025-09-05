@@ -74,6 +74,8 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java }}
+          # Use 'zulu' distribution for x86 because 'temurin' does not provide Java 8 for x86 architecture.
+          # This setup is specifically for Java 8 x86; elsewhere, 'temurin' is used.
           distribution: 'zulu'
           architecture: x86
         if: matrix.os != 'macos-13'
