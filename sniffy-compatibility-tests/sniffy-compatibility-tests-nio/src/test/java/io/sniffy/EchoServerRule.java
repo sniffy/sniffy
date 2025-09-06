@@ -22,7 +22,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
     private final List<Thread> socketThreads = new ArrayList<Thread>();
     private final List<Socket> sockets = new ArrayList<Socket>();
 
-    private int boundPort = 10200;
+    private int boundPort;
     private ServerSocket serverSocket;
 
     private final byte[] dataToBeSent;
@@ -39,26 +39,10 @@ public class EchoServerRule extends ExternalResource implements Runnable {
     @Override
     public void before() throws Throwable {
 
-        for (int i = 0; i < 10; i++, boundPort++) {
-            try {
-                serverSocket = new ServerSocket(boundPort, 50, InetAddress.getByName(null));
-                serverSocket.setReuseAddress(true);
-                break;
-            } catch (IOException e) {
-                e.printStackTrace();
-                if (null != serverSocket) {
-                    try {
-                        serverSocket.close();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
-        }
-
-        if (null == serverSocket) {
-            throw new IOException("Failed to find an available port");
-        }
+        // Use dynamic port allocation to avoid conflicts
+        serverSocket = new ServerSocket(0, 50, InetAddress.getByName(null));
+        serverSocket.setReuseAddress(true);
+        boundPort = serverSocket.getLocalPort();
 
         thread.start();
 

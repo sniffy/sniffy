@@ -26,7 +26,7 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
     private final AtomicInteger bytesReceivedCounter = new AtomicInteger();
 
-    private int boundPort = 10400;
+    private int boundPort;
     private ServerSocket serverSocket;
 
     private final byte[] dataToBeSent;
@@ -49,26 +49,10 @@ public class EchoServerRule extends ExternalResource implements Runnable {
 
         bytesReceivedCounter.set(0);
 
-        for (int i = 0; i < 10; i++, boundPort++) {
-            try {
-                serverSocket = new ServerSocket(boundPort, 50, InetAddress.getByName(null));
-                serverSocket.setReuseAddress(true);
-                break;
-            } catch (IOException e) {
-                e.printStackTrace();
-                if (null != serverSocket) {
-                    try {
-                        serverSocket.close();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
-        }
-
-        if (null == serverSocket) {
-            throw new IOException("Failed to find an available port");
-        }
+        // Use dynamic port allocation to avoid conflicts
+        serverSocket = new ServerSocket(0, 50, InetAddress.getByName(null));
+        serverSocket.setReuseAddress(true);
+        boundPort = serverSocket.getLocalPort();
 
         thread.setDaemon(true);
         thread.start();

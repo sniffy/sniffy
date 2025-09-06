@@ -19,7 +19,6 @@
         <module>sniffy-integration-tests-xnio</module>
         <module>sniffy-integration-tests-jboss-remoting</module>
         <module>sniffy-integration-tests-spock</module>
-	    <module>sniffy-integration-tests-spring-boot</module>
 	    <module>sniffy-integration-tests-spring-boot-2</module>
 	    <module>sniffy-integration-tests-spring-kafka</module>
 	    <module>sniffy-integration-tests-tomcat</module>
