@@ -12,10 +12,6 @@ public class SniffySelectorProviderModule {
 
     public static void initialize() {
 
-        if (JVMUtil.getVersion() <= 7) return;
-
-        if (JVMUtil.getVersion() == 8 && Boolean.getBoolean("io.sniffy.forceJava7Compatibility")) return;
-
         if (JVMUtil.getVersion() >= 16) {
 
             try {
