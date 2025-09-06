@@ -174,15 +174,7 @@ public class Spy<C extends Spy<C>> extends LegacySpy<C> implements Closeable {
             if (addressMatcher.matches(socketMetaData.getAddress()) &&
                     (null == socketMetaData.getThreadMetaData() || threadMatcher.matches(socketMetaData.getThreadMetaData()))) {
 
-                if (JVMUtil.getVersion() < 7) {
-                    // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
-                    //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                    synchronized (networkPackets) {
-                        filterNetworkPackets(threadMatcher, groupingOptions, reducedTraffic, socketMetaData, networkPackets);
-                    }
-                } else {
-                    filterNetworkPackets(threadMatcher, groupingOptions, reducedTraffic, socketMetaData, networkPackets);
-                }
+                filterNetworkPackets(threadMatcher, groupingOptions, reducedTraffic, socketMetaData, networkPackets);
 
             }
 

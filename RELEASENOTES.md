@@ -4,6 +4,8 @@
 
 [Commits](https://github.com/sniffy/sniffy/compare/3.1.13...master)
 
+ * [Drop support of Java 6 and Java 7](https://github.com/sniffy/sniffy/issues/587)
+
 ## v3.1.13 - June 15th, 2022
 
  * [Discover and disable connections made via HTTP Proxies](https://github.com/sniffy/sniffy/issues/421)

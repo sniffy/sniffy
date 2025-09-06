@@ -41,14 +41,9 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
                     maximumWeightedCapacity(Long.MAX_VALUE).
                     build();
 
-    // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
     @IgnoreJRERequirement
     private static <T> Deque<T> createConcurrentDeque() {
-        if (JVMUtil.getVersion() < 7) {
-            return new LinkedList<T>();
-        } else {
-            return new ConcurrentLinkedDeque<T>();
-        }
+        return new ConcurrentLinkedDeque<T>();
     }
 
     protected void addNetworkTraffic(
@@ -62,14 +57,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-            if (JVMUtil.getVersion() < 7) {
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (networkPackets) {
-                    networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
-                }
-            } else {
-                networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
-            }
+            networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
 
         }
     }
@@ -85,15 +73,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
-            if (JVMUtil.getVersion() < 7) {
-                // TODO: backport ConcurrentLinkedDeque for Java 1.6 and remove this code
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (networkPackets) {
-                    networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
-                }
-            } else {
-                networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
-            }
+            networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
 
         }
     }
