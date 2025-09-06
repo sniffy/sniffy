@@ -119,7 +119,7 @@ jobs:
         run: mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./.github/workflows/Dockerfile.3.8.1-adoptopenjdk-11
