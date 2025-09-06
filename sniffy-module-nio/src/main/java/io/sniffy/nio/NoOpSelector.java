@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * @since 3.2.0
+ * @since 3.1.14
  */
 public class NoOpSelector extends AbstractSelector {
 
