@@ -22,6 +22,7 @@ import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
 
 import jakarta.servlet.DispatcherType;
+import jakarta.servlet.Filter;
 import javax.sql.DataSource;
 import java.util.EnumSet;
 import java.util.Map;
@@ -90,9 +91,9 @@ public class SniffySpringConfiguration implements ImportAware, BeanFactoryAware,
     }
 
     @Bean
-    public FilterRegistrationBean sniffyFilterRegistration(SniffyFilter sniffyFilter) {
+    public FilterRegistrationBean<Filter> sniffyFilterRegistration(SniffyFilter sniffyFilter) {
 
-        FilterRegistrationBean filterRegistration = new FilterRegistrationBean(sniffyFilter);
+        FilterRegistrationBean<Filter> filterRegistration = new FilterRegistrationBean<>(sniffyFilter);
         filterRegistration.setAsyncSupported(true);
         filterRegistration.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
 

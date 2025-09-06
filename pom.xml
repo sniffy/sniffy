@@ -30,8 +30,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots</sonatypeOssDistMgmtSnapshotsUrl>
         <sniffy.ui.version>3.1.8</sniffy.ui.version>
-        <spring.version>5.3.39</spring.version>
-        <spring.boot.version>2.7.18</spring.boot.version>
+        <spring.version>6.0.23</spring.version>
+        <spring.boot.version>3.1.12</spring.boot.version>
         <jacoco.version>0.8.13</jacoco.version>
         <graalvm.version>20.3.6.1</graalvm.version>
 
