@@ -12,6 +12,8 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,12 +21,14 @@ import static org.junit.Assert.assertTrue;
 public class BaseTomcatIT {
 
     private static Tomcat tomcat;
+    private static int port;
 
     @BeforeClass
     public static void startTomcat() throws Exception {
 
         tomcat = new Tomcat();
-        tomcat.setPort(8081);
+        port = findFreePort();
+        tomcat.setPort(port);
 
         StandardContext ctx = (StandardContext) tomcat.addWebapp("/test", new File("src/main/webapp/").getAbsolutePath());
         //declare an alternate location for your "WEB-INF/classes" dir:
@@ -44,12 +48,18 @@ public class BaseTomcatIT {
         tomcat.stop();
     }
 
+    private static int findFreePort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
+    }
+
     @Test
     public void testSniffyInjected() {
 
         WebDriver webDriver = new HtmlUnitDriver(true);
 
-        webDriver.navigate().to("http://127.0.0.1:8081/test");
+        webDriver.navigate().to("http://127.0.0.1:" + port + "/test");
 
         assertFalse(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
         webDriver.findElement(By.className("sniffy-widget-icon-container")).click();
@@ -64,7 +74,7 @@ public class BaseTomcatIT {
 
         WebDriver webDriver = new HtmlUnitDriver(true);
 
-        webDriver.navigate().to("http://127.0.0.1:8081/test/index.html");
+        webDriver.navigate().to("http://127.0.0.1:" + port + "/test/index.html");
 
         assertFalse(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
         webDriver.findElement(By.className("sniffy-widget-icon-container")).click();
@@ -79,7 +89,7 @@ public class BaseTomcatIT {
 
         WebDriver webDriver = new HtmlUnitDriver(true);
 
-        webDriver.navigate().to("http://127.0.0.1:8081/test?foo=bar");
+        webDriver.navigate().to("http://127.0.0.1:" + port + "/test?foo=bar");
 
         assertFalse(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
         webDriver.findElement(By.className("sniffy-widget-icon-container")).click();

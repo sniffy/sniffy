@@ -42,7 +42,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @EnableSniffy(
         injectHtml = "#{injectHtml}",
-        filterEnabled = "${filterEnabled}",
+        filterEnabled = "${filterEnabled:true}",
         advanced = @SniffyAdvancedConfiguration(
                 topSqlCapacity = "#{topSqlCapacity}",
                 excludePattern = "#{excludePattern}",
@@ -50,7 +50,6 @@ import static org.junit.Assert.*;
         )
 )
 @ContextConfiguration(classes = EnableSniffyTest.class)
-@PropertySource("classpath:/test.properties")
 public class EnableSniffyTest {
 
     @Resource
