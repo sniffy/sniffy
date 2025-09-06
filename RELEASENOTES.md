@@ -2,9 +2,14 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.13...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.2.0...master)
+
+## v3.2.0 - TBD
+
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.13...3.2.0)
 
  * [Drop support of Java 6 and Java 7](https://github.com/sniffy/sniffy/issues/587)
+ * Updated dependencies: Spring Framework to 5.3.39, Spring Boot to 2.7.18, JaCoCo to 0.8.13, Animal Sniffer to 1.20
 
 ## v3.1.13 - June 15th, 2022
 
