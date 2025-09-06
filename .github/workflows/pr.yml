@@ -33,7 +33,7 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
@@ -99,7 +99,7 @@ jobs:
           java-version: 11
           distribution: 'temurin'
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
@@ -147,7 +147,7 @@ jobs:
           ${JAVA_HOME}/bin/java -version
         shell: bash
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
@@ -191,7 +191,7 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
@@ -247,7 +247,7 @@ jobs:
           java-version: 8
           distribution: 'temurin'
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
