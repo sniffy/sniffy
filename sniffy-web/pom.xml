@@ -71,8 +71,8 @@
                                 <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
                                     <signature>
                                         <groupId>org.codehaus.mojo.signature</groupId>
-                                        <artifactId>java16-sun</artifactId>
-                                        <version>1.10</version>
+                                        <artifactId>java18</artifactId>
+                                        <version>1.0</version>
                                     </signature>
                                     <ignores>
                                         <ignore>java.nio.channels.AsynchronousSocketChannel</ignore>
@@ -132,11 +132,6 @@
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-module-nio</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-module-nio-compat</artifactId>
             <version>${project.version}</version>
         </dependency>
 
