@@ -17,10 +17,10 @@ public class ReflectionFieldCopier {
     public void copy(Object source, Object target) {
         if (null != field) {
             try {
-                Object o = field.get(source);
-                field.set(target, o);
+                Object o = ReflectionUtil.get(field, source);
+                ReflectionUtil.set(field, target, o);
             } catch (IllegalAccessException e) {
-                e.printStackTrace();
+                e.printStackTrace(); // TODO: does it fail on Java 19/20 ?
             }
         }
     }

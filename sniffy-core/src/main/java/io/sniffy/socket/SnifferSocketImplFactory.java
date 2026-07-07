@@ -89,9 +89,9 @@ public class SnifferSocketImplFactory implements SocketImplFactory {
     public SocketImpl createSocketImpl() {
         SocketImpl socketImpl = isServerSocketAccept() ? newSocketImpl(false) :
                 isServerSocket() ? newSocketImpl(true) :
-                        JVMUtil.getVersion() > 6 ? new SnifferSocketImpl(newSocketImpl(false)) :
-                                new CompatSnifferSocketImpl(newSocketImpl(false));
+                        new SnifferSocketImpl(newSocketImpl(false));
         LOG.trace("Created SocketImpl " + socketImpl);
+        // TODO: optimize polyglog to support lazy evaluation in order not to call StackTraceExtractor.getStackTraceAsString() each time
         CONSTRUCTOR_VERBOSE_LOG.trace("StackTrace for creating new SocketImpl was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
         return socketImpl;
     }

@@ -395,7 +395,7 @@ public class SnifferSocketImplTest {
         verify(delegate).getInputStream();
         verifyNoMoreInteractions(delegate);
 
-        assertEquals(SnifferInputStream.class, actual.getClass());
+        assertTrue(actual instanceof SnifferInputStream || actual instanceof BufferedInputStream);
         assertEquals(1, actual.read());
 
     }

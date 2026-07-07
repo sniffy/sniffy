@@ -1,11 +1,14 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.*;
+import io.sniffy.util.ExceptionUtil;
+import io.sniffy.util.ObjectWrapper;
+import io.sniffy.util.StackTraceExtractor;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractSelectableChannel;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
@@ -13,22 +16,6 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
  * @since 3.1.7
  */
 public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
-
-    static {
-
-        if (JVMUtil.getVersion() < 14 && !Boolean.getBoolean("io.sniffy.forceJava14Compatibility")) {
-
-            try {
-                AtomicReferenceFieldUpdater<SelectionKey, Object> defaultFieldUpdater = ReflectionUtil.getField(SelectionKey.class, null, "attachmentUpdater");
-                AtomicReferenceFieldUpdater<SelectionKey, Object> attachmentFieldUpdater = new ObjectWrapperFieldUpdater<SelectionKey, Object>(defaultFieldUpdater);
-                ReflectionUtil.setField(SelectionKey.class, null, "attachmentUpdater", attachmentFieldUpdater);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-
-    }
 
     private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
@@ -57,7 +44,14 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public Selector selector() {
-        return sniffySelector;
+        if (!isValid() &&
+                StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey") &&
+                sniffyChannel instanceof SocketChannel
+        ) {
+            return NoOpSelector.INSTANCE; // TODO: cleanup this and other collections
+        } else {
+            return sniffySelector;
+        }
     }
 
     @Override
@@ -68,6 +62,20 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     @Override
     public void cancel() {
         delegate.cancel();
+        if (sniffyChannel instanceof SelectableChannelWrapper) {
+            //noinspection unchecked
+            ((SelectableChannelWrapper<AbstractSelectableChannel>) sniffyChannel).keyCancelled();
+        }
+        // TODO: seems that code below is safe to be removed on Java 17; is it the same on older Java?
+        /*synchronized (this) {
+            delegate.cancel();
+            try {
+                // TODO: reevaluate copying other fields across NIO stack
+                ReflectionUtil.invokeMethod(AbstractSelector.class, sniffySelector, "cancel", SelectionKey.class, this);
+            } catch (Exception e) {
+                throw ExceptionUtil.processException(e);
+            }
+        }*/
     }
 
     @Override
@@ -88,6 +96,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     // No @Override annotation here because this method is available in Java 11+ only
     //@Override
+    @SuppressWarnings("Since15")
     public int interestOpsOr(int ops) {
         try {
             return invokeMethod(SelectionKey.class, delegate, "interestOpsOr", Integer.TYPE, ops, Integer.TYPE);
@@ -98,6 +107,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     // No @Override annotation here because this method is available in Java 11+ only
     //@Override
+    @SuppressWarnings("Since15")
     public int interestOpsAnd(int ops) {
         try {
             return invokeMethod(SelectionKey.class, delegate, "interestOpsAnd", Integer.TYPE, ops, Integer.TYPE);

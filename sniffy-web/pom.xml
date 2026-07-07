@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.13-SNAPSHOT</version>
+        <version>3.2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -71,8 +71,8 @@
                                 <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
                                     <signature>
                                         <groupId>org.codehaus.mojo.signature</groupId>
-                                        <artifactId>java16-sun</artifactId>
-                                        <version>1.10</version>
+                                        <artifactId>java18</artifactId>
+                                        <version>1.0</version>
                                     </signature>
                                     <ignores>
                                         <ignore>java.nio.channels.AsynchronousSocketChannel</ignore>
@@ -84,6 +84,8 @@
                                         <ignore>java.nio.channels.NetworkChannel</ignore>
                                         <ignore>java.nio.channels.AsynchronousChannelGroup</ignore>
                                         <ignore>sun.misc.Unsafe</ignore>
+                                        <ignore>sun.nio.ch.DatagramChannelDelegate</ignore>
+                                        <ignore>sun.nio.ch.ServerSocketChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
@@ -97,6 +99,8 @@
                                     <ignores>
                                         <ignore>sun.nio.ch.SelChImpl</ignore>
                                         <ignore>sun.misc.Unsafe</ignore>
+                                        <ignore>sun.nio.ch.DatagramChannelDelegate</ignore>
+                                        <ignore>sun.nio.ch.ServerSocketChannelDelegate</ignore>
                                         <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
                                     </ignores>
                                     <checkTestClasses>false</checkTestClasses>
@@ -107,6 +111,8 @@
                     </execution>
                 </executions>
             </plugin>
+
+
 
         </plugins>
     </build>
@@ -126,11 +132,6 @@
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-module-nio</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-module-nio-compat</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -199,13 +200,13 @@
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js</artifactId>
-            <version>20.2.0</version>
+            <version>${graalvm.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js-scriptengine</artifactId>
-            <version>20.2.0</version>
+            <version>${graalvm.version}</version>
             <scope>test</scope>
         </dependency>
 

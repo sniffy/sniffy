@@ -10,4 +10,6 @@ public interface SelectableChannelWrapper<T extends AbstractSelectableChannel> e
 
     T getDelegate();
 
+    void keyCancelled();
+
 }

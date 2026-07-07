@@ -5,6 +5,7 @@ import io.sniffy.Sniffy;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
+import io.sniffy.sql.SqlStatement;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
@@ -14,8 +15,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.sniffy.servlet.SniffyFilter.*;
 
@@ -247,6 +250,60 @@ class SniffyRequestProcessor implements BufferedServletResponseListener {
         wrapper.setIntHeader(HEADER_NUMBER_OF_QUERIES, requestStats.executedStatements() + spy.executedStatements());
         wrapper.setHeader(HEADER_TIME_TO_FIRST_BYTE, Long.toString(getTimeToFirstByte()));
         // TODO: store startTime of first request processor somewhere
+
+        {
+            StringBuilder sb = new StringBuilder();
+
+            // TODO: use requestStats instead of spy
+            if (null != spy.getExecutedStatements() && !spy.getExecutedStatements().isEmpty()) {
+                long sqlTime = 0;
+                long sqlQueries = 0;
+                long sqlRows = 0;
+
+
+
+                for (Map.Entry<StatementMetaData, SqlStats> entry : spy.getExecutedStatements().entrySet()) {
+                    SqlStats sqlStats = entry.getValue();
+                    StatementMetaData statementMetaData = entry.getKey();
+                    sqlTime += sqlStats.elapsedTime.longValue();
+                    if (statementMetaData.query != SqlStatement.SYSTEM) {
+                        sqlQueries += sqlStats.queries.longValue();
+                    }
+                    sqlRows += sqlStats.rows.longValue();
+                }
+
+                //noinspection SpellCheckingInspection
+                sb.append("SQL; desc=\"").append(sqlQueries).append(" quer").append(sqlQueries == 1 ? "y" : "ies").append(" with ").append(sqlRows).append(" rows\"").append("; dur=").append(sqlTime);
+            }
+
+            if (null != spy.getSocketOperations() && !spy.getSocketOperations().isEmpty()) {
+                Map<String, SocketStats> networkMap = new HashMap<String, SocketStats>(spy.getSocketOperations().size());
+
+                for (Map.Entry<SocketMetaData, SocketStats> entry : spy.getSocketOperations().entrySet()) {
+                    String key = entry.getKey().getAddress().getHostName() + ":" + entry.getKey().getAddress().getPort();
+                    if (networkMap.containsKey(key)) {
+                        networkMap.get(key).accumulate(entry.getValue());
+                    } else {
+                        networkMap.put(key, new SocketStats(entry.getValue()));
+                    }
+                }
+
+                for (Map.Entry<String, SocketStats> entry : networkMap.entrySet()) {
+                    if (sb.length() > 0) {
+                        sb.append(",");
+                    }
+                    sb.
+                            append("Network; desc=\"").
+                            append(entry.getKey()).
+                            append(" ").
+                            append(entry.getValue().bytesDown.longValue() + entry.getValue().bytesUp.longValue()).
+                            append(" bytes\"").
+                            append("; dur=").append(entry.getValue().elapsedTime);
+                }
+            }
+
+            wrapper.setHeader(HEADER_SERVER_TIMING, sb.toString());
+        }
 
         StringBuilder sb = new StringBuilder();
         String contextRelativePath;

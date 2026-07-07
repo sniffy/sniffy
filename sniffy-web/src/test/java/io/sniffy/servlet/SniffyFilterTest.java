@@ -3,7 +3,9 @@ package io.sniffy.servlet;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Issue;
 import io.sniffy.BaseTest;
+import io.sniffy.Sniffy;
 import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.socket.Protocol;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Before;
@@ -29,6 +31,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.regex.Matcher;
@@ -37,6 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.sniffy.servlet.SniffyFilter.*;
+import static io.sniffy.servlet.SniffyRequestProcessor.SNIFFY_REQUEST_PROCESSOR_REQUEST_ATTRIBUTE_NAME;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -1187,6 +1191,55 @@ public class SniffyFilterTest extends BaseTest {
         assertTrue(httpServletResponse.containsHeader(HEADER_TIME_TO_FIRST_BYTE));
         assertTrue(Integer.parseInt(httpServletResponse.getHeader(HEADER_TIME_TO_FIRST_BYTE)) >= 1);
 
+    }
+
+    @Test
+    @Issue("issues/465")
+    public void testFilterServerTimingContainsSQL() throws IOException, ServletException {
+
+        doAnswer(invocation -> {
+            executeStatement();
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.getOutputStream().write(1);
+            response.flushBuffer();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertTrue(httpServletResponse.containsHeader(HEADER_SERVER_TIMING));
+
+        String serverTiming = httpServletResponse.getHeader(HEADER_SERVER_TIMING);
+
+        assertTrue(serverTiming.contains("SQL"));
+        assertTrue(serverTiming.contains("1 query"));
+    }
+
+    @Test
+    @Issue("issues/465")
+    public void testFilterServerTimingContainsNetwork() throws IOException, ServletException {
+
+        doAnswer(invocation -> {
+            Sniffy.logSocket(
+                    1,
+                    InetSocketAddress.createUnresolved("localhost", 1234),
+                    10, 3, 5
+            );
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.getOutputStream().write(1);
+            response.flushBuffer();
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertTrue(httpServletResponse.containsHeader(HEADER_SERVER_TIMING));
+
+        String serverTiming = httpServletResponse.getHeader(HEADER_SERVER_TIMING);
+
+        assertTrue(serverTiming.contains("Network"));
+        assertTrue(serverTiming.contains("desc=\"localhost:1234 8 bytes\""));
+        assertTrue(serverTiming.contains("dur=10"));
     }
 
     @Test

@@ -292,7 +292,7 @@ public class Sniffy {
 
                     try {
                         Class.forName("io.sniffy.nio.SniffySelectorProviderModule").getMethod("initialize").invoke(null);
-                        Class.forName("io.sniffy.nio.compat.SniffyCompatSelectorProviderModule").getMethod("initialize").invoke(null);
+                        Class.forName("io.sniffy.nio.compat.CompatSniffySelectorProviderModule").getMethod("initialize").invoke(null);
                     } catch (Exception e) {
                         LOG.error(e);
                     }

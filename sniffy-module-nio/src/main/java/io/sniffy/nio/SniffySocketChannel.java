@@ -10,10 +10,7 @@ import io.sniffy.socket.*;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -233,7 +230,19 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
     @Override
+    public boolean connect(SocketAddress remote) throws IOException {
+        long start = System.currentTimeMillis();
+        try {
+            checkConnectionAllowed((InetSocketAddress) remote, 1);
+            return super.connect(remote);
+        } finally {
+            logSocket(System.currentTimeMillis() - start);
+        }
+    }
+
+    @Override
     public int read(ByteBuffer dst) throws IOException {
+        // TODO: honor SpyConfiguration.isBufferIncomingTraffic() and SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize() settings
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
@@ -258,16 +267,15 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        // TODO: honor SpyConfiguration.isBufferIncomingTraffic() and SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize() settings
         checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         long bytesDown = 0;
 
         int[] positions = new int[length];
-        int[] remainings = new int[length];
 
         for (int i = 0; i < length; i++) {
             positions[i] = dsts[offset + i].position();
-            remainings[i] = dsts[offset + i].remaining();
         }
 
         try {
@@ -284,9 +292,11 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
             if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 for (int i = 0; i < length; i++) {
+                    //TODO: cover by unit test
+                    int newPosition = dsts[offset + i].position();
                     dsts[offset + i].position(positions[i]);
-                    byte[] buff = new byte[remainings[i]];
-                    dsts[offset + i].get(buff, 0, remainings[i]);
+                    byte[] buff = new byte[newPosition - positions[i]];
+                    dsts[offset + i].get(buff, 0, newPosition - positions[i]);
                     logTraffic(false, Protocol.TCP, buff, 0, buff.length);
                 }
 

@@ -14,12 +14,24 @@ public interface SniffyNetworkConnection extends TrafficCapturingNetworkConnecti
 
     void setConnectionStatus(Integer connectionStatus);
 
+    /**
+     * @since 3.1.13
+     */
     void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress);
 
+    /**
+     * @since 3.1.13
+     */
     InetSocketAddress getProxiedInetSocketAddress();
 
+    /**
+     * @since 3.1.13
+     */
     void  setFirstPacketSent(boolean firstPacketSent);
 
+    /**
+     * @since 3.1.13
+     */
     boolean isFirstPacketSent();
 
     int getPotentiallyBufferedInputBytes();

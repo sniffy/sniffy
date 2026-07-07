@@ -7,9 +7,12 @@ import io.sniffy.socket.SocketMetaData;
 import io.sniffy.socket.SocketStats;
 import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
+import io.sniffy.util.JVMUtil;
+import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * @since 3.1
@@ -38,6 +41,11 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
                     maximumWeightedCapacity(Long.MAX_VALUE).
                     build();
 
+    @IgnoreJRERequirement
+    private static <T> Deque<T> createConcurrentDeque() {
+        return new ConcurrentLinkedDeque<T>();
+    }
+
     protected void addNetworkTraffic(
             SocketMetaData socketMetaData,
             boolean sent, long timestamp,
@@ -45,11 +53,12 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
             byte[] traffic, int off, int len) {
         Deque<NetworkPacket> networkPackets = networkTraffic.get(socketMetaData);
         if (null == networkPackets) {
-            networkTraffic.putIfAbsent(socketMetaData, networkPackets = new LinkedList<NetworkPacket>());
+            networkTraffic.putIfAbsent(socketMetaData, networkPackets = createConcurrentDeque());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
             networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
+
         }
     }
 
@@ -60,11 +69,12 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
             byte[] traffic, int off, int len) {
         Deque<NetworkPacket> networkPackets = decryptedNetworkTraffic.get(socketMetaData);
         if (null == networkPackets) {
-            decryptedNetworkTraffic.putIfAbsent(socketMetaData, networkPackets = new LinkedList<NetworkPacket>());
+            decryptedNetworkTraffic.putIfAbsent(socketMetaData, networkPackets = createConcurrentDeque());
         }
         NetworkPacket lastPacket = networkPackets.peekLast();
         if (null == lastPacket || !lastPacket.combine(sent, timestamp, stackTrace, threadMetaData, traffic, off, len, SniffyConfiguration.INSTANCE.getPacketMergeThreshold())) {
             networkPackets.add(new NetworkPacket(sent, timestamp, stackTrace, threadMetaData, traffic, off, len));
+
         }
     }
 
@@ -74,7 +84,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
 
     public C reset() {
         resetExecutedStatements();
-        resetSocketOpertions();
+        resetSocketOperations();
         return self();
     }
 
@@ -94,7 +104,7 @@ public abstract class BaseSpy<C extends BaseSpy<C>> {
                         build();
     }
 
-    protected void resetSocketOpertions() {
+    protected void resetSocketOperations() {
         socketOperations = new ConcurrentLinkedHashMap.Builder<SocketMetaData, SocketStats>().
                 maximumWeightedCapacity(Long.MAX_VALUE).
                 build();

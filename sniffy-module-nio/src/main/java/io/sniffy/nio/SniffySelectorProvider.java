@@ -164,9 +164,11 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
-                    ProtocolFamily.class, family,
-                    ServerSocketChannel.class
+            return new SniffyServerSocketChannel(this,
+                    invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
+                        ProtocolFamily.class, family,
+                        ServerSocketChannel.class
+                )
             );
         } catch (Exception e) {
             throw processException(e);

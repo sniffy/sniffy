@@ -18,6 +18,34 @@ include::../../../../sniffy-core/src/test/java/io/sniffy/socket/CaptureTrafficOv
 <9> SocketMetaData describes the target host and port and other parameters as described above for `GroupingOptions`
 <10> `NetworkPacket` contains data in bytes, timestamp, direction and optional stacktrace and thread information
 
+`SpyConfiguration` supports following properties:
+
+.Configuration properties
+|===
+|Property name |Description |Default Value
+
+|captureStackTraces
+|Capture stack traces for network communication
+|true
+
+|captureNetwork
+|Capture network interactions
+|Global configuration `io.sniffy.monitorSocket`
+
+|captureNetworkTraffic
+|Capture network traffic
+|false
+
+|captureJdbc
+|Capture JDBC queries
+|Global configuration `io.sniffy.monitorJdbc`
+
+|bufferIncomingTraffic
+|Buffer incoming traffic - might be useful to more accurately capture traffic of conversation based protocols in multithreaded environments
+|Global configuration `io.sniffy.bufferIncomingTraffic`
+
+|===
+
 === Configuration
 
 `packetMergeThreshold` allows you to specify threshold for combining similar network packets when capturing traffic.

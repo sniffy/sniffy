@@ -29,6 +29,8 @@ public class PolyglogSystemOutImpl extends AbstractPolyglogImpl {
     @Override
     public void log(PolyglogLevel level, String message) {
         if (isLevelEnabled(level)) {
+            // TODO: make formatting configurable;
+            // TODO: if system out is redirected to another logging framework it is probably redundant
             System.out.println(DATE_FORMAT_THREAD_LOCAL.get().format(new Date()) +
                     " [" +
                     level.name() +

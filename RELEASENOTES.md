@@ -2,7 +2,23 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.12...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.2.0...master)
+
+## v3.2.0 - TBD
+
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.13...3.2.0)
+
+ * [Drop support of Java 6 and Java 7](https://github.com/sniffy/sniffy/issues/587)
+ * Updated dependencies: Spring Framework to 5.3.39, Spring Boot to 2.7.18, JaCoCo to 0.8.13, Animal Sniffer to 1.20
+
+## v3.1.13 - June 15th, 2022
+
+ * [Discover and disable connections made via HTTP Proxies](https://github.com/sniffy/sniffy/issues/421)
+ * [Test on various architectures using QEMU](https://github.com/sniffy/sniffy/issues/451)
+ * [If @DisableSockets is applied to the whole test class it should be effective before context initialization](https://github.com/sniffy/sniffy/issues/490)
+ * [java.lang.IllegalArgumentException: null from SniffySocketChannelAdapter.write(SniffySocketChannelAdapter.java:119)](https://github.com/sniffy/sniffy/issues/498)
+ * [Traffic captured with Sniffy is incorrectly splitted into packets](https://github.com/sniffy/sniffy/issues/528)
+ * Support of Java 18 and 19
 
 ## v3.1.12 - May 12th, 2021
 

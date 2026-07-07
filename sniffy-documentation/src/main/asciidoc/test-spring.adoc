@@ -13,7 +13,7 @@ include::../../../../sniffy-test/sniffy-spring-test/src/test/java/io/sniffy/test
 <5> - Add `@DisableSockets` annotation on your test method or test class and any attempt to open a network connection will fail
 <6> - All socket operations executed within test method annotated with `@DisableSockets` will throw a `java.net.ConnectException`
 
-=== @SharedConnection
+=== @SharedConnection - rolling back all JDBC transactions started within a test
 
 Sniffy provides convenient annotations for shared connection data source in Spring unit tests.
 Consider example below:
@@ -26,6 +26,15 @@ include::../../../../sniffy-test/sniffy-spring-test/src/test/java/io/sniffy/test
 <3> - `@SharedConnection` annotation will make the current connection (started because of `@Transactional` annotation before each test) as master
 <4> - Insert two rows into table using master connection
 <5> - Another slave connection obtained in another thread will still see the results of these inserts although the isolation level is `READ_COMITTED` and master transaction has not been committed
+
+=== @DisableSocketsGlobally - disabling all network connectivity in a spring application
+
+You can disable all network communications in your spring test (or in fact even in your spring application should you have such a use case) using a dedicated annotation.
+```
+@DisableSocketsGloballyConfiguration
+```
+
+This annotation works before the beans of your application are initialized, so it will capture and disable all network connections.
 
 === Troubleshooting
 
