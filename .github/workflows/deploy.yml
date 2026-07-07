@@ -15,11 +15,11 @@ jobs:
       matrix:
         include:
           - java: 8
-            os: ubuntu-24.04
+            os: ubuntu-26.04
           - java: 11
-            os: windows-2022
+            os: windows-2025
           - java: 17
-            os: macos-13
+            os: macos-26
     name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -67,7 +67,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - smoke-test
     strategy:
@@ -125,8 +125,8 @@ jobs:
   test-ibm-j9:
     needs:
       - smoke-test
-    runs-on: ubuntu-24.04
-    name: Test JDK IBM J9 1.8, ubuntu-24.04
+    runs-on: ubuntu-26.04
+    name: Test JDK IBM J9 1.8, ubuntu-26.04
     steps:
       - uses: actions/checkout@v6
       - name: Pull IBM JDK J9 1.8 Docker Image
@@ -173,11 +173,11 @@ jobs:
         os: [ ubuntu-24.04, windows-2022, macos-13 ]
         exclude:
           - java: 8
-            os: ubuntu-24.04
+            os: ubuntu-26.04
           - java: 11
-            os: windows-2022
+            os: windows-2025
           - java: 17
-            os: macos-13
+            os: macos-26
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -229,7 +229,7 @@ jobs:
     needs:
       - smoke-test
     name: Analyze
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
