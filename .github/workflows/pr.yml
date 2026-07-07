@@ -23,7 +23,7 @@ jobs:
           - java: 11
             os: windows-2025
           - java: 17
-            os: macos-26
+            os: macos-26-intel
     name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -174,14 +174,14 @@ jobs:
       matrix:
         # test against LTS versions of JDK up to 21:
         java: [ 8, 11, 17, 21 ]
-        os: [ ubuntu-26.04, windows-2025, macos-26 ]
+        os: [ ubuntu-26.04, windows-2025, macos-26-intel ]
         exclude:
           - java: 8
             os: ubuntu-26.04
           - java: 11
             os: windows-2025
           - java: 17
-            os: macos-26
+            os: macos-26-intel
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
