@@ -1,9 +1,19 @@
 package io.sniffy.util;
 
+import java.util.Locale;
+
 /**
  * @since 3.1.7
  */
 public class JVMUtil {
+
+    public static boolean isJ9() {
+        String vmName = System.getProperty("java.vm.name", "");
+        String normalized = vmName.toLowerCase(Locale.ROOT);
+
+        return normalized.contains("openj9")
+                || normalized.contains("j9");
+    }
 
     public static int getVersion() {
         String version = System.getProperty("java.version");

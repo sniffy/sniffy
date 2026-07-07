@@ -112,7 +112,7 @@ public class ReflectionUtil {
 
     public static boolean setAccessible(AccessibleObject ao) {
 
-        if (JVMUtil.getVersion() >= 16) {
+        if (JVMUtil.getVersion() >= 16 || (JVMUtil.getVersion() >= 8 && JVMUtil.isJ9())) {
 
             try {
                 long overrideOffset = UNSAFE.objectFieldOffset(FakeAccessibleObject.class.getDeclaredField("override"));
