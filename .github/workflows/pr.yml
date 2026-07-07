@@ -158,6 +158,8 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+      - name: Maven Version
+        run: mvn --version
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
