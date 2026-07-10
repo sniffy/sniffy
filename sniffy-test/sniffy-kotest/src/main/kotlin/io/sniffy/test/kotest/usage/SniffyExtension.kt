@@ -16,10 +16,10 @@ import io.sniffy.sql.SqlQueries
  */
 open class SniffyExtension(expectation: Spy.Expectation? = null) : TestCaseExtension {
 
-    private val spy: Spy<*> = Sniffy.spy<Spy<*>>()
+    private val spy: Spy<*> = Sniffy.spy()
 
     init {
-        expectation.let {
+        expectation?.let {
             spy.expect(it)
         }
 
@@ -48,4 +48,3 @@ open class SniffyExtension(expectation: Spy.Expectation? = null) : TestCaseExten
 class NoSocketsAllowedExtension(threads: Threads = Threads.ANY) : SniffyExtension(TcpConnections.none().threads(threads))
 
 class NoSqlExtension(threads: Threads = Threads.ANY) : SniffyExtension(SqlQueries.noneQueries().threads(threads))
-
