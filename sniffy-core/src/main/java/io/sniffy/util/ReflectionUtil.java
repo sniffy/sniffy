@@ -155,6 +155,33 @@ public class ReflectionUtil {
         return setField(clazz, instance, fieldName, value, null);
     }
 
+    public static <T, V> boolean setStaticFinal(Class<T> clazz, String fieldName, V value) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+
+            if (null == UNSAFE || !Modifier.isStatic(field.getModifiers()) || field.getType().isPrimitive()) {
+                return false;
+            }
+
+            if (null != value && !field.getType().isInstance(value)) {
+                return false;
+            }
+
+            Object base = UNSAFE.staticFieldBase(field);
+            long offset = UNSAFE.staticFieldOffset(field);
+
+            UNSAFE.putObjectVolatile(base, offset, value);
+
+            return true;
+        } catch (NoSuchFieldException e) {
+            return false;
+        } catch (SecurityException e) {
+            return false;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     public static <T, V> boolean setFields(String className, T instance, Class<V> valueClass, V value) {
         try {
             //noinspection unchecked
@@ -292,7 +319,7 @@ public class ReflectionUtil {
                     UNSAFE.staticFieldOffset(instanceField) :
                     UNSAFE.objectFieldOffset(instanceField);
 
-            Object object = null == instance ? instanceField.getDeclaringClass() : instance;
+            Object object = null == instance ? UNSAFE.staticFieldBase(instanceField) : instance;
 
             if (instanceField.getType() == Boolean.TYPE && value instanceof Boolean) {
                 if (Modifier.isVolatile(instanceField.getModifiers())) {
