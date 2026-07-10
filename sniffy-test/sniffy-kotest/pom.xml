@@ -16,8 +16,8 @@
         <kotest.version>4.6.4</kotest.version>
         <ktor.version>1.4.3</ktor.version>
         <kotlin-maven-plugin.version>2.1.10</kotlin-maven-plugin.version>
-        <dokka-maven-plugin.version>2.1.10</dokka-maven-plugin.version>
         <kotlin-stdlib-jdk8.version>2.1.10</kotlin-stdlib-jdk8.version>
+        <dokka-maven-plugin.version>2.1.0</dokka-maven-plugin.version>
     </properties>
 
     <build>
