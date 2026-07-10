@@ -176,8 +176,8 @@ jobs:
     strategy:
       matrix:
         # test against LTS versions of JDK up to 21:
-        java: [ 8, 11, 17, 21 ]
-#        java: [ 8, 11, 17, 21, 25 ]
+#        java: [ 8, 11, 17, 21 ]
+        java: [ 8, 11, 17, 21, 25 ]
         os: [ ubuntu-26.04, windows-2025, macos-26, macos-26-intel ]
         exclude:
           - java: 8
