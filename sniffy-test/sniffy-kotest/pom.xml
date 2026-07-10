@@ -149,6 +149,13 @@
 <!--                <artifactId>kotlinx-coroutines-core-jvm</artifactId>-->
 <!--                <version>1.5.0</version>-->
 <!--            </dependency>-->
+            <!-- Source: https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm -->
+            <dependency>
+                <groupId>org.jetbrains.kotlinx</groupId>
+                <artifactId>kotlinx-coroutines-core-jvm</artifactId>
+                <version>1.11.0</version>
+                <scope>runtime</scope>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
