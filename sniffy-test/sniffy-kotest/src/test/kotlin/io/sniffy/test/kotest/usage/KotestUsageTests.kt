@@ -10,7 +10,7 @@ import io.kotest.assertions.fail
 import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.test.TestCase
-import io.kotest.core.test.TestResult
+import io.kotest.engine.test.TestResult
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -25,13 +25,13 @@ class ExpectSniffyAssertionExceptionExtension : TestCaseExtension {
     override suspend fun intercept(testCase: TestCase, execute: suspend (TestCase) -> TestResult): TestResult {
         val testResult = execute(testCase)
         try {
-            testResult.error should beInstanceOf(SniffyAssertionError::class)
+            testResult.errorOrNull should beInstanceOf(SniffyAssertionError::class)
         } catch (e: AssertionError) {
-            return TestResult.failure(duration = testResult.duration, e = e)
+            return TestResult.Failure(duration = testResult.duration, cause = e)
         } catch (e: Exception) {
-            return TestResult.failure(duration = testResult.duration, e = AssertionError(e))
+            return TestResult.Failure(duration = testResult.duration, cause = AssertionError(e))
         }
-        return TestResult.success(testResult.duration)
+        return TestResult.Success(testResult.duration)
     }
 }
 
