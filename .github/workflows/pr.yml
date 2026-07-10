@@ -144,6 +144,7 @@ jobs:
       - name: Set Java Version
         run: |
           export JAVA_HOME=${{ github.workspace }}/ibmjdk
+          echo "JAVA_HOME=${{ github.workspace }}/ibmjdk" >> "$GITHUB_ENV"
           ${JAVA_HOME}/bin/java -version
         shell: bash
       - name: Set up Maven
