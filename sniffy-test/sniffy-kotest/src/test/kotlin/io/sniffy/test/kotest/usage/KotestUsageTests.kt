@@ -16,7 +16,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.beInstanceOf
 import io.ktor.client.*
-import io.ktor.client.engine.apache.*
+import io.ktor.client.engine.apache5.Apache5
 import io.ktor.client.request.*
 import io.sniffy.SniffyAssertionError
 
@@ -43,7 +43,7 @@ class KotestUsageTests : StringSpec({
             NoSocketsAllowedExtension() // <2>
     )) {
 
-        val client = HttpClient(Apache)
+        val client = HttpClient(Apache5)
 
         client.get("https://en.wikipedia.org/wiki/Main_Page")
 
