@@ -31,7 +31,7 @@
         <spring.version>5.3.39</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
         <jacoco.version>0.8.13</jacoco.version>
-        <graalvm.version>20.3.6.1</graalvm.version>
+
 
         <animal-sniffer.version>1.20</animal-sniffer.version>
     </properties>
