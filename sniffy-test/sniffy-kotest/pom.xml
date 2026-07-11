@@ -14,7 +14,7 @@
     <properties>
         <kotlin.version>2.1.10</kotlin.version>
         <kotest.version>5.9.1</kotest.version>
-        <ktor.version>1.4.3</ktor.version>
+        <ktor.version>2.3.13</ktor.version>
         <kotlin-maven-plugin.version>2.1.10</kotlin-maven-plugin.version>
         <kotlin-stdlib-jdk8.version>2.1.10</kotlin-stdlib-jdk8.version>
         <dokka-maven-plugin.version>2.1.0</dokka-maven-plugin.version>

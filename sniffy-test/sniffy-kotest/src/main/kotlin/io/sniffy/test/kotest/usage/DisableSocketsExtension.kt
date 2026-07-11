@@ -2,7 +2,7 @@ package io.sniffy.test.kotest.usage
 
 import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.test.TestCase
-import io.kotest.engine.test.TestResult
+import io.kotest.core.test.TestResult
 import io.sniffy.Sniffy
 import io.sniffy.configuration.SniffyConfiguration
 import io.sniffy.registry.ConnectionsRegistry
@@ -15,10 +15,7 @@ class DisableSocketsExtension : TestCaseExtension {
         Sniffy.initialize()
     }
 
-    override suspend fun intercept(
-        testCase: TestCase,
-        execute: suspend (TestCase) -> TestResult
-    ): TestResult {
+    override suspend fun intercept(testCase: TestCase, execute: suspend (TestCase) -> TestResult): TestResult {
         try {
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1)
             return execute.invoke(testCase)

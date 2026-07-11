@@ -2,7 +2,7 @@ package io.sniffy.test.kotest.usage
 
 import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.test.TestCase
-import io.kotest.engine.test.TestResult
+import io.kotest.core.test.TestResult
 import io.sniffy.Sniffy
 import io.sniffy.SniffyAssertionError
 import io.sniffy.Spy
@@ -34,19 +34,15 @@ open class SniffyExtension(expectation: Spy.Expectation? = null) : TestCaseExten
         return this
     }
 
-    override suspend fun intercept(
-        testCase: TestCase,
-        execute: suspend (TestCase) -> TestResult
-    ): TestResult {
+    override suspend fun intercept(testCase: TestCase, execute: suspend (TestCase) -> TestResult): TestResult {
         val testResult = execute.invoke(testCase)
         try {
             spy.verify()
         } catch (e: SniffyAssertionError) {
-            return TestResult.Failure(duration = testResult.duration, cause = e)
+            return TestResult.failure(durationMillis = testResult.duration.inWholeMilliseconds, error = e)
         }
         return testResult
     }
-
 }
 
 class NoSocketsAllowedExtension(threads: Threads = Threads.ANY) : SniffyExtension(TcpConnections.none().threads(threads))
