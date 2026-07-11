@@ -14,13 +14,15 @@ import org.mockserver.socket.PortFactory;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -42,8 +44,25 @@ public class DecryptGoogleTrafficTest {
         Sniffy.initialize();
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, new TrustManager[]{new TrustAllManager()}, new SecureRandom());
+        TrustManagerFactory trustManagerFactory = createTrustManagerFactory("localhost.crt");
+        sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
         HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+    }
+
+    private static TrustManagerFactory createTrustManagerFactory(String certificateResource) throws Exception {
+        try (InputStream certInputStream = DecryptGoogleTrafficTest.class.getResourceAsStream("/" + certificateResource)) {
+            if (certInputStream == null) {
+                throw new IllegalStateException("Certificate resource not found: " + certificateResource);
+            }
+            Certificate certificate = CertificateFactory.getInstance("X.509").generateCertificate(certInputStream);
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, null);
+            keyStore.setCertificateEntry("mock-server", certificate);
+
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(keyStore);
+            return trustManagerFactory;
+        }
     }
 
     private ClientAndServer mockServer;
@@ -69,22 +88,7 @@ public class DecryptGoogleTrafficTest {
         mockServer.stop();
     }
 
-    private static class TrustAllManager implements X509TrustManager {
 
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType) {
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType) {
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-
-    }
 
     @Test
     public void testGoogleTraffic() throws Exception {
