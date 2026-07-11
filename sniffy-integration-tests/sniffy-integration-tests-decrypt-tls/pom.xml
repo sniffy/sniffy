@@ -24,6 +24,15 @@
     </build>
 
     <dependencies>
+        <!-- mockserver -->
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-netty</artifactId>
+            <version>5.13.0</version>
+            <classifier>shaded</classifier>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-junit</artifactId>
