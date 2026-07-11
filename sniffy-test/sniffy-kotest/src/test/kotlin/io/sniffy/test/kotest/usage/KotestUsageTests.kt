@@ -16,7 +16,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.beInstanceOf
 import io.ktor.client.*
-import io.ktor.client.engine.apache.*
+import io.ktor.client.engine.apache5.Apache5
 import io.ktor.client.request.*
 import io.sniffy.SniffyAssertionError
 
@@ -25,13 +25,13 @@ class ExpectSniffyAssertionExceptionExtension : TestCaseExtension {
     override suspend fun intercept(testCase: TestCase, execute: suspend (TestCase) -> TestResult): TestResult {
         val testResult = execute(testCase)
         try {
-            testResult.error should beInstanceOf(SniffyAssertionError::class)
+            testResult.errorOrNull should beInstanceOf(SniffyAssertionError::class)
         } catch (e: AssertionError) {
-            return TestResult.failure(duration = testResult.duration, e = e)
+            return TestResult.failure(durationMillis = testResult.duration.inWholeMilliseconds, error = e)
         } catch (e: Exception) {
-            return TestResult.failure(duration = testResult.duration, e = AssertionError(e))
+            return TestResult.failure(durationMillis = testResult.duration.inWholeMilliseconds, error = AssertionError(e))
         }
-        return TestResult.success(testResult.duration)
+        return TestResult.success(testResult.duration.inWholeMilliseconds)
     }
 }
 
@@ -43,7 +43,7 @@ class KotestUsageTests : StringSpec({
             NoSocketsAllowedExtension() // <2>
     )) {
 
-        val client = HttpClient(Apache)
+        val client = HttpClient(Apache5)
 
         client.get("https://en.wikipedia.org/wiki/Main_Page")
 

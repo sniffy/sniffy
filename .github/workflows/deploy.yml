@@ -16,11 +16,11 @@ jobs:
       matrix:
         include:
           - java: 8
-            os: ubuntu-24.04
+            os: ubuntu-26.04
           - java: 11
-            os: windows-2022
+            os: windows-2025
           - java: 17
-            os: macos-13
+            os: macos-26
     name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -41,20 +41,20 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os != 'windows-2022'
+        if: matrix.os != 'windows-2025'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2025'
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2022'
+        if: matrix.os != 'windows-2025'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2025'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -68,7 +68,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - smoke-test
     strategy:
@@ -126,8 +126,8 @@ jobs:
   test-ibm-j9:
     needs:
       - smoke-test
-    runs-on: ubuntu-24.04
-    name: Test JDK IBM J9 1.8, ubuntu-24.04
+    runs-on: ubuntu-26.04
+    name: Test JDK IBM J9 1.8, ubuntu-26.04
     steps:
       - uses: actions/checkout@v6
       - name: Pull IBM JDK J9 1.8 Docker Image
@@ -141,6 +141,7 @@ jobs:
       - name: Set Java Version
         run: |
           export JAVA_HOME=${{ github.workspace }}/ibmjdk
+          echo "JAVA_HOME=${{ github.workspace }}/ibmjdk" >> "$GITHUB_ENV"
           ${JAVA_HOME}/bin/java -version
         shell: bash
       - name: Set up Maven
@@ -170,15 +171,20 @@ jobs:
     strategy:
       matrix:
         # test against LTS versions of JDK up to 21:
-        java: [ 8, 11, 17, 21 ]
-        os: [ ubuntu-24.04, windows-2022, macos-13 ]
+#        java: [ 8, 11, 17, 21 ]
+        java: [ 8, 11, 17, 21, 25 ]
+        os: [ ubuntu-26.04, windows-2025, macos-26, macos-26-intel ]
         exclude:
           - java: 8
-            os: ubuntu-24.04
+            os: ubuntu-26.04
           - java: 11
-            os: windows-2022
+            os: windows-2025
           - java: 17
-            os: macos-13
+            os: macos-26
+          - java: 8
+            os: macos-26
+          - java: 11
+            os: macos-26
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -199,20 +205,20 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os != 'windows-2022'
+        if: matrix.os != 'windows-2025'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2025'
       - name: Build with Maven
         run: mvn -T 1C -B clean package --file pom.xml -U -P ci -Dmaven.wagon.http.retryHandler.count=3 -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
-        if: matrix.os != 'windows-2022'
+        if: matrix.os != 'windows-2025'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1C -B clean package --file pom.xml -U -P ci '-Dmaven.wagon.http.retryHandler.count=3' '-Dhttp.keepAlive=false' '-Dmaven.wagon.http.pool=false'
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2025'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
@@ -230,7 +236,7 @@ jobs:
     needs:
       - smoke-test
     name: Analyze
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -276,7 +282,7 @@ jobs:
         with:
           java-version: 8
           distribution: 'temurin'
-          server-id: sonatype-nexus-snapshots
+          server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
       - name: Set up Maven
@@ -308,8 +314,8 @@ jobs:
         env:
           # https://youtrack.jetbrains.com/issue/KT-43894
           MAVEN_OPTS: "-Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
       - name: Set up Java for publishing to GitHub Packages
         uses: actions/setup-java@v5
         with:

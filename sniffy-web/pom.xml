@@ -197,19 +197,57 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.graalvm.js</groupId>
-            <artifactId>js</artifactId>
-            <version>${graalvm.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.js</groupId>
-            <artifactId>js-scriptengine</artifactId>
-            <version>${graalvm.version}</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
+
+    <profiles>
+        <!-- Legacy GraalJS line, compiled for Java 8 -->
+        <profile>
+            <id>graaljs-legacy</id>
+            <activation>
+                <jdk>[1.8,21)</jdk>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js-scriptengine</artifactId>
+                    <version>21.3.18</version>
+                    <scope>test</scope>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js</artifactId>
+                    <version>21.3.18</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Modern GraalJS line -->
+        <profile>
+            <id>graaljs-modern</id>
+            <activation>
+                <jdk>[21,)</jdk>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js-scriptengine</artifactId>
+                    <version>25.0.3</version>
+                    <scope>test</scope>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>js</artifactId>
+                    <version>25.0.3</version>
+                    <type>pom</type>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>

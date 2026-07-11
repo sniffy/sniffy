@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.util.concurrent.ExecutionException;
 
 import static io.sniffy.Threads.*;
@@ -30,6 +31,7 @@ public class Nio2SniffySocketTest extends BaseSocketTest {
         SniffySelectorProvider.install();
 
         SniffyAsynchronousChannelProvider.install();
+        Assert.assertTrue(AsynchronousChannelProvider.provider() instanceof SniffyAsynchronousChannelProvider);
 
         try {
             try (Spy<?> s = Sniffy.spy()) {

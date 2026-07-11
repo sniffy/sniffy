@@ -1,12 +1,8 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ReflectionUtil;
-import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -38,22 +34,17 @@ public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvid
         try {
             Class<?> holderClass = Class.forName("java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder");
 
-            Field instanceField = holderClass.getDeclaredField("provider");
-            //instanceField.setAccessible(true);
-            ReflectionUtil.setAccessible(instanceField);
+            boolean installed = ReflectionUtil.setStaticFinal(
+                    holderClass,
+                    "provider",
+                    new SniffyAsynchronousChannelProvider(delegate)
+            );
 
-            Field modifiersField = getModifiersField();
-            //modifiersField.setAccessible(true);
-            ReflectionUtil.setAccessible(modifiersField);
-            modifiersField.setInt(instanceField, instanceField.getModifiers() & ~Modifier.FINAL);
-
-            instanceField.set(null, new SniffyAsynchronousChannelProvider(delegate));
+            if (!installed) {
+                new IllegalStateException("Failed to install SniffyAsynchronousChannelProvider").printStackTrace();
+            }
 
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
     }
@@ -81,28 +72,6 @@ public class SniffyAsynchronousChannelProvider extends AsynchronousChannelProvid
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }*/
-    }
-
-    @IgnoreJRERequirement
-    private static Field getModifiersField() throws NoSuchFieldException {
-        try {
-            return Field.class.getDeclaredField("modifiers");
-        } catch (NoSuchFieldException e) {
-            try {
-                Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-                //getDeclaredFields0.setAccessible(true);
-                ReflectionUtil.setAccessible(getDeclaredFields0);
-                Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
-                for (Field field : fields) {
-                    if ("modifiers".equals(field.getName())) {
-                        return field;
-                    }
-                }
-            } catch (ReflectiveOperationException ex) {
-                e.addSuppressed(ex);
-            }
-            throw e;
-        }
     }
 
     @Override
