@@ -35,6 +35,8 @@ import static org.mockserver.model.HttpResponse.response;
 
 public class DecryptGoogleTrafficTest {
 
+    private static final String MOCK_SERVER_CA_CERTIFICATE = "org/mockserver/socket/CertificateAuthorityCertificate.pem";
+
     @BeforeClass
     public static void loadTlsModule() throws Exception {
         SniffyConfiguration.INSTANCE.setDecryptTls(true);
@@ -44,7 +46,7 @@ public class DecryptGoogleTrafficTest {
         Sniffy.initialize();
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        TrustManagerFactory trustManagerFactory = createTrustManagerFactory("localhost.crt");
+        TrustManagerFactory trustManagerFactory = createTrustManagerFactory(MOCK_SERVER_CA_CERTIFICATE);
         sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
         HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
     }
@@ -57,7 +59,7 @@ public class DecryptGoogleTrafficTest {
             Certificate certificate = CertificateFactory.getInstance("X.509").generateCertificate(certInputStream);
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
-            keyStore.setCertificateEntry("mock-server", certificate);
+            keyStore.setCertificateEntry("mock-server-ca", certificate);
 
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init(keyStore);
