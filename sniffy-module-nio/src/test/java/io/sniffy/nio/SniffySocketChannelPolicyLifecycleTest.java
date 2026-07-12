@@ -18,7 +18,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.AbstractMap;
 import java.util.HashMap;
@@ -265,7 +264,8 @@ public class SniffySocketChannelPolicyLifecycleTest {
     public void streamCloseInvalidatesRegisteredKey() throws Exception {
         SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         try (ConnectedPair pair = ConnectedPair.open();
-             SniffySelector selector = new SniffySelector(provider, (AbstractSelector) provider.openSelector())) {
+             SniffySelector selector = new SniffySelector(
+                     provider, NioFunctionalTestEnvironment.openRawSelector())) {
             pair.channel.configureBlocking(false);
             SelectionKey key = pair.channel.register(selector, SelectionKey.OP_READ);
             pair.channel.socket().getOutputStream().close();

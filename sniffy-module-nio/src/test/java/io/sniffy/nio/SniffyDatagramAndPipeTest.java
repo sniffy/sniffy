@@ -81,7 +81,8 @@ public class SniffyDatagramAndPipeTest {
     @Test
     public void selectorWakeupDoesNotLeakInternalConstructionScope() throws Exception {
         SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
-        final SelectionStartedSelector selector = new SelectionStartedSelector(provider, provider.openSelector());
+        final SelectionStartedSelector selector = new SelectionStartedSelector(
+                provider, NioFunctionalTestEnvironment.openRawSelector());
         final CountDownLatch enteringSelect = new CountDownLatch(1);
         final AtomicInteger result = new AtomicInteger(-1);
         Thread selectingThread = daemonThread("sniffy-selector-wakeup-test", new Runnable() {

@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,9 +36,12 @@ public class NioTestIsolationTest {
     public void rawDelegateFixturesDoNotMutateGlobalProvider() throws Exception {
         SelectorProvider original = NioFunctionalTestEnvironment.originalProvider();
         try (SocketChannel rawSocket = original.openSocketChannel();
-             ServerSocketChannel rawServer = original.openServerSocketChannel()) {
+             ServerSocketChannel rawServer = original.openServerSocketChannel();
+             AbstractSelector rawSelector = NioFunctionalTestEnvironment.openRawSelector()) {
             assertFalse(rawSocket instanceof SniffySocketChannel);
             assertFalse(rawServer instanceof SniffyServerSocketChannel);
+            assertFalse(rawSelector instanceof SniffySelector);
+            assertFalse(SniffySelectorProvider.isDelegateSelectorConstruction());
             assertSame(NioFunctionalTestEnvironment.installedProvider(), SelectorProvider.provider());
         }
     }

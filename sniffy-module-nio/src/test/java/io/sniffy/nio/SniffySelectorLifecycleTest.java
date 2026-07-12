@@ -584,7 +584,7 @@ public class SniffySelectorLifecycleTest {
     public void registrationWakesOneBlockedSelectionAndCompletes() throws Exception {
         SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         final LifecycleCoordinatedSelector selector = new LifecycleCoordinatedSelector(
-                provider, provider.openSelector());
+                provider, NioFunctionalTestEnvironment.openRawSelector());
         final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());
         final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
         final AtomicReference<Throwable> registrationFailure = new AtomicReference<Throwable>();
@@ -678,7 +678,7 @@ public class SniffySelectorLifecycleTest {
     public void cancellationDuringOneBlockedSelectionIsReconciled() throws Exception {
         SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         final LifecycleCoordinatedSelector selector = new LifecycleCoordinatedSelector(
-                provider, provider.openSelector());
+                provider, NioFunctionalTestEnvironment.openRawSelector());
         final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());
         final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
         channel.configureBlocking(false);
@@ -713,7 +713,7 @@ public class SniffySelectorLifecycleTest {
     public void channelCloseDuringOneBlockedSelectionIsReconciled() throws Exception {
         SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         final LifecycleCoordinatedSelector selector = new LifecycleCoordinatedSelector(
-                provider, provider.openSelector());
+                provider, NioFunctionalTestEnvironment.openRawSelector());
         final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());
         final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
         channel.configureBlocking(false);

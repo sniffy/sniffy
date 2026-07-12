@@ -30,7 +30,9 @@ Before every test the listener verifies the exact installed provider object and 
 last installation result, current thread, and JUnit test description if ownership changed.
 
 Functional fixtures requiring raw JDK channels must call `NioFunctionalTestEnvironment.originalProvider()` and
-construct the raw delegate locally. They must never uninstall the global provider. Calls to `SocketChannel.open()`,
+construct the raw delegate locally. Raw selectors must use `openRawSelector()`: Windows builds a selector's wakeup
+pipe through the global provider, so the helper applies the same narrow internal-construction scope as production
+without replacing the global provider. Functional tests must never uninstall it. Calls to `SocketChannel.open()`,
 `ServerSocketChannel.open()`, `Selector.open()`, and `Pipe.open()` exercise the globally installed Sniffy provider.
 
 The functional suite runs alphabetically by default and is also verified in reverse-alphabetical order. Test state

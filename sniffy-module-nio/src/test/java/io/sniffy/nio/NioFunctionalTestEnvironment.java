@@ -1,5 +1,7 @@
 package io.sniffy.nio;
 
+import java.io.IOException;
+import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
 /** Owns the JVM-global provider for the complete functional-test fork. */
@@ -31,6 +33,18 @@ final class NioFunctionalTestEnvironment {
     static SelectorProvider originalProvider() {
         assertGloballyInstalled("originalProvider fixture request");
         return ORIGINAL_PROVIDER;
+    }
+
+    static AbstractSelector openRawSelector() throws IOException {
+        assertGloballyInstalled("raw selector fixture request");
+        // WindowsSelectorImpl obtains its wakeup pipe through the global provider. Keep that
+        // nested construction raw without changing the JVM-global provider slot.
+        SniffySelectorProvider.enterDelegateSelectorConstruction();
+        try {
+            return ORIGINAL_PROVIDER.openSelector();
+        } finally {
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
+        }
     }
 
     static SniffySelectorProvider installedProvider() {
