@@ -8,7 +8,7 @@ Sniffy allows you to record traffic sent or received via network and exposes it 
 include::../../../../sniffy-core/src/test/java/io/sniffy/socket/CaptureTrafficOverviewTest.java[tags=CaptureTrafficOverview]
 ```
 <1> Use `captureNetworkTraffic(true)` when creating a `Spy` instance to enable traffic capturing
-<2> Invoke socket operation. Can be either in current or another thread. Plain socket API or NIO - doesn't matter.
+<2> Invoke a socket operation in the current or another thread. Classic sockets and monitored TCP NIO channels are captured.
 <3> Retrieve network packets filtered and grouped as defined in parameters
 <4> Allows you to filter traffic by thread
 <5> Allows you to filter traffic by target address and/or port

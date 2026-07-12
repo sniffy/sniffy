@@ -1,0 +1,29 @@
+== NIO monitoring
+
+Sniffy's NIO monitor is opt-in. Enable it with `-Dio.sniffy.monitorNio=true`, the
+`IO_SNIFFY_MONITOR_NIO=true` environment variable, or
+`SniffyConfiguration.INSTANCE.setMonitorNio(true)`. A Java agent is not required: Sniffy installs a wrapped
+`SelectorProvider` during initialization. Initialize Sniffy before application code caches channels or selectors.
+
+The monitor covers TCP `SocketChannel` and `ServerSocketChannel`, `Selector`, `SelectionKey`, protocol-family
+overloads, inherited TCP channels, and application-created `Pipe` channels. TCP statistics, captured traffic,
+fault injection, proxy destination detection, and TLS correlation use the same Sniffy model as classic sockets.
+Pipe bytes are never reported as network traffic.
+
+Provider installation is fail-open. If the runtime does not expose the narrowly scoped NIO capabilities Sniffy
+requires, the original provider remains active and Sniffy logs the reason. Classic socket monitoring continues.
+`Sniffy.reinitialize()` retries a failed installation. Set `io.sniffy.monitorNio=false` to opt out; this remains the
+default.
+
+Limitations:
+
+* UDP `DatagramChannel` is deliberately pass-through. Sniffy's connection-oriented traffic and fault model does
+  not yet represent per-datagram source and destination semantics correctly.
+* NIO2/AIO (`AsynchronousSocketChannel` and `AsynchronousServerSocketChannel`) is not monitored. The deprecated
+  asynchronous provider compatibility type does not install itself and must not be interpreted as AIO support.
+* SOCKS handshake inspection is not implemented. HTTP CONNECT proxy destinations are detected across bounded,
+  partial NIO writes.
+* The delegate `SelectionKey` attachment is reserved for Sniffy's internal backlink. Application attachments belong
+  on the wrapper key returned by normal selector APIs. Replacing the delegate attachment directly is unsupported
+  and produces a diagnosed `IllegalStateException`; direct delegate cancellation or closure is reconciled by the
+  next selection/cleanup operation.

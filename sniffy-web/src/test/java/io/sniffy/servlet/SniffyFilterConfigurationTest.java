@@ -86,6 +86,22 @@ public class SniffyFilterConfigurationTest extends BaseTest {
     }
 
     @Test
+    public void nioMonitoringRemainsOptInForServletFilter() throws ServletException {
+        FilterConfig defaultConfig = mock(FilterConfig.class);
+        when(defaultConfig.getServletContext()).thenReturn(servletContext);
+        SniffyFilter defaultFilter = new SniffyFilter();
+        defaultFilter.init(defaultConfig);
+        assertNull(defaultFilter.monitorNio);
+
+        FilterConfig disabledConfig = mock(FilterConfig.class);
+        when(disabledConfig.getInitParameter("monitor-nio")).thenReturn("false");
+        when(disabledConfig.getServletContext()).thenReturn(servletContext);
+        SniffyFilter disabledFilter = new SniffyFilter();
+        disabledFilter.init(disabledConfig);
+        assertFalse(disabledFilter.monitorNio);
+    }
+
+    @Test
     @Feature("issues/288")
     public void testSystemInConfigFilterDisabledGloballyOneQuery() throws IOException, ServletException {
 

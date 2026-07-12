@@ -6,7 +6,7 @@
 
 Sniffy is a Java profiler which shows the results directly in your browser.
 It also brings profiling to your unit (or rather component) tests and allows you to disable certain outgoing connections for fault-tolerance testing.
-It can even record network traffic sent via Java plain old Socket API as well as via NIO API.
+It can even record network traffic sent via Java plain old Socket API as well as TCP NIO channels.
 
 === In-browser profiler
 

@@ -4,6 +4,9 @@
 
 [Commits](https://github.com/sniffy/sniffy/compare/3.2.0...master)
 
+ * Reworked the opt-in TCP NIO monitor: fail-open provider installation, stable selection-key identity and lifecycle, exact buffer accounting, partial HTTP CONNECT detection, monitored accepted channels, and safe socket views.
+ * Clarified that UDP `DatagramChannel` and NIO2/AIO remain pass-through and are not monitored. `io.sniffy.monitorNio` remains disabled by default pending the complete platform CI matrix.
+
 ## v3.2.0 - TBD
 
 [Commits](https://github.com/sniffy/sniffy/compare/3.1.13...3.2.0)

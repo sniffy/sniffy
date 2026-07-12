@@ -148,8 +148,8 @@ public class SniffyFilter implements Filter {
             }
 
             String monitorNio = filterConfig.getInitParameter("monitor-nio");
-            if (null == this.monitorNio && (null == monitorNio || Boolean.parseBoolean(monitorNio))) {
-                setMonitorNio(true);
+            if (null == this.monitorNio && null != monitorNio) {
+                setMonitorNio(Boolean.parseBoolean(monitorNio));
             }
 
             // TODO: rename to filter-enabled for consistency
