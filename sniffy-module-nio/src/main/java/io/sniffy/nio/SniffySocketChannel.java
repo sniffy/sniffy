@@ -9,6 +9,7 @@ import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.*;
 import io.sniffy.util.ExceptionUtil;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
@@ -35,6 +36,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     private volatile long lastWriteThreadId;
 
     private boolean firstChunk = true;
+    private final ByteArrayOutputStream initialOutboundBytes = new ByteArrayOutputStream();
 
     protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
         super(provider, delegate);
@@ -170,8 +172,8 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                     if (null != sniffySSLNetworkConnection) {
                         sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
                     }
+                    firstChunk = false;
                 }
-                firstChunk = false;
             }
         }
     }
@@ -322,28 +324,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
             if (length > 0 && (effectiveSpyConfiguration.isCaptureNetworkTraffic() || !isFirstPacketSent())) {
                 byte[] buff = copyBytes(src, position, length);
-
-                boolean isConnectPacket = false;
-
-                if (!isFirstPacketSent()) {
-
-                    try {
-                        SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(this);
-                        sniffyPacketAnalyzer.analyze(buff, 0, buff.length);
-                    } catch (Exception e) {
-                        LOG.error(e);
-                    } finally {
-                        setFirstPacketSent(true);
-                    }
-
-                    isConnectPacket = null != proxiedAddress;
-
-                }
-
-                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
-                }
-
+                processOutboundBytes(buff, effectiveSpyConfiguration.isCaptureNetworkTraffic());
             }
         }
     }
@@ -370,30 +351,12 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             }
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
 
-            boolean isConnectPacket = false;
-
-            if (bytesUp > 0 && !isFirstPacketSent()) {
-                byte[] buff = copyTransferredBytes(srcs, offset, length, positions, bytesUp);
-
-                try {
-                    SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(this);
-                    sniffyPacketAnalyzer.analyze(buff, 0, buff.length);
-                } catch (Exception e) {
-                    LOG.error(e);
-                } finally {
-                    setFirstPacketSent(true);
-                }
-
-                isConnectPacket = null != proxiedAddress;
-
-            }
-
-            if (bytesUp > 0 && effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            if (bytesUp > 0) {
                 for (int i = 0; i < length; i++) {
                     int transferred = srcs[offset + i].position() - positions[i];
                     if (transferred > 0) {
                         byte[] buff = copyBytes(srcs[offset + i], positions[i], transferred);
-                        logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
+                        processOutboundBytes(buff, effectiveSpyConfiguration.isCaptureNetworkTraffic());
                     }
                 }
 
@@ -444,6 +407,80 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         byte[] exactBytes = new byte[destinationOffset];
         System.arraycopy(bytes, 0, exactBytes, 0, destinationOffset);
         return exactBytes;
+    }
+
+    synchronized void processOutboundBytes(byte[] bytes, boolean captureNetworkTraffic) {
+        if (bytes.length == 0) return;
+
+        if (isFirstPacketSent()) {
+            if (captureNetworkTraffic) {
+                logTraffic(true, Protocol.TCP, bytes, 0, bytes.length, false);
+            }
+            return;
+        }
+
+        if (!Boolean.TRUE.equals(SniffyConfiguration.INSTANCE.getInterceptProxyConnections())) {
+            setFirstPacketSent(true);
+            if (captureNetworkTraffic) {
+                logTraffic(true, Protocol.TCP, bytes, 0, bytes.length, false);
+            }
+            return;
+        }
+
+        int available = INITIAL_PACKET_CAPTURE_LIMIT - initialOutboundBytes.size();
+        int appended = Math.min(available, bytes.length);
+        initialOutboundBytes.write(bytes, 0, appended);
+        byte[] candidate = initialOutboundBytes.toByteArray();
+
+        if (!isProxyDecisionComplete(candidate) && appended == bytes.length) {
+            return;
+        }
+
+        try {
+            new SniffyPacketAnalyzer(this).analyze(candidate, 0, candidate.length);
+        } catch (Exception e) {
+            LOG.error(e);
+        } finally {
+            setFirstPacketSent(true);
+        }
+
+        if (captureNetworkTraffic) {
+            int handshakeLength = null == proxiedAddress ? 0 : firstLineLength(candidate);
+            if (handshakeLength > 0) {
+                logTraffic(true, Protocol.TCP, candidate, 0, handshakeLength, true);
+            }
+            if (handshakeLength < candidate.length) {
+                logTraffic(true, Protocol.TCP, candidate, handshakeLength, candidate.length - handshakeLength, false);
+            }
+            if (appended < bytes.length) {
+                logTraffic(true, Protocol.TCP, bytes, appended, bytes.length - appended, false);
+            }
+        }
+        initialOutboundBytes.reset();
+    }
+
+    private static boolean isProxyDecisionComplete(byte[] candidate) {
+        byte[] connectPrefix = new byte[]{'C', 'O', 'N', 'N', 'E', 'C', 'T', ' '};
+        int prefixLength = Math.min(candidate.length, connectPrefix.length);
+        for (int i = 0; i < prefixLength; i++) {
+            if (candidate[i] != connectPrefix[i]) return true;
+        }
+        if (candidate.length < connectPrefix.length) return false;
+        for (byte value : candidate) {
+            if ('\n' == value) return true;
+        }
+        return candidate.length >= INITIAL_PACKET_CAPTURE_LIMIT;
+    }
+
+    private static int firstLineLength(byte[] bytes) {
+        for (int i = 0; i < bytes.length; i++) {
+            if ('\n' == bytes[i]) return i + 1;
+        }
+        return bytes.length;
+    }
+
+    synchronized int pendingInitialOutboundByteCount() {
+        return initialOutboundBytes.size();
     }
 
     private void recordRead(long bytesDown, long start) throws ConnectException {
