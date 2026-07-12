@@ -18,6 +18,8 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.sniffy.Threads.*;
+import static io.sniffy.nio.NioTestSupport.daemonThread;
+import static io.sniffy.nio.NioTestSupport.joinOrDumpAndFail;
 import static org.junit.Assert.*;
 
 public class NioSniffySocketTest extends BaseSocketTest {
@@ -150,9 +152,13 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
                 performSocketOperation();
 
-                Thread thread = new Thread(this::performSocketOperation);
-                thread.start();
-                thread.join();
+                Thread thread = daemonThread("sniffy-socket-operation", this::performSocketOperation);
+                try {
+                    thread.start();
+                    joinOrDumpAndFail(thread);
+                } finally {
+                    joinOrDumpAndFail(thread);
+                }
 
                 // Current thread socket operations
 
@@ -214,8 +220,12 @@ public class NioSniffySocketTest extends BaseSocketTest {
     }
 
     @Test
-    public void testPipe() {
+    public void testPipe() throws Exception {
 
+        Pipe.SourceChannel source = null;
+        Pipe.SinkChannel sink = null;
+        Thread sourceThread = null;
+        Thread sinkThread = null;
         try {
             SniffySelectorProviderModule.initialize();
             SniffySelectorProvider.uninstall();
@@ -223,28 +233,30 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
             Pipe pipe = Pipe.open();
 
-            Pipe.SourceChannel source = pipe.source();
-            Pipe.SinkChannel sink = pipe.sink();
+            source = pipe.source();
+            sink = pipe.sink();
 
             final ByteBuffer targetBuffer = ByteBuffer.allocate(5);
             final AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
+            final Pipe.SourceChannel finalSource = source;
+            final Pipe.SinkChannel finalSink = sink;
 
-            Thread sourceThread = new Thread(new Runnable() {
+            sourceThread = daemonThread("sniffy-pipe-source", new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        source.read(targetBuffer);
+                        finalSource.read(targetBuffer);
                     } catch (IOException e) {
                         exceptionHolder.set(e);
                     }
                 }
             });
 
-            Thread sinkThread = new Thread(new Runnable() {
+            sinkThread = daemonThread("sniffy-pipe-sink", new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        sink.write(ByteBuffer.wrap(new byte[]{1, 2, 3, 5, 8}));
+                        finalSink.write(ByteBuffer.wrap(new byte[]{1, 2, 3, 5, 8}));
                     } catch (IOException e) {
                         exceptionHolder.set(e);
                     }
@@ -253,14 +265,16 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
             sourceThread.start();
             sinkThread.start();
-            sourceThread.join();
-            sinkThread.join();
+            joinOrDumpAndFail(sourceThread);
+            joinOrDumpAndFail(sinkThread);
 
+            assertNull(exceptionHolder.get());
             assertArrayEquals(new byte[]{1, 2, 3, 5, 8}, targetBuffer.array());
-
-        } catch (Exception e) {
-            SniffySelectorProvider.uninstall();
         } finally {
+            if (sink != null) sink.close();
+            if (source != null) source.close();
+            joinOrDumpAndFail(sourceThread);
+            joinOrDumpAndFail(sinkThread);
             SniffySelectorProvider.uninstall();
         }
 

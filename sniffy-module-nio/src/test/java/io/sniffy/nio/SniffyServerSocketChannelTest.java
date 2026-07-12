@@ -25,6 +25,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static io.sniffy.nio.NioTestSupport.*;
 
 public class SniffyServerSocketChannelTest {
 
@@ -134,48 +135,64 @@ public class SniffyServerSocketChannelTest {
 
     @Test
     public void zeroTimeoutBlocksUntilCloseAndCloseIsIdempotent() throws Exception {
-        final ServerSocketChannel channel = ServerSocketChannel.open();
+        final SniffyServerSocketChannel channel = (SniffyServerSocketChannel) ServerSocketChannel.open();
+        final ServerSocketChannel delegate = channel.getDelegate();
         final ServerSocket socket = channel.socket();
         socket.bind(new InetSocketAddress("localhost", 0));
         socket.setSoTimeout(0);
         assertEquals(0, socket.getSoTimeout());
         final CountDownLatch started = new CountDownLatch(1);
         final AtomicReference<Throwable> outcome = new AtomicReference<Throwable>();
-        Thread accepting = new Thread(new Runnable() {
+        final AtomicReference<Throwable> closeFailure = new AtomicReference<Throwable>();
+        Thread accepting = daemonThread("sniffy-server-socket-accept", new Runnable() {
             @Override public void run() {
                 started.countDown();
                 try { socket.accept(); } catch (Throwable e) { outcome.set(e); }
             }
         });
-        accepting.start();
-        assertTrue(started.await(5, TimeUnit.SECONDS));
-        awaitNativeAccept(accepting);
-        try {
-            channel.close();
-        } catch (java.io.IOException closeFailure) {
-            // AbstractInterruptibleChannel marks both wrapper and delegate closed before
-            // JDK 8/macOS signals the native accept thread, and that signal may itself fail.
-            assertFalse(channel.isOpen());
-            assertFalse(((SniffyServerSocketChannel) channel).getDelegate().isOpen());
-        }
-        channel.close();
-        accepting.join(5000);
-        assertFalse(accepting.isAlive());
-        assertTrue(outcome.get() instanceof java.io.IOException);
-        assertTrue(socket.isClosed());
-    }
-
-    private static void awaitNativeAccept(Thread thread) {
-        for (int attempt = 0; attempt < 100000; attempt++) {
-            for (StackTraceElement frame : thread.getStackTrace()) {
-                if ("accept".equals(frame.getMethodName())
-                        && frame.getClassName().contains("ServerSocketChannel")) {
-                    return;
-                }
+        Thread closing = daemonThread("sniffy-server-socket-close", new Runnable() {
+            @Override public void run() {
+                try { channel.close(); } catch (Throwable e) { closeFailure.set(e); }
             }
-            Thread.yield();
+        });
+        try {
+            accepting.start();
+            assertTrue(started.await(5, TimeUnit.SECONDS));
+            awaitStackFrame(accepting, "ServerSocketChannel", "accept");
+            closing.start();
+
+            joinOrDumpAndFail(closing);
+            joinOrDumpAndFail(accepting);
+            Throwable closeOutcome = closeFailure.get();
+            if (closeOutcome != null) {
+                // JDK 8/macOS can report a native signal failure after marking both views closed.
+                assertTrue(closeOutcome instanceof java.io.IOException);
+                assertFalse(channel.isOpen());
+                assertFalse(delegate.isOpen());
+            }
+            channel.close();
+            assertFalse(channel.isOpen());
+            assertFalse(delegate.isOpen());
+            assertTrue(outcome.get() instanceof java.io.IOException);
+            assertTrue(socket.isClosed());
+        } finally {
+            Thread delegateCleanup = null;
+            final AtomicReference<Throwable> delegateCleanupFailure = new AtomicReference<Throwable>();
+            if (channel.isOpen() || delegate.isOpen()) {
+                delegateCleanup = daemonThread("sniffy-server-socket-delegate-cleanup", new Runnable() {
+                    @Override public void run() {
+                        try { delegate.close(); } catch (Throwable e) { delegateCleanupFailure.set(e); }
+                    }
+                });
+                delegateCleanup.start();
+            }
+            joinOrDumpAndFail(delegateCleanup);
+            if (delegateCleanupFailure.get() != null) {
+                delegateCleanupFailure.get().printStackTrace(System.err);
+            }
+            joinOrDumpAndFail(closing);
+            joinOrDumpAndFail(accepting);
         }
-        throw new AssertionError("accept thread did not enter the delegate channel");
     }
 
     private static void assertAcceptTimesOut(ServerSocket socket) throws Exception {

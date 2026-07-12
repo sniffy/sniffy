@@ -120,6 +120,39 @@ public class SniffySelectorFailureLifecycleTest {
         assertFalse(selector.isOpen());
     }
 
+    @Test
+    public void closeAttemptsDelegateAndCleanupAfterWakeupAndCloseFailures() throws Exception {
+        TestDelegateSelector delegateSelector = new TestDelegateSelector();
+        RuntimeException wakeupFailure = new RuntimeException("delegate wakeup failure");
+        RuntimeException closeFailure = new RuntimeException("delegate close failure");
+        SniffySelector selector = new SniffySelector(null, delegateSelector);
+        TestWrapperChannel channel = new TestWrapperChannel();
+        channel.configureBlocking(false);
+        SelectionKey key = channel.register(selector, SelectionKey.OP_READ);
+        delegateSelector.wakeupFailure = wakeupFailure;
+        delegateSelector.closeFailure = closeFailure;
+        try {
+            try {
+                selector.close();
+                fail("Expected wakeup failure");
+            } catch (RuntimeException e) {
+                assertSame(wakeupFailure, e);
+                assertEquals(1, e.getSuppressed().length);
+                assertSame(closeFailure, e.getSuppressed()[0]);
+            }
+
+            assertEquals(1, delegateSelector.closeCount);
+            assertFalse(selector.isOpen());
+            assertFalse(key.isValid());
+            assertNull(channel.keyFor(selector));
+            assertEquals(0, selector.activeLinkCount());
+            selector.close();
+        } finally {
+            channel.close();
+            selector.close();
+        }
+    }
+
     private static final class TestWrapperChannel extends AbstractSelectableChannel
             implements SelectableChannelWrapper<TestDelegateChannel> {
 
@@ -175,6 +208,8 @@ public class SniffySelectorFailureLifecycleTest {
         private final Set<SelectionKey> keys = new HashSet<SelectionKey>();
         private final Set<SelectionKey> selectedKeys = new HashSet<SelectionKey>();
         private volatile RuntimeException selectFailure;
+        private volatile RuntimeException wakeupFailure;
+        private volatile RuntimeException closeFailure;
         private int closeCount;
 
         private TestDelegateSelector() {
@@ -186,6 +221,9 @@ public class SniffySelectorFailureLifecycleTest {
             closeCount++;
             for (SelectionKey key : keys) {
                 key.cancel();
+            }
+            if (closeFailure != null) {
+                throw closeFailure;
             }
         }
 
@@ -227,6 +265,9 @@ public class SniffySelectorFailureLifecycleTest {
 
         @Override
         public Selector wakeup() {
+            if (wakeupFailure != null) {
+                throw wakeupFailure;
+            }
             return this;
         }
     }

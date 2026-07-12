@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static org.junit.Assume.assumeTrue;
+import static io.sniffy.nio.NioTestSupport.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -471,7 +472,7 @@ public class SniffySelectorLifecycleTest {
     }
 
     @Test
-    public void consumerClosingSelectorRelaysClosedSelectorException() throws Exception {
+    public void closeFromSelectionConsumerDoesNotDeadlock() throws Exception {
         assumeTrue(runtimeFeatureVersion() >= 11);
         final SniffySelector selector = (SniffySelector) Selector.open();
         Pipe pipe = Pipe.open();
@@ -489,11 +490,104 @@ public class SniffySelectorLifecycleTest {
             } catch (java.nio.channels.ClosedSelectorException expected) {
                 // required after the action that closed the selector completes
             }
+            assertFalse(selector.isOpen());
+            assertEquals(0, selector.activeLinkCount());
         } finally {
             pipe.source().close();
             pipe.sink().close();
             selector.close();
         }
+    }
+
+    @Test
+    public void closeWakesIndefinitelyBlockedSelectWithoutExternalWakeup() throws Exception {
+        final SniffySelector selector = (SniffySelector) Selector.open();
+        final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> closeFailure = new AtomicReference<Throwable>();
+        Thread selecting = daemonThread("sniffy-blocked-select", new Runnable() {
+            @Override public void run() {
+                try {
+                    selector.select();
+                } catch (Throwable e) {
+                    selectFailure.set(e);
+                }
+            }
+        });
+        Thread closing = daemonThread("sniffy-close-blocked-select", new Runnable() {
+            @Override public void run() {
+                try {
+                    selector.close();
+                } catch (Throwable e) {
+                    closeFailure.set(e);
+                }
+            }
+        });
+        try {
+            selecting.start();
+            awaitStackFrame(selecting, "sun.nio.ch.", null);
+            closing.start();
+
+            joinOrDumpAndFail(closing);
+            joinOrDumpAndFail(selecting);
+            assertNull(closeFailure.get());
+            assertTrue(selectFailure.get() == null
+                    || selectFailure.get() instanceof java.nio.channels.ClosedSelectorException);
+            assertFalse(selector.isOpen());
+            assertEquals(0, selector.activeLinkCount());
+        } finally {
+            if (selecting.isAlive() || closing.isAlive()) {
+                selector.wakeup();
+            }
+            try { selector.close(); } finally {
+                joinOrDumpAndFail(selecting);
+                joinOrDumpAndFail(closing);
+            }
+        }
+    }
+
+    @Test
+    public void concurrentCloseCallsRemainIdempotent() throws Exception {
+        final SniffySelector selector = (SniffySelector) Selector.open();
+        final CountDownLatch ready = new CountDownLatch(2);
+        final CountDownLatch start = new CountDownLatch(1);
+        final AtomicReference<Throwable> firstFailure = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> secondFailure = new AtomicReference<Throwable>();
+        Thread first = closeThread(selector, ready, start, firstFailure, "sniffy-close-first");
+        Thread second = closeThread(selector, ready, start, secondFailure, "sniffy-close-second");
+        try {
+            first.start();
+            second.start();
+            assertTrue(ready.await(5, TimeUnit.SECONDS));
+            start.countDown();
+            joinOrDumpAndFail(first);
+            joinOrDumpAndFail(second);
+            assertNull(firstFailure.get());
+            assertNull(secondFailure.get());
+            assertFalse(selector.isOpen());
+            assertEquals(0, selector.activeLinkCount());
+        } finally {
+            start.countDown();
+            selector.wakeup();
+            selector.close();
+            joinOrDumpAndFail(first);
+            joinOrDumpAndFail(second);
+        }
+    }
+
+    private static Thread closeThread(final Selector selector, final CountDownLatch ready,
+                                      final CountDownLatch start, final AtomicReference<Throwable> failure,
+                                      String name) {
+        return daemonThread(name, new Runnable() {
+            @Override public void run() {
+                ready.countDown();
+                try {
+                    start.await();
+                    selector.close();
+                } catch (Throwable e) {
+                    failure.set(e);
+                }
+            }
+        });
     }
 
     @Test
@@ -512,7 +606,7 @@ public class SniffySelectorLifecycleTest {
         channel.configureBlocking(false);
         final SelectionKey existing = action == LifecycleAction.REGISTER ? null :
                 channel.register(selector, SelectionKey.OP_CONNECT);
-        Thread selectThread = new Thread(new Runnable() {
+        Thread selectThread = daemonThread("sniffy-concurrent-select-" + action, new Runnable() {
             @Override
             public void run() {
                 try {
@@ -524,9 +618,12 @@ public class SniffySelectorLifecycleTest {
                     failure.set(e);
                 }
             }
-        }, "sniffy-concurrent-select-" + action);
+        });
         selectThread.start();
         assertTrue(selecting.await(5, TimeUnit.SECONDS));
+        // The latch only proves the worker called select. Wait until the delegate owns its
+        // selection monitors so a registration wakeup cannot be consumed before select blocks.
+        awaitStackFrame(selectThread, "sun.nio.ch.", null);
         try {
             if (action == LifecycleAction.REGISTER) {
                 // Registration may wait for an in-progress selection; wakeup is the JDK-prescribed handoff.
@@ -539,8 +636,7 @@ public class SniffySelectorLifecycleTest {
             }
             actionCompleted.set(true);
             selector.wakeup();
-            selectThread.join(5000);
-            assertFalse(selectThread.isAlive());
+            joinOrDumpAndFail(selectThread);
             assertNull(failure.get());
             if (action != LifecycleAction.REGISTER) {
                 assertNull("the returning selection operation must reconcile wrapper registration",
@@ -548,8 +644,13 @@ public class SniffySelectorLifecycleTest {
                 assertEquals(0, selector.activeLinkCount());
             }
         } finally {
-            channel.close();
-            selector.close();
+            actionCompleted.set(true);
+            selector.wakeup();
+            try { channel.close(); } finally {
+                try { selector.close(); } finally {
+                    joinOrDumpAndFail(selectThread);
+                }
+            }
         }
     }
 

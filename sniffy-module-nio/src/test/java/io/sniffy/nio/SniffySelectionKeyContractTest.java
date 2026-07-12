@@ -21,9 +21,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.sniffy.nio.NioTestSupport.daemonThread;
+import static io.sniffy.nio.NioTestSupport.dumpThreads;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -105,7 +109,12 @@ public class SniffySelectionKeyContractTest {
         final int taskCount = 16;
         final CountDownLatch ready = new CountDownLatch(taskCount);
         final CountDownLatch start = new CountDownLatch(1);
-        ExecutorService executor = Executors.newFixedThreadPool(taskCount);
+        final AtomicInteger threadId = new AtomicInteger();
+        ExecutorService executor = Executors.newFixedThreadPool(taskCount, new ThreadFactory() {
+            @Override public Thread newThread(Runnable task) {
+                return daemonThread("sniffy-key-publication-" + threadId.incrementAndGet(), task);
+            }
+        });
         try {
             List<Future<SniffySelectionKey>> futures = new ArrayList<Future<SniffySelectionKey>>();
             for (int i = 0; i < taskCount; i++) {
@@ -129,7 +138,12 @@ public class SniffySelectionKeyContractTest {
                 assertSame(expected, future.get(5, TimeUnit.SECONDS));
             }
         } finally {
+            start.countDown();
             executor.shutdownNow();
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                dumpThreads("selection-key publication executor did not terminate");
+                throw new AssertionError("Selection-key publication executor did not terminate");
+            }
             channel.close();
         }
     }

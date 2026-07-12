@@ -28,6 +28,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static io.sniffy.nio.NioTestSupport.*;
 
 public class SniffyDatagramAndPipeTest {
 
@@ -90,7 +91,7 @@ public class SniffyDatagramAndPipeTest {
         final Selector selector = Selector.open();
         final CountDownLatch enteringSelect = new CountDownLatch(1);
         final AtomicInteger result = new AtomicInteger(-1);
-        Thread selectingThread = new Thread(new Runnable() {
+        Thread selectingThread = daemonThread("sniffy-selector-wakeup-test", new Runnable() {
             @Override
             public void run() {
                 try {
@@ -100,13 +101,13 @@ public class SniffyDatagramAndPipeTest {
                     result.set(-2);
                 }
             }
-        }, "sniffy-selector-wakeup-test");
-        selectingThread.start();
-        assertTrue(enteringSelect.await(5, TimeUnit.SECONDS));
-        selector.wakeup();
-        selectingThread.join(5000);
+        });
         try {
-            assertFalse(selectingThread.isAlive());
+            selectingThread.start();
+            assertTrue(enteringSelect.await(5, TimeUnit.SECONDS));
+            awaitStackFrame(selectingThread, "sun.nio.ch.", null);
+            selector.wakeup();
+            joinOrDumpAndFail(selectingThread);
             assertEquals(0, result.get());
             assertFalse(SniffySelectorProvider.isDelegateSelectorConstruction());
             Pipe applicationPipe = Pipe.open();
@@ -117,7 +118,10 @@ public class SniffyDatagramAndPipeTest {
                 applicationPipe.sink().close();
             }
         } finally {
-            selector.close();
+            selector.wakeup();
+            try { selector.close(); } finally {
+                joinOrDumpAndFail(selectingThread);
+            }
         }
     }
 
@@ -163,7 +167,7 @@ public class SniffyDatagramAndPipeTest {
         Pipe.SinkChannel sink = pipe.sink();
         final CountDownLatch reading = new CountDownLatch(1);
         final AtomicReference<Throwable> failure = new AtomicReference<Throwable>();
-        Thread reader = new Thread(new Runnable() {
+        Thread reader = daemonThread("sniffy-pipe-blocked-read", new Runnable() {
             @Override
             public void run() {
                 try {
@@ -173,7 +177,7 @@ public class SniffyDatagramAndPipeTest {
                     failure.set(e);
                 }
             }
-        }, "sniffy-pipe-blocked-read");
+        });
         try {
             reader.start();
             assertTrue(reading.await(5, TimeUnit.SECONDS));
@@ -187,8 +191,7 @@ public class SniffyDatagramAndPipeTest {
                 // invariant under test is that the blocked reader is released.
             }
 
-            reader.join(5000);
-            assertFalse(reader.isAlive());
+            joinOrDumpAndFail(reader);
             assertFalse(source.isOpen());
             assertFalse(((SniffyPipe.SniffySourceChannel) source).getDelegate().isOpen());
             Throwable throwable = failure.get();
@@ -196,8 +199,11 @@ public class SniffyDatagramAndPipeTest {
                     throwable instanceof AsynchronousCloseException ||
                     throwable instanceof ClosedChannelException);
         } finally {
-            sink.close();
-            source.close();
+            try { sink.close(); } finally {
+                try { source.close(); } finally {
+                    joinOrDumpAndFail(reader);
+                }
+            }
         }
     }
 
@@ -211,6 +217,7 @@ public class SniffyDatagramAndPipeTest {
             }
             Thread.yield();
         }
+        dumpThreads("reader did not enter the native pipe read");
         fail("reader did not enter the native pipe read; state=" + reader.getState());
     }
 

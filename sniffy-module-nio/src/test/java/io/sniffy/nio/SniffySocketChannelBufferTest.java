@@ -33,6 +33,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static io.sniffy.nio.NioTestSupport.*;
 
 public class SniffySocketChannelBufferTest extends BaseSocketTest {
 
@@ -287,7 +288,7 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         server.bind(new InetSocketAddress(BaseSocketTest.localhost, 0));
         AtomicReference<Throwable> serverFailure = new AtomicReference<Throwable>();
         CountDownLatch acceptedConnection = new CountDownLatch(1);
-        Thread serverThread = new Thread(new Runnable() {
+        Thread serverThread = daemonThread("nio-tls-correlation-server", new Runnable() {
             @Override
             public void run() {
                 try (SocketChannel accepted = server.accept()) {
@@ -299,7 +300,7 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
                     serverFailure.set(e);
                 }
             }
-        }, "nio-tls-correlation-server");
+        });
         serverThread.start();
         SocketChannel delegate = provider.openSocketChannel();
         delegate.connect(server.getLocalAddress());
@@ -318,14 +319,12 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             assertSame(sniffyChannel, sslConnection.connection);
         } finally {
             Sniffy.CLIENT_HELLO_CACHE.remove(ByteBuffer.wrap(clientHello));
-            serverThread.join(5000);
-            boolean serverDidNotFinish = serverThread.isAlive();
-            if (serverThread.isAlive()) {
+            try {
+                joinOrDumpAndFail(serverThread);
+            } finally {
                 server.close();
-                serverThread.join(5000);
+                joinOrDumpAndFail(serverThread);
             }
-            server.close();
-            assertFalse("server did not observe the client channel closing", serverDidNotFinish);
             assertNull(serverFailure.get());
             SniffySelectorProvider.uninstall();
         }
@@ -339,7 +338,7 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         server.bind(new InetSocketAddress(BaseSocketTest.localhost, 0));
         final AtomicReference<Throwable> serverFailure = new AtomicReference<Throwable>();
         final ByteArrayOutputStream physicalBytes = new ByteArrayOutputStream();
-        Thread serverThread = new Thread(new Runnable() {
+        Thread serverThread = daemonThread("nio-shared-socket-state-server", new Runnable() {
             @Override public void run() {
                 try (SocketChannel accepted = server.accept()) {
                     ByteBuffer buffer = ByteBuffer.allocate(128);
@@ -389,8 +388,7 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         } finally {
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, 0);
             server.close();
-            serverThread.join(5000);
-            assertFalse(serverThread.isAlive());
+            joinOrDumpAndFail(serverThread);
             assertNull(serverFailure.get());
             assertArrayEquals(request, physicalBytes.toByteArray());
         }

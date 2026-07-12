@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.*;
+import static io.sniffy.nio.NioTestSupport.*;
 
 public class SniffySelectorSynchronizationTest {
 
@@ -24,28 +25,34 @@ public class SniffySelectorSynchronizationTest {
         final MonitorSelector delegate = new MonitorSelector();
         final SniffySelector selector = new SniffySelector(null, delegate);
         final CountDownLatch attempted = new CountDownLatch(1);
-        Thread selecting;
-        synchronized (selector.selectedKeys()) {
-            selecting = selectionThread(selector, attempted);
-            selecting.start();
-            assertTrue(attempted.await(5, TimeUnit.SECONDS));
-            awaitBlocked(selecting);
+        Thread selecting = null;
+        Thread selectorContender = null;
+        try {
+            synchronized (selector.selectedKeys()) {
+                selecting = selectionThread(selector, attempted);
+                selecting.start();
+                assertTrue(attempted.await(5, TimeUnit.SECONDS));
+                awaitBlocked(selecting);
 
-            final CountDownLatch selectorAttempted = new CountDownLatch(1);
-            Thread selectorContender = new Thread(new Runnable() {
-                @Override public void run() {
-                    selectorAttempted.countDown();
-                    synchronized (selector) { }
-                }
-            });
-            selectorContender.start();
-            assertTrue(selectorAttempted.await(5, TimeUnit.SECONDS));
-            awaitBlocked(selectorContender);
-            selectorContender.interrupt();
+                final CountDownLatch selectorAttempted = new CountDownLatch(1);
+                selectorContender = daemonThread("sniffy-selector-lock-contender", new Runnable() {
+                    @Override public void run() {
+                        selectorAttempted.countDown();
+                        synchronized (selector) { }
+                    }
+                });
+                selectorContender.start();
+                assertTrue(selectorAttempted.await(5, TimeUnit.SECONDS));
+                awaitBlocked(selectorContender);
+            }
+            joinOrDumpAndFail(selecting);
+            joinOrDumpAndFail(selectorContender);
+            assertTrue(delegate.entered.await(5, TimeUnit.SECONDS));
+        } finally {
+            joinOrDumpAndFail(selecting);
+            joinOrDumpAndFail(selectorContender);
+            selector.close();
         }
-        selecting.join(5000);
-        assertFalse(selecting.isAlive());
-        assertTrue(delegate.entered.await(5, TimeUnit.SECONDS));
     }
 
     @Test
@@ -59,22 +66,31 @@ public class SniffySelectorSynchronizationTest {
         final MonitorSelector delegate = new MonitorSelector();
         final SniffySelector selector = new SniffySelector(null, delegate);
         final CountDownLatch attempted = new CountDownLatch(1);
-        Thread closing;
-        synchronized (selector.selectedKeys()) {
-            closing = new Thread(new Runnable() {
-                @Override public void run() {
-                    attempted.countDown();
-                    try { selector.close(); } catch (IOException e) { throw new AssertionError(e); }
-                }
-            });
-            closing.start();
-            assertTrue(attempted.await(5, TimeUnit.SECONDS));
-            awaitBlocked(closing);
-            Thread contender = selectorContender(selector);
-            awaitBlocked(contender);
+        Thread closing = null;
+        Thread contender = null;
+        try {
+            synchronized (selector.selectedKeys()) {
+                closing = daemonThread("sniffy-selector-close-order", new Runnable() {
+                    @Override public void run() {
+                        attempted.countDown();
+                        try { selector.close(); } catch (IOException e) { throw new AssertionError(e); }
+                    }
+                });
+                closing.start();
+                assertTrue(attempted.await(5, TimeUnit.SECONDS));
+                awaitBlocked(closing);
+                contender = selectorContender(selector);
+                awaitBlocked(contender);
+            }
+            joinOrDumpAndFail(closing);
+            joinOrDumpAndFail(contender);
+            assertTrue(delegate.closed.await(5, TimeUnit.SECONDS));
+        } finally {
+            selector.wakeup();
+            joinOrDumpAndFail(closing);
+            joinOrDumpAndFail(contender);
+            selector.close();
         }
-        closing.join(5000);
-        assertTrue(delegate.closed.await(5, TimeUnit.SECONDS));
     }
 
     @Test
@@ -100,6 +116,7 @@ public class SniffySelectorSynchronizationTest {
         assertEquals(1, selector.selectNow(action));
         assertEquals(1, selector.select(action, 1));
         assertEquals(1, selector.select(action));
+        selector.close();
     }
 
     @Test
@@ -114,16 +131,20 @@ public class SniffySelectorSynchronizationTest {
         selector.selectNow();
 
         CountDownLatch attempted = new CountDownLatch(1);
-        Thread selecting;
-        synchronized (selector.selectedKeys()) {
-            selecting = selectionThread(selector, attempted);
-            selecting.start();
-            assertTrue(attempted.await(5, TimeUnit.SECONDS));
-            awaitBlocked(selecting);
-            assertSame(wrapper, selector.selectedKeys().iterator().next());
+        Thread selecting = null;
+        try {
+            synchronized (selector.selectedKeys()) {
+                selecting = selectionThread(selector, attempted);
+                selecting.start();
+                assertTrue(attempted.await(5, TimeUnit.SECONDS));
+                awaitBlocked(selecting);
+                assertSame(wrapper, selector.selectedKeys().iterator().next());
+            }
+            joinOrDumpAndFail(selecting);
+        } finally {
+            joinOrDumpAndFail(selecting);
+            selector.close();
         }
-        selecting.join(5000);
-        assertFalse(selecting.isAlive());
     }
 
     private static void assertMonitorBlocksSelection(boolean selectorMonitor) throws Exception {
@@ -132,19 +153,25 @@ public class SniffySelectorSynchronizationTest {
         Object monitor = selectorMonitor ? selector : selector.selectedKeys();
         CountDownLatch attempted = new CountDownLatch(1);
         Thread thread;
-        synchronized (monitor) {
-            thread = selectionThread(selector, attempted);
-            thread.start();
-            assertTrue(attempted.await(5, TimeUnit.SECONDS));
-            awaitBlocked(thread);
-            assertEquals(1L, delegate.entered.getCount());
+        thread = null;
+        try {
+            synchronized (monitor) {
+                thread = selectionThread(selector, attempted);
+                thread.start();
+                assertTrue(attempted.await(5, TimeUnit.SECONDS));
+                awaitBlocked(thread);
+                assertEquals(1L, delegate.entered.getCount());
+            }
+            assertTrue(delegate.entered.await(5, TimeUnit.SECONDS));
+            joinOrDumpAndFail(thread);
+        } finally {
+            joinOrDumpAndFail(thread);
+            selector.close();
         }
-        assertTrue(delegate.entered.await(5, TimeUnit.SECONDS));
-        thread.join(5000);
     }
 
     private static Thread selectionThread(final SniffySelector selector, final CountDownLatch attempted) {
-        return new Thread(new Runnable() {
+        return daemonThread("sniffy-selection-monitor-test", new Runnable() {
             @Override public void run() {
                 attempted.countDown();
                 try { selector.selectNow(); } catch (IOException e) { throw new AssertionError(e); }
@@ -154,7 +181,7 @@ public class SniffySelectorSynchronizationTest {
 
     private static Thread selectorContender(final SniffySelector selector) {
         final CountDownLatch attempted = new CountDownLatch(1);
-        Thread contender = new Thread(new Runnable() {
+        Thread contender = daemonThread("sniffy-selector-contender", new Runnable() {
             @Override public void run() {
                 attempted.countDown();
                 synchronized (selector) { }

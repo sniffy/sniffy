@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.CountDownLatch;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
+import static io.sniffy.nio.NioTestSupport.*;
 
 public class SniffySelectorRegistrationRaceTest {
 
@@ -56,6 +58,71 @@ public class SniffySelectorRegistrationRaceTest {
         }
     }
 
+    @Test public void registrationStartingAfterCloseBeginsFailsImmediately() throws Exception {
+        SelectorProvider provider = SelectorProvider.provider();
+        final SniffySelector selector = new SniffySelector(provider, provider.openSelector());
+        Pipe rawPipe = provider.openPipe();
+        Pipe pipe = new SniffyPipe(provider, rawPipe);
+        final Pipe.SourceChannel channel = pipe.source();
+        final AtomicReference<Throwable> closeFailure = new AtomicReference<Throwable>();
+        Thread closing = daemonThread("sniffy-close-before-registration", new Runnable() {
+            @Override public void run() {
+                try { selector.close(); } catch (Throwable e) { closeFailure.set(e); }
+            }
+        });
+        channel.configureBlocking(false);
+        try {
+            synchronized (selector) {
+                closing.start();
+                awaitCondition("selector close to begin", new Condition() {
+                    @Override public boolean isSatisfied() { return !selector.isOpen(); }
+                });
+                try {
+                    // Call the selector registration entry directly so this exercises its own
+                    // !isOpen check, rather than AbstractSelectableChannel's earlier check.
+                    selector.register((AbstractSelectableChannel) channel, SelectionKey.OP_READ, null);
+                    fail("Registration starting after close began must fail");
+                } catch (ClosedSelectorException expected) {
+                    // beginRegistration rejects this before ownership or delegate registration
+                }
+                assertEquals(0, selector.activeLinkCount());
+                assertNull(channel.keyFor(selector));
+            }
+            joinOrDumpAndFail(closing);
+            assertNull(closeFailure.get());
+        } finally {
+            selector.wakeup();
+            try { channel.close(); } finally {
+                try { pipe.sink().close(); } finally {
+                    try { selector.close(); } finally {
+                        joinOrDumpAndFail(closing);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test public void registrationRacingWithBlockedSelectAndCloseCannotBecomeActive() throws Exception {
+        RaceFixture fixture = new RaceFixture(SniffySelector.RegistrationPoint.BEFORE_DELEGATE_REGISTRATION);
+        try {
+            fixture.startSelection();
+            fixture.awaitSelectionBlocked();
+            fixture.startRegistration();
+            fixture.awaitPause();
+            fixture.startClose();
+            fixture.awaitDelegateClosed();
+            fixture.releaseRegistration();
+            fixture.awaitFinished();
+
+            assertNull(fixture.returned.get());
+            assertTrue(fixture.registrationFailure.get() instanceof ClosedSelectorException);
+            assertNull(fixture.channel.keyFor(fixture.selector));
+            assertEquals(0, fixture.selector.activeLinkCount());
+        } finally {
+            fixture.close();
+        }
+    }
+
     private static void assertCloseWins(SniffySelector.RegistrationPoint point) throws Exception {
         RaceFixture fixture = new RaceFixture(point);
         try {
@@ -85,8 +152,10 @@ public class SniffySelectorRegistrationRaceTest {
         private final AtomicReference<SelectionKey> returned = new AtomicReference<SelectionKey>();
         private final AtomicReference<Throwable> registrationFailure = new AtomicReference<Throwable>();
         private final AtomicReference<Throwable> closeFailure = new AtomicReference<Throwable>();
+        private final AtomicReference<Throwable> selectionFailure = new AtomicReference<Throwable>();
         private Thread registrationThread;
         private Thread closeThread;
+        private Thread selectionThread;
 
         RaceFixture(SniffySelector.RegistrationPoint point) throws Exception {
             selector = new PausingSelector(provider, delegate, point);
@@ -94,7 +163,7 @@ public class SniffySelectorRegistrationRaceTest {
         }
 
         void startRegistration() {
-            registrationThread = new Thread(new Runnable() {
+            registrationThread = daemonThread("sniffy-paused-registration", new Runnable() {
                 @Override public void run() {
                     try { returned.set(channel.register(selector, SelectionKey.OP_READ)); }
                     catch (Throwable e) { registrationFailure.set(e); }
@@ -104,7 +173,7 @@ public class SniffySelectorRegistrationRaceTest {
         }
 
         void startClose() {
-            closeThread = new Thread(new Runnable() {
+            closeThread = daemonThread("sniffy-registration-race-close", new Runnable() {
                 @Override public void run() {
                     try { selector.close(); } catch (Throwable e) { closeFailure.set(e); }
                 }
@@ -112,27 +181,44 @@ public class SniffySelectorRegistrationRaceTest {
             closeThread.start();
         }
 
+        void startSelection() {
+            selectionThread = daemonThread("sniffy-registration-race-select", new Runnable() {
+                @Override public void run() {
+                    try { selector.select(); } catch (Throwable e) { selectionFailure.set(e); }
+                }
+            });
+            selectionThread.start();
+        }
+
+        void awaitSelectionBlocked() { awaitStackFrame(selectionThread, "sun.nio.ch.", null); }
+
         void awaitPause() throws Exception { assertTrue(selector.reached.await(5, TimeUnit.SECONDS)); }
         void releaseRegistration() { selector.release.countDown(); }
         void awaitDelegateClosed() {
-            for (int i = 0; i < 100000; i++) {
-                if (!delegate.isOpen()) return;
-                Thread.yield();
-            }
-            fail("close did not reach the delegate");
+            awaitCondition("delegate selector close", new Condition() {
+                @Override public boolean isSatisfied() { return !delegate.isOpen(); }
+            });
         }
         void awaitFinished() throws Exception {
-            registrationThread.join(5000);
-            closeThread.join(5000);
-            assertFalse(registrationThread.isAlive());
-            assertFalse(closeThread.isAlive());
+            joinOrDumpAndFail(registrationThread);
+            joinOrDumpAndFail(closeThread);
+            joinOrDumpAndFail(selectionThread);
             assertNull(closeFailure.get());
         }
         void close() throws Exception {
             selector.release.countDown();
-            channel.close();
-            pipe.sink().close();
-            selector.close();
+            selector.wakeup();
+            try { channel.close(); } finally {
+                try { pipe.sink().close(); } finally {
+                    try { selector.close(); } finally {
+                        try { delegate.close(); } finally {
+                            joinOrDumpAndFail(registrationThread);
+                            joinOrDumpAndFail(closeThread);
+                            joinOrDumpAndFail(selectionThread);
+                        }
+                    }
+                }
+            }
         }
     }
 

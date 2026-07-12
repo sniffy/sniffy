@@ -79,37 +79,70 @@ public class SniffySelector extends AbstractSelector {
     @Override
     protected void implCloseSelector() throws IOException {
         Throwable failure = null;
-        synchronized (this) {
-            Set<SelectionKey> selectedKeys = selectedKeysWrapper;
-            synchronized (selectedKeys) {
-                // Mark closing before touching the delegate: registering threads must roll back
-                // instead of publishing a wrapper key after close has taken ownership.
-                synchronized (registrationLifecycle) {
-                    selectorState = SelectorState.CLOSING;
-                }
-                try {
-                    delegate.close();
-                } catch (Throwable e) {
-                    failure = e;
-                }
-                try {
-                    awaitRegistrations();
-                    cleanupLinks(true);
-                } catch (Throwable e) {
-                    if (failure == null) {
-                        failure = e;
-                    } else {
-                        failure.addSuppressed(e);
+        synchronized (registrationLifecycle) {
+            if (selectorState == SelectorState.OPEN) {
+                // This transition owns registration admission: no later registration may add a link
+                // or reach the delegate, while an admitted registration must finish or roll back.
+                selectorState = SelectorState.CLOSING;
+            }
+        }
+
+        // A blocked selection owns the public selector monitors. Close must wake the delegate
+        // before requesting those monitors, otherwise it waits for a selection only close can release.
+        try {
+            wakeupDelegate();
+        } catch (Throwable e) {
+            failure = combineFailures(failure, e);
+        }
+
+        try {
+            synchronized (this) {
+                Set<SelectionKey> selectedKeys = selectedKeysWrapper;
+                synchronized (selectedKeys) {
+                    try {
+                        delegate.close();
+                    } catch (Throwable e) {
+                        failure = combineFailures(failure, e);
                     }
-                } finally {
-                    synchronized (registrationLifecycle) {
-                        selectorState = SelectorState.CLOSED;
+                    try {
+                        awaitRegistrations();
+                    } catch (Throwable e) {
+                        failure = combineFailures(failure, e);
+                    }
+                    try {
+                        cleanupLinks(true);
+                    } catch (Throwable e) {
+                        failure = combineFailures(failure, e);
                     }
                 }
+            }
+        } finally {
+            synchronized (registrationLifecycle) {
+                selectorState = SelectorState.CLOSED;
+                registrationLifecycle.notifyAll();
             }
         }
         if (failure != null) {
             rethrowSelectionFailure(failure);
+        }
+    }
+
+    private static Throwable combineFailures(Throwable primary, Throwable secondary) {
+        if (primary == null) {
+            return secondary;
+        }
+        if (primary != secondary) {
+            primary.addSuppressed(secondary);
+        }
+        return primary;
+    }
+
+    private void wakeupDelegate() {
+        SniffySelectorProvider.enterDelegateSelectorConstruction();
+        try {
+            delegate.wakeup();
+        } finally {
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
         }
     }
 
@@ -298,7 +331,7 @@ public class SniffySelector extends AbstractSelector {
 
     private void beginRegistration(SelectionKeyLink link) {
         synchronized (registrationLifecycle) {
-            if (selectorState != SelectorState.OPEN) {
+            if (!isOpen() || selectorState != SelectorState.OPEN) {
                 throw new java.nio.channels.ClosedSelectorException();
             }
             activeLinks.add(link);
@@ -401,12 +434,7 @@ public class SniffySelector extends AbstractSelector {
 
     @Override
     public Selector wakeup() {
-        SniffySelectorProvider.enterDelegateSelectorConstruction();
-        try {
-            delegate.wakeup();
-        } finally {
-            SniffySelectorProvider.exitDelegateSelectorConstruction();
-        }
+        wakeupDelegate();
         return this;
     }
 
