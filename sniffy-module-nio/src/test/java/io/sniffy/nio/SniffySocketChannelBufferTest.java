@@ -230,7 +230,8 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(clientHello), sslConnection);
         try (Spy<?> ignored = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
              SniffySocketChannel sniffyChannel = new SniffySocketChannel(provider, delegate)) {
-            sniffyChannel.processOutboundBytes("CONNECT tls.example:443 HTTP/1.1\r\n".getBytes("US-ASCII"), true);
+            sniffyChannel.processOutboundBytes(
+                    "CONNECT tls.example:443 HTTP/1.1\r\nHost: tls.example\r\n\r\n".getBytes("US-ASCII"), true);
             sniffyChannel.processOutboundBytes(clientHello, true);
 
             assertEquals(new InetSocketAddress("tls.example", 443), sniffyChannel.getProxiedInetSocketAddress());

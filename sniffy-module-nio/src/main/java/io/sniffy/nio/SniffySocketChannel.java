@@ -445,7 +445,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         }
 
         if (captureNetworkTraffic) {
-            int handshakeLength = null == proxiedAddress ? 0 : firstLineLength(candidate);
+            int handshakeLength = null == proxiedAddress ? 0 : httpHeaderLength(candidate);
             if (handshakeLength > 0) {
                 logTraffic(true, Protocol.TCP, candidate, 0, handshakeLength, true);
             }
@@ -466,17 +466,19 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             if (candidate[i] != connectPrefix[i]) return true;
         }
         if (candidate.length < connectPrefix.length) return false;
-        for (byte value : candidate) {
-            if ('\n' == value) return true;
-        }
+        if (httpHeaderLength(candidate) > 0) return true;
         return candidate.length >= INITIAL_PACKET_CAPTURE_LIMIT;
     }
 
-    private static int firstLineLength(byte[] bytes) {
-        for (int i = 0; i < bytes.length; i++) {
-            if ('\n' == bytes[i]) return i + 1;
+    private static int httpHeaderLength(byte[] bytes) {
+        for (int i = 1; i < bytes.length; i++) {
+            if ('\n' == bytes[i] && '\n' == bytes[i - 1]) return i + 1;
+            if (i >= 3 && '\r' == bytes[i - 3] && '\n' == bytes[i - 2] &&
+                    '\r' == bytes[i - 1] && '\n' == bytes[i]) {
+                return i + 1;
+            }
         }
-        return bytes.length;
+        return 0;
     }
 
     synchronized int pendingInitialOutboundByteCount() {
