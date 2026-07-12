@@ -3,7 +3,6 @@ package io.sniffy.nio;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.OSUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
@@ -23,7 +22,12 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelectorProvider.class);
 
+    private static final Object INSTALLATION_LOCK = new Object();
+
     private static volatile SelectorProvider previousSelectorProvider;
+    private static volatile NioInstallationResult lastInstallationResult = NioInstallationResult.of(
+            NioInstallationResult.Status.UNINSTALLED, "NIO provider has not been installed");
+    private static boolean unsupportedPlatformLogged;
 
     private final SelectorProvider delegate;
 
@@ -31,50 +35,109 @@ public class SniffySelectorProvider extends SelectorProvider {
         this.delegate = delegate;
     }
 
-    public static synchronized boolean install() {
+    public static boolean install() {
+        return installWithResult().isInstalled();
+    }
 
-        SelectorProvider delegate = SelectorProvider.provider();
+    public static NioInstallationResult installWithResult() {
+        synchronized (INSTALLATION_LOCK) {
+            final JdkNioAccess access;
+            try {
+                access = JdkNioAccess.resolve();
+            } catch (JdkNioAccess.JdkNioAccessException e) {
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.UNSUPPORTED,
+                        e.getMessage(), e);
+                if (!unsupportedPlatformLogged) {
+                    LOG.error("NIO monitoring is unsupported on this runtime; classic socket monitoring remains active", e);
+                    unsupportedPlatformLogged = true;
+                }
+                return lastInstallationResult;
+            }
 
-        LOG.info("Original SelectorProvider was " + delegate);
+            SelectorProvider delegate = access.getSelectorProvider();
+            if (delegate == null) {
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.FAILED,
+                        "JDK SelectorProvider slot " + access.describeProviderSlot() + " is null");
+                LOG.error(lastInstallationResult.getMessage());
+                return lastInstallationResult;
+            }
+            if (delegate instanceof SniffySelectorProvider) {
+                SniffySelectorProvider installed = (SniffySelectorProvider) delegate;
+                if (previousSelectorProvider == null) {
+                    previousSelectorProvider = installed.delegate;
+                }
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.ALREADY_INSTALLED,
+                        "Sniffy SelectorProvider is already installed");
+                return lastInstallationResult;
+            }
 
-        if (null == delegate) {
-            return false;
+            SniffySelectorProvider wrapper = new SniffySelectorProvider(delegate);
+            try {
+                access.setSelectorProvider(wrapper);
+                if (access.getSelectorProvider() != wrapper) {
+                    access.setSelectorProvider(delegate);
+                    throw new IllegalStateException("JDK SelectorProvider slot did not retain the Sniffy provider");
+                }
+                previousSelectorProvider = delegate;
+                unsupportedPlatformLogged = false;
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.INSTALLED,
+                        "Installed Sniffy SelectorProvider around " + delegate.getClass().getName());
+                LOG.info(lastInstallationResult.getMessage());
+                return lastInstallationResult;
+            } catch (Throwable e) {
+                try {
+                    access.setSelectorProvider(delegate);
+                } catch (Throwable rollbackFailure) {
+                    e.addSuppressed(rollbackFailure);
+                }
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.FAILED,
+                        "Failed to install Sniffy SelectorProvider; the original provider was retained", e);
+                LOG.error(lastInstallationResult.getMessage(), e);
+                return lastInstallationResult;
+            }
         }
-
-        if (null == previousSelectorProvider && !SniffySelectorProvider.class.equals(delegate.getClass())) {
-            previousSelectorProvider = delegate;
-        }
-
-        if (SniffySelectorProvider.class.equals(delegate.getClass())) {
-            return true;
-        }
-
-        SelectorProvider sniffySelectorProvider = new SniffySelectorProvider(delegate);
-
-        LOG.info("Setting SelectorProvider to " + sniffySelectorProvider);
-
-        if (ReflectionUtil.setField("java.nio.channels.spi.SelectorProvider$Holder", null, "INSTANCE", sniffySelectorProvider)) {
-            return true;
-        } else {
-            return ReflectionUtil.setField(SelectorProvider.class, null, "provider", sniffySelectorProvider, "lock");
-        }
-
     }
 
     public static boolean uninstall() {
+        return uninstallWithResult().getStatus() == NioInstallationResult.Status.UNINSTALLED;
+    }
 
-        LOG.info("Restoring original SelectorProvider " + previousSelectorProvider);
-
-        if (null == previousSelectorProvider) {
-            return false;
+    public static NioInstallationResult uninstallWithResult() {
+        synchronized (INSTALLATION_LOCK) {
+            if (previousSelectorProvider == null) {
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.UNINSTALLED,
+                        "No Sniffy SelectorProvider installation is active");
+                return lastInstallationResult;
+            }
+            try {
+                JdkNioAccess access = JdkNioAccess.resolve();
+                SelectorProvider current = access.getSelectorProvider();
+                if (!(current instanceof SniffySelectorProvider)) {
+                    lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.FAILED,
+                            "Cannot uninstall Sniffy NIO provider because the global provider was replaced by " + current);
+                    LOG.error(lastInstallationResult.getMessage());
+                    return lastInstallationResult;
+                }
+                access.setSelectorProvider(previousSelectorProvider);
+                if (access.getSelectorProvider() != previousSelectorProvider) {
+                    throw new IllegalStateException("JDK SelectorProvider slot did not retain the original provider");
+                }
+                previousSelectorProvider = null;
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.UNINSTALLED,
+                        "Restored the original SelectorProvider");
+                LOG.info(lastInstallationResult.getMessage());
+                return lastInstallationResult;
+            } catch (Throwable e) {
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.FAILED,
+                        "Failed to restore the original SelectorProvider", e);
+                LOG.error(lastInstallationResult.getMessage(), e);
+                return lastInstallationResult;
+            }
         }
+    }
 
-        if (ReflectionUtil.setField("java.nio.channels.spi.SelectorProvider$Holder", null, "INSTANCE", previousSelectorProvider)) {
-            return true;
-        } else {
-            return ReflectionUtil.setField(SelectorProvider.class, null, "provider", previousSelectorProvider, "lock");
-        }
-
+    public static NioInstallationResult getLastInstallationResult() {
+        return lastInstallationResult;
     }
 
     @Override
