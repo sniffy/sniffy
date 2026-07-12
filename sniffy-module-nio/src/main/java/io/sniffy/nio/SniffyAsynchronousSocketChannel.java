@@ -432,7 +432,11 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
     @Override
     public void close() throws IOException {
-        delegate.close();
+        try {
+            delegate.close();
+        } finally {
+            ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(this);
+        }
     }
 
     @Override

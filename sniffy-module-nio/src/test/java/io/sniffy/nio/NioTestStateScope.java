@@ -3,6 +3,7 @@ package io.sniffy.nio;
 import io.sniffy.Sniffy;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.registry.ConnectionsRegistryTestState;
 import io.sniffy.socket.SniffySSLNetworkConnection;
 
 import java.nio.ByteBuffer;
@@ -33,6 +34,15 @@ final class NioTestStateScope implements AutoCloseable {
 
     NioTestStateScope preserveConnectionsRegistry() {
         final ConnectionsRegistry registry = ConnectionsRegistry.INSTANCE;
+        final ConnectionsRegistryTestState registeredConnections = ConnectionsRegistryTestState.capture(registry);
+        restore(new Cleanup() {
+            @Override public void run() {
+                registeredConnections.restore();
+                if (!registeredConnections.matchesCurrentState()) {
+                    throw new AssertionError("Failed to restore live ConnectionsRegistry registrations");
+                }
+            }
+        });
         final boolean previousThreadLocal = registry.isThreadLocal();
         final boolean previousPersist = registry.isPersistRegistry();
         final Map<Map.Entry<String, Integer>, Integer> globalAddresses;

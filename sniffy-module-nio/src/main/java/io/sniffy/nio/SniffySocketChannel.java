@@ -673,6 +673,11 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         } catch (Throwable e) {
             failure = combine(failure, e);
         }
+        try {
+            ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(this);
+        } catch (Throwable e) {
+            failure = combine(failure, e);
+        }
         if (failure != null) rethrow(failure);
     }
 

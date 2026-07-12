@@ -205,10 +205,14 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
 
     @Override
     public void close() throws IOException {
-        if (null != socketChannel) {
-            socketChannel.close();
-        } else {
-            super.close();
+        try {
+            if (null != socketChannel) {
+                socketChannel.close();
+            } else {
+                super.close();
+            }
+        } finally {
+            ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(this);
         }
     }
 

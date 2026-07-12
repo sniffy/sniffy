@@ -13,6 +13,13 @@ ClientHello cache entries, test hooks, spies, and listeners may be changed withi
 snapshot the exact prior value and restore it in `finally` or through `NioTestStateScope`/`NioTestStateRule`. Cleanup
 runs in reverse order, continues after failures, and suppresses later cleanup failures onto the first failure.
 
+Live `ConnectionsRegistry` registrations are part of that snapshot. The scope preserves the existing endpoint buckets
+and their weak-reference identities, removes registrations created by the test, and restores only prior references
+whose connections are still live. It never waits for GC or the reference queue. Production socket/channel close paths
+also call the registry's idempotent identity-based deregistration, which removes both hostname and IP aliases and empty
+endpoint buckets. The test snapshot remains necessary for synthetic connections and failed tests that do not close
+normally.
+
 ## JVM-global infrastructure
 
 The JDK `SelectorProvider` slot, provider installation/access resolvers, `Sniffy.nioModuleLoaded`, and module

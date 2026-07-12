@@ -172,6 +172,14 @@ until wrapper-channel key removal succeeds; failed cleanup stays owned for repor
 Never hold a delegate selector or delegate channel lock while acquiring a wrapper channel lock. In particular, snapshot
 links under `registrationLifecycle`, release it, and only then touch the channel key array.
 
+### Connection-registry ownership
+
+`ConnectionsRegistry` keeps weak registrations under both hostname and IP aliases so policy changes can update a live
+connection. Registration is idempotent for the same connection identity and endpoint. A monitored connection's close
+path explicitly unregisters that identity from every alias bucket after attempting physical close; repeated removal is
+safe and empty buckets are removed. The reference-queue housekeeper is a fallback for abandoned connections and removes
+the enqueued weak-reference object directly, because its referent is already unavailable at that point.
+
 ### Application and instrumentation code
 
 Application callbacks never run while private delegate selector locks or internal provider-construction scopes are
