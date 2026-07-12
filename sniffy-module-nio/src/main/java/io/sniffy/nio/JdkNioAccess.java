@@ -9,6 +9,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.AbstractSelectableChannel;
 
 /**
  * Resolved-once access to the small set of JDK-private facilities required by NIO instrumentation.
@@ -22,12 +24,15 @@ final class JdkNioAccess {
     private final Object providerFieldBase;
     private final long providerFieldOffset;
     private final String providerFieldDescription;
+    private final MethodHandle removeChannelKey;
 
-    private JdkNioAccess(Unsafe unsafe, Field providerField) {
+    private JdkNioAccess(Unsafe unsafe, Field providerField, MethodHandles.Lookup trustedLookup) throws Exception {
         this.unsafe = unsafe;
         this.providerFieldBase = unsafe.staticFieldBase(providerField);
         this.providerFieldOffset = unsafe.staticFieldOffset(providerField);
         this.providerFieldDescription = providerField.getDeclaringClass().getName() + "." + providerField.getName();
+        this.removeChannelKey = trustedLookup.findVirtual(AbstractSelectableChannel.class, "removeKey",
+                MethodType.methodType(void.class, SelectionKey.class));
     }
 
     static JdkNioAccess resolve() throws JdkNioAccessException {
@@ -50,9 +55,10 @@ final class JdkNioAccess {
             SelectorProvider.provider(); // initialize the JDK provider holder before resolving its slot
             Unsafe unsafe = resolveUnsafe();
             Field providerField = resolveProviderField();
-            openSunNioChannelPackage(unsafe);
+            MethodHandles.Lookup trustedLookup = resolveTrustedLookup(unsafe);
+            openSunNioChannelPackage(trustedLookup);
             Class.forName("sun.nio.ch.SelChImpl", false, JdkNioAccess.class.getClassLoader());
-            return new JdkNioAccess(unsafe, providerField);
+            return new JdkNioAccess(unsafe, providerField, trustedLookup);
         } catch (Throwable e) {
             throw new JdkNioAccessException("Required JDK NIO access is unavailable", e);
         }
@@ -84,7 +90,13 @@ final class JdkNioAccess {
         return field;
     }
 
-    private static void openSunNioChannelPackage(Unsafe unsafe) throws Throwable {
+    private static MethodHandles.Lookup resolveTrustedLookup(Unsafe unsafe) throws Exception {
+        Field trustedLookupField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+        return (MethodHandles.Lookup) unsafe.getObject(
+                unsafe.staticFieldBase(trustedLookupField), unsafe.staticFieldOffset(trustedLookupField));
+    }
+
+    private static void openSunNioChannelPackage(MethodHandles.Lookup trustedLookup) throws Throwable {
         Class<?> moduleClass;
         try {
             moduleClass = Class.forName("java.lang.Module");
@@ -92,9 +104,6 @@ final class JdkNioAccess {
             return; // Java 8 has no module boundaries.
         }
 
-        Field trustedLookupField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-        MethodHandles.Lookup trustedLookup = (MethodHandles.Lookup) unsafe.getObject(
-                unsafe.staticFieldBase(trustedLookupField), unsafe.staticFieldOffset(trustedLookupField));
         Class<?> selChImplClass = Class.forName("sun.nio.ch.SelChImpl");
         Method getModule = Class.class.getMethod("getModule");
         Object javaBaseModule = getModule.invoke(selChImplClass);
@@ -113,6 +122,14 @@ final class JdkNioAccess {
 
     String describeProviderSlot() {
         return providerFieldDescription;
+    }
+
+    void removeChannelKey(AbstractSelectableChannel channel, SelectionKey key) throws JdkNioAccessException {
+        try {
+            removeChannelKey.invoke(channel, key);
+        } catch (Throwable e) {
+            throw new JdkNioAccessException("Failed to remove a Sniffy key from wrapper channel " + channel, e);
+        }
     }
 
     static final class JdkNioAccessException extends Exception {

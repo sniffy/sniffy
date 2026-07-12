@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.function.Consumer;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
 
 /**
  * @since 3.1.7
@@ -25,6 +24,16 @@ public class SniffySelector extends AbstractSelector {
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelector.class);
 
     private final AbstractSelector delegate;
+
+    /*
+     * Ownership and locking:
+     * - every delegate key owns its SelectionKeyLink attachment; this selector only tracks active links for cleanup;
+     * - registration is entered with wrapper channel regLock/keyLock and may then take delegate channel locks;
+     * - selection/cancellation cleanup runs after delegate select releases delegate locks, then takes wrapper keyLock;
+     * - no path may hold a delegate channel/selector lock while acquiring a wrapper channel lock.
+     */
+    private final Set<SelectionKeyLink> activeLinks = Collections.newSetFromMap(
+            new java.util.concurrent.ConcurrentHashMap<SelectionKeyLink, Boolean>());
 
     private volatile Set<SelectionKey> keysWrapper = null;
     private volatile Set<SelectionKey> selectedKeysWrapper = null;
@@ -61,12 +70,23 @@ public class SniffySelector extends AbstractSelector {
     @SuppressWarnings("RedundantThrows")
     @Override
     protected void implCloseSelector() throws IOException {
+        IOException failure = null;
         try {
-            // TODO: document
-            setField(AbstractSelector.class, delegate, "closed", true);
-            invokeMethod(AbstractSelector.class, delegate, "implCloseSelector", Void.class);
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            delegate.close();
+        } catch (IOException e) {
+            failure = e;
+        }
+        try {
+            cleanupLinks(true);
+        } catch (IOException e) {
+            if (failure == null) {
+                failure = e;
+            } else {
+                failure.addSuppressed(e);
+            }
+        }
+        if (failure != null) {
+            throw failure;
         }
     }
 
@@ -192,25 +212,14 @@ public class SniffySelector extends AbstractSelector {
             }
 
             SelectionKeyLink link = new SelectionKeyLink(this, ch, att);
-
-            SelectionKey selectionKeyDelegate = invokeMethod(AbstractSelector.class, delegate, "register",
-                    AbstractSelectableChannel.class, chDelegate,
-                    Integer.TYPE, ops,
-                    Object.class, link,
-                    SelectionKey.class
-            );
-
-            Object regLock = ReflectionUtil.getField(AbstractSelectableChannel.class, chDelegate, "regLock");
-            Object keyLock = ReflectionUtil.getField(AbstractSelectableChannel.class, chDelegate, "keyLock");
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (regLock) {
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (keyLock) {
-                    invokeMethod(AbstractSelectableChannel.class, chDelegate, "addKey", SelectionKey.class, selectionKeyDelegate, Void.class);
-                }
+            activeLinks.add(link);
+            try {
+                SelectionKey selectionKeyDelegate = chDelegate.register(delegate, ops, link);
+                return link.wrapper(selectionKeyDelegate);
+            } catch (RuntimeException e) {
+                activeLinks.remove(link);
+                throw e;
             }
-
-            return link.wrapper(selectionKeyDelegate);
 
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
@@ -240,7 +249,10 @@ public class SniffySelector extends AbstractSelector {
      */
     @Override
     public int selectNow() throws IOException {
-        return delegate.selectNow();
+        propagateWrapperCancellations();
+        int selected = delegate.selectNow();
+        cleanupLinks(false);
+        return selected;
     }
 
     /**
@@ -249,7 +261,10 @@ public class SniffySelector extends AbstractSelector {
      */
     @Override
     public int select(long timeout) throws IOException {
-        return delegate.select(timeout);
+        propagateWrapperCancellations();
+        int selected = delegate.select(timeout);
+        cleanupLinks(false);
+        return selected;
     }
 
     /**
@@ -258,7 +273,10 @@ public class SniffySelector extends AbstractSelector {
      */
     @Override
     public int select() throws IOException {
-        return delegate.select();
+        propagateWrapperCancellations();
+        int selected = delegate.select();
+        cleanupLinks(false);
+        return selected;
     }
 
     @Override
@@ -267,17 +285,62 @@ public class SniffySelector extends AbstractSelector {
         return this;
     }
 
+    private void cleanupLinks(boolean all) throws IOException {
+        IOException failure = null;
+        for (SelectionKeyLink link : activeLinks) {
+            SelectionKey delegateKey = link.delegate();
+            if (!all && (delegateKey == null || delegateKey.isValid())) {
+                continue;
+            }
+            try {
+                SniffySelectionKey wrapper = link.existingWrapper();
+                AbstractSelectableChannel channel = link.channel();
+                if (wrapper != null && channel != null && channel.keyFor(this) == wrapper) {
+                    JdkNioAccess.resolve().removeChannelKey(channel, wrapper);
+                }
+                activeLinks.remove(link); // remove only after wrapper cleanup succeeds
+            } catch (Exception e) {
+                LOG.error("Failed to reconcile a deregistered NIO selection key; cleanup will be retried", e);
+                IOException ioe = new IOException("Failed to reconcile a deregistered NIO selection key", e);
+                if (failure == null) {
+                    failure = ioe;
+                } else {
+                    failure.addSuppressed(ioe);
+                }
+            }
+        }
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    private void propagateWrapperCancellations() {
+        for (SelectionKeyLink link : activeLinks) {
+            SniffySelectionKey wrapper = link.existingWrapper();
+            SelectionKey delegateKey = link.delegate();
+            if (wrapper != null && !wrapper.isValid() && delegateKey != null && delegateKey.isValid()) {
+                delegateKey.cancel();
+            }
+        }
+    }
+
+    int activeLinkCount() {
+        return activeLinks.size();
+    }
+
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
     @SuppressWarnings({"RedundantThrows", "Since15"})
     public int select(Consumer<SelectionKey> action, long timeout) throws IOException {
         try {
-            // TODO: call delegate.processDeregisterQueue and update selection keys from delegate
-            return invokeMethod(Selector.class, delegate, "select",
+            propagateWrapperCancellations();
+            int selected = invokeMethod(Selector.class, delegate, "select",
                     Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Long.TYPE, timeout,
                     Integer.TYPE
             );
+            cleanupLinks(false);
+            return selected;
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -288,10 +351,13 @@ public class SniffySelector extends AbstractSelector {
     @SuppressWarnings({"RedundantThrows", "Since15"})
     public int select(Consumer<SelectionKey> action) throws IOException {
         try {
-            return invokeMethod(Selector.class, delegate, "select",
+            propagateWrapperCancellations();
+            int selected = invokeMethod(Selector.class, delegate, "select",
                     Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Integer.TYPE
             );
+            cleanupLinks(false);
+            return selected;
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -302,10 +368,13 @@ public class SniffySelector extends AbstractSelector {
     @SuppressWarnings({"RedundantThrows", "Since15"})
     public int selectNow(Consumer<SelectionKey> action) throws IOException {
         try {
-            return invokeMethod(Selector.class, delegate, "selectNow",
+            propagateWrapperCancellations();
+            int selected = invokeMethod(Selector.class, delegate, "selectNow",
                     Consumer.class, new SelectionKeyConsumerWrapper(action),
                     Integer.TYPE
             );
+            cleanupLinks(false);
+            return selected;
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }

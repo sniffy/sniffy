@@ -2,20 +2,18 @@ package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
 import io.sniffy.util.ObjectWrapper;
-import io.sniffy.util.StackTraceExtractor;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.AbstractSelectionKey;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * @since 3.1.7
  */
-public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<SelectionKey> {
+public class SniffySelectionKey extends AbstractSelectionKey implements ObjectWrapper<SelectionKey> {
 
     private final SelectionKey delegate;
     private final SniffySelector sniffySelector;
@@ -47,38 +45,7 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
 
     @Override
     public Selector selector() {
-        if (!isValid() &&
-                StackTraceExtractor.hasClassAndMethodInStackTrace("java.nio.channels.spi.AbstractSelectableChannel", "findKey") &&
-                sniffyChannel instanceof SocketChannel
-        ) {
-            return NoOpSelector.INSTANCE; // TODO: cleanup this and other collections
-        } else {
-            return sniffySelector;
-        }
-    }
-
-    @Override
-    public boolean isValid() {
-        return delegate.isValid();
-    }
-
-    @Override
-    public void cancel() {
-        delegate.cancel();
-        if (sniffyChannel instanceof SelectableChannelWrapper) {
-            //noinspection unchecked
-            ((SelectableChannelWrapper<AbstractSelectableChannel>) sniffyChannel).keyCancelled();
-        }
-        // TODO: seems that code below is safe to be removed on Java 17; is it the same on older Java?
-        /*synchronized (this) {
-            delegate.cancel();
-            try {
-                // TODO: reevaluate copying other fields across NIO stack
-                ReflectionUtil.invokeMethod(AbstractSelector.class, sniffySelector, "cancel", SelectionKey.class, this);
-            } catch (Exception e) {
-                throw ExceptionUtil.processException(e);
-            }
-        }*/
+        return sniffySelector;
     }
 
     @Override

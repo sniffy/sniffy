@@ -2,6 +2,7 @@ package io.sniffy.nio;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.AbstractSelectableChannel;
 
 /**
  * Private backlink stored in the delegate key attachment. The final selector/channel context is
@@ -10,13 +11,13 @@ import java.nio.channels.SelectionKey;
 final class SelectionKeyLink {
 
     private final SniffySelector selector;
-    private final SelectableChannel channel;
+    private final AbstractSelectableChannel channel;
     private final Object initialUserAttachment;
 
     private volatile SelectionKey delegate;
     private volatile SniffySelectionKey wrapper;
 
-    SelectionKeyLink(SniffySelector selector, SelectableChannel channel, Object initialUserAttachment) {
+    SelectionKeyLink(SniffySelector selector, AbstractSelectableChannel channel, Object initialUserAttachment) {
         this.selector = selector;
         this.channel = channel;
         this.initialUserAttachment = initialUserAttachment;
@@ -41,6 +42,18 @@ final class SelectionKeyLink {
 
     boolean belongsTo(SniffySelector selector) {
         return this.selector == selector;
+    }
+
+    SelectionKey delegate() {
+        return delegate;
+    }
+
+    SniffySelectionKey existingWrapper() {
+        return wrapper;
+    }
+
+    AbstractSelectableChannel channel() {
+        return channel;
     }
 
     private void verifyDelegate(SelectionKey candidate) {

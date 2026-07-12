@@ -179,14 +179,15 @@ public class SniffySelectionKeyContractTest {
     @Test
     public void repeatedCancellationIsIdempotent() {
         TestSelectionKey delegate = new TestSelectionKey();
-        SniffySelectionKey key = new SniffySelectionKey(delegate, null, null);
+        SniffySelector selector = new SniffySelector(null, new TestSelector());
+        SniffySelectionKey key = new SniffySelectionKey(delegate, selector, null);
 
         assertTrue(key.isValid());
         key.cancel();
         key.cancel();
 
         assertFalse(key.isValid());
-        assertEquals(1, delegate.cancellationCount);
+        assertEquals(0, delegate.cancellationCount);
     }
 
     private static final class TestSelectionKey extends SelectionKey {
