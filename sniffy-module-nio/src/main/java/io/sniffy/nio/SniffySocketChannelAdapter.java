@@ -15,20 +15,14 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * @since 3.1.7
  */
 public class SniffySocketChannelAdapter extends SocketChannel implements SelectableChannelWrapper<SocketChannel>, SelChImpl {
 
-    // TODO: replace delegate.interruptor as well
-
     private final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
-
-    // TODO: based on this property, refresh keys from delegate after invoking select* calls
-    private volatile boolean hasCancelledKeys;
 
     protected SniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider);
@@ -43,7 +37,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     @Override
     public void keyCancelled() {
-        hasCancelledKeys = true;
+        // Selector cleanup observes the delegate key state directly.
     }
 
     @SuppressWarnings("Since15")
@@ -204,7 +198,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     // @Override
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+            JdkNioAccess.resolve().translateAndSetInterestOps(selChImplDelegate, ops, sk);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -214,7 +208,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     //@Override
     public int translateInterestOps(int ops) {
         try {
-            return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+            return JdkNioAccess.resolve().translateInterestOps(selChImplDelegate, ops);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -225,7 +219,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @SuppressWarnings("RedundantThrows")
     public void park(int event, long nanos) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+            JdkNioAccess.resolve().park(selChImplDelegate, event, nanos);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
@@ -236,7 +230,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @SuppressWarnings("RedundantThrows")
     public void park(int event) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+            JdkNioAccess.resolve().park(selChImplDelegate, event);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }

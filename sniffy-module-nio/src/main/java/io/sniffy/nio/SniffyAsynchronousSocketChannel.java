@@ -25,7 +25,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-// TODO: this functionality is available in java 1.7+ only - make sure it is safe
 
 /**
  * @since 3.1.7
@@ -335,7 +334,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                     checkConnectionAllowed(0);
                     sleepIfRequired(bytesDown);
                 } catch (ConnectException e) {
-                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                    throw new ExecutionException(new AsynchronousCloseException());
                 }
                 logSocket(System.currentTimeMillis() - start, bytesDown, 0);
                 return bytesDown;
@@ -348,7 +347,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                     checkConnectionAllowed(0);
                     sleepIfRequired(bytesDown);
                 } catch (ConnectException e) {
-                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                    throw new ExecutionException(new AsynchronousCloseException());
                 }
                 logSocket(System.currentTimeMillis() - start, bytesDown, 0);
                 return bytesDown;
@@ -399,7 +398,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                     checkConnectionAllowed(0);
                     sleepIfRequiredForWrite(bytesUp);
                 } catch (ConnectException e) {
-                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                    throw new ExecutionException(new AsynchronousCloseException());
                 }
                 logSocket(System.currentTimeMillis() - start, 0, bytesUp);
                 return bytesUp;
@@ -412,7 +411,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                     checkConnectionAllowed(0);
                     sleepIfRequiredForWrite(bytesUp);
                 } catch (ConnectException e) {
-                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                    throw new ExecutionException(new AsynchronousCloseException());
                 }
                 logSocket(System.currentTimeMillis() - start, 0, bytesUp);
                 return bytesUp;

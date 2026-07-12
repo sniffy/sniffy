@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.spi.SelectorProvider;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * @since 3.1.7
@@ -122,7 +121,7 @@ public class SniffyPipe extends Pipe {
         // @Override
         public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+                JdkNioAccess.resolve().translateAndSetInterestOps(selChImplDelegate, ops, sk);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
@@ -132,7 +131,7 @@ public class SniffyPipe extends Pipe {
         //@Override
         public int translateInterestOps(int ops) {
             try {
-                return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+                return JdkNioAccess.resolve().translateInterestOps(selChImplDelegate, ops);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
@@ -142,7 +141,7 @@ public class SniffyPipe extends Pipe {
         //@Override
         public void park(int event, long nanos) throws IOException {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+                JdkNioAccess.resolve().park(selChImplDelegate, event, nanos);
             } catch (Exception e) {
                 throw ExceptionUtil.throwException(e);
             }
@@ -152,7 +151,7 @@ public class SniffyPipe extends Pipe {
         //@Override
         public void park(int event) throws IOException {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+                JdkNioAccess.resolve().park(selChImplDelegate, event);
             } catch (Exception e) {
                 throw ExceptionUtil.throwException(e);
             }
@@ -246,7 +245,7 @@ public class SniffyPipe extends Pipe {
         // @Override
         public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+                JdkNioAccess.resolve().translateAndSetInterestOps(selChImplDelegate, ops, sk);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
@@ -256,7 +255,7 @@ public class SniffyPipe extends Pipe {
         //@Override
         public int translateInterestOps(int ops) {
             try {
-                return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+                return JdkNioAccess.resolve().translateInterestOps(selChImplDelegate, ops);
             } catch (Exception e) {
                 throw ExceptionUtil.processException(e);
             }
@@ -266,7 +265,7 @@ public class SniffyPipe extends Pipe {
         //@Override
         public void park(int event, long nanos) throws IOException {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+                JdkNioAccess.resolve().park(selChImplDelegate, event, nanos);
             } catch (Exception e) {
                 throw ExceptionUtil.throwException(e);
             }
@@ -276,7 +275,7 @@ public class SniffyPipe extends Pipe {
         //@Override
         public void park(int event) throws IOException {
             try {
-                invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+                JdkNioAccess.resolve().park(selChImplDelegate, event);
             } catch (Exception e) {
                 throw ExceptionUtil.throwException(e);
             }

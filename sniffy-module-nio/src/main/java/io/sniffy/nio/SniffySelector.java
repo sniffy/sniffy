@@ -197,11 +197,8 @@ public class SniffySelector extends AbstractSelector {
 
     }
 
-    /**
-     * This method adds a selection key to provided AbstractSelectableChannel, hence we're doing the same here manually
-     */
+    /** Registers the delegate channel while publishing the wrapper key through its attachment link. */
     @Override
-    // TODO: document
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att) {
         try {
 
@@ -234,13 +231,6 @@ public class SniffySelector extends AbstractSelector {
     @Override
     public Set<SelectionKey> selectedKeys() {
         return wrapSelectedKeys(delegate.selectedKeys());
-    }
-
-    private void copyKeysFromDelegate() {
-
-        // TODO: copy keys from delegate channels to sniffy channels
-        // TODO: consider doing in background?
-
     }
 
     /**

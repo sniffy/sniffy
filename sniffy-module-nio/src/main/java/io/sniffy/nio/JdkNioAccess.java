@@ -1,6 +1,8 @@
 package io.sniffy.nio;
 
 import sun.misc.Unsafe;
+import sun.nio.ch.SelChImpl;
+import sun.nio.ch.SelectionKeyImpl;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -12,11 +14,13 @@ import java.nio.channels.spi.SelectorProvider;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 
+import static io.sniffy.util.ReflectionUtil.invokeMethod;
+
 /**
  * Resolved-once access to the small set of JDK-private facilities required by NIO instrumentation.
  * All private member names, module opening and Unsafe use for NIO belong in this compatibility class.
  */
-final class JdkNioAccess {
+final class JdkNioAccess implements NioProviderAccess {
 
     private static volatile JdkNioAccess resolved;
 
@@ -112,15 +116,18 @@ final class JdkNioAccess {
         addOpens.invoke(javaBaseModule, "sun.nio.ch");
     }
 
-    SelectorProvider getSelectorProvider() {
+    @Override
+    public SelectorProvider getSelectorProvider() {
         return (SelectorProvider) unsafe.getObjectVolatile(providerFieldBase, providerFieldOffset);
     }
 
-    void setSelectorProvider(SelectorProvider provider) {
+    @Override
+    public void setSelectorProvider(SelectorProvider provider) {
         unsafe.putObjectVolatile(providerFieldBase, providerFieldOffset, provider);
     }
 
-    String describeProviderSlot() {
+    @Override
+    public String describeProviderSlot() {
         return providerFieldDescription;
     }
 
@@ -129,6 +136,41 @@ final class JdkNioAccess {
             removeChannelKey.invoke(channel, key);
         } catch (Throwable e) {
             throw new JdkNioAccessException("Failed to remove a Sniffy key from wrapper channel " + channel, e);
+        }
+    }
+
+    void translateAndSetInterestOps(SelChImpl channel, int ops, SelectionKeyImpl key) throws JdkNioAccessException {
+        try {
+            invokeMethod(SelChImpl.class, channel, "translateAndSetInterestOps",
+                    Integer.TYPE, ops, SelectionKeyImpl.class, key, Void.TYPE);
+        } catch (Exception e) {
+            throw new JdkNioAccessException("Failed to update delegate selector interest operations", e);
+        }
+    }
+
+    int translateInterestOps(SelChImpl channel, int ops) throws JdkNioAccessException {
+        try {
+            return invokeMethod(SelChImpl.class, channel, "translateInterestOps",
+                    Integer.TYPE, ops, Integer.TYPE);
+        } catch (Exception e) {
+            throw new JdkNioAccessException("Failed to translate delegate selector interest operations", e);
+        }
+    }
+
+    void park(SelChImpl channel, int event, long nanos) throws JdkNioAccessException {
+        try {
+            invokeMethod(SelChImpl.class, channel, "park",
+                    Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+        } catch (Exception e) {
+            throw new JdkNioAccessException("Failed to park a delegate NIO channel", e);
+        }
+    }
+
+    void park(SelChImpl channel, int event) throws JdkNioAccessException {
+        try {
+            invokeMethod(SelChImpl.class, channel, "park", Integer.TYPE, event, Void.TYPE);
+        } catch (Exception e) {
+            throw new JdkNioAccessException("Failed to park a delegate NIO channel", e);
         }
     }
 

@@ -19,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assume.assumeTrue;
 import static org.junit.Assert.assertEquals;
@@ -133,6 +134,12 @@ public class SniffySelectionKeyContractTest {
         assertSame(key, keys.iterator().next());
         assertSame(key, keys.toArray()[0]);
         assertSame(key, keys.toArray(new SelectionKey[0])[0]);
+        final AtomicReference<SelectionKey> forEachKey = new AtomicReference<SelectionKey>();
+        keys.forEach(forEachKey::set);
+        assertSame(key, forEachKey.get());
+        final AtomicReference<SelectionKey> spliteratorKey = new AtomicReference<SelectionKey>();
+        assertTrue(keys.spliterator().tryAdvance(spliteratorKey::set));
+        assertSame(key, spliteratorKey.get());
 
         try {
             keys.remove(key);
@@ -149,6 +156,14 @@ public class SniffySelectionKeyContractTest {
 
         delegateSelector.selectedKeys.add(delegateKey);
         assertTrue(selectedKeys.removeAll(Arrays.<SelectionKey>asList(key)));
+        delegateSelector.selectedKeys.add(delegateKey);
+        assertFalse(selectedKeys.retainAll(Collections.<SelectionKey>singleton(key)));
+        assertTrue(selectedKeys.retainAll(Collections.<SelectionKey>emptySet()));
+        delegateSelector.selectedKeys.add(delegateKey);
+        java.util.Iterator<SelectionKey> removableIterator = selectedKeys.iterator();
+        removableIterator.next();
+        removableIterator.remove();
+        assertTrue(selectedKeys.isEmpty());
         delegateSelector.selectedKeys.add(delegateKey);
         selectedKeys.clear();
         assertTrue(selectedKeys.isEmpty());

@@ -27,6 +27,13 @@ public class SniffySelectorProvider extends SelectorProvider {
     private static volatile NioInstallationResult lastInstallationResult = NioInstallationResult.of(
             NioInstallationResult.Status.UNINSTALLED, "NIO provider has not been installed");
     private static boolean unsupportedPlatformLogged;
+    private static final NioProviderAccessResolver DEFAULT_ACCESS_RESOLVER = new NioProviderAccessResolver() {
+        @Override
+        public NioProviderAccess resolve() throws JdkNioAccess.JdkNioAccessException {
+            return JdkNioAccess.resolve();
+        }
+    };
+    private static volatile NioProviderAccessResolver accessResolver = DEFAULT_ACCESS_RESOLVER;
 
     private final SelectorProvider delegate;
 
@@ -40,9 +47,9 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     public static NioInstallationResult installWithResult() {
         synchronized (INSTALLATION_LOCK) {
-            final JdkNioAccess access;
+            final NioProviderAccess access;
             try {
-                access = JdkNioAccess.resolve();
+                access = accessResolver.resolve();
             } catch (JdkNioAccess.JdkNioAccessException e) {
                 lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.UNSUPPORTED,
                         e.getMessage(), e);
@@ -109,7 +116,7 @@ public class SniffySelectorProvider extends SelectorProvider {
                 return lastInstallationResult;
             }
             try {
-                JdkNioAccess access = JdkNioAccess.resolve();
+                NioProviderAccess access = accessResolver.resolve();
                 SelectorProvider current = access.getSelectorProvider();
                 if (!(current instanceof SniffySelectorProvider)) {
                     lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.FAILED,
@@ -137,6 +144,19 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     public static NioInstallationResult getLastInstallationResult() {
         return lastInstallationResult;
+    }
+
+    static void setAccessResolverForTests(NioProviderAccessResolver resolver) {
+        synchronized (INSTALLATION_LOCK) {
+            accessResolver = resolver;
+            previousSelectorProvider = null;
+            lastInstallationResult = NioInstallationResult.of(
+                    NioInstallationResult.Status.UNINSTALLED, "Test installation state reset");
+        }
+    }
+
+    static void resetAccessResolverForTests() {
+        setAccessResolverForTests(DEFAULT_ACCESS_RESOLVER);
     }
 
     @Override
