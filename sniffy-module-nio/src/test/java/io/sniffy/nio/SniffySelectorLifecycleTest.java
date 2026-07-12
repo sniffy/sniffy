@@ -12,6 +12,7 @@ import java.nio.channels.Pipe;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -447,6 +448,7 @@ public class SniffySelectorLifecycleTest {
         final SniffySelector selector = (SniffySelector) Selector.open();
         final SocketChannel channel = SocketChannel.open();
         final AtomicReference<Throwable> failure = new AtomicReference<Throwable>();
+        final AtomicBoolean actionCompleted = new AtomicBoolean();
         final CountDownLatch selecting = new CountDownLatch(1);
         channel.configureBlocking(false);
         final SelectionKey existing = action == LifecycleAction.REGISTER ? null :
@@ -456,7 +458,9 @@ public class SniffySelectorLifecycleTest {
             public void run() {
                 try {
                     selecting.countDown();
-                    selector.select();
+                    do {
+                        selector.select();
+                    } while (!actionCompleted.get());
                 } catch (Throwable e) {
                     failure.set(e);
                 }
@@ -474,6 +478,7 @@ public class SniffySelectorLifecycleTest {
             } else {
                 channel.close();
             }
+            actionCompleted.set(true);
             selector.wakeup();
             selectThread.join(5000);
             assertFalse(selectThread.isAlive());
