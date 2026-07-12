@@ -1,7 +1,5 @@
 package io.sniffy.nio;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -29,16 +27,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class SniffySelectorLifecycleTest {
-
-    @Before
-    public void installProvider() {
-        SniffySelectorProviderModule.initialize();
-    }
-
-    @After
-    public void uninstallProvider() {
-        SniffySelectorProvider.uninstall();
-    }
 
     @Test
     public void reregisterReturnsSameKeyAndReplacesUserAttachment() throws Exception {
@@ -594,8 +582,7 @@ public class SniffySelectorLifecycleTest {
 
     @Test
     public void registrationWakesOneBlockedSelectionAndCompletes() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         final LifecycleCoordinatedSelector selector = new LifecycleCoordinatedSelector(
                 provider, provider.openSelector());
         final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());
@@ -689,8 +676,7 @@ public class SniffySelectorLifecycleTest {
 
     @Test
     public void cancellationDuringOneBlockedSelectionIsReconciled() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         final LifecycleCoordinatedSelector selector = new LifecycleCoordinatedSelector(
                 provider, provider.openSelector());
         final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());
@@ -725,8 +711,7 @@ public class SniffySelectorLifecycleTest {
 
     @Test
     public void channelCloseDuringOneBlockedSelectionIsReconciled() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         final LifecycleCoordinatedSelector selector = new LifecycleCoordinatedSelector(
                 provider, provider.openSelector());
         final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());

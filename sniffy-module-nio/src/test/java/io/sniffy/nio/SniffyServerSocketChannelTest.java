@@ -1,7 +1,5 @@
 package io.sniffy.nio;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -28,16 +26,6 @@ import static org.junit.Assert.assertTrue;
 import static io.sniffy.nio.NioTestSupport.*;
 
 public class SniffyServerSocketChannelTest {
-
-    @Before
-    public void installProvider() {
-        SniffySelectorProviderModule.initialize();
-    }
-
-    @After
-    public void uninstallProvider() {
-        SniffySelectorProvider.uninstall();
-    }
 
     @Test
     public void acceptReturnsFullyMonitoredChannel() throws Exception {

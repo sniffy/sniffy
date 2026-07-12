@@ -6,7 +6,6 @@ import io.sniffy.SpyConfiguration;
 import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySSLNetworkConnection;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -27,64 +26,59 @@ public class SniffySocketChannelTlsCorrelationTest {
     private static final byte[] CLIENT_HELLO = new byte[]{22, 3, 3, 0, 3, 1, 2, 3};
     private static final byte[] LATER_CLIENT_HELLO = new byte[]{22, 3, 3, 0, 3, 4, 5, 6};
 
-    @BeforeClass
-    public static void initializeNioAccess() {
-        SniffySelectorProviderModule.initialize();
-    }
-
     @Test
     public void directPlaintextConsumesTlsFirstChunkOnCacheMiss() throws Exception {
         TestSslConnection lateMatch = new TestSslConnection();
-        try (Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
+        try (NioTestStateScope state = new NioTestStateScope()
+                     .preserveClientHello(ByteBuffer.wrap(PLAINTEXT));
+             Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
             fixture.channel.logTraffic(true, Protocol.TCP, PLAINTEXT, 0, PLAINTEXT.length);
             Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(PLAINTEXT), lateMatch);
             fixture.channel.logTraffic(true, Protocol.TCP, PLAINTEXT, 0, PLAINTEXT.length);
             assertNull(lateMatch.connection);
             assertEquals(0, lateMatch.callbackCount.get());
-        } finally {
-            Sniffy.CLIENT_HELLO_CACHE.remove(ByteBuffer.wrap(PLAINTEXT));
         }
     }
 
     @Test
     public void laterClientHelloDoesNotCorrelateAfterPlaintext() throws Exception {
         TestSslConnection laterHello = new TestSslConnection();
-        try (Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
+        try (NioTestStateScope state = new NioTestStateScope()
+                     .preserveClientHello(ByteBuffer.wrap(LATER_CLIENT_HELLO));
+             Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
             fixture.channel.logTraffic(true, Protocol.TCP, PLAINTEXT, 0, PLAINTEXT.length);
             Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(LATER_CLIENT_HELLO), laterHello);
             fixture.channel.logTraffic(true, Protocol.TCP, LATER_CLIENT_HELLO, 0, LATER_CLIENT_HELLO.length);
             assertNull(laterHello.connection);
-        } finally {
-            Sniffy.CLIENT_HELLO_CACHE.remove(ByteBuffer.wrap(LATER_CLIENT_HELLO));
         }
     }
 
     @Test
     public void connectHandshakeDoesNotConsumeTlsFirstChunk() throws Exception {
         TestSslConnection firstTunneled = new TestSslConnection();
-        try (Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
+        try (NioTestStateScope state = new NioTestStateScope()
+                     .preserveClientHello(ByteBuffer.wrap(CLIENT_HELLO));
+             Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
             Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(CLIENT_HELLO), firstTunneled);
             fixture.channel.logTraffic(true, Protocol.TCP, CONNECT, 0, CONNECT.length, true);
             fixture.channel.logTraffic(true, Protocol.TCP, CLIENT_HELLO, 0, CLIENT_HELLO.length, false);
             assertSame(fixture.channel, firstTunneled.connection);
             assertEquals(1, firstTunneled.callbackCount.get());
-        } finally {
-            Sniffy.CLIENT_HELLO_CACHE.remove(ByteBuffer.wrap(CLIENT_HELLO));
         }
     }
 
     @Test
     public void firstTunneledChunkConsumesTlsFirstChunkOnCacheMiss() throws Exception {
         TestSslConnection laterHello = new TestSslConnection();
-        try (Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
+        try (NioTestStateScope state = new NioTestStateScope()
+                     .preserveClientHello(ByteBuffer.wrap(LATER_CLIENT_HELLO));
+             Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
             fixture.channel.logTraffic(true, Protocol.TCP, CONNECT, 0, CONNECT.length, true);
             fixture.channel.logTraffic(true, Protocol.TCP, PLAINTEXT, 0, PLAINTEXT.length, false);
             Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(LATER_CLIENT_HELLO), laterHello);
             fixture.channel.logTraffic(true, Protocol.TCP,
                     LATER_CLIENT_HELLO, 0, LATER_CLIENT_HELLO.length, false);
             assertNull(laterHello.connection);
-        } finally {
-            Sniffy.CLIENT_HELLO_CACHE.remove(ByteBuffer.wrap(LATER_CLIENT_HELLO));
         }
     }
 
@@ -92,7 +86,10 @@ public class SniffySocketChannelTlsCorrelationTest {
     public void firstTunneledClientHelloCorrelatesExactlyOnce() throws Exception {
         TestSslConnection firstHello = new TestSslConnection();
         TestSslConnection secondHello = new TestSslConnection();
-        try (Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
+        try (NioTestStateScope state = new NioTestStateScope()
+                     .preserveClientHello(ByteBuffer.wrap(CLIENT_HELLO))
+                     .preserveClientHello(ByteBuffer.wrap(LATER_CLIENT_HELLO));
+             Spy<?> ignored = captureTraffic(); ConnectedChannel fixture = ConnectedChannel.open()) {
             Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(CLIENT_HELLO), firstHello);
             Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(LATER_CLIENT_HELLO), secondHello);
             fixture.channel.logTraffic(true, Protocol.TCP, CONNECT, 0, CONNECT.length, true);
@@ -103,9 +100,6 @@ public class SniffySocketChannelTlsCorrelationTest {
             assertEquals(1, firstHello.callbackCount.get());
             assertNull(secondHello.connection);
             assertEquals(0, secondHello.callbackCount.get());
-        } finally {
-            Sniffy.CLIENT_HELLO_CACHE.remove(ByteBuffer.wrap(CLIENT_HELLO));
-            Sniffy.CLIENT_HELLO_CACHE.remove(ByteBuffer.wrap(LATER_CLIENT_HELLO));
         }
     }
 
@@ -141,8 +135,7 @@ public class SniffySocketChannelTlsCorrelationTest {
         private final SniffySocketChannel channel;
 
         private static ConnectedChannel open() throws Exception {
-            SniffySelectorProvider.uninstall();
-            SelectorProvider provider = SelectorProvider.provider();
+            SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
             ServerSocketChannel server = provider.openServerSocketChannel();
             server.bind(new InetSocketAddress("127.0.0.1", 0));
             SocketChannel raw = provider.openSocketChannel();

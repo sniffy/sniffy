@@ -6,8 +6,8 @@ import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.NetworkPacket;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Rule;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -34,12 +34,9 @@ import static org.junit.Assert.*;
 
 public class SniffySocketChannelPolicyLifecycleTest {
 
-    private static final byte[] DENIED_CONNECT = bytes("CONNECT 127.0.0.1:55443 HTTP/1.1\r\n\r\n");
+    @Rule public final NioTestStateRule localState = new NioTestStateRule();
 
-    @BeforeClass
-    public static void initializeNioAccess() {
-        SniffySelectorProviderModule.initialize();
-    }
+    private static final byte[] DENIED_CONNECT = bytes("CONNECT 127.0.0.1:55443 HTTP/1.1\r\n\r\n");
 
     @Test
     public void singleStreamWriteCompletingDeniedConnectSucceedsAndNextOperationFails() throws Exception {
@@ -111,7 +108,8 @@ public class SniffySocketChannelPolicyLifecycleTest {
         SniffyConfiguration.INSTANCE.setSocketFaultInjectionEnabled(true);
         try (ConnectedPair pair = ConnectedPair.open(false)) {
             final PolicyPausingHook hook = new PolicyPausingHook();
-            final SniffySocketChannel channel = new SniffySocketChannel(SelectorProvider.provider(), pair.raw, hook);
+            final SniffySocketChannel channel = new SniffySocketChannel(
+                    NioFunctionalTestEnvironment.originalProvider(), pair.raw, hook);
             InetSocketAddress target = new InetSocketAddress("127.0.0.1", 55444);
             channel.setConnectionStatus(0);
             final AtomicReference<Throwable> writeFailure = new AtomicReference<Throwable>();
@@ -265,7 +263,7 @@ public class SniffySocketChannelPolicyLifecycleTest {
 
     @Test
     public void streamCloseInvalidatesRegisteredKey() throws Exception {
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         try (ConnectedPair pair = ConnectedPair.open();
              SniffySelector selector = new SniffySelector(provider, (AbstractSelector) provider.openSelector())) {
             pair.channel.configureBlocking(false);
@@ -321,7 +319,7 @@ public class SniffySocketChannelPolicyLifecycleTest {
 
     @Test
     public void telemetryFailureCannotPreventPhysicalClose() throws Exception {
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         try (Spy<?> ignored = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
              ConnectedPair pair = ConnectedPair.open(false)) {
             SniffySocketChannel channel = new SniffySocketChannel(provider, pair.raw, new ThrowingTrafficHook());
@@ -338,7 +336,7 @@ public class SniffySocketChannelPolicyLifecycleTest {
 
     @Test
     public void telemetryFailureCannotPreventPhysicalShutdownOutput() throws Exception {
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         try (Spy<?> ignored = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
              ConnectedPair pair = ConnectedPair.open(false)) {
             SniffySocketChannel channel = new SniffySocketChannel(provider, pair.raw, new ThrowingTrafficHook());
@@ -401,8 +399,7 @@ public class SniffySocketChannelPolicyLifecycleTest {
         static ConnectedPair open() throws Exception { return open(true); }
 
         static ConnectedPair open(boolean wrap) throws Exception {
-            SniffySelectorProvider.uninstall();
-            SelectorProvider provider = SelectorProvider.provider();
+            SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
             ServerSocketChannel server = provider.openServerSocketChannel();
             server.bind(new InetSocketAddress("127.0.0.1", 0));
             SocketChannel raw = provider.openSocketChannel();

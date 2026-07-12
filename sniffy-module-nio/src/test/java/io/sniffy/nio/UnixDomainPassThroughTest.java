@@ -1,7 +1,5 @@
 package io.sniffy.nio;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -19,16 +17,6 @@ import static org.junit.Assert.*;
 import static org.junit.Assume.assumeNoException;
 
 public class UnixDomainPassThroughTest {
-
-    private SelectorProvider original;
-
-    @Before public void install() {
-        SniffySelectorProvider.uninstall();
-        original = SelectorProvider.provider();
-        SniffySelectorProvider.install();
-    }
-
-    @After public void uninstall() { SniffySelectorProvider.uninstall(); }
 
     @Test
     public void unixSocketAndServerChannelsRemainPassThroughAndFunctional() throws Exception {
@@ -63,7 +51,7 @@ public class UnixDomainPassThroughTest {
     public void unixUnsupportedSocketViewBehaviorMatchesOriginalProvider() throws Exception {
         ProtocolFamily unix = family("UNIX");
         Class<?> originalFailure;
-        try (SocketChannel raw = openSocket(original, unix)) {
+        try (SocketChannel raw = openSocket(NioFunctionalTestEnvironment.originalProvider(), unix)) {
             originalFailure = failureFromSocketView(raw);
         }
         try (SocketChannel passThrough = openSocket(SelectorProvider.provider(), unix)) {

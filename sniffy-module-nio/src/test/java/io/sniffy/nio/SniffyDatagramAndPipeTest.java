@@ -3,8 +3,6 @@ package io.sniffy.nio;
 import io.sniffy.Sniffy;
 import io.sniffy.Spy;
 import io.sniffy.SpyConfiguration;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -35,16 +33,6 @@ import static org.junit.Assert.fail;
 import static io.sniffy.nio.NioTestSupport.*;
 
 public class SniffyDatagramAndPipeTest {
-
-    @Before
-    public void installProvider() {
-        SniffySelectorProviderModule.initialize();
-    }
-
-    @After
-    public void uninstallProvider() {
-        SniffySelectorProvider.uninstall();
-    }
 
     @Test
     public void datagramChannelsAreExplicitlyPassThrough() throws Exception {
@@ -92,8 +80,7 @@ public class SniffyDatagramAndPipeTest {
 
     @Test
     public void selectorWakeupDoesNotLeakInternalConstructionScope() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         final SelectionStartedSelector selector = new SelectionStartedSelector(provider, provider.openSelector());
         final CountDownLatch enteringSelect = new CountDownLatch(1);
         final AtomicInteger result = new AtomicInteger(-1);
@@ -117,7 +104,6 @@ public class SniffyDatagramAndPipeTest {
             joinOrDumpAndFail(selectingThread);
             assertEquals(0, result.get());
             assertFalse(SniffySelectorProvider.isDelegateSelectorConstruction());
-            SniffySelectorProvider.install();
             Pipe applicationPipe = Pipe.open();
             try {
                 assertTrue(applicationPipe instanceof SniffyPipe);
@@ -195,8 +181,7 @@ public class SniffyDatagramAndPipeTest {
 
     @Test
     public void wrapperCloseUnblocksBlockedPipeRead() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         final BlockingSourceChannel delegate = new BlockingSourceChannel(provider);
         final Pipe.SourceChannel source = new SniffyPipe.SniffySourceChannel(provider, delegate);
         final AtomicReference<Throwable> failure = new AtomicReference<Throwable>();

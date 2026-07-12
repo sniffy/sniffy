@@ -8,6 +8,16 @@
 - Add SOCKS proxy detection and interception.
 - Add true pre-send HTTP CONNECT interception; current bounded incremental detection is post-write.
 
+## Route-specific fault policy
+
+- Extend fault-policy identity beyond host/port so a direct connection and a proxied connection to the same target can
+  have different rules. Future route kinds should include `DIRECT`, `PHYSICAL_PROXY`, and `PROXIED_TARGET`, identified
+  by endpoint, route kind, and an optional physical proxy endpoint. Legacy host/port rules must continue to apply to
+  every route.
+- Add `directAllowedWhileSameTargetViaProxyDenied`, `directDeniedWhileSameTargetViaProxyAllowed`,
+  `physicalProxyPolicyDoesNotAffectDirectTarget`, `proxiedTargetPolicyDoesNotAffectDirectConnection`,
+  `legacyHostPortRuleAppliesToAllRoutes`, and `sameTargetViaDifferentProxiesCanHaveDifferentPolicies` coverage.
+
 ## API and JDK parity
 
 - Audit broader `ServerSocket`, socket-view, and option behavior across supported JDKs.

@@ -30,10 +30,6 @@ public class NioSniffySocketTest extends BaseSocketTest {
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
 
-        SniffySelectorProviderModule.initialize();
-        SniffySelectorProvider.uninstall();
-        SniffySelectorProvider.install();
-
         try {
             ByteBuffer responseBuffer = ByteBuffer.allocate(BaseSocketTest.RESPONSE.length);
 
@@ -132,7 +128,6 @@ public class NioSniffySocketTest extends BaseSocketTest {
             Assert.assertArrayEquals(BaseSocketTest.RESPONSE, responseBuffer.array());
         } finally {
             SnifferSocketImplFactory.uninstall();
-            SniffySelectorProvider.uninstall();
         }
 
     }
@@ -142,10 +137,6 @@ public class NioSniffySocketTest extends BaseSocketTest {
 
         SnifferSocketImplFactory.uninstall();
         SnifferSocketImplFactory.install();
-
-        SniffySelectorProviderModule.initialize();
-        SniffySelectorProvider.uninstall();
-        SniffySelectorProvider.install();
 
         try {
             try (Spy<?> s = Sniffy.spy()) {
@@ -190,7 +181,6 @@ public class NioSniffySocketTest extends BaseSocketTest {
             }
         } finally {
             SnifferSocketImplFactory.uninstall();
-            SniffySelectorProvider.uninstall();
         }
 
     }
@@ -227,10 +217,6 @@ public class NioSniffySocketTest extends BaseSocketTest {
         Thread sourceThread = null;
         Thread sinkThread = null;
         try {
-            SniffySelectorProviderModule.initialize();
-            SniffySelectorProvider.uninstall();
-            SniffySelectorProvider.install();
-
             Pipe pipe = Pipe.open();
 
             source = pipe.source();
@@ -275,7 +261,6 @@ public class NioSniffySocketTest extends BaseSocketTest {
             if (source != null) source.close();
             joinOrDumpAndFail(sourceThread);
             joinOrDumpAndFail(sinkThread);
-            SniffySelectorProvider.uninstall();
         }
 
     }

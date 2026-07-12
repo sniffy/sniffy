@@ -9,8 +9,8 @@ import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySSLNetworkConnection;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.configuration.SniffyConfiguration;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Rule;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -39,10 +39,7 @@ import static io.sniffy.nio.NioTestSupport.*;
 
 public class SniffySocketChannelBufferTest extends BaseSocketTest {
 
-    @BeforeClass
-    public static void openNioInternals() {
-        SniffySelectorProviderModule.initialize();
-    }
+    @Rule public final NioTestStateRule localState = new NioTestStateRule();
 
     @Test
     public void copiesHeapBufferWithoutChangingApplicationState() {
@@ -102,8 +99,6 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
 
     @Test
     public void gatheringWriteAndScatteringReadCaptureExactBytes() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SniffySelectorProvider.install();
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
              SocketChannel client = SocketChannel.open(
                      new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()))) {
@@ -151,15 +146,12 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             }
             assertArrayEquals(BaseSocketTest.REQUEST, sent.toByteArray());
             assertArrayEquals(BaseSocketTest.RESPONSE, received.toByteArray());
-        } finally {
-            SniffySelectorProvider.uninstall();
         }
     }
 
     @Test
     public void detectsHttpConnectAcrossPartialWritesWhenCaptureIsDisabled() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         try (Spy<?> ignored = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(false).build());
              SniffySocketChannel sniffyChannel = new SniffySocketChannel(provider, provider.openSocketChannel())) {
 
@@ -176,15 +168,12 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             assertTrue(sniffyChannel.isFirstPacketSent());
             assertEquals(0, sniffyChannel.pendingInitialOutboundByteCount());
             assertEquals(0, ignored.getNetworkTraffic().size());
-        } finally {
-            SniffySelectorProvider.uninstall();
         }
     }
 
     @Test
     public void proxyCandidateBufferIsBounded() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         try (SniffySocketChannel sniffyChannel = new SniffySocketChannel(provider, provider.openSocketChannel())) {
             byte[] oversizedCandidate = new byte[9000];
             byte[] prefix = "CONNECT ".getBytes("US-ASCII");
@@ -196,15 +185,12 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
 
             assertTrue(sniffyChannel.isFirstPacketSent());
             assertEquals(0, sniffyChannel.pendingInitialOutboundByteCount());
-        } finally {
-            SniffySelectorProvider.uninstall();
         }
     }
 
     @Test
     public void closeAccountsForIncompleteInitialPrefixWithoutDuplicateCapture() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         byte[] prefix = "CONNE".getBytes("US-ASCII");
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
              ServerSocketChannel server = provider.openServerSocketChannel()) {
@@ -225,8 +211,7 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
 
     @Test
     public void shutdownOutputFinalizesIncompletePrefixWhenCaptureIsDisabled() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(false).build());
              SniffySocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel())) {
             channel.processOutboundBytes("CON".getBytes("US-ASCII"), false);
@@ -243,21 +228,17 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
 
     @Test
     public void directHttpIsRejectedAsProxyCandidateImmediately() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         try (SniffySocketChannel sniffyChannel = new SniffySocketChannel(provider, provider.openSocketChannel())) {
             sniffyChannel.processOutboundBytes("GET / HTTP/1.1\r\n\r\n".getBytes("US-ASCII"), false);
             assertTrue(sniffyChannel.isFirstPacketSent());
             assertNull(sniffyChannel.getProxiedInetSocketAddress());
-        } finally {
-            SniffySelectorProvider.uninstall();
         }
     }
 
     @Test
     public void proxiedRegistryAllowDelayAndDenyStatusesDriveSubsequentChecks() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         Boolean previous = SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled();
         SniffyConfiguration.INSTANCE.setSocketFaultInjectionEnabled(true);
         try {
@@ -284,9 +265,8 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
 
     @Test
     public void correlatesTlsBytesFollowingPartialConnectHandshake() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
-        ServerSocketChannel server = ServerSocketChannel.open();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
+        ServerSocketChannel server = provider.openServerSocketChannel();
         server.bind(new InetSocketAddress(BaseSocketTest.localhost, 0));
         AtomicReference<Throwable> serverFailure = new AtomicReference<Throwable>();
         CountDownLatch acceptedConnection = new CountDownLatch(1);
@@ -310,6 +290,8 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
                 acceptedConnection.await(5, TimeUnit.SECONDS));
         byte[] clientHello = new byte[]{22, 3, 3, 0, 4, 1, 2, 3, 4};
         TestSslConnection sslConnection = new TestSslConnection();
+        NioTestStateScope cacheState = new NioTestStateScope()
+                .preserveClientHello(ByteBuffer.wrap(clientHello));
         Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(clientHello), sslConnection);
         try (Spy<?> ignored = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
              SniffySocketChannel sniffyChannel = new SniffySocketChannel(provider, delegate)) {
@@ -320,22 +302,23 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             assertEquals(new InetSocketAddress("tls.example", 443), sniffyChannel.getProxiedInetSocketAddress());
             assertSame(sniffyChannel, sslConnection.connection);
         } finally {
-            Sniffy.CLIENT_HELLO_CACHE.remove(ByteBuffer.wrap(clientHello));
             try {
-                joinOrDumpAndFail(serverThread);
+                cacheState.close();
             } finally {
-                server.close();
-                joinOrDumpAndFail(serverThread);
+                try {
+                    joinOrDumpAndFail(serverThread);
+                } finally {
+                    server.close();
+                    joinOrDumpAndFail(serverThread);
+                }
             }
             assertNull(serverFailure.get());
-            SniffySelectorProvider.uninstall();
         }
     }
 
     @Test
     public void socketViewIsStableAndSharesIncrementalProxyAndTrafficState() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         ServerSocketChannel server = provider.openServerSocketChannel();
         server.bind(new InetSocketAddress(BaseSocketTest.localhost, 0));
         final AtomicReference<Throwable> serverFailure = new AtomicReference<Throwable>();
@@ -407,8 +390,6 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
 
     @Test
     public void channelAndSocketStreamsShareReadWriteAccountingWithoutDuplicateTraffic() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SniffySelectorProvider.install();
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
              SocketChannel client = SocketChannel.open(
                      new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()))) {
@@ -443,8 +424,6 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             assertArrayEquals(BaseSocketTest.RESPONSE, response);
             assertArrayEquals(BaseSocketTest.REQUEST, traffic(spy, true));
             assertArrayEquals(BaseSocketTest.RESPONSE, traffic(spy, false));
-        } finally {
-            SniffySelectorProvider.uninstall();
         }
     }
 

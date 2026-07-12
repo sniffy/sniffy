@@ -5,7 +5,6 @@ import io.sniffy.Spy;
 import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.socket.NetworkPacket;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -27,11 +26,6 @@ import static org.junit.Assert.*;
 
 public class SniffySocketChannelOrderingTest {
 
-    @BeforeClass
-    public static void initializeNioAccess() {
-        SniffySelectorProviderModule.initialize();
-    }
-
     @Test
     public void concurrentWritesPreserveCapturedWireOrder() throws Exception {
         assertConcurrentWriteOrder(false, false);
@@ -48,8 +42,7 @@ public class SniffySocketChannelOrderingTest {
     }
 
     private void assertConcurrentWriteOrder(final boolean secondUsesStream, boolean connect) throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         byte[] firstBytes = connect ? "CON".getBytes("US-ASCII") : new byte[]{'A'};
         byte[] secondBytes = connect
                 ? "NECT ordered.example:443 HTTP/1.1\r\n\r\n".getBytes("US-ASCII")
@@ -107,8 +100,7 @@ public class SniffySocketChannelOrderingTest {
 
     @Test
     public void concurrentReadsPreserveCapturedReadOrder() throws Exception {
-        SniffySelectorProvider.uninstall();
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         try (NioTestResourceScope scope = new NioTestResourceScope();
              Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build())) {
             ServerSocketChannel server = scope.track(provider.openServerSocketChannel());

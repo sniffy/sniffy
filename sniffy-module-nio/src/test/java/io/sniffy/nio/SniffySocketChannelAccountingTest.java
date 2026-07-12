@@ -1,6 +1,5 @@
 package io.sniffy.nio;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -20,11 +19,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class SniffySocketChannelAccountingTest {
-
-    @BeforeClass
-    public static void initializeNioAccess() {
-        SniffySelectorProviderModule.initialize();
-    }
 
     @Test
     public void concurrentReadAndWriteDoNotLoseBufferAccountingUpdates() throws Exception {
@@ -195,8 +189,7 @@ public class SniffySocketChannelAccountingTest {
         private final SniffySocketChannel channel;
 
         private static ConnectedChannel open(SniffySocketChannel.IoOperationHook hook) throws Exception {
-            SniffySelectorProvider.uninstall();
-            SelectorProvider provider = SelectorProvider.provider();
+            SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
             ServerSocketChannel server = provider.openServerSocketChannel();
             server.bind(new InetSocketAddress("127.0.0.1", 0));
             SocketChannel raw = provider.openSocketChannel();

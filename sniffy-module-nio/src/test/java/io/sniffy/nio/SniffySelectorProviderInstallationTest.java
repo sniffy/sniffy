@@ -5,6 +5,7 @@ import io.sniffy.configuration.SniffyConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.nio.channels.spi.SelectorProvider;
 import java.lang.reflect.Field;
@@ -23,19 +24,54 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@Category(NioProviderLifecycleTest.class)
 public class SniffySelectorProviderInstallationTest {
 
+    private SelectorProvider initialProvider;
+    private Field loadedField;
+    private NioTestStateScope stateScope;
+
     @Before
-    public void openJdkNioAccessAndRestoreProvider() {
-        SniffySelectorProviderModule.initialize();
-        SniffySelectorProvider.uninstall();
+    public void snapshotGlobalInfrastructure() throws Exception {
+        initialProvider = SelectorProvider.provider();
+        assertFalse("provider-lifecycle fork must start each test from the original provider",
+                initialProvider instanceof SniffySelectorProvider);
+        JdkNioAccess.resolve();
         SniffySelectorProvider.resetAccessResolverForTests();
+        loadedField = Sniffy.class.getDeclaredField("nioModuleLoaded");
+        loadedField.setAccessible(true);
+        final boolean previousModuleLoaded = loadedField.getBoolean(null);
+        final boolean previousMonitorNio = SniffyConfiguration.INSTANCE.isMonitorNio();
+        stateScope = new NioTestStateScope()
+                .restore(new NioTestStateScope.Cleanup() {
+                    @Override public void run() throws Exception {
+                        restoreOriginalProvider();
+                    }
+                })
+                .restore(new NioTestStateScope.Cleanup() {
+                    @Override public void run() throws Exception {
+                        loadedField.setBoolean(null, previousModuleLoaded);
+                    }
+                })
+                .restore(new NioTestStateScope.Cleanup() {
+                    @Override public void run() {
+                        SniffyConfiguration.INSTANCE.setMonitorNio(previousMonitorNio);
+                    }
+                });
     }
 
     @After
-    public void restoreProvider() {
-        SniffySelectorProvider.uninstall();
-        SniffySelectorProvider.resetAccessResolverForTests();
+    public void restoreProvider() throws Exception {
+        if (stateScope != null) {
+            stateScope.close();
+            assertSame(initialProvider, SelectorProvider.provider());
+        }
+    }
+
+    @Test
+    public void providerLifecycleForkStartsFromOriginalProvider() {
+        assertFalse(SelectorProvider.provider() instanceof SniffySelectorProvider);
+        assertSame(initialProvider, SelectorProvider.provider());
     }
 
     @Test
@@ -52,7 +88,7 @@ public class SniffySelectorProviderInstallationTest {
     }
 
     @Test
-    public void providerCanBeUninstalledAndReinstalled() {
+    public void providerLifecycleForkCanInstallUninstallAndReinstall() {
         SelectorProvider original = SelectorProvider.provider();
 
         assertTrue(SniffySelectorProvider.installWithResult().isInstalled());
@@ -113,9 +149,6 @@ public class SniffySelectorProviderInstallationTest {
     @Test
     public void sniffyModuleFlagTracksFailureAndReinitializeRetries() throws Exception {
         final SelectorProvider original = SelectorProvider.provider();
-        final Field loadedField = Sniffy.class.getDeclaredField("nioModuleLoaded");
-        loadedField.setAccessible(true);
-        boolean previousMonitorNio = SniffyConfiguration.INSTANCE.isMonitorNio();
         loadedField.setBoolean(null, false);
         SniffySelectorProvider.setAccessResolverForTests(new NioProviderAccessResolver() {
             @Override
@@ -125,20 +158,14 @@ public class SniffySelectorProviderInstallationTest {
             }
         });
         SniffyConfiguration.INSTANCE.setMonitorNio(true);
-        try {
-            Sniffy.reinitialize();
-            assertFalse(loadedField.getBoolean(null));
-            assertSame(original, SelectorProvider.provider());
+        Sniffy.reinitialize();
+        assertFalse(loadedField.getBoolean(null));
+        assertSame(original, SelectorProvider.provider());
 
-            SniffySelectorProvider.resetAccessResolverForTests();
-            Sniffy.reinitialize();
-            assertTrue(loadedField.getBoolean(null));
-            assertTrue(SelectorProvider.provider() instanceof SniffySelectorProvider);
-        } finally {
-            SniffySelectorProvider.uninstall();
-            loadedField.setBoolean(null, false);
-            SniffyConfiguration.INSTANCE.setMonitorNio(previousMonitorNio);
-        }
+        SniffySelectorProvider.resetAccessResolverForTests();
+        Sniffy.reinitialize();
+        assertTrue(loadedField.getBoolean(null));
+        assertTrue(SelectorProvider.provider() instanceof SniffySelectorProvider);
     }
 
     @Test
@@ -264,5 +291,31 @@ public class SniffySelectorProviderInstallationTest {
         if (version.startsWith("1.")) version = version.substring(2);
         int dot = version.indexOf('.');
         return Integer.parseInt(dot < 0 ? version : version.substring(0, dot));
+    }
+
+    private void restoreOriginalProvider() throws Exception {
+        Throwable failure = null;
+        try {
+            SniffySelectorProvider.uninstallWithResult();
+        } catch (Throwable e) {
+            failure = e;
+        }
+        try {
+            SniffySelectorProvider.resetAccessResolverForTests();
+            NioProviderAccess access = JdkNioAccess.resolve();
+            if (access.getSelectorProvider() != initialProvider) {
+                access.setSelectorProvider(initialProvider);
+            }
+            if (SelectorProvider.provider() != initialProvider) {
+                throw new AssertionError("Provider lifecycle cleanup did not restore "
+                        + initialProvider.getClass().getName() + "; actual="
+                        + SelectorProvider.provider().getClass().getName());
+            }
+        } catch (Throwable e) {
+            if (failure == null) failure = e;
+            else failure.addSuppressed(e);
+        }
+        if (failure instanceof Exception) throw (Exception) failure;
+        if (failure instanceof Error) throw (Error) failure;
     }
 }

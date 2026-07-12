@@ -1,7 +1,8 @@
 # Sniffy NIO architecture
 
 This document is a maintenance guide to Java NIO and Sniffy's wrapper implementation. It describes the invariants
-that production code and tests must preserve. Future work is tracked in [NIO-TODO.md](NIO-TODO.md).
+that production code and tests must preserve. Global-state test isolation is documented in
+[NIO-TESTING.md](NIO-TESTING.md); future work is tracked in [NIO-TODO.md](NIO-TODO.md).
 
 ## A. Ordinary Java NIO
 

@@ -59,7 +59,7 @@ public class SniffySelectorRegistrationRaceTest {
     }
 
     @Test public void registrationStartingAfterCloseBeginsFailsImmediately() throws Exception {
-        SelectorProvider provider = SelectorProvider.provider();
+        SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         final SniffySelector selector = new SniffySelector(provider, provider.openSelector());
         Pipe rawPipe = provider.openPipe();
         Pipe pipe = new SniffyPipe(provider, rawPipe);
@@ -144,7 +144,7 @@ public class SniffySelectorRegistrationRaceTest {
     }
 
     private static final class RaceFixture {
-        private final SelectorProvider provider = SelectorProvider.provider();
+        private final SelectorProvider provider = NioFunctionalTestEnvironment.originalProvider();
         private final AbstractSelector delegate = provider.openSelector();
         private final PausingSelector selector;
         private final Pipe rawPipe = provider.openPipe();

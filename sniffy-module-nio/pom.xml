@@ -18,6 +18,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
+        <nio.functional.runOrder>alphabetical</nio.functional.runOrder>
     </properties>
 
     <dependencies>
@@ -45,6 +46,45 @@
                     <forkedProcessTimeoutInSeconds>180</forkedProcessTimeoutInSeconds>
                     <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>JUnit-execution</id>
+                        <configuration>
+                            <forkCount>1</forkCount>
+                            <reuseForks>true</reuseForks>
+                            <runOrder>${nio.functional.runOrder}</runOrder>
+                            <excludes>
+                                <exclude>%regex[.*TestNg.*]</exclude>
+                                <exclude>**/SniffySelectorProviderInstallationTest.java</exclude>
+                            </excludes>
+                            <excludedGroups>io.sniffy.nio.NioProviderLifecycleTest</excludedGroups>
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>io.sniffy.nio.NioFunctionalTestRunListener</value>
+                                </property>
+                            </properties>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>nio-provider-lifecycle-execution</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <testNGArtifactName>dev:null</testNGArtifactName>
+                            <includes>
+                                <include>**/SniffySelectorProviderInstallationTest.java</include>
+                            </includes>
+                            <groups>io.sniffy.nio.NioProviderLifecycleTest</groups>
+                            <forkCount>1</forkCount>
+                            <reuseForks>false</reuseForks>
+                            <reportsDirectory>${project.build.directory}/surefire-reports-provider-lifecycle</reportsDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
