@@ -21,6 +21,7 @@ import java.nio.channels.spi.SelectorProvider;
 public class SniffySocketChannel extends SniffySocketChannelAdapter implements SniffyNetworkConnection {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySocketChannel.class);
+    private static final int INITIAL_PACKET_CAPTURE_LIMIT = 8192;
 
     private final int connectionId = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
 
@@ -250,17 +251,16 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         try {
             return bytesDown = super.read(dst);
         } finally {
-            if (bytesDown >= 0) { // TODO: implement same check in other places
+            if (bytesDown > 0) {
                 sleepIfRequired(bytesDown);
                 logSocket(System.currentTimeMillis() - start, bytesDown, 0);
                 SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
                 if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                    dst.position(position);
-                    byte[] buff = new byte[bytesDown];
-                    dst.get(buff, 0, bytesDown);
-
+                    byte[] buff = copyBytes(dst, position, bytesDown);
                     logTraffic(false, Protocol.TCP, buff, 0, buff.length);
                 }
+            } else {
+                logSocket(System.currentTimeMillis() - start, 0, 0);
             }
         }
     }
@@ -282,24 +282,21 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             bytesDown = super.read(dsts, offset, length);
             return bytesDown;
         } finally {
-            while (bytesDown > Integer.MAX_VALUE) {
-                sleepIfRequiredForWrite(Integer.MAX_VALUE);
-                logSocket(System.currentTimeMillis() - start, Integer.MAX_VALUE, 0);
-                bytesDown -= Integer.MAX_VALUE;
+            if (bytesDown > 0) {
+                recordRead(bytesDown, start);
+            } else {
+                logSocket(System.currentTimeMillis() - start, 0, 0);
             }
-            logSocket(System.currentTimeMillis() - start, (int) bytesDown, 0);
 
-            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            if (bytesDown > 0 && Sniffy.getEffectiveSpyConfiguration().isCaptureNetworkTraffic()) {
                 for (int i = 0; i < length; i++) {
-                    //TODO: cover by unit test
                     int newPosition = dsts[offset + i].position();
-                    dsts[offset + i].position(positions[i]);
-                    byte[] buff = new byte[newPosition - positions[i]];
-                    dsts[offset + i].get(buff, 0, newPosition - positions[i]);
-                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                    int transferred = newPosition - positions[i];
+                    if (transferred > 0) {
+                        byte[] buff = copyBytes(dsts[offset + i], positions[i], transferred);
+                        logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                    }
                 }
-
             }
         }
     }
@@ -316,13 +313,15 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             length = super.write(src);
             return length;
         } finally {
-            sleepIfRequiredForWrite(length);
-            logSocket(System.currentTimeMillis() - start, 0, length);
+            if (length > 0) {
+                sleepIfRequiredForWrite(length);
+                logSocket(System.currentTimeMillis() - start, 0, length);
+            } else {
+                logSocket(System.currentTimeMillis() - start, 0, 0);
+            }
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic() || isFirstPacketSent()) {
-                src.position(position);
-                byte[] buff = new byte[length];
-                src.get(buff, 0, length);
+            if (length > 0 && (effectiveSpyConfiguration.isCaptureNetworkTraffic() || !isFirstPacketSent())) {
+                byte[] buff = copyBytes(src, position, length);
 
                 boolean isConnectPacket = false;
 
@@ -356,33 +355,25 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         long bytesUp = 0;
 
         int[] positions = new int[length];
-        int[] remainings = new int[length];
-
         for (int i = 0; i < length; i++) {
             positions[i] = srcs[offset + i].position();
-            remainings[i] = srcs[offset + i].remaining();
         }
 
         try {
             bytesUp = super.write(srcs, offset, length);
             return bytesUp;
         } finally {
-            while (bytesUp > Integer.MAX_VALUE) {
-                sleepIfRequiredForWrite(Integer.MAX_VALUE);
-                logSocket(System.currentTimeMillis() - start, 0, Integer.MAX_VALUE);
-                bytesUp -= Integer.MAX_VALUE;
+            if (bytesUp > 0) {
+                recordWrite(bytesUp, start);
+            } else {
+                logSocket(System.currentTimeMillis() - start, 0, 0);
             }
-            sleepIfRequiredForWrite((int) bytesUp);
-            logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
             SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
 
             boolean isConnectPacket = false;
 
-            if (!isFirstPacketSent()) {
-
-                srcs[offset].position(positions[0]);
-                byte[] buff = new byte[remainings[0]];
-                srcs[offset].get(buff, 0, remainings[0]);
+            if (bytesUp > 0 && !isFirstPacketSent()) {
+                byte[] buff = copyTransferredBytes(srcs, offset, length, positions, bytesUp);
 
                 try {
                     SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(this);
@@ -397,12 +388,13 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
             }
 
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
+            if (bytesUp > 0 && effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
                 for (int i = 0; i < length; i++) {
-                    srcs[offset + i].position(positions[i]);
-                    byte[] buff = new byte[remainings[i]]; // TODO: here in other places avoid wrapping ByteBuffer to byte[]
-                    srcs[offset + i].get(buff, 0, remainings[i]);
-                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
+                    int transferred = srcs[offset + i].position() - positions[i];
+                    if (transferred > 0) {
+                        byte[] buff = copyBytes(srcs[offset + i], positions[i], transferred);
+                        logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
+                    }
                 }
 
             }
@@ -416,8 +408,65 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             LOG.trace("Getting SniffySocket " + sniffySocket + " from SniffySocketChannel " + this);
             return sniffySocket;
         } catch (SocketException e) {
-            e.printStackTrace();
+            LOG.error(e);
             return super.socket();
+        }
+    }
+
+    static byte[] copyBytes(ByteBuffer buffer, int position, int length) {
+        ByteBuffer duplicate = buffer.duplicate();
+        duplicate.limit(position + length);
+        duplicate.position(position);
+        byte[] bytes = new byte[length];
+        duplicate.get(bytes);
+        return bytes;
+    }
+
+    static byte[] copyTransferredBytes(ByteBuffer[] buffers, int offset, int length,
+                                       int[] initialPositions, long transferredBytes) {
+        int capturedLength = (int) Math.min(transferredBytes, INITIAL_PACKET_CAPTURE_LIMIT);
+        byte[] bytes = new byte[capturedLength];
+        int destinationOffset = 0;
+        for (int i = 0; i < length && destinationOffset < capturedLength; i++) {
+            ByteBuffer buffer = buffers[offset + i];
+            int transferred = Math.min(buffer.position() - initialPositions[i], capturedLength - destinationOffset);
+            if (transferred > 0) {
+                ByteBuffer duplicate = buffer.duplicate();
+                duplicate.limit(initialPositions[i] + transferred);
+                duplicate.position(initialPositions[i]);
+                duplicate.get(bytes, destinationOffset, transferred);
+                destinationOffset += transferred;
+            }
+        }
+        if (destinationOffset == capturedLength) {
+            return bytes;
+        }
+        byte[] exactBytes = new byte[destinationOffset];
+        System.arraycopy(bytes, 0, exactBytes, 0, destinationOffset);
+        return exactBytes;
+    }
+
+    private void recordRead(long bytesDown, long start) throws ConnectException {
+        long remaining = bytesDown;
+        boolean first = true;
+        while (remaining > 0) {
+            int chunk = (int) Math.min(remaining, Integer.MAX_VALUE);
+            sleepIfRequired(chunk);
+            logSocket(first ? System.currentTimeMillis() - start : 0, chunk, 0);
+            first = false;
+            remaining -= chunk;
+        }
+    }
+
+    private void recordWrite(long bytesUp, long start) throws ConnectException {
+        long remaining = bytesUp;
+        boolean first = true;
+        while (remaining > 0) {
+            int chunk = (int) Math.min(remaining, Integer.MAX_VALUE);
+            sleepIfRequiredForWrite(chunk);
+            logSocket(first ? System.currentTimeMillis() - start : 0, 0, chunk);
+            first = false;
+            remaining -= chunk;
         }
     }
 
