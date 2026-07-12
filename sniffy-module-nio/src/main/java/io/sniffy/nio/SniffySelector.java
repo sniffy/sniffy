@@ -192,7 +192,12 @@ public class SniffySelector extends AbstractSelector {
 
         @Override
         public void accept(SelectionKey selectionKey) {
-            delegate.accept(requireLinkedKey(selectionKey));
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
+            try {
+                delegate.accept(requireLinkedKey(selectionKey));
+            } finally {
+                SniffySelectorProvider.enterDelegateSelectorConstruction();
+            }
         }
 
     }
@@ -240,7 +245,7 @@ public class SniffySelector extends AbstractSelector {
     @Override
     public int selectNow() throws IOException {
         propagateWrapperCancellations();
-        int selected = delegate.selectNow();
+        int selected = selectNowDelegate();
         cleanupLinks(false);
         return selected;
     }
@@ -252,7 +257,7 @@ public class SniffySelector extends AbstractSelector {
     @Override
     public int select(long timeout) throws IOException {
         propagateWrapperCancellations();
-        int selected = delegate.select(timeout);
+        int selected = selectDelegate(timeout);
         cleanupLinks(false);
         return selected;
     }
@@ -264,15 +269,47 @@ public class SniffySelector extends AbstractSelector {
     @Override
     public int select() throws IOException {
         propagateWrapperCancellations();
-        int selected = delegate.select();
+        int selected = selectDelegate();
         cleanupLinks(false);
         return selected;
     }
 
     @Override
     public Selector wakeup() {
-        delegate.wakeup();
+        SniffySelectorProvider.enterDelegateSelectorConstruction();
+        try {
+            delegate.wakeup();
+        } finally {
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
+        }
         return this;
+    }
+
+    private int selectNowDelegate() throws IOException {
+        SniffySelectorProvider.enterDelegateSelectorConstruction();
+        try {
+            return delegate.selectNow();
+        } finally {
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
+        }
+    }
+
+    private int selectDelegate(long timeout) throws IOException {
+        SniffySelectorProvider.enterDelegateSelectorConstruction();
+        try {
+            return delegate.select(timeout);
+        } finally {
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
+        }
+    }
+
+    private int selectDelegate() throws IOException {
+        SniffySelectorProvider.enterDelegateSelectorConstruction();
+        try {
+            return delegate.select();
+        } finally {
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
+        }
     }
 
     private void cleanupLinks(boolean all) throws IOException {
@@ -324,11 +361,7 @@ public class SniffySelector extends AbstractSelector {
     public int select(Consumer<SelectionKey> action, long timeout) throws IOException {
         try {
             propagateWrapperCancellations();
-            int selected = invokeMethod(Selector.class, delegate, "select",
-                    Consumer.class, new SelectionKeyConsumerWrapper(action),
-                    Long.TYPE, timeout,
-                    Integer.TYPE
-            );
+            int selected = selectDelegate(action, timeout);
             cleanupLinks(false);
             return selected;
         } catch (Exception e) {
@@ -342,10 +375,7 @@ public class SniffySelector extends AbstractSelector {
     public int select(Consumer<SelectionKey> action) throws IOException {
         try {
             propagateWrapperCancellations();
-            int selected = invokeMethod(Selector.class, delegate, "select",
-                    Consumer.class, new SelectionKeyConsumerWrapper(action),
-                    Integer.TYPE
-            );
+            int selected = selectDelegate(action);
             cleanupLinks(false);
             return selected;
         } catch (Exception e) {
@@ -359,14 +389,48 @@ public class SniffySelector extends AbstractSelector {
     public int selectNow(Consumer<SelectionKey> action) throws IOException {
         try {
             propagateWrapperCancellations();
-            int selected = invokeMethod(Selector.class, delegate, "selectNow",
-                    Consumer.class, new SelectionKeyConsumerWrapper(action),
-                    Integer.TYPE
-            );
+            int selected = selectNowDelegate(action);
             cleanupLinks(false);
             return selected;
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
+        }
+    }
+
+    private int selectDelegate(Consumer<SelectionKey> action, long timeout) throws Exception {
+        SniffySelectorProvider.enterDelegateSelectorConstruction();
+        try {
+            return invokeMethod(Selector.class, delegate, "select",
+                    Consumer.class, new SelectionKeyConsumerWrapper(action),
+                    Long.TYPE, timeout,
+                    Integer.TYPE
+            );
+        } finally {
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
+        }
+    }
+
+    private int selectDelegate(Consumer<SelectionKey> action) throws Exception {
+        SniffySelectorProvider.enterDelegateSelectorConstruction();
+        try {
+            return invokeMethod(Selector.class, delegate, "select",
+                    Consumer.class, new SelectionKeyConsumerWrapper(action),
+                    Integer.TYPE
+            );
+        } finally {
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
+        }
+    }
+
+    private int selectNowDelegate(Consumer<SelectionKey> action) throws Exception {
+        SniffySelectorProvider.enterDelegateSelectorConstruction();
+        try {
+            return invokeMethod(Selector.class, delegate, "selectNow",
+                    Consumer.class, new SelectionKeyConsumerWrapper(action),
+                    Integer.TYPE
+            );
+        } finally {
+            SniffySelectorProvider.exitDelegateSelectorConstruction();
         }
     }
 

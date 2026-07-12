@@ -264,12 +264,12 @@ public class SniffySelectorProvider extends SelectorProvider {
         return null != depth && depth > 0;
     }
 
-    private static void enterDelegateSelectorConstruction() {
+    static void enterDelegateSelectorConstruction() {
         Integer depth = DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.get();
         DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.set(null == depth ? 1 : depth + 1);
     }
 
-    private static void exitDelegateSelectorConstruction() {
+    static void exitDelegateSelectorConstruction() {
         Integer depth = DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.get();
         if (null == depth || depth <= 1) {
             DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.remove();

@@ -223,6 +223,40 @@ public class SniffySelectorLifecycleTest {
     }
 
     @Test
+    public void consumerSelectDoesNotLeakDelegateConstructionScopeToApplicationConsumer() throws Exception {
+        assumeTrue(runtimeFeatureVersion() >= 11);
+        SniffySelector selector = (SniffySelector) Selector.open();
+        Pipe pipe = Pipe.open();
+        final AtomicReference<SocketChannel> channelOpenedByConsumer = new AtomicReference<SocketChannel>();
+        try {
+            pipe.source().configureBlocking(false);
+            pipe.source().register(selector, SelectionKey.OP_READ);
+            Consumer<SelectionKey> consumer = new Consumer<SelectionKey>() {
+                @Override
+                public void accept(SelectionKey selected) {
+                    try {
+                        channelOpenedByConsumer.set(SocketChannel.open());
+                    } catch (Exception e) {
+                        throw new IllegalStateException(e);
+                    }
+                }
+            };
+
+            pipe.sink().write(ByteBuffer.wrap(new byte[]{1}));
+            assertEquals(1, selector.selectNow(consumer));
+            assertTrue(channelOpenedByConsumer.get() instanceof SniffySocketChannel);
+        } finally {
+            SocketChannel channel = channelOpenedByConsumer.get();
+            if (channel != null) {
+                channel.close();
+            }
+            pipe.source().close();
+            pipe.sink().close();
+            selector.close();
+        }
+    }
+
+    @Test
     public void concurrentRegisterSelectCancelAndCloseDoNotDeadlock() throws Exception {
         assertConcurrentSelectLifecycle(LifecycleAction.REGISTER);
         assertConcurrentSelectLifecycle(LifecycleAction.CANCEL);
