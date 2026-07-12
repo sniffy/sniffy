@@ -35,7 +35,6 @@ public class SniffyPacketAnalyzer {
 
         @SuppressWarnings("CharsetObjectCanBeUsed") String potentialRequest = new String(b, off, len, Charset.forName("US-ASCII"));
 
-        // TODO: support CONNECT header sent in multiple small chunks
         // TODO: support SOCKS proxy connection
         int connectIx = potentialRequest.indexOf("CONNECT ");
 
@@ -83,9 +82,8 @@ public class SniffyPacketAnalyzer {
         }
 
         if (null != proxiedInetSocketAddress) {
-            snifferSocket.setProxiedInetSocketAddress(proxiedInetSocketAddress);
             int status = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, snifferSocket);
-            snifferSocket.setConnectionStatus(status);
+            snifferSocket.setProxiedInetSocketAddressAndStatus(proxiedInetSocketAddress, status);
         }
 
         // TODO: set flag to allow capturing proxied traffic

@@ -190,7 +190,7 @@ public class SniffySelectorRegistrationRaceTest {
             selectionThread.start();
         }
 
-        void awaitSelectionBlocked() { awaitStackFrame(selectionThread, "sun.nio.ch.", null); }
+        void awaitSelectionBlocked() { awaitRealSelectorBlocked(selectionThread); }
 
         void awaitPause() throws Exception { assertTrue(selector.reached.await(5, TimeUnit.SECONDS)); }
         void releaseRegistration() { selector.release.countDown(); }

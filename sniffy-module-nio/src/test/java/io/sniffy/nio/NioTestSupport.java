@@ -6,6 +6,7 @@ import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.fail;
 
@@ -47,18 +48,36 @@ final class NioTestSupport {
                 }
             }
             if (!thread.isAlive()) break;
-            Thread.yield();
+            LockSupport.parkNanos(1000000L);
         }
         dumpThreads("Thread did not reach " + classNameFragment + "." + methodName);
         fail("Expected stack frame was not reached by " + thread.getName()
                 + "; state=" + thread.getState());
     }
 
+    /**
+     * A few integration tests must prove that the installed provider interoperates with the real
+     * JDK selector. There is no public "now blocked in native select" signal, so those tests keep
+     * the implementation-sensitive observation isolated here instead of spreading JDK names.
+     */
+    static void awaitRealSelectorBlocked(Thread thread) {
+        awaitStackFrame(thread, "sun.nio.ch.", null);
+    }
+
+    /**
+     * This integration test must exercise the real blocking socket-view accept so close reaches
+     * the native JDK path. The JDK exposes no public "accept is blocked" signal, hence the single
+     * implementation observation remains isolated here.
+     */
+    static void awaitRealServerSocketAcceptBlocked(Thread thread) {
+        awaitStackFrame(thread, "ServerSocketChannel", "accept");
+    }
+
     static void awaitCondition(String description, Condition condition) {
         long deadline = System.nanoTime() + THREAD_TIMEOUT_MILLIS * 1000000L;
         while (System.nanoTime() < deadline) {
             if (condition.isSatisfied()) return;
-            Thread.yield();
+            LockSupport.parkNanos(1000000L);
         }
         dumpThreads("Timed out waiting for " + description);
         fail("Condition was not satisfied: " + description);

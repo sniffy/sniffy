@@ -32,6 +32,10 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            ((SharedConnectionIO) trafficCapturingNetworkConnection).write(delegate, b);
+            return;
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         boolean written = false;
@@ -85,6 +89,11 @@ public class SnifferOutputStream extends OutputStream {
     @Override
     public void write(byte[] b) throws IOException {
 
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            ((SharedConnectionIO) trafficCapturingNetworkConnection).write(delegate, b);
+            return;
+        }
+
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
 
         if (!(trafficCapturingNetworkConnection instanceof PostWriteNetworkTraffic)
@@ -116,6 +125,10 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            ((SharedConnectionIO) trafficCapturingNetworkConnection).write(delegate, b, off, len);
+            return;
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
 
         if (!(trafficCapturingNetworkConnection instanceof PostWriteNetworkTraffic)
@@ -166,6 +179,10 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void close() throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            ((SharedConnectionIO) trafficCapturingNetworkConnection).closeOutputStream(delegate);
+            return;
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {

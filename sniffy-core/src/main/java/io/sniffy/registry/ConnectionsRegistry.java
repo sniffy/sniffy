@@ -186,7 +186,12 @@ public enum ConnectionsRegistry implements Runnable {
             for (Reference<SniffyNetworkConnection> sniffySocketWeakReference : sniffySockets) {
                 SniffyNetworkConnection sniffyNetworkConnection = sniffySocketWeakReference.get();
                 if (null != sniffyNetworkConnection) {
-                    sniffyNetworkConnection.setConnectionStatus(connectionStatus);
+                    if (hostName != null && port != null) {
+                        sniffyNetworkConnection.setConnectionStatus(
+                                new InetSocketAddress(hostName, port), connectionStatus);
+                    } else {
+                        sniffyNetworkConnection.setConnectionStatus(connectionStatus);
+                    }
                 }
             }
         }

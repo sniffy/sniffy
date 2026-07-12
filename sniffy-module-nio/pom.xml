@@ -41,8 +41,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- Surefire 3.0.0-M7 supports this fork watchdog; the NIO suite normally finishes in seconds. -->
+                    <!-- Merged into both inherited JUnit/TestNG executions; verified in help:effective-pom. -->
                     <forkedProcessTimeoutInSeconds>180</forkedProcessTimeoutInSeconds>
+                    <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
                 </configuration>
             </plugin>
         </plugins>
@@ -69,6 +70,14 @@
                             <target>1.9</target>
                             <testSource>1.9</testSource>
                             <testTarget>1.9</testTarget>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!-- Surefire scans test classes before capability probes can open this package. -->
+                            <argLine>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED -Xmx1024m ${argLine}</argLine>
                         </configuration>
                     </plugin>
                 </plugins>

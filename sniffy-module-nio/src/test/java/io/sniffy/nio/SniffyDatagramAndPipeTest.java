@@ -6,17 +6,20 @@ import io.sniffy.SpyConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import sun.nio.ch.SelChImpl;
+import sun.nio.ch.SelectionKeyImpl;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -105,7 +108,7 @@ public class SniffyDatagramAndPipeTest {
         try {
             selectingThread.start();
             assertTrue(enteringSelect.await(5, TimeUnit.SECONDS));
-            awaitStackFrame(selectingThread, "sun.nio.ch.", null);
+            awaitRealSelectorBlocked(selectingThread);
             selector.wakeup();
             joinOrDumpAndFail(selectingThread);
             assertEquals(0, result.get());
@@ -162,16 +165,15 @@ public class SniffyDatagramAndPipeTest {
 
     @Test
     public void wrapperCloseUnblocksBlockedPipeRead() throws Exception {
-        Pipe pipe = Pipe.open();
-        final Pipe.SourceChannel source = pipe.source();
-        Pipe.SinkChannel sink = pipe.sink();
-        final CountDownLatch reading = new CountDownLatch(1);
+        SniffySelectorProvider.uninstall();
+        SelectorProvider provider = SelectorProvider.provider();
+        final BlockingSourceChannel delegate = new BlockingSourceChannel(provider);
+        final Pipe.SourceChannel source = new SniffyPipe.SniffySourceChannel(provider, delegate);
         final AtomicReference<Throwable> failure = new AtomicReference<Throwable>();
         Thread reader = daemonThread("sniffy-pipe-blocked-read", new Runnable() {
             @Override
             public void run() {
                 try {
-                    reading.countDown();
                     source.read(ByteBuffer.allocate(1));
                 } catch (Throwable e) {
                     failure.set(e);
@@ -180,45 +182,19 @@ public class SniffyDatagramAndPipeTest {
         });
         try {
             reader.start();
-            assertTrue(reading.await(5, TimeUnit.SECONDS));
-            awaitNativePipeRead(reader);
-
-            try {
-                source.close();
-            } catch (IOException e) {
-                // Some Java 8/macOS builds surface NativeThread.signal(ENOENT) after the
-                // channel is already closed. The close contract permits IOException; the
-                // invariant under test is that the blocked reader is released.
-            }
+            assertTrue(delegate.readEntered.await(5, TimeUnit.SECONDS));
+            source.close();
 
             joinOrDumpAndFail(reader);
             assertFalse(source.isOpen());
-            assertFalse(((SniffyPipe.SniffySourceChannel) source).getDelegate().isOpen());
+            assertFalse(delegate.isOpen());
             Throwable throwable = failure.get();
-            assertTrue(throwable == null ||
-                    throwable instanceof AsynchronousCloseException ||
-                    throwable instanceof ClosedChannelException);
+            assertTrue(throwable instanceof AsynchronousCloseException);
         } finally {
-            try { sink.close(); } finally {
-                try { source.close(); } finally {
-                    joinOrDumpAndFail(reader);
-                }
+            try { source.close(); } finally {
+                joinOrDumpAndFail(reader);
             }
         }
-    }
-
-    private static void awaitNativePipeRead(Thread reader) {
-        for (int attempt = 0; attempt < 100000; attempt++) {
-            for (StackTraceElement element : reader.getStackTrace()) {
-                if ("read0".equals(element.getMethodName()) || "read".equals(element.getMethodName())
-                        && element.getClassName().contains("FileDispatcher")) {
-                    return;
-                }
-            }
-            Thread.yield();
-        }
-        dumpThreads("reader did not enter the native pipe read");
-        fail("reader did not enter the native pipe read; state=" + reader.getState());
     }
 
     @Test
@@ -288,6 +264,55 @@ public class SniffyDatagramAndPipeTest {
         } finally {
             source.close();
             sink.close();
+        }
+    }
+
+    private static final class BlockingSourceChannel extends Pipe.SourceChannel implements SelChImpl {
+        private final CountDownLatch readEntered = new CountDownLatch(1);
+        private final CountDownLatch closed = new CountDownLatch(1);
+
+        private BlockingSourceChannel(SelectorProvider provider) {
+            super(provider);
+        }
+
+        @Override public int read(ByteBuffer dst) throws IOException {
+            readEntered.countDown();
+            try {
+                closed.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException(e);
+            }
+            throw new AsynchronousCloseException();
+        }
+
+        @Override public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+            return read(dsts[offset]);
+        }
+
+        @Override public long read(ByteBuffer[] dsts) throws IOException {
+            return read(dsts, 0, dsts.length);
+        }
+
+        @Override protected void implCloseSelectableChannel() {
+            closed.countDown();
+        }
+
+        @Override protected void implConfigureBlocking(boolean block) {
+        }
+
+        @Override public FileDescriptor getFD() { return null; }
+        @Override public int getFDVal() { return -1; }
+        @Override public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski) { return false; }
+        @Override public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski) { return false; }
+        @Override public void kill() {
+        }
+        public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
+        }
+        public int translateInterestOps(int ops) { return ops; }
+        public void park(int event, long nanos) {
+        }
+        public void park(int event) {
         }
     }
 }

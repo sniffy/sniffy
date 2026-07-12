@@ -1,5 +1,6 @@
 /**
- * TCP NIO monitoring implementation.
+ * TCP NIO monitoring implementation. Maintainer-facing background, object diagrams, and the complete lock/lifecycle
+ * invariants are documented in the module-level {@code NIO-ARCHITECTURE.md}; future work is in {@code NIO-TODO.md}.
  *
  * <p>The selector owns registration links in registering, active, cleaning, and removed states. A delegate key keeps
  * its link in the delegate attachment; user attachments remain on the canonical wrapper key. Close marks the selector

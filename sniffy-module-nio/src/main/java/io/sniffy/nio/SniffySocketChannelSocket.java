@@ -2,9 +2,12 @@ package io.sniffy.nio;
 
 import io.sniffy.socket.PostWriteNetworkTraffic;
 import io.sniffy.socket.Protocol;
+import io.sniffy.socket.SharedConnectionIO;
 import io.sniffy.socket.SniffySocket;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -12,7 +15,7 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 
 /** Socket view whose monitoring state and accounting are owned by its channel. */
-final class SniffySocketChannelSocket extends SniffySocket implements PostWriteNetworkTraffic {
+final class SniffySocketChannelSocket extends SniffySocket implements PostWriteNetworkTraffic, SharedConnectionIO {
 
     private final SniffySocketChannel channel;
 
@@ -64,7 +67,13 @@ final class SniffySocketChannelSocket extends SniffySocket implements PostWriteN
 
     @Override public InetSocketAddress getInetSocketAddress() { return channel.getInetSocketAddress(); }
     @Override public void setConnectionStatus(Integer value) { channel.setConnectionStatus(value); }
+    @Override public void setConnectionStatus(InetSocketAddress endpoint, Integer value) {
+        channel.setConnectionStatus(endpoint, value);
+    }
     @Override public void setProxiedInetSocketAddress(InetSocketAddress value) { channel.setProxiedInetSocketAddress(value); }
+    @Override public void setProxiedInetSocketAddressAndStatus(InetSocketAddress value, Integer status) {
+        channel.setProxiedInetSocketAddressAndStatus(value, status);
+    }
     @Override public InetSocketAddress getProxiedInetSocketAddress() { return channel.getProxiedInetSocketAddress(); }
     @Override public void setFirstPacketSent(boolean value) { channel.setFirstPacketSent(value); }
     @Override public boolean isFirstPacketSent() { return channel.isFirstPacketSent(); }
@@ -84,4 +93,19 @@ final class SniffySocketChannelSocket extends SniffySocket implements PostWriteN
     @Override public void checkConnectionAllowed(InetSocketAddress address, int cycles) throws ConnectException {
         channel.checkConnectionAllowed(address, cycles);
     }
+
+    @Override public int read(InputStream delegate) throws IOException { return channel.read(delegate); }
+    @Override public int read(InputStream delegate, byte[] bytes) throws IOException {
+        return channel.read(delegate, bytes);
+    }
+    @Override public int read(InputStream delegate, byte[] bytes, int offset, int length) throws IOException {
+        return channel.read(delegate, bytes, offset, length);
+    }
+    @Override public void write(OutputStream delegate, int value) throws IOException { channel.write(delegate, value); }
+    @Override public void write(OutputStream delegate, byte[] bytes) throws IOException { channel.write(delegate, bytes); }
+    @Override public void write(OutputStream delegate, byte[] bytes, int offset, int length) throws IOException {
+        channel.write(delegate, bytes, offset, length);
+    }
+    @Override public void closeInputStream(InputStream delegate) throws IOException { channel.closeInputStream(delegate); }
+    @Override public void closeOutputStream(OutputStream delegate) throws IOException { channel.closeOutputStream(delegate); }
 }

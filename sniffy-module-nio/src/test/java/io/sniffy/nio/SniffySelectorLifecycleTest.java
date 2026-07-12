@@ -11,6 +11,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.Pipe;
 import java.nio.ByteBuffer;
+import java.nio.channels.spi.AbstractSelector;
+import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -524,7 +526,7 @@ public class SniffySelectorLifecycleTest {
         });
         try {
             selecting.start();
-            awaitStackFrame(selecting, "sun.nio.ch.", null);
+            awaitRealSelectorBlocked(selecting);
             closing.start();
 
             joinOrDumpAndFail(closing);
@@ -591,71 +593,135 @@ public class SniffySelectorLifecycleTest {
     }
 
     @Test
-    public void concurrentRegisterSelectCancelAndCloseDoNotDeadlock() throws Exception {
-        assertConcurrentSelectLifecycle(LifecycleAction.REGISTER);
-        assertConcurrentSelectLifecycle(LifecycleAction.CANCEL);
-        assertConcurrentSelectLifecycle(LifecycleAction.CLOSE);
-    }
-
-    private void assertConcurrentSelectLifecycle(LifecycleAction action) throws Exception {
-        final SniffySelector selector = (SniffySelector) Selector.open();
-        final SocketChannel channel = SocketChannel.open();
-        final AtomicReference<Throwable> failure = new AtomicReference<Throwable>();
-        final AtomicBoolean actionCompleted = new AtomicBoolean();
-        final CountDownLatch selecting = new CountDownLatch(1);
+    public void registrationWakesOneBlockedSelectionAndCompletes() throws Exception {
+        SniffySelectorProvider.uninstall();
+        SelectorProvider provider = SelectorProvider.provider();
+        final RegistrationStartedSelector selector = new RegistrationStartedSelector(
+                provider, provider.openSelector());
+        final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());
+        final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> registrationFailure = new AtomicReference<Throwable>();
+        final AtomicReference<SelectionKey> registered = new AtomicReference<SelectionKey>();
         channel.configureBlocking(false);
-        final SelectionKey existing = action == LifecycleAction.REGISTER ? null :
-                channel.register(selector, SelectionKey.OP_CONNECT);
-        Thread selectThread = daemonThread("sniffy-concurrent-select-" + action, new Runnable() {
+        Thread selectThread = daemonThread("sniffy-one-shot-select-register", new Runnable() {
             @Override
             public void run() {
                 try {
-                    selecting.countDown();
-                    do {
-                        selector.select();
-                    } while (!actionCompleted.get());
+                    selector.select();
                 } catch (Throwable e) {
-                    failure.set(e);
+                    selectFailure.set(e);
                 }
             }
         });
-        selectThread.start();
-        assertTrue(selecting.await(5, TimeUnit.SECONDS));
-        // The latch only proves the worker called select. Wait until the delegate owns its
-        // selection monitors so a registration wakeup cannot be consumed before select blocks.
-        awaitStackFrame(selectThread, "sun.nio.ch.", null);
-        try {
-            if (action == LifecycleAction.REGISTER) {
-                // Registration may wait for an in-progress selection; wakeup is the JDK-prescribed handoff.
-                selector.wakeup();
-                channel.register(selector, SelectionKey.OP_CONNECT);
-            } else if (action == LifecycleAction.CANCEL) {
-                existing.cancel();
-            } else {
-                channel.close();
+        Thread registrationThread = daemonThread("sniffy-register-during-select", new Runnable() {
+            @Override public void run() {
+                try {
+                    registered.set(channel.register(selector, SelectionKey.OP_CONNECT));
+                } catch (Throwable e) {
+                    registrationFailure.set(e);
+                }
             }
-            actionCompleted.set(true);
+        });
+        try {
+            selectThread.start();
+            awaitRealSelectorBlocked(selectThread);
+            registrationThread.start();
+            assertTrue(selector.registrationEntered.await(5, TimeUnit.SECONDS));
+
+            // There is exactly one select call, so this handoff cannot be followed by an
+            // uncontrolled second select that reacquires the delegate selected-key monitor.
             selector.wakeup();
             joinOrDumpAndFail(selectThread);
-            assertNull(failure.get());
-            if (action != LifecycleAction.REGISTER) {
-                assertNull("the returning selection operation must reconcile wrapper registration",
-                        channel.keyFor(selector));
-                assertEquals(0, selector.activeLinkCount());
-            }
+            joinOrDumpAndFail(registrationThread);
+            assertNull(selectFailure.get());
+            assertNull(registrationFailure.get());
+            assertSame(registered.get(), channel.keyFor(selector));
+            assertEquals(1, selector.activeLinkCount());
         } finally {
-            actionCompleted.set(true);
             selector.wakeup();
             try { channel.close(); } finally {
                 try { selector.close(); } finally {
-                    joinOrDumpAndFail(selectThread);
+                    try { joinOrDumpAndFail(selectThread); } finally {
+                        joinOrDumpAndFail(registrationThread);
+                    }
                 }
             }
         }
     }
 
-    private enum LifecycleAction {
-        REGISTER, CANCEL, CLOSE
+    private static final class RegistrationStartedSelector extends SniffySelector {
+        private final CountDownLatch registrationEntered = new CountDownLatch(1);
+
+        private RegistrationStartedSelector(SelectorProvider provider, AbstractSelector delegate) {
+            super(provider, delegate);
+        }
+
+        @Override void registrationPoint(RegistrationPoint point, SelectionKeyLink link) {
+            if (point == RegistrationPoint.BEFORE_DELEGATE_REGISTRATION) {
+                registrationEntered.countDown();
+            }
+            super.registrationPoint(point, link);
+        }
+    }
+
+    @Test
+    public void cancellationDuringOneBlockedSelectionIsReconciled() throws Exception {
+        final SniffySelector selector = (SniffySelector) Selector.open();
+        final SocketChannel channel = SocketChannel.open();
+        final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
+        channel.configureBlocking(false);
+        final SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT);
+        Thread selectThread = daemonThread("sniffy-one-shot-select-cancel", new Runnable() {
+            @Override public void run() {
+                try { selector.select(); } catch (Throwable e) { selectFailure.set(e); }
+            }
+        });
+        try {
+            selectThread.start();
+            awaitRealSelectorBlocked(selectThread);
+            key.cancel();
+            selector.wakeup();
+            joinOrDumpAndFail(selectThread);
+
+            assertNull(selectFailure.get());
+            assertNull(channel.keyFor(selector));
+            assertEquals(0, selector.activeLinkCount());
+        } finally {
+            selector.wakeup();
+            try { channel.close(); } finally {
+                try { selector.close(); } finally { joinOrDumpAndFail(selectThread); }
+            }
+        }
+    }
+
+    @Test
+    public void channelCloseDuringOneBlockedSelectionIsReconciled() throws Exception {
+        final SniffySelector selector = (SniffySelector) Selector.open();
+        final SocketChannel channel = SocketChannel.open();
+        final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
+        channel.configureBlocking(false);
+        channel.register(selector, SelectionKey.OP_CONNECT);
+        Thread selectThread = daemonThread("sniffy-one-shot-select-channel-close", new Runnable() {
+            @Override public void run() {
+                try { selector.select(); } catch (Throwable e) { selectFailure.set(e); }
+            }
+        });
+        try {
+            selectThread.start();
+            awaitRealSelectorBlocked(selectThread);
+            channel.close();
+            selector.wakeup();
+            joinOrDumpAndFail(selectThread);
+
+            assertNull(selectFailure.get());
+            assertNull(channel.keyFor(selector));
+            assertEquals(0, selector.activeLinkCount());
+        } finally {
+            selector.wakeup();
+            try { channel.close(); } finally {
+                try { selector.close(); } finally { joinOrDumpAndFail(selectThread); }
+            }
+        }
     }
 
     private enum CloseTarget {

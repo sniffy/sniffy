@@ -158,7 +158,7 @@ public class SniffyServerSocketChannelTest {
         try {
             accepting.start();
             assertTrue(started.await(5, TimeUnit.SECONDS));
-            awaitStackFrame(accepting, "ServerSocketChannel", "accept");
+            awaitRealServerSocketAcceptBlocked(accepting);
             closing.start();
 
             joinOrDumpAndFail(closing);

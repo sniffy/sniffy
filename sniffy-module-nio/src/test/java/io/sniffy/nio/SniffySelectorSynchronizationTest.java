@@ -195,11 +195,9 @@ public class SniffySelectorSynchronizationTest {
     }
 
     private static void awaitBlocked(Thread thread) {
-        for (int i = 0; i < 100000; i++) {
-            if (thread.getState() == Thread.State.BLOCKED) return;
-            Thread.yield();
-        }
-        fail("thread did not block on the expected monitor; state=" + thread.getState());
+        awaitCondition("thread to block on the expected monitor", new Condition() {
+            @Override public boolean isSatisfied() { return thread.getState() == Thread.State.BLOCKED; }
+        });
     }
 
     private static final class MonitorSelector extends AbstractSelector {

@@ -76,6 +76,34 @@ public class SnifferInputStreamTest {
     }
 
     @Test
+    public void eofFromReadIsAccountedAsZeroBytes() throws IOException {
+        SnifferInputStream stream = new SnifferInputStream(snifferSocket, new ByteArrayInputStream(new byte[0]));
+        assertEquals(-1, stream.read());
+        verify(snifferSocket).logSocket(anyLong(), eq(0), eq(0));
+        verify(snifferSocket, never()).logTraffic(anyBoolean(), any(Protocol.class), any(byte[].class), anyInt(), anyInt());
+    }
+
+    @Test
+    public void eofFromByteArrayReadDoesNotIncreaseBufferedAccounting() throws IOException {
+        when(snifferSocket.getPotentiallyBufferedInputBytes()).thenReturn(13);
+        SnifferInputStream stream = new SnifferInputStream(snifferSocket, new ByteArrayInputStream(new byte[0]));
+        assertEquals(-1, stream.read(new byte[4]));
+        verify(snifferSocket).setPotentiallyBufferedInputBytes(13);
+        verify(snifferSocket).logSocket(anyLong(), eq(0), eq(0));
+        verify(snifferSocket, never()).logTraffic(anyBoolean(), any(Protocol.class), any(byte[].class), anyInt(), anyInt());
+    }
+
+    @Test
+    public void eofFromRangedReadDoesNotIncreaseBufferedAccounting() throws IOException {
+        when(snifferSocket.getPotentiallyBufferedInputBytes()).thenReturn(17);
+        SnifferInputStream stream = new SnifferInputStream(snifferSocket, new ByteArrayInputStream(new byte[0]));
+        assertEquals(-1, stream.read(new byte[6], 1, 3));
+        verify(snifferSocket).setPotentiallyBufferedInputBytes(17);
+        verify(snifferSocket).logSocket(anyLong(), eq(0), eq(0));
+        verify(snifferSocket, never()).logTraffic(anyBoolean(), any(Protocol.class), any(byte[].class), anyInt(), anyInt());
+    }
+
+    @Test
     public void testSkip() throws IOException {
 
         ByteArrayInputStream bais = new ByteArrayInputStream(DATA);
