@@ -9,8 +9,14 @@ import org.junit.Test;
 import java.nio.channels.spi.SelectorProvider;
 import java.lang.reflect.Field;
 import java.net.StandardProtocolFamily;
+import java.net.ProtocolFamily;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.Channel;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.Pipe;
+import java.nio.channels.spi.AbstractSelector;
+import java.io.IOException;
 
 import static org.junit.Assume.assumeTrue;
 import static org.junit.Assert.assertSame;
@@ -148,6 +154,26 @@ public class SniffySelectorProviderInstallationTest {
         }
     }
 
+    @Test
+    public void inheritedTcpChannelsAreWrappedAndDatagramsRemainPassThrough() throws Exception {
+        SniffySelectorProvider.uninstall();
+        SelectorProvider delegate = SelectorProvider.provider();
+        try (SocketChannel inheritedSocket = delegate.openSocketChannel()) {
+            SniffySelectorProvider socketProvider = new SniffySelectorProvider(
+                    new InheritedChannelProvider(delegate, inheritedSocket));
+            Channel wrapped = socketProvider.inheritedChannel();
+            assertTrue(wrapped instanceof SniffySocketChannel);
+            assertSame(inheritedSocket, ((SniffySocketChannel) wrapped).getDelegate());
+            wrapped.close();
+        }
+
+        try (DatagramChannel inheritedDatagram = delegate.openDatagramChannel()) {
+            SniffySelectorProvider datagramProvider = new SniffySelectorProvider(
+                    new InheritedChannelProvider(delegate, inheritedDatagram));
+            assertSame(inheritedDatagram, datagramProvider.inheritedChannel());
+        }
+    }
+
     private static class FixedAccessResolver implements NioProviderAccessResolver {
         private final NioProviderAccess access;
 
@@ -185,6 +211,51 @@ public class SniffySelectorProviderInstallationTest {
         @Override
         public String describeProviderSlot() {
             return "test.provider";
+        }
+    }
+
+    private static class InheritedChannelProvider extends SelectorProvider {
+        private final SelectorProvider delegate;
+        private final Channel inherited;
+
+        private InheritedChannelProvider(SelectorProvider delegate, Channel inherited) {
+            this.delegate = delegate;
+            this.inherited = inherited;
+        }
+
+        @Override
+        public DatagramChannel openDatagramChannel() throws IOException {
+            return delegate.openDatagramChannel();
+        }
+
+        @Override
+        public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
+            return delegate.openDatagramChannel(family);
+        }
+
+        @Override
+        public Pipe openPipe() throws IOException {
+            return delegate.openPipe();
+        }
+
+        @Override
+        public AbstractSelector openSelector() throws IOException {
+            return delegate.openSelector();
+        }
+
+        @Override
+        public ServerSocketChannel openServerSocketChannel() throws IOException {
+            return delegate.openServerSocketChannel();
+        }
+
+        @Override
+        public SocketChannel openSocketChannel() throws IOException {
+            return delegate.openSocketChannel();
+        }
+
+        @Override
+        public Channel inheritedChannel() {
+            return inherited;
         }
     }
 
