@@ -27,6 +27,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) throws IOException {
         super(provider);
+        assert SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyServerSocketChannel");
         this.delegate = delegate;
         this.selChImplDelegate = (SelChImpl) delegate;
         this.socket = new SniffyServerSocket(delegate.socket(), this);

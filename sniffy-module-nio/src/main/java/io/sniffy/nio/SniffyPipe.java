@@ -21,6 +21,7 @@ public class SniffyPipe extends Pipe {
     private final SinkChannel sink;
 
     public SniffyPipe(SelectorProvider selectorProvider, Pipe delegate) {
+        assert SniffySelectorProvider.assertOriginalPipe(delegate, "SniffyPipe");
         this.source = new SniffySourceChannel(selectorProvider, delegate.source());
         this.sink = new SniffySinkChannel(selectorProvider, delegate.sink());
     }
@@ -43,6 +44,7 @@ public class SniffyPipe extends Pipe {
 
         public SniffySourceChannel(SelectorProvider provider, SourceChannel delegate) {
             super(provider);
+            assert SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyPipe.SniffySourceChannel");
             this.delegate = delegate;
             this.selChImplDelegate = (SelChImpl) delegate;
         }
@@ -167,6 +169,7 @@ public class SniffyPipe extends Pipe {
 
         public SniffySinkChannel(SelectorProvider provider, SinkChannel delegate) {
             super(provider);
+            assert SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyPipe.SniffySinkChannel");
             this.delegate = delegate;
             this.selChImplDelegate = (SelChImpl) delegate;
         }

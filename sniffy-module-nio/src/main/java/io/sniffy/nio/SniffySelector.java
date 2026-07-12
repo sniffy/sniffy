@@ -40,6 +40,8 @@ public class SniffySelector extends AbstractSelector {
 
     public SniffySelector(SelectorProvider provider, AbstractSelector delegate) {
         super(provider);
+        assert null == delegate || !(delegate instanceof SniffySelector) :
+                "SniffySelector expects the original selector delegate, got " + delegate.getClass().getName();
         this.delegate = delegate;
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
     }

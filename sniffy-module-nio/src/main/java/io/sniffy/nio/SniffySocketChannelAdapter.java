@@ -26,6 +26,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     protected SniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider);
+        assert SniffySelectorProvider.assertOriginalChannel(delegate, "SniffySocketChannel");
         this.delegate = delegate;
         this.selChImplDelegate = (SelChImpl) delegate;
     }
