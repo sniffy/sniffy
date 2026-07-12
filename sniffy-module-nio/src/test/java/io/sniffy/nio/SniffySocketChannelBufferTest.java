@@ -19,6 +19,7 @@ import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.net.ConnectException;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -337,6 +339,7 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         ServerSocketChannel server = provider.openServerSocketChannel();
         server.bind(new InetSocketAddress(BaseSocketTest.localhost, 0));
         final AtomicReference<Throwable> serverFailure = new AtomicReference<Throwable>();
+        final AtomicBoolean listenerClosing = new AtomicBoolean();
         final ByteArrayOutputStream physicalBytes = new ByteArrayOutputStream();
         Thread serverThread = daemonThread("nio-shared-socket-state-server", new Runnable() {
             @Override public void run() {
@@ -352,7 +355,14 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
                             buffer.clear();
                         }
                     }
-                } catch (Throwable e) { serverFailure.set(e); }
+                } catch (Throwable e) {
+                    // Closing the listener during test teardown can interrupt an accept that has
+                    // not yet returned on some JDKs. The byte-for-byte assertion below still
+                    // proves the accepted connection observed the complete request.
+                    if (!(listenerClosing.get() && e instanceof AsynchronousCloseException)) {
+                        serverFailure.set(e);
+                    }
+                }
             }
         });
         serverThread.start();
@@ -387,6 +397,7 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             assertTrue(first.isClosed());
         } finally {
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, 0);
+            listenerClosing.set(true);
             server.close();
             joinOrDumpAndFail(serverThread);
             assertNull(serverFailure.get());
