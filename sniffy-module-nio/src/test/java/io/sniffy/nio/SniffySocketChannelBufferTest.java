@@ -17,6 +17,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -210,10 +212,12 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         ServerSocketChannel server = ServerSocketChannel.open();
         server.bind(new InetSocketAddress(BaseSocketTest.localhost, 0));
         AtomicReference<Throwable> serverFailure = new AtomicReference<Throwable>();
+        CountDownLatch acceptedConnection = new CountDownLatch(1);
         Thread serverThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try (SocketChannel accepted = server.accept()) {
+                    acceptedConnection.countDown();
                     while (accepted.read(ByteBuffer.allocate(1)) >= 0) {
                         // Wait for the client to close; this server intentionally sends no response.
                     }
@@ -225,6 +229,8 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         serverThread.start();
         SocketChannel delegate = provider.openSocketChannel();
         delegate.connect(server.getLocalAddress());
+        assertTrue("server did not accept the client connection",
+                acceptedConnection.await(5, TimeUnit.SECONDS));
         byte[] clientHello = new byte[]{22, 3, 3, 0, 4, 1, 2, 3, 4};
         TestSslConnection sslConnection = new TestSslConnection();
         Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(clientHello), sslConnection);
@@ -238,8 +244,14 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             assertSame(sniffyChannel, sslConnection.connection);
         } finally {
             Sniffy.CLIENT_HELLO_CACHE.remove(ByteBuffer.wrap(clientHello));
+            serverThread.join(5000);
+            boolean serverDidNotFinish = serverThread.isAlive();
+            if (serverThread.isAlive()) {
+                server.close();
+                serverThread.join(5000);
+            }
             server.close();
-            serverThread.join();
+            assertFalse("server did not observe the client channel closing", serverDidNotFinish);
             assertNull(serverFailure.get());
             SniffySelectorProvider.uninstall();
         }
