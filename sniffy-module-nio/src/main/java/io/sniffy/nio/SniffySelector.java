@@ -439,29 +439,44 @@ public class SniffySelector extends AbstractSelector {
     }
 
     private int selectNowDelegate() throws IOException {
+        selectionPoint(SelectionPoint.BEFORE_DELEGATE_SELECT);
         SniffySelectorProvider.enterDelegateSelectorConstruction();
         try {
             return delegate.selectNow();
         } finally {
-            SniffySelectorProvider.exitDelegateSelectorConstruction();
+            try {
+                SniffySelectorProvider.exitDelegateSelectorConstruction();
+            } finally {
+                selectionPoint(SelectionPoint.AFTER_DELEGATE_SELECT);
+            }
         }
     }
 
     private int selectDelegate(long timeout) throws IOException {
+        selectionPoint(SelectionPoint.BEFORE_DELEGATE_SELECT);
         SniffySelectorProvider.enterDelegateSelectorConstruction();
         try {
             return delegate.select(timeout);
         } finally {
-            SniffySelectorProvider.exitDelegateSelectorConstruction();
+            try {
+                SniffySelectorProvider.exitDelegateSelectorConstruction();
+            } finally {
+                selectionPoint(SelectionPoint.AFTER_DELEGATE_SELECT);
+            }
         }
     }
 
     private int selectDelegate() throws IOException {
+        selectionPoint(SelectionPoint.BEFORE_DELEGATE_SELECT);
         SniffySelectorProvider.enterDelegateSelectorConstruction();
         try {
             return delegate.select();
         } finally {
-            SniffySelectorProvider.exitDelegateSelectorConstruction();
+            try {
+                SniffySelectorProvider.exitDelegateSelectorConstruction();
+            } finally {
+                selectionPoint(SelectionPoint.AFTER_DELEGATE_SELECT);
+            }
         }
     }
 
@@ -610,6 +625,7 @@ public class SniffySelector extends AbstractSelector {
             rethrowSelectionFailure(primaryFailure);
             return 0;
         } finally {
+            selectionPoint(SelectionPoint.BEFORE_CLEANUP);
             try {
                 cleanupLinks(false);
             } catch (Throwable cleanupFailure) {
@@ -618,6 +634,8 @@ public class SniffySelector extends AbstractSelector {
                 } else {
                     rethrowSelectionFailure(cleanupFailure);
                 }
+            } finally {
+                selectionPoint(SelectionPoint.AFTER_CLEANUP);
             }
         }
     }
@@ -646,6 +664,17 @@ public class SniffySelector extends AbstractSelector {
 
     void registrationPoint(RegistrationPoint point, SelectionKeyLink link) {
         // Test subclasses provide deterministic race pause points; production has no work here.
+    }
+
+    enum SelectionPoint {
+        BEFORE_DELEGATE_SELECT,
+        AFTER_DELEGATE_SELECT,
+        BEFORE_CLEANUP,
+        AFTER_CLEANUP
+    }
+
+    void selectionPoint(SelectionPoint point) {
+        // Test subclasses provide deterministic selection pause points; production has no work here.
     }
 
 }

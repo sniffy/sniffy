@@ -181,21 +181,40 @@ public enum ConnectionsRegistry implements Runnable {
             }
         }
 
-        Collection<Reference<SniffyNetworkConnection>> sniffySockets = sniffySocketImpls.get(new AbstractMap.SimpleEntry<String, Integer>(hostName, port));
-        if (null != sniffySockets) {
-            for (Reference<SniffyNetworkConnection> sniffySocketWeakReference : sniffySockets) {
-                SniffyNetworkConnection sniffyNetworkConnection = sniffySocketWeakReference.get();
-                if (null != sniffyNetworkConnection) {
-                    if (hostName != null && port != null) {
-                        sniffyNetworkConnection.setConnectionStatus(
-                                new InetSocketAddress(hostName, port), connectionStatus);
-                    } else {
-                        sniffyNetworkConnection.setConnectionStatus(connectionStatus);
-                    }
+        Set<SniffyNetworkConnection> matchingConnections =
+                Collections.newSetFromMap(new IdentityHashMap<SniffyNetworkConnection, Boolean>());
+        if (hostName != null && port != null) {
+            collectConnections(sniffySocketImpls.get(
+                    new AbstractMap.SimpleEntry<String, Integer>(hostName, port)), matchingConnections);
+        } else {
+            for (Map.Entry<Map.Entry<String, Integer>, Collection<Reference<SniffyNetworkConnection>>> entry
+                    : sniffySocketImpls.entrySet()) {
+                String registeredHost = entry.getKey().getKey();
+                Integer registeredPort = entry.getKey().getValue();
+                if ((hostName == null || hostName.equals(registeredHost))
+                        && (port == null || port.equals(registeredPort))) {
+                    collectConnections(entry.getValue(), matchingConnections);
                 }
             }
         }
+        for (SniffyNetworkConnection connection : matchingConnections) {
+            if (hostName != null && port != null) {
+                connection.setConnectionStatus(new InetSocketAddress(hostName, port), connectionStatus);
+            } else {
+                // Endpoint-less registry rules apply to whichever endpoint is currently effective.
+                connection.setConnectionStatus(connectionStatus);
+            }
+        }
 
+    }
+
+    private static void collectConnections(Collection<Reference<SniffyNetworkConnection>> references,
+                                           Set<SniffyNetworkConnection> connections) {
+        if (references == null) return;
+        for (Reference<SniffyNetworkConnection> reference : references) {
+            SniffyNetworkConnection connection = reference.get();
+            if (connection != null) connections.add(connection);
+        }
     }
 
     public Map<Map.Entry<String, String>, Integer> getDiscoveredDataSources() {

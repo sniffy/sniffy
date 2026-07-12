@@ -56,9 +56,9 @@ final class NioTestSupport {
     }
 
     /**
-     * A few integration tests must prove that the installed provider interoperates with the real
-     * JDK selector. There is no public "now blocked in native select" signal, so those tests keep
-     * the implementation-sensitive observation isolated here instead of spreading JDK names.
+     * The selector-close integration test must prove close wakes a real native selection. There
+     * is no public "now blocked in native select" signal, so that single implementation-sensitive
+     * observation remains isolated here instead of spreading JDK names through lifecycle tests.
      */
     static void awaitRealSelectorBlocked(Thread thread) {
         awaitStackFrame(thread, "sun.nio.ch.", null);

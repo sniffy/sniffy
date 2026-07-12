@@ -173,6 +173,38 @@ public class SniffySocketChannelPolicyLifecycleTest {
     }
 
     @Test
+    public void wildcardStatusUpdateAppliesToCurrentEffectiveEndpoint() throws Exception {
+        try (ConnectedPair pair = ConnectedPair.open()) {
+            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(pair.physicalAddress, pair.channel);
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, 43);
+
+            SniffySocketChannel.EffectiveEndpointPolicy policy = pair.channel.effectiveEndpointPolicy();
+            assertEquals(pair.physicalAddress, policy.address);
+            assertEquals(Integer.valueOf(43), policy.status);
+            assertFalse(policy.proxied);
+        } finally {
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, 0);
+        }
+    }
+
+    @Test
+    public void wildcardUpdateAfterProxyDetectionUpdatesTargetPolicy() throws Exception {
+        try (ConnectedPair pair = ConnectedPair.open()) {
+            pair.channel.processOutboundBytes(
+                    bytes("CONNECT 127.0.0.1:55449 HTTP/1.1\r\n\r\n"), false);
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, 57);
+
+            SniffySocketChannel.EffectiveEndpointPolicy policy = pair.channel.effectiveEndpointPolicy();
+            assertEquals(new InetSocketAddress("127.0.0.1", 55449), policy.address);
+            assertEquals(Integer.valueOf(57), policy.status);
+            assertTrue(policy.proxied);
+        } finally {
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, 0);
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 55449, 0);
+        }
+    }
+
+    @Test
     public void threadLocalRegistryResolutionRemainsCorrect() throws Exception {
         Boolean previousFault = SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled();
         ConnectionsRegistry.INSTANCE.setThreadLocal(true);

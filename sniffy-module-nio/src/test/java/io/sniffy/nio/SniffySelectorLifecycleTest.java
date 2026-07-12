@@ -596,7 +596,7 @@ public class SniffySelectorLifecycleTest {
     public void registrationWakesOneBlockedSelectionAndCompletes() throws Exception {
         SniffySelectorProvider.uninstall();
         SelectorProvider provider = SelectorProvider.provider();
-        final RegistrationStartedSelector selector = new RegistrationStartedSelector(
+        final LifecycleCoordinatedSelector selector = new LifecycleCoordinatedSelector(
                 provider, provider.openSelector());
         final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());
         final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
@@ -624,20 +624,23 @@ public class SniffySelectorLifecycleTest {
         });
         try {
             selectThread.start();
-            awaitRealSelectorBlocked(selectThread);
+            assertTrue(selector.selectionEntered.await(5, TimeUnit.SECONDS));
             registrationThread.start();
             assertTrue(selector.registrationEntered.await(5, TimeUnit.SECONDS));
 
             // There is exactly one select call, so this handoff cannot be followed by an
             // uncontrolled second select that reacquires the delegate selected-key monitor.
             selector.wakeup();
+            selector.releaseSelection.countDown();
             joinOrDumpAndFail(selectThread);
             joinOrDumpAndFail(registrationThread);
+            assertTrue(selector.cleanupCompleted.await(5, TimeUnit.SECONDS));
             assertNull(selectFailure.get());
             assertNull(registrationFailure.get());
             assertSame(registered.get(), channel.keyFor(selector));
             assertEquals(1, selector.activeLinkCount());
         } finally {
+            selector.releaseSelection.countDown();
             selector.wakeup();
             try { channel.close(); } finally {
                 try { selector.close(); } finally {
@@ -649,11 +652,31 @@ public class SniffySelectorLifecycleTest {
         }
     }
 
-    private static final class RegistrationStartedSelector extends SniffySelector {
+    private static final class LifecycleCoordinatedSelector extends SniffySelector {
+        private final CountDownLatch selectionEntered = new CountDownLatch(1);
+        private final CountDownLatch releaseSelection = new CountDownLatch(1);
+        private final CountDownLatch cleanupCompleted = new CountDownLatch(1);
         private final CountDownLatch registrationEntered = new CountDownLatch(1);
 
-        private RegistrationStartedSelector(SelectorProvider provider, AbstractSelector delegate) {
+        private LifecycleCoordinatedSelector(SelectorProvider provider, AbstractSelector delegate) {
             super(provider, delegate);
+        }
+
+        @Override void selectionPoint(SelectionPoint point) {
+            if (point == SelectionPoint.BEFORE_DELEGATE_SELECT) {
+                selectionEntered.countDown();
+                try {
+                    if (!releaseSelection.await(5, TimeUnit.SECONDS)) {
+                        throw new AssertionError("Timed out waiting to release delegate selection");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError(e);
+                }
+            } else if (point == SelectionPoint.AFTER_CLEANUP) {
+                cleanupCompleted.countDown();
+            }
+            super.selectionPoint(point);
         }
 
         @Override void registrationPoint(RegistrationPoint point, SelectionKeyLink link) {
@@ -666,8 +689,11 @@ public class SniffySelectorLifecycleTest {
 
     @Test
     public void cancellationDuringOneBlockedSelectionIsReconciled() throws Exception {
-        final SniffySelector selector = (SniffySelector) Selector.open();
-        final SocketChannel channel = SocketChannel.open();
+        SniffySelectorProvider.uninstall();
+        SelectorProvider provider = SelectorProvider.provider();
+        final LifecycleCoordinatedSelector selector = new LifecycleCoordinatedSelector(
+                provider, provider.openSelector());
+        final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());
         final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
         channel.configureBlocking(false);
         final SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT);
@@ -678,15 +704,18 @@ public class SniffySelectorLifecycleTest {
         });
         try {
             selectThread.start();
-            awaitRealSelectorBlocked(selectThread);
+            assertTrue(selector.selectionEntered.await(5, TimeUnit.SECONDS));
             key.cancel();
             selector.wakeup();
+            selector.releaseSelection.countDown();
             joinOrDumpAndFail(selectThread);
+            assertTrue(selector.cleanupCompleted.await(5, TimeUnit.SECONDS));
 
             assertNull(selectFailure.get());
             assertNull(channel.keyFor(selector));
             assertEquals(0, selector.activeLinkCount());
         } finally {
+            selector.releaseSelection.countDown();
             selector.wakeup();
             try { channel.close(); } finally {
                 try { selector.close(); } finally { joinOrDumpAndFail(selectThread); }
@@ -696,8 +725,11 @@ public class SniffySelectorLifecycleTest {
 
     @Test
     public void channelCloseDuringOneBlockedSelectionIsReconciled() throws Exception {
-        final SniffySelector selector = (SniffySelector) Selector.open();
-        final SocketChannel channel = SocketChannel.open();
+        SniffySelectorProvider.uninstall();
+        SelectorProvider provider = SelectorProvider.provider();
+        final LifecycleCoordinatedSelector selector = new LifecycleCoordinatedSelector(
+                provider, provider.openSelector());
+        final SocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel());
         final AtomicReference<Throwable> selectFailure = new AtomicReference<Throwable>();
         channel.configureBlocking(false);
         channel.register(selector, SelectionKey.OP_CONNECT);
@@ -708,15 +740,18 @@ public class SniffySelectorLifecycleTest {
         });
         try {
             selectThread.start();
-            awaitRealSelectorBlocked(selectThread);
+            assertTrue(selector.selectionEntered.await(5, TimeUnit.SECONDS));
             channel.close();
             selector.wakeup();
+            selector.releaseSelection.countDown();
             joinOrDumpAndFail(selectThread);
+            assertTrue(selector.cleanupCompleted.await(5, TimeUnit.SECONDS));
 
             assertNull(selectFailure.get());
             assertNull(channel.keyFor(selector));
             assertEquals(0, selector.activeLinkCount());
         } finally {
+            selector.releaseSelection.countDown();
             selector.wakeup();
             try { channel.close(); } finally {
                 try { selector.close(); } finally { joinOrDumpAndFail(selectThread); }

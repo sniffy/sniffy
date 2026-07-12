@@ -182,6 +182,10 @@ event. `connectionWriteLock` does the same for writes, including incremental pro
 socket streams use the same locks. Close performs the physical delegate close before waiting for an I/O ordering lock,
 so it can release a thread blocked in native I/O.
 
+`bufferAccountingLock` protects only the cross-direction reader/writer IDs, buffered-byte counters, direction-switch
+resets, and delay-cycle calculation. Physical I/O, policy resolution, sleeping, traffic publication, proxy parsing, and
+TLS correlation never run under it, so reads and writes remain physically full duplex.
+
 Each operation reads one immutable effective-endpoint policy snapshot. HTTP CONNECT parsing atomically replaces the
 physical policy with a target policy after the successful physical write. The new policy starts with the next operation;
 the already transmitted CONNECT write is accounted using its starting policy.

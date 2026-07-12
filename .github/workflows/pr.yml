@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
         java: [ 8, 25 ]
     name: Focused NIO JDK ${{ matrix.java }}, Linux

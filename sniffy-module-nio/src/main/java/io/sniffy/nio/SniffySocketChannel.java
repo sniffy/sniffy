@@ -45,6 +45,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     /* A physical operation and its accounting event share this lock, preserving wire order. */
     private final Object connectionReadLock = new Object();
     private final Object connectionWriteLock = new Object();
+    private final Object bufferAccountingLock = new Object();
     private final Object endpointPolicyLock = new Object();
     private volatile InetSocketAddress physicalAddress;
     private volatile EffectiveEndpointPolicy effectiveEndpointPolicy =
@@ -145,39 +146,39 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
     private void sleepIfRequired(int bytesDown, EffectiveEndpointPolicy policy) throws ConnectException {
-
-        lastReadThreadId = Thread.currentThread().getId();
-
-        if (lastReadThreadId == lastWriteThreadId) {
-            potentiallyBufferedOutputBytes = 0;
+        int delayCycles = 0;
+        synchronized (bufferAccountingLock) {
+            lastReadThreadId = Thread.currentThread().getId();
+            if (lastReadThreadId == lastWriteThreadId) {
+                potentiallyBufferedOutputBytes = 0;
+            }
+            potentiallyBufferedInputBytes -= bytesDown;
+            if (potentiallyBufferedInputBytes < 0) {
+                delayCycles = 1 + (-1 * potentiallyBufferedInputBytes)
+                        / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+                potentiallyBufferedInputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+            }
         }
-
-        int potentiallyBufferedInputBytes = this.potentiallyBufferedInputBytes -= bytesDown;
-
-        if (potentiallyBufferedInputBytes < 0) {
-            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
-            checkConnectionAllowed(policy, estimatedNumberOfTcpPackets);
-            this.potentiallyBufferedInputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
-        }
-
+        // Policy resolution and sleeping can re-enter instrumentation; never perform them under
+        // the short cross-direction accounting critical section.
+        if (delayCycles > 0) checkConnectionAllowed(policy, delayCycles);
     }
 
     private void sleepIfRequiredForWrite(int bytesUp, EffectiveEndpointPolicy policy) throws ConnectException {
-
-        lastWriteThreadId = Thread.currentThread().getId();
-
-        if (lastReadThreadId == lastWriteThreadId) {
-            potentiallyBufferedInputBytes = 0;
+        int delayCycles = 0;
+        synchronized (bufferAccountingLock) {
+            lastWriteThreadId = Thread.currentThread().getId();
+            if (lastReadThreadId == lastWriteThreadId) {
+                potentiallyBufferedInputBytes = 0;
+            }
+            potentiallyBufferedOutputBytes -= bytesUp;
+            if (potentiallyBufferedOutputBytes < 0) {
+                delayCycles = 1 + (-1 * potentiallyBufferedOutputBytes)
+                        / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+                potentiallyBufferedOutputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
+            }
         }
-
-        int potentiallyBufferedOutputBytes = this.potentiallyBufferedOutputBytes -= bytesUp;
-
-        if (potentiallyBufferedOutputBytes < 0) {
-            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
-            checkConnectionAllowed(policy, estimatedNumberOfTcpPackets);
-            this.potentiallyBufferedOutputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
-        }
-
+        if (delayCycles > 0) checkConnectionAllowed(policy, delayCycles);
     }
 
     @Deprecated
@@ -210,13 +211,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                     traffic, off, len,
                     effectiveSpyConfiguration.isCaptureStackTraces()
             );
-            if (sent && firstChunk) {
-                SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
-                if (null != sniffySSLNetworkConnection) {
-                    sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
-                }
-                firstChunk = false;
-            }
+            correlateFirstOutboundChunk(sent, traffic, off, len);
         }
     }
 
@@ -231,13 +226,23 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
                     effectiveSpyConfiguration.isCaptureStackTraces()
             );
             if (!isConnectPacket) {
-                if (sent && firstChunk) {
-                    SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
-                    if (null != sniffySSLNetworkConnection) {
-                        sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
-                    }
-                    firstChunk = false;
+                correlateFirstOutboundChunk(sent, traffic, off, len);
+            }
+        }
+    }
+
+    private void correlateFirstOutboundChunk(boolean sent, byte[] traffic, int off, int len) {
+        if (sent && firstChunk) {
+            try {
+                SniffySSLNetworkConnection sniffySSLNetworkConnection =
+                        Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
+                if (null != sniffySSLNetworkConnection) {
+                    sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
                 }
+            } finally {
+                // A captured non-CONNECT outbound chunk consumes the single TLS correlation attempt,
+                // including cache misses and callback failures.
+                firstChunk = false;
             }
         }
     }
@@ -869,42 +874,58 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public int getPotentiallyBufferedInputBytes() {
-        return potentiallyBufferedInputBytes;
+        synchronized (bufferAccountingLock) {
+            return potentiallyBufferedInputBytes;
+        }
     }
 
     @Override
     public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) {
-        this.potentiallyBufferedInputBytes = potentiallyBufferedInputBytes;
+        synchronized (bufferAccountingLock) {
+            this.potentiallyBufferedInputBytes = potentiallyBufferedInputBytes;
+        }
     }
 
     @Override
     public int getPotentiallyBufferedOutputBytes() {
-        return potentiallyBufferedOutputBytes;
+        synchronized (bufferAccountingLock) {
+            return potentiallyBufferedOutputBytes;
+        }
     }
 
     @Override
     public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) {
-        this.potentiallyBufferedOutputBytes = potentiallyBufferedOutputBytes;
+        synchronized (bufferAccountingLock) {
+            this.potentiallyBufferedOutputBytes = potentiallyBufferedOutputBytes;
+        }
     }
 
     @Override
     public long getLastReadThreadId() {
-        return lastReadThreadId;
+        synchronized (bufferAccountingLock) {
+            return lastReadThreadId;
+        }
     }
 
     @Override
     public void setLastReadThreadId(long lastReadThreadId) {
-        this.lastReadThreadId = lastReadThreadId;
+        synchronized (bufferAccountingLock) {
+            this.lastReadThreadId = lastReadThreadId;
+        }
     }
 
     @Override
     public long getLastWriteThreadId() {
-        return lastWriteThreadId;
+        synchronized (bufferAccountingLock) {
+            return lastWriteThreadId;
+        }
     }
 
     @Override
     public void setLastWriteThreadId(long lastWriteThreadId) {
-        this.lastWriteThreadId = lastWriteThreadId;
+        synchronized (bufferAccountingLock) {
+            this.lastWriteThreadId = lastWriteThreadId;
+        }
     }
 
 }

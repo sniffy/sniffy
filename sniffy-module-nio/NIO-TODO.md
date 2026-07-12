@@ -14,6 +14,17 @@
 - Verify `FileChannel.transferTo` and other zero-copy paths across JDK implementations.
 - Evaluate whether the public `getDelegate()` escape hatch should remain available or be constrained.
 - Define a recovery/reporting strategy for cleanup failures discovered after selector close.
+- In a future major release, replace the public `SharedConnectionIO` cross-module SPI with a cleaner internal module
+  boundary that does not expose an unsupported application extension point.
+
+## Instrumentation semantics
+
+- Audit reentrant callbacks reached under `connectionReadLock` and `connectionWriteLock`, including traffic listeners,
+  stack-trace capture, TLS cache correlation, and registry-related callbacks. Add recursive same-connection tests that
+  prove reentrancy cannot corrupt ordering/parser state or recurse indefinitely.
+- Define post-I/O telemetry failure semantics. Prefer recording accidental monitoring failures internally after a
+  successful physical read/write and returning the successful result to the application, while keeping intentional
+  fault-injection refusal and delay behavior distinct.
 
 ## Confidence and rollout
 

@@ -19,6 +19,7 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -91,7 +92,9 @@ public class SniffyDatagramAndPipeTest {
 
     @Test
     public void selectorWakeupDoesNotLeakInternalConstructionScope() throws Exception {
-        final Selector selector = Selector.open();
+        SniffySelectorProvider.uninstall();
+        SelectorProvider provider = SelectorProvider.provider();
+        final SelectionStartedSelector selector = new SelectionStartedSelector(provider, provider.openSelector());
         final CountDownLatch enteringSelect = new CountDownLatch(1);
         final AtomicInteger result = new AtomicInteger(-1);
         Thread selectingThread = daemonThread("sniffy-selector-wakeup-test", new Runnable() {
@@ -108,11 +111,13 @@ public class SniffyDatagramAndPipeTest {
         try {
             selectingThread.start();
             assertTrue(enteringSelect.await(5, TimeUnit.SECONDS));
-            awaitRealSelectorBlocked(selectingThread);
+            assertTrue(selector.selectionEntered.await(5, TimeUnit.SECONDS));
             selector.wakeup();
+            selector.releaseSelection.countDown();
             joinOrDumpAndFail(selectingThread);
             assertEquals(0, result.get());
             assertFalse(SniffySelectorProvider.isDelegateSelectorConstruction());
+            SniffySelectorProvider.install();
             Pipe applicationPipe = Pipe.open();
             try {
                 assertTrue(applicationPipe instanceof SniffyPipe);
@@ -121,10 +126,35 @@ public class SniffyDatagramAndPipeTest {
                 applicationPipe.sink().close();
             }
         } finally {
+            selector.releaseSelection.countDown();
             selector.wakeup();
             try { selector.close(); } finally {
                 joinOrDumpAndFail(selectingThread);
             }
+        }
+    }
+
+    private static final class SelectionStartedSelector extends SniffySelector {
+        private final CountDownLatch selectionEntered = new CountDownLatch(1);
+        private final CountDownLatch releaseSelection = new CountDownLatch(1);
+
+        private SelectionStartedSelector(SelectorProvider provider, AbstractSelector delegate) {
+            super(provider, delegate);
+        }
+
+        @Override void selectionPoint(SelectionPoint point) {
+            if (point == SelectionPoint.BEFORE_DELEGATE_SELECT) {
+                selectionEntered.countDown();
+                try {
+                    if (!releaseSelection.await(5, TimeUnit.SECONDS)) {
+                        throw new AssertionError("Timed out waiting to release delegate selection");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError(e);
+                }
+            }
+            super.selectionPoint(point);
         }
     }
 

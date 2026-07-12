@@ -110,6 +110,7 @@ public class SniffySelectorRegistrationRaceTest {
             fixture.startRegistration();
             fixture.awaitPause();
             fixture.startClose();
+            fixture.releaseSelection();
             fixture.awaitDelegateClosed();
             fixture.releaseRegistration();
             fixture.awaitFinished();
@@ -190,7 +191,10 @@ public class SniffySelectorRegistrationRaceTest {
             selectionThread.start();
         }
 
-        void awaitSelectionBlocked() { awaitRealSelectorBlocked(selectionThread); }
+        void awaitSelectionBlocked() throws Exception {
+            assertTrue(selector.selectionEntered.await(5, TimeUnit.SECONDS));
+        }
+        void releaseSelection() { selector.releaseSelection.countDown(); }
 
         void awaitPause() throws Exception { assertTrue(selector.reached.await(5, TimeUnit.SECONDS)); }
         void releaseRegistration() { selector.release.countDown(); }
@@ -207,6 +211,7 @@ public class SniffySelectorRegistrationRaceTest {
         }
         void close() throws Exception {
             selector.release.countDown();
+            selector.releaseSelection.countDown();
             selector.wakeup();
             try { channel.close(); } finally {
                 try { pipe.sink().close(); } finally {
@@ -226,6 +231,8 @@ public class SniffySelectorRegistrationRaceTest {
         private final RegistrationPoint pauseAt;
         private final CountDownLatch reached = new CountDownLatch(1);
         private final CountDownLatch release = new CountDownLatch(1);
+        private final CountDownLatch selectionEntered = new CountDownLatch(1);
+        private final CountDownLatch releaseSelection = new CountDownLatch(1);
 
         PausingSelector(SelectorProvider provider, AbstractSelector delegate, RegistrationPoint pauseAt) {
             super(provider, delegate);
@@ -239,6 +246,21 @@ public class SniffySelectorRegistrationRaceTest {
                     Thread.currentThread().interrupt(); throw new AssertionError(e);
                 }
             }
+        }
+
+        @Override void selectionPoint(SelectionPoint point) {
+            if (point == SelectionPoint.BEFORE_DELEGATE_SELECT) {
+                selectionEntered.countDown();
+                try {
+                    if (!releaseSelection.await(5, TimeUnit.SECONDS)) {
+                        throw new AssertionError("Timed out waiting to release delegate selection");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError(e);
+                }
+            }
+            super.selectionPoint(point);
         }
     }
 }
