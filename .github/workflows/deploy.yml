@@ -23,7 +23,7 @@ jobs:
             os: macos-26
     name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v5
         with:
@@ -76,7 +76,7 @@ jobs:
         platform: [ linux/arm, linux/arm64, linux/s390x, linux/ppc64le ]
     name: Test with ${{ matrix.platform }} AdoptOpenJDK 11
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up QEMU
         id: qemu
         uses: docker/setup-qemu-action@v3
@@ -129,7 +129,7 @@ jobs:
     runs-on: ubuntu-26.04
     name: Test JDK IBM J9 1.8, ubuntu-26.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Pull IBM JDK J9 1.8 Docker Image
         uses: addnab/docker-run-action@v3
         with:
@@ -187,7 +187,7 @@ jobs:
             os: macos-26
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v5
         with:
@@ -239,7 +239,7 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
@@ -276,7 +276,7 @@ jobs:
       - test-matrix
       - analyze
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Java for publishing to Maven Central Repository
         uses: actions/setup-java@v5
         with:
