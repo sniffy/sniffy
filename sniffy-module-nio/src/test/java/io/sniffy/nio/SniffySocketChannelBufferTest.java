@@ -323,10 +323,12 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         server.bind(new InetSocketAddress(BaseSocketTest.localhost, 0));
         final AtomicReference<Throwable> serverFailure = new AtomicReference<Throwable>();
         final AtomicBoolean listenerClosing = new AtomicBoolean();
+        final CountDownLatch acceptedConnection = new CountDownLatch(1);
         final ByteArrayOutputStream physicalBytes = new ByteArrayOutputStream();
         Thread serverThread = daemonThread("nio-shared-socket-state-server", new Runnable() {
             @Override public void run() {
                 try (SocketChannel accepted = server.accept()) {
+                    acceptedConnection.countDown();
                     ByteBuffer buffer = ByteBuffer.allocate(128);
                     int read;
                     while ((read = accepted.read(buffer)) >= 0) {
@@ -351,6 +353,8 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         serverThread.start();
         SocketChannel raw = provider.openSocketChannel();
         raw.connect(server.getLocalAddress());
+        assertTrue("server must accept before the listener can be closed during teardown",
+                acceptedConnection.await(5, TimeUnit.SECONDS));
         byte[] request = "CONNECT 127.0.0.1:5555 HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n"
                 .getBytes("US-ASCII");
         ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, -42);
@@ -378,6 +382,10 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             first.close();
             assertFalse(channel.isOpen());
             assertTrue(first.isClosed());
+            // Wait for EOF and byte collection before teardown closes the listening channel.
+            joinOrDumpAndFail(serverThread);
+            assertNull(serverFailure.get());
+            assertArrayEquals(request, physicalBytes.toByteArray());
         } finally {
             ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, 0);
             listenerClosing.set(true);
