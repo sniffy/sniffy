@@ -21,7 +21,7 @@ public class SniffyPipe extends Pipe {
     private final SinkChannel sink;
 
     public SniffyPipe(SelectorProvider selectorProvider, Pipe delegate) {
-        assert SniffySelectorProvider.assertOriginalPipe(delegate, "SniffyPipe");
+        SniffySelectorProvider.assertOriginalPipe(delegate, "SniffyPipe");
         this.source = new SniffySourceChannel(selectorProvider, delegate.source());
         this.sink = new SniffySinkChannel(selectorProvider, delegate.sink());
     }
@@ -45,7 +45,7 @@ public class SniffyPipe extends Pipe {
 
         public SniffySourceChannel(SelectorProvider provider, SourceChannel delegate) {
             super(provider);
-            assert SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyPipe.SniffySourceChannel");
+            SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyPipe.SniffySourceChannel");
             this.delegate = delegate;
             this.selChImplDelegate = (SelChImpl) delegate;
         }
@@ -56,20 +56,12 @@ public class SniffyPipe extends Pipe {
         }
 
         @Override
-        public void keyCancelled() {
-            // Selector cleanup observes the delegate key state directly.
-        }
-
-        @Override
         public void implCloseSelectableChannel() throws IOException {
             delegate.close();
         }
 
         @Override
         public void implConfigureBlocking(boolean block) throws IOException {
-            if (block) {
-                registrationSupport.propagateCancelledKeys();
-            }
             delegate.configureBlocking(block);
         }
 
@@ -165,11 +157,6 @@ public class SniffyPipe extends Pipe {
             registrationSupport.unregister(link);
         }
 
-        @Override
-        public void propagateCancelledKeyDelegates() {
-            registrationSupport.propagateCancelledKeys();
-        }
-
     }
 
     @SuppressWarnings("RedundantThrows")
@@ -181,7 +168,7 @@ public class SniffyPipe extends Pipe {
 
         public SniffySinkChannel(SelectorProvider provider, SinkChannel delegate) {
             super(provider);
-            assert SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyPipe.SniffySinkChannel");
+            SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyPipe.SniffySinkChannel");
             this.delegate = delegate;
             this.selChImplDelegate = (SelChImpl) delegate;
         }
@@ -192,20 +179,12 @@ public class SniffyPipe extends Pipe {
         }
 
         @Override
-        public void keyCancelled() {
-            // Selector cleanup observes the delegate key state directly.
-        }
-
-        @Override
         public void implCloseSelectableChannel() throws IOException {
             delegate.close();
         }
 
         @Override
         public void implConfigureBlocking(boolean block) throws IOException {
-            if (block) {
-                registrationSupport.propagateCancelledKeys();
-            }
             delegate.configureBlocking(block);
         }
 
@@ -299,11 +278,6 @@ public class SniffyPipe extends Pipe {
         @Override
         public void unregisterKeyLink(SelectionKeyLink link) {
             registrationSupport.unregister(link);
-        }
-
-        @Override
-        public void propagateCancelledKeyDelegates() {
-            registrationSupport.propagateCancelledKeys();
         }
 
     }

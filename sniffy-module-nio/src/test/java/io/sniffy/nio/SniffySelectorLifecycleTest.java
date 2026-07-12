@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.channels.SelectionKey;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.Pipe;
@@ -20,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class SniffySelectorLifecycleTest {
 
@@ -51,6 +53,54 @@ public class SniffySelectorLifecycleTest {
             assertEquals(SelectionKey.OP_READ, first.interestOps());
             assertTrue(first.channel() instanceof SniffySocketChannel);
             assertSame(selector, first.selector());
+        } finally {
+            channel.close();
+            selector.close();
+        }
+    }
+
+    @Test
+    public void wrapperCancellationImmediatelyCancelsDelegate() throws Exception {
+        SniffySelector selector = (SniffySelector) Selector.open();
+        SocketChannel channel = SocketChannel.open();
+        try {
+            channel.configureBlocking(false);
+            SniffySelectionKey key = (SniffySelectionKey) channel.register(selector, SelectionKey.OP_CONNECT);
+
+            key.cancel();
+
+            assertFalse(key.isValid());
+            assertFalse(key.getDelegate().isValid());
+        } finally {
+            channel.close();
+            selector.close();
+        }
+    }
+
+    @Test
+    public void channelAndSelectorClosureImmediatelyInvalidateWrapper() throws Exception {
+        assertImmediateInvalidation(CloseTarget.DELEGATE_CHANNEL);
+        assertImmediateInvalidation(CloseTarget.WRAPPER_CHANNEL);
+        assertImmediateInvalidation(CloseTarget.DELEGATE_SELECTOR);
+        assertImmediateInvalidation(CloseTarget.WRAPPER_SELECTOR);
+    }
+
+    private void assertImmediateInvalidation(CloseTarget target) throws Exception {
+        SniffySelector selector = (SniffySelector) Selector.open();
+        SocketChannel channel = SocketChannel.open();
+        try {
+            channel.configureBlocking(false);
+            SniffySelectionKey key = (SniffySelectionKey) channel.register(selector, SelectionKey.OP_CONNECT);
+            if (target == CloseTarget.DELEGATE_CHANNEL) {
+                key.getDelegate().channel().close();
+            } else if (target == CloseTarget.WRAPPER_CHANNEL) {
+                channel.close();
+            } else if (target == CloseTarget.DELEGATE_SELECTOR) {
+                key.getDelegate().selector().close();
+            } else {
+                selector.close();
+            }
+            assertFalse(target.name(), key.isValid());
         } finally {
             channel.close();
             selector.close();
@@ -139,6 +189,31 @@ public class SniffySelectorLifecycleTest {
     }
 
     @Test
+    public void selectorCloseRemovesAllWrapperRegistrations() throws Exception {
+        SniffySelector selector = (SniffySelector) Selector.open();
+        SocketChannel firstChannel = SocketChannel.open();
+        SocketChannel secondChannel = SocketChannel.open();
+        try {
+            firstChannel.configureBlocking(false);
+            secondChannel.configureBlocking(false);
+            SelectionKey first = firstChannel.register(selector, SelectionKey.OP_CONNECT);
+            SelectionKey second = secondChannel.register(selector, SelectionKey.OP_CONNECT);
+
+            selector.close();
+
+            assertFalse(first.isValid());
+            assertFalse(second.isValid());
+            assertNull(firstChannel.keyFor(selector));
+            assertNull(secondChannel.keyFor(selector));
+            assertEquals(0, selector.activeLinkCount());
+        } finally {
+            firstChannel.close();
+            secondChannel.close();
+            selector.close();
+        }
+    }
+
+    @Test
     public void repeatedRegisterCancelCyclesDoNotGrowOwnershipState() throws Exception {
         SniffySelector selector = (SniffySelector) Selector.open();
         SocketChannel channel = SocketChannel.open();
@@ -151,6 +226,77 @@ public class SniffySelectorLifecycleTest {
                 assertNull("cycle " + i, channel.keyFor(selector));
                 assertEquals("cycle " + i, 0, selector.activeLinkCount());
             }
+        } finally {
+            channel.close();
+            selector.close();
+        }
+    }
+
+    @Test
+    public void cancelThenConfigureBlockingTrueDoesNotRequireIntermediateSelect() throws Exception {
+        SniffySelector selector = (SniffySelector) Selector.open();
+        SocketChannel channel = SocketChannel.open();
+        try {
+            channel.configureBlocking(false);
+            SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT);
+
+            key.cancel();
+            channel.configureBlocking(true);
+
+            assertTrue(channel.isBlocking());
+            assertFalse(((SniffySelectionKey) key).getDelegate().isValid());
+        } finally {
+            channel.close();
+            selector.close();
+        }
+    }
+
+    @Test
+    public void cancelThenReregisterBeforeDeregistrationFollowsJdkContract() throws Exception {
+        SniffySelector selector = (SniffySelector) Selector.open();
+        SocketChannel channel = SocketChannel.open();
+        try {
+            channel.configureBlocking(false);
+            SelectionKey cancelled = channel.register(selector, SelectionKey.OP_CONNECT);
+            cancelled.cancel();
+
+            try {
+                channel.register(selector, SelectionKey.OP_READ);
+                fail("The cancelled key remains registered until selection processes cancellation");
+            } catch (CancelledKeyException expected) {
+                // expected JDK behavior
+            }
+
+            selector.selectNow();
+            SelectionKey replacement = channel.register(selector, SelectionKey.OP_READ);
+            assertTrue(replacement.isValid());
+            assertFalse(replacement == cancelled);
+        } finally {
+            channel.close();
+            selector.close();
+        }
+    }
+
+    @Test
+    public void reregistrationDoesNotRetainOldAttachmentInLink() throws Exception {
+        SniffySelector selector = (SniffySelector) Selector.open();
+        SocketChannel channel = SocketChannel.open();
+        try {
+            channel.configureBlocking(false);
+            Object oldAttachment = new Object();
+            Object replacement = new Object();
+            SniffySelectionKey key = (SniffySelectionKey) channel.register(
+                    selector, SelectionKey.OP_CONNECT, oldAttachment);
+            SelectionKeyLink link = (SelectionKeyLink) key.getDelegate().attachment();
+
+            channel.register(selector, SelectionKey.OP_READ, replacement);
+
+            java.lang.reflect.Field initialAttachment = SelectionKeyLink.class
+                    .getDeclaredField("initialUserAttachment");
+            initialAttachment.setAccessible(true);
+            assertNull(initialAttachment.get(link));
+            assertSame(replacement, key.attachment());
+            assertSame(link, key.getDelegate().attachment());
         } finally {
             channel.close();
             selector.close();
@@ -257,6 +403,40 @@ public class SniffySelectorLifecycleTest {
     }
 
     @Test
+    public void cleanupRunsWhenSelectionConsumerThrows() throws Exception {
+        assumeTrue(runtimeFeatureVersion() >= 11);
+        SniffySelector selector = (SniffySelector) Selector.open();
+        Pipe pipe = Pipe.open();
+        final RuntimeException primary = new RuntimeException("consumer failure");
+        try {
+            pipe.source().configureBlocking(false);
+            final SelectionKey key = pipe.source().register(selector, SelectionKey.OP_READ);
+            pipe.sink().write(ByteBuffer.wrap(new byte[]{1}));
+
+            try {
+                selector.selectNow(new Consumer<SelectionKey>() {
+                    @Override
+                    public void accept(SelectionKey selected) {
+                        assertSame(key, selected);
+                        selected.cancel();
+                        throw primary;
+                    }
+                });
+                fail("Expected the consumer failure");
+            } catch (RuntimeException e) {
+                assertSame(primary, e);
+            }
+
+            assertNull(pipe.source().keyFor(selector));
+            assertEquals(0, selector.activeLinkCount());
+        } finally {
+            pipe.source().close();
+            pipe.sink().close();
+            selector.close();
+        }
+    }
+
+    @Test
     public void concurrentRegisterSelectCancelAndCloseDoNotDeadlock() throws Exception {
         assertConcurrentSelectLifecycle(LifecycleAction.REGISTER);
         assertConcurrentSelectLifecycle(LifecycleAction.CANCEL);
@@ -298,8 +478,9 @@ public class SniffySelectorLifecycleTest {
             selectThread.join(5000);
             assertFalse(selectThread.isAlive());
             assertNull(failure.get());
-            selector.selectNow();
             if (action != LifecycleAction.REGISTER) {
+                assertNull("the returning selection operation must reconcile wrapper registration",
+                        channel.keyFor(selector));
                 assertEquals(0, selector.activeLinkCount());
             }
         } finally {
@@ -310,6 +491,10 @@ public class SniffySelectorLifecycleTest {
 
     private enum LifecycleAction {
         REGISTER, CANCEL, CLOSE
+    }
+
+    private enum CloseTarget {
+        DELEGATE_CHANNEL, WRAPPER_CHANNEL, DELEGATE_SELECTOR, WRAPPER_SELECTOR
     }
 
     private static int runtimeFeatureVersion() {

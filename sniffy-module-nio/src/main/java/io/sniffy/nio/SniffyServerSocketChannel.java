@@ -28,7 +28,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) throws IOException {
         super(provider);
-        assert SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyServerSocketChannel");
+        SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyServerSocketChannel");
         this.delegate = delegate;
         this.selChImplDelegate = (SelChImpl) delegate;
         this.socket = new SniffyServerSocket(delegate.socket(), this);
@@ -37,11 +37,6 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     @Override
     public ServerSocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public void keyCancelled() {
-        // Selector cleanup observes the delegate key state directly.
     }
 
     @Override
@@ -88,9 +83,6 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     @Override
     public void implConfigureBlocking(boolean block) throws IOException {
-        if (block) {
-            registrationSupport.propagateCancelledKeys();
-        }
         delegate.configureBlocking(block);
     }
 
@@ -183,11 +175,6 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     @Override
     public void unregisterKeyLink(SelectionKeyLink link) {
         registrationSupport.unregister(link);
-    }
-
-    @Override
-    public void propagateCancelledKeyDelegates() {
-        registrationSupport.propagateCancelledKeys();
     }
 
 }

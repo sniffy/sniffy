@@ -299,14 +299,18 @@ public class SniffySelectorProvider extends SelectorProvider {
     }
 
     static boolean assertOriginalChannel(Channel delegate, String owner) {
-        assert null == delegate || !(delegate instanceof SelectableChannelWrapper) :
-                owner + " expects the original channel delegate, got " + delegate.getClass().getName();
+        if (delegate instanceof SelectableChannelWrapper) {
+            throw new IllegalArgumentException(
+                    owner + " expects the original channel delegate, got " + delegate.getClass().getName());
+        }
         return true;
     }
 
     static boolean assertOriginalPipe(Pipe delegate, String owner) {
-        assert null == delegate || !(delegate instanceof SniffyPipe) :
-                owner + " expects the original Pipe delegate, got " + delegate.getClass().getName();
+        if (delegate instanceof SniffyPipe) {
+            throw new IllegalArgumentException(
+                    owner + " expects the original Pipe delegate, got " + delegate.getClass().getName());
+        }
         return true;
     }
 

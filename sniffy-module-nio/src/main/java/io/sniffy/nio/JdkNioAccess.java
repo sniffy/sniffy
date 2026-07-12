@@ -13,6 +13,7 @@ import java.lang.reflect.Modifier;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.AbstractSelectionKey;
 
 import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
@@ -135,6 +136,19 @@ final class JdkNioAccess implements NioProviderAccess {
         try {
             removeChannelKey.invoke(channel, key);
         } catch (Throwable e) {
+            /*
+             * There is no public or protected SPI for removing a selector-owned key from an
+             * AbstractSelectableChannel's private key array. JDK removeKey accepts SelectionKey,
+             * removes the matching entry under keyLock, and only then casts it to
+             * AbstractSelectionKey to invalidate it. Sniffy keys deliberately are direct
+             * SelectionKey proxies and are already invalid at reconciliation time, so this
+             * precise trailing cast failure means the required removal completed successfully.
+             */
+            if (e instanceof ClassCastException
+                    && !(key instanceof AbstractSelectionKey)
+                    && channel.keyFor(key.selector()) != key) {
+                return;
+            }
             throw new JdkNioAccessException("Failed to remove a Sniffy key from wrapper channel " + channel, e);
         }
     }

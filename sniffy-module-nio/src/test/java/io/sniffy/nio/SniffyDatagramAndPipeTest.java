@@ -192,7 +192,7 @@ public class SniffyDatagramAndPipeTest {
     }
 
     @Test
-    public void cancelThenConfigureBlockingDoesNotRequireSelect() throws Exception {
+    public void cancelThenConfigureBlockingTrueDoesNotRequireIntermediateSelect() throws Exception {
         Pipe pipe = Pipe.open();
         SniffyPipe.SniffySourceChannel source = (SniffyPipe.SniffySourceChannel) pipe.source();
         Pipe.SinkChannel sink = pipe.sink();
@@ -203,7 +203,7 @@ public class SniffyDatagramAndPipeTest {
 
             key.cancel();
             assertFalse(key.isValid());
-            assertTrue(delegateKey.isValid());
+            assertFalse(delegateKey.isValid());
 
             source.configureBlocking(true);
 

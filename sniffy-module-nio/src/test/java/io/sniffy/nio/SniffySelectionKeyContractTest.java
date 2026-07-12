@@ -3,9 +3,11 @@ package io.sniffy.nio;
 import org.junit.Test;
 
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.AbstractSelectionKey;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assume.assumeTrue;
@@ -33,6 +36,18 @@ import static org.junit.Assert.fail;
  * Characterizes the public SelectionKey contract that the NIO rewrite must preserve.
  */
 public class SniffySelectionKeyContractTest {
+
+    @Test
+    public void wrapperExtendsSelectionKeyWithoutAbstractSelectorCancellationLeak() {
+        assertSame(SelectionKey.class, SniffySelectionKey.class.getSuperclass());
+        assertFalse(AbstractSelectionKey.class.isAssignableFrom(SniffySelectionKey.class));
+
+        TestSelectionKey delegate = new TestSelectionKey();
+        InspectingSniffySelector selector = new InspectingSniffySelector(new TestSelector());
+        SniffySelectionKey key = new SniffySelectionKey(delegate, selector, null);
+        key.cancel();
+        assertEquals(0, selector.cancelledKeyCount());
+    }
 
     @Test
     public void wrapperKeepsUserAttachmentSeparateFromDelegateAttachment() {
@@ -70,10 +85,23 @@ public class SniffySelectionKeyContractTest {
     }
 
     @Test
+    public void compatibilityConstructorDoesNotExposeInternalLinkAsUserAttachment() {
+        TestSelectionKey delegate = new TestSelectionKey();
+        SelectionKeyLink link = new SelectionKeyLink(null, null, new Object());
+        delegate.attach(link);
+
+        SniffySelectionKey key = new SniffySelectionKey(delegate, null, null);
+
+        assertNull(key.attachment());
+        assertSame(link, delegate.attachment());
+    }
+
+    @Test
     public void wrapperPublicationIsSafeAndUnique() throws Exception {
         final TestSelectionKey delegate = new TestSelectionKey();
         final SniffySelector selector = new SniffySelector(null, null);
-        delegate.attach(new SelectionKeyLink(selector, null, null));
+        final TestChannel channel = new TestChannel();
+        delegate.attach(new SelectionKeyLink(selector, channel, null));
         final int taskCount = 16;
         final CountDownLatch ready = new CountDownLatch(taskCount);
         final CountDownLatch start = new CountDownLatch(1);
@@ -86,18 +114,23 @@ public class SniffySelectionKeyContractTest {
                     public SniffySelectionKey call() throws Exception {
                         ready.countDown();
                         start.await();
-                        return selector.wrap(delegate, selector, null);
+                        SniffySelectionKey key = selector.wrap(delegate, selector, channel);
+                        assertSame(delegate, key.getDelegate());
+                        assertSame(selector, key.selector());
+                        assertSame(channel, key.channel());
+                        return key;
                     }
                 }));
             }
-            ready.await();
+            assertTrue(ready.await(5, TimeUnit.SECONDS));
             start.countDown();
-            SniffySelectionKey expected = futures.get(0).get();
+            SniffySelectionKey expected = futures.get(0).get(5, TimeUnit.SECONDS);
             for (Future<SniffySelectionKey> future : futures) {
-                assertSame(expected, future.get());
+                assertSame(expected, future.get(5, TimeUnit.SECONDS));
             }
         } finally {
             executor.shutdownNow();
+            channel.close();
         }
     }
 
@@ -170,6 +203,125 @@ public class SniffySelectionKeyContractTest {
     }
 
     @Test
+    public void keysViewAlwaysRejectsEveryMutationMethod() {
+        final KeySetFixture fixture = new KeySetFixture();
+        final Set<SelectionKey> keys = fixture.selector.keys();
+
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                keys.add(fixture.key);
+            }
+        });
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                keys.addAll(Collections.<SelectionKey>emptySet());
+            }
+        });
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                keys.remove(new Object());
+            }
+        });
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                keys.removeAll(Collections.emptySet());
+            }
+        });
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                keys.retainAll(Collections.singleton(fixture.key));
+            }
+        });
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                keys.removeIf(key -> false);
+            }
+        });
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                keys.clear();
+            }
+        });
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                java.util.Iterator<SelectionKey> iterator = keys.iterator();
+                iterator.next();
+                iterator.remove();
+            }
+        });
+        assertTrue(keys.contains(fixture.key));
+    }
+
+    @Test
+    public void selectedKeysRejectsAddAndAddAll() {
+        final KeySetFixture fixture = new KeySetFixture();
+        final Set<SelectionKey> selectedKeys = fixture.selector.selectedKeys();
+
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                selectedKeys.add(fixture.key);
+            }
+        });
+        assertUnsupported(new Runnable() {
+            @Override
+            public void run() {
+                selectedKeys.addAll(Collections.<SelectionKey>emptySet());
+            }
+        });
+    }
+
+    @Test
+    public void selectedKeysSupportsAllRemovalMethods() {
+        KeySetFixture fixture = new KeySetFixture();
+        Set<SelectionKey> selectedKeys = fixture.selector.selectedKeys();
+
+        assertTrue(selectedKeys.remove(fixture.key));
+        fixture.delegateSelector.selectedKeys.add(fixture.delegateKey);
+        assertTrue(selectedKeys.removeAll(Collections.<SelectionKey>singleton(fixture.key)));
+        fixture.delegateSelector.selectedKeys.add(fixture.delegateKey);
+        assertTrue(selectedKeys.retainAll(Collections.emptySet()));
+        fixture.delegateSelector.selectedKeys.add(fixture.delegateKey);
+        assertTrue(selectedKeys.removeIf(key -> key == fixture.key));
+        fixture.delegateSelector.selectedKeys.add(fixture.delegateKey);
+        java.util.Iterator<SelectionKey> iterator = selectedKeys.iterator();
+        iterator.next();
+        iterator.remove();
+        fixture.delegateSelector.selectedKeys.add(fixture.delegateKey);
+        selectedKeys.clear();
+
+        assertTrue(selectedKeys.isEmpty());
+    }
+
+    @Test
+    public void selectedKeysDoesNotRemoveCanonicalKeyUsingForeignWrapper() {
+        KeySetFixture fixture = new KeySetFixture();
+        SniffySelectionKey foreign = new SniffySelectionKey(
+                fixture.delegateKey, fixture.selector, fixture.key.channel());
+
+        assertFalse(fixture.selector.selectedKeys().contains(foreign));
+        assertFalse(fixture.selector.selectedKeys().remove(foreign));
+        assertTrue(fixture.selector.selectedKeys().contains(fixture.key));
+    }
+
+    private static void assertUnsupported(Runnable operation) {
+        try {
+            operation.run();
+            fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException expected) {
+            // expected
+        }
+    }
+
+    @Test
     public void interestOperationMutatorsFollowJdkReturnContracts() {
         assumeTrue("interestOpsOr/And were added in Java 11", runtimeFeatureVersion() >= 11);
         TestSelectionKey delegate = new TestSelectionKey();
@@ -183,6 +335,89 @@ public class SniffySelectionKeyContractTest {
         assertEquals(SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT,
                 key.interestOpsAnd(SelectionKey.OP_CONNECT));
         assertEquals(SelectionKey.OP_CONNECT, key.interestOps());
+    }
+
+    @Test
+    public void wrapperCancellationIsImmediateAndIdempotent() {
+        TestSelectionKey delegate = new TestSelectionKey();
+        SniffySelector selector = new SniffySelector(null, new TestSelector());
+        SniffySelectionKey key = new SniffySelectionKey(delegate, selector, null);
+
+        key.cancel();
+        key.cancel();
+
+        assertFalse(key.isValid());
+        assertEquals(1, delegate.cancellationCount);
+    }
+
+    @Test
+    public void directDelegateCancellationInvalidatesWrapper() {
+        TestSelectionKey delegate = new TestSelectionKey();
+        SniffySelectionKey key = new SniffySelectionKey(delegate, null, null);
+
+        delegate.cancel();
+
+        assertFalse(key.isValid());
+    }
+
+    @Test
+    public void cancelledKeyOperationsThrowCancelledKeyException() {
+        final TestSelectionKey delegate = new TestSelectionKey();
+        final SniffySelectionKey key = new SniffySelectionKey(delegate, null, null);
+        key.cancel();
+
+        assertCancelled(new Runnable() {
+            @Override
+            public void run() {
+                key.interestOps();
+            }
+        });
+        assertCancelled(new Runnable() {
+            @Override
+            public void run() {
+                key.interestOps(SelectionKey.OP_READ);
+            }
+        });
+        assertCancelled(new Runnable() {
+            @Override
+            public void run() {
+                key.readyOps();
+            }
+        });
+        if (runtimeFeatureVersion() >= 11) {
+            assertCancelled(new Runnable() {
+                @Override
+                public void run() {
+                    key.interestOpsOr(SelectionKey.OP_READ);
+                }
+            });
+            assertCancelled(new Runnable() {
+                @Override
+                public void run() {
+                    key.interestOpsAnd(SelectionKey.OP_READ);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void selectorAlwaysReturnsRealSniffySelectorAfterCancellation() {
+        TestSelectionKey delegate = new TestSelectionKey();
+        SniffySelector selector = new SniffySelector(null, new TestSelector());
+        SniffySelectionKey key = new SniffySelectionKey(delegate, selector, null);
+
+        key.cancel();
+
+        assertSame(selector, key.selector());
+    }
+
+    private static void assertCancelled(Runnable operation) {
+        try {
+            operation.run();
+            fail("Expected CancelledKeyException");
+        } catch (CancelledKeyException expected) {
+            // expected
+        }
     }
 
     private static int runtimeFeatureVersion() {
@@ -202,7 +437,7 @@ public class SniffySelectionKeyContractTest {
         key.cancel();
 
         assertFalse(key.isValid());
-        assertEquals(0, delegate.cancellationCount);
+        assertEquals(1, delegate.cancellationCount);
     }
 
     private static final class TestSelectionKey extends SelectionKey {
@@ -297,6 +532,50 @@ public class SniffySelectionKeyContractTest {
         @Override
         public Selector wakeup() {
             return this;
+        }
+    }
+
+    private static final class KeySetFixture {
+        private final TestSelector delegateSelector = new TestSelector();
+        private final SniffySelector selector = new SniffySelector(null, delegateSelector);
+        private final TestSelectionKey delegateKey = new TestSelectionKey();
+        private final SniffySelectionKey key;
+
+        private KeySetFixture() {
+            SelectionKeyLink link = new SelectionKeyLink(selector, null, null);
+            delegateKey.attach(link);
+            key = link.wrapper(delegateKey);
+            delegateSelector.keys.add(delegateKey);
+            delegateSelector.selectedKeys.add(delegateKey);
+        }
+    }
+
+    private static final class InspectingSniffySelector extends SniffySelector {
+        private InspectingSniffySelector(AbstractSelector delegate) {
+            super(null, delegate);
+        }
+
+        private int cancelledKeyCount() {
+            return cancelledKeys().size();
+        }
+    }
+
+    private static final class TestChannel extends AbstractSelectableChannel {
+        private TestChannel() {
+            super((SelectorProvider) null);
+        }
+
+        @Override
+        public int validOps() {
+            return SelectionKey.OP_READ;
+        }
+
+        @Override
+        protected void implCloseSelectableChannel() {
+        }
+
+        @Override
+        protected void implConfigureBlocking(boolean block) {
         }
     }
 }

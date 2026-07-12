@@ -27,7 +27,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     protected SniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider);
-        assert SniffySelectorProvider.assertOriginalChannel(delegate, "SniffySocketChannel");
+        SniffySelectorProvider.assertOriginalChannel(delegate, "SniffySocketChannel");
         this.delegate = delegate;
         this.selChImplDelegate = (SelChImpl) delegate;
     }
@@ -35,11 +35,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @Override
     public SocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public void keyCancelled() {
-        // Selector cleanup observes the delegate key state directly.
     }
 
     @SuppressWarnings("Since15")
@@ -138,9 +133,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     @Override
     public void implConfigureBlocking(boolean block) throws IOException {
-        if (block) {
-            registrationSupport.propagateCancelledKeys();
-        }
         delegate.configureBlocking(block);
     }
 
@@ -241,11 +233,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     @Override
     public void unregisterKeyLink(SelectionKeyLink link) {
         registrationSupport.unregister(link);
-    }
-
-    @Override
-    public void propagateCancelledKeyDelegates() {
-        registrationSupport.propagateCancelledKeys();
     }
 
 }

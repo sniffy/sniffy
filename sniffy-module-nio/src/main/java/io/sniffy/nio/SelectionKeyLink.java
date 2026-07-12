@@ -12,7 +12,7 @@ final class SelectionKeyLink {
 
     private final SniffySelector selector;
     private final AbstractSelectableChannel channel;
-    private final Object initialUserAttachment;
+    private Object initialUserAttachment;
 
     private volatile SelectionKey delegate;
     private volatile SniffySelectionKey wrapper;
@@ -34,6 +34,7 @@ final class SelectionKeyLink {
             key = wrapper;
             if (key == null) {
                 key = new SniffySelectionKey(delegate, selector, channel, initialUserAttachment);
+                initialUserAttachment = null;
                 wrapper = key;
             }
             return key;
@@ -54,14 +55,6 @@ final class SelectionKeyLink {
 
     AbstractSelectableChannel channel() {
         return channel;
-    }
-
-    void propagateWrapperCancellation() {
-        SniffySelectionKey wrapperKey = wrapper;
-        SelectionKey delegateKey = delegate;
-        if (wrapperKey != null && !wrapperKey.isValid() && delegateKey != null && delegateKey.isValid()) {
-            delegateKey.cancel();
-        }
     }
 
     private void verifyDelegate(SelectionKey candidate) {
