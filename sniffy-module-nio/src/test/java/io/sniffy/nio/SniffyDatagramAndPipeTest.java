@@ -7,6 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
@@ -176,11 +177,20 @@ public class SniffyDatagramAndPipeTest {
         try {
             reader.start();
             assertTrue(reading.await(5, TimeUnit.SECONDS));
+            awaitNativePipeRead(reader);
 
-            source.close();
+            try {
+                source.close();
+            } catch (IOException e) {
+                // Some Java 8/macOS builds surface NativeThread.signal(ENOENT) after the
+                // channel is already closed. The close contract permits IOException; the
+                // invariant under test is that the blocked reader is released.
+            }
 
             reader.join(5000);
             assertFalse(reader.isAlive());
+            assertFalse(source.isOpen());
+            assertFalse(((SniffyPipe.SniffySourceChannel) source).getDelegate().isOpen());
             Throwable throwable = failure.get();
             assertTrue(throwable == null ||
                     throwable instanceof AsynchronousCloseException ||
@@ -189,6 +199,19 @@ public class SniffyDatagramAndPipeTest {
             sink.close();
             source.close();
         }
+    }
+
+    private static void awaitNativePipeRead(Thread reader) {
+        for (int attempt = 0; attempt < 100000; attempt++) {
+            for (StackTraceElement element : reader.getStackTrace()) {
+                if ("read0".equals(element.getMethodName()) || "read".equals(element.getMethodName())
+                        && element.getClassName().contains("FileDispatcher")) {
+                    return;
+                }
+            }
+            Thread.yield();
+        }
+        fail("reader did not enter the native pipe read; state=" + reader.getState());
     }
 
     @Test

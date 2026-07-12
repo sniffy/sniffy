@@ -10,12 +10,17 @@ import java.nio.channels.spi.AbstractSelectableChannel;
  */
 final class SelectionKeyLink {
 
+    enum State {
+        REGISTERING, ACTIVE, CLEANING, REMOVED
+    }
+
     private final SniffySelector selector;
     private final AbstractSelectableChannel channel;
     private Object initialUserAttachment;
 
     private volatile SelectionKey delegate;
     private volatile SniffySelectionKey wrapper;
+    private State state = State.REGISTERING;
 
     SelectionKeyLink(SniffySelector selector, AbstractSelectableChannel channel, Object initialUserAttachment) {
         this.selector = selector;
@@ -55,6 +60,37 @@ final class SelectionKeyLink {
 
     AbstractSelectableChannel channel() {
         return channel;
+    }
+
+    State state() {
+        return state;
+    }
+
+    void activate() {
+        transition(State.REGISTERING, State.ACTIVE);
+    }
+
+    boolean beginCleaning() {
+        if (state == State.REGISTERING || state == State.ACTIVE) {
+            state = State.CLEANING;
+            return true;
+        }
+        return false;
+    }
+
+    void retryCleanup() {
+        transition(State.CLEANING, State.ACTIVE);
+    }
+
+    void removed() {
+        transition(State.CLEANING, State.REMOVED);
+    }
+
+    private void transition(State expected, State next) {
+        if (state != expected) {
+            throw new IllegalStateException("SelectionKey link state is " + state + ", expected " + expected);
+        }
+        state = next;
     }
 
     private void verifyDelegate(SelectionKey candidate) {

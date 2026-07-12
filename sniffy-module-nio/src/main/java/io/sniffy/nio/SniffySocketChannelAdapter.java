@@ -23,7 +23,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     private final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
-    private final ChannelRegistrationSupport registrationSupport = new ChannelRegistrationSupport();
 
     protected SniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider);
@@ -223,16 +222,6 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
-    }
-
-    @Override
-    public void registerKeyLink(SelectionKeyLink link) {
-        registrationSupport.register(link);
-    }
-
-    @Override
-    public void unregisterKeyLink(SelectionKeyLink link) {
-        registrationSupport.unregister(link);
     }
 
 }

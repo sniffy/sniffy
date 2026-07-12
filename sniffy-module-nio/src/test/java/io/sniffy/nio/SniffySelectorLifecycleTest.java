@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Selector;
@@ -430,6 +431,64 @@ public class SniffySelectorLifecycleTest {
 
             assertNull(pipe.source().keyFor(selector));
             assertEquals(0, selector.activeLinkCount());
+        } finally {
+            pipe.source().close();
+            pipe.sink().close();
+            selector.close();
+        }
+    }
+
+    @Test
+    public void consumerMayChangeInterestOpsAndCloseItsChannel() throws Exception {
+        assumeTrue(runtimeFeatureVersion() >= 11);
+        SniffySelector selector = (SniffySelector) Selector.open();
+        Pipe pipe = Pipe.open();
+        try {
+            pipe.source().configureBlocking(false);
+            final SelectionKey key = pipe.source().register(selector, SelectionKey.OP_READ);
+            pipe.sink().write(ByteBuffer.wrap(new byte[]{1}));
+            assertEquals(1, selector.selectNow(new Consumer<SelectionKey>() {
+                @Override public void accept(SelectionKey selected) {
+                    assertSame(key, selected);
+                    selected.interestOps(0);
+                }
+            }));
+            assertEquals(0, key.interestOps());
+
+            key.interestOps(SelectionKey.OP_READ);
+            selector.selectedKeys().clear();
+            assertEquals(1, selector.selectNow(new Consumer<SelectionKey>() {
+                @Override public void accept(SelectionKey selected) {
+                    try { selected.channel().close(); } catch (IOException e) { throw new AssertionError(e); }
+                }
+            }));
+            assertFalse(pipe.source().isOpen());
+        } finally {
+            pipe.source().close();
+            pipe.sink().close();
+            selector.close();
+        }
+    }
+
+    @Test
+    public void consumerClosingSelectorRelaysClosedSelectorException() throws Exception {
+        assumeTrue(runtimeFeatureVersion() >= 11);
+        final SniffySelector selector = (SniffySelector) Selector.open();
+        Pipe pipe = Pipe.open();
+        try {
+            pipe.source().configureBlocking(false);
+            pipe.source().register(selector, SelectionKey.OP_READ);
+            pipe.sink().write(ByteBuffer.wrap(new byte[]{1}));
+            try {
+                selector.selectNow(new Consumer<SelectionKey>() {
+                    @Override public void accept(SelectionKey selected) {
+                        try { selector.close(); } catch (IOException e) { throw new AssertionError(e); }
+                    }
+                });
+                fail("Expected ClosedSelectorException");
+            } catch (java.nio.channels.ClosedSelectorException expected) {
+                // required after the action that closed the selector completes
+            }
         } finally {
             pipe.source().close();
             pipe.sink().close();

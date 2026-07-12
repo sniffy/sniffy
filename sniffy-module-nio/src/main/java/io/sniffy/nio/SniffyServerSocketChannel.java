@@ -8,6 +8,7 @@ import sun.nio.ch.SelectionKeyImpl;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.ServerSocketChannel;
@@ -24,7 +25,6 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     private final ServerSocketChannel delegate;
     private final SelChImpl selChImplDelegate;
     private final ServerSocket socket;
-    private final ChannelRegistrationSupport registrationSupport = new ChannelRegistrationSupport();
 
     public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) throws IOException {
         super(provider);
@@ -68,6 +68,27 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
         }
 
         return new SniffySocketChannel(provider(), socketChannel);
+    }
+
+    Socket acceptSocket() throws IOException {
+        // ServerSocketAdaptor implements SO_TIMEOUT without changing channel-level accept.
+        // No selector or channel lifecycle monitor is held while this call can block.
+        Socket acceptedSocket = delegate.socket().accept();
+        SocketChannel acceptedChannel = acceptedSocket.getChannel();
+        if (acceptedChannel == null) {
+            acceptedSocket.close();
+            throw new IOException("Accepted socket did not expose its SocketChannel");
+        }
+        try {
+            return new SniffySocketChannel(provider(), acceptedChannel).socket();
+        } catch (Throwable failure) {
+            try {
+                acceptedSocket.close();
+            } catch (Throwable cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+            throw ExceptionUtil.throwException(failure);
+        }
     }
 
     @Override
@@ -165,16 +186,6 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
-    }
-
-    @Override
-    public void registerKeyLink(SelectionKeyLink link) {
-        registrationSupport.register(link);
-    }
-
-    @Override
-    public void unregisterKeyLink(SelectionKeyLink link) {
-        registrationSupport.unregister(link);
     }
 
 }

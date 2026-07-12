@@ -8,6 +8,8 @@ import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
 import java.net.ProtocolFamily;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.Channel;
 import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelector;
@@ -221,9 +223,11 @@ public class SniffySelectorProvider extends SelectorProvider {
     public Channel inheritedChannel() throws IOException {
         Channel channel = delegate.inheritedChannel();
         if (channel instanceof SocketChannel) {
-            return new SniffySocketChannel(this, (SocketChannel) channel);
+            return isIpChannel((SocketChannel) channel) ?
+                    new SniffySocketChannel(this, (SocketChannel) channel) : channel;
         } else if (channel instanceof ServerSocketChannel) {
-            return new SniffyServerSocketChannel(this, (ServerSocketChannel) channel);
+            return isIpChannel((ServerSocketChannel) channel) ?
+                    new SniffyServerSocketChannel(this, (ServerSocketChannel) channel) : channel;
         } else {
             return channel;
         }
@@ -234,18 +238,10 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return isDelegateChannelConstruction() ?
-                    invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
-                            ProtocolFamily.class, family,
-                            SocketChannel.class
-                    ) :
-                    new SniffySocketChannel(
-                            this,
-                            invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
-                                    ProtocolFamily.class, family,
-                                    SocketChannel.class
-                            )
-                    );
+            SocketChannel channel = invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
+                    ProtocolFamily.class, family, SocketChannel.class);
+            return isDelegateChannelConstruction() || !isIpFamily(family) ?
+                    channel : new SniffySocketChannel(this, channel);
         } catch (Exception e) {
             throw processException(e);
         }
@@ -256,16 +252,10 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return isDelegateChannelConstruction() ?
-                    invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
-                            ProtocolFamily.class, family,
-                            ServerSocketChannel.class) :
-                    new SniffyServerSocketChannel(this,
-                    invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
-                        ProtocolFamily.class, family,
-                        ServerSocketChannel.class
-                )
-            );
+            ServerSocketChannel channel = invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
+                    ProtocolFamily.class, family, ServerSocketChannel.class);
+            return isDelegateChannelConstruction() || !isIpFamily(family) ?
+                    channel : new SniffyServerSocketChannel(this, channel);
         } catch (Exception e) {
             throw processException(e);
         }
@@ -311,6 +301,31 @@ public class SniffySelectorProvider extends SelectorProvider {
             throw new IllegalArgumentException(
                     owner + " expects the original Pipe delegate, got " + delegate.getClass().getName());
         }
+        return true;
+    }
+
+    private static boolean isIpFamily(ProtocolFamily family) {
+        if (family == null) return false;
+        String name = family.name();
+        return "INET".equals(name) || "INET6".equals(name);
+    }
+
+    private static boolean isIpChannel(NetworkChannel channel) {
+        for (Class<?> type = channel.getClass(); type != null; type = type.getSuperclass()) {
+            if (type.getName().contains("UnixDomain")) return false;
+        }
+        try {
+            SocketAddress local = channel.getLocalAddress();
+            if (local != null) return local instanceof InetSocketAddress;
+            if (channel instanceof SocketChannel) {
+                SocketAddress remote = ((SocketChannel) channel).getRemoteAddress();
+                if (remote != null) return remote instanceof InetSocketAddress;
+            }
+        } catch (IOException ignored) {
+            return false;
+        }
+        // Legacy inherited channels are IP channels; newer non-IP implementations have
+        // distinct classes or addresses and are deliberately passed through above.
         return true;
     }
 

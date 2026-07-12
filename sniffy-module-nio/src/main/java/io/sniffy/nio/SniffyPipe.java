@@ -41,7 +41,6 @@ public class SniffyPipe extends Pipe {
 
         private final SourceChannel delegate;
         private final SelChImpl selChImplDelegate;
-        private final ChannelRegistrationSupport registrationSupport = new ChannelRegistrationSupport();
 
         public SniffySourceChannel(SelectorProvider provider, SourceChannel delegate) {
             super(provider);
@@ -147,15 +146,6 @@ public class SniffyPipe extends Pipe {
             }
         }
 
-        @Override
-        public void registerKeyLink(SelectionKeyLink link) {
-            registrationSupport.register(link);
-        }
-
-        @Override
-        public void unregisterKeyLink(SelectionKeyLink link) {
-            registrationSupport.unregister(link);
-        }
 
     }
 
@@ -164,7 +154,6 @@ public class SniffyPipe extends Pipe {
 
         private final SinkChannel delegate;
         private final SelChImpl selChImplDelegate;
-        private final ChannelRegistrationSupport registrationSupport = new ChannelRegistrationSupport();
 
         public SniffySinkChannel(SelectorProvider provider, SinkChannel delegate) {
             super(provider);
@@ -270,15 +259,6 @@ public class SniffyPipe extends Pipe {
             }
         }
 
-        @Override
-        public void registerKeyLink(SelectionKeyLink link) {
-            registrationSupport.register(link);
-        }
-
-        @Override
-        public void unregisterKeyLink(SelectionKeyLink link) {
-            registrationSupport.unregister(link);
-        }
 
     }
 

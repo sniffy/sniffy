@@ -8,13 +8,19 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -94,6 +100,90 @@ public class SniffyServerSocketChannelTest {
                         method.getName(), method.getParameterTypes());
                 assertSame(SniffyServerSocket.class, wrapperMethod.getDeclaringClass());
             }
+        }
+    }
+
+    @Test
+    public void socketViewAcceptHonorsSoTimeoutAndTimeoutChanges() throws Exception {
+        try (ServerSocketChannel channel = ServerSocketChannel.open()) {
+            ServerSocket socket = channel.socket();
+            socket.bind(new InetSocketAddress("localhost", 0));
+            socket.setSoTimeout(40);
+            assertEquals(40, socket.getSoTimeout());
+            assertAcceptTimesOut(socket);
+            socket.setSoTimeout(80);
+            assertEquals(80, socket.getSoTimeout());
+            assertAcceptTimesOut(socket);
+        }
+    }
+
+    @Test
+    public void socketViewAcceptReturnsStableMonitoredSocketBeforeTimeout() throws Exception {
+        try (ServerSocketChannel channel = ServerSocketChannel.open()) {
+            ServerSocket socket = channel.socket();
+            socket.bind(new InetSocketAddress("localhost", 0));
+            socket.setSoTimeout(2000);
+            try (SocketChannel client = SocketChannel.open(socket.getLocalSocketAddress());
+                 Socket accepted = socket.accept()) {
+                assertTrue(accepted.getChannel() instanceof SniffySocketChannel);
+                assertSame(accepted, accepted.getChannel().socket());
+                assertSame(accepted.getChannel(), accepted.getChannel().socket().getChannel());
+            }
+        }
+    }
+
+    @Test
+    public void zeroTimeoutBlocksUntilCloseAndCloseIsIdempotent() throws Exception {
+        final ServerSocketChannel channel = ServerSocketChannel.open();
+        final ServerSocket socket = channel.socket();
+        socket.bind(new InetSocketAddress("localhost", 0));
+        socket.setSoTimeout(0);
+        assertEquals(0, socket.getSoTimeout());
+        final CountDownLatch started = new CountDownLatch(1);
+        final AtomicReference<Throwable> outcome = new AtomicReference<Throwable>();
+        Thread accepting = new Thread(new Runnable() {
+            @Override public void run() {
+                started.countDown();
+                try { socket.accept(); } catch (Throwable e) { outcome.set(e); }
+            }
+        });
+        accepting.start();
+        assertTrue(started.await(5, TimeUnit.SECONDS));
+        awaitNativeAccept(accepting);
+        try {
+            channel.close();
+        } catch (java.io.IOException closeFailure) {
+            // AbstractInterruptibleChannel marks both wrapper and delegate closed before
+            // JDK 8/macOS signals the native accept thread, and that signal may itself fail.
+            assertFalse(channel.isOpen());
+            assertFalse(((SniffyServerSocketChannel) channel).getDelegate().isOpen());
+        }
+        channel.close();
+        accepting.join(5000);
+        assertFalse(accepting.isAlive());
+        assertTrue(outcome.get() instanceof java.io.IOException);
+        assertTrue(socket.isClosed());
+    }
+
+    private static void awaitNativeAccept(Thread thread) {
+        for (int attempt = 0; attempt < 100000; attempt++) {
+            for (StackTraceElement frame : thread.getStackTrace()) {
+                if ("accept".equals(frame.getMethodName())
+                        && frame.getClassName().contains("ServerSocketChannel")) {
+                    return;
+                }
+            }
+            Thread.yield();
+        }
+        throw new AssertionError("accept thread did not enter the delegate channel");
+    }
+
+    private static void assertAcceptTimesOut(ServerSocket socket) throws Exception {
+        try {
+            socket.accept();
+            throw new AssertionError("Expected SocketTimeoutException");
+        } catch (SocketTimeoutException expected) {
+            // expected
         }
     }
 }

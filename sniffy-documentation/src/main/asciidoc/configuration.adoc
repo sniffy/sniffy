@@ -34,7 +34,7 @@ WARNING: sniffy configuration is parsed only once and any changes made to system
 |-Dio.sniffy.monitorNio
 |IO_SNIFFY_MONITOR_NIO
 |monitorNio
-|Monitor TCP `SocketChannel` and `ServerSocketChannel` connections. UDP datagrams and NIO2/AIO are not monitored; see <<nio-monitoring,NIO monitoring>>.
+|Monitor IP TCP `SocketChannel` and `ServerSocketChannel` connections. UNIX-domain channels and UDP are pass-through; NIO2/AIO is unsupported. See <<nio-monitoring,NIO monitoring>>.
 |false; enable explicitly with this setting, `monitor-nio`, or the agent parameter
 
 |-Dio.sniffy.topSqlCapacity

@@ -57,8 +57,7 @@ final class SniffyServerSocket extends ServerSocket {
     @Override
     public Socket accept() throws IOException {
         if (!channel.isBlocking()) throw new IllegalBlockingModeException();
-        SocketChannel accepted = channel.accept();
-        return accepted.socket();
+        return channel.acceptSocket();
     }
 
     @Override

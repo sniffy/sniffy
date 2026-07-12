@@ -84,7 +84,8 @@ public class SniffyPacketAnalyzer {
 
         if (null != proxiedInetSocketAddress) {
             snifferSocket.setProxiedInetSocketAddress(proxiedInetSocketAddress);
-            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, snifferSocket);
+            int status = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(proxiedInetSocketAddress, snifferSocket);
+            snifferSocket.setConnectionStatus(status);
         }
 
         // TODO: set flag to allow capturing proxied traffic

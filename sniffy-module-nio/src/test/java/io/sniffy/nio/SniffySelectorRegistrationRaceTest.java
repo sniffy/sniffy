@@ -1,0 +1,158 @@
+package io.sniffy.nio;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.Pipe;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.AbstractSelector;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.*;
+
+public class SniffySelectorRegistrationRaceTest {
+
+    @BeforeClass public static void initializeAccess() throws Exception { JdkNioAccess.resolve(); }
+
+    @Test public void closeWinsBeforeDelegateRegistration() throws Exception {
+        assertCloseWins(SniffySelector.RegistrationPoint.BEFORE_DELEGATE_REGISTRATION);
+    }
+
+    @Test public void closeWinsAfterDelegateRegistration() throws Exception {
+        assertCloseWins(SniffySelector.RegistrationPoint.AFTER_DELEGATE_REGISTRATION);
+    }
+
+    @Test public void closeWinsBeforeActivation() throws Exception {
+        assertCloseWins(SniffySelector.RegistrationPoint.BEFORE_ACTIVATION);
+    }
+
+    @Test public void repeatedRegisterCloseRacesRetainNeitherLinksNorWrapperKeys() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            assertCloseWins(SniffySelector.RegistrationPoint.AFTER_DELEGATE_REGISTRATION);
+        }
+    }
+
+    @Test public void closeWaitsForFinalizedRegistrationPublicationAndRemovesIt() throws Exception {
+        RaceFixture fixture = new RaceFixture(SniffySelector.RegistrationPoint.ACTIVATION_FINALIZED);
+        try {
+            fixture.startRegistration();
+            fixture.awaitPause();
+            fixture.startClose();
+            fixture.awaitDelegateClosed();
+            fixture.releaseRegistration();
+            fixture.awaitFinished();
+
+            SelectionKey returned = fixture.returned.get();
+            assertNotNull(returned);
+            assertFalse(returned.isValid());
+            assertNull(fixture.channel.keyFor(fixture.selector));
+            assertEquals(0, fixture.selector.activeLinkCount());
+        } finally {
+            fixture.close();
+        }
+    }
+
+    private static void assertCloseWins(SniffySelector.RegistrationPoint point) throws Exception {
+        RaceFixture fixture = new RaceFixture(point);
+        try {
+            fixture.startRegistration();
+            fixture.awaitPause();
+            fixture.startClose();
+            fixture.awaitDelegateClosed();
+            fixture.releaseRegistration();
+            fixture.awaitFinished();
+
+            assertNull(fixture.returned.get());
+            assertTrue(fixture.registrationFailure.get() instanceof ClosedSelectorException);
+            assertNull(fixture.channel.keyFor(fixture.selector));
+            assertEquals(0, fixture.selector.activeLinkCount());
+        } finally {
+            fixture.close();
+        }
+    }
+
+    private static final class RaceFixture {
+        private final SelectorProvider provider = SelectorProvider.provider();
+        private final AbstractSelector delegate = provider.openSelector();
+        private final PausingSelector selector;
+        private final Pipe rawPipe = provider.openPipe();
+        private final Pipe pipe = new SniffyPipe(provider, rawPipe);
+        private final Pipe.SourceChannel channel = pipe.source();
+        private final AtomicReference<SelectionKey> returned = new AtomicReference<SelectionKey>();
+        private final AtomicReference<Throwable> registrationFailure = new AtomicReference<Throwable>();
+        private final AtomicReference<Throwable> closeFailure = new AtomicReference<Throwable>();
+        private Thread registrationThread;
+        private Thread closeThread;
+
+        RaceFixture(SniffySelector.RegistrationPoint point) throws Exception {
+            selector = new PausingSelector(provider, delegate, point);
+            channel.configureBlocking(false);
+        }
+
+        void startRegistration() {
+            registrationThread = new Thread(new Runnable() {
+                @Override public void run() {
+                    try { returned.set(channel.register(selector, SelectionKey.OP_READ)); }
+                    catch (Throwable e) { registrationFailure.set(e); }
+                }
+            });
+            registrationThread.start();
+        }
+
+        void startClose() {
+            closeThread = new Thread(new Runnable() {
+                @Override public void run() {
+                    try { selector.close(); } catch (Throwable e) { closeFailure.set(e); }
+                }
+            });
+            closeThread.start();
+        }
+
+        void awaitPause() throws Exception { assertTrue(selector.reached.await(5, TimeUnit.SECONDS)); }
+        void releaseRegistration() { selector.release.countDown(); }
+        void awaitDelegateClosed() {
+            for (int i = 0; i < 100000; i++) {
+                if (!delegate.isOpen()) return;
+                Thread.yield();
+            }
+            fail("close did not reach the delegate");
+        }
+        void awaitFinished() throws Exception {
+            registrationThread.join(5000);
+            closeThread.join(5000);
+            assertFalse(registrationThread.isAlive());
+            assertFalse(closeThread.isAlive());
+            assertNull(closeFailure.get());
+        }
+        void close() throws Exception {
+            selector.release.countDown();
+            channel.close();
+            pipe.sink().close();
+            selector.close();
+        }
+    }
+
+    private static final class PausingSelector extends SniffySelector {
+        private final RegistrationPoint pauseAt;
+        private final CountDownLatch reached = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+
+        PausingSelector(SelectorProvider provider, AbstractSelector delegate, RegistrationPoint pauseAt) {
+            super(provider, delegate);
+            this.pauseAt = pauseAt;
+        }
+
+        @Override void registrationPoint(RegistrationPoint point, SelectionKeyLink link) {
+            if (point == pauseAt) {
+                reached.countDown();
+                try { release.await(); } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); throw new AssertionError(e);
+                }
+            }
+        }
+    }
+}

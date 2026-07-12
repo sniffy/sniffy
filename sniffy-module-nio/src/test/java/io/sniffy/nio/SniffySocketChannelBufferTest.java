@@ -7,11 +7,17 @@ import io.sniffy.socket.BaseSocketTest;
 import io.sniffy.socket.NetworkPacket;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.socket.SniffySSLNetworkConnection;
+import io.sniffy.registry.ConnectionsRegistry;
+import io.sniffy.configuration.SniffyConfiguration;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.net.InetSocketAddress;
+import java.net.ConnectException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -193,6 +199,46 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
     }
 
     @Test
+    public void closeAccountsForIncompleteInitialPrefixWithoutDuplicateCapture() throws Exception {
+        SniffySelectorProvider.uninstall();
+        SelectorProvider provider = SelectorProvider.provider();
+        byte[] prefix = "CONNE".getBytes("US-ASCII");
+        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
+             ServerSocketChannel server = provider.openServerSocketChannel()) {
+            server.bind(new InetSocketAddress(BaseSocketTest.localhost, 0));
+            SocketChannel delegate = provider.openSocketChannel();
+            delegate.connect(server.getLocalAddress());
+            SocketChannel accepted = server.accept();
+            SniffySocketChannel channel = new SniffySocketChannel(provider, delegate);
+            channel.processOutboundBytes(prefix, true);
+            assertEquals(prefix.length, channel.pendingInitialOutboundByteCount());
+            channel.close();
+            accepted.close();
+            assertEquals(0, channel.pendingInitialOutboundByteCount());
+            assertTrue(channel.isFirstPacketSent());
+            assertArrayEquals(prefix, sentTraffic(spy));
+        }
+    }
+
+    @Test
+    public void shutdownOutputFinalizesIncompletePrefixWhenCaptureIsDisabled() throws Exception {
+        SniffySelectorProvider.uninstall();
+        SelectorProvider provider = SelectorProvider.provider();
+        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(false).build());
+             SniffySocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel())) {
+            channel.processOutboundBytes("CON".getBytes("US-ASCII"), false);
+            try {
+                channel.shutdownOutput();
+            } catch (java.nio.channels.NotYetConnectedException expected) {
+                // The delegate behavior is preserved; the post-write prefix is still accounted for.
+            }
+            assertEquals(0, channel.pendingInitialOutboundByteCount());
+            assertTrue(channel.isFirstPacketSent());
+            assertTrue(spy.getNetworkTraffic().isEmpty());
+        }
+    }
+
+    @Test
     public void directHttpIsRejectedAsProxyCandidateImmediately() throws Exception {
         SniffySelectorProvider.uninstall();
         SelectorProvider provider = SelectorProvider.provider();
@@ -202,6 +248,34 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             assertNull(sniffyChannel.getProxiedInetSocketAddress());
         } finally {
             SniffySelectorProvider.uninstall();
+        }
+    }
+
+    @Test
+    public void proxiedRegistryAllowDelayAndDenyStatusesDriveSubsequentChecks() throws Exception {
+        SniffySelectorProvider.uninstall();
+        SelectorProvider provider = SelectorProvider.provider();
+        Boolean previous = SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled();
+        SniffyConfiguration.INSTANCE.setSocketFaultInjectionEnabled(true);
+        try {
+            int[] statuses = new int[]{0, 1, -1};
+            for (int status : statuses) {
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5443, status);
+                try (SniffySocketChannel channel = new SniffySocketChannel(provider, provider.openSocketChannel())) {
+                    channel.processOutboundBytes(
+                            "CONNECT 127.0.0.1:5443 HTTP/1.1\r\n\r\n".getBytes("US-ASCII"), false);
+                    assertEquals(Integer.valueOf(status), channel.connectionStatus());
+                    try {
+                        channel.checkConnectionAllowed(1);
+                        assertTrue("deny status must reject the next connection check", status >= 0);
+                    } catch (ConnectException denied) {
+                        assertEquals(-1, status);
+                    }
+                }
+            }
+        } finally {
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5443, 0);
+            SniffyConfiguration.INSTANCE.setSocketFaultInjectionEnabled(previous);
         }
     }
 
@@ -257,6 +331,114 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         }
     }
 
+    @Test
+    public void socketViewIsStableAndSharesIncrementalProxyAndTrafficState() throws Exception {
+        SniffySelectorProvider.uninstall();
+        SelectorProvider provider = SelectorProvider.provider();
+        ServerSocketChannel server = provider.openServerSocketChannel();
+        server.bind(new InetSocketAddress(BaseSocketTest.localhost, 0));
+        final AtomicReference<Throwable> serverFailure = new AtomicReference<Throwable>();
+        final ByteArrayOutputStream physicalBytes = new ByteArrayOutputStream();
+        Thread serverThread = new Thread(new Runnable() {
+            @Override public void run() {
+                try (SocketChannel accepted = server.accept()) {
+                    ByteBuffer buffer = ByteBuffer.allocate(128);
+                    int read;
+                    while ((read = accepted.read(buffer)) >= 0) {
+                        if (read > 0) {
+                            buffer.flip();
+                            byte[] bytes = new byte[buffer.remaining()];
+                            buffer.get(bytes);
+                            physicalBytes.write(bytes, 0, bytes.length);
+                            buffer.clear();
+                        }
+                    }
+                } catch (Throwable e) { serverFailure.set(e); }
+            }
+        });
+        serverThread.start();
+        SocketChannel raw = provider.openSocketChannel();
+        raw.connect(server.getLocalAddress());
+        byte[] request = "CONNECT 127.0.0.1:5555 HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n"
+                .getBytes("US-ASCII");
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, -42);
+        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
+             SniffySocketChannel channel = new SniffySocketChannel(provider, raw)) {
+            Socket first = channel.socket();
+            assertSame(first, channel.socket());
+            assertSame(channel, first.getChannel());
+            OutputStream stream = first.getOutputStream();
+            stream.write(request[0]);
+            channel.write(ByteBuffer.wrap(request, 1, 3));
+            for (int i = 4; i < request.length; i++) stream.write(request[i]);
+
+            assertEquals(new InetSocketAddress("127.0.0.1", 5555), channel.getProxiedInetSocketAddress());
+            assertEquals(Integer.valueOf(-42), channel.connectionStatus());
+            assertTrue(channel.isFirstPacketSent());
+
+            ByteArrayOutputStream captured = new ByteArrayOutputStream();
+            for (List<NetworkPacket> packets : spy.getNetworkTraffic().values()) {
+                for (NetworkPacket packet : packets) {
+                    if (packet.isSent()) captured.write(packet.getBytes());
+                }
+            }
+            assertArrayEquals(request, captured.toByteArray());
+            first.close();
+            assertFalse(channel.isOpen());
+            assertTrue(first.isClosed());
+        } finally {
+            ConnectionsRegistry.INSTANCE.setSocketAddressStatus("127.0.0.1", 5555, 0);
+            server.close();
+            serverThread.join(5000);
+            assertFalse(serverThread.isAlive());
+            assertNull(serverFailure.get());
+            assertArrayEquals(request, physicalBytes.toByteArray());
+        }
+    }
+
+    @Test
+    public void channelAndSocketStreamsShareReadWriteAccountingWithoutDuplicateTraffic() throws Exception {
+        SniffySelectorProvider.uninstall();
+        SniffySelectorProvider.install();
+        try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).build());
+             SocketChannel client = SocketChannel.open(
+                     new InetSocketAddress(BaseSocketTest.localhost, echoServerRule.getBoundPort()))) {
+            SniffySocketChannel channel = (SniffySocketChannel) client;
+            Socket socket = channel.socket();
+            int requestSplit = BaseSocketTest.REQUEST.length / 2;
+            while (requestSplit > 0) {
+                int written = channel.write(ByteBuffer.wrap(BaseSocketTest.REQUEST,
+                        BaseSocketTest.REQUEST.length / 2 - requestSplit, requestSplit));
+                requestSplit -= written;
+            }
+            int streamOffset = BaseSocketTest.REQUEST.length / 2;
+            socket.getOutputStream().write(BaseSocketTest.REQUEST, streamOffset,
+                    BaseSocketTest.REQUEST.length - streamOffset);
+
+            int responseSplit = BaseSocketTest.RESPONSE.length / 2;
+            ByteBuffer channelResponse = ByteBuffer.allocate(responseSplit);
+            while (channelResponse.hasRemaining()) {
+                assertTrue(channel.read(channelResponse) >= 0);
+            }
+            byte[] response = new byte[BaseSocketTest.RESPONSE.length];
+            channelResponse.flip();
+            channelResponse.get(response, 0, responseSplit);
+            InputStream stream = socket.getInputStream();
+            int responseOffset = responseSplit;
+            while (responseOffset < response.length) {
+                int read = stream.read(response, responseOffset, response.length - responseOffset);
+                assertTrue(read >= 0);
+                responseOffset += read;
+            }
+
+            assertArrayEquals(BaseSocketTest.RESPONSE, response);
+            assertArrayEquals(BaseSocketTest.REQUEST, traffic(spy, true));
+            assertArrayEquals(BaseSocketTest.RESPONSE, traffic(spy, false));
+        } finally {
+            SniffySelectorProvider.uninstall();
+        }
+    }
+
     private static byte[] join(ByteBuffer first, ByteBuffer second) {
         ByteBuffer firstCopy = first.duplicate();
         ByteBuffer secondCopy = second.duplicate();
@@ -266,6 +448,20 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         firstCopy.get(bytes, 0, firstCopy.remaining());
         secondCopy.get(bytes, first.position(), secondCopy.remaining());
         return bytes;
+    }
+
+    private static byte[] sentTraffic(Spy<?> spy) throws Exception {
+        return traffic(spy, true);
+    }
+
+    private static byte[] traffic(Spy<?> spy, boolean sent) throws Exception {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        for (List<NetworkPacket> packets : spy.getNetworkTraffic().values()) {
+            for (NetworkPacket packet : packets) {
+                if (packet.isSent() == sent) bytes.write(packet.getBytes());
+            }
+        }
+        return bytes.toByteArray();
     }
 
     private static class TestSslConnection implements SniffySSLNetworkConnection {

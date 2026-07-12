@@ -14,7 +14,6 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -46,7 +45,6 @@ public class SniffySelectorFailureLifecycleTest {
             }
 
             assertEquals(0, selector.activeLinkCount());
-            assertEquals(0, channel.linkCount());
             assertNull(channel.keyFor(selector));
         } finally {
             channel.close();
@@ -74,7 +72,6 @@ public class SniffySelectorFailureLifecycleTest {
             }
 
             assertNull(channel.keyFor(selector));
-            assertEquals(0, channel.linkCount());
             assertEquals(0, selector.activeLinkCount());
         } finally {
             channel.close();
@@ -93,28 +90,19 @@ public class SniffySelectorFailureLifecycleTest {
         try {
             SelectionKey key = channel.register(selector, SelectionKey.OP_READ);
             key.cancel();
-            channel.failUnregister = true;
-
             try {
                 selector.selectNow();
                 fail("Expected delegate selection failure");
             } catch (RuntimeException e) {
                 assertSame(primary, e);
-                assertEquals(1, e.getSuppressed().length);
-                assertTrue(e.getSuppressed()[0] instanceof IOException);
             }
 
-            assertEquals(1, selector.activeLinkCount());
-            assertEquals(1, channel.linkCount());
+            assertEquals(0, selector.activeLinkCount());
             assertNull(channel.keyFor(selector));
-
-            channel.failUnregister = false;
             delegateSelector.selectFailure = null;
             selector.selectNow();
             assertEquals(0, selector.activeLinkCount());
-            assertEquals(0, channel.linkCount());
         } finally {
-            channel.failUnregister = false;
             channel.close();
             selector.close();
         }
@@ -136,9 +124,6 @@ public class SniffySelectorFailureLifecycleTest {
             implements SelectableChannelWrapper<TestDelegateChannel> {
 
         private final TestDelegateChannel delegate = new TestDelegateChannel();
-        private final Set<SelectionKeyLink> links = Collections.newSetFromMap(
-                new ConcurrentHashMap<SelectionKeyLink, Boolean>());
-        private volatile boolean failUnregister;
 
         private TestWrapperChannel() {
             super((SelectorProvider) null);
@@ -147,23 +132,6 @@ public class SniffySelectorFailureLifecycleTest {
         @Override
         public TestDelegateChannel getDelegate() {
             return delegate;
-        }
-
-        @Override
-        public void registerKeyLink(SelectionKeyLink link) {
-            links.add(link);
-        }
-
-        @Override
-        public void unregisterKeyLink(SelectionKeyLink link) {
-            if (failUnregister) {
-                throw new IllegalStateException("injected channel-link cleanup failure");
-            }
-            links.remove(link);
-        }
-
-        private int linkCount() {
-            return links.size();
         }
 
         @Override

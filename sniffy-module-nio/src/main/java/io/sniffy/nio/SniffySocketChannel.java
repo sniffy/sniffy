@@ -25,6 +25,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     private static final int INITIAL_PACKET_CAPTURE_LIMIT = 8192;
 
     private final int connectionId = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
+    private final Socket socket;
 
     private volatile Integer connectionStatus;
 
@@ -38,8 +39,9 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     private boolean firstChunk = true;
     private final ByteArrayOutputStream initialOutboundBytes = new ByteArrayOutputStream();
 
-    protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
+    protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) throws SocketException {
         super(provider, delegate);
+        this.socket = new SniffySocketChannelSocket(super.socket(), this, connectionId);
         LOG.trace("Created new SniffySocketChannel(" + provider + ", " + delegate + ") = " + this);
     }
 
@@ -196,7 +198,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
     public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
-        checkConnectionAllowed(getInetSocketAddress(), numberOfSleepCycles);
+        checkConnectionAllowed(null == proxiedAddress ? getInetSocketAddress() : proxiedAddress, numberOfSleepCycles);
     }
 
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
@@ -236,7 +238,9 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     public boolean connect(SocketAddress remote) throws IOException {
         long start = System.currentTimeMillis();
         try {
-            checkConnectionAllowed((InetSocketAddress) remote, 1);
+            if (remote instanceof InetSocketAddress) {
+                checkConnectionAllowed((InetSocketAddress) remote, 1);
+            }
             return super.connect(remote);
         } finally {
             logSocket(System.currentTimeMillis() - start);
@@ -366,14 +370,7 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public Socket socket() {
-        try {
-            SniffySocket sniffySocket = new SniffySocket(super.socket(), this, connectionId, getInetSocketAddress());
-            LOG.trace("Getting SniffySocket " + sniffySocket + " from SniffySocketChannel " + this);
-            return sniffySocket;
-        } catch (SocketException e) {
-            LOG.error(e);
-            return super.socket();
-        }
+        return socket;
     }
 
     static byte[] copyBytes(ByteBuffer buffer, int position, int length) {
@@ -483,6 +480,42 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     synchronized int pendingInitialOutboundByteCount() {
         return initialOutboundBytes.size();
+    }
+
+    synchronized Integer connectionStatus() {
+        return connectionStatus;
+    }
+
+    private synchronized void finishOutboundInspection() {
+        if (!isFirstPacketSent() && initialOutboundBytes.size() > 0) {
+            byte[] pending = initialOutboundBytes.toByteArray();
+            try {
+                new SniffyPacketAnalyzer(this).analyze(pending, 0, pending.length);
+            } catch (Exception e) {
+                LOG.error(e);
+            } finally {
+                setFirstPacketSent(true);
+                initialOutboundBytes.reset();
+            }
+            if (Sniffy.getEffectiveSpyConfiguration().isCaptureNetworkTraffic()) {
+                logTraffic(true, Protocol.TCP, pending, 0, pending.length, false);
+            }
+        }
+    }
+
+    @Override
+    public SocketChannel shutdownOutput() throws IOException {
+        try {
+            return super.shutdownOutput();
+        } finally {
+            finishOutboundInspection();
+        }
+    }
+
+    @Override
+    public void implCloseSelectableChannel() throws IOException {
+        finishOutboundInspection();
+        super.implCloseSelectableChannel();
     }
 
     private void recordRead(long bytesDown, long start) throws ConnectException {

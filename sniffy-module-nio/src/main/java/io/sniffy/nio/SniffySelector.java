@@ -5,7 +5,6 @@ import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.*;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -16,7 +15,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
 
 /**
  * @since 3.1.7
@@ -28,14 +26,15 @@ public class SniffySelector extends AbstractSelector {
     private final AbstractSelector delegate;
 
     /*
-     * Ownership and locking:
-     * - every delegate key owns its SelectionKeyLink attachment; this selector only tracks active links for cleanup;
-     * - registration is entered with wrapper channel regLock/keyLock and may then take delegate channel locks;
-     * - selection/cancellation cleanup runs after delegate select releases delegate locks, then takes wrapper keyLock;
-     * - no path may hold a delegate channel/selector lock while acquiring a wrapper channel lock.
+     * Public selection/close lock order is this selector, then selectedKeysWrapper.
+     * registrationLifecycle owns link states only; it is never held while delegate or
+     * wrapper-channel cleanup runs, so registration's channel -> selector calls cannot
+     * deadlock with selector cleanup.
      */
-    private final Set<SelectionKeyLink> activeLinks = Collections.newSetFromMap(
-            new java.util.concurrent.ConcurrentHashMap<SelectionKeyLink, Boolean>());
+    private final Object registrationLifecycle = new Object();
+    private final Set<SelectionKeyLink> activeLinks = new HashSet<SelectionKeyLink>();
+    private SelectorState selectorState = SelectorState.OPEN;
+    private int registrationsInFlight;
 
     private volatile Set<SelectionKey> keysWrapper = null;
     private volatile Set<SelectionKey> selectedKeysWrapper = null;
@@ -46,6 +45,10 @@ public class SniffySelector extends AbstractSelector {
             throw new IllegalArgumentException("SniffySelector requires an original selector delegate");
         }
         this.delegate = delegate;
+        if (delegate != null) {
+            this.keysWrapper = new SelectionKeySetView(delegate.keys(), false);
+            this.selectedKeysWrapper = new SelectionKeySetView(delegate.selectedKeys(), true);
+        }
         LOG.trace("Created new SniffySelector(" + provider + ", " + delegate + ") = " + this);
     }
 
@@ -76,45 +79,38 @@ public class SniffySelector extends AbstractSelector {
     @Override
     protected void implCloseSelector() throws IOException {
         Throwable failure = null;
-        try {
-            delegate.close();
-        } catch (Throwable e) {
-            failure = e;
-        }
-        try {
-            cleanupLinks(true);
-        } catch (Throwable e) {
-            if (failure == null) {
-                failure = e;
-            } else {
-                failure.addSuppressed(e);
+        synchronized (this) {
+            Set<SelectionKey> selectedKeys = selectedKeysWrapper;
+            synchronized (selectedKeys) {
+                // Mark closing before touching the delegate: registering threads must roll back
+                // instead of publishing a wrapper key after close has taken ownership.
+                synchronized (registrationLifecycle) {
+                    selectorState = SelectorState.CLOSING;
+                }
+                try {
+                    delegate.close();
+                } catch (Throwable e) {
+                    failure = e;
+                }
+                try {
+                    awaitRegistrations();
+                    cleanupLinks(true);
+                } catch (Throwable e) {
+                    if (failure == null) {
+                        failure = e;
+                    } else {
+                        failure.addSuppressed(e);
+                    }
+                } finally {
+                    synchronized (registrationLifecycle) {
+                        selectorState = SelectorState.CLOSED;
+                    }
+                }
             }
         }
         if (failure != null) {
             rethrowSelectionFailure(failure);
         }
-    }
-
-    private Set<SelectionKey> wrapKeys(final Set<SelectionKey> delegates) {
-        if (null == keysWrapper) {
-            synchronized (this) {
-                if (null == keysWrapper && null != delegates) {
-                    keysWrapper = new SelectionKeySetView(delegates, false);
-                }
-            }
-        }
-        return keysWrapper;
-    }
-
-    private Set<SelectionKey> wrapSelectedKeys(final Set<SelectionKey> delegates) {
-        if (null == selectedKeysWrapper) {
-            synchronized (this) {
-                if (null == selectedKeysWrapper && null != delegates) {
-                    selectedKeysWrapper = new SelectionKeySetView(delegates, true);
-                }
-            }
-        }
-        return selectedKeysWrapper;
     }
 
     private final class SelectionKeySetView extends AbstractSet<SelectionKey> {
@@ -246,63 +242,94 @@ public class SniffySelector extends AbstractSelector {
         }
     }
 
-    private class SelectionKeyConsumerWrapper implements Consumer<SelectionKey> {
-
-        private final Consumer<SelectionKey> delegate;
-        public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void accept(SelectionKey selectionKey) {
-            SniffySelectorProvider.exitDelegateSelectorConstruction();
-            try {
-                delegate.accept(requireLinkedKey(selectionKey));
-            } finally {
-                SniffySelectorProvider.enterDelegateSelectorConstruction();
-            }
-        }
-
-    }
-
     /** Registers the delegate channel while publishing the wrapper key through its attachment link. */
     @Override
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att) {
         SelectionKeyLink link = new SelectionKeyLink(this, ch, att);
-        boolean success = false;
-        Throwable failure = null;
+        beginRegistration(link);
         try {
             AbstractSelectableChannel chDelegate = ch;
             if (ch instanceof SelectableChannelWrapper) {
                 chDelegate = ((SelectableChannelWrapper<?>) ch).getDelegate();
             }
-            activeLinks.add(link);
-            if (ch instanceof SelectableChannelWrapper) {
-                ((SelectableChannelWrapper<?>) ch).registerKeyLink(link);
-            }
+            registrationPoint(RegistrationPoint.BEFORE_DELEGATE_REGISTRATION, link);
             SelectionKey selectionKeyDelegate = chDelegate.register(delegate, ops, link);
+            registrationPoint(RegistrationPoint.AFTER_DELEGATE_REGISTRATION, link);
             SniffySelectionKey wrapper = link.wrapper(selectionKeyDelegate);
-            success = true;
-            return wrapper;
-        } catch (Throwable e) {
-            failure = e;
-            throw ExceptionUtil.processException(e);
-        } finally {
-            if (!success) {
-                try {
-                    rollbackRegistration(link, ch);
-                } catch (Throwable cleanupFailure) {
-                    if (failure != null) {
-                        failure.addSuppressed(cleanupFailure);
-                    } else {
-                        throw ExceptionUtil.processException(cleanupFailure);
-                    }
+            registrationPoint(RegistrationPoint.BEFORE_ACTIVATION, link);
+            boolean activated = false;
+            synchronized (registrationLifecycle) {
+                if (selectorState == SelectorState.OPEN) {
+                    link.activate();
+                    activated = true;
+                } else {
+                    link.beginCleaning();
                 }
             }
+            if (activated) {
+                registrationPoint(RegistrationPoint.ACTIVATION_FINALIZED, link);
+                return wrapper;
+            }
+            java.nio.channels.ClosedSelectorException closed = new java.nio.channels.ClosedSelectorException();
+            try {
+                rollbackRegistration(link);
+            } catch (Throwable cleanupFailure) {
+                closed.addSuppressed(cleanupFailure);
+            }
+            throw closed;
+        } catch (Throwable e) {
+            Throwable failure = e;
+            boolean cleanupRequired;
+            synchronized (registrationLifecycle) {
+                cleanupRequired = link.beginCleaning();
+            }
+            if (cleanupRequired) {
+                try {
+                    rollbackRegistration(link);
+                } catch (Throwable cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            throw ExceptionUtil.processException(failure);
+        } finally {
+            endRegistration();
         }
     }
 
-    private void rollbackRegistration(SelectionKeyLink link, AbstractSelectableChannel channel) {
+    private void beginRegistration(SelectionKeyLink link) {
+        synchronized (registrationLifecycle) {
+            if (selectorState != SelectorState.OPEN) {
+                throw new java.nio.channels.ClosedSelectorException();
+            }
+            activeLinks.add(link);
+            registrationsInFlight++;
+        }
+    }
+
+    private void endRegistration() {
+        synchronized (registrationLifecycle) {
+            registrationsInFlight--;
+            registrationLifecycle.notifyAll();
+        }
+    }
+
+    private void awaitRegistrations() {
+        boolean interrupted = false;
+        synchronized (registrationLifecycle) {
+            while (registrationsInFlight != 0) {
+                try {
+                    registrationLifecycle.wait();
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void rollbackRegistration(SelectionKeyLink link) {
         Throwable failure = null;
         SelectionKey delegateKey = link.delegate();
         if (delegateKey != null) {
@@ -312,18 +339,19 @@ public class SniffySelector extends AbstractSelector {
                 failure = e;
             }
         }
-        if (channel instanceof SelectableChannelWrapper) {
-            try {
-                ((SelectableChannelWrapper<?>) channel).unregisterKeyLink(link);
-            } catch (Throwable e) {
-                if (failure == null) {
-                    failure = e;
-                } else {
-                    failure.addSuppressed(e);
-                }
+        try {
+            removeWrapperKey(link);
+        } catch (Throwable e) {
+            if (failure == null) failure = e; else failure.addSuppressed(e);
+        }
+        synchronized (registrationLifecycle) {
+            if (failure == null) {
+                link.removed();
+                activeLinks.remove(link);
+            } else {
+                link.retryCleanup();
             }
         }
-        activeLinks.remove(link);
         if (failure != null) {
             throw ExceptionUtil.throwException(failure);
         }
@@ -331,17 +359,19 @@ public class SniffySelector extends AbstractSelector {
 
     @Override
     public Set<SelectionKey> keys() {
-        return wrapKeys(delegate.keys());
+        if (!isOpen() || !delegate.isOpen()) throw new java.nio.channels.ClosedSelectorException();
+        return keysWrapper;
     }
 
     @Override
     public Set<SelectionKey> selectedKeys() {
-        return wrapSelectedKeys(delegate.selectedKeys());
+        if (!isOpen() || !delegate.isOpen()) throw new java.nio.channels.ClosedSelectorException();
+        return selectedKeysWrapper;
     }
 
     @Override
     public int selectNow() throws IOException {
-        return selectWithCleanup(new SelectionOperation() {
+        return selectWithPublicLocks(new SelectionOperation() {
             @Override
             public int execute() throws Exception {
                 return selectNowDelegate();
@@ -351,7 +381,7 @@ public class SniffySelector extends AbstractSelector {
 
     @Override
     public int select(final long timeout) throws IOException {
-        return selectWithCleanup(new SelectionOperation() {
+        return selectWithPublicLocks(new SelectionOperation() {
             @Override
             public int execute() throws Exception {
                 return selectDelegate(timeout);
@@ -361,7 +391,7 @@ public class SniffySelector extends AbstractSelector {
 
     @Override
     public int select() throws IOException {
-        return selectWithCleanup(new SelectionOperation() {
+        return selectWithPublicLocks(new SelectionOperation() {
             @Override
             public int execute() throws Exception {
                 return selectDelegate();
@@ -409,22 +439,31 @@ public class SniffySelector extends AbstractSelector {
 
     private void cleanupLinks(boolean all) throws IOException {
         IOException failure = null;
-        for (SelectionKeyLink link : activeLinks) {
+        final List<SelectionKeyLink> links;
+        synchronized (registrationLifecycle) {
+            links = new ArrayList<SelectionKeyLink>(activeLinks);
+        }
+        for (SelectionKeyLink link : links) {
             SelectionKey delegateKey = link.delegate();
             SniffySelectionKey wrapper = link.existingWrapper();
             if (!all && (delegateKey == null || (wrapper == null ? delegateKey.isValid() : wrapper.isValid()))) {
                 continue;
             }
+            synchronized (registrationLifecycle) {
+                if (link.state() != SelectionKeyLink.State.ACTIVE || !link.beginCleaning()) {
+                    continue;
+                }
+            }
             try {
-                AbstractSelectableChannel channel = link.channel();
-                if (wrapper != null && channel != null && channel.keyFor(this) == wrapper) {
-                    JdkNioAccess.resolve().removeChannelKey(channel, wrapper);
+                removeWrapperKey(link);
+                synchronized (registrationLifecycle) {
+                    link.removed();
+                    activeLinks.remove(link); // ownership ends only after channel cleanup succeeds
                 }
-                if (channel instanceof SelectableChannelWrapper) {
-                    ((SelectableChannelWrapper<?>) channel).unregisterKeyLink(link);
-                }
-                activeLinks.remove(link); // remove only after wrapper cleanup succeeds
             } catch (Throwable e) {
+                synchronized (registrationLifecycle) {
+                    link.retryCleanup();
+                }
                 LOG.error("Failed to reconcile a deregistered NIO selection key; cleanup will be retried", e);
                 IOException ioe = new IOException("Failed to reconcile a deregistered NIO selection key", e);
                 if (failure == null) {
@@ -440,17 +479,37 @@ public class SniffySelector extends AbstractSelector {
     }
 
     int activeLinkCount() {
-        return activeLinks.size();
+        synchronized (registrationLifecycle) {
+            return activeLinks.size();
+        }
+    }
+
+    private void removeWrapperKey(SelectionKeyLink link) throws JdkNioAccess.JdkNioAccessException {
+        SniffySelectionKey wrapper = link.existingWrapper();
+        AbstractSelectableChannel channel = link.channel();
+        if (wrapper != null && channel != null && channel.keyFor(this) == wrapper) {
+            // AbstractSelectableChannel.removeKey takes keyLock. Registration already owns
+            // keyLock until its outer register call publishes the returned wrapper key, so
+            // this acquisition also waits for publication before removing it.
+            JdkNioAccess.resolve().removeChannelKey(channel, wrapper);
+        }
     }
 
     // Note: this method was absent in earlier JDKs so we cannot use @Override annotation
     //@Override
     @SuppressWarnings({"RedundantThrows", "Since15"})
     public int select(final Consumer<SelectionKey> action, final long timeout) throws IOException {
-        return selectWithCleanup(new SelectionOperation() {
+        if (timeout < 0) throw new IllegalArgumentException("Negative timeout");
+        Objects.requireNonNull(action, "action");
+        return selectWithPublicLocks(new SelectionOperation() {
             @Override
             public int execute() throws Exception {
-                return selectDelegate(action, timeout);
+                return consumeSelectedKeys(action, new SelectionOperation() {
+                    @Override
+                    public int execute() throws Exception {
+                        return selectDelegate(timeout);
+                    }
+                });
             }
         });
     }
@@ -459,10 +518,16 @@ public class SniffySelector extends AbstractSelector {
     //@Override
     @SuppressWarnings({"RedundantThrows", "Since15"})
     public int select(final Consumer<SelectionKey> action) throws IOException {
-        return selectWithCleanup(new SelectionOperation() {
+        Objects.requireNonNull(action, "action");
+        return selectWithPublicLocks(new SelectionOperation() {
             @Override
             public int execute() throws Exception {
-                return selectDelegate(action);
+                return consumeSelectedKeys(action, new SelectionOperation() {
+                    @Override
+                    public int execute() throws Exception {
+                        return selectDelegate();
+                    }
+                });
             }
         });
     }
@@ -471,12 +536,41 @@ public class SniffySelector extends AbstractSelector {
     //@Override
     @SuppressWarnings({"RedundantThrows", "Since15"})
     public int selectNow(final Consumer<SelectionKey> action) throws IOException {
-        return selectWithCleanup(new SelectionOperation() {
+        Objects.requireNonNull(action, "action");
+        return selectWithPublicLocks(new SelectionOperation() {
             @Override
             public int execute() throws Exception {
-                return selectNowDelegate(action);
+                return consumeSelectedKeys(action, new SelectionOperation() {
+                    @Override
+                    public int execute() throws Exception {
+                        return selectNowDelegate();
+                    }
+                });
             }
         });
+    }
+
+    private int selectWithPublicLocks(SelectionOperation operation) throws IOException {
+        synchronized (this) {
+            Set<SelectionKey> selectedKeys = selectedKeys();
+            synchronized (selectedKeys) {
+                return selectWithCleanup(operation);
+            }
+        }
+    }
+
+    private int consumeSelectedKeys(Consumer<SelectionKey> action, SelectionOperation selection) throws Exception {
+        Set<SelectionKey> selected = selectedKeys();
+        selected.clear();
+        selection.execute(); // delegate monitors and provider scope are gone before application code runs
+        List<SelectionKey> ready = new ArrayList<SelectionKey>(selected);
+        for (SelectionKey key : ready) {
+            action.accept(key);
+            if (!isOpen()) {
+                throw new java.nio.channels.ClosedSelectorException();
+            }
+        }
+        return ready.size();
     }
 
     private int selectWithCleanup(SelectionOperation operation) throws IOException {
@@ -484,7 +578,7 @@ public class SniffySelector extends AbstractSelector {
         try {
             return operation.execute();
         } catch (Throwable e) {
-            primaryFailure = unwrapInvocationFailure(e);
+            primaryFailure = e;
             rethrowSelectionFailure(primaryFailure);
             return 0;
         } finally {
@@ -500,14 +594,6 @@ public class SniffySelector extends AbstractSelector {
         }
     }
 
-    private static Throwable unwrapInvocationFailure(Throwable failure) {
-        if (failure instanceof InvocationTargetException
-                && ((InvocationTargetException) failure).getTargetException() != null) {
-            return ((InvocationTargetException) failure).getTargetException();
-        }
-        return failure;
-    }
-
     private static void rethrowSelectionFailure(Throwable failure) throws IOException {
         if (failure instanceof IOException) {
             throw (IOException) failure;
@@ -519,41 +605,19 @@ public class SniffySelector extends AbstractSelector {
         int execute() throws Exception;
     }
 
-    private int selectDelegate(Consumer<SelectionKey> action, long timeout) throws Exception {
-        SniffySelectorProvider.enterDelegateSelectorConstruction();
-        try {
-            return invokeMethod(Selector.class, delegate, "select",
-                    Consumer.class, new SelectionKeyConsumerWrapper(action),
-                    Long.TYPE, timeout,
-                    Integer.TYPE
-            );
-        } finally {
-            SniffySelectorProvider.exitDelegateSelectorConstruction();
-        }
+    private enum SelectorState {
+        OPEN, CLOSING, CLOSED
     }
 
-    private int selectDelegate(Consumer<SelectionKey> action) throws Exception {
-        SniffySelectorProvider.enterDelegateSelectorConstruction();
-        try {
-            return invokeMethod(Selector.class, delegate, "select",
-                    Consumer.class, new SelectionKeyConsumerWrapper(action),
-                    Integer.TYPE
-            );
-        } finally {
-            SniffySelectorProvider.exitDelegateSelectorConstruction();
-        }
+    enum RegistrationPoint {
+        BEFORE_DELEGATE_REGISTRATION,
+        AFTER_DELEGATE_REGISTRATION,
+        BEFORE_ACTIVATION,
+        ACTIVATION_FINALIZED
     }
 
-    private int selectNowDelegate(Consumer<SelectionKey> action) throws Exception {
-        SniffySelectorProvider.enterDelegateSelectorConstruction();
-        try {
-            return invokeMethod(Selector.class, delegate, "selectNow",
-                    Consumer.class, new SelectionKeyConsumerWrapper(action),
-                    Integer.TYPE
-            );
-        } finally {
-            SniffySelectorProvider.exitDelegateSelectorConstruction();
-        }
+    void registrationPoint(RegistrationPoint point, SelectionKeyLink link) {
+        // Test subclasses provide deterministic race pause points; production has no work here.
     }
 
 }
