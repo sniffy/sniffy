@@ -149,4 +149,26 @@ public class SniffySelectorLifecycleTest {
             selector.close();
         }
     }
+
+    @Test
+    public void closingSocketViewClosesWrapperChannelAndCleansKey() throws Exception {
+        SniffySelector selector = (SniffySelector) Selector.open();
+        SniffySocketChannel channel = (SniffySocketChannel) SocketChannel.open();
+        try {
+            channel.configureBlocking(false);
+            SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT);
+
+            channel.socket().close();
+            selector.selectNow();
+
+            assertFalse(channel.isOpen());
+            assertFalse(channel.getDelegate().isOpen());
+            assertFalse(key.isValid());
+            assertNull(channel.keyFor(selector));
+            assertEquals(0, selector.activeLinkCount());
+        } finally {
+            channel.close();
+            selector.close();
+        }
+    }
 }

@@ -1,8 +1,6 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.OSUtil;
-import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -22,19 +20,20 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
 /**
  * @since 3.1.7
  */
-// TODO: test properly and come up with a strategy for server sockets and server channels
 public class SniffyServerSocketChannel extends ServerSocketChannel implements SelChImpl, SelectableChannelWrapper<ServerSocketChannel> {
 
     private final ServerSocketChannel delegate;
     private final SelChImpl selChImplDelegate;
+    private final ServerSocket socket;
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private volatile boolean hasCancelledKeys;
 
-    public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) {
+    public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) throws IOException {
         super(provider);
         this.delegate = delegate;
         this.selChImplDelegate = (SelChImpl) delegate;
+        this.socket = new SniffyServerSocket(delegate.socket(), this);
     }
 
     @Override
@@ -63,7 +62,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     @Override
     public ServerSocket socket() {
-        return delegate.socket();
+        return socket;
     }
 
     @Override
@@ -75,10 +74,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
             return null;
         }
 
-        // Windows Selector is implemented using pair of sockets which are explicitly casted and do not work with Sniffy
-        return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
-                socketChannel :
-                new SniffySocketChannelAdapter(provider(), socketChannel);
+        return new SniffySocketChannel(provider(), socketChannel);
     }
 
     @Override
