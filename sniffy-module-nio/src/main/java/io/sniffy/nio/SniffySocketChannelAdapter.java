@@ -23,6 +23,7 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
 
     private final SocketChannel delegate;
     private final SelChImpl selChImplDelegate;
+    private final ChannelRegistrationSupport registrationSupport = new ChannelRegistrationSupport();
 
     protected SniffySocketChannelAdapter(SelectorProvider provider, SocketChannel delegate) {
         super(provider);
@@ -131,21 +132,16 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
     }
 
     @Override
-    public void implCloseSelectableChannel() {
-        try {
-            delegate.close();
-        } catch (IOException e) {
-            throw ExceptionUtil.processException(e);
-        }
+    public void implCloseSelectableChannel() throws IOException {
+        delegate.close();
     }
 
     @Override
-    public void implConfigureBlocking(boolean block) {
-        try {
-            delegate.configureBlocking(block);
-        } catch (IOException e) {
-            throw ExceptionUtil.processException(e);
+    public void implConfigureBlocking(boolean block) throws IOException {
+        if (block) {
+            registrationSupport.propagateCancelledKeys();
         }
+        delegate.configureBlocking(block);
     }
 
     @Override
@@ -235,6 +231,21 @@ public class SniffySocketChannelAdapter extends SocketChannel implements Selecta
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
+    }
+
+    @Override
+    public void registerKeyLink(SelectionKeyLink link) {
+        registrationSupport.register(link);
+    }
+
+    @Override
+    public void unregisterKeyLink(SelectionKeyLink link) {
+        registrationSupport.unregister(link);
+    }
+
+    @Override
+    public void propagateCancelledKeyDelegates() {
+        registrationSupport.propagateCancelledKeys();
     }
 
 }

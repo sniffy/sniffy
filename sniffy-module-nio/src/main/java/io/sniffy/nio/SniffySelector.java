@@ -217,11 +217,17 @@ public class SniffySelector extends AbstractSelector {
 
             SelectionKeyLink link = new SelectionKeyLink(this, ch, att);
             activeLinks.add(link);
+            if (ch instanceof SelectableChannelWrapper) {
+                ((SelectableChannelWrapper<?>) ch).registerKeyLink(link);
+            }
             try {
                 SelectionKey selectionKeyDelegate = chDelegate.register(delegate, ops, link);
                 return link.wrapper(selectionKeyDelegate);
             } catch (RuntimeException e) {
                 activeLinks.remove(link);
+                if (ch instanceof SelectableChannelWrapper) {
+                    ((SelectableChannelWrapper<?>) ch).unregisterKeyLink(link);
+                }
                 throw e;
             }
 
@@ -327,6 +333,9 @@ public class SniffySelector extends AbstractSelector {
                 if (wrapper != null && channel != null && channel.keyFor(this) == wrapper) {
                     JdkNioAccess.resolve().removeChannelKey(channel, wrapper);
                 }
+                if (channel instanceof SelectableChannelWrapper) {
+                    ((SelectableChannelWrapper<?>) channel).unregisterKeyLink(link);
+                }
                 activeLinks.remove(link); // remove only after wrapper cleanup succeeds
             } catch (Exception e) {
                 LOG.error("Failed to reconcile a deregistered NIO selection key; cleanup will be retried", e);
@@ -345,11 +354,7 @@ public class SniffySelector extends AbstractSelector {
 
     private void propagateWrapperCancellations() {
         for (SelectionKeyLink link : activeLinks) {
-            SniffySelectionKey wrapper = link.existingWrapper();
-            SelectionKey delegateKey = link.delegate();
-            if (wrapper != null && !wrapper.isValid() && delegateKey != null && delegateKey.isValid()) {
-                delegateKey.cancel();
-            }
+            link.propagateWrapperCancellation();
         }
     }
 

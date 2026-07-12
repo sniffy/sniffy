@@ -41,6 +41,7 @@ public class SniffyPipe extends Pipe {
 
         private final SourceChannel delegate;
         private final SelChImpl selChImplDelegate;
+        private final ChannelRegistrationSupport registrationSupport = new ChannelRegistrationSupport();
 
         public SniffySourceChannel(SelectorProvider provider, SourceChannel delegate) {
             super(provider);
@@ -60,21 +61,16 @@ public class SniffyPipe extends Pipe {
         }
 
         @Override
-        public void implCloseSelectableChannel() {
-            try {
-                delegate.close();
-            } catch (IOException e) {
-                throw ExceptionUtil.processException(e);
-            }
+        public void implCloseSelectableChannel() throws IOException {
+            delegate.close();
         }
 
         @Override
-        public void implConfigureBlocking(boolean block) {
-            try {
-                delegate.configureBlocking(block);
-            } catch (IOException e) {
-                throw ExceptionUtil.processException(e);
+        public void implConfigureBlocking(boolean block) throws IOException {
+            if (block) {
+                registrationSupport.propagateCancelledKeys();
             }
+            delegate.configureBlocking(block);
         }
 
         @Override
@@ -159,6 +155,21 @@ public class SniffyPipe extends Pipe {
             }
         }
 
+        @Override
+        public void registerKeyLink(SelectionKeyLink link) {
+            registrationSupport.register(link);
+        }
+
+        @Override
+        public void unregisterKeyLink(SelectionKeyLink link) {
+            registrationSupport.unregister(link);
+        }
+
+        @Override
+        public void propagateCancelledKeyDelegates() {
+            registrationSupport.propagateCancelledKeys();
+        }
+
     }
 
     @SuppressWarnings("RedundantThrows")
@@ -166,6 +177,7 @@ public class SniffyPipe extends Pipe {
 
         private final SinkChannel delegate;
         private final SelChImpl selChImplDelegate;
+        private final ChannelRegistrationSupport registrationSupport = new ChannelRegistrationSupport();
 
         public SniffySinkChannel(SelectorProvider provider, SinkChannel delegate) {
             super(provider);
@@ -185,21 +197,16 @@ public class SniffyPipe extends Pipe {
         }
 
         @Override
-        public void implCloseSelectableChannel() {
-            try {
-                delegate.close();
-            } catch (IOException e) {
-                throw ExceptionUtil.processException(e);
-            }
+        public void implCloseSelectableChannel() throws IOException {
+            delegate.close();
         }
 
         @Override
-        public void implConfigureBlocking(boolean block) {
-            try {
-                delegate.configureBlocking(block);
-            } catch (IOException e) {
-                throw ExceptionUtil.processException(e);
+        public void implConfigureBlocking(boolean block) throws IOException {
+            if (block) {
+                registrationSupport.propagateCancelledKeys();
             }
+            delegate.configureBlocking(block);
         }
 
         @Override
@@ -282,6 +289,21 @@ public class SniffyPipe extends Pipe {
             } catch (Exception e) {
                 throw ExceptionUtil.throwException(e);
             }
+        }
+
+        @Override
+        public void registerKeyLink(SelectionKeyLink link) {
+            registrationSupport.register(link);
+        }
+
+        @Override
+        public void unregisterKeyLink(SelectionKeyLink link) {
+            registrationSupport.unregister(link);
+        }
+
+        @Override
+        public void propagateCancelledKeyDelegates() {
+            registrationSupport.propagateCancelledKeys();
         }
 
     }

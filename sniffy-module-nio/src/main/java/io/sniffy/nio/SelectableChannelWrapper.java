@@ -12,4 +12,10 @@ public interface SelectableChannelWrapper<T extends AbstractSelectableChannel> e
 
     void keyCancelled();
 
+    void registerKeyLink(SelectionKeyLink link);
+
+    void unregisterKeyLink(SelectionKeyLink link);
+
+    void propagateCancelledKeyDelegates();
+
 }

@@ -56,6 +56,14 @@ final class SelectionKeyLink {
         return channel;
     }
 
+    void propagateWrapperCancellation() {
+        SniffySelectionKey wrapperKey = wrapper;
+        SelectionKey delegateKey = delegate;
+        if (wrapperKey != null && !wrapperKey.isValid() && delegateKey != null && delegateKey.isValid()) {
+            delegateKey.cancel();
+        }
+    }
+
     private void verifyDelegate(SelectionKey candidate) {
         SelectionKey linkedDelegate = delegate;
         if (linkedDelegate != candidate) {
