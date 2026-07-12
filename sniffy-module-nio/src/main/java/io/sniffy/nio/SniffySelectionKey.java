@@ -22,14 +22,17 @@ public class SniffySelectionKey extends SelectionKey implements ObjectWrapper<Se
     private final SelectableChannel sniffyChannel;
 
     protected SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel) {
+        this(delegate, sniffySelector, sniffyChannel, null == delegate ? null : delegate.attachment());
+    }
+
+    SniffySelectionKey(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffyChannel,
+                       Object userAttachment) {
         this.delegate = delegate;
-
-        if (null != delegate) {
-            attach(delegate.attachment());
-        }
-
         this.sniffySelector = sniffySelector;
         this.sniffyChannel = sniffyChannel;
+        if (userAttachment != null) {
+            attach(userAttachment);
+        }
     }
 
     @Override

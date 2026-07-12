@@ -29,12 +29,6 @@ public class SniffySelector extends AbstractSelector {
     private volatile Set<SelectionKey> keysWrapper = null;
     private volatile Set<SelectionKey> selectedKeysWrapper = null;
 
-    private final Map<AbstractSelectableChannel, AbstractSelectableChannel> channelToSniffyChannelMap =
-            new WeakHashMap<AbstractSelectableChannel, AbstractSelectableChannel>();
-
-    private final Map<SelectionKey, SniffySelectionKey> sniffySelectionKeyCache =
-            new WeakHashMap<SelectionKey, SniffySelectionKey>();
-
     public SniffySelector(SelectorProvider provider, AbstractSelector delegate) {
         super(provider);
         this.delegate = delegate;
@@ -42,17 +36,26 @@ public class SniffySelector extends AbstractSelector {
     }
 
     public SniffySelectionKey wrap(SelectionKey delegate, SniffySelector sniffySelector, SelectableChannel sniffySocketChannel) {
-        SniffySelectionKey sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
-        if (null == sniffySelectionKey) {
-            synchronized (sniffySelectionKeyCache) {
-                sniffySelectionKey = sniffySelectionKeyCache.get(delegate);
-                if (null == sniffySelectionKey) {
-                    sniffySelectionKey = new SniffySelectionKey(delegate, sniffySelector, sniffySocketChannel);
-                    sniffySelectionKeyCache.put(delegate, sniffySelectionKey);
-                }
-            }
+        if (sniffySelector != this) {
+            throw new IllegalArgumentException("SelectionKey cannot be wrapped by a different SniffySelector");
         }
-        return sniffySelectionKey;
+        return requireLinkedKey(delegate);
+    }
+
+    private SniffySelectionKey requireLinkedKey(SelectionKey delegate) {
+        Object association = delegate.attachment();
+        if (!(association instanceof SelectionKeyLink)) {
+            String message = "Delegate SelectionKey attachment no longer contains Sniffy's internal link: " + association;
+            LOG.error(message);
+            throw new IllegalStateException(message);
+        }
+        SelectionKeyLink link = (SelectionKeyLink) association;
+        if (!link.belongsTo(this)) {
+            String message = "Delegate SelectionKey is linked to a different Sniffy selector";
+            LOG.error(message);
+            throw new IllegalStateException(message);
+        }
+        return link.wrapper(delegate);
     }
 
     @SuppressWarnings("RedundantThrows")
@@ -71,7 +74,7 @@ public class SniffySelector extends AbstractSelector {
         if (null == keysWrapper) {
             synchronized (this) {
                 if (null == keysWrapper && null != delegates) {
-                    keysWrapper = createSelectionKeysWrapper(delegates);
+                    keysWrapper = new SelectionKeySetView(delegates, false);
                 }
             }
         }
@@ -82,40 +85,94 @@ public class SniffySelector extends AbstractSelector {
         if (null == selectedKeysWrapper) {
             synchronized (this) {
                 if (null == selectedKeysWrapper && null != delegates) {
-                    selectedKeysWrapper = createSelectionKeysWrapper(delegates);
+                    selectedKeysWrapper = new SelectionKeySetView(delegates, true);
                 }
             }
         }
         return selectedKeysWrapper;
     }
 
-    private SetWrapper<SniffySelectionKey, SelectionKey> createSelectionKeysWrapper(Set<SelectionKey> delegates) {
-        return new SetWrapper<SniffySelectionKey, SelectionKey>(delegates, new WrapperFactory<SelectionKey, SniffySelectionKey>() {
-            @Override
-            public SniffySelectionKey wrap(SelectionKey delegate) {
-                //noinspection SuspiciousMethodCalls
-                return SniffySelector.this.wrap(delegate, SniffySelector.this, channelToSniffyChannelMap.get(delegate.channel()));
+    private final class SelectionKeySetView extends AbstractSet<SelectionKey> {
+
+        private final Set<SelectionKey> delegates;
+        private final boolean removalAllowed;
+
+        private SelectionKeySetView(Set<SelectionKey> delegates, boolean removalAllowed) {
+            this.delegates = delegates;
+            this.removalAllowed = removalAllowed;
+        }
+
+        @Override
+        public Iterator<SelectionKey> iterator() {
+            final Iterator<SelectionKey> iterator = delegates.iterator();
+            return new Iterator<SelectionKey>() {
+                @Override
+                public boolean hasNext() {
+                    return iterator.hasNext();
+                }
+
+                @Override
+                public SelectionKey next() {
+                    return requireLinkedKey(iterator.next());
+                }
+
+                @Override
+                public void remove() {
+                    ensureRemovalAllowed();
+                    iterator.remove();
+                }
+            };
+        }
+
+        @Override
+        public int size() {
+            return delegates.size();
+        }
+
+        @Override
+        public boolean contains(Object candidate) {
+            SelectionKey delegateKey = unwrap(candidate);
+            return delegateKey != null && delegates.contains(delegateKey) && requireLinkedKey(delegateKey) == candidate;
+        }
+
+        @Override
+        public boolean remove(Object candidate) {
+            ensureRemovalAllowed();
+            SelectionKey delegateKey = unwrap(candidate);
+            return delegateKey != null && delegates.remove(delegateKey);
+        }
+
+        @Override
+        public void clear() {
+            ensureRemovalAllowed();
+            delegates.clear();
+        }
+
+        private SelectionKey unwrap(Object candidate) {
+            if (!(candidate instanceof SniffySelectionKey)) {
+                return null;
             }
-        });
+            SniffySelectionKey wrapper = (SniffySelectionKey) candidate;
+            return wrapper.selector() == SniffySelector.this ? wrapper.getDelegate() : null;
+        }
+
+        private void ensureRemovalAllowed() {
+            if (!removalAllowed) {
+                throw new UnsupportedOperationException("Selector.keys() does not support removal");
+            }
+        }
     }
 
     private class SelectionKeyConsumerWrapper implements Consumer<SelectionKey> {
 
         private final Consumer<SelectionKey> delegate;
-        private final SniffySocketChannel sniffyChannel;
-
         public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate) {
-            this(delegate, null);
-        }
-
-        public SelectionKeyConsumerWrapper(Consumer<SelectionKey> delegate, SniffySocketChannel sniffyChannel) {
             this.delegate = delegate;
-            this.sniffyChannel = sniffyChannel;
         }
 
         @Override
         public void accept(SelectionKey selectionKey) {
-            delegate.accept(wrap(selectionKey, SniffySelector.this, sniffyChannel));
+            delegate.accept(requireLinkedKey(selectionKey));
         }
 
     }
@@ -132,13 +189,14 @@ public class SniffySelector extends AbstractSelector {
 
             if (ch instanceof SelectableChannelWrapper) {
                 chDelegate = ((SelectableChannelWrapper<?>) ch).getDelegate();
-                channelToSniffyChannelMap.put(chDelegate, ch);
             }
+
+            SelectionKeyLink link = new SelectionKeyLink(this, ch, att);
 
             SelectionKey selectionKeyDelegate = invokeMethod(AbstractSelector.class, delegate, "register",
                     AbstractSelectableChannel.class, chDelegate,
                     Integer.TYPE, ops,
-                    Object.class, att,
+                    Object.class, link,
                     SelectionKey.class
             );
 
@@ -152,7 +210,7 @@ public class SniffySelector extends AbstractSelector {
                 }
             }
 
-            return wrap(selectionKeyDelegate, this, ch);
+            return link.wrapper(selectionKeyDelegate);
 
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
