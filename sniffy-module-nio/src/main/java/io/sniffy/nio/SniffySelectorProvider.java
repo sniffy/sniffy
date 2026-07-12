@@ -2,6 +2,8 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
+import io.sniffy.util.OSUtil;
+import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
@@ -174,9 +176,18 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public Pipe openPipe() throws IOException {
-        return isDelegateSelectorConstruction() ?
-                delegate.openPipe() :
-                new SniffyPipe(this, delegate.openPipe());
+        if (isDelegateSelectorConstruction()) {
+            return delegate.openPipe();
+        }
+
+        // On Windows, PipeImpl builds its pipe from socket channels obtained through the
+        // globally installed provider. Keep those implementation channels unwrapped.
+        enterDelegateSelectorConstruction();
+        try {
+            return new SniffyPipe(this, delegate.openPipe());
+        } finally {
+            exitDelegateSelectorConstruction();
+        }
     }
 
     @Override
@@ -192,7 +203,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     /** @return a monitored server channel, except during scoped delegate-selector construction. */
     @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
-        return isDelegateSelectorConstruction() ?
+        return isDelegateChannelConstruction() ?
                 delegate.openServerSocketChannel() :
                 new SniffyServerSocketChannel(this, delegate.openServerSocketChannel());
     }
@@ -200,7 +211,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     /** @return a monitored socket channel, except during scoped delegate-selector construction. */
     @Override
     public SocketChannel openSocketChannel() throws IOException {
-        return isDelegateSelectorConstruction() ?
+        return isDelegateChannelConstruction() ?
                 delegate.openSocketChannel() :
                 new SniffySocketChannel(this, delegate.openSocketChannel());
     }
@@ -222,7 +233,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return isDelegateSelectorConstruction() ?
+            return isDelegateChannelConstruction() ?
                     invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
                             ProtocolFamily.class, family,
                             SocketChannel.class
@@ -244,7 +255,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return isDelegateSelectorConstruction() ?
+            return isDelegateChannelConstruction() ?
                     invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
                             ProtocolFamily.class, family,
                             ServerSocketChannel.class) :
@@ -262,6 +273,14 @@ public class SniffySelectorProvider extends SelectorProvider {
     static boolean isDelegateSelectorConstruction() {
         Integer depth = DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.get();
         return null != depth && depth > 0;
+    }
+
+    private static boolean isDelegateChannelConstruction() {
+        // Java 11's Windows PipeImpl may retry construction on a helper thread after an
+        // interrupt, where the ThreadLocal scope cannot propagate. The stack check keeps
+        // that JDK-owned pipe construction on concrete JDK socket channel implementations.
+        return isDelegateSelectorConstruction() ||
+                (OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe"));
     }
 
     static void enterDelegateSelectorConstruction() {
