@@ -2,8 +2,6 @@ package io.sniffy.nio;
 
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
-import io.sniffy.util.OSUtil;
-import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
@@ -23,6 +21,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelectorProvider.class);
 
     private static final Object INSTALLATION_LOCK = new Object();
+    private static final ThreadLocal<Integer> DELEGATE_SELECTOR_CONSTRUCTION_DEPTH = new ThreadLocal<Integer>();
 
     private static volatile SelectorProvider previousSelectorProvider;
     private static volatile NioInstallationResult lastInstallationResult = NioInstallationResult.of(
@@ -142,46 +141,46 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     @Override
     public DatagramChannel openDatagramChannel() throws IOException {
-        return new SniffyDatagramChannelAdapter(this, delegate.openDatagramChannel());
+        // UDP is deliberately pass-through until Sniffy's connection model can represent datagram endpoints.
+        return delegate.openDatagramChannel();
     }
 
     // Available in Java 1.7+ only
     @Override
     @IgnoreJRERequirement
     public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
-        return new SniffyDatagramChannelAdapter(this, delegate.openDatagramChannel(family));
+        return delegate.openDatagramChannel(family);
     }
 
     @Override
     public Pipe openPipe() throws IOException {
-        return OSUtil.isWindows() && StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.SniffySelectorProvider", "openSelector") ?
+        return isDelegateSelectorConstruction() ?
                 delegate.openPipe() :
                 new SniffyPipe(this, delegate.openPipe());
     }
 
     @Override
     public AbstractSelector openSelector() throws IOException {
-        return new SniffySelector(this, delegate.openSelector());
+        enterDelegateSelectorConstruction();
+        try {
+            return new SniffySelector(this, delegate.openSelector());
+        } finally {
+            exitDelegateSelectorConstruction();
+        }
     }
 
-    /**
-     * @return a Sniffy Wrapper around SocketChannel unless we're on Windows and SocketChannel is created for Pipe
-     * @throws IOException on underlying IOException
-     */
+    /** @return a monitored server channel, except during scoped delegate-selector construction. */
     @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
-        return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
+        return isDelegateSelectorConstruction() ?
                 delegate.openServerSocketChannel() :
                 new SniffyServerSocketChannel(this, delegate.openServerSocketChannel());
     }
 
-    /**
-     * @return a Sniffy Wrapper around SocketChannel unless we're on Windows and SocketChannel is created for Pipe
-     * @throws IOException on underlying IOException
-     */
+    /** @return a monitored socket channel, except during scoped delegate-selector construction. */
     @Override
     public SocketChannel openSocketChannel() throws IOException {
-        return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
+        return isDelegateSelectorConstruction() ?
                 delegate.openSocketChannel() :
                 new SniffySocketChannel(this, delegate.openSocketChannel());
     }
@@ -193,8 +192,6 @@ public class SniffySelectorProvider extends SelectorProvider {
             return new SniffySocketChannel(this, (SocketChannel) channel);
         } else if (channel instanceof ServerSocketChannel) {
             return new SniffyServerSocketChannel(this, (ServerSocketChannel) channel);
-        } else if (channel instanceof DatagramChannel) {
-            return new SniffyDatagramChannelAdapter(this, (DatagramChannel) channel);
         } else {
             return channel;
         }
@@ -205,7 +202,7 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
+            return isDelegateSelectorConstruction() ?
                     invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
                             ProtocolFamily.class, family,
                             SocketChannel.class
@@ -227,7 +224,11 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return new SniffyServerSocketChannel(this,
+            return isDelegateSelectorConstruction() ?
+                    invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
+                            ProtocolFamily.class, family,
+                            ServerSocketChannel.class) :
+                    new SniffyServerSocketChannel(this,
                     invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
                         ProtocolFamily.class, family,
                         ServerSocketChannel.class
@@ -235,6 +236,25 @@ public class SniffySelectorProvider extends SelectorProvider {
             );
         } catch (Exception e) {
             throw processException(e);
+        }
+    }
+
+    static boolean isDelegateSelectorConstruction() {
+        Integer depth = DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.get();
+        return null != depth && depth > 0;
+    }
+
+    private static void enterDelegateSelectorConstruction() {
+        Integer depth = DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.get();
+        DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.set(null == depth ? 1 : depth + 1);
+    }
+
+    private static void exitDelegateSelectorConstruction() {
+        Integer depth = DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.get();
+        if (null == depth || depth <= 1) {
+            DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.remove();
+        } else {
+            DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.set(depth - 1);
         }
     }
 

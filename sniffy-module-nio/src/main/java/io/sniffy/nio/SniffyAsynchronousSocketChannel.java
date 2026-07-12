@@ -30,6 +30,12 @@ import java.util.concurrent.TimeoutException;
 /**
  * @since 3.1.7
  */
+/**
+ * Legacy experimental wrapper retained for binary compatibility. It is not installed or supported by Sniffy.
+ *
+ * @deprecated NIO2/AIO monitoring is not supported.
+ */
+@Deprecated
 public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel implements SniffyNetworkConnection {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffyAsynchronousSocketChannel.class);

@@ -18,22 +18,22 @@ import static io.sniffy.util.ReflectionUtil.invokeMethod;
  */
 public class SniffyPipe extends Pipe {
 
-    private final SelectorProvider selectorProvider;
-    private final Pipe delegate;
+    private final SourceChannel source;
+    private final SinkChannel sink;
 
     public SniffyPipe(SelectorProvider selectorProvider, Pipe delegate) {
-        this.selectorProvider = selectorProvider;
-        this.delegate = delegate;
+        this.source = new SniffySourceChannel(selectorProvider, delegate.source());
+        this.sink = new SniffySinkChannel(selectorProvider, delegate.sink());
     }
 
     @Override
     public SourceChannel source() {
-        return new SniffySourceChannel(selectorProvider, delegate.source());
+        return source;
     }
 
     @Override
     public SinkChannel sink() {
-        return new SniffySinkChannel(selectorProvider, delegate.sink());
+        return sink;
     }
 
     @SuppressWarnings("RedundantThrows")
