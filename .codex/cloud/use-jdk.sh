@@ -12,9 +12,10 @@ case "${feature}" in
     ;;
 esac
 
-jdk_home="${HOME}/.jdks/temurin-${feature}"
-if [[ ! -x "${jdk_home}/bin/java" ]]; then
-  echo "JDK ${feature} is not installed. Run bash .codex/cloud/setup.sh first." >&2
+variable="SNIFFY_JDK${feature}_HOME"
+eval "jdk_home=\${${variable}:-}"
+if [[ -z "${jdk_home}" || ! -x "${jdk_home}/bin/java" ]]; then
+  echo "JDK ${feature} is not configured. Run bash .codex/cloud/setup.sh first." >&2
   return 1 2>/dev/null || exit 1
 fi
 
