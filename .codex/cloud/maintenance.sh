@@ -10,10 +10,6 @@ fi
 # shellcheck disable=SC1090
 source "${HOME}/.sniffy-codex-env"
 
-# Proxy endpoints are task-environment details and may change when a cached
-# container is resumed, so refresh Maven's settings before resolving anything.
-bash .codex/cloud/configure-maven-proxy.sh
-
 # Resolve dependencies again after checkout. With a warm ~/.m2 cache this is
 # cheap, while still downloading dependencies introduced by the selected branch.
 bash .codex/cloud/warm-maven-cache.sh
