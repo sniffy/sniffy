@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.2.0-SNAPSHOT</version>
+        <version>4.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -21,7 +21,7 @@
         <module>sniffy-integration-tests-spock</module>
 	    <module>sniffy-integration-tests-spring-boot-2</module>
 	    <module>sniffy-integration-tests-spring-kafka</module>
-	    <module>sniffy-integration-tests-tomcat</module>
+	    <module>sniffy-integration-tests-tomcat-javax</module>
 	    <module>sniffy-integration-tests-proxy</module>
         <module>sniffy-integration-tests-java8-bytecode</module>
     </modules>
@@ -74,7 +74,7 @@
             </activation>
             <modules>
                 <module>sniffy-integration-tests-spring-boot</module>
-                <module>sniffy-integration-tests-tomcat-jakarta</module>
+                <module>sniffy-integration-tests-tomcat</module>
                 <module>sniffy-integration-tests-servlet-contract</module>
             </modules>
         </profile>

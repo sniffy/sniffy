@@ -1,6 +1,6 @@
-== Migration to Sniffy 3.2
+== Migration to Sniffy 4.0
 
-Sniffy 3.2 separates the Javax and Jakarta Servlet ecosystems. This avoids mixing incompatible copies of the Servlet
+Sniffy 4.0 separates the Javax and Jakarta Servlet ecosystems. This avoids mixing incompatible copies of the Servlet
 API and lets each Spring generation use its native namespace without source generation or bytecode rewriting.
 
 [cols="1,1,1,1"]

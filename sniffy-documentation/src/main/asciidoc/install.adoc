@@ -5,7 +5,7 @@
 Sniffy comes with an uber-jar which doesn't require any additional dependencies to be installed.
 Just grab the `sniffy-{sniffy-version}.jar` from our https://github.com/sniffy/sniffy/releases/latest[releases page] and add it to the classpath of your application.
 
-NOTE: The Sniffy 3.x aggregate jar remains Java 8 and Javax Servlet compatible. Jakarta Servlet applications should
+NOTE: The Sniffy 4.x aggregate jar remains Java 8 and Javax Servlet compatible. Jakarta Servlet applications should
 use the modular artifacts below instead.
 
 WARNING: If you're using an application server like Tomcat and you're defining a datasource on application server level, `sniffy-{sniffy-version}.jar` should be added to the common classloader classpath and should be *absent* in web application classpath.

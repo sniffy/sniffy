@@ -1,6 +1,5 @@
 package io.sniffy.test.tomcat;
 
-import io.qameta.allure.Issue;
 import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.descriptor.web.FilterDef;
@@ -30,10 +29,9 @@ public class BaseTomcatIT {
         tomcat.setPort(0);
         tomcat.getConnector();
 
-        Context context = tomcat.addContext("/test", new File("src/main/webapp").getAbsolutePath());
+        Context context = tomcat.addContext("/test", new File("target").getAbsolutePath());
         Tomcat.addServlet(context, "integration", new IntegrationTestServlet());
         context.addServletMappingDecoded("/*", "integration");
-
         FilterDef filterDef = new FilterDef();
         filterDef.setFilterName("sniffy");
         filterDef.setFilter(new SniffyAnnotationFilter());
@@ -42,7 +40,6 @@ public class BaseTomcatIT {
         filterMap.setFilterName("sniffy");
         filterMap.addURLPattern("/*");
         context.addFilterMap(filterMap);
-
         tomcat.start();
         port = tomcat.getConnector().getLocalPort();
     }
@@ -59,24 +56,9 @@ public class BaseTomcatIT {
     }
 
     @Test
-    public void testSniffyInjected() throws IOException {
-        assertInstrumented("/test");
-    }
-
-    @Test
-    @Issue("issues/321")
-    public void testSniffyInjectedPath() throws IOException {
-        assertInstrumented("/test/index.html");
-    }
-
-    @Test
-    @Issue("issues/319")
-    public void testSniffyInjectedToUrlWithQueryParameters() throws IOException {
-        assertInstrumented("/test?foo=bar");
-    }
-
-    private static void assertInstrumented(String path) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL("http://127.0.0.1:" + port + path).openConnection();
+    public void jakartaFilterRunsInTomcat10() throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(
+                "http://127.0.0.1:" + port + "/test?namespace=jakarta").openConnection();
         connection.setRequestProperty("Accept", "text/html");
         try {
             assertTrue(connection.getResponseCode() / 100 == 2);

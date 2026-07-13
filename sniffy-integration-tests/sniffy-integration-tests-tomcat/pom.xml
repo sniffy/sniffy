@@ -7,36 +7,21 @@
     <parent>
         <groupId>io.sniffy</groupId>
         <artifactId>sniffy-integration-tests</artifactId>
-        <version>3.2.0-SNAPSHOT</version>
+        <version>4.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>sniffy-integration-tests-tomcat</artifactId>
-    <name>Sniffy Tomcat 9 Javax Integration Tests</name>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <testSource>1.8</testSource>
-                    <testTarget>1.8</testTarget>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <name>Sniffy Tomcat 10 Jakarta Integration Tests</name>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>${tomcat.javax.version}</version>
+            <version>${tomcat.jakarta.version}</version>
         </dependency>
         <dependency>
             <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-web-javax</artifactId>
+            <artifactId>sniffy-web</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
