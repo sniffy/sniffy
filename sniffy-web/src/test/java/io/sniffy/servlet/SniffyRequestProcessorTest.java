@@ -3,9 +3,9 @@ package io.sniffy.servlet;
 import io.qameta.allure.Issue;
 import org.junit.Test;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletRegistration;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletRegistration;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

@@ -398,12 +398,16 @@ class CompatSnifferSocketImpl extends CompatSniffySocketImplAdapter implements S
 
     @Override
     protected void close() throws IOException {
-        checkConnectionAllowed(1);
-        long start = System.currentTimeMillis();
         try {
-            super.close();
+            checkConnectionAllowed(1);
+            long start = System.currentTimeMillis();
+            try {
+                super.close();
+            } finally {
+                logSocket(System.currentTimeMillis() - start);
+            }
         } finally {
-            logSocket(System.currentTimeMillis() - start);
+            ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(this);
         }
     }
 

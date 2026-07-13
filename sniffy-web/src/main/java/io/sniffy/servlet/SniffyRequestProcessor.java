@@ -10,9 +10,9 @@ import io.sniffy.sql.SqlStats;
 import io.sniffy.sql.StatementMetaData;
 import io.sniffy.util.ExceptionUtil;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashMap;

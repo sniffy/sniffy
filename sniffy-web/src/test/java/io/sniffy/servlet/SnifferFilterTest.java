@@ -4,7 +4,7 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import javax.script.ScriptException;
-import jakarta.servlet.ServletException;
+import javax.servlet.ServletException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 

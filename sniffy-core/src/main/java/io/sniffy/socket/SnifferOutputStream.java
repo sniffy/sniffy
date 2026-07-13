@@ -32,18 +32,21 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            ((SharedConnectionIO) trafficCapturingNetworkConnection).write(delegate, b);
+            return;
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
+        boolean written = false;
         try {
             delegate.write(b);
-            trafficCapturingNetworkConnection.logTraffic(
-                    true, Protocol.TCP,
-                    new byte[]{(byte) b},
-                    0, 1
-            );
+            written = true;
+            recordWritten(new byte[]{(byte) b}, 0, 1);
         } finally {
-            sleepIfRequired(1);
-            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, 0, 1);
+            sleepIfRequired(written ? 1 : 0);
+            if (null != snifferSocket) snifferSocket.logSocket(
+                    System.currentTimeMillis() - start, 0, written ? 1 : 0);
         }
     }
 
@@ -86,9 +89,15 @@ public class SnifferOutputStream extends OutputStream {
     @Override
     public void write(byte[] b) throws IOException {
 
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            ((SharedConnectionIO) trafficCapturingNetworkConnection).write(delegate, b);
+            return;
+        }
+
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
 
-        if (null != snifferSocket && !snifferSocket.isFirstPacketSent()) {
+        if (!(trafficCapturingNetworkConnection instanceof PostWriteNetworkTraffic)
+                && null != snifferSocket && !snifferSocket.isFirstPacketSent()) {
 
             try {
                 SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(snifferSocket);
@@ -102,24 +111,28 @@ public class SnifferOutputStream extends OutputStream {
         }
 
         long start = System.currentTimeMillis();
+        boolean written = false;
         try {
             delegate.write(b);
-            trafficCapturingNetworkConnection.logTraffic(
-                    true, Protocol.TCP,
-                    b,
-                    0, b.length
-            );
+            written = true;
+            recordWritten(b, 0, b.length);
         } finally {
-            sleepIfRequired(b.length);
-            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, 0, b.length);
+            sleepIfRequired(written ? b.length : 0);
+            if (null != snifferSocket) snifferSocket.logSocket(
+                    System.currentTimeMillis() - start, 0, written ? b.length : 0);
         }
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            ((SharedConnectionIO) trafficCapturingNetworkConnection).write(delegate, b, off, len);
+            return;
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
 
-        if (null != snifferSocket && !snifferSocket.isFirstPacketSent()) {
+        if (!(trafficCapturingNetworkConnection instanceof PostWriteNetworkTraffic)
+                && null != snifferSocket && !snifferSocket.isFirstPacketSent()) {
 
             try {
                 SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(snifferSocket);
@@ -133,16 +146,23 @@ public class SnifferOutputStream extends OutputStream {
         }
 
         long start = System.currentTimeMillis();
+        boolean written = false;
         try {
             delegate.write(b, off, len);
-            trafficCapturingNetworkConnection.logTraffic(
-                    true, Protocol.TCP,
-                    b,
-                    off, len
-            );
+            written = true;
+            recordWritten(b, off, len);
         } finally {
-            sleepIfRequired(len);
-            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, 0, len);
+            sleepIfRequired(written ? len : 0);
+            if (null != snifferSocket) snifferSocket.logSocket(
+                    System.currentTimeMillis() - start, 0, written ? len : 0);
+        }
+    }
+
+    private void recordWritten(byte[] bytes, int offset, int length) {
+        if (trafficCapturingNetworkConnection instanceof PostWriteNetworkTraffic) {
+            ((PostWriteNetworkTraffic) trafficCapturingNetworkConnection).onBytesWritten(bytes, offset, length);
+        } else {
+            trafficCapturingNetworkConnection.logTraffic(true, Protocol.TCP, bytes, offset, length);
         }
     }
 
@@ -159,6 +179,10 @@ public class SnifferOutputStream extends OutputStream {
 
     @Override
     public void close() throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            ((SharedConnectionIO) trafficCapturingNetworkConnection).closeOutputStream(delegate);
+            return;
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {

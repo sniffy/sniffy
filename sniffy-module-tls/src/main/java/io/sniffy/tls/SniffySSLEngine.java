@@ -98,9 +98,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
             if (firstWrap && dstLength > 0) {
                 firstWrap = false;
 
-                dst.position(dstPosition);
-                byte[] dstBuff = new byte[dstLength]; // TODO: limit it if it's bigger than say 512
-                dst.get(dstBuff, 0, dstLength);
+                byte[] dstBuff = copyBytes(dst, dstPosition, dstLength); // TODO: limit it if it's bigger than say 512
 
                 Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(dstBuff), this);
 
@@ -112,9 +110,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
                     UNKNOWN_CONNECTION_LOG.trace("SSLEngine invoked for unknown connection id " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
                 } else {
 
-                    src.position(srcPosition);
-                    byte[] buff = new byte[srcLength];
-                    src.get(buff, 0, srcLength);
+                    byte[] buff = copyBytes(src, srcPosition, srcLength);
 
                     sniffyNetworkConnection.logDecryptedTraffic(
                             true,
@@ -135,7 +131,6 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         return wrap(srcs, 0, null == srcs ? 0 : srcs.length, dst);
     }
 
-    // TODO: cover with tests
     @Override
     public SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length, ByteBuffer dst) throws SSLException {
         WRAP_VERBOSE_LOG.trace("StackTrace for first SSLEngine.wrap() invocation was " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
@@ -143,11 +138,8 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         int srcLength = 0;
 
         int[] positions = new int[length];
-        int[] remainings = new int[length];
-
         for (int i = 0; i < length; i++) {
             positions[i] = srcs[offset + i].position();
-            remainings[i] = srcs[offset + i].remaining();
         }
 
         int dstPosition = dst.position();
@@ -171,9 +163,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
             if (firstWrap && dstLength > 0) {
                 firstWrap = false;
 
-                dst.position(dstPosition);
-                byte[] dstBuff = new byte[dstLength]; // TODO: limit it if it's bigger than say 512
-                dst.get(dstBuff, 0, dstLength);
+                byte[] dstBuff = copyBytes(dst, dstPosition, dstLength); // TODO: limit it if it's bigger than say 512
 
                 Sniffy.CLIENT_HELLO_CACHE.put(ByteBuffer.wrap(dstBuff), this);
 
@@ -184,14 +174,12 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
                 if (null == sniffyNetworkConnection) {
                     UNKNOWN_CONNECTION_LOG.trace("SSLEngine invoked for unknown connection id " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
                 } else {
-                    for (int i = 0; i < length; i++) {
-                        srcs[offset + i].position(positions[i]);
-                        byte[] buff = new byte[remainings[i]];
-                        srcs[offset + i].get(buff, 0, remainings[i]);
+                    byte[] buff = copyTransferredBytes(srcs, offset, length, positions, srcLength);
+                    if (buff.length > 0) {
                         sniffyNetworkConnection.logDecryptedTraffic(
                                 true,
                                 Protocol.TCP,
-                                buff, 0, srcLength
+                                buff, 0, buff.length
                         );
                     }
                 }
@@ -230,9 +218,7 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
                 if (null == sniffyNetworkConnection) {
                     UNKNOWN_CONNECTION_LOG.trace("SSLEngine invoked for unknown connection id " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
                 } else {
-                    dst.position(dstPosition);
-                    byte[] buff = new byte[dstLength];
-                    dst.get(buff, 0, dstLength);
+                    byte[] buff = copyBytes(dst, dstPosition, dstLength);
 
                     sniffyNetworkConnection.logDecryptedTraffic(
                             false,
@@ -259,11 +245,8 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         int srcLength = 0;
 
         int[] positions = new int[length];
-        int[] remainings = new int[length];
-
         for (int i = 0; i < length; i++) {
             positions[i] = dsts[offset + i].position();
-            remainings[i] = dsts[offset + i].remaining();
         }
 
         int dstLength = 0;
@@ -288,14 +271,12 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
                 if (null == sniffyNetworkConnection) {
                     UNKNOWN_CONNECTION_LOG.trace("SSLEngine invoked for unknown connection id " + StringUtil.LINE_SEPARATOR + StackTraceExtractor.getStackTraceAsString());
                 } else {
-                    for (int i = 0; i < length; i++) {
-                        dsts[offset + i].position(positions[i]);
-                        byte[] buff = new byte[remainings[i]];
-                        dsts[offset + i].get(buff, 0, remainings[i]);
+                    byte[] buff = copyTransferredBytes(dsts, offset, length, positions, dstLength);
+                    if (buff.length > 0) {
                         sniffyNetworkConnection.logDecryptedTraffic(
                                 false,
                                 Protocol.TCP,
-                                buff, 0, dstLength
+                                buff, 0, buff.length
                         );
                     }
                 }
@@ -304,6 +285,46 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
 
         }
 
+    }
+
+    private static byte[] copyBytes(ByteBuffer buffer, int position, int length) {
+        ByteBuffer duplicate = buffer.duplicate();
+        duplicate.limit(position + length);
+        duplicate.position(position);
+        byte[] bytes = new byte[length];
+        duplicate.get(bytes);
+        return bytes;
+    }
+
+    /**
+     * Copies at most the aggregate byte count reported by SSLEngine, using each
+     * buffer's actual position advance to preserve buffer order and partial-transfer
+     * boundaries without changing application-visible positions or limits.
+     */
+    private static byte[] copyTransferredBytes(ByteBuffer[] buffers, int offset, int length,
+                                               int[] initialPositions, int reportedBytes) {
+        byte[] bytes = new byte[reportedBytes];
+        int destinationOffset = 0;
+        for (int i = 0; i < length && destinationOffset < reportedBytes; i++) {
+            ByteBuffer buffer = buffers[offset + i];
+            int transferred = Math.min(
+                    buffer.position() - initialPositions[i], reportedBytes - destinationOffset);
+            if (transferred > 0) {
+                ByteBuffer duplicate = buffer.duplicate();
+                duplicate.limit(initialPositions[i] + transferred);
+                duplicate.position(initialPositions[i]);
+                duplicate.get(bytes, destinationOffset, transferred);
+                destinationOffset += transferred;
+            }
+        }
+        if (destinationOffset == reportedBytes) return bytes;
+
+        // A compliant SSLEngine advances buffer positions by exactly the reported
+        // aggregate. If a provider violates that contract, publish only bytes that
+        // can be observed safely instead of padding or reading beyond a buffer.
+        byte[] exactBytes = new byte[destinationOffset];
+        System.arraycopy(bytes, 0, exactBytes, 0, destinationOffset);
+        return exactBytes;
     }
 
     @Override

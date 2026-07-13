@@ -1,7 +1,7 @@
 package io.sniffy.servlet;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletRegistration;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletRegistration;
 import java.util.*;
 
 /**
@@ -14,7 +14,7 @@ class ServletRegistrationUtil {
     static {
         boolean servletRegitrationApiAvailable;
         try {
-            Class.forName("jakarta.servlet.ServletRegistration");
+            Class.forName("javax.servlet.ServletRegistration");
             servletRegitrationApiAvailable = true;
         } catch (ClassNotFoundException e) {
             servletRegitrationApiAvailable = false;

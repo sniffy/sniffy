@@ -1,8 +1,8 @@
 package io.sniffy.servlet;
 
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.ServletContext;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import java.util.Enumeration;
 
 /**

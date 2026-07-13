@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.14-SNAPSHOT</version>
+        <version>3.2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,6 +18,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
+        <nio.functional.runOrder>alphabetical</nio.functional.runOrder>
     </properties>
 
     <dependencies>
@@ -34,6 +35,59 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Merged into both inherited JUnit/TestNG executions; verified in help:effective-pom. -->
+                    <forkedProcessTimeoutInSeconds>180</forkedProcessTimeoutInSeconds>
+                    <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>JUnit-execution</id>
+                        <configuration>
+                            <forkCount>1</forkCount>
+                            <reuseForks>true</reuseForks>
+                            <runOrder>${nio.functional.runOrder}</runOrder>
+                            <excludes>
+                                <exclude>%regex[.*TestNg.*]</exclude>
+                                <exclude>**/SniffySelectorProviderInstallationTest.java</exclude>
+                            </excludes>
+                            <excludedGroups>io.sniffy.nio.NioProviderLifecycleTest</excludedGroups>
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>io.sniffy.nio.NioFunctionalTestRunListener</value>
+                                </property>
+                            </properties>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>nio-provider-lifecycle-execution</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <testNGArtifactName>dev:null</testNGArtifactName>
+                            <includes>
+                                <include>**/SniffySelectorProviderInstallationTest.java</include>
+                            </includes>
+                            <groups>io.sniffy.nio.NioProviderLifecycleTest</groups>
+                            <forkCount>1</forkCount>
+                            <reuseForks>false</reuseForks>
+                            <reportsDirectory>${project.build.directory}/surefire-reports-provider-lifecycle</reportsDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
 
@@ -56,6 +110,14 @@
                             <target>1.9</target>
                             <testSource>1.9</testSource>
                             <testTarget>1.9</testTarget>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!-- Surefire scans test classes before capability probes can open this package. -->
+                            <argLine>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED -Xmx1024m ${argLine}</argLine>
                         </configuration>
                     </plugin>
                 </plugins>

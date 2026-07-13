@@ -2,7 +2,17 @@
 
 ## Development
 
-[Commits](https://github.com/sniffy/sniffy/compare/3.1.13...master)
+[Commits](https://github.com/sniffy/sniffy/compare/3.2.0...master)
+
+ * Reworked the opt-in IP TCP NIO monitor: public `Selector` monitor semantics, race-safe registration cleanup, stable selection-key identity, shared channel/socket state, exact buffer accounting, incremental post-write HTTP CONNECT detection, monitored accepted channels, and socket-view `SO_TIMEOUT`.
+ * UNIX-domain channels, UDP `DatagramChannel`, and unknown non-IP families are pass-through; NIO2/AIO and SOCKS remain unsupported. `io.sniffy.monitorNio` remains disabled by default pending the complete platform CI matrix.
+
+## v3.2.0 - TBD
+
+[Commits](https://github.com/sniffy/sniffy/compare/3.1.13...3.2.0)
+
+ * [Drop support of Java 6 and Java 7](https://github.com/sniffy/sniffy/issues/587)
+ * Updated dependencies: Spring Framework to 5.3.39, Spring Boot to 2.7.18, JaCoCo to 0.8.13, Animal Sniffer to 1.20
 
 ## v3.1.13 - June 15th, 2022
 

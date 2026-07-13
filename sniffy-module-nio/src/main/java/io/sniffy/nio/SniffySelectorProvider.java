@@ -3,12 +3,14 @@ package io.sniffy.nio;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.util.OSUtil;
-import io.sniffy.util.ReflectionUtil;
 import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
 import java.io.IOException;
 import java.net.ProtocolFamily;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.channels.Channel;
 import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
@@ -23,7 +25,20 @@ public class SniffySelectorProvider extends SelectorProvider {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySelectorProvider.class);
 
+    private static final Object INSTALLATION_LOCK = new Object();
+    private static final ThreadLocal<Integer> DELEGATE_SELECTOR_CONSTRUCTION_DEPTH = new ThreadLocal<Integer>();
+
     private static volatile SelectorProvider previousSelectorProvider;
+    private static volatile NioInstallationResult lastInstallationResult = NioInstallationResult.of(
+            NioInstallationResult.Status.UNINSTALLED, "NIO provider has not been installed");
+    private static boolean unsupportedPlatformLogged;
+    private static final NioProviderAccessResolver DEFAULT_ACCESS_RESOLVER = new NioProviderAccessResolver() {
+        @Override
+        public NioProviderAccess resolve() throws JdkNioAccess.JdkNioAccessException {
+            return JdkNioAccess.resolve();
+        }
+    };
+    private static volatile NioProviderAccessResolver accessResolver = DEFAULT_ACCESS_RESOLVER;
 
     private final SelectorProvider delegate;
 
@@ -31,94 +46,175 @@ public class SniffySelectorProvider extends SelectorProvider {
         this.delegate = delegate;
     }
 
-    public static synchronized boolean install() {
+    public static boolean install() {
+        return installWithResult().isInstalled();
+    }
 
-        SelectorProvider delegate = SelectorProvider.provider();
+    public static NioInstallationResult installWithResult() {
+        synchronized (INSTALLATION_LOCK) {
+            final NioProviderAccess access;
+            try {
+                access = accessResolver.resolve();
+            } catch (JdkNioAccess.JdkNioAccessException e) {
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.UNSUPPORTED,
+                        e.getMessage(), e);
+                if (!unsupportedPlatformLogged) {
+                    LOG.error("NIO monitoring is unsupported on this runtime; classic socket monitoring remains active", e);
+                    unsupportedPlatformLogged = true;
+                }
+                return lastInstallationResult;
+            }
 
-        LOG.info("Original SelectorProvider was " + delegate);
+            SelectorProvider delegate = access.getSelectorProvider();
+            if (delegate == null) {
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.FAILED,
+                        "JDK SelectorProvider slot " + access.describeProviderSlot() + " is null");
+                LOG.error(lastInstallationResult.getMessage());
+                return lastInstallationResult;
+            }
+            if (delegate instanceof SniffySelectorProvider) {
+                SniffySelectorProvider installed = (SniffySelectorProvider) delegate;
+                if (previousSelectorProvider == null) {
+                    previousSelectorProvider = installed.delegate;
+                }
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.ALREADY_INSTALLED,
+                        "Sniffy SelectorProvider is already installed");
+                return lastInstallationResult;
+            }
 
-        if (null == delegate) {
-            return false;
+            SniffySelectorProvider wrapper = new SniffySelectorProvider(delegate);
+            try {
+                access.setSelectorProvider(wrapper);
+                if (access.getSelectorProvider() != wrapper) {
+                    access.setSelectorProvider(delegate);
+                    throw new IllegalStateException("JDK SelectorProvider slot did not retain the Sniffy provider");
+                }
+                previousSelectorProvider = delegate;
+                unsupportedPlatformLogged = false;
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.INSTALLED,
+                        "Installed Sniffy SelectorProvider around " + delegate.getClass().getName());
+                LOG.info(lastInstallationResult.getMessage());
+                return lastInstallationResult;
+            } catch (Throwable e) {
+                try {
+                    access.setSelectorProvider(delegate);
+                } catch (Throwable rollbackFailure) {
+                    e.addSuppressed(rollbackFailure);
+                }
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.FAILED,
+                        "Failed to install Sniffy SelectorProvider; the original provider was retained", e);
+                LOG.error(lastInstallationResult.getMessage(), e);
+                return lastInstallationResult;
+            }
         }
-
-        if (null == previousSelectorProvider && !SniffySelectorProvider.class.equals(delegate.getClass())) {
-            previousSelectorProvider = delegate;
-        }
-
-        if (SniffySelectorProvider.class.equals(delegate.getClass())) {
-            return true;
-        }
-
-        SelectorProvider sniffySelectorProvider = new SniffySelectorProvider(delegate);
-
-        LOG.info("Setting SelectorProvider to " + sniffySelectorProvider);
-
-        if (ReflectionUtil.setField("java.nio.channels.spi.SelectorProvider$Holder", null, "INSTANCE", sniffySelectorProvider)) {
-            return true;
-        } else {
-            return ReflectionUtil.setField(SelectorProvider.class, null, "provider", sniffySelectorProvider, "lock");
-        }
-
     }
 
     public static boolean uninstall() {
+        return uninstallWithResult().getStatus() == NioInstallationResult.Status.UNINSTALLED;
+    }
 
-        LOG.info("Restoring original SelectorProvider " + previousSelectorProvider);
-
-        if (null == previousSelectorProvider) {
-            return false;
+    public static NioInstallationResult uninstallWithResult() {
+        synchronized (INSTALLATION_LOCK) {
+            if (previousSelectorProvider == null) {
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.UNINSTALLED,
+                        "No Sniffy SelectorProvider installation is active");
+                return lastInstallationResult;
+            }
+            try {
+                NioProviderAccess access = accessResolver.resolve();
+                SelectorProvider current = access.getSelectorProvider();
+                if (!(current instanceof SniffySelectorProvider)) {
+                    lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.FAILED,
+                            "Cannot uninstall Sniffy NIO provider because the global provider was replaced by " + current);
+                    LOG.error(lastInstallationResult.getMessage());
+                    return lastInstallationResult;
+                }
+                access.setSelectorProvider(previousSelectorProvider);
+                if (access.getSelectorProvider() != previousSelectorProvider) {
+                    throw new IllegalStateException("JDK SelectorProvider slot did not retain the original provider");
+                }
+                previousSelectorProvider = null;
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.UNINSTALLED,
+                        "Restored the original SelectorProvider");
+                LOG.info(lastInstallationResult.getMessage());
+                return lastInstallationResult;
+            } catch (Throwable e) {
+                lastInstallationResult = NioInstallationResult.of(NioInstallationResult.Status.FAILED,
+                        "Failed to restore the original SelectorProvider", e);
+                LOG.error(lastInstallationResult.getMessage(), e);
+                return lastInstallationResult;
+            }
         }
+    }
 
-        if (ReflectionUtil.setField("java.nio.channels.spi.SelectorProvider$Holder", null, "INSTANCE", previousSelectorProvider)) {
-            return true;
-        } else {
-            return ReflectionUtil.setField(SelectorProvider.class, null, "provider", previousSelectorProvider, "lock");
+    public static NioInstallationResult getLastInstallationResult() {
+        return lastInstallationResult;
+    }
+
+    static void setAccessResolverForTests(NioProviderAccessResolver resolver) {
+        synchronized (INSTALLATION_LOCK) {
+            accessResolver = resolver;
+            previousSelectorProvider = null;
+            lastInstallationResult = NioInstallationResult.of(
+                    NioInstallationResult.Status.UNINSTALLED, "Test installation state reset");
         }
+    }
 
+    static void resetAccessResolverForTests() {
+        setAccessResolverForTests(DEFAULT_ACCESS_RESOLVER);
     }
 
     @Override
     public DatagramChannel openDatagramChannel() throws IOException {
-        return new SniffyDatagramChannelAdapter(this, delegate.openDatagramChannel());
+        // UDP is deliberately pass-through until Sniffy's connection model can represent datagram endpoints.
+        return delegate.openDatagramChannel();
     }
 
     // Available in Java 1.7+ only
     @Override
     @IgnoreJRERequirement
     public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
-        return new SniffyDatagramChannelAdapter(this, delegate.openDatagramChannel(family));
+        return delegate.openDatagramChannel(family);
     }
 
     @Override
     public Pipe openPipe() throws IOException {
-        return OSUtil.isWindows() && StackTraceExtractor.hasClassAndMethodInStackTrace("io.sniffy.nio.SniffySelectorProvider", "openSelector") ?
-                delegate.openPipe() :
-                new SniffyPipe(this, delegate.openPipe());
+        if (isDelegateSelectorConstruction()) {
+            return delegate.openPipe();
+        }
+
+        // On Windows, PipeImpl builds its pipe from socket channels obtained through the
+        // globally installed provider. Keep those implementation channels unwrapped.
+        enterDelegateSelectorConstruction();
+        try {
+            return new SniffyPipe(this, delegate.openPipe());
+        } finally {
+            exitDelegateSelectorConstruction();
+        }
     }
 
     @Override
     public AbstractSelector openSelector() throws IOException {
-        return new SniffySelector(this, delegate.openSelector());
+        enterDelegateSelectorConstruction();
+        try {
+            return new SniffySelector(this, delegate.openSelector());
+        } finally {
+            exitDelegateSelectorConstruction();
+        }
     }
 
-    /**
-     * @return a Sniffy Wrapper around SocketChannel unless we're on Windows and SocketChannel is created for Pipe
-     * @throws IOException on underlying IOException
-     */
+    /** @return a monitored server channel, except during scoped delegate-selector construction. */
     @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
-        return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
+        return isDelegateChannelConstruction() ?
                 delegate.openServerSocketChannel() :
                 new SniffyServerSocketChannel(this, delegate.openServerSocketChannel());
     }
 
-    /**
-     * @return a Sniffy Wrapper around SocketChannel unless we're on Windows and SocketChannel is created for Pipe
-     * @throws IOException on underlying IOException
-     */
+    /** @return a monitored socket channel, except during scoped delegate-selector construction. */
     @Override
     public SocketChannel openSocketChannel() throws IOException {
-        return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
+        return isDelegateChannelConstruction() ?
                 delegate.openSocketChannel() :
                 new SniffySocketChannel(this, delegate.openSocketChannel());
     }
@@ -127,11 +223,11 @@ public class SniffySelectorProvider extends SelectorProvider {
     public Channel inheritedChannel() throws IOException {
         Channel channel = delegate.inheritedChannel();
         if (channel instanceof SocketChannel) {
-            return new SniffySocketChannel(this, (SocketChannel) channel);
+            return isIpChannel((SocketChannel) channel) ?
+                    new SniffySocketChannel(this, (SocketChannel) channel) : channel;
         } else if (channel instanceof ServerSocketChannel) {
-            return new SniffyServerSocketChannel(this, (ServerSocketChannel) channel);
-        } else if (channel instanceof DatagramChannel) {
-            return new SniffyDatagramChannelAdapter(this, (DatagramChannel) channel);
+            return isIpChannel((ServerSocketChannel) channel) ?
+                    new SniffyServerSocketChannel(this, (ServerSocketChannel) channel) : channel;
         } else {
             return channel;
         }
@@ -142,18 +238,10 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
-                    invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
-                            ProtocolFamily.class, family,
-                            SocketChannel.class
-                    ) :
-                    new SniffySocketChannel(
-                            this,
-                            invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
-                                    ProtocolFamily.class, family,
-                                    SocketChannel.class
-                            )
-                    );
+            SocketChannel channel = invokeMethod(SelectorProvider.class, delegate, "openSocketChannel",
+                    ProtocolFamily.class, family, SocketChannel.class);
+            return isDelegateChannelConstruction() || !isIpFamily(family) ?
+                    channel : new SniffySocketChannel(this, channel);
         } catch (Exception e) {
             throw processException(e);
         }
@@ -164,15 +252,81 @@ public class SniffySelectorProvider extends SelectorProvider {
     @SuppressWarnings({"unused", "RedundantThrows"})
     public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
         try {
-            return new SniffyServerSocketChannel(this,
-                    invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
-                        ProtocolFamily.class, family,
-                        ServerSocketChannel.class
-                )
-            );
+            ServerSocketChannel channel = invokeMethod(SelectorProvider.class, delegate, "openServerSocketChannel",
+                    ProtocolFamily.class, family, ServerSocketChannel.class);
+            return isDelegateChannelConstruction() || !isIpFamily(family) ?
+                    channel : new SniffyServerSocketChannel(this, channel);
         } catch (Exception e) {
             throw processException(e);
         }
+    }
+
+    static boolean isDelegateSelectorConstruction() {
+        Integer depth = DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.get();
+        return null != depth && depth > 0;
+    }
+
+    private static boolean isDelegateChannelConstruction() {
+        // Java 11's Windows PipeImpl may retry construction on a helper thread after an
+        // interrupt, where the ThreadLocal scope cannot propagate. The stack check keeps
+        // that JDK-owned pipe construction on concrete JDK socket channel implementations.
+        return isDelegateSelectorConstruction() ||
+                (OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe"));
+    }
+
+    static void enterDelegateSelectorConstruction() {
+        Integer depth = DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.get();
+        DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.set(null == depth ? 1 : depth + 1);
+    }
+
+    static void exitDelegateSelectorConstruction() {
+        Integer depth = DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.get();
+        if (null == depth || depth <= 1) {
+            DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.remove();
+        } else {
+            DELEGATE_SELECTOR_CONSTRUCTION_DEPTH.set(depth - 1);
+        }
+    }
+
+    static boolean assertOriginalChannel(Channel delegate, String owner) {
+        if (delegate instanceof SelectableChannelWrapper) {
+            throw new IllegalArgumentException(
+                    owner + " expects the original channel delegate, got " + delegate.getClass().getName());
+        }
+        return true;
+    }
+
+    static boolean assertOriginalPipe(Pipe delegate, String owner) {
+        if (delegate instanceof SniffyPipe) {
+            throw new IllegalArgumentException(
+                    owner + " expects the original Pipe delegate, got " + delegate.getClass().getName());
+        }
+        return true;
+    }
+
+    private static boolean isIpFamily(ProtocolFamily family) {
+        if (family == null) return false;
+        String name = family.name();
+        return "INET".equals(name) || "INET6".equals(name);
+    }
+
+    private static boolean isIpChannel(NetworkChannel channel) {
+        for (Class<?> type = channel.getClass(); type != null; type = type.getSuperclass()) {
+            if (type.getName().contains("UnixDomain")) return false;
+        }
+        try {
+            SocketAddress local = channel.getLocalAddress();
+            if (local != null) return local instanceof InetSocketAddress;
+            if (channel instanceof SocketChannel) {
+                SocketAddress remote = ((SocketChannel) channel).getRemoteAddress();
+                if (remote != null) return remote instanceof InetSocketAddress;
+            }
+        } catch (IOException ignored) {
+            return false;
+        }
+        // Legacy inherited channels are IP channels; newer non-IP implementations have
+        // distinct classes or addresses and are deliberately passed through above.
+        return true;
     }
 
 }

@@ -229,8 +229,7 @@ public class Sniffy {
                     if (sniffySelectorProviderInstalled) return;
                     if (Boolean.TRUE.equals(evt.getNewValue())) {
                         LOG.info("NIO monitoring enabled - loading NIO Sniffy Module");
-                        loadNioModule();
-                        sniffySelectorProviderInstalled = true;
+                        sniffySelectorProviderInstalled = loadNioModule();
                     }
                 }
 
@@ -280,28 +279,32 @@ public class Sniffy {
             reloadTlsModule();
         }
 
+        if (SniffyConfiguration.INSTANCE.isMonitorNio() && !nioModuleLoaded) {
+            LOG.info("NIO monitoring enabled - retrying NIO Sniffy Module installation");
+            loadNioModule();
+        }
+
     }
 
     private static volatile boolean nioModuleLoaded = false;
 
     // TODO: do something more clever and extensible
-    private static void loadNioModule() {
+    private static boolean loadNioModule() {
         if (!nioModuleLoaded) {
             synchronized (Sniffy.class) {
                 if (!nioModuleLoaded) {
 
                     try {
-                        Class.forName("io.sniffy.nio.SniffySelectorProviderModule").getMethod("initialize").invoke(null);
-                        Class.forName("io.sniffy.nio.compat.CompatSniffySelectorProviderModule").getMethod("initialize").invoke(null);
+                        Object result = Class.forName("io.sniffy.nio.SniffySelectorProviderModule")
+                                .getMethod("initialize").invoke(null);
+                        nioModuleLoaded = Boolean.TRUE.equals(result);
                     } catch (Exception e) {
-                        LOG.error(e);
+                        LOG.error("Failed to initialize the NIO Sniffy Module; classic socket monitoring remains active", e);
                     }
-
-                    nioModuleLoaded = true;
-
                 }
             }
         }
+        return nioModuleLoaded;
     }
 
     private static volatile boolean tlsModuleLoaded = false;

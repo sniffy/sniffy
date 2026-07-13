@@ -8,11 +8,11 @@ import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
 import io.sniffy.registry.ConnectionsRegistry;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Map;
@@ -148,8 +148,8 @@ public class SniffyFilter implements Filter {
             }
 
             String monitorNio = filterConfig.getInitParameter("monitor-nio");
-            if (null == this.monitorNio && (null == monitorNio || Boolean.parseBoolean(monitorNio))) {
-                setMonitorNio(true);
+            if (null == this.monitorNio && null != monitorNio) {
+                setMonitorNio(Boolean.parseBoolean(monitorNio));
             }
 
             // TODO: rename to filter-enabled for consistency

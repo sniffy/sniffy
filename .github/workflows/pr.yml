@@ -11,78 +11,96 @@ on:
   pull_request:
     branches-ignore:
       - tag/*
-
+env:
+  MAVEN_OPTS: -Dkotlin.environment.keepalive=true
+# TODO: somehow grab test results from the github action
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
         include:
           - java: 8
-            os: ubuntu-24.04
+            os: ubuntu-26.04
+            label: Ubuntu
           - java: 11
-            os: windows-2022
+            os: windows-2025
+            label: Windows
           - java: 17
-            os: macos-13
-    name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
+            os: macos-26
+            label: macOS
+          - java: 25
+            os: ubuntu-26.04
+            label: Ubuntu
+    name: Smoke JDK ${{ matrix.java }}, ${{ matrix.label }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -X -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os != 'windows-2022'
+        if: matrix.os != 'windows-2025'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2025'
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2022'
+        if: matrix.os != 'windows-2025'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2025'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: surefire-test-report-smoke-test-${{ matrix.java }}-${{ matrix.os }}
           path: |
             **/target/surefire-reports/
+            **/target/surefire-reports/*.dump
+            **/target/surefire-reports/*.dumpstream
+            **/target/surefire-reports-provider-lifecycle/
+            **/target/surefire-reports-provider-lifecycle/*.dump
+            **/target/surefire-reports-provider-lifecycle/*.dumpstream
             **/target/hs_err*.*
-      - uses: codecov/codecov-action@v4
+            **/target/*jstack*.txt
+      - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
     needs:
       - smoke-test
     strategy:
       matrix:
-        platform: [ linux/arm, linux/arm64, linux/s390x ]
+        platform: [ linux/arm, linux/arm64, linux/s390x, linux/ppc64le ]
     name: Test with ${{ matrix.platform }} AdoptOpenJDK 11
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up QEMU
         id: qemu
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           image: tonistiigi/binfmt:latest
           platforms: all
@@ -90,20 +108,20 @@ jobs:
         run: echo ${{ steps.qemu.outputs.platforms }}
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
       - name: Set up JDK 11
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: 11
           distribution: 'temurin'
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
@@ -119,7 +137,7 @@ jobs:
         run: mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn -f sniffy-compatibility-tests/pom.xml de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
       - run: cp -R ~/.m2/repository ./repository
       - name: Build with ${{ matrix.platform }} AdoptOpenJDK 11
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./.github/workflows/Dockerfile.3.8.1-adoptopenjdk-11
@@ -129,10 +147,10 @@ jobs:
   test-ibm-j9:
     needs:
       - smoke-test
-    runs-on: ubuntu-24.04
-    name: Test JDK IBM J9 1.8, ubuntu-24.04
+    runs-on: ubuntu-26.04
+    name: Test JDK IBM J9 1.8, ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Pull IBM JDK J9 1.8 Docker Image
         uses: addnab/docker-run-action@v3
         with:
@@ -144,114 +162,131 @@ jobs:
       - name: Set Java Version
         run: |
           export JAVA_HOME=${{ github.workspace }}/ibmjdk
+          echo "JAVA_HOME=${{ github.workspace }}/ibmjdk" >> "$GITHUB_ENV"
           ${JAVA_HOME}/bin/java -version
         shell: bash
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+      - name: Maven Version
+        run: mvn --version
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   test-matrix:
     needs:
       - smoke-test
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
         # test against LTS versions of JDK up to 21:
-        java: [ 8, 11, 17, 21 ]
-        os: [ ubuntu-24.04, windows-2022, macos-13 ]
+#        java: [ 8, 11, 17, 21 ]
+        java: [ 8, 11, 17, 21, 25 ]
+        os: [ ubuntu-26.04, windows-2025, macos-26, macos-26-intel ]
         exclude:
           - java: 8
-            os: ubuntu-24.04
+            os: ubuntu-26.04
           - java: 11
-            os: windows-2022
+            os: windows-2025
           - java: 17
-            os: macos-13
+            os: macos-26
+          - java: 25
+            os: ubuntu-26.04
+          - java: 8
+            os: macos-26
+          - java: 11
+            os: macos-26
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci || mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os != 'windows-2022'
+        if: matrix.os != 'windows-2025'
       - name: Resolve dependencies
         shell: cmd
         run: .\mvnretry.bat de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2025'
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
-        if: matrix.os != 'windows-2022'
+        if: matrix.os != 'windows-2025'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Build with Maven
         run: mvn -T 1C -B verify --file pom.xml -U -P ci '-Dgpg.skip=true' '-Dmaven.wagon.http.retryHandler.count=3'
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2025'
         # https://youtrack.jetbrains.com/issue/KT-43894
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
-      - uses: actions/upload-artifact@v4
-        if: failure()
+      - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: surefire-test-report-test-matrix-${{ matrix.java }}-${{ matrix.os }}
           path: |
             **/target/surefire-reports/
+            **/target/surefire-reports/*.dump
+            **/target/surefire-reports/*.dumpstream
+            **/target/surefire-reports-provider-lifecycle/
+            **/target/surefire-reports-provider-lifecycle/*.dump
+            **/target/surefire-reports-provider-lifecycle/*.dumpstream
             **/target/hs_err*.*
-      - uses: codecov/codecov-action@v4
+            **/target/*jstack*.txt
+      - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   analyze:
     needs:
       - smoke-test
     name: Analyze
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
       - name: Set up JDK 8
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: 8
           distribution: 'temurin'
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.6
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml', '.github/workflows/pr.yml') }}
@@ -264,4 +299,4 @@ jobs:
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4

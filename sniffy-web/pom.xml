@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.1.14-SNAPSHOT</version>
+        <version>3.2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -71,8 +71,8 @@
                                 <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
                                     <signature>
                                         <groupId>org.codehaus.mojo.signature</groupId>
-                                        <artifactId>java16-sun</artifactId>
-                                        <version>1.10</version>
+                                        <artifactId>java18</artifactId>
+                                        <version>1.0</version>
                                     </signature>
                                     <ignores>
                                         <ignore>java.nio.channels.AsynchronousSocketChannel</ignore>
@@ -134,11 +134,6 @@
             <artifactId>sniffy-module-nio</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-module-nio-compat</artifactId>
-            <version>${project.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>io.sniffy</groupId>
@@ -169,8 +164,8 @@
         </dependency>
 
         <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -202,19 +197,57 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.graalvm.js</groupId>
-            <artifactId>js</artifactId>
-            <version>${graalvm.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.js</groupId>
-            <artifactId>js-scriptengine</artifactId>
-            <version>${graalvm.version}</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
+
+    <profiles>
+        <!-- Legacy GraalJS line, compiled for Java 8 -->
+        <profile>
+            <id>graaljs-legacy</id>
+            <activation>
+                <jdk>[1.8,21)</jdk>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js-scriptengine</artifactId>
+                    <version>21.3.18</version>
+                    <scope>test</scope>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js</artifactId>
+                    <version>21.3.18</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Modern GraalJS line -->
+        <profile>
+            <id>graaljs-modern</id>
+            <activation>
+                <jdk>[21,)</jdk>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js-scriptengine</artifactId>
+                    <version>25.0.3</version>
+                    <scope>test</scope>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>js</artifactId>
+                    <version>25.0.3</version>
+                    <type>pom</type>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>

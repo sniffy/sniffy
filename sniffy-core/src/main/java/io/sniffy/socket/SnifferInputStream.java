@@ -28,6 +28,9 @@ public class SnifferInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            return ((SharedConnectionIO) trafficCapturingNetworkConnection).read(delegate);
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
@@ -88,6 +91,9 @@ public class SnifferInputStream extends InputStream {
 
     @Override
     public int read(byte[] b) throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            return ((SharedConnectionIO) trafficCapturingNetworkConnection).read(delegate, b);
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
@@ -102,13 +108,17 @@ public class SnifferInputStream extends InputStream {
             }
             return bytesDown;
         } finally {
-            sleepIfRequired(bytesDown);
-            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+            int accountedBytes = Math.max(bytesDown, 0);
+            sleepIfRequired(accountedBytes);
+            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, accountedBytes, 0);
         }
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            return ((SharedConnectionIO) trafficCapturingNetworkConnection).read(delegate, b, off, len);
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         int bytesDown = 0;
@@ -123,9 +133,10 @@ public class SnifferInputStream extends InputStream {
             }
             return bytesDown;
         } finally {
-            sleepIfRequired(bytesDown);
+            int accountedBytes = Math.max(bytesDown, 0);
+            sleepIfRequired(accountedBytes);
             //snifferSocket.logTraffic(false, Protocol.TCP, b, off, bytesDown); // TODO
-            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+            if (null != snifferSocket) snifferSocket.logSocket(System.currentTimeMillis() - start, accountedBytes, 0);
         }
     }
 
@@ -153,6 +164,10 @@ public class SnifferInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
+        if (trafficCapturingNetworkConnection instanceof SharedConnectionIO) {
+            ((SharedConnectionIO) trafficCapturingNetworkConnection).closeInputStream(delegate);
+            return;
+        }
         if (null != snifferSocket) snifferSocket.checkConnectionAllowed(0);
         long start = System.currentTimeMillis();
         try {

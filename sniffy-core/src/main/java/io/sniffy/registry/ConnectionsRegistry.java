@@ -104,37 +104,10 @@ public enum ConnectionsRegistry implements Runnable {
         InetAddress inetAddress = inetSocketAddress.getAddress();
 
         if (null != sniffyNetworkConnection && !threadLocal) {
-
-            // register given SniffyNetworkConnetion instance (SocketImpl or SocketChannel or similar) in sniffySocketImpls map
-
-            {
-                AbstractMap.SimpleEntry<String, Integer> hostNamePortPair = new AbstractMap.SimpleEntry<String, Integer>(inetAddress.getHostName(), inetSocketAddress.getPort());
-                Collection<Reference<SniffyNetworkConnection>> sniffySockets = sniffySocketImpls.get(hostNamePortPair);
-                if (null == sniffySockets) {
-                    synchronized (sniffySocketImpls) {
-                        sniffySockets = sniffySocketImpls.get(hostNamePortPair);
-                        if (null == sniffySockets) {
-                            sniffySockets = Collections.newSetFromMap(new ConcurrentHashMap<Reference<SniffyNetworkConnection>, Boolean>());
-                            sniffySocketImpls.put(hostNamePortPair, sniffySockets);
-                        }
-                    }
-                }
-                sniffySockets.add(new WeakReference<SniffyNetworkConnection>(sniffyNetworkConnection, sniffySocketReferenceQueue));
-            }
-            {
-                AbstractMap.SimpleEntry<String, Integer> hostAddressPortPair = new AbstractMap.SimpleEntry<String, Integer>(inetAddress.getHostAddress(), inetSocketAddress.getPort());
-                Collection<Reference<SniffyNetworkConnection>> sniffySockets = sniffySocketImpls.get(hostAddressPortPair);
-                if (null == sniffySockets) {
-                    synchronized (sniffySocketImpls) {
-                        sniffySockets = sniffySocketImpls.get(hostAddressPortPair);
-                        if (null == sniffySockets) {
-                            sniffySockets = Collections.newSetFromMap(new ConcurrentHashMap<Reference<SniffyNetworkConnection>, Boolean>());
-                            sniffySocketImpls.put(hostAddressPortPair, sniffySockets);
-                        }
-                    }
-                }
-                sniffySockets.add(new WeakReference<SniffyNetworkConnection>(sniffyNetworkConnection, sniffySocketReferenceQueue));
-            }
+            registerNetworkConnection(new AbstractMap.SimpleEntry<String, Integer>(
+                    inetAddress.getHostName(), inetSocketAddress.getPort()), sniffyNetworkConnection);
+            registerNetworkConnection(new AbstractMap.SimpleEntry<String, Integer>(
+                    inetAddress.getHostAddress(), inetSocketAddress.getPort()), sniffyNetworkConnection);
         }
 
         // search for given address in discoveredAddresses map (global or thread local)
@@ -159,6 +132,50 @@ public enum ConnectionsRegistry implements Runnable {
 
     }
 
+    private void registerNetworkConnection(Map.Entry<String, Integer> endpoint,
+                                           SniffyNetworkConnection connection) {
+        synchronized (sniffySocketImpls) {
+            Collection<Reference<SniffyNetworkConnection>> references = sniffySocketImpls.get(endpoint);
+            if (references == null) {
+                references = Collections.newSetFromMap(
+                        new ConcurrentHashMap<Reference<SniffyNetworkConnection>, Boolean>());
+                sniffySocketImpls.put(endpoint, references);
+            }
+            boolean alreadyRegistered = false;
+            for (Iterator<Reference<SniffyNetworkConnection>> iterator = references.iterator(); iterator.hasNext();) {
+                SniffyNetworkConnection registered = iterator.next().get();
+                if (registered == connection) alreadyRegistered = true;
+                if (registered == null) iterator.remove();
+            }
+            if (!alreadyRegistered) {
+                references.add(new WeakReference<SniffyNetworkConnection>(connection, sniffySocketReferenceQueue));
+            }
+        }
+    }
+
+    /**
+     * Removes every hostname/IP alias registered for this connection. Identity comparison is intentional:
+     * connection implementations are not required to define value equality.
+     *
+     * @since 3.2
+     */
+    public void unregisterNetworkConnection(SniffyNetworkConnection connection) {
+        if (connection == null) return;
+        synchronized (sniffySocketImpls) {
+            for (Map.Entry<Map.Entry<String, Integer>, Collection<Reference<SniffyNetworkConnection>>> entry
+                    : sniffySocketImpls.entrySet()) {
+                Collection<Reference<SniffyNetworkConnection>> references = entry.getValue();
+                for (Iterator<Reference<SniffyNetworkConnection>> iterator = references.iterator(); iterator.hasNext();) {
+                    SniffyNetworkConnection registered = iterator.next().get();
+                    if (registered == null || registered == connection) iterator.remove();
+                }
+                if (references.isEmpty() && sniffySocketImpls.get(entry.getKey()) == references) {
+                    sniffySocketImpls.remove(entry.getKey());
+                }
+            }
+        }
+    }
+
     public Map<Map.Entry<String, Integer>, Integer> getDiscoveredAddresses() {
         return Collections.unmodifiableMap(getDiscoveredAddressesImpl());
     }
@@ -181,16 +198,42 @@ public enum ConnectionsRegistry implements Runnable {
             }
         }
 
-        Collection<Reference<SniffyNetworkConnection>> sniffySockets = sniffySocketImpls.get(new AbstractMap.SimpleEntry<String, Integer>(hostName, port));
-        if (null != sniffySockets) {
-            for (Reference<SniffyNetworkConnection> sniffySocketWeakReference : sniffySockets) {
-                SniffyNetworkConnection sniffyNetworkConnection = sniffySocketWeakReference.get();
-                if (null != sniffyNetworkConnection) {
-                    sniffyNetworkConnection.setConnectionStatus(connectionStatus);
+        Set<SniffyNetworkConnection> matchingConnections =
+                Collections.newSetFromMap(new IdentityHashMap<SniffyNetworkConnection, Boolean>());
+        synchronized (sniffySocketImpls) {
+            if (hostName != null && port != null) {
+                collectConnections(sniffySocketImpls.get(
+                        new AbstractMap.SimpleEntry<String, Integer>(hostName, port)), matchingConnections);
+            } else {
+                for (Map.Entry<Map.Entry<String, Integer>, Collection<Reference<SniffyNetworkConnection>>> entry
+                        : sniffySocketImpls.entrySet()) {
+                    String registeredHost = entry.getKey().getKey();
+                    Integer registeredPort = entry.getKey().getValue();
+                    if ((hostName == null || hostName.equals(registeredHost))
+                            && (port == null || port.equals(registeredPort))) {
+                        collectConnections(entry.getValue(), matchingConnections);
+                    }
                 }
             }
         }
+        for (SniffyNetworkConnection connection : matchingConnections) {
+            if (hostName != null && port != null) {
+                connection.setConnectionStatus(new InetSocketAddress(hostName, port), connectionStatus);
+            } else {
+                // Endpoint-less registry rules apply to whichever endpoint is currently effective.
+                connection.setConnectionStatus(connectionStatus);
+            }
+        }
 
+    }
+
+    private static void collectConnections(Collection<Reference<SniffyNetworkConnection>> references,
+                                           Set<SniffyNetworkConnection> connections) {
+        if (references == null) return;
+        for (Reference<SniffyNetworkConnection> reference : references) {
+            SniffyNetworkConnection connection = reference.get();
+            if (connection != null) connections.add(connection);
+        }
     }
 
     public Map<Map.Entry<String, String>, Integer> getDiscoveredDataSources() {
@@ -231,7 +274,9 @@ public enum ConnectionsRegistry implements Runnable {
         discoveredAddresses.clear();
         discoveredDataSources.clear();
         persistRegistry = false;
-        sniffySocketImpls.clear();
+        synchronized (sniffySocketImpls) {
+            sniffySocketImpls.clear();
+        }
     }
 
     public void readFrom(Reader reader) throws IOException {
@@ -363,32 +408,17 @@ public enum ConnectionsRegistry implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 Reference<? extends SniffyNetworkConnection> reference = sniffySocketReferenceQueue.remove();
-                SniffyNetworkConnection sniffyNetworkConnection = reference.get();
-                if (null != sniffyNetworkConnection) {
-                    InetSocketAddress inetSocketAddress = sniffyNetworkConnection.getInetSocketAddress();
-
-                    {
-                        Collection<Reference<SniffyNetworkConnection>> sniffySockets = sniffySocketImpls.get(
-                                new AbstractMap.SimpleEntry<String, Integer>(
-                                        inetSocketAddress.getAddress().getHostName(), inetSocketAddress.getPort()
-                                )
-                        );
-                        if (null != sniffySockets) {
-                            sniffySockets.remove(reference);
+                // An enqueued WeakReference has already lost its referent, so remove the reference
+                // object itself from every alias bucket instead of trying to recover its endpoint.
+                synchronized (sniffySocketImpls) {
+                    for (Map.Entry<Map.Entry<String, Integer>, Collection<Reference<SniffyNetworkConnection>>> entry
+                            : sniffySocketImpls.entrySet()) {
+                        Collection<Reference<SniffyNetworkConnection>> references = entry.getValue();
+                        references.remove(reference);
+                        if (references.isEmpty() && sniffySocketImpls.get(entry.getKey()) == references) {
+                            sniffySocketImpls.remove(entry.getKey());
                         }
                     }
-
-                    {
-                        Collection<Reference<SniffyNetworkConnection>> sniffySockets = sniffySocketImpls.get(
-                                new AbstractMap.SimpleEntry<String, Integer>(
-                                        inetSocketAddress.getAddress().getHostAddress(), inetSocketAddress.getPort()
-                                )
-                        );
-                        if (null != sniffySockets) {
-                            sniffySockets.remove(reference);
-                        }
-                    }
-
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

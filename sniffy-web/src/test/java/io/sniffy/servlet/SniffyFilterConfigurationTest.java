@@ -15,13 +15,13 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Enumeration;
@@ -83,6 +83,22 @@ public class SniffyFilterConfigurationTest extends BaseTest {
 
         assertFalse(httpServletResponse.containsHeader(HEADER_NUMBER_OF_QUERIES));
 
+    }
+
+    @Test
+    public void nioMonitoringRemainsOptInForServletFilter() throws ServletException {
+        FilterConfig defaultConfig = mock(FilterConfig.class);
+        when(defaultConfig.getServletContext()).thenReturn(servletContext);
+        SniffyFilter defaultFilter = new SniffyFilter();
+        defaultFilter.init(defaultConfig);
+        assertNull(defaultFilter.monitorNio);
+
+        FilterConfig disabledConfig = mock(FilterConfig.class);
+        when(disabledConfig.getInitParameter("monitor-nio")).thenReturn("false");
+        when(disabledConfig.getServletContext()).thenReturn(servletContext);
+        SniffyFilter disabledFilter = new SniffyFilter();
+        disabledFilter.init(disabledConfig);
+        assertFalse(disabledFilter.monitorNio);
     }
 
     @Test
