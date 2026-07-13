@@ -13,7 +13,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.ServerSocket;
 import java.net.URL;
 
 import static org.junit.Assert.assertNotNull;
@@ -27,8 +26,7 @@ public class BaseTomcatIT {
     @BeforeClass
     public static void startTomcat() throws Exception {
         tomcat = new Tomcat();
-        port = findFreePort();
-        tomcat.setPort(port);
+        tomcat.setPort(0);
         tomcat.getConnector();
 
         Context context = tomcat.addContext("/test", new File("target").getAbsolutePath());
@@ -43,6 +41,7 @@ public class BaseTomcatIT {
         filterMap.addURLPattern("/*");
         context.addFilterMap(filterMap);
         tomcat.start();
+        port = tomcat.getConnector().getLocalPort();
     }
 
     @AfterClass
@@ -69,15 +68,6 @@ public class BaseTomcatIT {
             assertTrue(body.contains("Hello, World!"));
         } finally {
             connection.disconnect();
-        }
-    }
-
-    private static int findFreePort() throws IOException {
-        ServerSocket socket = new ServerSocket(0);
-        try {
-            return socket.getLocalPort();
-        } finally {
-            socket.close();
         }
     }
 
