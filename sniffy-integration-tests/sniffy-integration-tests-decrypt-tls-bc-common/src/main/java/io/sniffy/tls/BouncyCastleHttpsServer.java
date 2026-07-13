@@ -167,7 +167,7 @@ public final class BouncyCastleHttpsServer implements AutoCloseable {
         keyStore.setKeyEntry("server", keyPair.getPrivate(), KEY_PASSWORD,
                 new Certificate[]{certificate});
 
-        BouncyCastleJsseProvider jsseProvider = new BouncyCastleJsseProvider();
+        BouncyCastleJsseProvider jsseProvider = new BouncyCastleJsseProvider(new BouncyCastleProvider());
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("X.509", jsseProvider);
         keyManagerFactory.init(keyStore, KEY_PASSWORD);
 
