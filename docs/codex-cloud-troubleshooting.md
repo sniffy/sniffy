@@ -2,51 +2,47 @@
 
 ## Maven cache warm-up failures
 
-Codex Cloud setup and maintenance run with internet access, but outbound traffic is exposed through standard proxy environment variables such as `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`.
+Codex Cloud runs setup and maintenance behind its platform HTTP/HTTPS proxy. The base `codex-universal` image already provides Maven and JDK 11, 17, 21, and 25. These platform runtimes must remain in use because their network and TLS behavior is part of the Cloud environment.
 
-Command-line tools such as `curl` read those variables automatically. Maven does not reliably translate them into its own proxy configuration. Maven's supported proxy configuration lives in `${user.home}/.m2/settings.xml`.
+Sniffy only installs Temurin JDK 8, which the universal image does not provide. Dependency warm-up always runs with the Codex-provided Maven and JDK 25; Java 8 is used later for compatibility builds after dependencies are cached.
 
-This distinction matters when logs show both of the following:
+### Why the earlier setup failed
 
-- JDK and Maven archives download successfully with `curl`;
-- Maven repeatedly fails on the first artifact descriptor, for example `maven-bundle-plugin`, while the direct Maven Central probe succeeds.
+The first setup downloaded its own Maven and replacement Temurin JDKs. `curl` could download archives through the Cloud proxy, but Maven running on the replacement JDK repeatedly failed during HTTPS artifact resolution. Adding retries and synthesizing `~/.m2/settings.xml` did not fix the failure because the replacement Java runtime did not inherit the platform's complete proxy/TLS integration.
 
-That pattern is a proxy-configuration failure, not a transient repository timeout. Repeating the same Maven command cannot fix it.
+The telltale log pattern was:
 
-The Sniffy environment now uses `.codex/cloud/configure-maven-proxy.sh` before dependency resolution. The script:
+- setup successfully downloaded JDK and Maven archives with `curl`;
+- Maven proxy configuration was present;
+- every Maven attempt failed on the first HTTPS artifact descriptor;
+- the failure was deterministic rather than intermittent.
 
-- reads upper- and lower-case `HTTPS_PROXY` / `HTTP_PROXY` variables;
-- parses optional proxy credentials without printing them;
-- converts `NO_PROXY` into Maven `nonProxyHosts` syntax;
-- creates or updates the `codex-cloud-env-proxy` entry in `~/.m2/settings.xml`;
-- preserves unrelated Maven settings and makes the generated file readable only by the current user;
-- runs during both initial setup and cached-environment maintenance.
+The correct fix is to stop replacing platform tools, not to add more proxy retries.
 
-`.codex/cloud/warm-maven-cache.sh` then:
+### Expected setup log
 
-- verifies that Maven proxy settings exist when Cloud proxy variables are present;
-- probes Maven Central separately for diagnosis;
-- retries Maven dependency resolution three times for genuine transient failures;
-- enables Maven stack traces on the final attempt;
-- distinguishes a curl/proxy mismatch from complete network failure in its final diagnostic.
+A fresh setup should now show:
 
-The cache warm-up remains mandatory because normal agent-phase internet is disabled. Allowing setup to succeed with an incomplete `~/.m2` cache would only move the same failure into the task itself.
+```text
+Installing latest Temurin JDK 8 GA release...
+Using Codex-provided Maven: ...
+Warming dependencies with Maven ... and JAVA_HOME=...
+```
 
-After merging a setup-script change:
+It must not print either of these old messages:
+
+```text
+Installing Apache Maven 3.9.11...
+Configured Maven proxy ...
+```
+
+### After changing environment scripts
 
 1. Ensure the environment uses the latest `develop` branch.
 2. Select **Reset cache** on the `sniffy` environment page.
 3. Start the environment validation task again.
-4. Confirm that setup prints `Configured Maven proxy HOST:PORT from the Cloud proxy environment.` before Maven dependency resolution.
-5. If Maven still fails, use the stack trace from the final attempt. Do not increase retry counts until the reported exception has been understood.
+4. Confirm `mvn -version` reports the Maven installed by the Codex image, not `/root/.local/share/sniffy-codex/apache-maven-*`.
+5. Confirm Java 25 resolves to a `mise` installation while Java 8 resolves to `$HOME/.jdks/temurin-8`.
+6. If dependency warm-up still fails, use the final Maven `-X` transport exception. Do not reinstall Maven, replace the platform JDK, or add proxy credentials as a first response.
 
-For local script validation without exposing real credentials, use a temporary `HOME` and a synthetic proxy URL:
-
-```bash
-HOME="$(mktemp -d)" \
-HTTPS_PROXY='http://user%40example:password@proxy.example:3128' \
-NO_PROXY='localhost,127.0.0.1,.example.org' \
-bash .codex/cloud/configure-maven-proxy.sh
-```
-
-Inspect the generated `~/.m2/settings.xml` only in the temporary directory. Never print a real Cloud proxy URL because it may contain credentials.
+The cache warm-up remains mandatory while agent-phase internet is disabled. Allowing setup to succeed with an incomplete Maven cache would only move the same resolution failure into the task itself.
