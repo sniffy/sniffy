@@ -23,7 +23,7 @@ esac
 
 mkdir -p "${TOOLS_DIR}" "${JDKS_DIR}" "${HOME}/.m2"
 
-for command_name in curl tar git find; do
+for command_name in curl tar git find python3; do
   if ! command -v "${command_name}" >/dev/null 2>&1; then
     echo "Required command '${command_name}' is unavailable." >&2
     exit 1
@@ -109,6 +109,8 @@ cat > "${HOME}/.m2/toolchains.xml" <<EOF_TOOLCHAINS
   <toolchain><type>jdk</type><provides><version>25</version><vendor>temurin</vendor></provides><configuration><jdkHome>${JDKS_DIR}/temurin-25</jdkHome></configuration></toolchain>
 </toolchains>
 EOF_TOOLCHAINS
+
+bash .codex/cloud/configure-maven-proxy.sh
 
 java -version
 mvn -version
