@@ -44,7 +44,7 @@ install_jdk() {
   archive="$(mktemp)"
   unpack="$(mktemp -d)"
 
-  curl --fail --location --retry 5 --retry-delay 2 \
+  curl --fail --location --retry 5 --retry-all-errors --retry-delay 2 \
     "https://api.adoptium.net/v3/binary/latest/${feature}/ga/linux/${ADOPTIUM_ARCH}/jdk/hotspot/normal/eclipse?project=jdk" \
     --output "${archive}"
   tar -xzf "${archive}" -C "${unpack}"
@@ -67,7 +67,7 @@ done
 if [[ ! -x "${MAVEN_HOME_DIR}/bin/mvn" ]]; then
   echo "Installing Apache Maven ${MAVEN_VERSION}..."
   archive="$(mktemp)"
-  curl --fail --location --retry 5 --retry-delay 2 \
+  curl --fail --location --retry 5 --retry-all-errors --retry-delay 2 \
     "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
     --output "${archive}"
   tar -xzf "${archive}" -C "${TOOLS_DIR}"
@@ -113,9 +113,6 @@ EOF_TOOLCHAINS
 java -version
 mvn -version
 
-# Prime the Maven cache using the same resolver and profile as CI. The retry
-# handles transient repository failures; it must not be copied into test runs.
-mvn -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci \
-  || mvn -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -U -P ci
+bash .codex/cloud/warm-maven-cache.sh
 
 echo "Sniffy Codex Cloud environment is ready."
