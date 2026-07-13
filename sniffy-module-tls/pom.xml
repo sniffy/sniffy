@@ -62,12 +62,12 @@
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
                             <compilerArgs>
-                                <arg>--add-exports=java.base/sun.security.jca=ALL-UNNAMED</arg>
+                                <arg>-XDignore.symbol.file</arg>
                             </compilerArgs>
-                            <source>1.9</source>
-                            <target>1.9</target>
-                            <testSource>1.9</testSource>
-                            <testTarget>1.9</testTarget>
+                            <source>1.8</source>
+                            <target>1.8</target>
+                            <testSource>1.8</testSource>
+                            <testTarget>1.8</testTarget>
                         </configuration>
                     </plugin>
                 </plugins>

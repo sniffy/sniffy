@@ -13,7 +13,12 @@
 
     <name>Sniffy Web</name>
     <url>http://sniffy.io/</url>
-    <description>Sniffy Web Integration</description>
+    <description>Sniffy Servlet integration for the Jakarta Servlet namespace</description>
+
+    <properties>
+        <!-- Override the parent's legacy Spring dependency-management entries for this module. -->
+        <spring.version>${spring.servlet-test.version}</spring.version>
+    </properties>
 
     <build>
 
@@ -60,6 +65,23 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <id>ban-javax-servlet</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>javax.servlet:javax.servlet-api</exclude>
+                                    </excludes>
+                                    <searchTransitive>true</searchTransitive>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>check-signatures</id>
                         <goals>
@@ -121,6 +143,12 @@
 
         <dependency>
             <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-web-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.sniffy</groupId>
             <artifactId>sniffy-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -164,31 +192,22 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${jakarta.servlet.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot</artifactId>
-            <optional>true</optional>
-        </dependency>
-        
-        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
+            <version>${spring.servlet-test.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
+            <version>${spring.servlet-test.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -23,6 +23,7 @@
 	    <module>sniffy-integration-tests-spring-kafka</module>
 	    <module>sniffy-integration-tests-tomcat</module>
 	    <module>sniffy-integration-tests-proxy</module>
+        <module>sniffy-integration-tests-java8-bytecode</module>
     </modules>
 
     <build>
@@ -64,5 +65,19 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>modern-servlet-integration-tests</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <modules>
+                <module>sniffy-integration-tests-spring-boot</module>
+                <module>sniffy-integration-tests-tomcat-jakarta</module>
+                <module>sniffy-integration-tests-servlet-contract</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

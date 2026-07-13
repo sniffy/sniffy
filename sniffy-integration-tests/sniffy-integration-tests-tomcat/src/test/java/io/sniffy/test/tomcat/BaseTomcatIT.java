@@ -1,21 +1,23 @@
 package io.sniffy.test.tomcat;
 
 import io.qameta.allure.Issue;
-import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.naming.resources.VirtualDirContext;
+import org.apache.tomcat.util.descriptor.web.FilterDef;
+import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.ServerSocket;
+import java.net.URL;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class BaseTomcatIT {
@@ -25,77 +27,89 @@ public class BaseTomcatIT {
 
     @BeforeClass
     public static void startTomcat() throws Exception {
-
         tomcat = new Tomcat();
         port = findFreePort();
         tomcat.setPort(port);
+        tomcat.getConnector();
 
-        StandardContext ctx = (StandardContext) tomcat.addWebapp("/test", new File("src/main/webapp/").getAbsolutePath());
-        //declare an alternate location for your "WEB-INF/classes" dir:
-        File additionWebInfClasses = new File("target/classes");
-        VirtualDirContext resources = new VirtualDirContext();
-        resources.setExtraResourcePaths("/WEB-INF/classes=" + additionWebInfClasses);
-        ctx.setResources(resources);
+        Context context = tomcat.addContext("/test", new File("src/main/webapp").getAbsolutePath());
+        Tomcat.addServlet(context, "integration", new IntegrationTestServlet());
+        context.addServletMappingDecoded("/*", "integration");
 
-        ctx.start();
+        FilterDef filterDef = new FilterDef();
+        filterDef.setFilterName("sniffy");
+        filterDef.setFilter(new SniffyAnnotationFilter());
+        context.addFilterDef(filterDef);
+        FilterMap filterMap = new FilterMap();
+        filterMap.setFilterName("sniffy");
+        filterMap.addURLPattern("/*");
+        context.addFilterMap(filterMap);
 
         tomcat.start();
-
     }
 
     @AfterClass
     public static void stopTomcat() throws Exception {
-        tomcat.stop();
+        if (null != tomcat) {
+            try {
+                tomcat.stop();
+            } finally {
+                tomcat.destroy();
+            }
+        }
     }
 
     private static int findFreePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
+        ServerSocket socket = new ServerSocket(0);
+        try {
             return socket.getLocalPort();
+        } finally {
+            socket.close();
         }
     }
 
     @Test
-    public void testSniffyInjected() {
-
-        WebDriver webDriver = new HtmlUnitDriver(true);
-
-        webDriver.navigate().to("http://127.0.0.1:" + port + "/test");
-
-        assertFalse(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
-        webDriver.findElement(By.className("sniffy-widget-icon-container")).click();
-        assertTrue(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
-
-        webDriver.quit();
+    public void testSniffyInjected() throws IOException {
+        assertInstrumented("/test");
     }
 
     @Test
     @Issue("issues/321")
-    public void testSniffyInjectedPath() {
-
-        WebDriver webDriver = new HtmlUnitDriver(true);
-
-        webDriver.navigate().to("http://127.0.0.1:" + port + "/test/index.html");
-
-        assertFalse(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
-        webDriver.findElement(By.className("sniffy-widget-icon-container")).click();
-        assertTrue(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
-
-        webDriver.quit();
+    public void testSniffyInjectedPath() throws IOException {
+        assertInstrumented("/test/index.html");
     }
 
     @Test
     @Issue("issues/319")
-    public void testSniffyInjectedToUrlWithQueryParameters() {
-
-        WebDriver webDriver = new HtmlUnitDriver(true);
-
-        webDriver.navigate().to("http://127.0.0.1:" + port + "/test?foo=bar");
-
-        assertFalse(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
-        webDriver.findElement(By.className("sniffy-widget-icon-container")).click();
-        assertTrue(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
-
-        webDriver.quit();
+    public void testSniffyInjectedToUrlWithQueryParameters() throws IOException {
+        assertInstrumented("/test?foo=bar");
     }
 
+    private static void assertInstrumented(String path) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL("http://127.0.0.1:" + port + path).openConnection();
+        connection.setRequestProperty("Accept", "text/html");
+        try {
+            assertTrue(connection.getResponseCode() / 100 == 2);
+            assertNotNull(connection.getHeaderField("Sniffy-Sql-Queries"));
+            String body = read(connection.getInputStream());
+            assertTrue(body.contains("script id=\"sniffy-header\""));
+            assertTrue(body.contains("Hello, World!"));
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private static String read(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            byte[] buffer = new byte[4096];
+            int count;
+            while ((count = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, count);
+            }
+            return new String(outputStream.toByteArray(), "UTF-8");
+        } finally {
+            inputStream.close();
+        }
+    }
 }

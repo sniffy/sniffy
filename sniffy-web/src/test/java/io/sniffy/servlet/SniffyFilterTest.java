@@ -22,9 +22,9 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.script.ScriptException;
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -709,6 +709,24 @@ public class SniffyFilterTest extends BaseTest {
 
         assertEquals(2, httpServletResponse.getHeaderValue(HEADER_NUMBER_OF_QUERIES));
         assertTrue(httpServletResponse.getContentAsString().substring(actualContent.length()).contains("id=\"sniffy\""));
+
+    }
+
+    @Test
+    public void testNullSpecialHeadersDoNotFailInstrumentation() throws IOException, ServletException {
+
+        doAnswer(invocation -> {
+            HttpServletResponse response = (HttpServletResponse) invocation.getArguments()[1];
+            response.setHeader("Content-Type", null);
+            response.setHeader("Content-Length", null);
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        filter.init(getFilterConfig());
+        filter.doFilter(requestWithPathAndQueryParameter, httpServletResponse, filterChain);
+
+        assertNull(httpServletResponse.getHeader("Content-Type"));
+        assertNull(httpServletResponse.getHeader("Content-Length"));
 
     }
 
