@@ -129,6 +129,25 @@ public class SniffyAgentTest {
         TestRestTemplate template = new TestRestTemplate();
         ResponseEntity<String> entity = template.getForEntity("http://localhost:5555/", String.class);
         assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertTrue(entity.getBody().contains("sniffy-agent.js"));
+        assertTrue(entity.getBody().contains("sniffy-agent.css"));
+    }
+
+    @Test
+    @Feature("issues/628")
+    public void testGetModernAgentAssets() {
+        TestRestTemplate template = new TestRestTemplate();
+        ResponseEntity<String> javascript = template.getForEntity("http://localhost:5555/sniffy-agent.js", String.class);
+        assertTrue(javascript.getStatusCode().is2xxSuccessful());
+        assertEquals(MediaType.parseMediaType("application/javascript"), javascript.getHeaders().getContentType());
+
+        ResponseEntity<String> css = template.getForEntity("http://localhost:5555/sniffy-agent.css", String.class);
+        assertTrue(css.getStatusCode().is2xxSuccessful());
+        assertEquals(MediaType.parseMediaType("text/css"), css.getHeaders().getContentType());
+
+        ResponseEntity<String> sourceMap = template.getForEntity("http://localhost:5555/sniffy-agent.js.map", String.class);
+        assertTrue(sourceMap.getStatusCode().is2xxSuccessful());
+        assertEquals(MediaType.APPLICATION_JSON, sourceMap.getHeaders().getContentType());
     }
 
     @Test

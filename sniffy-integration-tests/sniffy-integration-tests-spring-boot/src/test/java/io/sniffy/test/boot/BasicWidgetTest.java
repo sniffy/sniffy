@@ -2,14 +2,17 @@ package io.sniffy.test.boot;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertFalse;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
@@ -20,16 +23,47 @@ public class BasicWidgetTest {
     private int localServerPort;
 
     @Test
-    public void widgetIconOpensSniffyIframe() {
-        WebDriver webDriver = new HtmlUnitDriver(true);
+    public void customElementAndShadowDomBundleAreAvailable() throws Exception {
+        URL pageUrl = new URL("http://127.0.0.1:" + localServerPort + "/index.html");
+        HttpURLConnection pageConnection = (HttpURLConnection) pageUrl.openConnection();
+        String html;
         try {
-            webDriver.navigate().to("http://127.0.0.1:" + localServerPort + "/index.html");
-
-            assertFalse(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
-            webDriver.findElement(By.className("sniffy-widget-icon-container")).click();
-            assertTrue(webDriver.findElement(By.id("sniffy-iframe")).isDisplayed());
+            assertTrue(pageConnection.getResponseCode() / 100 == 2);
+            html = read(pageConnection.getInputStream());
         } finally {
-            webDriver.quit();
+            pageConnection.disconnect();
+        }
+
+        assertTrue(html.contains("id=\"sniffy-header\""));
+        assertTrue(html.contains("<data id=\"sniffy\""));
+        Matcher sourceMatcher = Pattern.compile("id=\"sniffy-header\"[^;]+src=\"([^\"]+)\"").matcher(html);
+        assertTrue(sourceMatcher.find());
+        URL scriptUrl = new URL(pageUrl, sourceMatcher.group(1));
+        assertTrue(scriptUrl.toString().endsWith("/sniffy.min.js"));
+
+        HttpURLConnection scriptConnection = (HttpURLConnection) scriptUrl.openConnection();
+        try {
+            assertTrue(scriptConnection.getResponseCode() / 100 == 2);
+            String javascript = read(scriptConnection.getInputStream());
+            assertTrue(javascript.contains("sniffy-profiler"));
+            assertTrue(javascript.contains("attachShadow"));
+            assertTrue(javascript.contains("mode:`open`"));
+        } finally {
+            scriptConnection.disconnect();
+        }
+    }
+
+    private static String read(InputStream inputStream) throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            byte[] buffer = new byte[4096];
+            int count;
+            while ((count = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, count);
+            }
+            return new String(outputStream.toByteArray(), "UTF-8");
+        } finally {
+            inputStream.close();
         }
     }
 
