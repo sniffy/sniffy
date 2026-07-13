@@ -2,24 +2,47 @@
 
 ## Maven cache warm-up failures
 
-Codex Cloud setup and maintenance run with internet access, but outbound traffic still passes through the Cloud network proxy. A temporary Maven Central failure can therefore occur even when the JDK and Maven downloads succeeded.
+Codex Cloud runs setup and maintenance behind its platform HTTP/HTTPS proxy. The base `codex-universal` image already provides Maven and JDK 11, 17, 21, and 25. These platform runtimes must remain in use because their network and TLS behavior is part of the Cloud environment.
 
-The Sniffy environment uses `.codex/cloud/warm-maven-cache.sh` to:
+Sniffy only installs Temurin JDK 8, which the universal image does not provide. Dependency warm-up always runs with the Codex-provided Maven and JDK 25; Java 8 is used later for compatibility builds after dependencies are cached.
 
-- probe Maven Central directly before each Maven attempt;
-- let Maven retry individual HTTP transfers five times;
-- retry the complete dependency-resolution command six times;
-- wait progressively longer between attempts;
-- fail with an explicit diagnostic rather than immediately aborting after two identical attempts.
+### Why the earlier setup failed
 
-The cache warm-up remains mandatory because normal agent-phase internet is disabled. Allowing setup to succeed with an incomplete `~/.m2` cache would only move the same failure into the task itself.
+The first setup downloaded its own Maven and replacement Temurin JDKs. `curl` could download archives through the Cloud proxy, but Maven running on the replacement JDK repeatedly failed during HTTPS artifact resolution. Adding retries and synthesizing `~/.m2/settings.xml` did not fix the failure because the replacement Java runtime did not inherit the platform's complete proxy/TLS integration.
 
-If setup still fails after all retries:
+The telltale log pattern was:
 
-1. Check whether the final output reports a failed Maven Central probe or a Maven resolution error.
-2. Ensure the environment uses the latest `develop` branch.
-3. Select **Reset cache** on the `sniffy` environment page. Codex also invalidates the cache automatically when setup or maintenance scripts change.
-4. Start the environment validation task again.
-5. For diagnosis, increase the `SNIFFY_MAVEN_WARMUP_ATTEMPTS` environment variable. Do not reduce it to zero or bypass cache warm-up while agent-phase internet is disabled.
+- setup successfully downloaded JDK and Maven archives with `curl`;
+- Maven proxy configuration was present;
+- every Maven attempt failed on the first HTTPS artifact descriptor;
+- the failure was deterministic rather than intermittent.
 
-The setup script installs the toolchain before warming dependencies, so repeated runs reuse already installed JDKs and Maven from the cached container whenever the cache is available.
+The correct fix is to stop replacing platform tools, not to add more proxy retries.
+
+### Expected setup log
+
+A fresh setup should now show:
+
+```text
+Installing latest Temurin JDK 8 GA release...
+Using Codex-provided Maven: ...
+Warming dependencies with Maven ... and JAVA_HOME=...
+```
+
+It must not print either of these old messages:
+
+```text
+Installing Apache Maven 3.9.11...
+Configured Maven proxy ...
+```
+
+### After changing environment scripts
+
+1. Ensure the environment uses the latest `develop` branch.
+2. Select **Reset cache** on the `sniffy` environment page.
+3. Start the environment validation task again.
+4. Confirm `mvn -version` reports the Maven installed by the Codex image, not `/root/.local/share/sniffy-codex/apache-maven-*`.
+5. Confirm Java 25 resolves to a `mise` installation while Java 8 resolves to `$HOME/.jdks/temurin-8`.
+6. If dependency warm-up still fails, use the final Maven `-X` transport exception. Do not reinstall Maven, replace the platform JDK, or add proxy credentials as a first response.
+
+The cache warm-up remains mandatory while agent-phase internet is disabled. Allowing setup to succeed with an incomplete Maven cache would only move the same resolution failure into the task itself.

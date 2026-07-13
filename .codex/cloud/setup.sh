@@ -2,14 +2,13 @@
 set -euo pipefail
 
 # Codex Cloud setup script for Sniffy.
-# Configure the environment setup command as:
-#   bash .codex/cloud/setup.sh
+# Keep the Maven and Java runtimes provided by codex-universal. They are part of
+# the platform environment and may include network/TLS integration that a
+# separately downloaded toolchain would not inherit. Sniffy only adds Java 8,
+# which is not present in the universal image.
 
-MAVEN_VERSION="${MAVEN_VERSION:-3.9.11}"
-JDK_FEATURES="${SNIFFY_JDK_FEATURES:-8 11 17 21 25}"
-TOOLS_DIR="${HOME}/.local/share/sniffy-codex"
 JDKS_DIR="${HOME}/.jdks"
-MAVEN_HOME_DIR="${TOOLS_DIR}/apache-maven-${MAVEN_VERSION}"
+JDK8_HOME="${JDKS_DIR}/temurin-8"
 ENV_FILE="${HOME}/.sniffy-codex-env"
 
 case "$(uname -m)" in
@@ -21,68 +20,70 @@ case "$(uname -m)" in
     ;;
 esac
 
-mkdir -p "${TOOLS_DIR}" "${JDKS_DIR}" "${HOME}/.m2"
-
-for command_name in curl tar git find; do
+for command_name in curl tar find mise mvn; do
   if ! command -v "${command_name}" >/dev/null 2>&1; then
-    echo "Required command '${command_name}' is unavailable." >&2
+    echo "Required command '${command_name}' is unavailable in the Codex image." >&2
     exit 1
   fi
 done
 
-install_jdk() {
-  local feature="$1"
-  local destination="${JDKS_DIR}/temurin-${feature}"
+mkdir -p "${JDKS_DIR}" "${HOME}/.m2"
 
-  if [[ -x "${destination}/bin/java" ]]; then
-    echo "Temurin JDK ${feature} already installed."
+install_jdk8() {
+  if [[ -x "${JDK8_HOME}/bin/java" ]]; then
+    echo "Temurin JDK 8 already installed."
     return
   fi
 
-  echo "Installing latest Temurin JDK ${feature} GA release..."
+  echo "Installing latest Temurin JDK 8 GA release..."
   local archive unpack extracted
   archive="$(mktemp)"
   unpack="$(mktemp -d)"
+  trap 'rm -rf "${archive:-}" "${unpack:-}"' RETURN
 
   curl --fail --location --retry 5 --retry-all-errors --retry-delay 2 \
-    "https://api.adoptium.net/v3/binary/latest/${feature}/ga/linux/${ADOPTIUM_ARCH}/jdk/hotspot/normal/eclipse?project=jdk" \
+    "https://api.adoptium.net/v3/binary/latest/8/ga/linux/${ADOPTIUM_ARCH}/jdk/hotspot/normal/eclipse?project=jdk" \
     --output "${archive}"
   tar -xzf "${archive}" -C "${unpack}"
 
   extracted="$(find "${unpack}" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
   if [[ -z "${extracted}" ]]; then
-    echo "Could not locate extracted JDK ${feature}." >&2
+    echo "Could not locate extracted JDK 8." >&2
     exit 1
   fi
 
-  rm -rf "${destination}"
-  mv "${extracted}" "${destination}"
+  rm -rf "${JDK8_HOME}"
+  mv "${extracted}" "${JDK8_HOME}"
   rm -rf "${archive}" "${unpack}"
+  trap - RETURN
 }
 
-for feature in ${JDK_FEATURES}; do
-  install_jdk "${feature}"
-done
+builtin_jdk_home() {
+  local feature="$1"
+  local home
+  home="$(mise where "java@${feature}")"
+  if [[ -z "${home}" || ! -x "${home}/bin/java" ]]; then
+    echo "Codex image does not provide a usable JDK ${feature}." >&2
+    exit 1
+  fi
+  printf '%s\n' "${home}"
+}
 
-if [[ ! -x "${MAVEN_HOME_DIR}/bin/mvn" ]]; then
-  echo "Installing Apache Maven ${MAVEN_VERSION}..."
-  archive="$(mktemp)"
-  curl --fail --location --retry 5 --retry-all-errors --retry-delay 2 \
-    "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
-    --output "${archive}"
-  tar -xzf "${archive}" -C "${TOOLS_DIR}"
-  rm -f "${archive}"
-fi
+install_jdk8
+
+JDK11_HOME="$(builtin_jdk_home 11)"
+JDK17_HOME="$(builtin_jdk_home 17)"
+JDK21_HOME="$(builtin_jdk_home 21)"
+JDK25_HOME="$(builtin_jdk_home 25)"
 
 cat > "${ENV_FILE}" <<EOF_ENV
-export SNIFFY_JDK8_HOME="${JDKS_DIR}/temurin-8"
-export SNIFFY_JDK11_HOME="${JDKS_DIR}/temurin-11"
-export SNIFFY_JDK17_HOME="${JDKS_DIR}/temurin-17"
-export SNIFFY_JDK21_HOME="${JDKS_DIR}/temurin-21"
-export SNIFFY_JDK25_HOME="${JDKS_DIR}/temurin-25"
-export JAVA_HOME="${JDKS_DIR}/temurin-25"
-export MAVEN_HOME="${MAVEN_HOME_DIR}"
-export PATH="${MAVEN_HOME_DIR}/bin:${JDKS_DIR}/temurin-25/bin:\${PATH}"
+export SNIFFY_JDK8_HOME="${JDK8_HOME}"
+export SNIFFY_JDK11_HOME="${JDK11_HOME}"
+export SNIFFY_JDK17_HOME="${JDK17_HOME}"
+export SNIFFY_JDK21_HOME="${JDK21_HOME}"
+export SNIFFY_JDK25_HOME="${JDK25_HOME}"
+export JAVA_HOME="${JDK25_HOME}"
+export PATH="${JDK25_HOME}/bin:\${PATH}"
 EOF_ENV
 
 for shell_file in "${HOME}/.bashrc" "${HOME}/.profile"; do
@@ -102,14 +103,15 @@ source "${ENV_FILE}"
 cat > "${HOME}/.m2/toolchains.xml" <<EOF_TOOLCHAINS
 <?xml version="1.0" encoding="UTF-8"?>
 <toolchains>
-  <toolchain><type>jdk</type><provides><version>8</version><vendor>temurin</vendor></provides><configuration><jdkHome>${JDKS_DIR}/temurin-8</jdkHome></configuration></toolchain>
-  <toolchain><type>jdk</type><provides><version>11</version><vendor>temurin</vendor></provides><configuration><jdkHome>${JDKS_DIR}/temurin-11</jdkHome></configuration></toolchain>
-  <toolchain><type>jdk</type><provides><version>17</version><vendor>temurin</vendor></provides><configuration><jdkHome>${JDKS_DIR}/temurin-17</jdkHome></configuration></toolchain>
-  <toolchain><type>jdk</type><provides><version>21</version><vendor>temurin</vendor></provides><configuration><jdkHome>${JDKS_DIR}/temurin-21</jdkHome></configuration></toolchain>
-  <toolchain><type>jdk</type><provides><version>25</version><vendor>temurin</vendor></provides><configuration><jdkHome>${JDKS_DIR}/temurin-25</jdkHome></configuration></toolchain>
+  <toolchain><type>jdk</type><provides><version>8</version></provides><configuration><jdkHome>${JDK8_HOME}</jdkHome></configuration></toolchain>
+  <toolchain><type>jdk</type><provides><version>11</version></provides><configuration><jdkHome>${JDK11_HOME}</jdkHome></configuration></toolchain>
+  <toolchain><type>jdk</type><provides><version>17</version></provides><configuration><jdkHome>${JDK17_HOME}</jdkHome></configuration></toolchain>
+  <toolchain><type>jdk</type><provides><version>21</version></provides><configuration><jdkHome>${JDK21_HOME}</jdkHome></configuration></toolchain>
+  <toolchain><type>jdk</type><provides><version>25</version></provides><configuration><jdkHome>${JDK25_HOME}</jdkHome></configuration></toolchain>
 </toolchains>
 EOF_TOOLCHAINS
 
+printf 'Using Codex-provided Maven: %s\n' "$(command -v mvn)"
 java -version
 mvn -version
 

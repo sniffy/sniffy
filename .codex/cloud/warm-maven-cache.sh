@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Warm the Maven cache during Codex Cloud setup/maintenance.
-#
-# Setup and maintenance run with internet access, but all outbound traffic goes
-# through a proxy and transient Maven Central failures can occur. Retry with
-# backoff instead of immediately failing the whole environment build.
+# Warm the Maven cache during Codex Cloud setup/maintenance using the Maven and
+# JDK supplied by codex-universal. Do not replace these tools or synthesize proxy
+# settings here; the platform owns their network/TLS integration.
 
-MAX_ATTEMPTS="${SNIFFY_MAVEN_WARMUP_ATTEMPTS:-6}"
-BASE_DELAY_SECONDS="${SNIFFY_MAVEN_WARMUP_DELAY_SECONDS:-10}"
-CENTRAL_PROBE_URL="${SNIFFY_MAVEN_CENTRAL_PROBE_URL:-https://repo.maven.apache.org/maven2/org/apache/felix/maven-bundle-plugin/5.1.1/maven-bundle-plugin-5.1.1.pom}"
+MAX_ATTEMPTS="${SNIFFY_MAVEN_WARMUP_ATTEMPTS:-2}"
+BASE_DELAY_SECONDS="${SNIFFY_MAVEN_WARMUP_DELAY_SECONDS:-5}"
 
 if ! [[ "${MAX_ATTEMPTS}" =~ ^[1-9][0-9]*$ ]]; then
   echo "SNIFFY_MAVEN_WARMUP_ATTEMPTS must be a positive integer." >&2
@@ -21,36 +18,37 @@ if ! [[ "${BASE_DELAY_SECONDS}" =~ ^[0-9]+$ ]]; then
   exit 2
 fi
 
+if ! command -v mvn >/dev/null 2>&1; then
+  echo "Maven is unavailable; the Codex universal image is incomplete." >&2
+  exit 1
+fi
+
+if [[ -n "${SNIFFY_JDK25_HOME:-}" ]]; then
+  export JAVA_HOME="${SNIFFY_JDK25_HOME}"
+  export PATH="${JAVA_HOME}/bin:${PATH}"
+fi
+
 maven_args=(
   -T 1C
   -B
   de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
   -U
   -P ci
-  -Dmaven.wagon.http.retryHandler.count=5
+  -Dmaven.wagon.http.retryHandler.count=3
 )
+
+printf 'Warming dependencies with Maven %s and JAVA_HOME=%s\n' "$(command -v mvn)" "${JAVA_HOME:-<unset>}"
+mvn -version
 
 for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
   echo "Warming Maven cache (attempt ${attempt}/${MAX_ATTEMPTS})..."
 
-  if command -v curl >/dev/null 2>&1; then
-    if ! curl \
-      --fail \
-      --silent \
-      --show-error \
-      --location \
-      --retry 3 \
-      --retry-all-errors \
-      --retry-delay 2 \
-      --connect-timeout 15 \
-      --max-time 90 \
-      "${CENTRAL_PROBE_URL}" \
-      --output /dev/null; then
-      echo "Maven Central connectivity probe failed; Maven may still succeed." >&2
+  if ((attempt == MAX_ATTEMPTS)); then
+    if mvn -e -X "${maven_args[@]}"; then
+      echo "Maven cache warm-up completed."
+      exit 0
     fi
-  fi
-
-  if mvn "${maven_args[@]}"; then
+  elif mvn "${maven_args[@]}"; then
     echo "Maven cache warm-up completed."
     exit 0
   fi
@@ -62,7 +60,6 @@ for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
   fi
 done
 
-echo "Maven cache warm-up failed after ${MAX_ATTEMPTS} attempts." >&2
-echo "The toolchain was installed, but the Cloud task would not be reliable with agent internet disabled." >&2
-echo "Retry after resetting the environment cache. For diagnosis only, increase SNIFFY_MAVEN_WARMUP_ATTEMPTS." >&2
+echo "Maven cache warm-up failed with the Codex-provided Maven/JDK." >&2
+echo "Inspect the final Maven transport exception; do not reinstall Maven or replace the platform JDK as a workaround." >&2
 exit 1
