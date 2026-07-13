@@ -9,8 +9,8 @@ API and lets each Spring generation use its native namespace without source gene
 
 |Servlet filter on a modern container
 |`sniffy-web`
-|Jakarta Servlet 6.0; tested with Tomcat 10.1
-|Container baseline (Java 11 for Tomcat 10.1)
+|Jakarta Servlet 5.0+; tested with Tomcat 10.1 (Servlet 6.0)
+|Java 8 (Java 11 for the tested Tomcat 10.1 container)
 
 |Servlet filter on a legacy container
 |`sniffy-web-javax`

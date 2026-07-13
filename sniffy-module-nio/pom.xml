@@ -39,6 +39,19 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <configuration>
+                    <ignores>
+                        <!-- Signature-polymorphic invoke descriptors are call-site specific. -->
+                        <ignore>java.lang.invoke.MethodHandle</ignore>
+                        <ignore>sun.misc.Unsafe</ignore>
+                        <ignore>sun.nio.ch.SelChImpl</ignore>
+                        <ignore>sun.nio.ch.SelectionKeyImpl</ignore>
+                    </ignores>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>

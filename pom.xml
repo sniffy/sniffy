@@ -32,10 +32,11 @@
         <sniffy.ui.version>3.1.8</sniffy.ui.version>
         <spring.version>5.3.39</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
-        <spring.servlet-test.version>6.2.18</spring.servlet-test.version>
+        <spring.servlet-test.version>6.0.23</spring.servlet-test.version>
         <spring.modern.version>7.0.8</spring.modern.version>
         <spring.boot.modern.version>4.1.0</spring.boot.modern.version>
-        <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
+        <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
+        <jakarta.servlet.test.version>6.0.0</jakarta.servlet.test.version>
         <jakarta.servlet.spring.version>6.1.0</jakarta.servlet.spring.version>
         <tomcat.javax.version>9.0.119</tomcat.javax.version>
         <tomcat.jakarta.version>10.1.57</tomcat.jakarta.version>
@@ -306,6 +307,29 @@
                             <version>${animal-sniffer.version}</version>
                         </dependency>
                     </dependencies>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>animal-sniffer-maven-plugin</artifactId>
+                    <version>${animal-sniffer.version}</version>
+                    <executions>
+                        <execution>
+                            <id>check-java8-runtime-api</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <configuration>
+                                <signature>
+                                    <groupId>org.codehaus.mojo.signature</groupId>
+                                    <artifactId>java18</artifactId>
+                                    <version>1.0</version>
+                                </signature>
+                                <checkTestClasses>false</checkTestClasses>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
 
                 <plugin>

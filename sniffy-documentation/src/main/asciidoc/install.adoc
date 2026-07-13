@@ -75,7 +75,7 @@ Do not put both namespace variants on one application classpath.
 
 == Servlet Filter Integration
 
-For a Jakarta Servlet application without Spring use:
+For a Jakarta Servlet 5.0+ application without Spring use:
 [source,xml,indent=0,subs="normal"]
 ----
 <dependency>

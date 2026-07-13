@@ -64,7 +64,7 @@
             <artifactId>sniffy-web</artifactId>
             <version>${project.version}</version>
             <exclusions>
-                <!-- sniffy-web intentionally targets the Servlet 6.0 baseline;
+                <!-- sniffy-web intentionally targets the Servlet 5.0 baseline;
                      Spring 7 requires the Servlet 6.1 API declared below. -->
                 <exclusion>
                     <groupId>jakarta.servlet</groupId>

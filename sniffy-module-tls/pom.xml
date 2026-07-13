@@ -47,6 +47,20 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <configuration>
+                    <ignores>
+                        <ignore>sun.security.jca.ProviderList</ignore>
+                    </ignores>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <profiles>
 
         <profile>

@@ -7,8 +7,8 @@ Select one Servlet artifact before configuring the filter:
 |Artifact |Servlet API |Typical container
 
 |`sniffy-web`
-|`jakarta.servlet` 6.0+
-|Tomcat 10.1+
+|`jakarta.servlet` 5.0+
+|Tomcat 10+
 
 |`sniffy-web-javax`
 |`javax.servlet` 3.1 or 4.0

@@ -18,7 +18,7 @@ Documentation - [https://www.sniffy.io/docs/latest/](https://www.sniffy.io/docs/
 Servlet integrations
 ============
 
-Use `sniffy-web` / `sniffy-spring` for Jakarta Servlet and modern Spring, or
+Use `sniffy-web` for Jakarta Servlet 5.0+ and `sniffy-spring` for Servlet 6.1 and modern Spring, or
 `sniffy-web-javax` / `sniffy-spring-javax` for Java 8, Javax Servlet, Spring 5.3, and Spring Boot 2.7.
 The two namespace variants are mutually exclusive.
 
