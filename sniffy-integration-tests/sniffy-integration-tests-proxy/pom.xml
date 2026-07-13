@@ -24,7 +24,6 @@
     </build>
 
     <dependencies>
-        <!-- TODO: run in forked JVM -->
         <dependency>
             <groupId>org.littleshoot</groupId>
             <artifactId>littleproxy</artifactId>
@@ -55,6 +54,12 @@
         <dependency>
             <groupId>io.sniffy</groupId>
             <artifactId>sniffy-junit</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-integration-tests-decrypt-tls-bc-common</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
