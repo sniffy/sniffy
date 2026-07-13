@@ -1,0 +1,80 @@
+name: Autonomous implementation task
+description: A task refined enough for Codex Cloud or unattended local Codex execution
+title: ""
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Complete every relevant section. The issue should contain enough information for an agent to implement and test the change without an interactive clarification round.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe observable user or developer behavior after the task is complete.
+      placeholder: What should work, for whom, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and current behavior
+      description: Include relevant modules, APIs, links, prior attempts, errors, and constraints.
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: State the decisions already made. Avoid leaving product choices to the implementation agent.
+      placeholder: |
+        - Requirement 1
+        - Requirement 2
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: Explicitly exclude tempting adjacent work.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Use verifiable checkboxes.
+      placeholder: |
+        - [ ] Behavior is covered by tests
+        - [ ] Compatibility requirements are preserved
+        - [ ] Documentation is updated
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Required validation
+      description: List focused tests, full build commands, JDKs, platforms, or manual checks.
+    validations:
+      required: true
+  - type: dropdown
+    id: execution
+    attributes:
+      label: Proposed execution route
+      description: The delivery lead may change this during refinement.
+      options:
+        - Codex Cloud
+        - Unattended local Codex in an isolated VM/container
+        - Human-led implementation
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Autonomous readiness
+      options:
+        - label: Product and compatibility decisions are explicit.
+          required: true
+        - label: Acceptance criteria are testable.
+          required: true
+        - label: The agent may make ordinary implementation decisions without asking for approval.
+          required: true
+        - label: Required credentials, external services, and branch constraints are documented.
+          required: true
