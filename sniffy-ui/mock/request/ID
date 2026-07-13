@@ -1,0 +1,4 @@
+{"time":42,"executedQueries":[
+{"query":"SELECT 1 FROM DUAL","invocations":1,"time":300,"bytesDown":34,"bytesUp":0},
+{"query":"SELECT 1 FROM DUAL","time":300,"bytesDown":34,"bytesUp":0}
+]}

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sniffy</title>
+	<style>
+		html, body {height: 100%;width: 100%;margin: 0;padding: 0;}
+		code { background: inherit !important;}
+		input.form-control.input-sm { height: 18px; width:50px; padding-top: 1px; padding-bottom: 1px; }
+		@@include('../build/sniffy.iframe.embedded.css')
+	</style>
+</head>
+<body>
+	<div class="panel panel-primary" style="height: 100%; margin: 0">
+		<div class="panel-heading" style="position:absolute; top:0px; left:0px; height:38px; right:0px; overflow:hidden; padding: 0">
+			<div style="float: right; padding: 10px 15px;">
+			
+				<a href="javascript:void(0);" id="sniffy-iframe-erase" title="Clear data"><span class="glyphicon glyphicon-erase" aria-hidden="true"></span></a>
+				<a href="javascript:void(0);" class="clipboard" data-clipboard-target="#sniffy-queries" title="Copy report to clipboard"><span class="glyphicon glyphicon-copy" aria-hidden="true"></span></a>
+				<a href="javascript:void(0);" id="sniffy-iframe-maximize" title="Maximize"><span class="glyphicon glyphicon-resize-full" aria-hidden="true"></span></a>
+				<a href="javascript:void(0);" id="sniffy-iframe-close" title="Close"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
+			</div>	
+			<!-- <h3 class="panel-title">Executed Queries</h3> -->
+			<ul class="nav nav-tabs" role="tablist" style="padding: 6px 15px">
+			    <li role="presentation" class="active"><a href="#executedqueries" aria-controls="executedqueries" role="tab" data-toggle="tab">Executed Queries</a></li>
+			    <li role="presentation"><a href="#networkconnections" aria-controls="networkconnections" role="tab" data-toggle="tab">Network Connections</a></li>
+			    <li role="presentation"><a href="#topsql" aria-controls="topsql" role="tab" data-toggle="tab">Top SQL</a></li>
+			  </ul>
+		</div>
+		<div style="position:absolute; top:38px; bottom:38px; left:0px; right: 0px" class="tab-content">
+			<div class="nano" id="sniffy-queries-div">
+				<div class="nano-content">
+					<div class="tab-content">
+					    <div role="tabpanel" class="tab-pane active" id="executedqueries">
+					    	<table class="table table-hover">
+								<thead>
+									<tr>
+										<th class="col-md-10">Query</th>
+										<th class="col-md-2" title="Elapsed Time (millis)">Time (ms)</th>
+									</tr>
+								</thead>
+								<tbody id="sniffy-queries">
+								</tbody>
+							</table>
+					    </div>
+					    <div role="tabpanel" class="tab-pane" id="networkconnections">
+					    	<table class="table table-hover">
+								<thead>
+									<tr>
+										<th class="col-md-4">URL</th>
+										<th class="col-md-4">Username</th>
+										<th class="col-md-2">Status</th>
+										<th class="col-md-2">Delay</th>
+									</tr>
+								</thead>
+								<tbody id="sniffy-datasource-registry">
+								</tbody>
+							</table>
+					    	<table class="table table-hover">
+								<thead>
+									<tr>
+										<th class="col-md-4">Host</th>
+										<th class="col-md-4">Port</th>
+										<th class="col-md-2">Status</th>
+										<th class="col-md-2">Delay</th>
+									</tr>
+								</thead>
+								<tbody id="sniffy-socket-registry">
+								</tbody>
+							</table>
+							<table class="table table-hover">
+								<thead>
+									<tr>
+										<th class="col-md-10">Settings</th>
+										<th class="col-md-2"></th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="col-md-10">
+											<label for="persistent">Keep the fault tolerance settings after server restart</label>
+										</td>
+										<td class="col-md-2">
+											<input type="checkbox" data-toggle="toggle" id="persistent"/>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+					    </div>
+					    <div role="tabpanel" class="tab-pane" id="topsql">
+					    	<table class="table table-hover">
+								<thead>
+									<tr>
+										<th class="col-md-10">SQL</th>
+										<th class="col-md-1" role="button" id="top-sql-count-header">Count<span class="glyphicon"></span></th>
+										<th class="col-md-1" role="button" title="Mean time in milliseconds" id="top-sql-mean-header">Mean<span class="glyphicon glyphicon-sort-by-order-alt"></span></th>
+									</tr>
+								</thead>
+								<tbody id="sniffy-top-sql">
+								</tbody>
+								<tfoot>
+									<tr>
+										<td class="col-md-10">
+											<button type="button" class="btn btn-default" id="reset-top-sql">Reset gathered queries</button>
+										</td>
+										<td class="col-md-1"></td>
+										<td class="col-md-1"></td>
+									</tr>
+								</tfoot>
+							</table>
+					    </div>
+				    </div>	
+				</div>	
+			</div>
+		</div>
+		<div class="panel-footer" style="position:absolute; bottom:1px; height:38px; left:1px; right:1px; overflow:hidden;">
+			Powered by <a href="http://sniffy.io/" target="_blank">Sniffy</a> @@version
+		</div>
+	</div>
+	<script>
+		@@include('../vendor/highlight.js')
+		@@include('../bower_components/clipboard/dist/clipboard.min.js')
+		@@include('../bower_components/jquery/jquery.min.js')
+		@@include('../bower_components/bootstrap/dist/js/bootstrap.min.js')
+		@@include('../bower_components/bootstrap-switch/dist/js/bootstrap-switch.min.js')
+		@@include('../vendor/nanoscroller.js')
+		new Clipboard('.clipboard');
+		function nanoScroller() {
+			$("#sniffy-queries-div").nanoScroller();
+	    }	    
+	    function round(number, precision) {
+		    var factor = Math.pow(10, precision);
+		    var tempNumber = number * factor;
+		    var roundedTempNumber = Math.round(tempNumber);
+		    return roundedTempNumber / factor;
+		};
+	    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+		  nanoScroller();
+		});	    
+		
+		var sort = 2;
+	    var topSqls = new Array();
+
+	    $('#top-sql-count-header').click(function() {
+	    	if (1 === sort) {
+	    		sort = -1;
+	    	} else {
+	    		sort = 1;
+	    	}
+	    	sortAndRenderTopSql();
+	    });
+
+	    $('#top-sql-mean-header').click(function() {
+	    	if (2 === sort) {
+	    		sort = -2;
+	    	} else {
+	    		sort = 2;
+	    	}
+	    	sortAndRenderTopSql();
+	    });
+
+	    function sortAndRenderTopSql() {
+
+	    	switch (sort) {
+	    		case -1:
+	    			$('#top-sql-count-header span').addClass('glyphicon-sort-by-order');
+	    			$('#top-sql-count-header span').removeClass('glyphicon-sort-by-order-alt');
+
+	    			$('#top-sql-mean-header span').removeClass('glyphicon-sort-by-order');
+	    			$('#top-sql-mean-header span').removeClass('glyphicon-sort-by-order-alt');
+	    			break;
+	    		case -2:
+	    			$('#top-sql-mean-header span').addClass('glyphicon-sort-by-order');
+	    			$('#top-sql-mean-header span').removeClass('glyphicon-sort-by-order-alt');
+
+	    			$('#top-sql-count-header span').removeClass('glyphicon-sort-by-order');
+	    			$('#top-sql-count-header span').removeClass('glyphicon-sort-by-order-alt');
+	    			break;
+	    		case 1:
+	    			$('#top-sql-count-header span').addClass('glyphicon-sort-by-order-alt');
+	    			$('#top-sql-count-header span').removeClass('glyphicon-sort-by-order');
+
+	    			$('#top-sql-mean-header span').removeClass('glyphicon-sort-by-order');
+	    			$('#top-sql-mean-header span').removeClass('glyphicon-sort-by-order-alt');
+	    			break;
+    			default:
+	    		case 2:
+	    			$('#top-sql-mean-header span').addClass('glyphicon-sort-by-order-alt');
+	    			$('#top-sql-mean-header span').removeClass('glyphicon-sort-by-order');
+
+	    			$('#top-sql-count-header span').removeClass('glyphicon-sort-by-order');
+	    			$('#top-sql-count-header span').removeClass('glyphicon-sort-by-order-alt');
+	    			break;
+	    	}
+
+	    	$('#sniffy-top-sql').empty();
+    		topSqls.sort(function(a,b) {
+    			switch (sort) {
+    				case -1:
+    					return a.timer.count - b.timer.count
+    					break;
+    				case -2:
+    					return a.timer.mean - b.timer.mean
+    					break;
+    				case 1:
+    					return b.timer.count - a.timer.count
+    					break;
+    				default:
+    				case 2:
+    					return b.timer.mean - a.timer.mean
+    					break;
+    			}
+    		});
+    		$.each(topSqls, function(i, item) {
+				var codeEl = $('<code class="language-sql">');
+				item.sql = item.sql.replace(/\r\n|\n/g, ' \r\n');
+		        $('<tr>').append(
+		            $('<td>').append(codeEl.text(item.sql)),
+		            $('<td>').text(item.timer.count),
+		            $('<td>').text(round(item.timer.mean / 1000 / 1000, 3))
+		        ).appendTo('#sniffy-top-sql');
+		        hljs.highlightBlock(codeEl.get(0));
+		    });
+	    }
+
+	    function loadTopSql() {
+	    	$.ajax({
+	    		url : window.parent.sniffy.baseUrl + 'topsql/',
+	    		dataType: "json"
+	    	}).done(function(data) {
+	    		topSqls = data;
+	    		sortAndRenderTopSql();
+	    	});
+	    }
+
+	    $('#reset-top-sql').click(function(e){
+			$.ajax({
+	    		url : window.parent.sniffy.baseUrl + 'topsql/',
+	    		type: 'DELETE'
+	    	}).done(function(data) {
+	    		loadTopSql();
+	    	});
+	    });
+
+		$('a[href="#topsql"]').on('shown.bs.tab', loadTopSql);
+
+		$('#persistent').bootstrapSwitch({
+		        'size': 'mini',
+		        'handleWidth': 34,
+		        'labelWidth': 34,
+		        'onSwitchChange': function (event, state) {
+		            $.ajax({
+		                url: window.parent.sniffy.baseUrl + 'connectionregistry/persistent/',
+		                type: state ? 'POST' : 'DELETE',
+		                success: function (result) {
+		                    console.log(result);
+		                }
+		            });
+		        }
+		    });
+
+	    $('a[href="#networkconnections"]').on('shown.bs.tab', function (e) {
+	    	$.ajax({
+	    		url : window.parent.sniffy.baseUrl + 'connectionregistry/',
+	    		dataType: "json"
+	    	}).done(function(data) {
+	    		$('#sniffy-datasource-registry').empty();
+
+				if (true === data.persistent) {
+		            $('#persistent').bootstrapSwitch('state', true, true);
+		        } else {
+		            $('#persistent').bootstrapSwitch('state', false, true);
+		        }
+
+	    		if (data.dataSources) $.each(data.dataSources, function(i, item) {
+	    			var toggleButton, delayInput;
+			        $('<tr>').append(
+			            $('<td>').text(item.url),
+			            $('<td>').text(item.userName),
+			            $('<td>').append(
+			            	toggleButton = $('<input type="checkbox" data-toggle="toggle">')
+		            	),
+			            $('<td>').append(
+			            	delayInput = $('<input type="text" class="form-control input-sm">')
+		            	)
+			        ).appendTo('#sniffy-datasource-registry');
+			        if (item.status >= 0) {
+						toggleButton.attr('checked', true);
+					}
+					delayInput.val(item.status >= 0 ? item.status : -1 == item.status ? 0 : -1 * item.status);
+					delayInput.change(function() {
+						$.ajax({
+							    url: window.parent.sniffy.baseUrl + 'connectionregistry/datasource/' + encodeURIComponent(encodeURIComponent(item.url)) + '/' + encodeURIComponent(encodeURIComponent(item.userName)),
+							    type: 'POST',
+								data: '' + (toggleButton[0].checked ? delayInput.val() : delayInput.val() == '0' ? -1 : -1 * delayInput.val()),
+								contentType: "application/json; charset=utf-8",
+        						dataType   : "json",
+							    success: function(result) {
+							        console.log(result);
+							    }
+							});
+					});
+			        toggleButton.bootstrapSwitch({
+				    	'size' : 'mini',
+				        'handleWidth': 34,
+				        'labelWidth': 34,
+				    	'onSwitchChange' : function(event, state) {
+				    		$.ajax({
+							    url: window.parent.sniffy.baseUrl + 'connectionregistry/datasource/' + encodeURIComponent(encodeURIComponent(item.url)) + '/' + encodeURIComponent(encodeURIComponent(item.userName)),
+							    type: 'POST',
+								data: '' + (state ? delayInput.val() : delayInput.val() == '0' ? -1 : -1 * delayInput.val()),
+								contentType: "application/json; charset=utf-8",
+        						dataType   : "json",
+							    success: function(result) {
+							        console.log(result);
+							    }
+							});
+				    	}
+				    });
+			    });
+
+	    		$('#sniffy-socket-registry').empty();
+	    		if (data.sockets) $.each(data.sockets, function(i, item) {
+	    			var toggleButton, delayInput;
+			        $('<tr>').append(
+			            $('<td>').text(item.host),
+			            $('<td>').text(item.port),
+			            $('<td>').append(
+			            	toggleButton = $('<input type="checkbox" data-toggle="toggle">')
+		            	),
+			            $('<td>').append(
+			            	delayInput = $('<input type="text" class="form-control input-sm">')
+		            	)
+			        ).appendTo('#sniffy-socket-registry');
+			        if (item.status >= 0) {
+						toggleButton.attr('checked', true);
+					}
+					delayInput.val(item.status >= 0 ? item.status : -1 == item.status ? 0 : -1 * item.status);
+					delayInput.change(function() {
+						$.ajax({
+							url: window.parent.sniffy.baseUrl + 'connectionregistry/socket/' + encodeURIComponent(encodeURIComponent(item.host)) + '/' + encodeURIComponent(encodeURIComponent(item.port)),
+							    type: 'POST',
+								data: '' + (toggleButton[0].checked ? delayInput.val() : delayInput.val() == '0' ? -1 : -1 * delayInput.val()),
+								contentType: "application/json; charset=utf-8",
+        						dataType   : "json",
+							    success: function(result) {
+							        console.log(result);
+							    }
+							});
+					});
+			        toggleButton.bootstrapSwitch({
+				    	'size' : 'mini',
+				        'handleWidth': 34,
+				        'labelWidth': 34,
+				    	'onSwitchChange' : function(event, state) {
+				    		$.ajax({
+							    url: window.parent.sniffy.baseUrl + 'connectionregistry/socket/' + encodeURIComponent(encodeURIComponent(item.host)) + '/' + encodeURIComponent(encodeURIComponent(item.port)),
+								type: 'POST',
+								data: '' + (state ? delayInput.val() : delayInput.val() == '0' ? -1 : -1 * delayInput.val()),
+								contentType: "application/json; charset=utf-8",
+        						dataType   : "json",
+							    success: function(result) {
+							        console.log(result);
+							    }
+							});
+				    	}
+				    });
+			    });
+			    
+	    	});	
+	    	
+		});
+	</script>	
+</body>
+</html>
