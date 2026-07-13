@@ -258,8 +258,6 @@ public class SniffyDriverTest extends BaseTest {
     @Test
     public void testVersion() throws ClassNotFoundException, SQLException {
         Driver driver = DriverManager.getDriver("sniffy:jdbc:h2:mem:");
-        assertEquals(4, driver.getMajorVersion());
-        assertEquals(0, driver.getMinorVersion());
         assertEquals(Constants.MAJOR_VERSION, driver.getMajorVersion());
         assertEquals(Constants.MINOR_VERSION, driver.getMinorVersion());
     }
