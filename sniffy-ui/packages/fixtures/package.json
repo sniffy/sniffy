@@ -1,0 +1,13 @@
+{
+  "name": "@sniffy/fixtures",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@sniffy/api": "0.0.0",
+    "msw": "2.15.0"
+  }
+}

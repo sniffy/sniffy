@@ -1,0 +1,29 @@
+@theme {
+  --color-canvas: var(--sniffy-canvas);
+  --color-surface: var(--sniffy-surface);
+  --color-surface-raised: var(--sniffy-surface-raised);
+  --color-surface-hover: var(--sniffy-surface-hover);
+  --color-foreground: var(--sniffy-foreground);
+  --color-muted: var(--sniffy-foreground-muted);
+  --color-border: var(--sniffy-border);
+  --color-focus: var(--sniffy-focus);
+  --color-accent: var(--sniffy-accent);
+  --color-success: var(--sniffy-success);
+  --color-warning: var(--sniffy-warning);
+  --color-danger: var(--sniffy-danger);
+  --color-info: var(--sniffy-info);
+  --color-sql: var(--sniffy-sql);
+  --color-network: var(--sniffy-network);
+  --color-exception: var(--sniffy-exception);
+  --font-sans: var(--sniffy-font-sans);
+  --font-mono: var(--sniffy-font-mono);
+  --spacing-sniffy-1: var(--sniffy-space-1);
+  --spacing-sniffy-2: var(--sniffy-space-2);
+  --spacing-sniffy-3: var(--sniffy-space-3);
+  --spacing-sniffy-4: var(--sniffy-space-4);
+  --spacing-sniffy-6: var(--sniffy-space-6);
+  --radius-sm: var(--sniffy-radius-sm);
+  --radius-md: var(--sniffy-radius);
+  --radius-lg: var(--sniffy-radius-lg);
+  --shadow-sniffy: var(--sniffy-shadow);
+}

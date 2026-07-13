@@ -1,0 +1,69 @@
+@import 'tailwindcss';
+@import '@sniffy/theme/tokens.css';
+@import '@sniffy/theme/tailwind.css';
+@source "../../../packages/ui/src";
+
+:host {
+  all: initial !important;
+  position: fixed !important;
+  inset: auto 12px 12px auto !important;
+  z-index: 2147483647 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  color-scheme: dark !important;
+  isolation: isolate !important;
+}
+
+#sniffy-root,
+#sniffy-root *,
+#sniffy-root *::before,
+#sniffy-root *::after {
+  box-sizing: border-box;
+}
+
+#sniffy-root {
+  all: initial;
+  display: block;
+  color: var(--sniffy-foreground);
+  font: 14px/1.4 var(--sniffy-font-sans);
+  letter-spacing: normal;
+  text-align: left;
+}
+
+.sniffy-panel {
+  width: min(760px, calc(100vw - 24px));
+  height: min(540px, calc(100vh - 24px));
+}
+.sniffy-panel[data-maximized='true'] {
+  width: calc(100vw - 24px);
+  height: calc(100vh - 24px);
+}
+.sniffy-scroll {
+  scrollbar-color: var(--sniffy-border) transparent;
+}
+.hljs-keyword,
+.hljs-built_in,
+.hljs-type {
+  color: #d7a6ff;
+}
+.hljs-string,
+.hljs-title {
+  color: #8ee6b8;
+}
+.hljs-number,
+.hljs-literal {
+  color: #ffc45c;
+}
+.hljs-comment {
+  color: #7688a2;
+}
+
+@media (max-width: 640px) {
+  :host {
+    inset: auto 6px 6px 6px !important;
+  }
+  .sniffy-panel {
+    width: calc(100vw - 12px);
+    height: calc(100vh - 12px);
+  }
+}

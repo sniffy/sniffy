@@ -1,33 +1,7 @@
-![Build and deploy](https://github.com/sniffy/sniffy-ui/workflows/Build%20and%20deploy/badge.svg)
-[![Dependency Status](https://david-dm.org/sniffy/sniffy-ui.svg)](https://david-dm.org/sniffy/sniffy-ui)
-[![devDependency Status](https://david-dm.org/sniffy/sniffy-ui/dev-status.svg)](https://david-dm.org/sniffy/sniffy-ui#info=devDependencies)
+# Sniffy frontend workspace
 
-# sniffy-ui
-Sniffy UI 
+Private npm workspace for the injected profiler and `SniffyAgent` connectivity page. It is built into committed Maven resources and is not published independently.
 
-## Prerequisites
+Requires Node 24 or newer. Run `npm ci`, then `npm run dev` for the real two-origin playground, `npm run storybook` for shared components and product states, and `npm run build` to regenerate Java resources. `npm run check:generated` rebuilds in a temporary directory and byte-compares every committed output; `npm run check:bundle` enforces the one-file/eval-free profiler contract, the 200 KiB gzip budget, stable agent assets, and machine-neutral source maps.
 
-Node and NPM
-Grunt CLI (`npm install -g grunt-cli`)
-
-## Building
-
-```
-npm install
-./node_modules/.bin/bower install
-grunt
-```
-
-## Developing
-
-```
-grunt watch
-```
-
-## Testing with mock server
-
-```
-node index.js
-```
-
-Now open [http://localhost:3000/mock/mock.html](http://localhost:3000/mock/mock.html) in your browser and have fun!
+Production browser baseline: Chromium 90+, Firefox 88+, and Safari 14+. The profiler is a classic IIFE with an open Shadow DOM and no runtime frontend asset requests. The agent UI is an ES2020 module served by the embedded agent server.
