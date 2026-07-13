@@ -8,6 +8,7 @@ This document describes the one-time Codex Cloud setup for Sniffy and the operat
 - `.codex/cloud/setup.sh` installs Maven and Temurin JDK 8, 11, 17, 21, and 25, writes Maven toolchains, persists the environment, and primes the Maven dependency cache.
 - `.codex/cloud/maintenance.sh` refreshes dependencies when a cached cloud environment is resumed on another branch.
 - `.codex/cloud/use-jdk.sh` switches the current shell between installed JDKs.
+- `.codex/local/run-issue.sh` prepares an issue branch and launches unattended local Codex in an isolated machine.
 - `.github/ISSUE_TEMPLATE/codex-task.yml` provides a Definition-of-Ready template for autonomous tasks.
 
 Codex loads `AGENTS.md` automatically. More specific instructions can be added later in subdirectories when a module needs different build or review rules.
@@ -95,21 +96,13 @@ Examples: focused fixes, tests, documentation, ordinary refactoring, dependency 
 
 The local run should still be non-interactive: use `--ask-for-approval never`, run inside a disposable VM/container, put the complete specification in the issue, and instruct the agent to implement, test, commit, push, and update the draft pull request without asking routine questions.
 
-Recommended command shape:
+Recommended launcher:
 
 ```bash
-codex \
-  --model gpt-5.6-sol \
-  --config 'model_reasoning_effort="xhigh"' \
-  --ask-for-approval never \
-  --sandbox danger-full-access \
-  --search \
-  exec - <<'PROMPT'
-Read the complete linked GitHub issue and AGENTS.md. Treat the issue as authoritative. Work autonomously end to end: inspect, implement, test, review the diff, commit, push, and create or update a draft pull request. Do not ask for routine decisions or approval. Stop only for a real blocker and report it precisely.
-
-Issue: https://github.com/sniffy/sniffy/issues/NUMBER
-PROMPT
+bash .codex/local/run-issue.sh NUMBER [BRANCH_NAME]
 ```
+
+The script requires authenticated `gh`, a clean working tree, and an installed Codex CLI. It fetches the issue text, switches to an existing issue branch or creates `agent/issue-NUMBER` from the default branch, and starts Codex with `gpt-5.6-sol`, Extra High reasoning, no approvals, search enabled, and `danger-full-access`. Override the defaults with `CODEX_MODEL` and `CODEX_REASONING_EFFORT`.
 
 `danger-full-access` is appropriate only inside the isolated environment because it grants the agent the same filesystem and network authority as the executing user.
 
