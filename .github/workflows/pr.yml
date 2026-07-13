@@ -264,6 +264,41 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+  servlet-compatibility:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - java: 8
+            stack: Javax Servlet, Spring 5, Boot 2, Tomcat 9, Java 8 bytecode
+            modules: :sniffy-web-javax,:sniffy-spring-javax,:sniffy-integration-tests-spring-boot-2,:sniffy-integration-tests-tomcat,:sniffy-integration-tests-java8-bytecode
+          - java: 17
+            stack: Jakarta Servlet, Spring 7, Boot 4, Tomcat 10, namespace contracts
+            modules: :sniffy-web,:sniffy-spring,:sniffy-integration-tests-spring-boot,:sniffy-integration-tests-tomcat-jakarta,:sniffy-integration-tests-servlet-contract
+    name: Servlet compatibility - ${{ matrix.stack }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.8.6
+      - name: Verify ${{ matrix.stack }}
+        run: mvn -B -pl ${{ matrix.modules }} -am verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: surefire-servlet-compatibility-${{ matrix.java }}
+          path: |
+            **/target/surefire-reports/
+            **/target/surefire-reports/*.dump
+            **/target/surefire-reports/*.dumpstream
   analyze:
     needs:
       - smoke-test
@@ -276,10 +311,10 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-      - name: Set up JDK 8
+      - name: Set up JDK 17 for the complete legacy and modern reactor
         uses: actions/setup-java@v5
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'temurin'
       - name: Set up Maven
         uses: stCarolas/setup-maven@v5

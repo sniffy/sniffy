@@ -254,10 +254,10 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-      - name: Set up JDK 8
+      - name: Set up JDK 17 for the complete legacy and modern reactor
         uses: actions/setup-java@v5
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'temurin'
       - name: Set up Maven
         uses: stCarolas/setup-maven@v5
@@ -290,7 +290,7 @@ jobs:
       - name: Set up Java for publishing to Maven Central Repository
         uses: actions/setup-java@v5
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'temurin'
           server-id: central
           server-username: MAVEN_USERNAME
@@ -329,7 +329,7 @@ jobs:
       - name: Set up Java for publishing to GitHub Packages
         uses: actions/setup-java@v5
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'temurin'
       - name: Publish to GitHub Packages
         run: mvn -P github,ci -B clean deploy -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3 -X
