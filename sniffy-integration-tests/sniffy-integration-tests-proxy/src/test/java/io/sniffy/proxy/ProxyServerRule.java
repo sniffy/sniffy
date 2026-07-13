@@ -4,19 +4,21 @@ import net.bytebuddy.utility.privilege.GetSystemPropertyAction;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.littleshoot.proxy.Launcher;
+import org.littleshoot.proxy.HttpProxyServer;
+import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 
 import static java.security.AccessController.doPrivileged;
 
 public class ProxyServerRule implements TestRule {
 
-    private static final AtomicInteger port = new AtomicInteger();
+    private static final String PORT_PREFIX = "SNIFFY_PROXY_PORT=";
+
+    private int port;
 
     @Override
     public Statement apply(Statement base, Description description) {
@@ -24,13 +26,14 @@ public class ProxyServerRule implements TestRule {
     }
 
     public int getPortNumber() {
-        return port.get();
+        return port;
     }
 
-    public static class ProxyServerStatement extends Statement {
+    private class ProxyServerStatement extends Statement {
 
         private final Statement delegate;
         private Process process;
+        private Thread outputDrainer;
 
         public ProxyServerStatement(Statement delegate) {
             this.delegate = delegate;
@@ -38,76 +41,130 @@ public class ProxyServerRule implements TestRule {
 
         @Override
         public void evaluate() throws Throwable {
+            Throwable failure = null;
             try {
                 startProxy();
-                waitForProxy();
-                System.out.println("Proxy server ready; running test");
                 delegate.evaluate();
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Throwable e) {
+                failure = e;
                 throw e;
             } finally {
-                stopProxy();
-            }
-        }
-
-        private void waitForProxy() {
-
-            boolean connected = false;
-
-            for (int i = 0; i < 1000; i++) {
                 try {
-                    new Socket("localhost", port.get());
-                    connected = true;
-                    break;
-                } catch (Exception e) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException interruptedException) {
-                        interruptedException.printStackTrace();
+                    stopProxy();
+                } catch (Throwable cleanupFailure) {
+                    if (null != failure) {
+                        failure.addSuppressed(cleanupFailure);
+                    } else {
+                        throw cleanupFailure;
                     }
                 }
             }
-
-            if (!connected) {
-                throw new RuntimeException("Failed to connect to proxy server");
-            }
-
         }
 
-        private void startProxy() {
+        private void startProxy() throws Exception {
+            process = new ProcessBuilder(
+                    doPrivileged(new GetSystemPropertyAction("java.home")) + "/bin/java",
+                    "-classpath", System.getProperty("java.class.path"),
+                    ProxyServerProcess.class.getName())
+                    .redirectError(ProcessBuilder.Redirect.INHERIT)
+                    .start();
+
+            BufferedReader processOutput = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"));
+            String line;
+            while (null != (line = processOutput.readLine())) {
+                if (line.startsWith(PORT_PREFIX)) {
+                    port = Integer.parseInt(line.substring(PORT_PREFIX.length()));
+                    startOutputDrainer(processOutput);
+                    return;
+                }
+                System.out.println(line);
+            }
+
+            throw new IllegalStateException("Proxy process exited before reporting its port with exit code " +
+                    process.waitFor());
+        }
+
+        private void startOutputDrainer(final BufferedReader processOutput) {
+            outputDrainer = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String line;
+                        while (null != (line = processOutput.readLine())) {
+                            System.out.println(line);
+                        }
+                    } catch (IOException e) {
+                        if (process.isAlive()) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }, "sniffy-proxy-output");
+            outputDrainer.setDaemon(true);
+            outputDrainer.start();
+        }
+
+        private void stopProxy() throws Exception {
+            if (null == process) {
+                return;
+            }
+
+            Exception failure = null;
+            try {
+                process.getOutputStream().close();
+            } catch (Exception e) {
+                failure = e;
+            }
 
             try {
-                // Find a free port to avoid conflicts in parallel execution
-                int freePort = findFreePort();
-                port.set(freePort);
-                
-                process = new ProcessBuilder(
-                        doPrivileged(new GetSystemPropertyAction("java.home")) + "/bin/java",
-                        "-classpath", System.getProperty("java.class.path"),
-                        Launcher.class.getName(),
-                        "-port", Integer.toString(freePort))
-                        .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                        .redirectError(ProcessBuilder.Redirect.INHERIT)
+                int exitCode = process.waitFor();
+                if (0 != exitCode) {
+                    throw new IllegalStateException("Proxy process exited with code " + exitCode);
+                }
+            } catch (Exception e) {
+                failure = suppress(failure, e);
+            }
+
+            if (null != outputDrainer) {
+                try {
+                    outputDrainer.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    failure = suppress(failure, e);
+                }
+            }
+
+            if (null != failure) {
+                throw failure;
+            }
+        }
+
+        private Exception suppress(Exception first, Exception later) {
+            if (null == first) {
+                return later;
+            }
+            first.addSuppressed(later);
+            return first;
+        }
+
+    }
+
+    public static class ProxyServerProcess {
+
+        public static void main(String[] args) throws Exception {
+            HttpProxyServer proxyServer = null;
+            try {
+                proxyServer = DefaultHttpProxyServer.bootstrap()
+                        .withAddress(new InetSocketAddress("127.0.0.1", 0))
                         .start();
-                Runtime.getRuntime().addShutdownHook(new Thread(() -> process.destroy()));
-                System.out.println("Started proxy server process on port " + freePort);
-            } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println(PORT_PREFIX + proxyServer.getListenAddress().getPort());
+                System.out.flush();
+                System.in.read();
+            } finally {
+                if (null != proxyServer) {
+                    proxyServer.stop();
+                }
             }
-        }
-
-        private int findFreePort() throws IOException {
-            try (ServerSocket socket = new ServerSocket(0)) {
-                return socket.getLocalPort();
-            }
-        }
-
-        private void stopProxy() throws InterruptedException {
-            System.out.println("Destroying proxy server process");
-            process.destroy();
-            process.waitFor(1, TimeUnit.MINUTES);
-            System.out.println("Proxy server process joined");
         }
 
     }

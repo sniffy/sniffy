@@ -1,13 +1,11 @@
 package io.sniffy.test.boot;
 
-import kong.unirest.Unirest;
+import io.sniffy.sql.SniffyDataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +14,9 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +34,14 @@ public class RestControllerTest {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private javax.sql.DataSource dataSource;
+
+    @Test
+    public void dataSourceIsInstrumented() {
+        assertTrue(dataSource instanceof SniffyDataSource);
+    }
 
     @Test
     public void exampleTest() throws IOException {
@@ -196,7 +204,7 @@ public class RestControllerTest {
     }
 
     @Test
-    public void testDisableConnectivityUrlEncoding() throws UnsupportedEncodingException {
+    public void testDisableConnectivityUrlEncoding() throws IOException {
 
         String databaseUrl;
 
@@ -212,18 +220,15 @@ public class RestControllerTest {
             assertEquals(0, databaseConnectivity.getStatus().intValue());
         }
 
-        int status = Unirest.post("http://localhost:" + localServerPort + "/" + SNIFFY_URI_PREFIX + "/connectionregistry/datasource/{datasource}/SA")
-                .routeParam("datasource", databaseUrl)
-                .body("-1")
-                .asEmpty()
-                .getStatus();
+        int status = postForStatus("http://localhost:" + localServerPort + "/" + SNIFFY_URI_PREFIX +
+                "/connectionregistry/datasource/" + URLEncoder.encode(databaseUrl, "UTF-8") + "/SA", "-1");
 
         assertEquals(400, status);
 
     }
 
     @Test
-    public void testDisableConnectivityDoubleUrlEncoding() throws UnsupportedEncodingException {
+    public void testDisableConnectivityDoubleUrlEncoding() throws IOException {
 
         String databaseUrl;
 
@@ -239,11 +244,9 @@ public class RestControllerTest {
             assertEquals(0, databaseConnectivity.getStatus().intValue());
         }
 
-        int status = Unirest.post("http://localhost:" + localServerPort + "/" + SNIFFY_URI_PREFIX + "/connectionregistry/datasource/{datasource}/SA")
-                .routeParam("datasource", URLEncoder.encode(databaseUrl, "UTF-8"))
-                .body("-1")
-                .asEmpty()
-                .getStatus();
+        int status = postForStatus("http://localhost:" + localServerPort + "/" + SNIFFY_URI_PREFIX +
+                "/connectionregistry/datasource/" + URLEncoder.encode(URLEncoder.encode(databaseUrl, "UTF-8"), "UTF-8") +
+                "/SA", "-1");
 
         assertTrue(status / 100 == 2);
 
@@ -286,6 +289,25 @@ public class RestControllerTest {
         }
         /*assertNotNull(response);
          */
+    }
+
+    private static int postForStatus(String url, String body) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        byte[] bytes = body.getBytes("UTF-8");
+        connection.setFixedLengthStreamingMode(bytes.length);
+        OutputStream outputStream = connection.getOutputStream();
+        try {
+            outputStream.write(bytes);
+        } finally {
+            outputStream.close();
+        }
+        try {
+            return connection.getResponseCode();
+        } finally {
+            connection.disconnect();
+        }
     }
 
 }

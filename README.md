@@ -15,6 +15,19 @@ Live Demo - [https://demo.sniffy.io/](https://demo.sniffy.io/owners.html?lastNam
 
 Documentation - [https://www.sniffy.io/docs/latest/](https://www.sniffy.io/docs/latest/)
 
+Servlet integrations
+============
+
+The unsuffixed artifacts are the modern Jakarta variants; the `-javax` artifacts are the legacy Javax variants.
+The two namespace variants are mutually exclusive.
+
+| Artifact | Verified compatibility |
+| --- | --- |
+| `sniffy-web` | Java 8 + Servlet 5 + Tomcat 10.0.27; Java 17+ + Tomcat 10.1.57 (Servlet 6.0) or 11.0.24 (Servlet 6.1) |
+| `sniffy-spring` | Java 17+ + Spring Framework 7.0.8 + Spring Boot 4.1.0 |
+| `sniffy-web-javax` | Java 8 + Javax Servlet + Tomcat 9.0.120 |
+| `sniffy-spring-javax` | Java 8 + Spring Framework 5.3.39 + Spring Boot 2.7.18 |
+
 Support
 ============
 Ask questions on stackoverflow with tag [sniffy](https://stackoverflow.com/questions/tagged/sniffy)

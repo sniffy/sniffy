@@ -1,26 +1,23 @@
 package io.sniffy.test.boot;
 
+import io.sniffy.sql.SniffyDataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.client.DefaultResponseErrorHandler;
-import org.springframework.web.client.RestTemplate;
 
+import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -29,50 +26,71 @@ public class RestControllerTest {
     @LocalServerPort
     private int localServerPort;
 
-    private final static RestTemplate restTemplate = new RestTemplate();
+    @Autowired
+    private DataSource dataSource;
 
-    public RestControllerTest() {
-        restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
-
-            @Override
-            public void handleError(ClientHttpResponse response) throws IOException {
-            }
-
-        });
+    @Test
+    public void servletFilterAddsHeadersAndInjectsHtml() throws IOException {
+        Response response = get("/index.html", "text/html");
+        assertEquals(200, response.status);
+        assertNotNull(response.sqlQueriesHeader);
+        assertTrue(response.body.contains("script id=\"sniffy-header\""));
     }
 
     @Test
-    public void exampleTest() throws IOException {
-        ResponseEntity<String> entity = restTemplate.getForEntity("http://localhost:" + localServerPort + "/", String.class);
-        assertNotNull(entity);
-        assertNotNull(entity.getHeaders().getFirst("Sniffy-Sql-Queries"));
+    public void errorResponseIsInstrumentedOnce() throws IOException {
+        Response response = get("/ouch", "text/html");
+        assertEquals(500, response.status);
+        assertNotNull(response.sqlQueriesHeader);
+        int first = response.body.indexOf("script id=\"sniffy-header\"");
+        assertTrue(first >= 0);
+        assertEquals(first, response.body.lastIndexOf("script id=\"sniffy-header\""));
     }
 
     @Test
-    public void ouchTest() throws IOException {
+    public void dataSourceIsInstrumented() {
+        assertTrue(dataSource instanceof SniffyDataSource);
+    }
 
-        ClientHttpResponse response = restTemplate.execute(
-                "http://localhost:" + localServerPort + "/ouch",
-                HttpMethod.GET,
-                request -> request.getHeaders().setAccept(Collections.singletonList(MediaType.TEXT_HTML)),
-                v -> v
-        );
-        assertNotNull(response);
-        List<String> sniffySqlQueriesHeaders = response.getHeaders().get("Sniffy-Sql-Queries");
-        assertEquals(1, sniffySqlQueriesHeaders.size());
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InputStream is = response.getBody();
-        int i;
-        while ((i = is.read()) != -1) {
-            baos.write(i);
+    private Response get(String path, String accept) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(
+                "http://127.0.0.1:" + localServerPort + path).openConnection();
+        connection.setRequestProperty("Accept", accept);
+        try {
+            int status = connection.getResponseCode();
+            InputStream inputStream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
+            return new Response(status, connection.getHeaderField("Sniffy-Sql-Queries"), read(inputStream));
+        } finally {
+            connection.disconnect();
         }
-
-        String responseString = new String(baos.toByteArray());
-        assertNotNull(responseString);
-
-        assertTrue(responseString.contains("script id=\"sniffy-header\""));
-        assertEquals(responseString.indexOf("script id=\"sniffy-header\""), responseString.lastIndexOf("script id=\"sniffy-header\""));
     }
 
+    private static String read(InputStream inputStream) throws IOException {
+        if (null == inputStream) {
+            return "";
+        }
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            byte[] buffer = new byte[4096];
+            int count;
+            while ((count = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, count);
+            }
+            return new String(outputStream.toByteArray(), "UTF-8");
+        } finally {
+            inputStream.close();
+        }
+    }
+
+    private static class Response {
+        private final int status;
+        private final String sqlQueriesHeader;
+        private final String body;
+
+        private Response(int status, String sqlQueriesHeader, String body) {
+            this.status = status;
+            this.sqlQueriesHeader = sqlQueriesHeader;
+            this.body = body;
+        }
+    }
 }

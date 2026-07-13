@@ -16,18 +16,18 @@ public interface Constants {
      * The major version of Sniffy
      * @see Driver#getMajorVersion()
      */
-    int MAJOR_VERSION = 3;
+    int MAJOR_VERSION = 4;
 
     /**
      * The major version of Sniffy
      * @see Driver#getMinorVersion() ()
      */
-    int MINOR_VERSION = 1;
+    int MINOR_VERSION = 0;
 
     /**
      * The major version of Sniffy
      * @see Driver#getMinorVersion() ()
      */
-    int PATCH_VERSION = 14;
+    int PATCH_VERSION = 0;
 
 }

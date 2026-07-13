@@ -1,6 +1,8 @@
 == Using Sniffy with Spring
 
-If you are using http://projects.spring.io/spring-boot/[Spring Boot], simply add `@EnableSniffy` to your application class:
+Add `sniffy-spring` for Spring Framework 7 / Spring Boot 4 applications using Jakarta Servlet, or
+`sniffy-spring-javax` for Spring Framework 5.3 / Spring Boot 2.7 applications using Javax Servlet. Then add
+`@EnableSniffy` to your application class:
 
 ```java
 package com.acme;
@@ -23,5 +25,9 @@ public class Application {
 ```
 <1> Put this annotation on a class with spring configuration.
 
-It will wrap all existing datasources with `SniffyDataSource` and also create an instance of `SniffyFilter` with bean id `sniffyFilter` which will inject sniffy widget into HTML pages.
-If you are using Spring Boot embedded servlet container t is sufficient - otherwise you should also create a mapping for this filter.
+It will wrap all existing datasources with `SniffyDataSource` and also create an instance of `SniffyFilter` with bean id
+`sniffyFilter` which will inject the Sniffy widget into HTML pages. The annotation package remains
+`io.sniffy.boot.EnableSniffy` in both variants, so application source normally needs no changes when moving between
+the two supported Spring generations.
+
+With a Spring Boot embedded servlet container this is sufficient. Otherwise, also create a mapping for this filter.

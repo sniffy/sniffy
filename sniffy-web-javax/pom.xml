@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>sniffy-parent</artifactId>
+        <groupId>io.sniffy</groupId>
+        <version>4.0.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>sniffy-web-javax</artifactId>
+
+    <name>Sniffy Web Javax</name>
+    <url>http://sniffy.io/</url>
+    <description>Sniffy Servlet integration for the legacy javax.servlet namespace</description>
+
+    <build>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>target/generated-resources</directory>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <testSource>1.8</testSource>
+                    <testTarget>1.8</testTarget>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>io.sniffy</groupId>
+                                    <artifactId>sniffy-ui</artifactId>
+                                    <version>${sniffy.ui.version}</version>
+                                    <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
+                                    <includes>
+                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.min.js,
+                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.js,
+                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.map
+                                    </includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>ban-jakarta-servlet</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>jakarta.servlet:jakarta.servlet-api</exclude>
+                                    </excludes>
+                                    <searchTransitive>true</searchTransitive>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>check-signatures</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>verify</phase>
+                        <configuration>
+                            <rules>
+                                <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
+                                    <signature>
+                                        <groupId>org.codehaus.mojo.signature</groupId>
+                                        <artifactId>java18</artifactId>
+                                        <version>1.0</version>
+                                    </signature>
+                                    <ignores>
+                                        <ignore>java.nio.channels.AsynchronousSocketChannel</ignore>
+                                        <ignore>java.nio.channels.spi.AsynchronousChannelProvider</ignore>
+                                        <ignore>java.nio.channels.AsynchronousSocketChannel</ignore>
+                                        <ignore>java.nio.channels.AsynchronousServerSocketChannel</ignore>
+                                        <ignore>java.net.SocketOption</ignore>
+                                        <ignore>java.net.StandardSocketOptions</ignore>
+                                        <ignore>java.nio.channels.NetworkChannel</ignore>
+                                        <ignore>java.nio.channels.AsynchronousChannelGroup</ignore>
+                                        <ignore>sun.misc.Unsafe</ignore>
+                                        <ignore>sun.nio.ch.DatagramChannelDelegate</ignore>
+                                        <ignore>sun.nio.ch.ServerSocketChannelDelegate</ignore>
+                                        <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
+                                    </ignores>
+                                    <checkTestClasses>false</checkTestClasses>
+                                </checkSignatureRule>
+                                <checkSignatureRule implementation="org.codehaus.mojo.animal_sniffer.enforcer.CheckSignatureRule">
+                                    <signature>
+                                        <groupId>org.codehaus.mojo.signature</groupId>
+                                        <artifactId>java17</artifactId>
+                                        <version>1.0</version>
+                                    </signature>
+                                    <ignores>
+                                        <ignore>sun.nio.ch.SelChImpl</ignore>
+                                        <ignore>sun.misc.Unsafe</ignore>
+                                        <ignore>sun.nio.ch.DatagramChannelDelegate</ignore>
+                                        <ignore>sun.nio.ch.ServerSocketChannelDelegate</ignore>
+                                        <ignore>sun.nio.ch.SocketChannelDelegate</ignore>
+                                    </ignores>
+                                    <checkTestClasses>false</checkTestClasses>
+                                </checkSignatureRule>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+
+        </plugins>
+    </build>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-web-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-module-tls</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-module-nio</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-core</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-ui</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.webjars.bower</groupId>
+                    <artifactId>minified</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.webjars.bower</groupId>
+                    <artifactId>highlightjs</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.webjars.bower</groupId>
+                    <artifactId>clipboard</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <profiles>
+        <!-- Legacy GraalJS line, compiled for Java 8 -->
+        <profile>
+            <id>graaljs-legacy</id>
+            <activation>
+                <jdk>[1.8,21)</jdk>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js-scriptengine</artifactId>
+                    <version>21.3.18</version>
+                    <scope>test</scope>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js</artifactId>
+                    <version>21.3.18</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Modern GraalJS line -->
+        <profile>
+            <id>graaljs-modern</id>
+            <activation>
+                <jdk>[21,)</jdk>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js-scriptengine</artifactId>
+                    <version>25.0.3</version>
+                    <scope>test</scope>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>js</artifactId>
+                    <version>25.0.3</version>
+                    <type>pom</type>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
+</project>

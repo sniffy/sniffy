@@ -276,10 +276,10 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-      - name: Set up JDK 8
+      - name: Set up JDK 17 for the complete legacy and modern reactor
         uses: actions/setup-java@v5
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'temurin'
       - name: Set up Maven
         uses: stCarolas/setup-maven@v5

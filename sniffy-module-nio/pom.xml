@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sniffy-parent</artifactId>
         <groupId>io.sniffy</groupId>
-        <version>3.2.0-SNAPSHOT</version>
+        <version>4.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,6 +38,19 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <configuration>
+                    <ignores>
+                        <!-- Signature-polymorphic invoke descriptors are call-site specific. -->
+                        <ignore>java.lang.invoke.MethodHandle</ignore>
+                        <ignore>sun.misc.Unsafe</ignore>
+                        <ignore>sun.nio.ch.SelChImpl</ignore>
+                        <ignore>sun.nio.ch.SelectionKeyImpl</ignore>
+                    </ignores>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -104,12 +117,12 @@
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
                             <compilerArgs>
-                                <arg>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED</arg>
+                                <arg>-XDignore.symbol.file</arg>
                             </compilerArgs>
-                            <source>1.9</source>
-                            <target>1.9</target>
-                            <testSource>1.9</testSource>
-                            <testTarget>1.9</testTarget>
+                            <source>1.8</source>
+                            <target>1.8</target>
+                            <testSource>1.8</testSource>
+                            <testTarget>1.8</testTarget>
                         </configuration>
                     </plugin>
                     <plugin>

@@ -83,4 +83,6 @@ include::capture-traffic.adoc[]
 
 = Migration from previous versions
 
+include::migration-to-4.0.adoc[]
+
 include::migration-to-3.1.adoc[]

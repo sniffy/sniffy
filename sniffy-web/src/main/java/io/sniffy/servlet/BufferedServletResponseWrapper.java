@@ -1,8 +1,8 @@
 package io.sniffy.servlet;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Locale;
@@ -142,6 +142,14 @@ class BufferedServletResponseWrapper extends HttpServletResponseWrapper {
     }
 
     private void processSpecialHeader(String name, String processedValue) {
+        if (null == processedValue) {
+            if ("Content-Type".equals(name)) {
+                contentType = null;
+            } else if ("Content-Length".equals(name)) {
+                contentLength = 0;
+            }
+            return;
+        }
         if ("Content-Type".equals(name)) {
             String[] splits = processedValue.split(";");
             contentType = splits[0];
