@@ -15,6 +15,13 @@ Live Demo - [https://demo.sniffy.io/](https://demo.sniffy.io/owners.html?lastNam
 
 Documentation - [https://www.sniffy.io/docs/latest/](https://www.sniffy.io/docs/latest/)
 
+Servlet integrations
+============
+
+Use `sniffy-web` / `sniffy-spring` for Jakarta Servlet and modern Spring, or
+`sniffy-web-javax` / `sniffy-spring-javax` for Java 8, Javax Servlet, Spring 5.3, and Spring Boot 2.7.
+The two namespace variants are mutually exclusive.
+
 Support
 ============
 Ask questions on stackoverflow with tag [sniffy](https://stackoverflow.com/questions/tagged/sniffy)

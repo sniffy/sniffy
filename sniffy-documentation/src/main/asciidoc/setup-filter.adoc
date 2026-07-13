@@ -1,5 +1,23 @@
 == Filter
 
+Select one Servlet artifact before configuring the filter:
+
+[cols="1,1,1"]
+|===
+|Artifact |Servlet API |Typical container
+
+|`sniffy-web`
+|`jakarta.servlet` 6.0+
+|Tomcat 10.1+
+
+|`sniffy-web-javax`
+|`javax.servlet` 3.1 or 4.0
+|Tomcat 8.5 or 9
+|===
+
+The filter class name and configuration are identical in both artifacts. The artifacts are mutually exclusive and
+must not be installed together.
+
 === Enable Sniffy filter in web.xml
 
 ```xml

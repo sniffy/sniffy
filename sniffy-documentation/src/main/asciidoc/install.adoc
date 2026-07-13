@@ -5,6 +5,9 @@
 Sniffy comes with an uber-jar which doesn't require any additional dependencies to be installed.
 Just grab the `sniffy-{sniffy-version}.jar` from our https://github.com/sniffy/sniffy/releases/latest[releases page] and add it to the classpath of your application.
 
+NOTE: The Sniffy 3.x aggregate jar remains Java 8 and Javax Servlet compatible. Jakarta Servlet applications should
+use the modular artifacts below instead.
+
 WARNING: If you're using an application server like Tomcat and you're defining a datasource on application server level, `sniffy-{sniffy-version}.jar` should be added to the common classloader classpath and should be *absent* in web application classpath.
 
 == Non-Servlet applications
@@ -22,13 +25,30 @@ Advanced syntax takes comma separated parameters: `-javaagent:sniffy-<VERSION>.j
 
 == Spring Boot Integration
 
-If you're using Spring Boot, add the dependency below to your project in order to use Sniffy.
+Choose the integration artifact which matches the Servlet namespace used by your Spring generation.
+
+[cols="1,1,1,1"]
+|===
+|Artifact |Servlet namespace |Spring line |Java baseline
+
+|`sniffy-spring`
+|Jakarta Servlet 6.1
+|Spring Framework 7 / Spring Boot 4
+|Java 17
+
+|`sniffy-spring-javax`
+|Javax Servlet 3.1 or 4.0
+|Spring Framework 5.3 / Spring Boot 2.7
+|Java 8
+|===
+
+For a Jakarta Spring Boot application use:
 [source,xml,indent=0,subs="normal",role="primary"]
 .Maven
 ----
 <dependency>
     <groupId>io.sniffy</groupId>
-    <artifactId>sniffy-web</artifactId>
+    <artifactId>sniffy-spring</artifactId>
     <version>{sniffy-version}</version>
 </dependency>
 ----
@@ -37,9 +57,46 @@ If you're using Spring Boot, add the dependency below to your project in order t
 .Gradle
 ----
 dependencies {
-    compile 'io.sniffy:sniffy-web:{sniffy-version}'
+    implementation 'io.sniffy:sniffy-spring:{sniffy-version}'
 }
 ----
+
+For a Java 8 / Spring Boot 2.7 application use:
+[source,xml,indent=0,subs="normal"]
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-spring-javax</artifactId>
+    <version>{sniffy-version}</version>
+</dependency>
+----
+
+Do not put both namespace variants on one application classpath.
+
+== Servlet Filter Integration
+
+For a Jakarta Servlet application without Spring use:
+[source,xml,indent=0,subs="normal"]
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-web</artifactId>
+    <version>{sniffy-version}</version>
+</dependency>
+----
+
+For a Java 8 / Javax Servlet application use:
+[source,xml,indent=0,subs="normal"]
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-web-javax</artifactId>
+    <version>{sniffy-version}</version>
+</dependency>
+----
+
+Both artifacts register `io.sniffy.servlet.SniffyFilter` using the same `web.xml` or programmatic configuration;
+only the Servlet types in method signatures differ. See <<_filter>> for the complete filter mapping.
 
 == Sniffy Test
 
