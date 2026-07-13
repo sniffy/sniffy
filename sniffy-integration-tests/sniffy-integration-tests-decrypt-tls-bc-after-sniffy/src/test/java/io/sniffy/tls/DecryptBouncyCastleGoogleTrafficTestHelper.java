@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
+import static org.junit.Assume.assumeNoException;
 
 public class DecryptBouncyCastleGoogleTrafficTestHelper {
 
@@ -51,6 +52,9 @@ public class DecryptBouncyCastleGoogleTrafficTestHelper {
                     //noinspection ResultOfMethodCallIgnored
                     urlConnection.getInputStream().read();
 
+                    break;
+                } catch (java.net.UnknownHostException e) {
+                    assumeNoException("Cannot resolve www.google.com - network unavailable on this runner", e);
                     break;
                 } catch (IOException e) {
                     if ((
