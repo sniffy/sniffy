@@ -1,39 +1,29 @@
 package io.sniffy.nio;
 
-import io.sniffy.util.JVMUtil;
-import io.sniffy.util.ReflectionUtil;
-
-import java.lang.reflect.Method;
+import io.sniffy.log.Polyglog;
+import io.sniffy.log.PolyglogFactory;
 
 /**
  * @since 3.1.7
  */
 public class SniffySelectorProviderModule {
 
-    public static void initialize() {
+    private static final Polyglog LOG = PolyglogFactory.log(SniffySelectorProviderModule.class);
+    private static boolean unsupportedRuntimeLogged;
 
-        if (JVMUtil.getVersion() >= 16) {
-
-            try {
-                Class<?> moduleClass = Class.forName("java.lang.Module");
-                Method implAddOpensMethod = moduleClass.getDeclaredMethod("implAddOpens", String.class);
-                ReflectionUtil.setAccessible(implAddOpensMethod);
-
-                Class<?> selChImplClass = Class.forName("sun.nio.ch.SelChImpl");
-                Method getModuleMethod = Class.class.getMethod("getModule");
-
-                Object module = getModuleMethod.invoke(selChImplClass);
-                implAddOpensMethod.invoke(module, "sun.nio.ch");
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
+    public static boolean initialize() {
         try {
-            SniffySelectorProvider.install();
-        } catch (Exception e) {
-            e.printStackTrace();
+            // Resolve module access before the provider class links channel wrappers implementing SelChImpl.
+            JdkNioAccess.resolve();
+            return SniffySelectorProvider.installWithResult().isInstalled();
+        } catch (JdkNioAccess.JdkNioAccessException e) {
+            synchronized (SniffySelectorProviderModule.class) {
+                if (!unsupportedRuntimeLogged) {
+                    LOG.error("NIO monitoring is unsupported on this runtime; classic socket monitoring remains active", e);
+                    unsupportedRuntimeLogged = true;
+                }
+            }
+            return false;
         }
     }
 

@@ -1,9 +1,6 @@
 package io.sniffy.nio;
 
 import io.sniffy.util.ExceptionUtil;
-import io.sniffy.util.OSUtil;
-import io.sniffy.util.ReflectionUtil;
-import io.sniffy.util.StackTraceExtractor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -11,44 +8,35 @@ import sun.nio.ch.SelectionKeyImpl;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
-import static io.sniffy.util.ReflectionUtil.invokeMethod;
-import static io.sniffy.util.ReflectionUtil.setField;
 
 /**
  * @since 3.1.7
  */
-// TODO: test properly and come up with a strategy for server sockets and server channels
 public class SniffyServerSocketChannel extends ServerSocketChannel implements SelChImpl, SelectableChannelWrapper<ServerSocketChannel> {
 
     private final ServerSocketChannel delegate;
     private final SelChImpl selChImplDelegate;
+    private final ServerSocket socket;
 
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private volatile boolean hasCancelledKeys;
-
-    public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) {
+    public SniffyServerSocketChannel(SelectorProvider provider, ServerSocketChannel delegate) throws IOException {
         super(provider);
+        SniffySelectorProvider.assertOriginalChannel(delegate, "SniffyServerSocketChannel");
         this.delegate = delegate;
         this.selChImplDelegate = (SelChImpl) delegate;
+        this.socket = new SniffyServerSocket(delegate.socket(), this);
     }
 
     @Override
     public ServerSocketChannel getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public void keyCancelled() {
-        hasCancelledKeys = true;
     }
 
     @Override
@@ -67,7 +55,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
 
     @Override
     public ServerSocket socket() {
-        return delegate.socket();
+        return socket;
     }
 
     @Override
@@ -79,10 +67,28 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
             return null;
         }
 
-        // Windows Selector is implemented using pair of sockets which are explicitly casted and do not work with Sniffy
-        return OSUtil.isWindows() && StackTraceExtractor.hasClassInStackTrace("sun.nio.ch.Pipe") ?
-                socketChannel :
-                new SniffySocketChannelAdapter(provider(), socketChannel);
+        return new SniffySocketChannel(provider(), socketChannel);
+    }
+
+    Socket acceptSocket() throws IOException {
+        // ServerSocketAdaptor implements SO_TIMEOUT without changing channel-level accept.
+        // No selector or channel lifecycle monitor is held while this call can block.
+        Socket acceptedSocket = delegate.socket().accept();
+        SocketChannel acceptedChannel = acceptedSocket.getChannel();
+        if (acceptedChannel == null) {
+            acceptedSocket.close();
+            throw new IOException("Accepted socket did not expose its SocketChannel");
+        }
+        try {
+            return new SniffySocketChannel(provider(), acceptedChannel).socket();
+        } catch (Throwable failure) {
+            try {
+                acceptedSocket.close();
+            } catch (Throwable cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+            throw ExceptionUtil.throwException(failure);
+        }
     }
 
     @Override
@@ -92,39 +98,13 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     }
 
     @Override
-    public void implCloseSelectableChannel() {
-        try {
-
-            Object delegateCloseLock = ReflectionUtil.getField(AbstractInterruptibleChannel.class, delegate, "closeLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateCloseLock) {
-                setField(AbstractInterruptibleChannel.class, delegate, "closed", true);
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implCloseSelectableChannel", Void.class);
-            }
-
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        }
+    public void implCloseSelectableChannel() throws IOException {
+        delegate.close();
     }
 
     @Override
-    public void implConfigureBlocking(boolean block) {
-        try {
-
-            Object delegateRegLock = ReflectionUtil.getField(AbstractSelectableChannel.class, delegate, "regLock");
-
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (delegateRegLock) {
-                invokeMethod(AbstractSelectableChannel.class, delegate, "implConfigureBlocking", Boolean.TYPE, block, Void.class);
-                if (!setField(AbstractSelectableChannel.class, delegate, "nonBlocking", !block)) {
-                    setField(AbstractSelectableChannel.class, delegate, "blocking", block); // Java 10 had blocking field instead of nonBlocking
-                }
-            }
-
-        } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
-        }
+    public void implConfigureBlocking(boolean block) throws IOException {
+        delegate.configureBlocking(block);
     }
 
     @Override
@@ -170,7 +150,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     // @Override
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "translateAndSetInterestOps", Integer.TYPE, ops, SelectionKeyImpl.class, sk, Void.TYPE);
+            JdkNioAccess.resolve().translateAndSetInterestOps(selChImplDelegate, ops, sk);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -180,7 +160,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     //@Override
     public int translateInterestOps(int ops) {
         try {
-            return invokeMethod(SelChImpl.class, selChImplDelegate, "translateInterestOps", Integer.TYPE, ops, Integer.TYPE);
+            return JdkNioAccess.resolve().translateInterestOps(selChImplDelegate, ops);
         } catch (Exception e) {
             throw ExceptionUtil.processException(e);
         }
@@ -191,7 +171,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     @SuppressWarnings("RedundantThrows")
     public void park(int event, long nanos) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Long.TYPE, nanos, Void.TYPE);
+            JdkNioAccess.resolve().park(selChImplDelegate, event, nanos);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }
@@ -202,7 +182,7 @@ public class SniffyServerSocketChannel extends ServerSocketChannel implements Se
     @SuppressWarnings("RedundantThrows")
     public void park(int event) throws IOException {
         try {
-            invokeMethod(SelChImpl.class, selChImplDelegate, "park", Integer.TYPE, event, Void.TYPE);
+            JdkNioAccess.resolve().park(selChImplDelegate, event);
         } catch (Exception e) {
             throw ExceptionUtil.throwException(e);
         }

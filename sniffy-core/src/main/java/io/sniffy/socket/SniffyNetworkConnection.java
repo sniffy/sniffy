@@ -12,12 +12,26 @@ public interface SniffyNetworkConnection extends TrafficCapturingNetworkConnecti
 
     InetSocketAddress getInetSocketAddress();
 
+    /**
+     * Applies an endpoint-less or wildcard registry update to this connection's current effective endpoint.
+     */
     void setConnectionStatus(Integer connectionStatus);
+
+    /** Endpoint-aware registry callback; implementations with one endpoint may use the default. */
+    default void setConnectionStatus(InetSocketAddress endpoint, Integer connectionStatus) {
+        setConnectionStatus(connectionStatus);
+    }
 
     /**
      * @since 3.1.13
      */
     void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress);
+
+    /** Atomically publishes a detected proxy target and the policy resolved for that target. */
+    default void setProxiedInetSocketAddressAndStatus(InetSocketAddress proxiedAddress, Integer connectionStatus) {
+        setProxiedInetSocketAddress(proxiedAddress);
+        setConnectionStatus(connectionStatus);
+    }
 
     /**
      * @since 3.1.13

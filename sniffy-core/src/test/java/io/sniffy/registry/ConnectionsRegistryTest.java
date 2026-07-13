@@ -21,12 +21,85 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 public class ConnectionsRegistryTest extends BaseSocketTest {
+
+    @Test
+    public void closedConnectionDoesNotReceiveLaterRegistryUpdate() throws Exception {
+        InetSocketAddress address = aliasedAddress();
+        SniffyNetworkConnection connection = mock(SniffyNetworkConnection.class);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(address, connection);
+
+        ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(connection);
+        reset(connection);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus(address.getAddress().getHostAddress(), address.getPort(), -7);
+
+        verifyNoInteractions(connection);
+        assertEquals(0, registrationCount(connection));
+    }
+
+    @Test
+    public void hostnameAndIpAliasesAreBothRemovedOrRestored() throws Exception {
+        InetSocketAddress address = aliasedAddress();
+        SniffyNetworkConnection connection = mock(SniffyNetworkConnection.class);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(address, connection);
+
+        assertTrue(ConnectionsRegistry.INSTANCE.sniffySocketImpls.containsKey(
+                new AbstractMap.SimpleEntry<String, Integer>(address.getAddress().getHostName(), address.getPort())));
+        assertTrue(ConnectionsRegistry.INSTANCE.sniffySocketImpls.containsKey(
+                new AbstractMap.SimpleEntry<String, Integer>(address.getAddress().getHostAddress(), address.getPort())));
+
+        ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(connection);
+
+        assertFalse(ConnectionsRegistry.INSTANCE.sniffySocketImpls.containsKey(
+                new AbstractMap.SimpleEntry<String, Integer>(address.getAddress().getHostName(), address.getPort())));
+        assertFalse(ConnectionsRegistry.INSTANCE.sniffySocketImpls.containsKey(
+                new AbstractMap.SimpleEntry<String, Integer>(address.getAddress().getHostAddress(), address.getPort())));
+    }
+
+    @Test
+    public void duplicateRegistrationDoesNotCauseDuplicateCallback() throws Exception {
+        InetSocketAddress address = aliasedAddress();
+        SniffyNetworkConnection connection = mock(SniffyNetworkConnection.class);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(address, connection);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(address, connection);
+
+        assertEquals("one weak registration per hostname/IP alias", 2, registrationCount(connection));
+        reset(connection);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus(
+                address.getAddress().getHostAddress(), address.getPort(), -11);
+
+        verify(connection, times(1)).setConnectionStatus(any(InetSocketAddress.class), eq(-11));
+    }
 
     @After
     public void clearConnectionRules() {
         ConnectionsRegistry.INSTANCE.clear();
+    }
+
+    private static InetSocketAddress aliasedAddress() throws Exception {
+        return new InetSocketAddress(InetAddress.getByAddress(
+                "registry-test.invalid", new byte[]{127, 0, 0, 42}), 5555);
+    }
+
+    private static int registrationCount(SniffyNetworkConnection connection) {
+        int count = 0;
+        synchronized (ConnectionsRegistry.INSTANCE.sniffySocketImpls) {
+            for (Iterable<Reference<SniffyNetworkConnection>> references
+                    : ConnectionsRegistry.INSTANCE.sniffySocketImpls.values()) {
+                for (Reference<SniffyNetworkConnection> reference : references) {
+                    if (reference.get() == connection) count++;
+                }
+            }
+        }
+        return count;
     }
 
     @Test

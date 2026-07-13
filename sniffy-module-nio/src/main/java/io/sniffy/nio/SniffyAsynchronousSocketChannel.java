@@ -25,11 +25,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-// TODO: this functionality is available in java 1.7+ only - make sure it is safe
 
 /**
  * @since 3.1.7
  */
+/**
+ * Legacy experimental wrapper retained for binary compatibility. It is not installed or supported by Sniffy.
+ *
+ * @deprecated NIO2/AIO monitoring is not supported.
+ */
+@Deprecated
 public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel implements SniffyNetworkConnection {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffyAsynchronousSocketChannel.class);
@@ -329,7 +334,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                     checkConnectionAllowed(0);
                     sleepIfRequired(bytesDown);
                 } catch (ConnectException e) {
-                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                    throw new ExecutionException(new AsynchronousCloseException());
                 }
                 logSocket(System.currentTimeMillis() - start, bytesDown, 0);
                 return bytesDown;
@@ -342,7 +347,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                     checkConnectionAllowed(0);
                     sleepIfRequired(bytesDown);
                 } catch (ConnectException e) {
-                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                    throw new ExecutionException(new AsynchronousCloseException());
                 }
                 logSocket(System.currentTimeMillis() - start, bytesDown, 0);
                 return bytesDown;
@@ -393,7 +398,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                     checkConnectionAllowed(0);
                     sleepIfRequiredForWrite(bytesUp);
                 } catch (ConnectException e) {
-                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                    throw new ExecutionException(new AsynchronousCloseException());
                 }
                 logSocket(System.currentTimeMillis() - start, 0, bytesUp);
                 return bytesUp;
@@ -406,7 +411,7 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
                     checkConnectionAllowed(0);
                     sleepIfRequiredForWrite(bytesUp);
                 } catch (ConnectException e) {
-                    throw new ExecutionException(new AsynchronousCloseException()); // TODO: this is all wrong
+                    throw new ExecutionException(new AsynchronousCloseException());
                 }
                 logSocket(System.currentTimeMillis() - start, 0, bytesUp);
                 return bytesUp;
@@ -427,7 +432,11 @@ public class SniffyAsynchronousSocketChannel extends AsynchronousSocketChannel i
 
     @Override
     public void close() throws IOException {
-        delegate.close();
+        try {
+            delegate.close();
+        } finally {
+            ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(this);
+        }
     }
 
     @Override

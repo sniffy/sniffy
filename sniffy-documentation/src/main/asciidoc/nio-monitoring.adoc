@@ -1,0 +1,38 @@
+== NIO monitoring
+
+Sniffy's NIO monitor is opt-in. Enable it with `-Dio.sniffy.monitorNio=true`, the
+`IO_SNIFFY_MONITOR_NIO=true` environment variable, or
+`SniffyConfiguration.INSTANCE.setMonitorNio(true)`. A Java agent is not required: Sniffy installs a wrapped
+`SelectorProvider` during initialization. Initialize Sniffy before application code caches channels or selectors.
+
+The monitor covers IP TCP `SocketChannel` and `ServerSocketChannel`, `Selector`, `SelectionKey`, IP protocol-family
+overloads, inherited IP TCP channels, and application-created `Pipe` channels. A channel and its stable `socket()`
+view share one connection identity, proxy parser, fault status, buffering counters, and TLS correlation state. TCP
+statistics, captured traffic, fault injection, proxy destination detection, and TLS correlation use the same Sniffy
+model as classic sockets. The `ServerSocket` view honors `SO_TIMEOUT`; channel-level accept retains its normal
+blocking and nonblocking behavior. Pipe bytes are never reported as network traffic.
+
+Provider installation is fail-open. If the runtime does not expose the narrowly scoped NIO capabilities Sniffy
+requires, the original provider remains active and Sniffy logs the reason. Classic socket monitoring continues.
+`Sniffy.reinitialize()` retries a failed installation. Set `io.sniffy.monitorNio=false` to opt out; this remains the
+default.
+
+Limitations:
+
+* UDP `DatagramChannel` is deliberately pass-through. Sniffy's connection-oriented traffic and fault model does
+  not yet represent per-datagram source and destination semantics correctly.
+* UNIX-domain socket and server channels are deliberately returned unchanged. Sniffy's current address and fault
+  model is IP-specific; monitored UNIX-domain sockets are tracked in `sniffy-module-nio/NIO-TODO.md`. Unknown non-IP
+  protocol families also fail open instead of being wrapped as IP connections.
+* NIO2/AIO (`AsynchronousSocketChannel` and `AsynchronousServerSocketChannel`) is not monitored. The deprecated
+  asynchronous provider compatibility type does not install itself and must not be interpreted as AIO support.
+* SOCKS handshake inspection is not implemented. HTTP CONNECT proxy destinations are detected incrementally across
+  channel, gathering, and socket-output-stream writes. Detection examines successfully written bytes, so it is
+  post-write detection: the CONNECT request has already reached the physical proxy before Sniffy can apply the
+  resolved destination status to subsequent operations. True pre-send interception is future work.
+* The delegate `SelectionKey` attachment is reserved for Sniffy's internal backlink. Application attachments belong
+  on the wrapper key returned by normal selector APIs. Replacing the delegate attachment directly is unsupported
+  and produces a diagnosed `IllegalStateException`; direct delegate cancellation or closure is reconciled by the
+  next selection/cleanup operation.
+
+See `sniffy-module-nio/NIO-TODO.md` for the focused follow-up list.

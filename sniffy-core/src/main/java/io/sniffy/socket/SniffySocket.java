@@ -204,6 +204,19 @@ public class SniffySocket extends SniffySocketAdapter implements SniffyNetworkCo
     }
 
     @Override
+    public void close() throws IOException {
+        try {
+            if (null != socketChannel) {
+                socketChannel.close();
+            } else {
+                super.close();
+            }
+        } finally {
+            ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(this);
+        }
+    }
+
+    @Override
     public InputStream getInputStream() throws IOException {
         long start = System.currentTimeMillis();
         checkConnectionAllowed();

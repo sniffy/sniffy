@@ -17,16 +17,24 @@ env:
 jobs:
   smoke-test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
         include:
           - java: 8
             os: ubuntu-26.04
+            label: Ubuntu
           - java: 11
             os: windows-2025
+            label: Windows
           - java: 17
             os: macos-26
-    name: Smoke Test ${{ matrix.java }}, ${{ matrix.os }}
+            label: macOS
+          - java: 25
+            os: ubuntu-26.04
+            label: Ubuntu
+    name: Smoke JDK ${{ matrix.java }}, ${{ matrix.label }}
     steps:
       - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
@@ -64,16 +72,24 @@ jobs:
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: surefire-test-report-smoke-test-${{ matrix.java }}-${{ matrix.os }}
           path: |
             **/target/surefire-reports/
+            **/target/surefire-reports/*.dump
+            **/target/surefire-reports/*.dumpstream
+            **/target/surefire-reports-provider-lifecycle/
+            **/target/surefire-reports-provider-lifecycle/*.dump
+            **/target/surefire-reports-provider-lifecycle/*.dumpstream
             **/target/hs_err*.*
+            **/target/*jstack*.txt
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   arch-matrix:
     runs-on: ubuntu-26.04
+    timeout-minutes: 90
     needs:
       - smoke-test
     strategy:
@@ -175,6 +191,7 @@ jobs:
     needs:
       - smoke-test
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
         # test against LTS versions of JDK up to 21:
@@ -188,6 +205,8 @@ jobs:
             os: windows-2025
           - java: 17
             os: macos-26
+          - java: 25
+            os: ubuntu-26.04
           - java: 8
             os: macos-26
           - java: 11
@@ -230,12 +249,18 @@ jobs:
         env:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: actions/upload-artifact@v7
-        if: failure()
+        if: always()
         with:
           name: surefire-test-report-test-matrix-${{ matrix.java }}-${{ matrix.os }}
           path: |
             **/target/surefire-reports/
+            **/target/surefire-reports/*.dump
+            **/target/surefire-reports/*.dumpstream
+            **/target/surefire-reports-provider-lifecycle/
+            **/target/surefire-reports-provider-lifecycle/*.dump
+            **/target/surefire-reports-provider-lifecycle/*.dumpstream
             **/target/hs_err*.*
+            **/target/*jstack*.txt
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

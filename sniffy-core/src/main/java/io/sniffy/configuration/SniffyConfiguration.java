@@ -89,7 +89,7 @@ public enum SniffyConfiguration {
     private volatile Boolean jdbcFaultInjectionEnabled; // TODO: implement
 
     /**
-     * Capture stats (bytes and time) on socket IO (including IO, NIO, NIO2/AIO depending on monitorSocket and monitorNio)
+     * Capture stats (bytes and time) on classic socket IO and TCP NIO, depending on monitorSocket and monitorNio.
      * default - true
      *
      * @since 3.1.9
@@ -97,7 +97,7 @@ public enum SniffyConfiguration {
     private volatile Boolean socketCaptureEnabled;
 
     /**
-     * Enabled fault injection to socket IO  (including IO, NIO, NIO2/AIO depending on monitorSocket and monitorNio)
+     * Enable fault injection for classic socket IO and TCP NIO, depending on monitorSocket and monitorNio.
      * default - true
      *
      * @since 3.1.9

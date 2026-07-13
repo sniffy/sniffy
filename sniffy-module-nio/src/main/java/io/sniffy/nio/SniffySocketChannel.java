@@ -1,7 +1,6 @@
 package io.sniffy.nio;
 
 import io.sniffy.Sniffy;
-import io.sniffy.SpyConfiguration;
 import io.sniffy.configuration.SniffyConfiguration;
 import io.sniffy.log.Polyglog;
 import io.sniffy.log.PolyglogFactory;
@@ -10,6 +9,8 @@ import io.sniffy.socket.*;
 import io.sniffy.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -21,96 +22,109 @@ import java.nio.channels.spi.SelectorProvider;
 public class SniffySocketChannel extends SniffySocketChannelAdapter implements SniffyNetworkConnection {
 
     private static final Polyglog LOG = PolyglogFactory.log(SniffySocketChannel.class);
+    private static final IoOperationHook NOOP_IO_OPERATION_HOOK = new IoOperationHook() {
+        @Override public void beforeWrite() {
+        }
+        @Override public void beforeRead() {
+        }
+        @Override public void afterPhysicalWrite() {
+        }
+        @Override public void afterPhysicalRead() {
+        }
+        @Override public void beforeFinalTrafficPublication() {
+        }
+    };
 
     private final int connectionId = Sniffy.CONNECTION_ID_SEQUENCE.getAndIncrement();
+    private final Socket socket;
+    private final IoOperationHook ioOperationHook;
 
-    private volatile Integer connectionStatus;
+    /* A physical operation and its accounting event share this lock, preserving wire order. */
+    private final Object connectionReadLock = new Object();
+    private final Object connectionWriteLock = new Object();
+    private final Object bufferAccountingLock = new Object();
+    private final SocketChannelFaultDelayState faultDelayState =
+            new SocketChannelFaultDelayState(bufferAccountingLock);
+    private final SocketChannelEndpointPolicy endpointPolicy;
+    private final SocketChannelTrafficPublisher trafficPublisher;
+    private final SocketChannelOutboundTraffic outboundTraffic;
 
-    // fields related to injecting latency fault
-    private volatile int potentiallyBufferedInputBytes = 0;
-    private volatile int potentiallyBufferedOutputBytes = 0;
+    protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) throws SocketException {
+        this(provider, delegate, NOOP_IO_OPERATION_HOOK);
+    }
 
-    private volatile long lastReadThreadId;
-    private volatile long lastWriteThreadId;
-
-    private boolean firstChunk = true;
-
-    protected SniffySocketChannel(SelectorProvider provider, SocketChannel delegate) {
+    SniffySocketChannel(SelectorProvider provider, SocketChannel delegate, IoOperationHook ioOperationHook)
+            throws SocketException {
         super(provider, delegate);
+        this.ioOperationHook = ioOperationHook;
+        SocketAddress remoteAddress = delegate.socket().getRemoteSocketAddress();
+        InetSocketAddress physicalAddress = remoteAddress instanceof InetSocketAddress
+                ? (InetSocketAddress) remoteAddress : null;
+        this.endpointPolicy = new SocketChannelEndpointPolicy(this, physicalAddress);
+        this.trafficPublisher = new SocketChannelTrafficPublisher(this, connectionId);
+        this.outboundTraffic = new SocketChannelOutboundTraffic(this, trafficPublisher);
+        this.socket = new SniffySocketChannelSocket(super.socket(), this, connectionId);
         LOG.trace("Created new SniffySocketChannel(" + provider + ", " + delegate + ") = " + this);
     }
 
     @Override
     public void setConnectionStatus(Integer connectionStatus) {
-        this.connectionStatus = connectionStatus;
+        endpointPolicy.setConnectionStatus(connectionStatus);
+    }
+
+    @Override
+    public void setConnectionStatus(InetSocketAddress endpoint, Integer connectionStatus) {
+        endpointPolicy.setConnectionStatus(endpoint, connectionStatus);
     }
 
     @Override
     public InetSocketAddress getInetSocketAddress() {
         try {
-            return (InetSocketAddress) getRemoteAddress();
+            SocketAddress remote = getRemoteAddress();
+            if (remote instanceof InetSocketAddress) {
+                endpointPolicy.updatePhysicalAddress((InetSocketAddress) remote);
+            }
         } catch (Exception e) {
-            throw ExceptionUtil.processException(e);
+            if (endpointPolicy.physicalAddress() == null) throw ExceptionUtil.processException(e);
         }
+        return endpointPolicy.physicalAddress();
     }
-
-    private boolean firstPacketSent;
-    private InetSocketAddress proxiedAddress;
 
     @Override
     public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {
-        this.proxiedAddress = proxiedAddress;
+        endpointPolicy.setProxiedAddress(proxiedAddress);
+    }
+
+    @Override
+    public void setProxiedInetSocketAddressAndStatus(InetSocketAddress proxiedAddress, Integer connectionStatus) {
+        endpointPolicy.setProxiedAddressAndStatus(proxiedAddress, connectionStatus);
     }
 
     @Override
     public InetSocketAddress getProxiedInetSocketAddress() {
-        return proxiedAddress;
+        return endpointPolicy.proxiedAddress();
     }
 
     @Override
     public void setFirstPacketSent(boolean firstPacketSent) {
-        this.firstPacketSent = firstPacketSent;
+        outboundTraffic.setFirstPacketSent(firstPacketSent);
     }
 
     @Override
     public boolean isFirstPacketSent() {
-        return firstPacketSent;
+        return outboundTraffic.isFirstPacketSent();
     }
 
-    private void sleepIfRequired(int bytesDown) throws ConnectException {
-
-        lastReadThreadId = Thread.currentThread().getId();
-
-        if (lastReadThreadId == lastWriteThreadId) {
-            potentiallyBufferedOutputBytes = 0;
-        }
-
-        int potentiallyBufferedInputBytes = this.potentiallyBufferedInputBytes -= bytesDown;
-
-        if (potentiallyBufferedInputBytes < 0) {
-            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedInputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
-            checkConnectionAllowed(estimatedNumberOfTcpPackets);
-            this.potentiallyBufferedInputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
-        }
-
+    private void sleepIfRequired(int bytesDown, EffectiveEndpointPolicy policy) throws ConnectException {
+        int delayCycles = faultDelayState.recordRead(bytesDown);
+        // Policy resolution and sleeping can re-enter instrumentation; never perform them under
+        // the short cross-direction accounting critical section.
+        if (delayCycles > 0) checkConnectionAllowed(policy, delayCycles);
     }
 
-    private void sleepIfRequiredForWrite(int bytesUp) throws ConnectException {
-
-        lastWriteThreadId = Thread.currentThread().getId();
-
-        if (lastReadThreadId == lastWriteThreadId) {
-            potentiallyBufferedInputBytes = 0;
-        }
-
-        int potentiallyBufferedOutputBytes = this.potentiallyBufferedOutputBytes -= bytesUp;
-
-        if (potentiallyBufferedOutputBytes < 0) {
-            int estimatedNumberOfTcpPackets = 1 + (-1 * potentiallyBufferedOutputBytes) / SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
-            checkConnectionAllowed(estimatedNumberOfTcpPackets);
-            this.potentiallyBufferedOutputBytes = SniffyNetworkConnection.DEFAULT_TCP_WINDOW_SIZE;
-        }
-
+    private void sleepIfRequiredForWrite(int bytesUp, EffectiveEndpointPolicy policy) throws ConnectException {
+        int delayCycles = faultDelayState.recordWrite(bytesUp);
+        if (delayCycles > 0) checkConnectionAllowed(policy, delayCycles);
     }
 
     @Deprecated
@@ -134,58 +148,15 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
-        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-            LOG.trace("SniffySocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
-            Sniffy.logTraffic(
-                    connectionId, getInetSocketAddress(),
-                    sent, protocol,
-                    traffic, off, len,
-                    effectiveSpyConfiguration.isCaptureStackTraces()
-            );
-            if (sent && firstChunk) {
-                SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
-                if (null != sniffySSLNetworkConnection) {
-                    sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
-                }
-                firstChunk = false;
-            }
-        }
+        trafficPublisher.logTraffic(sent, protocol, traffic, off, len, false);
     }
 
     public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len, boolean isConnectPacket) {
-        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-            LOG.trace("SniffySocketChannel.logTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
-            Sniffy.logTraffic(
-                    connectionId, getInetSocketAddress(),
-                    sent, protocol,
-                    traffic, off, len,
-                    effectiveSpyConfiguration.isCaptureStackTraces()
-            );
-            if (!isConnectPacket) {
-                if (sent && firstChunk) {
-                    SniffySSLNetworkConnection sniffySSLNetworkConnection = Sniffy.CLIENT_HELLO_CACHE.get(ByteBuffer.wrap(traffic, off, len));
-                    if (null != sniffySSLNetworkConnection) {
-                        sniffySSLNetworkConnection.setSniffyNetworkConnection(this);
-                    }
-                }
-                firstChunk = false;
-            }
-        }
+        trafficPublisher.logTraffic(sent, protocol, traffic, off, len, isConnectPacket);
     }
 
     public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) {
-        SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-        if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-            LOG.trace("SniffySocketChannel.logDecryptedTraffic() called; sent = " + sent + "; len = " + len + "; connectionId = " + connectionId);
-            Sniffy.logDecryptedTraffic(
-                    connectionId, null == getProxiedInetSocketAddress() ? getInetSocketAddress() : getProxiedInetSocketAddress(),
-                    sent, protocol,
-                    traffic, off, len,
-                    effectiveSpyConfiguration.isCaptureStackTraces()
-            );
-        }
+        trafficPublisher.logDecryptedTraffic(sent, protocol, traffic, off, len);
     }
 
     public void checkConnectionAllowed() throws ConnectException {
@@ -193,7 +164,8 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
     public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException {
-        checkConnectionAllowed(getInetSocketAddress(), numberOfSleepCycles);
+        if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
+        checkConnectionAllowed(policySnapshot(), numberOfSleepCycles);
     }
 
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException {
@@ -201,20 +173,23 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     }
 
     public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException {
+        if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
+        checkConnectionAllowed(policySnapshot(inetSocketAddress), numberOfSleepCycles);
+    }
+
+    private void checkConnectionAllowed(EffectiveEndpointPolicy policy, int numberOfSleepCycles) throws ConnectException {
 
         if (!SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()) return;
 
-        if (null != inetSocketAddress) {
-            if (null == this.connectionStatus || ConnectionsRegistry.INSTANCE.isThreadLocal()) {
-                this.connectionStatus = ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(inetSocketAddress, this);
-            }
+        if (null != policy.address && null != policy.status) {
+            Integer connectionStatus = policy.status;
             if (connectionStatus < 0) {
                 if (numberOfSleepCycles > 0 && -1 != connectionStatus) try {
                     sleepImpl(-1 * connectionStatus * numberOfSleepCycles);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                throw new ConnectException(String.format("Connection to %s refused by Sniffy", inetSocketAddress));
+                throw new ConnectException(String.format("Connection to %s refused by Sniffy", policy.address));
             } else if (numberOfSleepCycles > 0 && connectionStatus > 0) {
                 try {
                     sleepImpl(connectionStatus * numberOfSleepCycles);
@@ -225,6 +200,22 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         }
     }
 
+    private EffectiveEndpointPolicy policySnapshot() {
+        EffectiveEndpointPolicy current = endpointPolicy.current();
+        return endpointPolicy.policySnapshot(
+                current,
+                current.address == null ? getInetSocketAddress() : null);
+    }
+
+    private EffectiveEndpointPolicy operationPolicySnapshot() {
+        return SniffyConfiguration.INSTANCE.getSocketFaultInjectionEnabled()
+                ? policySnapshot() : endpointPolicy.current();
+    }
+
+    private EffectiveEndpointPolicy policySnapshot(InetSocketAddress address) {
+        return endpointPolicy.policySnapshotForAddress(address);
+    }
+
     private static void sleepImpl(int millis) throws InterruptedException {
         Thread.sleep(millis);
     }
@@ -233,7 +224,10 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
     public boolean connect(SocketAddress remote) throws IOException {
         long start = System.currentTimeMillis();
         try {
-            checkConnectionAllowed((InetSocketAddress) remote, 1);
+            if (remote instanceof InetSocketAddress) {
+                checkConnectionAllowed((InetSocketAddress) remote, 1);
+                endpointPolicy.updatePhysicalAddress((InetSocketAddress) remote);
+            }
             return super.connect(remote);
         } finally {
             logSocket(System.currentTimeMillis() - start);
@@ -242,24 +236,28 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        // TODO: honor SpyConfiguration.isBufferIncomingTraffic() and SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize() settings
-        checkConnectionAllowed(0);
-        long start = System.currentTimeMillis();
-        int bytesDown = 0;
-        int position = dst.position();
-        try {
-            return bytesDown = super.read(dst);
-        } finally {
-            if (bytesDown >= 0) { // TODO: implement same check in other places
-                sleepIfRequired(bytesDown);
-                logSocket(System.currentTimeMillis() - start, bytesDown, 0);
-                SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                    dst.position(position);
-                    byte[] buff = new byte[bytesDown];
-                    dst.get(buff, 0, bytesDown);
-
-                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+        ioOperationHook.beforeRead();
+        synchronized (connectionReadLock) {
+            // The physical read and immutable byte copy are one ordered event shared with streams.
+            EffectiveEndpointPolicy policy = operationPolicySnapshot();
+            checkConnectionAllowed(policy, 0);
+            long start = System.currentTimeMillis();
+            int bytesDown = 0;
+            int position = dst.position();
+            try {
+                bytesDown = super.read(dst);
+                if (bytesDown > 0) ioOperationHook.afterPhysicalRead();
+                return bytesDown;
+            } finally {
+                if (bytesDown > 0) {
+                    sleepIfRequired(bytesDown, policy);
+                    logSocket(System.currentTimeMillis() - start, bytesDown, 0);
+                    if (Sniffy.getEffectiveSpyConfiguration().isCaptureNetworkTraffic()) {
+                        byte[] buff = copyBytes(dst, position, bytesDown);
+                        logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                    }
+                } else {
+                    logSocket(System.currentTimeMillis() - start, 0, 0);
                 }
             }
         }
@@ -267,200 +265,446 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        // TODO: honor SpyConfiguration.isBufferIncomingTraffic() and SniffyConfiguration.INSTANCE.getIncomingTrafficBufferSize() settings
-        checkConnectionAllowed(0);
-        long start = System.currentTimeMillis();
-        long bytesDown = 0;
-
-        int[] positions = new int[length];
-
-        for (int i = 0; i < length; i++) {
-            positions[i] = dsts[offset + i].position();
-        }
-
-        try {
-            bytesDown = super.read(dsts, offset, length);
-            return bytesDown;
-        } finally {
-            while (bytesDown > Integer.MAX_VALUE) {
-                sleepIfRequiredForWrite(Integer.MAX_VALUE);
-                logSocket(System.currentTimeMillis() - start, Integer.MAX_VALUE, 0);
-                bytesDown -= Integer.MAX_VALUE;
+        ioOperationHook.beforeRead();
+        synchronized (connectionReadLock) {
+            EffectiveEndpointPolicy policy = operationPolicySnapshot();
+            checkConnectionAllowed(policy, 0);
+            long start = System.currentTimeMillis();
+            long bytesDown = 0;
+            int[] positions = new int[length];
+            for (int i = 0; i < length; i++) {
+                positions[i] = dsts[offset + i].position();
             }
-            logSocket(System.currentTimeMillis() - start, (int) bytesDown, 0);
-
-            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                for (int i = 0; i < length; i++) {
-                    //TODO: cover by unit test
-                    int newPosition = dsts[offset + i].position();
-                    dsts[offset + i].position(positions[i]);
-                    byte[] buff = new byte[newPosition - positions[i]];
-                    dsts[offset + i].get(buff, 0, newPosition - positions[i]);
-                    logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+            try {
+                bytesDown = super.read(dsts, offset, length);
+                if (bytesDown > 0) ioOperationHook.afterPhysicalRead();
+                return bytesDown;
+            } finally {
+                if (bytesDown > 0) {
+                    recordRead(bytesDown, start, policy);
+                } else {
+                    logSocket(System.currentTimeMillis() - start, 0, 0);
                 }
-
+                if (bytesDown > 0 && Sniffy.getEffectiveSpyConfiguration().isCaptureNetworkTraffic()) {
+                    for (int i = 0; i < length; i++) {
+                        int transferred = dsts[offset + i].position() - positions[i];
+                        if (transferred > 0) {
+                            byte[] buff = copyBytes(dsts[offset + i], positions[i], transferred);
+                            logTraffic(false, Protocol.TCP, buff, 0, buff.length);
+                        }
+                    }
+                }
             }
         }
     }
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        checkConnectionAllowed(0);
-        long start = System.currentTimeMillis();
-        int length = 0;
-
-        int position = src.position();
-
-        try {
-            length = super.write(src);
-            return length;
-        } finally {
-            sleepIfRequiredForWrite(length);
-            logSocket(System.currentTimeMillis() - start, 0, length);
-            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic() || isFirstPacketSent()) {
-                src.position(position);
-                byte[] buff = new byte[length];
-                src.get(buff, 0, length);
-
-                boolean isConnectPacket = false;
-
-                if (!isFirstPacketSent()) {
-
-                    try {
-                        SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(this);
-                        sniffyPacketAnalyzer.analyze(buff, 0, buff.length);
-                    } catch (Exception e) {
-                        LOG.error(e);
-                    } finally {
-                        setFirstPacketSent(true);
-                    }
-
-                    isConnectPacket = null != proxiedAddress;
-
-                }
-
-                if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
-                }
-
+        ioOperationHook.beforeWrite();
+        synchronized (connectionWriteLock) {
+            // Starting policy, physical write, accounting, and parser publication are one event.
+            EffectiveEndpointPolicy policy = operationPolicySnapshot();
+            checkConnectionAllowed(policy, 0);
+            long start = System.currentTimeMillis();
+            int written = 0;
+            int position = src.position();
+            try {
+                written = super.write(src);
+                if (written > 0) ioOperationHook.afterPhysicalWrite();
+                return written;
+            } finally {
+                recordCompletedWrite(src, position, written, start, policy);
             }
         }
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        checkConnectionAllowed(0);
-        long start = System.currentTimeMillis();
-        long bytesUp = 0;
-
-        int[] positions = new int[length];
-        int[] remainings = new int[length];
-
-        for (int i = 0; i < length; i++) {
-            positions[i] = srcs[offset + i].position();
-            remainings[i] = srcs[offset + i].remaining();
-        }
-
-        try {
-            bytesUp = super.write(srcs, offset, length);
-            return bytesUp;
-        } finally {
-            while (bytesUp > Integer.MAX_VALUE) {
-                sleepIfRequiredForWrite(Integer.MAX_VALUE);
-                logSocket(System.currentTimeMillis() - start, 0, Integer.MAX_VALUE);
-                bytesUp -= Integer.MAX_VALUE;
+        ioOperationHook.beforeWrite();
+        synchronized (connectionWriteLock) {
+            EffectiveEndpointPolicy policy = operationPolicySnapshot();
+            checkConnectionAllowed(policy, 0);
+            long start = System.currentTimeMillis();
+            long bytesUp = 0;
+            int[] positions = new int[length];
+            for (int i = 0; i < length; i++) {
+                positions[i] = srcs[offset + i].position();
             }
-            sleepIfRequiredForWrite((int) bytesUp);
-            logSocket(System.currentTimeMillis() - start, 0, (int) bytesUp);
-            SpyConfiguration effectiveSpyConfiguration = Sniffy.getEffectiveSpyConfiguration();
-
-            boolean isConnectPacket = false;
-
-            if (!isFirstPacketSent()) {
-
-                srcs[offset].position(positions[0]);
-                byte[] buff = new byte[remainings[0]];
-                srcs[offset].get(buff, 0, remainings[0]);
-
-                try {
-                    SniffyPacketAnalyzer sniffyPacketAnalyzer = new SniffyPacketAnalyzer(this);
-                    sniffyPacketAnalyzer.analyze(buff, 0, buff.length);
-                } catch (Exception e) {
-                    LOG.error(e);
-                } finally {
-                    setFirstPacketSent(true);
+            try {
+                bytesUp = super.write(srcs, offset, length);
+                if (bytesUp > 0) ioOperationHook.afterPhysicalWrite();
+                return bytesUp;
+            } finally {
+                if (bytesUp > 0) {
+                    recordWrite(bytesUp, start, policy);
+                } else {
+                    logSocket(System.currentTimeMillis() - start, 0, 0);
                 }
-
-                isConnectPacket = null != proxiedAddress;
-
-            }
-
-            if (effectiveSpyConfiguration.isCaptureNetworkTraffic()) {
-                for (int i = 0; i < length; i++) {
-                    srcs[offset + i].position(positions[i]);
-                    byte[] buff = new byte[remainings[i]]; // TODO: here in other places avoid wrapping ByteBuffer to byte[]
-                    srcs[offset + i].get(buff, 0, remainings[i]);
-                    logTraffic(true, Protocol.TCP, buff, 0, buff.length, isConnectPacket);
+                boolean capture = Sniffy.getEffectiveSpyConfiguration().isCaptureNetworkTraffic();
+                if (bytesUp > 0) {
+                    for (int i = 0; i < length; i++) {
+                        int transferred = srcs[offset + i].position() - positions[i];
+                        if (transferred > 0) {
+                            processOutboundBytes(copyBytes(srcs[offset + i], positions[i], transferred), capture);
+                        }
+                    }
                 }
-
             }
         }
     }
 
     @Override
     public Socket socket() {
-        try {
-            SniffySocket sniffySocket = new SniffySocket(super.socket(), this, connectionId, getInetSocketAddress());
-            LOG.trace("Getting SniffySocket " + sniffySocket + " from SniffySocketChannel " + this);
-            return sniffySocket;
-        } catch (SocketException e) {
-            e.printStackTrace();
-            return super.socket();
+        return socket;
+    }
+
+    static byte[] copyBytes(ByteBuffer buffer, int position, int length) {
+        ByteBuffer duplicate = buffer.duplicate();
+        duplicate.limit(position + length);
+        duplicate.position(position);
+        byte[] bytes = new byte[length];
+        duplicate.get(bytes);
+        return bytes;
+    }
+
+    static byte[] copyTransferredBytes(ByteBuffer[] buffers, int offset, int length,
+                                       int[] initialPositions, long transferredBytes) {
+        int capturedLength = (int) Math.min(
+                transferredBytes, SocketChannelOutboundTraffic.INITIAL_PACKET_CAPTURE_LIMIT);
+        byte[] bytes = new byte[capturedLength];
+        int destinationOffset = 0;
+        for (int i = 0; i < length && destinationOffset < capturedLength; i++) {
+            ByteBuffer buffer = buffers[offset + i];
+            int transferred = Math.min(buffer.position() - initialPositions[i], capturedLength - destinationOffset);
+            if (transferred > 0) {
+                ByteBuffer duplicate = buffer.duplicate();
+                duplicate.limit(initialPositions[i] + transferred);
+                duplicate.position(initialPositions[i]);
+                duplicate.get(bytes, destinationOffset, transferred);
+                destinationOffset += transferred;
+            }
         }
+        if (destinationOffset == capturedLength) {
+            return bytes;
+        }
+        byte[] exactBytes = new byte[destinationOffset];
+        System.arraycopy(bytes, 0, exactBytes, 0, destinationOffset);
+        return exactBytes;
+    }
+
+    void processOutboundBytes(byte[] bytes, boolean captureNetworkTraffic) {
+        synchronized (connectionWriteLock) {
+            processOutboundBytesLocked(bytes, captureNetworkTraffic);
+        }
+    }
+
+    private void processOutboundBytesLocked(byte[] bytes, boolean captureNetworkTraffic) {
+        outboundTraffic.process(bytes, captureNetworkTraffic);
+    }
+
+    int pendingInitialOutboundByteCount() {
+        synchronized (connectionWriteLock) {
+            return outboundTraffic.pendingByteCount();
+        }
+    }
+
+    Integer connectionStatus() {
+        return endpointPolicy.current().status;
+    }
+
+    EffectiveEndpointPolicy effectiveEndpointPolicy() {
+        return endpointPolicy.current();
+    }
+
+    private void finishOutboundInspection() {
+        synchronized (connectionWriteLock) {
+            finishOutboundInspectionLocked();
+        }
+    }
+
+    private void finishOutboundInspectionLocked() {
+        outboundTraffic.finish(
+                Sniffy.getEffectiveSpyConfiguration().isCaptureNetworkTraffic(),
+                new Runnable() {
+                    @Override public void run() {
+                        ioOperationHook.beforeFinalTrafficPublication();
+                    }
+                });
+    }
+
+    @Override
+    public SocketChannel shutdownOutput() throws IOException {
+        Throwable failure = null;
+        try {
+            super.shutdownOutput();
+        } catch (Throwable e) {
+            failure = e;
+        }
+        try {
+            finishOutboundInspection();
+        } catch (Throwable e) {
+            failure = combine(failure, e);
+        }
+        if (failure != null) rethrow(failure);
+        return this;
+    }
+
+    @Override
+    public void implCloseSelectableChannel() throws IOException {
+        Throwable failure = null;
+        // Physical close runs first so it can release a thread blocked while holding an I/O lock.
+        try {
+            super.implCloseSelectableChannel();
+        } catch (Throwable e) {
+            failure = e;
+        }
+        try {
+            finishOutboundInspection();
+        } catch (Throwable e) {
+            failure = combine(failure, e);
+        }
+        try {
+            ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(this);
+        } catch (Throwable e) {
+            failure = combine(failure, e);
+        }
+        if (failure != null) rethrow(failure);
+    }
+
+    private void recordRead(long bytesDown, long start, EffectiveEndpointPolicy policy) throws ConnectException {
+        long remaining = bytesDown;
+        boolean first = true;
+        while (remaining > 0) {
+            int chunk = (int) Math.min(remaining, Integer.MAX_VALUE);
+            sleepIfRequired(chunk, policy);
+            logSocket(first ? System.currentTimeMillis() - start : 0, chunk, 0);
+            first = false;
+            remaining -= chunk;
+        }
+    }
+
+    private void recordWrite(long bytesUp, long start, EffectiveEndpointPolicy policy) throws ConnectException {
+        long remaining = bytesUp;
+        boolean first = true;
+        while (remaining > 0) {
+            int chunk = (int) Math.min(remaining, Integer.MAX_VALUE);
+            sleepIfRequiredForWrite(chunk, policy);
+            logSocket(first ? System.currentTimeMillis() - start : 0, 0, chunk);
+            first = false;
+            remaining -= chunk;
+        }
+    }
+
+    private void recordCompletedWrite(ByteBuffer src, int position, int written, long start,
+                                      EffectiveEndpointPolicy policy) throws ConnectException {
+        if (written > 0) {
+            sleepIfRequiredForWrite(written, policy);
+            logSocket(System.currentTimeMillis() - start, 0, written);
+            boolean capture = Sniffy.getEffectiveSpyConfiguration().isCaptureNetworkTraffic();
+            if (capture || !isFirstPacketSent()) {
+                processOutboundBytesLocked(copyBytes(src, position, written), capture);
+            }
+        } else {
+            logSocket(System.currentTimeMillis() - start, 0, 0);
+        }
+    }
+
+    int read(InputStream delegate) throws IOException {
+        ioOperationHook.beforeRead();
+        synchronized (connectionReadLock) {
+            EffectiveEndpointPolicy policy = operationPolicySnapshot();
+            checkConnectionAllowed(policy, 0);
+            long start = System.currentTimeMillis();
+            int value = -1;
+            try {
+                value = delegate.read();
+                if (value >= 0) ioOperationHook.afterPhysicalRead();
+                return value;
+            } finally {
+                int accountedBytes = value < 0 ? 0 : 1;
+                if (accountedBytes > 0) {
+                    sleepIfRequired(accountedBytes, policy);
+                    logTraffic(false, Protocol.TCP, new byte[]{(byte) value}, 0, 1);
+                }
+                logSocket(System.currentTimeMillis() - start, accountedBytes, 0);
+            }
+        }
+    }
+
+    int read(InputStream delegate, byte[] bytes) throws IOException {
+        return read(delegate, bytes, 0, bytes.length, false);
+    }
+
+    int read(InputStream delegate, byte[] bytes, int offset, int length) throws IOException {
+        return read(delegate, bytes, offset, length, true);
+    }
+
+    private int read(InputStream delegate, byte[] bytes, int offset, int length, boolean ranged) throws IOException {
+        ioOperationHook.beforeRead();
+        synchronized (connectionReadLock) {
+            EffectiveEndpointPolicy policy = operationPolicySnapshot();
+            checkConnectionAllowed(policy, 0);
+            long start = System.currentTimeMillis();
+            int read = 0;
+            try {
+                read = ranged ? delegate.read(bytes, offset, length) : delegate.read(bytes);
+                if (read > 0) ioOperationHook.afterPhysicalRead();
+                return read;
+            } finally {
+                int accountedBytes = Math.max(read, 0);
+                if (accountedBytes > 0) {
+                    sleepIfRequired(accountedBytes, policy);
+                    logTraffic(false, Protocol.TCP, bytes, offset, accountedBytes);
+                }
+                logSocket(System.currentTimeMillis() - start, accountedBytes, 0);
+            }
+        }
+    }
+
+    void write(OutputStream delegate, int value) throws IOException {
+        ioOperationHook.beforeWrite();
+        synchronized (connectionWriteLock) {
+            EffectiveEndpointPolicy policy = operationPolicySnapshot();
+            checkConnectionAllowed(policy, 0);
+            long start = System.currentTimeMillis();
+            boolean written = false;
+            try {
+                delegate.write(value);
+                written = true;
+                ioOperationHook.afterPhysicalWrite();
+            } finally {
+                int accountedBytes = written ? 1 : 0;
+                if (written) {
+                    recordWrite(1, start, policy);
+                    processOutboundBytesLocked(new byte[]{(byte) value},
+                            Sniffy.getEffectiveSpyConfiguration().isCaptureNetworkTraffic());
+                } else {
+                    logSocket(System.currentTimeMillis() - start, 0, accountedBytes);
+                }
+            }
+        }
+    }
+
+    void write(OutputStream delegate, byte[] bytes) throws IOException {
+        write(delegate, bytes, 0, bytes.length, false);
+    }
+
+    void write(OutputStream delegate, byte[] bytes, int offset, int length) throws IOException {
+        write(delegate, bytes, offset, length, true);
+    }
+
+    private void write(OutputStream delegate, byte[] bytes, int offset, int length, boolean ranged) throws IOException {
+        ioOperationHook.beforeWrite();
+        synchronized (connectionWriteLock) {
+            EffectiveEndpointPolicy policy = operationPolicySnapshot();
+            checkConnectionAllowed(policy, 0);
+            long start = System.currentTimeMillis();
+            boolean written = false;
+            try {
+                if (ranged) delegate.write(bytes, offset, length); else delegate.write(bytes);
+                written = true;
+                ioOperationHook.afterPhysicalWrite();
+            } finally {
+                if (written) {
+                    recordWrite(length, start, policy);
+                    byte[] copy = new byte[length];
+                    System.arraycopy(bytes, offset, copy, 0, length);
+                    processOutboundBytesLocked(copy,
+                            Sniffy.getEffectiveSpyConfiguration().isCaptureNetworkTraffic());
+                } else {
+                    logSocket(System.currentTimeMillis() - start, 0, 0);
+                }
+            }
+        }
+    }
+
+    void closeInputStream(InputStream delegate) throws IOException {
+        close();
+    }
+
+    void closeOutputStream(OutputStream delegate) throws IOException {
+        close();
+    }
+
+    private static Throwable combine(Throwable primary, Throwable secondary) {
+        if (primary == null) return secondary;
+        if (primary != secondary) primary.addSuppressed(secondary);
+        return primary;
+    }
+
+    private static void rethrow(Throwable failure) throws IOException {
+        if (failure instanceof IOException) throw (IOException) failure;
+        if (failure instanceof RuntimeException) throw (RuntimeException) failure;
+        if (failure instanceof Error) throw (Error) failure;
+        throw new IOException(failure);
+    }
+
+    static final class EffectiveEndpointPolicy {
+        final InetSocketAddress address;
+        final Integer status;
+        final long generation;
+        final boolean proxied;
+
+        EffectiveEndpointPolicy(InetSocketAddress address, Integer status, long generation, boolean proxied) {
+            this.address = address;
+            this.status = status;
+            this.generation = generation;
+            this.proxied = proxied;
+        }
+
+        EffectiveEndpointPolicy withStatus(Integer newStatus) {
+            return new EffectiveEndpointPolicy(address, newStatus, generation + 1L, proxied);
+        }
+    }
+
+    interface IoOperationHook {
+        void beforeWrite() throws IOException;
+        void beforeRead() throws IOException;
+        void afterPhysicalWrite() throws IOException;
+        void afterPhysicalRead() throws IOException;
+        void beforeFinalTrafficPublication();
     }
 
     //
 
     @Override
     public int getPotentiallyBufferedInputBytes() {
-        return potentiallyBufferedInputBytes;
+        return faultDelayState.getPotentiallyBufferedInputBytes();
     }
 
     @Override
     public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) {
-        this.potentiallyBufferedInputBytes = potentiallyBufferedInputBytes;
+        faultDelayState.setPotentiallyBufferedInputBytes(potentiallyBufferedInputBytes);
     }
 
     @Override
     public int getPotentiallyBufferedOutputBytes() {
-        return potentiallyBufferedOutputBytes;
+        return faultDelayState.getPotentiallyBufferedOutputBytes();
     }
 
     @Override
     public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) {
-        this.potentiallyBufferedOutputBytes = potentiallyBufferedOutputBytes;
+        faultDelayState.setPotentiallyBufferedOutputBytes(potentiallyBufferedOutputBytes);
     }
 
     @Override
     public long getLastReadThreadId() {
-        return lastReadThreadId;
+        return faultDelayState.getLastReadThreadId();
     }
 
     @Override
     public void setLastReadThreadId(long lastReadThreadId) {
-        this.lastReadThreadId = lastReadThreadId;
+        faultDelayState.setLastReadThreadId(lastReadThreadId);
     }
 
     @Override
     public long getLastWriteThreadId() {
-        return lastWriteThreadId;
+        return faultDelayState.getLastWriteThreadId();
     }
 
     @Override
     public void setLastWriteThreadId(long lastWriteThreadId) {
-        this.lastWriteThreadId = lastWriteThreadId;
+        faultDelayState.setLastWriteThreadId(lastWriteThreadId);
     }
 
 }
