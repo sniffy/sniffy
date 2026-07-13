@@ -12,5 +12,4 @@ source "${HOME}/.sniffy-codex-env"
 
 # Resolve dependencies again after checkout. With a warm ~/.m2 cache this is
 # cheap, while still downloading dependencies introduced by the selected branch.
-mvn -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -P ci \
-  || mvn -T 1C -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -P ci
+bash .codex/cloud/warm-maven-cache.sh
