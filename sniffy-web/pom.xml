@@ -15,11 +15,6 @@
     <url>http://sniffy.io/</url>
     <description>Sniffy Servlet integration for the Jakarta Servlet namespace</description>
 
-    <properties>
-        <!-- Override the parent's legacy Spring dependency-management entries for this module. -->
-        <spring.version>${spring.servlet-test.version}</spring.version>
-    </properties>
-
     <build>
 
         <resources>
@@ -59,39 +54,7 @@
                             </artifactItems>
                         </configuration>
                     </execution>
-                    <execution>
-                        <!-- Spring's Jakarta test mocks expose optional Servlet 6 methods.
-                             Keep production compilation on Servlet 5 and replace only the
-                             provided API on the forked test runtime classpath. -->
-                        <id>copy-servlet-test-api</id>
-                        <phase>process-test-classes</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>jakarta.servlet</groupId>
-                                    <artifactId>jakarta.servlet-api</artifactId>
-                                    <version>${jakarta.servlet.test.version}</version>
-                                    <outputDirectory>${project.build.directory}/test-dependencies</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <classpathDependencyExcludes>
-                        <classpathDependencyExclude>jakarta.servlet:jakarta.servlet-api</classpathDependencyExclude>
-                    </classpathDependencyExcludes>
-                    <additionalClasspathElements>
-                        <additionalClasspathElement>${project.build.directory}/test-dependencies/jakarta.servlet-api-${jakarta.servlet.test.version}.jar</additionalClasspathElement>
-                    </additionalClasspathElements>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -230,75 +193,5 @@
             <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webmvc</artifactId>
-            <version>${spring.servlet-test.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <version>${spring.servlet-test.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
-
-    <profiles>
-        <!-- Legacy GraalJS line, compiled for Java 8 -->
-        <profile>
-            <id>graaljs-legacy</id>
-            <activation>
-                <jdk>[1.8,21)</jdk>
-            </activation>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.graalvm.js</groupId>
-                    <artifactId>js-scriptengine</artifactId>
-                    <version>21.3.18</version>
-                    <scope>test</scope>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.graalvm.js</groupId>
-                    <artifactId>js</artifactId>
-                    <version>21.3.18</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <!-- Modern GraalJS line -->
-        <profile>
-            <id>graaljs-modern</id>
-            <activation>
-                <jdk>[21,)</jdk>
-            </activation>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.graalvm.js</groupId>
-                    <artifactId>js-scriptengine</artifactId>
-                    <version>25.0.3</version>
-                    <scope>test</scope>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.graalvm.polyglot</groupId>
-                    <artifactId>js</artifactId>
-                    <version>25.0.3</version>
-                    <type>pom</type>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
-
 </project>

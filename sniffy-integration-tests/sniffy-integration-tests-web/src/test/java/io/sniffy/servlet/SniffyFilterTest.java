@@ -44,6 +44,7 @@ import static io.sniffy.servlet.SniffyRequestProcessor.SNIFFY_REQUEST_PROCESSOR_
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+/** Spring 7 mock coverage kept outside the Java 8 servlet production module. */
 @RunWith(MockitoJUnitRunner.class)
 public class SniffyFilterTest extends BaseTest {
 

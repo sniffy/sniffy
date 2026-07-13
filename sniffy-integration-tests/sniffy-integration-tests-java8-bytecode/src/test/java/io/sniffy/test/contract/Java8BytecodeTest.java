@@ -14,10 +14,10 @@ import static org.junit.Assert.assertTrue;
 public class Java8BytecodeTest {
 
     @Test
-    public void legacyAndAggregateArtifactsRemainJava8Bytecode() throws IOException {
+    public void java8AndAggregateArtifactsRemainJava8Bytecode() throws IOException {
         File directory = new File("target/artifacts");
         File[] jars = directory.listFiles();
-        assertTrue("No contract artifacts copied", null != jars && jars.length == 4);
+        assertTrue("No contract artifacts copied", null != jars && jars.length == 5);
         int inspected = 0;
         for (File jar : jars) {
             if (!jar.getName().endsWith(".jar")) {

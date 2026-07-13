@@ -14,15 +14,18 @@
     <modules>
         <module>sniffy-integration-tests-decrypt-tls</module>
         <module>sniffy-integration-tests-decrypt-tls-vertx</module>
+        <module>sniffy-integration-tests-decrypt-tls-bc-common</module>
         <module>sniffy-integration-tests-decrypt-tls-bc</module>
         <module>sniffy-integration-tests-decrypt-tls-bc-after-sniffy</module>
         <module>sniffy-integration-tests-xnio</module>
         <module>sniffy-integration-tests-jboss-remoting</module>
         <module>sniffy-integration-tests-spock</module>
-	    <module>sniffy-integration-tests-spring-boot-2</module>
-	    <module>sniffy-integration-tests-spring-kafka</module>
-	    <module>sniffy-integration-tests-tomcat-javax</module>
-	    <module>sniffy-integration-tests-proxy</module>
+        <module>sniffy-integration-tests-spring-boot-2</module>
+        <module>sniffy-integration-tests-spring-kafka</module>
+        <module>sniffy-integration-tests-tomcat-javax</module>
+        <module>sniffy-integration-tests-tomcat-jakarta-support</module>
+        <module>sniffy-integration-tests-tomcat-10.0</module>
+        <module>sniffy-integration-tests-proxy</module>
         <module>sniffy-integration-tests-java8-bytecode</module>
     </modules>
 
@@ -74,7 +77,9 @@
             </activation>
             <modules>
                 <module>sniffy-integration-tests-spring-boot</module>
+                <module>sniffy-integration-tests-web</module>
                 <module>sniffy-integration-tests-tomcat</module>
+                <module>sniffy-integration-tests-tomcat-10.1</module>
                 <module>sniffy-integration-tests-servlet-contract</module>
             </modules>
         </profile>

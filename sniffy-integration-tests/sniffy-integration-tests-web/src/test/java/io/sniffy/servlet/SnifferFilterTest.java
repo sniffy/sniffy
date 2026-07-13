@@ -11,6 +11,7 @@ import java.io.IOException;
 import static io.sniffy.servlet.SniffyFilter.*;
 import static org.junit.Assert.assertTrue;
 
+/** Spring 7 mock coverage kept outside the Java 8 servlet production module. */
 @Deprecated
 public class SnifferFilterTest extends SniffyFilterTest {
 

@@ -9,22 +9,22 @@ API and lets each Spring generation use its native namespace without source gene
 
 |Servlet filter on a modern container
 |`sniffy-web`
-|Jakarta Servlet 5.0+; tested with Tomcat 10.1 (Servlet 6.0)
-|Java 8 (Java 11 for the tested Tomcat 10.1 container)
+|Jakarta Servlet 5.0+; tested with Tomcat 10.0.27, 10.1.57, and 11.0.24
+|Java 8 for the artifact and Tomcat 10.0; Java 17+ verification for Tomcat 10.1 and 11
 
 |Servlet filter on a legacy container
 |`sniffy-web-javax`
-|Javax Servlet 3.1/4.0; tested with Tomcat 9
+|Javax Servlet 3.1/4.0; tested with Tomcat 9.0.120
 |Java 8
 
 |Modern Spring integration
 |`sniffy-spring`
-|Spring Framework 7, Spring Boot 4, Jakarta Servlet 6.1
+|Spring Framework 7.0.8, Spring Boot 4.1.0, Jakarta Servlet 6.1
 |Java 17
 
 |Legacy Spring integration
 |`sniffy-spring-javax`
-|Spring Framework 5.3, Spring Boot 2.7, Javax Servlet
+|Spring Framework 5.3.39, Spring Boot 2.7.18, Javax Servlet
 |Java 8
 |===
 

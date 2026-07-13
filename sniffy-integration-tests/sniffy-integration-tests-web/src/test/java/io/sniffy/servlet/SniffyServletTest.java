@@ -32,6 +32,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
+/** Spring 7 mock coverage kept outside the Java 8 servlet production module. */
 public class SniffyServletTest extends BaseTest {
 
     private static class SampleApplicationException extends Exception {

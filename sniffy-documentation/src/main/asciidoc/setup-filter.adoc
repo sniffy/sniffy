@@ -2,17 +2,19 @@
 
 Select one Servlet artifact before configuring the filter:
 
-[cols="1,1,1"]
+[cols="1,1,1,1"]
 |===
-|Artifact |Servlet API |Typical container
+|Artifact |Servlet API |Verified container |Verified Java
 
 |`sniffy-web`
 |`jakarta.servlet` 5.0+
-|Tomcat 10+
+|Tomcat 10.0.27, 10.1.57, and 11.0.24
+|Java 8 with Tomcat 10.0; Java 17+ with Tomcat 10.1 and 11
 
 |`sniffy-web-javax`
 |`javax.servlet` 3.1 or 4.0
-|Tomcat 8.5 or 9
+|Tomcat 9.0.120
+|Java 8
 |===
 
 The filter class name and configuration are identical in both artifacts. The artifacts are mutually exclusive and

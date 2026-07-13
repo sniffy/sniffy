@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+/** Shared Servlet 5 baseline fixture executed by all Jakarta Tomcat runners. */
 @WebServlet("/*")
 public class IntegrationTestServlet extends HttpServlet {
 

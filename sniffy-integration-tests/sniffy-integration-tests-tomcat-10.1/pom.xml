@@ -10,14 +10,14 @@
         <version>4.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>sniffy-integration-tests-tomcat</artifactId>
-    <name>Sniffy Tomcat 11 Servlet 6.1 Integration Tests</name>
+    <artifactId>sniffy-integration-tests-tomcat-10.1</artifactId>
+    <name>Sniffy Tomcat 10.1 Servlet 6.0 Integration Tests</name>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>${tomcat.servlet61.version}</version>
+            <version>${tomcat.servlet6.version}</version>
         </dependency>
         <dependency>
             <groupId>io.sniffy</groupId>

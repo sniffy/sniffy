@@ -7,6 +7,7 @@ import java.util.Enumeration;
 
 import static org.junit.Assert.*;
 
+/** Spring 7 mock coverage kept outside the Java 8 servlet production module. */
 public class FilterServletConfigAdapterTest {
 
     @Test

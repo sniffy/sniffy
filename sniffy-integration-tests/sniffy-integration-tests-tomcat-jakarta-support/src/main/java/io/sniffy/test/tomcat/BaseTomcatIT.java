@@ -18,6 +18,7 @@ import java.net.URL;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+/** Runtime contract inherited by each version-specific Jakarta Tomcat runner. */
 public class BaseTomcatIT {
 
     private static Tomcat tomcat;
@@ -56,7 +57,7 @@ public class BaseTomcatIT {
     }
 
     @Test
-    public void jakartaFilterRunsInTomcat10() throws IOException {
+    public void jakartaFilterRunsInSelectedTomcat() throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(
                 "http://127.0.0.1:" + port + "/test?namespace=jakarta").openConnection();
         connection.setRequestProperty("Accept", "text/html");

@@ -18,9 +18,15 @@ Documentation - [https://www.sniffy.io/docs/latest/](https://www.sniffy.io/docs/
 Servlet integrations
 ============
 
-Use `sniffy-web` for Jakarta Servlet 5.0+ and `sniffy-spring` for Servlet 6.1 and modern Spring, or
-`sniffy-web-javax` / `sniffy-spring-javax` for Java 8, Javax Servlet, Spring 5.3, and Spring Boot 2.7.
+The unsuffixed artifacts are the modern Jakarta variants; the `-javax` artifacts are the legacy Javax variants.
 The two namespace variants are mutually exclusive.
+
+| Artifact | Verified compatibility |
+| --- | --- |
+| `sniffy-web` | Java 8 + Servlet 5 + Tomcat 10.0.27; Java 17+ + Tomcat 10.1.57 (Servlet 6.0) or 11.0.24 (Servlet 6.1) |
+| `sniffy-spring` | Java 17+ + Spring Framework 7.0.8 + Spring Boot 4.1.0 |
+| `sniffy-web-javax` | Java 8 + Javax Servlet + Tomcat 9.0.120 |
+| `sniffy-spring-javax` | Java 8 + Spring Framework 5.3.39 + Spring Boot 2.7.18 |
 
 Support
 ============

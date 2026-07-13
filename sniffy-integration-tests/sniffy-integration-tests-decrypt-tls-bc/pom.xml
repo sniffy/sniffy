@@ -25,6 +25,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.sniffy</groupId>
+            <artifactId>sniffy-integration-tests-decrypt-tls-bc-common</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bctls-jdk15on</artifactId>
             <version>1.68</version>

@@ -14,6 +14,7 @@
         <module>sniffy-module-tls</module>
         <module>sniffy-module-nio</module>
         <module>sniffy-web-common</module>
+        <module>sniffy-web</module>
         <module>sniffy-web-javax</module>
         <module>sniffy-spring-javax</module>
         <module>sniffy</module>
@@ -32,14 +33,14 @@
         <sniffy.ui.version>3.1.8</sniffy.ui.version>
         <spring.version>5.3.39</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
-        <spring.servlet-test.version>6.0.23</spring.servlet-test.version>
         <spring.modern.version>7.0.8</spring.modern.version>
         <spring.boot.modern.version>4.1.0</spring.boot.modern.version>
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
-        <jakarta.servlet.test.version>6.0.0</jakarta.servlet.test.version>
         <jakarta.servlet.spring.version>6.1.0</jakarta.servlet.spring.version>
-        <tomcat.javax.version>9.0.119</tomcat.javax.version>
-        <tomcat.jakarta.version>10.1.57</tomcat.jakarta.version>
+        <tomcat.javax.version>9.0.120</tomcat.javax.version>
+        <tomcat.servlet5.version>10.0.27</tomcat.servlet5.version>
+        <tomcat.servlet6.version>10.1.57</tomcat.servlet6.version>
+        <tomcat.servlet61.version>11.0.24</tomcat.servlet61.version>
         <jacoco.version>0.8.13</jacoco.version>
 
 
@@ -693,12 +694,11 @@
     <profiles>
 
         <profile>
-            <id>modern-servlet</id>
+            <id>modern-spring</id>
             <activation>
                 <jdk>[17,)</jdk>
             </activation>
             <modules>
-                <module>sniffy-web</module>
                 <module>sniffy-spring</module>
             </modules>
         </profile>

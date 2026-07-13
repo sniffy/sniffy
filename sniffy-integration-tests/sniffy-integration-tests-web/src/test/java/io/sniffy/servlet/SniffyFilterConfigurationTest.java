@@ -33,6 +33,7 @@ import static io.sniffy.servlet.SniffyFilter.HEADER_REQUEST_DETAILS;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+/** Spring 7 mock coverage kept outside the Java 8 servlet production module. */
 @RunWith(MockitoJUnitRunner.class)
 public class SniffyFilterConfigurationTest extends BaseTest {
 
