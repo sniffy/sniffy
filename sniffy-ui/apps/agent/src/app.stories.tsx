@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 import { AgentApp } from './app';
 export default {
@@ -13,6 +13,14 @@ export const Desktop: StoryObj<typeof AgentApp> = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('table', { name: 'Socket connections' })).toBeVisible();
     await expect(canvas.getByRole('switch', { name: 'Keep settings after restart' })).toBeVisible();
+    const socketSwitch = canvas.getByRole('switch', {
+      name: 'Enable en.wikipedia.org:443 socket',
+    });
+    await userEvent.click(socketSwitch);
+    await expect(socketSwitch).not.toBeChecked();
+    socketSwitch.focus();
+    await userEvent.keyboard(' ');
+    await expect(socketSwitch).toBeChecked();
   },
 };
 export const Narrow: StoryObj<typeof AgentApp> = {

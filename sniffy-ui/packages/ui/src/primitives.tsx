@@ -60,19 +60,25 @@ export function Switch({
   checked,
   onCheckedChange,
   label,
+  disabled = false,
 }: {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <BaseSwitch.Root
       checked={checked}
       onCheckedChange={onCheckedChange}
       aria-label={label}
+      disabled={disabled}
       className="relative h-6 w-11 rounded-full border border-border bg-canvas transition data-[checked]:bg-accent focus-visible:outline-2 focus-visible:outline-focus"
     >
-      <BaseSwitch.Thumb className="block size-5 translate-x-0.5 rounded-full bg-foreground transition-transform data-[checked]:translate-x-[1.2rem]" />
+      <BaseSwitch.Thumb
+        className="block size-5 rounded-full bg-foreground transition-transform"
+        style={{ transform: checked ? 'translateX(20px)' : 'translateX(2px)' }}
+      />
     </BaseSwitch.Root>
   );
 }
@@ -81,10 +87,12 @@ export function NumberField({
   value,
   onValueChange,
   label,
+  disabled = false,
 }: {
   value: number;
   onValueChange: (value: number) => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <BaseNumberField.Root
@@ -92,6 +100,7 @@ export function NumberField({
       onValueChange={(next) => onValueChange(next ?? 0)}
       min={0}
       aria-label={label}
+      disabled={disabled}
     >
       <BaseNumberField.Group className="inline-flex overflow-hidden rounded-md border border-border bg-canvas">
         <BaseNumberField.Decrement

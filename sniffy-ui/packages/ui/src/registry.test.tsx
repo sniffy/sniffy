@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ConnectionRegistry, SniffyClient } from '@sniffy/api';
 import { ConnectionRegistryPanel } from './registry';
 
@@ -8,35 +8,98 @@ const registry = (status: number): ConnectionRegistry => ({
   dataSources: [],
 });
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+function client(overrides: Partial<SniffyClient> = {}): SniffyClient {
+  return {
+    baseUrl: 'http://localhost/',
+    getRegistry: vi.fn().mockResolvedValue(registry(0)),
+    getRequestDetails: vi.fn(),
+    setSocket: vi.fn().mockResolvedValue(undefined),
+    setDataSource: vi.fn().mockResolvedValue(undefined),
+    setPersistent: vi.fn().mockResolvedValue(undefined),
+    getTopSql: vi.fn(),
+    resetTopSql: vi.fn(),
+    ...overrides,
+  };
+}
+
 describe('connection registry controls', () => {
-  it('resynchronizes row controls with the authoritative refresh response', async () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('keeps the last table visible while refresh is pending and after refresh failure', async () => {
+    const refresh = deferred<ConnectionRegistry>();
+    const getRegistry = vi
+      .fn<SniffyClient['getRegistry']>()
+      .mockResolvedValueOnce(registry(0))
+      .mockReturnValueOnce(refresh.promise);
+    render(<ConnectionRegistryPanel client={client({ getRegistry })} />);
+    await screen.findByRole('table', { name: 'Socket connections' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(screen.getByRole('table', { name: 'Socket connections' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Refreshing…' })).toBeDisabled();
+    refresh.reject(new Error('refresh failed'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('refresh failed');
+    expect(screen.getByRole('table', { name: 'Socket connections' })).toBeVisible();
+  });
+
+  it('reloads authoritative row state and surfaces an error after a rejected mutation', async () => {
     const getRegistry = vi
       .fn<SniffyClient['getRegistry']>()
       .mockResolvedValueOnce(registry(0))
       .mockResolvedValueOnce(registry(0));
-    const client: SniffyClient = {
-      baseUrl: 'http://localhost/',
-      getRegistry,
-      getRequestDetails: vi.fn(),
-      setSocket: vi.fn(),
-      setDataSource: vi.fn(),
-      setPersistent: vi.fn(),
-      getTopSql: vi.fn(),
-      resetTopSql: vi.fn(),
-    };
-
-    render(<ConnectionRegistryPanel client={client} />);
+    const setSocket = vi
+      .fn<SniffyClient['setSocket']>()
+      .mockRejectedValue(new Error('write failed'));
+    render(<ConnectionRegistryPanel client={client({ getRegistry, setSocket })} />);
     const socketSwitch = await screen.findByRole('switch', {
       name: 'Enable example.test:443 socket',
     });
-    expect(socketSwitch).toBeChecked();
-    fireEvent.click(socketSwitch);
-    await waitFor(() => expect(socketSwitch).not.toBeChecked());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
-    await waitFor(() =>
-      expect(screen.getByRole('switch', { name: 'Enable example.test:443 socket' })).toBeChecked(),
+    fireEvent.click(socketSwitch);
+    expect(socketSwitch).not.toBeChecked();
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'write failed. Server state was reloaded.',
     );
+    await waitFor(() => expect(socketSwitch).toBeChecked());
     expect(getRegistry).toHaveBeenCalledTimes(2);
+  });
+
+  it('debounces rapid delays and serializes a newer intent behind an in-flight write', async () => {
+    const firstWrite = deferred<void>();
+    const setSocket = vi
+      .fn<SniffyClient['setSocket']>()
+      .mockReturnValueOnce(firstWrite.promise)
+      .mockResolvedValueOnce(undefined);
+    render(<ConnectionRegistryPanel client={client({ setSocket })} />);
+    const increment = await screen.findByRole('button', {
+      name: 'Increase example.test:443 socket delay',
+    });
+    vi.useFakeTimers();
+
+    fireEvent.click(increment);
+    fireEvent.click(increment);
+    await act(async () => vi.advanceTimersByTime(250));
+    expect(setSocket).toHaveBeenCalledTimes(1);
+    expect(setSocket).toHaveBeenLastCalledWith(expect.anything(), 2);
+
+    fireEvent.click(increment);
+    fireEvent.click(increment);
+    await act(async () => vi.advanceTimersByTime(250));
+    expect(setSocket).toHaveBeenCalledTimes(1);
+    firstWrite.resolve();
+    await act(async () => Promise.resolve());
+    expect(setSocket).toHaveBeenCalledTimes(2);
+    expect(setSocket).toHaveBeenLastCalledWith(expect.anything(), 4);
   });
 });

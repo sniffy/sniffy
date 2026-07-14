@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Clipboard,
   Eraser,
@@ -9,6 +9,9 @@ import {
   Timer,
   Network,
   CircleAlert,
+  Gauge,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import hljs from 'highlight.js/lib/core';
 import sql from 'highlight.js/lib/languages/sql';
@@ -37,9 +40,51 @@ interface RequestRecord {
   label: string;
   url: string;
   sqlQueries: number;
-  serverTime: number;
+  serverTime?: number;
   stats?: RequestStats;
   error?: string;
+}
+
+type CounterKey = 'exceptions' | 'network' | 'time' | 'sql';
+
+function requestNetworkBytes(stats: RequestStats): number {
+  const queryBytes =
+    stats.executedQueries?.reduce(
+      (sum, query) => sum + (query.bytesDown ?? 0) + (query.bytesUp ?? 0),
+      0,
+    ) ?? 0;
+  const connectionBytes =
+    stats.networkConnections?.reduce(
+      (sum, connection) => sum + (connection.bytesDown ?? 0) + (connection.bytesUp ?? 0),
+      0,
+    ) ?? 0;
+  return queryBytes + connectionBytes;
+}
+
+export async function copyText(text: string, root: ShadowRoot): Promise<void> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+  } catch {
+    // Plain HTTP applications commonly reject Clipboard API access; use the local fallback.
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.cssText =
+    'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
+  root.append(textarea);
+  textarea.focus();
+  textarea.select();
+  try {
+    if (typeof document.execCommand !== 'function' || !document.execCommand('copy'))
+      throw new Error('Copy is not supported by this browser');
+  } finally {
+    textarea.remove();
+  }
 }
 
 function HighlightedCode({ code, language }: { code: string; language: 'sql' | 'java' }) {
@@ -227,18 +272,80 @@ export function ProfilerApp({
 }) {
   const client = useMemo(() => createSniffyClient(metadata.baseUrl), [metadata.baseUrl]);
   const [open, setOpen] = useState(initialOpen);
-  const [minimized, setMinimized] = useState(false);
+  const [pinned, setPinned] = useState(true);
+  const [pointerInside, setPointerInside] = useState(false);
+  const [focusInside, setFocusInside] = useState(false);
+  const [temporarilyExpanded, setTemporarilyExpanded] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const [cleared, setCleared] = useState(false);
   const [requests, setRequests] = useState<RequestRecord[]>([]);
+  const [updating, setUpdating] = useState<Record<CounterKey, boolean>>({
+    exceptions: false,
+    network: false,
+    time: false,
+    sql: false,
+  });
+  const [copyStatus, setCopyStatus] = useState<{ message: string; error: boolean }>();
+  const collapseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pulseTimers = useRef<Partial<Record<CounterKey, ReturnType<typeof setTimeout>>>>({});
+
+  const cancelCollapse = useCallback(() => {
+    if (collapseTimer.current !== undefined) clearTimeout(collapseTimer.current);
+    collapseTimer.current = undefined;
+  }, []);
+  const scheduleCollapse = useCallback(() => {
+    cancelCollapse();
+    collapseTimer.current = setTimeout(() => {
+      setTemporarilyExpanded(false);
+    }, 750);
+  }, [cancelCollapse]);
+  const pulseCounters = useCallback((keys: CounterKey[]) => {
+    const started = keys.filter((key) => pulseTimers.current[key] === undefined);
+    if (started.length === 0) return;
+    setUpdating((current) => ({
+      ...current,
+      ...Object.fromEntries(started.map((key) => [key, true])),
+    }));
+    for (const key of started) {
+      pulseTimers.current[key] = setTimeout(() => {
+        delete pulseTimers.current[key];
+        setUpdating((current) => ({ ...current, [key]: false }));
+      }, 800);
+    }
+  }, []);
+  useEffect(
+    () => () => {
+      cancelCollapse();
+      Object.values(pulseTimers.current).forEach((timer) => clearTimeout(timer));
+    },
+    [cancelCollapse],
+  );
   const load = useCallback(
-    async (label: string, url: string, sqlQueries = 0, serverTime = 0) => {
+    async (
+      label: string,
+      url: string,
+      sqlQueries = 0,
+      serverTime?: number,
+      interceptedRequest = false,
+    ) => {
       setRequests((current) => [...current, { label, url, sqlQueries, serverTime }]);
+      if (interceptedRequest)
+        pulseCounters([
+          ...(sqlQueries !== 0 ? (['sql'] as CounterKey[]) : []),
+          ...(serverTime !== undefined && serverTime !== 0 ? (['time'] as CounterKey[]) : []),
+        ]);
       try {
         const stats = await client.getRequestDetails(url);
         setRequests((current) =>
           current.map((item) => (item.url === url ? { ...item, stats } : item)),
         );
+        if (interceptedRequest) {
+          const changed: CounterKey[] = [];
+          if (requestNetworkBytes(stats) !== 0) changed.push('network');
+          if ((stats.exceptions?.length ?? 0) !== 0) changed.push('exceptions');
+          if (serverTime !== undefined && stats.time !== serverTime) changed.push('time');
+          pulseCounters(changed);
+        }
       } catch (reason) {
         setRequests((current) =>
           current.map((item) =>
@@ -249,7 +356,7 @@ export function ProfilerApp({
         );
       }
     },
-    [client],
+    [client, pulseCounters],
   );
   useEffect(() => {
     if (metadata.requestId)
@@ -259,22 +366,19 @@ export function ProfilerApp({
       );
     return intercepted.subscribe(
       (request) =>
-        void load(request.label, request.detailsUrl, request.sqlQueries, request.timeToFirstByte),
+        void load(
+          request.label,
+          request.detailsUrl,
+          request.sqlQueries,
+          request.timeToFirstByte,
+          true,
+        ),
     );
   }, [intercepted, load, metadata]);
   const totals = requests.reduce(
     (result, request) => {
       const stats = request.stats;
-      result.network +=
-        stats?.executedQueries?.reduce(
-          (sum, query) => sum + (query.bytesDown ?? 0) + (query.bytesUp ?? 0),
-          0,
-        ) ?? 0;
-      result.network +=
-        stats?.networkConnections?.reduce(
-          (sum, connection) => sum + (connection.bytesDown ?? 0) + (connection.bytesUp ?? 0),
-          0,
-        ) ?? 0;
+      result.network += stats ? requestNetworkBytes(stats) : 0;
       result.exceptions += stats?.exceptions?.length ?? 0;
       return result;
     },
@@ -285,144 +389,225 @@ export function ProfilerApp({
     cleared ? 0 : metadata.sqlQueries,
   );
   const serverTime = requests.reduce(
-    (time, request) => time + request.serverTime,
+    (time, request) =>
+      request.serverTime === undefined ? time : time + (request.stats?.time ?? request.serverTime),
     cleared ? 0 : metadata.serverTime,
   );
-
-  if (!open)
-    return (
-      <div className="flex items-stretch overflow-hidden rounded-lg border border-border bg-surface shadow-[var(--sniffy-shadow)]">
-        <button
-          className="border-r border-border px-2 text-xs font-semibold text-muted hover:bg-surface-hover"
-          aria-label={minimized ? 'Expand Sniffy counters' : 'Minimize Sniffy counters'}
-          onClick={() => setMinimized(!minimized)}
+  const trayExpanded = pinned || open || pointerInside || focusInside || temporarilyExpanded;
+  return (
+    <div
+      className="sniffy-shell"
+      onPointerEnter={() => {
+        setPointerInside(true);
+        setTemporarilyExpanded(true);
+        cancelCollapse();
+      }}
+      onPointerLeave={() => {
+        setPointerInside(false);
+        setTemporarilyExpanded(true);
+        scheduleCollapse();
+      }}
+      onFocusCapture={() => {
+        setFocusInside(true);
+        setTemporarilyExpanded(true);
+        cancelCollapse();
+      }}
+      onBlurCapture={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        setFocusInside(false);
+        setTemporarilyExpanded(true);
+        scheduleCollapse();
+      }}
+    >
+      {open && (
+        <Card
+          className="sniffy-panel flex flex-col overflow-hidden shadow-[var(--sniffy-shadow)]"
+          data-maximized={maximized}
         >
-          Sniffy
+          <header className="flex items-center gap-2 border-b border-border bg-surface-raised px-3 py-2">
+            <strong className="mr-auto">Sniffy profiler</strong>
+            {copyStatus && (
+              <span
+                className={copyStatus.error ? 'text-xs text-danger' : 'text-xs text-success'}
+                role={copyStatus.error ? 'alert' : 'status'}
+              >
+                {copyStatus.message}
+              </span>
+            )}
+            <Tooltip label="Clear captured data" portalRoot={shadowRoot}>
+              <IconButton
+                aria-label="Clear captured data"
+                onClick={() => {
+                  setRequests([]);
+                  setCleared(true);
+                }}
+              >
+                <Eraser size={16} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip label="Copy report" portalRoot={shadowRoot}>
+              <IconButton
+                aria-label="Copy report"
+                onClick={async () => {
+                  const report = JSON.stringify(
+                    requests.map((request) => request.stats),
+                    null,
+                    2,
+                  );
+                  try {
+                    await copyText(report, shadowRoot);
+                    setCopyStatus({ message: 'Report copied.', error: false });
+                  } catch (reason) {
+                    setCopyStatus({
+                      message: reason instanceof Error ? reason.message : 'Unable to copy report.',
+                      error: true,
+                    });
+                  }
+                }}
+              >
+                <Clipboard size={16} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip label={maximized ? 'Restore panel' : 'Maximize panel'} portalRoot={shadowRoot}>
+              <IconButton
+                aria-label={maximized ? 'Restore panel' : 'Maximize panel'}
+                onClick={() => setMaximized(!maximized)}
+              >
+                {maximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </IconButton>
+            </Tooltip>
+            <IconButton
+              aria-label="Close profiler"
+              onClick={() => {
+                setOpen(false);
+              }}
+            >
+              <X size={16} />
+            </IconButton>
+          </header>
+          <Tabs.Root defaultValue="queries" className="flex min-h-0 flex-1 flex-col">
+            <Tabs.List
+              className="flex border-b border-border bg-surface"
+              aria-label="Profiler sections"
+            >
+              <Tabs.Tab
+                className="border-b-2 border-transparent px-4 py-2 text-sm data-[active]:border-accent data-[active]:text-accent"
+                value="queries"
+              >
+                Executed Queries
+              </Tabs.Tab>
+              <Tabs.Tab
+                className="border-b-2 border-transparent px-4 py-2 text-sm data-[active]:border-accent data-[active]:text-accent"
+                value="network"
+              >
+                Network Connections
+              </Tabs.Tab>
+              <Tabs.Tab
+                className="border-b-2 border-transparent px-4 py-2 text-sm data-[active]:border-accent data-[active]:text-accent"
+                value="topsql"
+              >
+                Top SQL
+              </Tabs.Tab>
+            </Tabs.List>
+            <div className="sniffy-scroll min-h-0 flex-1 overflow-auto">
+              <Tabs.Panel value="queries">
+                <QueryDetails requests={requests} />
+              </Tabs.Panel>
+              <Tabs.Panel value="network" className="p-3">
+                <ConnectionRegistryPanel client={client} />
+              </Tabs.Panel>
+              <Tabs.Panel value="topsql">
+                <TopSqlPanel client={client} />
+              </Tabs.Panel>
+            </div>
+          </Tabs.Root>
+          <footer className="border-t border-border px-3 py-2 text-xs text-muted">
+            Powered by{' '}
+            <a
+              className="text-accent underline"
+              href="https://sniffy.io/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Sniffy
+            </a>
+          </footer>
+        </Card>
+      )}
+      <div
+        className="sniffy-widget flex items-stretch overflow-hidden rounded-lg border border-border bg-surface shadow-[var(--sniffy-shadow)]"
+        data-counter-expanded={trayExpanded}
+      >
+        <button
+          className="sniffy-brand-trigger grid size-10 place-items-center text-accent hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
+          aria-label={open ? 'Close Sniffy profiler' : 'Open Sniffy profiler'}
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <Gauge size={19} />
         </button>
-        {!minimized && (
-          <button className="flex" aria-label="Open Sniffy profiler" onClick={() => setOpen(true)}>
+        <div
+          className="sniffy-counter-tray flex items-stretch"
+          data-expanded={trayExpanded}
+          aria-hidden={!trayExpanded}
+        >
+          <button
+            className="flex"
+            aria-label="View captured Sniffy details"
+            aria-expanded={open}
+            tabIndex={trayExpanded ? 0 : -1}
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
             <Counter
               icon={<CircleAlert size={16} />}
               label="Exceptions"
               value={String(totals.exceptions)}
               color="text-exception"
+              kind="exceptions"
+              updating={updating.exceptions}
             />
             <Counter
               icon={<Network size={16} />}
               label="Network bytes"
               value={formatBytes(totals.network)}
               color="text-network"
+              kind="network"
+              updating={updating.network}
             />
             <Counter
               icon={<Timer size={16} />}
               label="Server time"
               value={formatTime(serverTime)}
               color="text-info"
+              kind="time"
+              updating={updating.time}
             />
             <Counter
               icon={<Database size={16} />}
               label="SQL queries"
               value={String(sqlCount)}
               color="text-sql"
+              kind="sql"
+              updating={updating.sql}
             />
           </button>
-        )}
-      </div>
-    );
-
-  return (
-    <Card
-      className="sniffy-panel flex flex-col overflow-hidden shadow-[var(--sniffy-shadow)]"
-      data-maximized={maximized}
-    >
-      <header className="flex items-center gap-2 border-b border-border bg-surface-raised px-3 py-2">
-        <strong className="mr-auto">Sniffy profiler</strong>
-        <Tooltip label="Clear captured data" portalRoot={shadowRoot}>
-          <IconButton
-            aria-label="Clear captured data"
+          <button
+            className="grid w-9 place-items-center border-l border-border text-muted hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
+            aria-label="Keep Sniffy counters pinned"
+            aria-pressed={pinned}
+            tabIndex={trayExpanded ? 0 : -1}
             onClick={() => {
-              setRequests([]);
-              setCleared(true);
+              setPinned((current) => !current);
+              setTemporarilyExpanded(true);
             }}
           >
-            <Eraser size={16} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip label="Copy report" portalRoot={shadowRoot}>
-          <IconButton
-            aria-label="Copy report"
-            onClick={() => {
-              const report = JSON.stringify(
-                requests.map((request) => request.stats),
-                null,
-                2,
-              );
-              void navigator.clipboard?.writeText(report).catch(() => undefined);
-            }}
-          >
-            <Clipboard size={16} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip label={maximized ? 'Restore panel' : 'Maximize panel'} portalRoot={shadowRoot}>
-          <IconButton
-            aria-label={maximized ? 'Restore panel' : 'Maximize panel'}
-            onClick={() => setMaximized(!maximized)}
-          >
-            {maximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </IconButton>
-        </Tooltip>
-        <IconButton aria-label="Close profiler" onClick={() => setOpen(false)}>
-          <X size={16} />
-        </IconButton>
-      </header>
-      <Tabs.Root defaultValue="queries" className="flex min-h-0 flex-1 flex-col">
-        <Tabs.List
-          className="flex border-b border-border bg-surface"
-          aria-label="Profiler sections"
-        >
-          <Tabs.Tab
-            className="border-b-2 border-transparent px-4 py-2 text-sm data-[selected]:border-accent data-[selected]:text-accent"
-            value="queries"
-          >
-            Executed Queries
-          </Tabs.Tab>
-          <Tabs.Tab
-            className="border-b-2 border-transparent px-4 py-2 text-sm data-[selected]:border-accent data-[selected]:text-accent"
-            value="network"
-          >
-            Network Connections
-          </Tabs.Tab>
-          <Tabs.Tab
-            className="border-b-2 border-transparent px-4 py-2 text-sm data-[selected]:border-accent data-[selected]:text-accent"
-            value="topsql"
-          >
-            Top SQL
-          </Tabs.Tab>
-        </Tabs.List>
-        <div className="sniffy-scroll min-h-0 flex-1 overflow-auto">
-          <Tabs.Panel value="queries">
-            <QueryDetails requests={requests} />
-          </Tabs.Panel>
-          <Tabs.Panel value="network" className="p-3">
-            <ConnectionRegistryPanel client={client} />
-          </Tabs.Panel>
-          <Tabs.Panel value="topsql">
-            <TopSqlPanel client={client} />
-          </Tabs.Panel>
+            {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+          </button>
         </div>
-      </Tabs.Root>
-      <footer className="border-t border-border px-3 py-2 text-xs text-muted">
-        Powered by{' '}
-        <a
-          className="text-accent underline"
-          href="https://sniffy.io/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Sniffy
-        </a>
-      </footer>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -431,19 +616,27 @@ function Counter({
   label,
   value,
   color,
+  kind,
+  updating,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   color: string;
+  kind: CounterKey;
+  updating: boolean;
 }) {
   return (
     <span
-      className="flex min-w-16 flex-col items-center gap-0.5 border-r border-border px-3 py-2 last:border-0"
+      className="sniffy-counter flex min-w-16 flex-col items-center gap-0.5 border-r border-border px-3 py-2 last:border-0"
       title={label}
+      data-kind={kind}
+      data-updating={updating}
     >
       <span className={color}>{icon}</span>
-      <span className="text-xs font-semibold">{value}</span>
+      <span className="text-xs font-semibold" aria-live="polite">
+        {value}
+      </span>
     </span>
   );
 }

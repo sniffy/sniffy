@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { delay, http, HttpResponse } from 'msw';
 import { requestFixture } from '@sniffy/fixtures';
 import { ProfilerApp } from './app';
@@ -27,7 +27,53 @@ export default {
 } satisfies Meta<typeof ProfilerApp>;
 export const Collapsed: StoryObj<typeof ProfilerApp> = {
   args: { metadata: { ...metadata, requestId: '' }, intercepted, shadowRoot },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pin = canvas.getByRole('button', { name: 'Keep Sniffy counters pinned' });
+    await expect(pin).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(pin);
+    await expect(pin).toHaveAttribute('aria-pressed', 'false');
+    const trigger = canvas.getByRole('button', { name: 'Open Sniffy profiler' });
+    trigger.focus();
+    await userEvent.keyboard('{Enter}');
+    await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  },
 };
+
+export const UnpinnedInteraction: StoryObj<typeof ProfilerApp> = {
+  args: { metadata: { ...metadata, requestId: '' }, intercepted, shadowRoot },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pin = canvas.getByRole('button', { name: 'Keep Sniffy counters pinned' });
+    const shell = canvasElement.querySelector('.sniffy-shell') as HTMLElement;
+    await userEvent.click(pin);
+    (document.activeElement as HTMLElement | null)?.blur();
+    shell.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }));
+    await waitFor(() => expect(pin.parentElement).toHaveAttribute('data-expanded', 'false'), {
+      timeout: 1_000,
+    });
+    const trigger = canvas.getByRole('button', { name: 'Open Sniffy profiler' });
+    await userEvent.hover(trigger);
+    await expect(pin.parentElement).toHaveAttribute('data-expanded', 'true');
+    await userEvent.unhover(trigger);
+    await waitFor(() => expect(pin.parentElement).toHaveAttribute('data-expanded', 'false'), {
+      timeout: 1_000,
+    });
+    triggerFocus(trigger);
+    await expect(pin.parentElement).toHaveAttribute('data-expanded', 'true');
+    trigger.blur();
+    await waitFor(() => expect(pin.parentElement).toHaveAttribute('data-expanded', 'false'), {
+      timeout: 1_000,
+    });
+    await userEvent.click(trigger);
+    await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
+  },
+};
+
+function triggerFocus(element: HTMLElement) {
+  element.focus();
+}
 
 export const Normal: StoryObj<typeof ProfilerApp> = {
   args: { metadata, intercepted, shadowRoot, initialOpen: true },
@@ -85,8 +131,17 @@ export const Registry: StoryObj<typeof ProfilerApp> = {
   args: { metadata: { ...metadata, requestId: '' }, intercepted, shadowRoot, initialOpen: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: 'Network Connections' }));
+    const tab = canvas.getByRole('tab', { name: 'Network Connections' });
+    await userEvent.click(tab);
+    await expect(tab).toHaveAttribute('data-active');
     await expect(await canvas.findByRole('table', { name: 'Socket connections' })).toBeVisible();
+    const socketSwitch = canvas.getByRole('switch', {
+      name: 'Enable en.wikipedia.org:443 socket',
+    });
+    await userEvent.click(socketSwitch);
+    await expect(socketSwitch).not.toBeChecked();
+    await userEvent.keyboard(' ');
+    await expect(socketSwitch).toBeChecked();
   },
 };
 

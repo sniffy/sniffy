@@ -2,6 +2,7 @@ import type { Preview } from '@storybook/react-vite';
 import { initialize, mswLoader } from 'msw-storybook-addon';
 import { mswHandlers } from '@sniffy/fixtures';
 import '../apps/agent/src/styles.css';
+import '../apps/profiler/src/styles.css';
 
 initialize({ onUnhandledRequest: 'error' });
 

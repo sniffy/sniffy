@@ -28,18 +28,79 @@
   font: 14px/1.4 var(--sniffy-font-sans);
   letter-spacing: normal;
   text-align: left;
+  --spacing: 4px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-2xl: 24px;
+  --sniffy-space-1: 4px;
+  --sniffy-space-2: 8px;
+  --sniffy-space-3: 12px;
+  --sniffy-space-4: 16px;
+  --sniffy-space-6: 24px;
+  --sniffy-radius-sm: 6px;
+  --sniffy-radius: 10px;
+  --sniffy-radius-lg: 14px;
 }
 
+.sniffy-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
 .sniffy-panel {
   width: min(760px, calc(100vw - 24px));
   height: min(540px, calc(100vh - 24px));
 }
 .sniffy-panel[data-maximized='true'] {
   width: calc(100vw - 24px);
-  height: calc(100vh - 24px);
+  height: calc(100vh - 82px);
 }
 .sniffy-scroll {
   scrollbar-color: var(--sniffy-border) transparent;
+}
+.sniffy-widget {
+  min-height: 50px;
+}
+.sniffy-brand-trigger {
+  width: 40px;
+  flex: 0 0 40px;
+}
+.sniffy-counter-tray {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(8px);
+  transform-origin: right center;
+  transition:
+    max-width 180ms ease,
+    opacity 160ms ease,
+    transform 180ms ease;
+}
+.sniffy-counter-tray[data-expanded='true'] {
+  max-width: 320px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+.sniffy-counter {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+.sniffy-counter[data-updating='true'] {
+  background: rgb(76 166 255 / 18%);
+  background: color-mix(in srgb, var(--sniffy-accent) 18%, transparent);
+  color: var(--sniffy-accent);
+  transform: scale(1.025);
+}
+.sniffy-counter[data-kind='exceptions'][data-updating='true'] {
+  background: rgb(255 125 138 / 18%);
+  background: color-mix(in srgb, var(--sniffy-danger) 18%, transparent);
+  color: var(--sniffy-danger);
 }
 .hljs-keyword,
 .hljs-built_in,
@@ -65,5 +126,21 @@
   .sniffy-panel {
     width: calc(100vw - 12px);
     height: calc(100vh - 12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sniffy-counter-tray,
+  .sniffy-counter,
+  #sniffy-root *,
+  #sniffy-root *::before,
+  #sniffy-root *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .sniffy-counter[data-updating='true'] {
+    transform: none;
   }
 }
