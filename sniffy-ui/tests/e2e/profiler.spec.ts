@@ -132,7 +132,10 @@ test('supports pinning, delayed hover/focus reveal, keyboard use and click fallb
   await trigger.focus();
   await expect(tray).toHaveAttribute('data-expanded', 'true');
   await page.keyboard.press('Enter');
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(profiler.getByRole('button', { name: 'Close Sniffy profiler' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
   await expect(profiler.getByText('Sniffy profiler')).toBeVisible();
   await expect(tray).toHaveAttribute('data-expanded', 'true');
   expect(await tray.evaluate((element) => getComputedStyle(element).transitionDuration)).toContain(
