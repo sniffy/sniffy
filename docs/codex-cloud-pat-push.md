@@ -31,12 +31,58 @@ Official references:
 ## Risks and limitations
 
 - `Contents: write` is still a broad repository-content permission. It can create commits and refs, update ordinary branches, and delete files in commits.
-- A fine-grained PAT cannot be restricted to only `codex/*` branches or only fast-forward pushes.
+- A fine-grained PAT cannot be restricted to only `codex-cloud/*` branches or only fast-forward pushes.
 - Because the PAT belongs to Dmitry's GitHub identity, it inherits that identity's repository access, subject to token permissions and branch/ruleset enforcement.
 - A local `pre-push` hook is defense in depth only. An agent or process can remove it or invoke `git push --no-verify`.
 - GitHub-side branch protection or rulesets are therefore mandatory for protecting `develop` and other important branches.
 - The persisted credential is readable by processes running as the same container user. Malicious repository instructions, compromised build plugins, or dependencies with execution hooks could exfiltrate it when agent internet access is enabled.
 - Codex caches environment state. Revoke the token and reset the environment cache after the experiment.
+- The PAT changes Git publication only. It does not change Codex Cloud task history: each task launched from a GitHub mention still creates a `GitHub Mention` entry in the Codex UI.
+
+## Identity and provenance
+
+Git identity, GitHub push identity, and the agent identity are different concepts.
+
+The setup script configures commits as:
+
+```text
+Sniffy Codex Cloud <codex-cloud@sniffy.invalid>
+```
+
+The `.invalid` address is intentionally not linked to a GitHub account. This prevents GitHub from presenting the commit as authored by Dmitry or by an unrelated registered account.
+
+A `commit-msg` hook also appends:
+
+```text
+Agent-Executor: Codex Cloud
+Execution-Environment: OpenAI Codex Cloud
+Publication-Credential: bedrin fine-grained PAT
+```
+
+This makes `git log --format=full` and the GitHub commit page self-describing.
+
+However, GitHub's ref-update actor will still be `bedrin`, because the PAT belongs to Dmitry. Changing `git config user.name` or `user.email` cannot change the authenticated push actor. A dedicated GitHub App or machine account is required for a genuinely separate GitHub actor.
+
+Use branch prefixes to distinguish execution routes:
+
+- `codex-cloud/*` for Codex Cloud;
+- `codex-cli/*` for unattended local Codex CLI;
+- `chatgpt/*` for repository-management changes performed by ChatGPT through Dmitry's connector;
+- `human/*` only when a dedicated prefix is useful for manual work.
+
+For the initial experiment, existing `codex/*` branches may remain unchanged, but all new Cloud implementation branches should use `codex-cloud/*`.
+
+## Codex task-list behavior
+
+A successful direct push does not remove or transform the originating Cloud task. `GitHub Mention` cards are task-history records, not unpublished-change queues. Therefore:
+
+- one `@codex ...` GitHub mention should be treated as one durable Cloud task entry;
+- avoid creating a second mention merely to publish the same result;
+- prefer one implementation task per issue/PR branch;
+- use follow-up messages in the existing task when practical instead of starting duplicate GitHub-mentioned tasks;
+- do not interpret an old task card as an additional open pull request or unpushed branch.
+
+The PAT experiment is intended to remove the publication click, not to clean up the Codex task list. No automatic task-history cleanup is assumed.
 
 ## Required GitHub protections before creating the token
 
@@ -53,7 +99,7 @@ GitHub branch protection blocks force pushes and deletion by default, but admini
 
 Recommended additional ruleset for agent branches:
 
-- target `codex/**/*` and `agent/**/*`;
+- target `codex-cloud/**/*`, `codex-cli/**/*`, and the transitional `codex/**/*` pattern;
 - block force pushes;
 - block branch deletion during the experiment;
 - leave ordinary fast-forward pushes allowed.
@@ -76,7 +122,7 @@ Repository permissions:
 | --- | --- | --- |
 | Contents | Read and write | Required for Git commit/ref push over HTTPS |
 | Metadata | Read-only | Added automatically by GitHub |
-| Pull requests | No access | PR #633 already exists; the agent only needs to push its head branch |
+| Pull requests | No access | The agent only needs to push an existing PR head branch |
 | Workflows | No access | Prevent workflow-file modification authorization |
 | Administration | No access | Prevent repository settings/rules changes |
 | Actions | No access | Prevent workflow dispatch/cancel/rerun operations |
@@ -98,30 +144,39 @@ Do not grant `Pull requests: write` for the first experiment. ChatGPT's GitHub c
 3. Enable agent-phase internet access only to `github.com` if limited-domain access is available. Do not enable unrestricted internet solely for pushing.
 4. Reset the environment cache after adding or rotating the secret.
 
-`.codex/cloud/setup.sh` calls `.codex/cloud/configure-github-push.sh`. When the secret is absent, the script exits without changing Git authentication. When present, it:
+`.codex/cloud/setup.sh` calls `.codex/cloud/configure-github-push.sh`. When the secret is absent, the script exits without changing Git authentication or identity. When present, it:
 
 - stores the token in a mode-`0600` Git credential file;
 - keeps the `origin` URL free of credentials;
+- sets the non-human Codex Cloud author/committer identity;
+- appends provenance trailers to commits;
 - installs a global `pre-push` hook that rejects direct pushes to `develop`, `main`, and `master`, branch deletion, and non-fast-forward updates;
 - verifies authenticated repository access with `git ls-remote`;
 - unsets the setup-phase environment variable.
 
-The hook does not replace GitHub-side rules because it can be bypassed locally.
+The hooks do not replace GitHub-side rules because they can be bypassed locally.
 
 ## Initial validation
 
-Use a disposable branch and draft PR. Do not test against `develop` directly.
+Use a disposable `codex-cloud/*` branch and draft PR. Do not test against `develop` directly.
 
 Suggested prompt:
 
 ```text
 Validate guarded GitHub push access only.
 
-Read AGENTS.md and docs/codex-cloud-pat-push.md. Confirm that origin is the credential-free HTTPS URL and that the current branch is the existing pull-request head branch. Create `.codex/push-test.txt` with the current UTC timestamp, commit it, and push with a normal fast-forward command:
+Read AGENTS.md and docs/codex-cloud-pat-push.md. Confirm that:
+
+- origin is the credential-free HTTPS URL;
+- the current branch is the existing pull-request head branch;
+- `git config user.name` is `Sniffy Codex Cloud`;
+- `git config user.email` is `codex-cloud@sniffy.invalid`.
+
+Create `.codex/push-test.txt` with the current UTC timestamp, commit it normally, inspect the commit author and provenance trailers, and push with a normal fast-forward command:
 
   git push origin HEAD:<existing-pr-head-branch>
 
-Do not use --force, --force-with-lease, --no-verify, ref deletion syntax, or a default-branch destination. Do not create or merge another pull request. Report complete stderr on failure. The test succeeds only when the commit is visible on GitHub.
+Do not use --force, --force-with-lease, --no-verify, ref deletion syntax, or a default-branch destination. Do not create or merge another pull request. Report complete stderr on failure. The test succeeds only when the commit is visible on GitHub with the Codex Cloud commit identity and expected trailers.
 ```
 
 After the commit appears, run a second task that deletes `.codex/push-test.txt`, commits the deletion, and performs another normal fast-forward push. This validates ordinary branch updates without exercising destructive ref operations.
@@ -163,6 +218,7 @@ Adopt this mechanism only if all of the following are true:
 - direct fast-forward push to an existing PR branch succeeds;
 - default-branch push, force push, and deletion protections are enforced by GitHub;
 - no token material appears in task output;
+- GitHub shows the expected Codex Cloud commit identity and provenance trailers;
 - Codex reliably reports the actual remote commit SHA;
 - the operational benefit outweighs storing a user credential in the Cloud container.
 
