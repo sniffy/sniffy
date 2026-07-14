@@ -7,7 +7,8 @@ set -euo pipefail
 # SNIFFY_GITHUB_PAT. Codex exposes secrets only to the setup phase, so this
 # script persists a credential for the later agent phase. This deliberately
 # weakens the normal Cloud secret boundary and must only be enabled with the
-# narrowly scoped, short-lived token documented in docs/codex-workflow.md.
+# narrowly scoped, short-lived token documented in
+# docs/codex-cloud-pat-push.md.
 
 if [[ -z "${SNIFFY_GITHUB_PAT:-}" ]]; then
   echo "SNIFFY_GITHUB_PAT is not configured; GitHub push remains disabled."
@@ -19,6 +20,8 @@ readonly repository_url="https://github.com/${repository}.git"
 readonly credential_dir="${HOME}/.config/git"
 readonly credential_file="${credential_dir}/sniffy-codex-credentials"
 readonly hooks_dir="${HOME}/.config/git/sniffy-codex-hooks"
+readonly cloud_name="Sniffy Codex Cloud"
+readonly cloud_email="codex-cloud@sniffy.invalid"
 
 mkdir -p "${credential_dir}" "${hooks_dir}"
 chmod 700 "${credential_dir}" "${hooks_dir}"
@@ -31,6 +34,32 @@ chmod 600 "${credential_file}"
 git config --global credential.helper "store --file=${credential_file}"
 git config --global core.hooksPath "${hooks_dir}"
 git remote set-url origin "${repository_url}"
+
+# Give commits an explicit, non-human author/committer identity. The .invalid
+# address is intentionally not associated with a GitHub account, avoiding any
+# false claim that the commit was authored by Dmitry or a registered bot.
+git config --global user.name "${cloud_name}"
+git config --global user.email "${cloud_email}"
+git config --global user.useConfigOnly true
+git config --global commit.gpgsign false
+
+cat > "${hooks_dir}/commit-msg" <<'EOF_COMMIT_MSG'
+#!/usr/bin/env bash
+set -euo pipefail
+
+message_file="$1"
+
+# Keep provenance stable while avoiding duplicate trailers when a commit is
+# amended or the hook is invoked more than once.
+if ! git interpret-trailers --parse "${message_file}" | grep -Fq 'Agent-Executor: Codex Cloud'; then
+  git interpret-trailers --in-place \
+    --trailer 'Agent-Executor: Codex Cloud' \
+    --trailer 'Execution-Environment: OpenAI Codex Cloud' \
+    --trailer 'Publication-Credential: bedrin fine-grained PAT' \
+    "${message_file}"
+fi
+EOF_COMMIT_MSG
+chmod 700 "${hooks_dir}/commit-msg"
 
 cat > "${hooks_dir}/pre-push" <<'EOF_HOOK'
 #!/usr/bin/env bash
@@ -66,3 +95,5 @@ git ls-remote --exit-code origin HEAD >/dev/null
 unset SNIFFY_GITHUB_PAT
 
 echo "Configured guarded GitHub push access for ${repository}."
+echo "Git commit identity: ${cloud_name} <${cloud_email}>"
+echo "GitHub push actor remains the PAT owner; see docs/codex-cloud-pat-push.md."
