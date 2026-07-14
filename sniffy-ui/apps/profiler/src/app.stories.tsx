@@ -60,8 +60,9 @@ export const UnpinnedInteraction: StoryObj<typeof ProfilerApp> = {
     await waitFor(() => expect(pin.parentElement).toHaveAttribute('data-expanded', 'false'), {
       timeout: 1_000,
     });
-    triggerFocus(trigger);
-    await expect(pin.parentElement).toHaveAttribute('data-expanded', 'true');
+    await userEvent.tab();
+    await expect(trigger).toHaveFocus();
+    await waitFor(() => expect(pin.parentElement).toHaveAttribute('data-expanded', 'true'));
     trigger.blur();
     await waitFor(() => expect(pin.parentElement).toHaveAttribute('data-expanded', 'false'), {
       timeout: 1_000,
@@ -70,10 +71,6 @@ export const UnpinnedInteraction: StoryObj<typeof ProfilerApp> = {
     await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
   },
 };
-
-function triggerFocus(element: HTMLElement) {
-  element.focus();
-}
 
 export const Normal: StoryObj<typeof ProfilerApp> = {
   args: { metadata, intercepted, shadowRoot, initialOpen: true },
