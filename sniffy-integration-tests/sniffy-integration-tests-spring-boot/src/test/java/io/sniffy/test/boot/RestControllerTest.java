@@ -18,6 +18,7 @@ import java.net.URL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static io.sniffy.servlet.SniffyFilter.JAVASCRIPT_URI;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -35,6 +36,14 @@ public class RestControllerTest {
         assertEquals(200, response.status);
         assertNotNull(response.sqlQueriesHeader);
         assertTrue(response.body.contains("script id=\"sniffy-header\""));
+    }
+
+    @Test
+    public void sharedProfilerResourceIsAvailable() throws IOException {
+        Response response = get("/" + JAVASCRIPT_URI, "application/javascript");
+        assertEquals(200, response.status);
+        assertTrue(response.body.contains("sniffy-profiler"));
+        assertTrue(response.body.contains("sourceMappingURL=sniffy.map"));
     }
 
     @Test

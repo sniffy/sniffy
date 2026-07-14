@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.instrument.Instrumentation;
 import java.net.InetSocketAddress;
 
@@ -124,9 +125,7 @@ public class SniffyAgent {
 
             } else {
 
-                String resourceName =
-                        path.startsWith("/webjars/") ? "/web/META-INF/resources" + path :
-                        "/web" + ("/".equals(path) ? "/index.html" : path);
+                String resourceName = "/web" + ("/".equals(path) ? "/index.html" : path);
                 InputStream inputStream = SniffyAgent.class.getResourceAsStream(resourceName);
 
                 if (null != inputStream) {
@@ -134,13 +133,14 @@ public class SniffyAgent {
                     httpExchange.getResponseHeaders().add("Content-Type", getMimeType(resourceName));
                     httpExchange.sendResponseHeaders(200, 0);
 
-                    byte[] buff = new byte[1024];
-                    int read;
-                    while (-1 != (read = inputStream.read(buff))) {
-                        httpExchange.getResponseBody().write(buff, 0, read);
+                    try (InputStream resourceStream = inputStream;
+                         OutputStream responseStream = httpExchange.getResponseBody()) {
+                        byte[] buff = new byte[1024];
+                        int read;
+                        while (-1 != (read = resourceStream.read(buff))) {
+                            responseStream.write(buff, 0, read);
+                        }
                     }
-
-                    httpExchange.getResponseBody().close();
                 } else {
                     httpExchange.sendResponseHeaders(404, 0);
                     httpExchange.getResponseBody().close();
@@ -161,6 +161,8 @@ public class SniffyAgent {
                 return "application/javascript";
             } else if (resourceName.endsWith(".css")) {
                 return "text/css";
+            } else if (resourceName.endsWith(".map")) {
+                return "application/json";
             } else {
                 return "application/octet-stream";
             }

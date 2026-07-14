@@ -30,7 +30,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots</sonatypeOssDistMgmtSnapshotsUrl>
-        <sniffy.ui.version>3.1.8</sniffy.ui.version>
         <spring.version>5.3.39</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
         <spring.modern.version>7.0.8</spring.modern.version>
@@ -437,27 +436,6 @@
                 <artifactId>sniffy-test-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.sniffy</groupId>
-                <artifactId>sniffy-ui</artifactId>
-                <version>${sniffy.ui.version}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.webjars.bower</groupId>
-                        <artifactId>minified</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.webjars.bower</groupId>
-                        <artifactId>highlightjs</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.webjars.bower</groupId>
-                        <artifactId>clipboard</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>

@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/theme" },
+    { "path": "packages/ui" },
+    { "path": "packages/api" },
+    { "path": "packages/fixtures" },
+    { "path": "apps/profiler" },
+    { "path": "apps/agent" },
+    { "path": "apps/playground" }
+  ]
+}

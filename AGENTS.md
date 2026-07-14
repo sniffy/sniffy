@@ -49,6 +49,16 @@ constraints for their subtrees.
 - Run `git diff --check` before committing. A failing or skipped required check must be reported with its exact reason;
   never describe a partial, retried, or ignored run as passing.
 
+## Frontend work
+
+- The private `sniffy-ui/` npm workspace is the source for both the injected profiler and `SniffyAgent` UI. Use Node 24+
+  and the root workspace scripts; do not hand-edit generated Java resources.
+- Keep profiler CSS and Base UI portals inside its open ShadowRoot. Do not add dynamic imports, runtime assets, host-page
+  mutations, global CSS, or absolute backend assumptions.
+- Run lint, typecheck, Vitest, Storybook build, production build, generated-resource comparison, bundle validation, npm
+  audit, and Playwright for UI changes. Review `npm run dev` playground pages and visual diffs before updating baselines.
+- Storybook's MCP addon is optional for local exploration. CI and tests must never require an external AI or MCP service.
+
 ## Pull requests
 
 - Keep pull requests draft until the implementation and locally applicable verification are complete.
