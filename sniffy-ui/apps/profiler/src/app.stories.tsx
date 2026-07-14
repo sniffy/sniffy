@@ -49,7 +49,7 @@ export const UnpinnedInteraction: StoryObj<typeof ProfilerApp> = {
     const shell = canvasElement.querySelector('.sniffy-shell') as HTMLElement;
     await userEvent.click(pin);
     (document.activeElement as HTMLElement | null)?.blur();
-    shell.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }));
+    await userEvent.unhover(shell);
     await waitFor(() => expect(pin.parentElement).toHaveAttribute('data-expanded', 'false'), {
       timeout: 1_000,
     });
@@ -155,6 +155,13 @@ export const RegistryEmpty: StoryObj<typeof ProfilerApp> = {
         ),
       ],
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tab = canvas.getByRole('tab', { name: 'Network Connections' });
+    await userEvent.click(tab);
+    await expect(tab).toHaveAttribute('data-active');
+    await expect(await canvas.findByText('No sockets discovered.')).toBeVisible();
   },
 };
 
