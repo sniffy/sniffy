@@ -117,4 +117,8 @@ mvn -version
 
 bash .codex/cloud/warm-maven-cache.sh
 
+# Optional and disabled unless a narrowly scoped SNIFFY_GITHUB_PAT secret is
+# present in the Codex environment. See docs/codex-workflow.md before enabling.
+bash .codex/cloud/configure-github-push.sh
+
 echo "Sniffy Codex Cloud environment is ready."
