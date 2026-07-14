@@ -6,8 +6,24 @@ describe('Sniffy API', () => {
       resolveRequestDetailsUrl('https://host/app/path/subpath/ajax.json', '../../request/42'),
     ).toBe('https://host/app/request/42');
     expect(resolveRequestDetailsUrl('https://host/app/notrailingslash', './request/42')).toBe(
-      'https://host/app/request/42',
+      'https://host/app/notrailingslash/request/42',
     );
+  });
+
+  it('models an HTTP 200 empty request-details body as empty stats', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('', { status: 200 }));
+    const client = createSniffyClient('https://host/sniffy/4.0.0/');
+
+    await expect(client.getRequestDetails('https://host/request/empty')).resolves.toEqual({
+      time: 0,
+      timeToFirstByte: 0,
+      executedQueries: [],
+      networkConnections: [],
+      exceptions: [],
+    });
+    fetchMock.mockRestore();
   });
 
   it('preserves the legacy status encoding', () => {

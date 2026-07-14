@@ -36,6 +36,20 @@ export function parseMetadata(doc: Document = document): ProfilerMetadata | null
   };
 }
 
+export function formatRequestLabel(
+  method: string,
+  requestUrl: string,
+  status: number,
+  currentOrigin: string = location.origin,
+): string {
+  const parsedRequestUrl = new URL(requestUrl);
+  const labelUrl =
+    parsedRequestUrl.origin === currentOrigin
+      ? `${parsedRequestUrl.pathname}${parsedRequestUrl.search}${parsedRequestUrl.hash}`
+      : parsedRequestUrl.href;
+  return `${method} ${labelUrl} - ${status}`;
+}
+
 export function installXhrInterceptor(onRequest: (request: InterceptedRequest) => void): void {
   const prototype = XMLHttpRequest.prototype as XMLHttpRequest & Record<PropertyKey, unknown>;
   const existing = prototype[interceptorKey] as
@@ -73,9 +87,9 @@ export function installXhrInterceptor(onRequest: (request: InterceptedRequest) =
         const details = this.getResponseHeader('Sniffy-Request-Details');
         if (!details) return;
         const state = this as XMLHttpRequest & { __sniffyUrl?: string; __sniffyMethod?: string };
-        const requestUrl = this.responseURL || state.__sniffyUrl || location.href;
+        const requestUrl = state.__sniffyUrl || this.responseURL || location.href;
         const request: InterceptedRequest = {
-          label: `${state.__sniffyMethod ?? 'GET'} ${new URL(requestUrl).pathname} - ${this.status}`,
+          label: formatRequestLabel(state.__sniffyMethod ?? 'GET', requestUrl, this.status),
           detailsUrl: resolveRequestDetailsUrl(requestUrl, details),
           sqlQueries: Number.parseInt(this.getResponseHeader('Sniffy-Sql-Queries') ?? '0', 10) || 0,
           timeToFirstByte:

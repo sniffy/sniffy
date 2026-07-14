@@ -41,7 +41,8 @@ app.get(
   '/mock/path/subpath/ajax.json',
   sendAjax('../../request/a54b32e7-b94b-450b-b145-0cf62270d32a'),
 );
-app.get('/mock/notrailingslash', sendAjax('./request/a54b32e7-b94b-450b-b145-0cf62270d32a'));
+const noTrailingSlashRequestId = 'notrailingslash-a54b32e7-b94b-450b-b145-0cf62270d32a';
+app.get('/mock/notrailingslash', sendAjax(`./request/${noTrailingSlashRequestId}`));
 app.get('/mock/204.json', sendAjax('request/b43a32e7-b94b-450b-b145-0cf62270d32a', 1));
 
 const requestIds = new Set([
@@ -52,12 +53,18 @@ const requestIds = new Set([
   'loading',
   'error',
   'many',
+  noTrailingSlashRequestId,
 ]);
 app.get(/\/request\/([^/]+)$/, async (request, response) => {
   const id = String(request.params[0]);
-  if (!requestIds.has(id)) {
+  const exactPath = request.path;
+  const validPath =
+    id === noTrailingSlashRequestId
+      ? exactPath === `/mock/notrailingslash/request/${noTrailingSlashRequestId}`
+      : requestIds.has(id);
+  if (!validPath) {
     console.error(`Unexpected request fixture: ${id}`);
-    response.status(500).json({ error: 'Unexpected request fixture', id });
+    response.status(500).json({ error: 'Unexpected request fixture', id, path: exactPath });
     return;
   }
   if (id === 'loading') await new Promise((resolvePromise) => setTimeout(resolvePromise, 1_500));
@@ -66,12 +73,7 @@ app.get(/\/request\/([^/]+)$/, async (request, response) => {
     return;
   }
   if (id === 'empty' || id === 'b43a32e7-b94b-450b-b145-0cf62270d32a') {
-    response.json({
-      ...requestFixture,
-      executedQueries: [],
-      networkConnections: [],
-      exceptions: [],
-    });
+    response.status(200).send();
     return;
   }
   if (id === 'many') {
@@ -152,15 +154,17 @@ function hostPage({
   hostile = false,
   nested = false,
   requestId = 'a54b32e7-b94b-450b-b145-0cf62270d32a',
+  rootFontSize = 48,
 }: {
   scriptOrigin?: string;
   hostile?: boolean;
   nested?: boolean;
   requestId?: string;
+  rootFontSize?: number;
 }) {
   const prefix = nested ? '../../../' : './';
   const script = `${scriptOrigin}${prefix}sniffy/4.0.0/sniffy.min.js`;
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Sniffy playground</title>${hostile ? '<style>*{all:unset!important;color:fuchsia!important;font-size:48px!important} sniffy-profiler{position:static!important;z-index:-999!important} body{background:lime!important} #host-card{position:fixed;z-index:2147483647}</style>' : '<style>body{font:16px system-ui;background:#f5f7fa;color:#172033;padding:2rem}</style>'}</head><body><main id="host-card"><h1>Host application</h1><p id="host-status">Host styles and behavior stay independent.</p><button id="host-xhr">Run application XHR</button></main><script>window.hostHandlerCalls=0;document.getElementById('host-xhr').onclick=function(){var xhr=new XMLHttpRequest();xhr.onreadystatechange=function(){if(xhr.readyState===4){window.hostHandlerCalls++;document.getElementById('host-status').dataset.response=xhr.status}};xhr.open('GET','${nested ? 'ajax.json' : '/mock/ajax.json'}');xhr.send()};</script><script id="sniffy-header" type="application/javascript" data-request-id="${requestId}" data-request-method="GET" data-response-code="200" src="${script}"></script><data id="sniffy" data-sql-queries="2" data-server-time="84"></data><pre id="long-content">${longStack}</pre></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Sniffy playground</title>${hostile ? `<style>html{font-size:${rootFontSize}px!important} *{all:unset!important;color:fuchsia!important} sniffy-profiler{position:static!important;z-index:-999!important} body{background:lime!important} #host-card{position:fixed;z-index:2147483647}</style>` : '<style>body{font:16px system-ui;background:#f5f7fa;color:#172033;padding:2rem}</style>'}</head><body><main id="host-card"><h1>Host application</h1><p id="host-status">Host styles and behavior stay independent.</p><button id="host-xhr">Run application XHR</button></main><script>window.hostHandlerCalls=0;document.getElementById('host-xhr').onclick=function(){var xhr=new XMLHttpRequest();xhr.onreadystatechange=function(){if(xhr.readyState===4){window.hostHandlerCalls++;document.getElementById('host-status').dataset.response=xhr.status}};xhr.open('GET','${nested ? 'ajax.json' : '/mock/ajax.json'}');xhr.send()};</script><script id="sniffy-header" type="application/javascript" data-request-id="${requestId}" data-request-method="GET" data-response-code="200" src="${script}"></script><data id="sniffy" data-sql-queries="2" data-server-time="84"></data><pre id="long-content">${longStack}</pre></body></html>`;
 }
 
 app.get('/mock/mock.html', (_request, response) => response.type('html').send(hostPage({})));
@@ -170,6 +174,10 @@ app.get('/mock/path/subpath/page', (_request, response) =>
 app.get('/mock/hostile/nested/page', (_request, response) =>
   response.type('html').send(hostPage({ nested: true, hostile: true })),
 );
+for (const rootFontSize of [10, 16, 32, 48])
+  app.get(`/mock/hostile/root-${rootFontSize}/page`, (_request, response) =>
+    response.type('html').send(hostPage({ nested: true, hostile: true, rootFontSize })),
+  );
 app.get('/mock/cors/page', (_request, response) =>
   response.type('html').send(hostPage({ scriptOrigin: 'http://127.0.0.1:3001/' })),
 );

@@ -83,6 +83,7 @@ export function normalizeBaseUrl(baseUrl: string): string {
 }
 
 export function resolveRequestDetailsUrl(requestUrl: string, headerValue: string): string {
+  if (headerValue.startsWith('./')) return `${requestUrl}${headerValue.substring(1)}`;
   return new URL(headerValue, requestUrl).href;
 }
 
@@ -114,7 +115,17 @@ export function createSniffyClient(baseUrl: string): SniffyClient {
   return {
     baseUrl: base,
     async getRequestDetails(url) {
-      return (await request(url)).json() as Promise<RequestStats>;
+      const body = await (await request(url)).text();
+      if (!body.trim()) {
+        return {
+          time: 0,
+          timeToFirstByte: 0,
+          executedQueries: [],
+          networkConnections: [],
+          exceptions: [],
+        };
+      }
+      return JSON.parse(body) as RequestStats;
     },
     async getRegistry() {
       return (

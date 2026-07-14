@@ -1,4 +1,9 @@
-import { discoverBaseUrl, installXhrInterceptor, parseMetadata } from './runtime';
+import {
+  discoverBaseUrl,
+  formatRequestLabel,
+  installXhrInterceptor,
+  parseMetadata,
+} from './runtime';
 
 describe('profiler runtime contract', () => {
   it('discovers the backend from the resolved classic script URL', () => {
@@ -41,5 +46,24 @@ describe('profiler runtime contract', () => {
     expect(xhr.onreadystatechange).toBe(applicationHandler);
     expect(setRequestHeader).toHaveBeenCalledWith('Sniffy-Inject-Html-Enabled', 'false');
     expect(originalSend).toHaveBeenCalledOnce();
+  });
+
+  it('preserves query and fragment labels and distinguishes cross-origin requests', () => {
+    expect(
+      formatRequestLabel(
+        'GET',
+        'https://app.example.test/ajax.json?view=full#results',
+        200,
+        'https://app.example.test',
+      ),
+    ).toBe('GET /ajax.json?view=full#results - 200');
+    expect(
+      formatRequestLabel(
+        'POST',
+        'https://api.example.test/ajax.json?view=full#results',
+        201,
+        'https://app.example.test',
+      ),
+    ).toBe('POST https://api.example.test/ajax.json?view=full#results - 201');
   });
 });

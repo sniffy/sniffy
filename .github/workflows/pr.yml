@@ -18,7 +18,11 @@ jobs:
   frontend:
     name: Frontend
     runs-on: ubuntu-26.04
-    container: node:24-bookworm-slim@sha256:cb4e8f7c443347358b7875e717c29e27bf9befc8f5a26cf18af3c3dec80e58c5
+    container:
+      image: node:24-bookworm-slim@sha256:cb4e8f7c443347358b7875e717c29e27bf9befc8f5a26cf18af3c3dec80e58c5
+      env:
+        HOME: /root
+        PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
     timeout-minutes: 30
     defaults:
       run:
@@ -30,17 +34,28 @@ jobs:
           node-version: 24.18.0
           cache: npm
           cache-dependency-path: sniffy-ui/package-lock.json
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test
-      - run: npm run storybook:build
-      - run: npm run build
-      - run: npm run check:generated
-      - run: npm run check:bundle
-      - run: npm audit --audit-level=high
-      - run: npm run test:e2e
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit and Storybook interaction tests
+        run: npm run test
+      - name: Build Storybook
+        run: npm run storybook:build
+      - name: Build production assets
+        run: npm run build
+      - name: Verify generated assets
+        run: npm run check:generated
+      - name: Validate bundle
+        run: npm run check:bundle
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+      - name: Playwright end-to-end tests
+        run: npm run test:e2e
       - uses: actions/upload-artifact@v7
         if: always()
         with:
