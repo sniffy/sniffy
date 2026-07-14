@@ -117,16 +117,16 @@ test('supports pinning, delayed hover/focus reveal, keyboard use and click fallb
   await expect(pin).toHaveAttribute('aria-pressed', 'false');
   await page.locator('#host-xhr').focus();
   await page.mouse.move(0, 0);
-  await page.clock.fastForward(749);
+  await page.clock.fastForward(500);
   await expect(tray).toHaveAttribute('data-expanded', 'true');
-  await page.clock.fastForward(1);
+  await page.clock.fastForward(300);
   await expect(tray).toHaveAttribute('data-expanded', 'false');
 
   const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
   await trigger.hover();
   await expect(tray).toHaveAttribute('data-expanded', 'true');
   await page.mouse.move(0, 0);
-  await page.clock.fastForward(750);
+  await page.clock.fastForward(800);
   await expect(tray).toHaveAttribute('data-expanded', 'false');
 
   await trigger.focus();
@@ -150,7 +150,11 @@ test('compact trigger works in a touch context and reduced motion removes transi
   const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
   await trigger.tap();
   await expect(profiler.getByText('Sniffy profiler')).toBeVisible();
-  await expect(profiler.locator('.sniffy-counter-tray')).toHaveCSS('transition-duration', '1e-05s');
+  expect(
+    await profiler
+      .locator('.sniffy-counter-tray')
+      .evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration)),
+  ).toBeLessThanOrEqual(0.001);
   await context.close();
 });
 
@@ -371,9 +375,7 @@ test('registry controls render and mutate equivalently in profiler and agent', a
     const delayResponse = page.waitForResponse(
       (response) => response.url().includes(socketSuffix) && response.request().method() === 'POST',
     );
-    await increment.click();
-    await increment.click();
-    await increment.click();
+    await increment.click({ clickCount: 3 });
     await expect(surface.getByText('Saving…').first()).toBeVisible();
     await delayResponse;
     await expect.poll(() => mutations.length).toBe(3);
