@@ -31,7 +31,10 @@ export const Collapsed: StoryObj<typeof ProfilerApp> = {
     const canvas = within(canvasElement);
     const pin = canvas.getByRole('button', { name: 'Keep Sniffy counters pinned' });
     await expect(pin).toHaveAttribute('aria-pressed', 'true');
-    await expect(canvas.queryByRole('button', { name: 'Open Sniffy profiler' })).toBeNull();
+    await expect(canvas.getByRole('button', { name: 'Open Sniffy profiler' })).toHaveAttribute(
+      'data-visible',
+      'false',
+    );
     await userEvent.click(canvas.getByRole('button', { name: 'Toggle Sniffy profiler' }));
     await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
     await expect(canvas.queryByRole('button', { name: 'Toggle Sniffy profiler' })).toBeNull();

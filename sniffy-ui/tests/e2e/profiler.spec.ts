@@ -137,8 +137,9 @@ test('supports pinning, delayed hover/focus reveal, keyboard use and click fallb
   await expect(tray).toHaveAttribute('data-expanded', 'true');
   await pin.click();
   await expect(pin).toHaveAttribute('aria-pressed', 'false');
-  await page.locator('#host-xhr').focus();
-  await page.mouse.move(0, 0);
+  const hostButton = page.locator('#host-xhr');
+  await hostButton.focus();
+  await hostButton.hover();
   await page.clock.fastForward(500);
   await expect(tray).toHaveAttribute('data-expanded', 'true');
   await page.clock.fastForward(300);
@@ -147,7 +148,7 @@ test('supports pinning, delayed hover/focus reveal, keyboard use and click fallb
   const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
   await trigger.hover();
   await expect(tray).toHaveAttribute('data-expanded', 'true');
-  await page.mouse.move(0, 0);
+  await hostButton.hover();
   await page.clock.fastForward(800);
   await expect(tray).toHaveAttribute('data-expanded', 'false');
 
@@ -173,12 +174,11 @@ test('compact trigger works in a touch context and reduced motion removes transi
     .getByRole('button', { name: 'Keep Sniffy counters pinned' })
     .evaluate((element) => (element as HTMLElement).click());
   await page.locator('#host-xhr').focus();
-  await page.waitForTimeout(800);
+  const tray = profiler.locator('.sniffy-counter-tray');
+  await expect(tray).toHaveAttribute('data-expanded', 'false');
   const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
   expect(
-    await profiler
-      .locator('.sniffy-counter-tray')
-      .evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration)),
+    await tray.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration)),
   ).toBeLessThanOrEqual(0.001);
   await trigger.tap();
   await expect(profiler.getByText('Sniffy profiler')).toBeVisible();
@@ -218,12 +218,17 @@ test('pulses the collapsed trigger and retains empty-details TTFB in the final t
   page,
 }) => {
   await page.goto('/mock/mock.html');
-  await page.clock.install();
   const profiler = page.locator('sniffy-profiler');
-  await profiler.getByRole('button', { name: 'Keep Sniffy counters pinned' }).click();
-  await page.locator('#host-xhr').focus();
-  await page.mouse.move(0, 0);
-  await page.clock.fastForward(800);
+  const pin = profiler.getByRole('button', { name: 'Keep Sniffy counters pinned' });
+  const tray = profiler.locator('.sniffy-counter-tray');
+  await expect(pin).toHaveAttribute('aria-pressed', 'true');
+  await expect(tray).toHaveAttribute('data-expanded', 'true');
+  await pin.click();
+  await expect(pin).toHaveAttribute('aria-pressed', 'false');
+  const hostButton = page.locator('#host-xhr');
+  await hostButton.focus();
+  await hostButton.hover();
+  await expect(tray).toHaveAttribute('data-expanded', 'false');
   const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
 
   await page.evaluate(
@@ -239,7 +244,6 @@ test('pulses the collapsed trigger and retains empty-details TTFB in the final t
   await expect(trigger).toHaveAttribute('data-updating', 'true');
   await trigger.hover();
   await expect(profiler.locator('[title="Server time"]')).toContainText('105 ms');
-  await page.clock.fastForward(800);
   await expect(trigger).toHaveAttribute('data-updating', 'false');
 });
 
@@ -627,11 +631,10 @@ test('@visual final profiler and agent states', async ({ page, request }) => {
   const widget = profiler.locator('.sniffy-widget');
   await expect(widget).toHaveScreenshot('pinned-widget.png', { animations: 'disabled' });
   await profiler.getByRole('button', { name: 'Keep Sniffy counters pinned' }).click();
-  await page.locator('#host-xhr').focus();
-  await page.mouse.move(0, 0);
-  await expect(profiler.locator('.sniffy-counter-tray')).toHaveAttribute('data-expanded', 'false', {
-    timeout: 1_000,
-  });
+  const hostButton = page.locator('#host-xhr');
+  await hostButton.focus();
+  await hostButton.hover();
+  await expect(profiler.locator('.sniffy-counter-tray')).toHaveAttribute('data-expanded', 'false');
   await expect(widget).toHaveScreenshot('unpinned-widget.png', { animations: 'disabled' });
   await page.evaluate(
     () =>

@@ -375,6 +375,7 @@ export function ProfilerApp({
   const shell = useRef<HTMLDivElement | null>(null);
   const restoreFocusAfterClose = useRef(false);
   const trayExpanded = pinned || pointerInside || focusInside || temporarilyExpanded;
+  const brandTriggerVisible = !trayExpanded || triggerActive;
   const trayExpandedRef = useRef(trayExpanded);
   const openRef = useRef(open);
   trayExpandedRef.current = trayExpanded;
@@ -384,12 +385,20 @@ export function ProfilerApp({
     if (collapseTimer.current !== undefined) clearTimeout(collapseTimer.current);
     collapseTimer.current = undefined;
   }, []);
-  const scheduleCollapse = useCallback(() => {
-    cancelCollapse();
-    collapseTimer.current = setTimeout(() => {
-      setTemporarilyExpanded(false);
-    }, 750);
-  }, [cancelCollapse]);
+  const scheduleCollapse = useCallback(
+    (clearInteractionState = false) => {
+      cancelCollapse();
+      collapseTimer.current = setTimeout(() => {
+        if (clearInteractionState) {
+          setPointerInside(false);
+          setFocusInside(false);
+          setTriggerActive(false);
+        }
+        setTemporarilyExpanded(false);
+      }, 750);
+    },
+    [cancelCollapse],
+  );
   const pulseCounters = useCallback((keys: CounterKey[]) => {
     const started = keys.filter((key) => pulseTimers.current[key] === undefined);
     if (started.length === 0) return;
@@ -688,25 +697,30 @@ export function ProfilerApp({
           className="sniffy-widget flex items-stretch overflow-hidden rounded-lg border border-border bg-surface shadow-[var(--sniffy-shadow)]"
           data-counter-expanded={trayExpanded}
         >
-          {(!trayExpanded || triggerActive) && (
-            <button
-              ref={brandTrigger}
-              className="sniffy-brand-trigger grid size-10 place-items-center text-accent hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
-              data-updating={triggerUpdating}
-              aria-label="Open Sniffy profiler"
-              aria-expanded="false"
-              onPointerEnter={() => setTriggerActive(true)}
-              onPointerLeave={() => setTriggerActive(false)}
-              onFocus={() => setTriggerActive(true)}
-              onBlur={() => setTriggerActive(false)}
-              onClick={() => {
-                setTemporarilyExpanded(true);
-                setOpen(true);
-              }}
-            >
-              <Gauge size={19} />
-            </button>
-          )}
+          <button
+            ref={brandTrigger}
+            className="sniffy-brand-trigger grid size-10 place-items-center overflow-hidden text-accent hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
+            data-visible={brandTriggerVisible}
+            data-updating={triggerUpdating}
+            aria-label="Open Sniffy profiler"
+            aria-expanded="false"
+            tabIndex={brandTriggerVisible ? 0 : -1}
+            onPointerEnter={() => setTriggerActive(true)}
+            onPointerLeave={() => setTriggerActive(false)}
+            onPointerDown={(event) => {
+              if (event.pointerType !== 'touch') return;
+              setTemporarilyExpanded(true);
+              setOpen(true);
+            }}
+            onFocus={() => setTriggerActive(true)}
+            onBlur={() => setTriggerActive(false)}
+            onClick={() => {
+              setTemporarilyExpanded(true);
+              setOpen(true);
+            }}
+          >
+            <Gauge size={19} />
+          </button>
           <div
             className="sniffy-counter-tray flex items-stretch"
             data-expanded={trayExpanded}
@@ -759,7 +773,9 @@ export function ProfilerApp({
               aria-pressed={pinned}
               tabIndex={trayExpanded ? 0 : -1}
               onClick={() => {
-                setPinned((current) => !current);
+                if (pinned) scheduleCollapse(true);
+                else cancelCollapse();
+                setPinned(!pinned);
                 setTemporarilyExpanded(true);
               }}
             >

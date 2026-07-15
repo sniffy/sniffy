@@ -55,7 +55,6 @@ describe('compact profiler widget', () => {
     fireEvent.click(pin);
     expect(pin).toHaveAttribute('aria-pressed', 'false');
     const shell = tray.closest('.sniffy-shell') as HTMLElement;
-    fireEvent.pointerLeave(shell);
     await act(async () => vi.advanceTimersByTime(749));
     expect(tray).toHaveAttribute('data-expanded', 'true');
     await act(async () => vi.advanceTimersByTime(1));
@@ -63,6 +62,10 @@ describe('compact profiler widget', () => {
 
     fireEvent.pointerEnter(shell);
     expect(tray).toHaveAttribute('data-expanded', 'true');
+    expect(screen.getByRole('button', { name: 'Open Sniffy profiler' })).toHaveAttribute(
+      'data-visible',
+      'false',
+    );
     fireEvent.pointerLeave(shell);
     await act(async () => vi.advanceTimersByTime(750));
     expect(tray).toHaveAttribute('data-expanded', 'false');
