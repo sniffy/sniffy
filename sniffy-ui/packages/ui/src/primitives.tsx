@@ -3,7 +3,13 @@ import { NumberField as BaseNumberField } from '@base-ui/react/number-field';
 import { Switch as BaseSwitch } from '@base-ui/react/switch';
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
-import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
+import {
+  useLayoutEffect,
+  useRef,
+  type ButtonHTMLAttributes,
+  type HTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { ChevronDown, LoaderCircle, Minus, Plus } from 'lucide-react';
 
 export function cx(...values: Array<string | false | null | undefined>): string {
@@ -91,10 +97,24 @@ export function NumberField({
   label: string;
   disabled?: boolean;
 }) {
+  const interactionValue = useRef(value);
+  useLayoutEffect(() => {
+    interactionValue.current = value;
+  }, [value]);
   return (
     <BaseNumberField.Root
       value={value}
-      onValueChange={(next) => onValueChange(next ?? 0)}
+      onValueChange={(next, details) => {
+        let resolved = next ?? 0;
+        if (details.direction !== undefined) {
+          // Controlled step events can share one rendered value inside a React batch.
+          // Accumulate their deltas so rapid clicks are not collapsed into one change.
+          const step = resolved - value;
+          resolved = Math.max(0, interactionValue.current + step);
+        }
+        interactionValue.current = resolved;
+        onValueChange(resolved);
+      }}
       min={0}
       aria-label={label}
       disabled={disabled}

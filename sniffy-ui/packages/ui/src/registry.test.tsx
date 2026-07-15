@@ -88,14 +88,18 @@ describe('connection registry controls', () => {
     });
     vi.useFakeTimers();
 
-    fireEvent.click(increment);
-    fireEvent.click(increment);
+    act(() => {
+      fireEvent.click(increment);
+      fireEvent.click(increment);
+    });
     await act(async () => vi.advanceTimersByTime(250));
     expect(setSocket).toHaveBeenCalledTimes(1);
     expect(setSocket).toHaveBeenLastCalledWith(expect.anything(), 2);
 
-    fireEvent.click(increment);
-    fireEvent.click(increment);
+    act(() => {
+      fireEvent.click(increment);
+      fireEvent.click(increment);
+    });
     await act(async () => vi.advanceTimersByTime(250));
     expect(setSocket).toHaveBeenCalledTimes(1);
     firstWrite.resolve();

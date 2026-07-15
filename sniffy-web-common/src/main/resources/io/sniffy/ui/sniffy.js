@@ -23762,9 +23762,21 @@ var SniffyProfiler = (function(exports) {
 		});
 	}
 	function NumberField({ value, onValueChange, label, disabled = false }) {
+		const interactionValue = (0, import_react.useRef)(value);
+		(0, import_react.useLayoutEffect)(() => {
+			interactionValue.current = value;
+		}, [value]);
 		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NumberFieldRoot, {
 			value,
-			onValueChange: (next) => onValueChange(next ?? 0),
+			onValueChange: (next, details) => {
+				let resolved = next ?? 0;
+				if (details.direction !== void 0) {
+					const step = resolved - value;
+					resolved = Math.max(0, interactionValue.current + step);
+				}
+				interactionValue.current = resolved;
+				onValueChange(resolved);
+			},
 			min: 0,
 			"aria-label": label,
 			disabled,
