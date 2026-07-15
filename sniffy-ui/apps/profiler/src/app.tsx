@@ -10,6 +10,7 @@ import {
   Network,
   CircleAlert,
   Gauge,
+  EyeOff,
   Pin,
   PinOff,
 } from 'lucide-react';
@@ -27,6 +28,7 @@ import {
   ConnectionRegistryPanel,
   IconButton,
   StateMessage,
+  StatusSlot,
   Table,
   Tabs,
   Tooltip,
@@ -106,7 +108,11 @@ function QueryDetails({ requests }: { requests: RequestRecord[] }) {
           <div className="border-b border-border bg-surface-raised px-3 py-2 font-medium">
             {request.label}
           </div>
-          {request.error && <StateMessage kind="error">{request.error}</StateMessage>}
+          <StatusSlot
+            className="mx-3 my-2"
+            kind={request.error ? 'error' : 'idle'}
+            message={request.error}
+          />
           {!request.stats && !request.error && (
             <StateMessage kind="loading">Loading request details…</StateMessage>
           )}
@@ -199,7 +205,7 @@ function TopSqlPanel({ client }: { client: SniffyClient }) {
     sort.key === key ? (sort.direction === 'desc' ? ' ↓' : ' ↑') : '';
   return (
     <div className="p-3">
-      {error && <StateMessage kind="error">{error}</StateMessage>}
+      <StatusSlot className="mx-3 mt-3" kind={error ? 'error' : 'idle'} message={error} />
       {!rows && !error && <StateMessage kind="loading">Loading Top SQL…</StateMessage>}
       {rows?.length === 0 && <StateMessage kind="empty">No SQL queries gathered yet.</StateMessage>}
       {rows && rows.length > 0 && (
@@ -259,6 +265,77 @@ function formatBytes(value: number): string {
       : `${(value / 1_000_000).toFixed(1)} MB`;
 }
 
+function resolvedServerTime(request: RequestRecord): number {
+  if (request.serverTime === undefined) return 0;
+  return Math.max(request.serverTime, request.stats?.time ?? request.serverTime);
+}
+
+function SummaryStrip({
+  exceptions,
+  network,
+  serverTime,
+  sql,
+}: {
+  exceptions: number;
+  network: number;
+  serverTime: number;
+  sql: number;
+}) {
+  return (
+    <div
+      className="sniffy-summary grid grid-cols-4 border-b border-border bg-surface"
+      aria-label="Profiler summary"
+    >
+      <SummaryMetric
+        icon={<CircleAlert size={14} />}
+        label="Exceptions"
+        value={String(exceptions)}
+        color="text-exception"
+      />
+      <SummaryMetric
+        icon={<Network size={14} />}
+        label="Network bytes"
+        value={formatBytes(network)}
+        color="text-network"
+      />
+      <SummaryMetric
+        icon={<Timer size={14} />}
+        label="Server time"
+        value={formatTime(serverTime)}
+        color="text-info"
+      />
+      <SummaryMetric
+        icon={<Database size={14} />}
+        label="SQL queries"
+        value={String(sql)}
+        color="text-sql"
+      />
+    </div>
+  );
+}
+
+function SummaryMetric({
+  icon,
+  label,
+  value,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  color: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center justify-center gap-2 border-r border-border px-2 py-1.5 last:border-r-0">
+      <span className={color}>{icon}</span>
+      <span className="truncate text-xs text-muted">{label}</span>
+      <strong className="shrink-0 text-xs" aria-live="polite">
+        {value}
+      </strong>
+    </div>
+  );
+}
+
 export function ProfilerApp({
   metadata,
   intercepted,
@@ -275,8 +352,11 @@ export function ProfilerApp({
   const [pinned, setPinned] = useState(true);
   const [pointerInside, setPointerInside] = useState(false);
   const [focusInside, setFocusInside] = useState(false);
+  const [triggerActive, setTriggerActive] = useState(false);
   const [temporarilyExpanded, setTemporarilyExpanded] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [triggerUpdating, setTriggerUpdating] = useState(false);
   const [cleared, setCleared] = useState(false);
   const [requests, setRequests] = useState<RequestRecord[]>([]);
   const [updating, setUpdating] = useState<Record<CounterKey, boolean>>({
@@ -288,6 +368,16 @@ export function ProfilerApp({
   const [copyStatus, setCopyStatus] = useState<{ message: string; error: boolean }>();
   const collapseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pulseTimers = useRef<Partial<Record<CounterKey, ReturnType<typeof setTimeout>>>>({});
+  const triggerPulseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const copyStatusTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const counterButton = useRef<HTMLButtonElement | null>(null);
+  const brandTrigger = useRef<HTMLButtonElement | null>(null);
+  const restoreFocusAfterClose = useRef(false);
+  const trayExpanded = pinned || pointerInside || focusInside || temporarilyExpanded;
+  const trayExpandedRef = useRef(trayExpanded);
+  const openRef = useRef(open);
+  trayExpandedRef.current = trayExpanded;
+  openRef.current = open;
 
   const cancelCollapse = useCallback(() => {
     if (collapseTimer.current !== undefined) clearTimeout(collapseTimer.current);
@@ -313,13 +403,60 @@ export function ProfilerApp({
       }, 800);
     }
   }, []);
+  const pulseCollapsedTrigger = useCallback(() => {
+    if (openRef.current || trayExpandedRef.current || triggerPulseTimer.current !== undefined)
+      return;
+    setTriggerUpdating(true);
+    triggerPulseTimer.current = setTimeout(() => {
+      triggerPulseTimer.current = undefined;
+      setTriggerUpdating(false);
+    }, 800);
+  }, []);
+  const showCopyStatus = useCallback((message: string, error: boolean) => {
+    if (copyStatusTimer.current !== undefined) clearTimeout(copyStatusTimer.current);
+    setCopyStatus({ message, error });
+    copyStatusTimer.current = setTimeout(() => {
+      copyStatusTimer.current = undefined;
+      setCopyStatus(undefined);
+    }, 1800);
+  }, []);
+  const closeProfiler = useCallback((restoreFocus: boolean) => {
+    restoreFocusAfterClose.current = restoreFocus;
+    setTemporarilyExpanded(true);
+    setOpen(false);
+  }, []);
   useEffect(
     () => () => {
       cancelCollapse();
       Object.values(pulseTimers.current).forEach((timer) => clearTimeout(timer));
+      if (triggerPulseTimer.current !== undefined) clearTimeout(triggerPulseTimer.current);
+      if (copyStatusTimer.current !== undefined) clearTimeout(copyStatusTimer.current);
     },
     [cancelCollapse],
   );
+  useEffect(() => {
+    if (open || !restoreFocusAfterClose.current) return;
+    restoreFocusAfterClose.current = false;
+    (counterButton.current ?? brandTrigger.current)?.focus();
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.composedPath().includes(shadowRoot.host)) return;
+      closeProfiler(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closeProfiler(true);
+    };
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [closeProfiler, open, shadowRoot]);
   const load = useCallback(
     async (
       label: string,
@@ -364,17 +501,17 @@ export function ProfilerApp({
         `${metadata.requestMethod || 'GET'} ${location.pathname}${metadata.responseCode ? ` - ${metadata.responseCode}` : ''}`,
         new URL(`request/${metadata.requestId}`, metadata.baseUrl).href,
       );
-    return intercepted.subscribe(
-      (request) =>
-        void load(
-          request.label,
-          request.detailsUrl,
-          request.sqlQueries,
-          request.timeToFirstByte,
-          true,
-        ),
-    );
-  }, [intercepted, load, metadata]);
+    return intercepted.subscribe((request) => {
+      pulseCollapsedTrigger();
+      void load(
+        request.label,
+        request.detailsUrl,
+        request.sqlQueries,
+        request.timeToFirstByte,
+        true,
+      );
+    });
+  }, [intercepted, load, metadata, pulseCollapsedTrigger]);
   const totals = requests.reduce(
     (result, request) => {
       const stats = request.stats;
@@ -389,11 +526,10 @@ export function ProfilerApp({
     cleared ? 0 : metadata.sqlQueries,
   );
   const serverTime = requests.reduce(
-    (time, request) =>
-      request.serverTime === undefined ? time : time + (request.stats?.time ?? request.serverTime),
+    (time, request) => time + resolvedServerTime(request),
     cleared ? 0 : metadata.serverTime,
   );
-  const trayExpanded = pinned || open || pointerInside || focusInside || temporarilyExpanded;
+  if (dismissed) return null;
   return (
     <div
       className="sniffy-shell"
@@ -419,21 +555,18 @@ export function ProfilerApp({
         scheduleCollapse();
       }}
     >
-      {open && (
+      {open ? (
         <Card
           className="sniffy-panel flex flex-col overflow-hidden shadow-[var(--sniffy-shadow)]"
           data-maximized={maximized}
         >
-          <header className="flex items-center gap-2 border-b border-border bg-surface-raised px-3 py-2">
+          <header className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-raised px-3 py-2">
             <strong className="mr-auto">Sniffy profiler</strong>
-            {copyStatus && (
-              <span
-                className={copyStatus.error ? 'text-xs text-danger' : 'text-xs text-success'}
-                role={copyStatus.error ? 'alert' : 'status'}
-              >
-                {copyStatus.message}
-              </span>
-            )}
+            <StatusSlot
+              className="w-36 shrink-0"
+              kind={copyStatus?.error ? 'error' : copyStatus ? 'success' : 'idle'}
+              message={copyStatus?.message}
+            />
             <Tooltip label="Clear captured data" portalRoot={shadowRoot}>
               <IconButton
                 aria-label="Clear captured data"
@@ -456,12 +589,12 @@ export function ProfilerApp({
                   );
                   try {
                     await copyText(report, shadowRoot);
-                    setCopyStatus({ message: 'Report copied.', error: false });
+                    showCopyStatus('Report copied.', false);
                   } catch (reason) {
-                    setCopyStatus({
-                      message: reason instanceof Error ? reason.message : 'Unable to copy report.',
-                      error: true,
-                    });
+                    showCopyStatus(
+                      reason instanceof Error ? reason.message : 'Unable to copy report.',
+                      true,
+                    );
                   }
                 }}
               >
@@ -476,15 +609,39 @@ export function ProfilerApp({
                 {maximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
               </IconButton>
             </Tooltip>
-            <IconButton
-              aria-label="Close profiler"
-              onClick={() => {
-                setOpen(false);
-              }}
+            <Tooltip
+              label={pinned ? 'Allow Sniffy counters to collapse' : 'Keep Sniffy counters pinned'}
+              portalRoot={shadowRoot}
             >
+              <IconButton
+                aria-label="Keep Sniffy counters pinned"
+                aria-pressed={pinned}
+                onClick={() => setPinned((current) => !current)}
+              >
+                {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+              </IconButton>
+            </Tooltip>
+            <Tooltip label="Dismiss Sniffy for this page" portalRoot={shadowRoot}>
+              <IconButton
+                aria-label="Dismiss Sniffy for this page"
+                onClick={() => {
+                  setOpen(false);
+                  setDismissed(true);
+                }}
+              >
+                <EyeOff size={16} />
+              </IconButton>
+            </Tooltip>
+            <IconButton aria-label="Close profiler" onClick={() => closeProfiler(true)}>
               <X size={16} />
             </IconButton>
           </header>
+          <SummaryStrip
+            exceptions={totals.exceptions}
+            network={totals.network}
+            serverTime={serverTime}
+            sql={sqlCount}
+          />
           <Tabs.Root defaultValue="queries" className="flex min-h-0 flex-1 flex-col">
             <Tabs.List
               className="flex border-b border-border bg-surface"
@@ -533,80 +690,99 @@ export function ProfilerApp({
             </a>
           </footer>
         </Card>
-      )}
-      <div
-        className="sniffy-widget flex items-stretch overflow-hidden rounded-lg border border-border bg-surface shadow-[var(--sniffy-shadow)]"
-        data-counter-expanded={trayExpanded}
-      >
-        <button
-          className="sniffy-brand-trigger grid size-10 place-items-center text-accent hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
-          aria-label={open ? 'Close Sniffy profiler' : 'Open Sniffy profiler'}
-          aria-expanded={open}
-          onClick={() => setOpen((current) => !current)}
-        >
-          <Gauge size={19} />
-        </button>
+      ) : (
         <div
-          className="sniffy-counter-tray flex items-stretch"
-          data-expanded={trayExpanded}
-          aria-hidden={!trayExpanded}
+          className="sniffy-widget flex items-stretch overflow-hidden rounded-lg border border-border bg-surface shadow-[var(--sniffy-shadow)]"
+          data-counter-expanded={trayExpanded}
         >
-          <button
-            className="flex"
-            aria-label="View captured Sniffy details"
-            aria-expanded={open}
-            tabIndex={trayExpanded ? 0 : -1}
-            onClick={() => {
-              setOpen(true);
-            }}
+          {(!trayExpanded || triggerActive) && (
+            <button
+              ref={brandTrigger}
+              className="sniffy-brand-trigger grid size-10 place-items-center text-accent hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
+              data-updating={triggerUpdating}
+              aria-label="Open Sniffy profiler"
+              aria-expanded="false"
+              onPointerEnter={() => setTriggerActive(true)}
+              onPointerLeave={() => setTriggerActive(false)}
+              onFocus={() => setTriggerActive(true)}
+              onBlur={() => setTriggerActive(false)}
+              onClick={() => {
+                setTemporarilyExpanded(true);
+                setOpen(true);
+              }}
+            >
+              <Gauge size={19} />
+            </button>
+          )}
+          <div
+            className="sniffy-counter-tray flex items-stretch"
+            data-expanded={trayExpanded}
+            aria-hidden={!trayExpanded}
           >
-            <Counter
-              icon={<CircleAlert size={16} />}
-              label="Exceptions"
-              value={String(totals.exceptions)}
-              color="text-exception"
-              kind="exceptions"
-              updating={updating.exceptions}
-            />
-            <Counter
-              icon={<Network size={16} />}
-              label="Network bytes"
-              value={formatBytes(totals.network)}
-              color="text-network"
-              kind="network"
-              updating={updating.network}
-            />
-            <Counter
-              icon={<Timer size={16} />}
-              label="Server time"
-              value={formatTime(serverTime)}
-              color="text-info"
-              kind="time"
-              updating={updating.time}
-            />
-            <Counter
-              icon={<Database size={16} />}
-              label="SQL queries"
-              value={String(sqlCount)}
-              color="text-sql"
-              kind="sql"
-              updating={updating.sql}
-            />
-          </button>
-          <button
-            className="grid w-9 place-items-center border-l border-border text-muted hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
-            aria-label="Keep Sniffy counters pinned"
-            aria-pressed={pinned}
-            tabIndex={trayExpanded ? 0 : -1}
-            onClick={() => {
-              setPinned((current) => !current);
-              setTemporarilyExpanded(true);
-            }}
-          >
-            {pinned ? <PinOff size={15} /> : <Pin size={15} />}
-          </button>
+            <button
+              ref={counterButton}
+              className="flex"
+              aria-label="Toggle Sniffy profiler"
+              aria-expanded="false"
+              tabIndex={trayExpanded ? 0 : -1}
+              onClick={() => setOpen((current) => !current)}
+            >
+              <Counter
+                icon={<CircleAlert size={16} />}
+                label="Exceptions"
+                value={String(totals.exceptions)}
+                color="text-exception"
+                kind="exceptions"
+                updating={updating.exceptions}
+              />
+              <Counter
+                icon={<Network size={16} />}
+                label="Network bytes"
+                value={formatBytes(totals.network)}
+                color="text-network"
+                kind="network"
+                updating={updating.network}
+              />
+              <Counter
+                icon={<Timer size={16} />}
+                label="Server time"
+                value={formatTime(serverTime)}
+                color="text-info"
+                kind="time"
+                updating={updating.time}
+              />
+              <Counter
+                icon={<Database size={16} />}
+                label="SQL queries"
+                value={String(sqlCount)}
+                color="text-sql"
+                kind="sql"
+                updating={updating.sql}
+              />
+            </button>
+            <button
+              className="grid w-9 place-items-center border-l border-border text-muted hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
+              aria-label="Keep Sniffy counters pinned"
+              aria-pressed={pinned}
+              tabIndex={trayExpanded ? 0 : -1}
+              onClick={() => {
+                setPinned((current) => !current);
+                setTemporarilyExpanded(true);
+              }}
+            >
+              {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+            </button>
+            <button
+              className="grid w-9 place-items-center border-l border-border text-muted hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
+              aria-label="Dismiss Sniffy for this page"
+              tabIndex={trayExpanded ? 0 : -1}
+              onClick={() => setDismissed(true)}
+            >
+              <EyeOff size={15} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

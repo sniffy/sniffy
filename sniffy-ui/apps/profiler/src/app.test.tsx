@@ -12,7 +12,7 @@ const metadata: ProfilerMetadata = {
   serverTime: 0,
 };
 
-function fixture() {
+function fixture(options: { metadata?: ProfilerMetadata; initialOpen?: boolean } = {}) {
   const portalHost = document.createElement('div');
   document.body.append(portalHost);
   const shadowRoot = portalHost.attachShadow({ mode: 'open' });
@@ -23,8 +23,19 @@ function fixture() {
       return () => undefined;
     },
   };
-  render(<ProfilerApp metadata={metadata} intercepted={intercepted} shadowRoot={shadowRoot} />);
-  return { shadowRoot, intercept: (request: InterceptedRequest) => listener?.(request) };
+  const result = render(
+    <ProfilerApp
+      metadata={options.metadata ?? metadata}
+      intercepted={intercepted}
+      shadowRoot={shadowRoot}
+      initialOpen={options.initialOpen}
+    />,
+  );
+  return {
+    ...result,
+    shadowRoot,
+    intercept: (request: InterceptedRequest) => listener?.(request),
+  };
 }
 
 describe('compact profiler widget', () => {
@@ -59,10 +70,10 @@ describe('compact profiler widget', () => {
     const trigger = screen.getByRole('button', { name: 'Open Sniffy profiler' });
     fireEvent.focus(trigger);
     expect(tray).toHaveAttribute('data-expanded', 'true');
-    fireEvent.keyDown(trigger, { key: 'Enter' });
     fireEvent.click(trigger);
-    expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Sniffy profiler')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Toggle Sniffy profiler' })).toBeNull();
+    expect(screen.getByLabelText('Profiler summary')).toBeVisible();
   });
 
   it('marks only changed counters and clears the coalesced update state', async () => {
@@ -97,6 +108,66 @@ describe('compact profiler widget', () => {
     await act(async () => vi.advanceTimersByTime(800));
     expect(screen.getByTitle('SQL queries')).toHaveAttribute('data-updating', 'false');
     expect(screen.getByTitle('Server time')).toHaveAttribute('data-updating', 'false');
+  });
+
+  it('pulses the compact trigger for activity captured while collapsed', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 200 }));
+    const { intercept } = fixture();
+    fireEvent.click(screen.getByRole('button', { name: 'Keep Sniffy counters pinned' }));
+    fireEvent.blur(document.activeElement as Element);
+    fireEvent.pointerLeave(screen.getByRole('button', { name: 'Toggle Sniffy profiler' }));
+    await act(async () => vi.advanceTimersByTime(750));
+
+    const trigger = screen.getByRole('button', { name: 'Open Sniffy profiler' });
+    await act(async () => {
+      intercept({
+        label: 'GET /empty.json - 200',
+        detailsUrl: 'http://localhost/request/empty',
+        sqlQueries: 0,
+        timeToFirstByte: 21,
+      });
+      await Promise.resolve();
+    });
+    expect(trigger).toHaveAttribute('data-updating', 'true');
+    await act(async () => vi.advanceTimersByTime(800));
+    expect(trigger).toHaveAttribute('data-updating', 'false');
+  });
+
+  it('keeps response-header TTFB when request details return an empty 200 body', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 200 }));
+    const { intercept } = fixture({ metadata: { ...metadata, serverTime: 84 } });
+
+    await act(async () => {
+      intercept({
+        label: 'GET /empty.json - 200',
+        detailsUrl: 'http://localhost/request/empty',
+        sqlQueries: 0,
+        timeToFirstByte: 21,
+      });
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTitle('Server time')).toHaveTextContent('105 ms');
+  });
+
+  it('replaces the tray while open, closes accessibly, and dismisses only this mount', () => {
+    const { container } = fixture();
+    const counters = screen.getByRole('button', { name: 'Toggle Sniffy profiler' });
+    fireEvent.click(counters);
+    expect(screen.queryByRole('button', { name: 'Toggle Sniffy profiler' })).toBeNull();
+    expect(screen.getByLabelText('Profiler summary')).toBeVisible();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    const restoredCounters = screen.getByRole('button', { name: 'Toggle Sniffy profiler' });
+    expect(restoredCounters).toHaveFocus();
+
+    fireEvent.click(restoredCounters);
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByText('Sniffy profiler')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss Sniffy for this page' }));
+    expect(container).toBeEmptyDOMElement();
   });
 });
 

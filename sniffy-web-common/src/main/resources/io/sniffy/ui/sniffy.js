@@ -10125,7 +10125,7 @@ var SniffyProfiler = (function(exports) {
 		checkDCE();
 		module.exports = require_react_dom_client_production();
 	})))();
-	var styles_default = "/*! tailwindcss v4.3.2 | MIT License | https://tailwindcss.com */\n@layer properties {\n  @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {\n    *, :before, :after, ::backdrop {\n      --tw-rotate-x: initial;\n      --tw-rotate-y: initial;\n      --tw-rotate-z: initial;\n      --tw-skew-x: initial;\n      --tw-skew-y: initial;\n      --tw-space-y-reverse: 0;\n      --tw-border-style: solid;\n      --tw-font-weight: initial;\n      --tw-tracking: initial;\n      --tw-shadow: 0 0 #0000;\n      --tw-shadow-color: initial;\n      --tw-shadow-alpha: 100%;\n      --tw-inset-shadow: 0 0 #0000;\n      --tw-inset-shadow-color: initial;\n      --tw-inset-shadow-alpha: 100%;\n      --tw-ring-color: initial;\n      --tw-ring-shadow: 0 0 #0000;\n      --tw-inset-ring-color: initial;\n      --tw-inset-ring-shadow: 0 0 #0000;\n      --tw-ring-inset: initial;\n      --tw-ring-offset-width: 0px;\n      --tw-ring-offset-color: #fff;\n      --tw-ring-offset-shadow: 0 0 #0000;\n      --tw-outline-style: solid;\n    }\n  }\n}\n\n@layer theme {\n  :root, :host {\n    --font-sans: var(--sniffy-font-sans);\n    --font-mono: var(--sniffy-font-mono);\n    --spacing: .25rem;\n    --container-2xl: 42rem;\n    --container-3xl: 48rem;\n    --container-6xl: 72rem;\n    --text-xs: .75rem;\n    --text-xs--line-height: calc(1 / .75);\n    --text-sm: .875rem;\n    --text-sm--line-height: calc(1.25 / .875);\n    --text-base: 1rem;\n    --text-base--line-height: calc(1.5 / 1);\n    --text-2xl: 1.5rem;\n    --text-2xl--line-height: calc(2 / 1.5);\n    --font-weight-medium: 500;\n    --font-weight-semibold: 600;\n    --radius-md: var(--sniffy-radius);\n    --radius-lg: var(--sniffy-radius-lg);\n    --animate-spin: spin 1s linear infinite;\n    --default-transition-duration: .15s;\n    --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);\n    --default-font-family: var(--font-sans);\n    --default-mono-font-family: var(--font-mono);\n    --color-canvas: var(--sniffy-canvas);\n    --color-surface: var(--sniffy-surface);\n    --color-surface-raised: var(--sniffy-surface-raised);\n    --color-surface-hover: var(--sniffy-surface-hover);\n    --color-foreground: var(--sniffy-foreground);\n    --color-muted: var(--sniffy-foreground-muted);\n    --color-border: var(--sniffy-border);\n    --color-focus: var(--sniffy-focus);\n    --color-accent: var(--sniffy-accent);\n    --color-success: var(--sniffy-success);\n    --color-warning: var(--sniffy-warning);\n    --color-danger: var(--sniffy-danger);\n    --color-info: var(--sniffy-info);\n    --color-sql: var(--sniffy-sql);\n    --color-network: var(--sniffy-network);\n    --color-exception: var(--sniffy-exception);\n  }\n}\n\n@layer base {\n  *, :after, :before, ::backdrop {\n    box-sizing: border-box;\n    border: 0 solid;\n    margin: 0;\n    padding: 0;\n  }\n\n  ::file-selector-button {\n    box-sizing: border-box;\n    border: 0 solid;\n    margin: 0;\n    padding: 0;\n  }\n\n  html, :host {\n    -webkit-text-size-adjust: 100%;\n    tab-size: 4;\n    line-height: 1.5;\n    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\");\n    font-feature-settings: var(--default-font-feature-settings, normal);\n    font-variation-settings: var(--default-font-variation-settings, normal);\n    -webkit-tap-highlight-color: transparent;\n  }\n\n  hr {\n    height: 0;\n    color: inherit;\n    border-top-width: 1px;\n  }\n\n  abbr:where([title]) {\n    -webkit-text-decoration: underline dotted;\n    text-decoration: underline dotted;\n  }\n\n  h1, h2, h3, h4, h5, h6 {\n    font-size: inherit;\n    font-weight: inherit;\n  }\n\n  a {\n    color: inherit;\n    -webkit-text-decoration: inherit;\n    -webkit-text-decoration: inherit;\n    -webkit-text-decoration: inherit;\n    text-decoration: inherit;\n  }\n\n  b, strong {\n    font-weight: bolder;\n  }\n\n  code, kbd, samp, pre {\n    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace);\n    font-feature-settings: var(--default-mono-font-feature-settings, normal);\n    font-variation-settings: var(--default-mono-font-variation-settings, normal);\n    font-size: 1em;\n  }\n\n  small {\n    font-size: 80%;\n  }\n\n  sub, sup {\n    vertical-align: baseline;\n    font-size: 75%;\n    line-height: 0;\n    position: relative;\n  }\n\n  sub {\n    bottom: -.25em;\n  }\n\n  sup {\n    top: -.5em;\n  }\n\n  table {\n    text-indent: 0;\n    border-color: inherit;\n    border-collapse: collapse;\n  }\n\n  :-moz-focusring {\n    outline: auto;\n  }\n\n  progress {\n    vertical-align: baseline;\n  }\n\n  summary {\n    display: list-item;\n  }\n\n  ol, ul, menu {\n    list-style: none;\n  }\n\n  img, svg, video, canvas, audio, iframe, embed, object {\n    vertical-align: middle;\n    display: block;\n  }\n\n  img, video {\n    max-width: 100%;\n    height: auto;\n  }\n\n  button, input, select, optgroup, textarea {\n    font: inherit;\n    font-feature-settings: inherit;\n    font-variation-settings: inherit;\n    letter-spacing: inherit;\n    color: inherit;\n    opacity: 1;\n    background-color: #0000;\n    border-radius: 0;\n  }\n\n  ::file-selector-button {\n    font: inherit;\n    font-feature-settings: inherit;\n    font-variation-settings: inherit;\n    letter-spacing: inherit;\n    color: inherit;\n    opacity: 1;\n    background-color: #0000;\n    border-radius: 0;\n  }\n\n  :where(select:is([multiple], [size])) optgroup {\n    font-weight: bolder;\n  }\n\n  :where(select:is([multiple], [size])) optgroup option {\n    padding-inline-start: 20px;\n  }\n\n  ::file-selector-button {\n    margin-inline-end: 4px;\n  }\n\n  ::placeholder {\n    opacity: 1;\n  }\n\n  @supports (not ((-webkit-appearance: -apple-pay-button))) or (contain-intrinsic-size: 1px) {\n    ::placeholder {\n      color: currentColor;\n    }\n\n    @supports (color: color-mix(in lab, red, red)) {\n      ::placeholder {\n        color: color-mix(in oklab, currentcolor 50%, transparent);\n      }\n    }\n  }\n\n  textarea {\n    resize: vertical;\n  }\n\n  ::-webkit-search-decoration {\n    -webkit-appearance: none;\n  }\n\n  ::-webkit-date-and-time-value {\n    min-height: 1lh;\n    text-align: inherit;\n  }\n\n  ::-webkit-datetime-edit {\n    display: inline-flex;\n  }\n\n  ::-webkit-datetime-edit-fields-wrapper {\n    padding: 0;\n  }\n\n  ::-webkit-datetime-edit {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-year-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-month-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-day-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-hour-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-minute-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-second-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-millisecond-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-meridiem-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-calendar-picker-indicator {\n    line-height: 1;\n  }\n\n  :-moz-ui-invalid {\n    box-shadow: none;\n  }\n\n  button, input:where([type=\"button\"], [type=\"reset\"], [type=\"submit\"]) {\n    appearance: button;\n  }\n\n  ::file-selector-button {\n    appearance: button;\n  }\n\n  ::-webkit-inner-spin-button {\n    height: auto;\n  }\n\n  ::-webkit-outer-spin-button {\n    height: auto;\n  }\n\n  [hidden]:where(:not([hidden=\"until-found\"])) {\n    display: none !important;\n  }\n}\n\n@layer components;\n\n@layer utilities {\n  .collapse {\n    visibility: collapse;\n  }\n\n  .visible {\n    visibility: visible;\n  }\n\n  .relative {\n    position: relative;\n  }\n\n  .z-50 {\n    z-index: 50;\n  }\n\n  .container {\n    width: 100%;\n  }\n\n  @media (min-width: 40rem) {\n    .container {\n      max-width: 40rem;\n    }\n  }\n\n  @media (min-width: 48rem) {\n    .container {\n      max-width: 48rem;\n    }\n  }\n\n  @media (min-width: 64rem) {\n    .container {\n      max-width: 64rem;\n    }\n  }\n\n  @media (min-width: 80rem) {\n    .container {\n      max-width: 80rem;\n    }\n  }\n\n  @media (min-width: 96rem) {\n    .container {\n      max-width: 96rem;\n    }\n  }\n\n  .m-4 {\n    margin: calc(var(--spacing) * 4);\n  }\n\n  .mx-auto {\n    margin-inline: auto;\n  }\n\n  .mt-1 {\n    margin-top: var(--spacing);\n  }\n\n  .mt-8 {\n    margin-top: calc(var(--spacing) * 8);\n  }\n\n  .mr-auto {\n    margin-right: auto;\n  }\n\n  .mb-6 {\n    margin-bottom: calc(var(--spacing) * 6);\n  }\n\n  .mb-8 {\n    margin-bottom: calc(var(--spacing) * 8);\n  }\n\n  .ml-2 {\n    margin-left: calc(var(--spacing) * 2);\n  }\n\n  .block {\n    display: block;\n  }\n\n  .flex {\n    display: flex;\n  }\n\n  .grid {\n    display: grid;\n  }\n\n  .inline-flex {\n    display: inline-flex;\n  }\n\n  .table {\n    display: table;\n  }\n\n  .size-5 {\n    width: calc(var(--spacing) * 5);\n    height: calc(var(--spacing) * 5);\n  }\n\n  .size-8 {\n    width: calc(var(--spacing) * 8);\n    height: calc(var(--spacing) * 8);\n  }\n\n  .size-9 {\n    width: calc(var(--spacing) * 9);\n    height: calc(var(--spacing) * 9);\n  }\n\n  .size-10 {\n    width: calc(var(--spacing) * 10);\n    height: calc(var(--spacing) * 10);\n  }\n\n  .size-12 {\n    width: calc(var(--spacing) * 12);\n    height: calc(var(--spacing) * 12);\n  }\n\n  .h-6 {\n    height: calc(var(--spacing) * 6);\n  }\n\n  .min-h-0 {\n    min-height: 0;\n  }\n\n  .min-h-9 {\n    min-height: calc(var(--spacing) * 9);\n  }\n\n  .min-h-screen {\n    min-height: 100vh;\n  }\n\n  .w-9 {\n    width: calc(var(--spacing) * 9);\n  }\n\n  .w-11 {\n    width: calc(var(--spacing) * 11);\n  }\n\n  .w-14 {\n    width: calc(var(--spacing) * 14);\n  }\n\n  .w-full {\n    width: 100%;\n  }\n\n  .max-w-2xl {\n    max-width: var(--container-2xl);\n  }\n\n  .max-w-3xl {\n    max-width: var(--container-3xl);\n  }\n\n  .max-w-6xl {\n    max-width: var(--container-6xl);\n  }\n\n  .max-w-full {\n    max-width: 100%;\n  }\n\n  .min-w-16 {\n    min-width: calc(var(--spacing) * 16);\n  }\n\n  .flex-1 {\n    flex: 1;\n  }\n\n  .border-collapse {\n    border-collapse: collapse;\n  }\n\n  .transform {\n    transform: var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );\n  }\n\n  .flex-col {\n    flex-direction: column;\n  }\n\n  .flex-wrap {\n    flex-wrap: wrap;\n  }\n\n  .place-items-center {\n    place-items: center;\n  }\n\n  .items-center {\n    align-items: center;\n  }\n\n  .items-stretch {\n    align-items: stretch;\n  }\n\n  .justify-between {\n    justify-content: space-between;\n  }\n\n  .justify-center {\n    justify-content: center;\n  }\n\n  .gap-0\\.5 {\n    gap: calc(var(--spacing) * .5);\n  }\n\n  .gap-2 {\n    gap: calc(var(--spacing) * 2);\n  }\n\n  .gap-3 {\n    gap: calc(var(--spacing) * 3);\n  }\n\n  .gap-4 {\n    gap: calc(var(--spacing) * 4);\n  }\n\n  :where(.space-y-2 > :not(:last-child)) {\n    --tw-space-y-reverse: 0;\n    margin-block-start: calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse));\n    margin-block-end: calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)));\n  }\n\n  :where(.space-y-3 > :not(:last-child)) {\n    --tw-space-y-reverse: 0;\n    margin-block-start: calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse));\n    margin-block-end: calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)));\n  }\n\n  :where(.space-y-4 > :not(:last-child)) {\n    --tw-space-y-reverse: 0;\n    margin-block-start: calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse));\n    margin-block-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)));\n  }\n\n  .overflow-auto {\n    overflow: auto;\n  }\n\n  .overflow-hidden {\n    overflow: hidden;\n  }\n\n  .overflow-x-auto {\n    overflow-x: auto;\n  }\n\n  .rounded-full {\n    border-radius: 3.40282e38px;\n  }\n\n  .rounded-lg {\n    border-radius: var(--radius-lg);\n  }\n\n  .rounded-md {\n    border-radius: var(--radius-md);\n  }\n\n  .border {\n    border-style: var(--tw-border-style);\n    border-width: 1px;\n  }\n\n  .border-t {\n    border-top-style: var(--tw-border-style);\n    border-top-width: 1px;\n  }\n\n  .border-r {\n    border-right-style: var(--tw-border-style);\n    border-right-width: 1px;\n  }\n\n  .border-b {\n    border-bottom-style: var(--tw-border-style);\n    border-bottom-width: 1px;\n  }\n\n  .border-b-2 {\n    border-bottom-style: var(--tw-border-style);\n    border-bottom-width: 2px;\n  }\n\n  .border-l {\n    border-left-style: var(--tw-border-style);\n    border-left-width: 1px;\n  }\n\n  .border-border {\n    border-color: var(--color-border);\n  }\n\n  .border-danger, .border-danger\\/40 {\n    border-color: var(--color-danger);\n  }\n\n  @supports (color: color-mix(in lab, red, red)) {\n    .border-danger\\/40 {\n      border-color: color-mix(in oklab, var(--color-danger) 40%, transparent);\n    }\n  }\n\n  .border-network\\/40 {\n    border-color: var(--color-network);\n  }\n\n  @supports (color: color-mix(in lab, red, red)) {\n    .border-network\\/40 {\n      border-color: color-mix(in oklab, var(--color-network) 40%, transparent);\n    }\n  }\n\n  .border-transparent {\n    border-color: #0000;\n  }\n\n  .bg-accent {\n    background-color: var(--color-accent);\n  }\n\n  .bg-canvas {\n    background-color: var(--color-canvas);\n  }\n\n  .bg-foreground {\n    background-color: var(--color-foreground);\n  }\n\n  .bg-surface {\n    background-color: var(--color-surface);\n  }\n\n  .bg-surface-raised {\n    background-color: var(--color-surface-raised);\n  }\n\n  .bg-transparent {\n    background-color: #0000;\n  }\n\n  .fill-surface-raised {\n    fill: var(--color-surface-raised);\n  }\n\n  .p-0 {\n    padding: 0;\n  }\n\n  .p-2 {\n    padding: calc(var(--spacing) * 2);\n  }\n\n  .p-3 {\n    padding: calc(var(--spacing) * 3);\n  }\n\n  .p-4 {\n    padding: calc(var(--spacing) * 4);\n  }\n\n  .p-5 {\n    padding: calc(var(--spacing) * 5);\n  }\n\n  .px-2 {\n    padding-inline: calc(var(--spacing) * 2);\n  }\n\n  .px-3 {\n    padding-inline: calc(var(--spacing) * 3);\n  }\n\n  .px-4 {\n    padding-inline: calc(var(--spacing) * 4);\n  }\n\n  .py-0\\.5 {\n    padding-block: calc(var(--spacing) * .5);\n  }\n\n  .py-1 {\n    padding-block: var(--spacing);\n  }\n\n  .py-2 {\n    padding-block: calc(var(--spacing) * 2);\n  }\n\n  .py-4 {\n    padding-block: calc(var(--spacing) * 4);\n  }\n\n  .py-8 {\n    padding-block: calc(var(--spacing) * 8);\n  }\n\n  .text-center {\n    text-align: center;\n  }\n\n  .text-left {\n    text-align: left;\n  }\n\n  .text-right {\n    text-align: right;\n  }\n\n  .font-mono {\n    font-family: var(--font-mono);\n  }\n\n  .text-2xl {\n    font-size: var(--text-2xl);\n    line-height: var(--tw-leading, var(--text-2xl--line-height));\n  }\n\n  .text-base {\n    font-size: var(--text-base);\n    line-height: var(--tw-leading, var(--text-base--line-height));\n  }\n\n  .text-sm {\n    font-size: var(--text-sm);\n    line-height: var(--tw-leading, var(--text-sm--line-height));\n  }\n\n  .text-xs {\n    font-size: var(--text-xs);\n    line-height: var(--tw-leading, var(--text-xs--line-height));\n  }\n\n  .font-medium {\n    --tw-font-weight: var(--font-weight-medium);\n    font-weight: var(--font-weight-medium);\n  }\n\n  .font-semibold {\n    --tw-font-weight: var(--font-weight-semibold);\n    font-weight: var(--font-weight-semibold);\n  }\n\n  .tracking-\\[0\\.18em\\] {\n    --tw-tracking: .18em;\n    letter-spacing: .18em;\n  }\n\n  .whitespace-pre-wrap {\n    white-space: pre-wrap;\n  }\n\n  .text-\\[var\\(--sniffy-accent-foreground\\)\\] {\n    color: var(--sniffy-accent-foreground);\n  }\n\n  .text-accent {\n    color: var(--color-accent);\n  }\n\n  .text-danger {\n    color: var(--color-danger);\n  }\n\n  .text-exception {\n    color: var(--color-exception);\n  }\n\n  .text-foreground {\n    color: var(--color-foreground);\n  }\n\n  .text-info {\n    color: var(--color-info);\n  }\n\n  .text-muted {\n    color: var(--color-muted);\n  }\n\n  .text-network {\n    color: var(--color-network);\n  }\n\n  .text-sql {\n    color: var(--color-sql);\n  }\n\n  .text-success {\n    color: var(--color-success);\n  }\n\n  .text-warning {\n    color: var(--color-warning);\n  }\n\n  .uppercase {\n    text-transform: uppercase;\n  }\n\n  .underline {\n    text-decoration-line: underline;\n  }\n\n  .shadow-\\[var\\(--sniffy-shadow\\)\\] {\n    --tw-shadow: var(--sniffy-shadow);\n    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);\n  }\n\n  .shadow-lg {\n    --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, #0000001a), 0 4px 6px -4px var(--tw-shadow-color, #0000001a);\n    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);\n  }\n\n  .shadow-sm {\n    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, #0000001a), 0 1px 2px -1px var(--tw-shadow-color, #0000001a);\n    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);\n  }\n\n  .transition {\n    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;\n    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));\n    transition-duration: var(--tw-duration, var(--default-transition-duration));\n  }\n\n  .transition-transform {\n    transition-property: transform, translate, scale, rotate;\n    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));\n    transition-duration: var(--tw-duration, var(--default-transition-duration));\n  }\n\n  .outline-none {\n    --tw-outline-style: none;\n    outline-style: none;\n  }\n\n  .last\\:border-0:last-child {\n    border-style: var(--tw-border-style);\n    border-width: 0;\n  }\n\n  @media (hover: hover) {\n    .hover\\:bg-surface-hover:hover {\n      background-color: var(--color-surface-hover);\n    }\n  }\n\n  .focus-visible\\:outline-2:focus-visible {\n    outline-style: var(--tw-outline-style);\n    outline-width: 2px;\n  }\n\n  .focus-visible\\:outline-offset-2:focus-visible {\n    outline-offset: 2px;\n  }\n\n  .focus-visible\\:outline-focus:focus-visible {\n    outline-color: var(--color-focus);\n  }\n\n  .disabled\\:cursor-not-allowed:disabled {\n    cursor: not-allowed;\n  }\n\n  .disabled\\:opacity-50:disabled {\n    opacity: .5;\n  }\n\n  .data-\\[active\\]\\:border-accent[data-active] {\n    border-color: var(--color-accent);\n  }\n\n  .data-\\[active\\]\\:text-accent[data-active] {\n    color: var(--color-accent);\n  }\n\n  .data-\\[checked\\]\\:bg-accent[data-checked] {\n    background-color: var(--color-accent);\n  }\n\n  .data-\\[ending-style\\]\\:h-0[data-ending-style] {\n    height: 0;\n  }\n\n  .data-\\[panel-open\\]\\:rotate-180[data-panel-open] {\n    rotate: 180deg;\n  }\n\n  .data-\\[starting-style\\]\\:h-0[data-starting-style] {\n    height: 0;\n  }\n\n  @media (prefers-reduced-motion: no-preference) {\n    .motion-safe\\:animate-spin {\n      animation: var(--animate-spin);\n    }\n  }\n\n  @media (min-width: 40rem) {\n    .sm\\:px-8 {\n      padding-inline: calc(var(--spacing) * 8);\n    }\n  }\n\n  .\\[\\&_td\\]\\:border-t td {\n    border-top-style: var(--tw-border-style);\n    border-top-width: 1px;\n  }\n\n  .\\[\\&_td\\]\\:border-border td {\n    border-color: var(--color-border);\n  }\n\n  .\\[\\&_td\\]\\:p-2 td, .\\[\\&_th\\]\\:p-2 th {\n    padding: calc(var(--spacing) * 2);\n  }\n\n  .\\[\\&_th\\]\\:text-muted th {\n    color: var(--color-muted);\n  }\n}\n\n:root, :host, .sniffy-theme {\n  color-scheme: dark;\n  --sniffy-canvas: #090e17;\n  --sniffy-surface: #111927;\n  --sniffy-surface-raised: #172235;\n  --sniffy-surface-hover: #1e2b40;\n  --sniffy-foreground: #eef4ff;\n  --sniffy-foreground-muted: #9babc3;\n  --sniffy-border: #2c3b52;\n  --sniffy-focus: #8cc8ff;\n  --sniffy-accent: #4ca6ff;\n  --sniffy-accent-foreground: #04111e;\n  --sniffy-success: #54d89a;\n  --sniffy-warning: #ffc45c;\n  --sniffy-danger: #ff7d8a;\n  --sniffy-info: #7bc8ff;\n  --sniffy-sql: #d7a6ff;\n  --sniffy-network: #67d9d0;\n  --sniffy-exception: #ff8e9b;\n  --sniffy-space-1: .25rem;\n  --sniffy-space-2: .5rem;\n  --sniffy-space-3: .75rem;\n  --sniffy-space-4: 1rem;\n  --sniffy-space-6: 1.5rem;\n  --sniffy-radius-sm: .375rem;\n  --sniffy-radius: .625rem;\n  --sniffy-radius-lg: .875rem;\n  --sniffy-shadow: 0 18px 50px #00000073;\n  --sniffy-font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  --sniffy-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;\n  --sniffy-density: 1;\n}\n\n:host {\n  all: initial !important;\n  z-index: 2147483647 !important;\n  box-sizing: border-box !important;\n  color-scheme: dark !important;\n  isolation: isolate !important;\n  display: block !important;\n  position: fixed !important;\n  inset: auto 12px 12px auto !important;\n}\n\n#sniffy-root, #sniffy-root *, #sniffy-root :before, #sniffy-root :after {\n  box-sizing: border-box;\n}\n\n#sniffy-root {\n  all: initial;\n  color: var(--sniffy-foreground);\n  font: 14px/1.4 var(--sniffy-font-sans);\n  letter-spacing: normal;\n  text-align: left;\n  --spacing: 4px;\n  --text-xs: 12px;\n  --text-sm: 14px;\n  --text-base: 16px;\n  --text-2xl: 24px;\n  --sniffy-space-1: 4px;\n  --sniffy-space-2: 8px;\n  --sniffy-space-3: 12px;\n  --sniffy-space-4: 16px;\n  --sniffy-space-6: 24px;\n  --sniffy-radius-sm: 6px;\n  --sniffy-radius: 10px;\n  --sniffy-radius-lg: 14px;\n  display: block;\n}\n\n.sniffy-shell {\n  flex-direction: column;\n  align-items: flex-end;\n  gap: 8px;\n  display: flex;\n}\n\n.sniffy-panel {\n  width: min(760px, 100vw - 24px);\n  height: min(540px, 100vh - 24px);\n}\n\n.sniffy-panel[data-maximized=\"true\"] {\n  width: calc(100vw - 24px);\n  height: calc(100vh - 82px);\n}\n\n.sniffy-scroll {\n  scrollbar-color: var(--sniffy-border) transparent;\n}\n\n.sniffy-widget {\n  min-height: 50px;\n}\n\n.sniffy-brand-trigger {\n  flex: 0 0 40px;\n  width: 40px;\n}\n\n.sniffy-counter-tray {\n  opacity: 0;\n  pointer-events: none;\n  transform-origin: 100%;\n  max-width: 0;\n  transition: max-width .18s, opacity .16s, transform .18s;\n  overflow: hidden;\n  transform: translateX(8px);\n}\n\n.sniffy-counter-tray[data-expanded=\"true\"] {\n  opacity: 1;\n  pointer-events: auto;\n  max-width: 320px;\n  transform: translateX(0);\n}\n\n.sniffy-counter {\n  transition: background-color .18s, color .18s, transform .18s;\n}\n\n.sniffy-counter[data-updating=\"true\"] {\n  background: #4ca6ff2e;\n  background: var(--sniffy-accent);\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .sniffy-counter[data-updating=\"true\"] {\n    background: color-mix(in srgb, var(--sniffy-accent) 18%, transparent);\n  }\n}\n\n.sniffy-counter[data-updating=\"true\"] {\n  color: var(--sniffy-accent);\n  transform: scale(1.025);\n}\n\n.sniffy-counter[data-kind=\"exceptions\"][data-updating=\"true\"] {\n  background: #ff7d8a2e;\n  background: var(--sniffy-danger);\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .sniffy-counter[data-kind=\"exceptions\"][data-updating=\"true\"] {\n    background: color-mix(in srgb, var(--sniffy-danger) 18%, transparent);\n  }\n}\n\n.sniffy-counter[data-kind=\"exceptions\"][data-updating=\"true\"] {\n  color: var(--sniffy-danger);\n}\n\n.hljs-keyword, .hljs-built_in, .hljs-type {\n  color: #d7a6ff;\n}\n\n.hljs-string, .hljs-title {\n  color: #8ee6b8;\n}\n\n.hljs-number, .hljs-literal {\n  color: #ffc45c;\n}\n\n.hljs-comment {\n  color: #7688a2;\n}\n\n@media (max-width: 640px) {\n  :host {\n    inset: auto 6px 6px !important;\n  }\n\n  .sniffy-panel {\n    width: calc(100vw - 12px);\n    height: calc(100vh - 12px);\n  }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .sniffy-counter-tray, .sniffy-counter, #sniffy-root *, #sniffy-root :before, #sniffy-root :after {\n    scroll-behavior: auto !important;\n    transition-duration: .01ms !important;\n    animation-duration: .01ms !important;\n    animation-iteration-count: 1 !important;\n  }\n\n  .sniffy-counter[data-updating=\"true\"] {\n    transform: none;\n  }\n}\n\n@property --tw-rotate-x {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-rotate-y {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-rotate-z {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-skew-x {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-skew-y {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-space-y-reverse {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0;\n}\n\n@property --tw-border-style {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: solid;\n}\n\n@property --tw-font-weight {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-tracking {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-shadow-color {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-shadow-alpha {\n  syntax: \"<percentage>\";\n  inherits: false;\n  initial-value: 100%;\n}\n\n@property --tw-inset-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-inset-shadow-color {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-inset-shadow-alpha {\n  syntax: \"<percentage>\";\n  inherits: false;\n  initial-value: 100%;\n}\n\n@property --tw-ring-color {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-ring-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-inset-ring-color {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-inset-ring-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-ring-inset {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-ring-offset-width {\n  syntax: \"<length>\";\n  inherits: false;\n  initial-value: 0;\n}\n\n@property --tw-ring-offset-color {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: #fff;\n}\n\n@property --tw-ring-offset-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-outline-style {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: solid;\n}\n\n@keyframes spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n";
+	var styles_default = "/*! tailwindcss v4.3.2 | MIT License | https://tailwindcss.com */\n@layer properties {\n  @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {\n    *, :before, :after, ::backdrop {\n      --tw-space-y-reverse: 0;\n      --tw-border-style: solid;\n      --tw-font-weight: initial;\n      --tw-tracking: initial;\n      --tw-shadow: 0 0 #0000;\n      --tw-shadow-color: initial;\n      --tw-shadow-alpha: 100%;\n      --tw-inset-shadow: 0 0 #0000;\n      --tw-inset-shadow-color: initial;\n      --tw-inset-shadow-alpha: 100%;\n      --tw-ring-color: initial;\n      --tw-ring-shadow: 0 0 #0000;\n      --tw-inset-ring-color: initial;\n      --tw-inset-ring-shadow: 0 0 #0000;\n      --tw-ring-inset: initial;\n      --tw-ring-offset-width: 0px;\n      --tw-ring-offset-color: #fff;\n      --tw-ring-offset-shadow: 0 0 #0000;\n      --tw-outline-style: solid;\n    }\n  }\n}\n\n@layer theme {\n  :root, :host {\n    --font-sans: var(--sniffy-font-sans);\n    --font-mono: var(--sniffy-font-mono);\n    --spacing: .25rem;\n    --container-2xl: 42rem;\n    --container-3xl: 48rem;\n    --container-6xl: 72rem;\n    --text-xs: .75rem;\n    --text-xs--line-height: calc(1 / .75);\n    --text-sm: .875rem;\n    --text-sm--line-height: calc(1.25 / .875);\n    --text-base: 1rem;\n    --text-base--line-height: calc(1.5 / 1);\n    --text-2xl: 1.5rem;\n    --text-2xl--line-height: calc(2 / 1.5);\n    --font-weight-medium: 500;\n    --font-weight-semibold: 600;\n    --tracking-wide: .025em;\n    --radius-md: var(--sniffy-radius);\n    --radius-lg: var(--sniffy-radius-lg);\n    --animate-spin: spin 1s linear infinite;\n    --default-transition-duration: .15s;\n    --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);\n    --default-font-family: var(--font-sans);\n    --default-mono-font-family: var(--font-mono);\n    --color-canvas: var(--sniffy-canvas);\n    --color-surface: var(--sniffy-surface);\n    --color-surface-raised: var(--sniffy-surface-raised);\n    --color-surface-hover: var(--sniffy-surface-hover);\n    --color-foreground: var(--sniffy-foreground);\n    --color-muted: var(--sniffy-foreground-muted);\n    --color-border: var(--sniffy-border);\n    --color-focus: var(--sniffy-focus);\n    --color-accent: var(--sniffy-accent);\n    --color-success: var(--sniffy-success);\n    --color-warning: var(--sniffy-warning);\n    --color-danger: var(--sniffy-danger);\n    --color-info: var(--sniffy-info);\n    --color-sql: var(--sniffy-sql);\n    --color-network: var(--sniffy-network);\n    --color-exception: var(--sniffy-exception);\n  }\n}\n\n@layer base {\n  *, :after, :before, ::backdrop {\n    box-sizing: border-box;\n    border: 0 solid;\n    margin: 0;\n    padding: 0;\n  }\n\n  ::file-selector-button {\n    box-sizing: border-box;\n    border: 0 solid;\n    margin: 0;\n    padding: 0;\n  }\n\n  html, :host {\n    -webkit-text-size-adjust: 100%;\n    tab-size: 4;\n    line-height: 1.5;\n    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\");\n    font-feature-settings: var(--default-font-feature-settings, normal);\n    font-variation-settings: var(--default-font-variation-settings, normal);\n    -webkit-tap-highlight-color: transparent;\n  }\n\n  hr {\n    height: 0;\n    color: inherit;\n    border-top-width: 1px;\n  }\n\n  abbr:where([title]) {\n    -webkit-text-decoration: underline dotted;\n    text-decoration: underline dotted;\n  }\n\n  h1, h2, h3, h4, h5, h6 {\n    font-size: inherit;\n    font-weight: inherit;\n  }\n\n  a {\n    color: inherit;\n    -webkit-text-decoration: inherit;\n    -webkit-text-decoration: inherit;\n    -webkit-text-decoration: inherit;\n    text-decoration: inherit;\n  }\n\n  b, strong {\n    font-weight: bolder;\n  }\n\n  code, kbd, samp, pre {\n    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace);\n    font-feature-settings: var(--default-mono-font-feature-settings, normal);\n    font-variation-settings: var(--default-mono-font-variation-settings, normal);\n    font-size: 1em;\n  }\n\n  small {\n    font-size: 80%;\n  }\n\n  sub, sup {\n    vertical-align: baseline;\n    font-size: 75%;\n    line-height: 0;\n    position: relative;\n  }\n\n  sub {\n    bottom: -.25em;\n  }\n\n  sup {\n    top: -.5em;\n  }\n\n  table {\n    text-indent: 0;\n    border-color: inherit;\n    border-collapse: collapse;\n  }\n\n  :-moz-focusring {\n    outline: auto;\n  }\n\n  progress {\n    vertical-align: baseline;\n  }\n\n  summary {\n    display: list-item;\n  }\n\n  ol, ul, menu {\n    list-style: none;\n  }\n\n  img, svg, video, canvas, audio, iframe, embed, object {\n    vertical-align: middle;\n    display: block;\n  }\n\n  img, video {\n    max-width: 100%;\n    height: auto;\n  }\n\n  button, input, select, optgroup, textarea {\n    font: inherit;\n    font-feature-settings: inherit;\n    font-variation-settings: inherit;\n    letter-spacing: inherit;\n    color: inherit;\n    opacity: 1;\n    background-color: #0000;\n    border-radius: 0;\n  }\n\n  ::file-selector-button {\n    font: inherit;\n    font-feature-settings: inherit;\n    font-variation-settings: inherit;\n    letter-spacing: inherit;\n    color: inherit;\n    opacity: 1;\n    background-color: #0000;\n    border-radius: 0;\n  }\n\n  :where(select:is([multiple], [size])) optgroup {\n    font-weight: bolder;\n  }\n\n  :where(select:is([multiple], [size])) optgroup option {\n    padding-inline-start: 20px;\n  }\n\n  ::file-selector-button {\n    margin-inline-end: 4px;\n  }\n\n  ::placeholder {\n    opacity: 1;\n  }\n\n  @supports (not ((-webkit-appearance: -apple-pay-button))) or (contain-intrinsic-size: 1px) {\n    ::placeholder {\n      color: currentColor;\n    }\n\n    @supports (color: color-mix(in lab, red, red)) {\n      ::placeholder {\n        color: color-mix(in oklab, currentcolor 50%, transparent);\n      }\n    }\n  }\n\n  textarea {\n    resize: vertical;\n  }\n\n  ::-webkit-search-decoration {\n    -webkit-appearance: none;\n  }\n\n  ::-webkit-date-and-time-value {\n    min-height: 1lh;\n    text-align: inherit;\n  }\n\n  ::-webkit-datetime-edit {\n    display: inline-flex;\n  }\n\n  ::-webkit-datetime-edit-fields-wrapper {\n    padding: 0;\n  }\n\n  ::-webkit-datetime-edit {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-year-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-month-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-day-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-hour-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-minute-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-second-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-millisecond-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-meridiem-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-calendar-picker-indicator {\n    line-height: 1;\n  }\n\n  :-moz-ui-invalid {\n    box-shadow: none;\n  }\n\n  button, input:where([type=\"button\"], [type=\"reset\"], [type=\"submit\"]) {\n    appearance: button;\n  }\n\n  ::file-selector-button {\n    appearance: button;\n  }\n\n  ::-webkit-inner-spin-button {\n    height: auto;\n  }\n\n  ::-webkit-outer-spin-button {\n    height: auto;\n  }\n\n  [hidden]:where(:not([hidden=\"until-found\"])) {\n    display: none !important;\n  }\n}\n\n@layer components;\n\n@layer utilities {\n  .collapse {\n    visibility: collapse;\n  }\n\n  .visible {\n    visibility: visible;\n  }\n\n  .absolute {\n    position: absolute;\n  }\n\n  .fixed {\n    position: fixed;\n  }\n\n  .relative {\n    position: relative;\n  }\n\n  .inset-0 {\n    inset: 0;\n  }\n\n  .z-50 {\n    z-index: 50;\n  }\n\n  .container {\n    width: 100%;\n  }\n\n  @media (min-width: 40rem) {\n    .container {\n      max-width: 40rem;\n    }\n  }\n\n  @media (min-width: 48rem) {\n    .container {\n      max-width: 48rem;\n    }\n  }\n\n  @media (min-width: 64rem) {\n    .container {\n      max-width: 64rem;\n    }\n  }\n\n  @media (min-width: 80rem) {\n    .container {\n      max-width: 80rem;\n    }\n  }\n\n  @media (min-width: 96rem) {\n    .container {\n      max-width: 96rem;\n    }\n  }\n\n  .m-4 {\n    margin: calc(var(--spacing) * 4);\n  }\n\n  .mx-3 {\n    margin-inline: calc(var(--spacing) * 3);\n  }\n\n  .mx-auto {\n    margin-inline: auto;\n  }\n\n  .my-2 {\n    margin-block: calc(var(--spacing) * 2);\n  }\n\n  .mt-3 {\n    margin-top: calc(var(--spacing) * 3);\n  }\n\n  .mt-8 {\n    margin-top: calc(var(--spacing) * 8);\n  }\n\n  .mr-auto {\n    margin-right: auto;\n  }\n\n  .mb-6 {\n    margin-bottom: calc(var(--spacing) * 6);\n  }\n\n  .mb-8 {\n    margin-bottom: calc(var(--spacing) * 8);\n  }\n\n  .flex {\n    display: flex;\n  }\n\n  .grid {\n    display: grid;\n  }\n\n  .inline-flex {\n    display: inline-flex;\n  }\n\n  .table {\n    display: table;\n  }\n\n  .size-8 {\n    width: calc(var(--spacing) * 8);\n    height: calc(var(--spacing) * 8);\n  }\n\n  .size-9 {\n    width: calc(var(--spacing) * 9);\n    height: calc(var(--spacing) * 9);\n  }\n\n  .size-10 {\n    width: calc(var(--spacing) * 10);\n    height: calc(var(--spacing) * 10);\n  }\n\n  .size-12 {\n    width: calc(var(--spacing) * 12);\n    height: calc(var(--spacing) * 12);\n  }\n\n  .h-6 {\n    height: calc(var(--spacing) * 6);\n  }\n\n  .min-h-0 {\n    min-height: 0;\n  }\n\n  .min-h-9 {\n    min-height: calc(var(--spacing) * 9);\n  }\n\n  .min-h-screen {\n    min-height: 100vh;\n  }\n\n  .w-9 {\n    width: calc(var(--spacing) * 9);\n  }\n\n  .w-14 {\n    width: calc(var(--spacing) * 14);\n  }\n\n  .w-20 {\n    width: calc(var(--spacing) * 20);\n  }\n\n  .w-28 {\n    width: calc(var(--spacing) * 28);\n  }\n\n  .w-36 {\n    width: calc(var(--spacing) * 36);\n  }\n\n  .w-40 {\n    width: calc(var(--spacing) * 40);\n  }\n\n  .w-52 {\n    width: calc(var(--spacing) * 52);\n  }\n\n  .w-64 {\n    width: calc(var(--spacing) * 64);\n  }\n\n  .w-full {\n    width: 100%;\n  }\n\n  .max-w-2xl {\n    max-width: var(--container-2xl);\n  }\n\n  .max-w-3xl {\n    max-width: var(--container-3xl);\n  }\n\n  .max-w-6xl {\n    max-width: var(--container-6xl);\n  }\n\n  .max-w-full {\n    max-width: 100%;\n  }\n\n  .min-w-0 {\n    min-width: 0;\n  }\n\n  .min-w-16 {\n    min-width: calc(var(--spacing) * 16);\n  }\n\n  .min-w-52 {\n    min-width: calc(var(--spacing) * 52);\n  }\n\n  .min-w-64 {\n    min-width: calc(var(--spacing) * 64);\n  }\n\n  .flex-1 {\n    flex: 1;\n  }\n\n  .shrink-0 {\n    flex-shrink: 0;\n  }\n\n  .border-collapse {\n    border-collapse: collapse;\n  }\n\n  .grid-cols-4 {\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n  }\n\n  .flex-col {\n    flex-direction: column;\n  }\n\n  .flex-wrap {\n    flex-wrap: wrap;\n  }\n\n  .place-items-center {\n    place-items: center;\n  }\n\n  .items-center {\n    align-items: center;\n  }\n\n  .items-end {\n    align-items: flex-end;\n  }\n\n  .items-stretch {\n    align-items: stretch;\n  }\n\n  .justify-between {\n    justify-content: space-between;\n  }\n\n  .justify-center {\n    justify-content: center;\n  }\n\n  .gap-0\\.5 {\n    gap: calc(var(--spacing) * .5);\n  }\n\n  .gap-1\\.5 {\n    gap: calc(var(--spacing) * 1.5);\n  }\n\n  .gap-2 {\n    gap: calc(var(--spacing) * 2);\n  }\n\n  .gap-3 {\n    gap: calc(var(--spacing) * 3);\n  }\n\n  .gap-4 {\n    gap: calc(var(--spacing) * 4);\n  }\n\n  :where(.space-y-2 > :not(:last-child)) {\n    --tw-space-y-reverse: 0;\n    margin-block-start: calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse));\n    margin-block-end: calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)));\n  }\n\n  :where(.space-y-3 > :not(:last-child)) {\n    --tw-space-y-reverse: 0;\n    margin-block-start: calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse));\n    margin-block-end: calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)));\n  }\n\n  :where(.space-y-4 > :not(:last-child)) {\n    --tw-space-y-reverse: 0;\n    margin-block-start: calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse));\n    margin-block-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)));\n  }\n\n  .truncate {\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    overflow: hidden;\n  }\n\n  .overflow-auto {\n    overflow: auto;\n  }\n\n  .overflow-hidden {\n    overflow: hidden;\n  }\n\n  .overflow-x-auto {\n    overflow-x: auto;\n  }\n\n  .rounded-full {\n    border-radius: 3.40282e38px;\n  }\n\n  .rounded-lg {\n    border-radius: var(--radius-lg);\n  }\n\n  .rounded-md {\n    border-radius: var(--radius-md);\n  }\n\n  .border {\n    border-style: var(--tw-border-style);\n    border-width: 1px;\n  }\n\n  .border-t {\n    border-top-style: var(--tw-border-style);\n    border-top-width: 1px;\n  }\n\n  .border-r {\n    border-right-style: var(--tw-border-style);\n    border-right-width: 1px;\n  }\n\n  .border-b {\n    border-bottom-style: var(--tw-border-style);\n    border-bottom-width: 1px;\n  }\n\n  .border-b-2 {\n    border-bottom-style: var(--tw-border-style);\n    border-bottom-width: 2px;\n  }\n\n  .border-l {\n    border-left-style: var(--tw-border-style);\n    border-left-width: 1px;\n  }\n\n  .border-border {\n    border-color: var(--color-border);\n  }\n\n  .border-danger, .border-danger\\/40 {\n    border-color: var(--color-danger);\n  }\n\n  @supports (color: color-mix(in lab, red, red)) {\n    .border-danger\\/40 {\n      border-color: color-mix(in oklab, var(--color-danger) 40%, transparent);\n    }\n  }\n\n  .border-network\\/40 {\n    border-color: var(--color-network);\n  }\n\n  @supports (color: color-mix(in lab, red, red)) {\n    .border-network\\/40 {\n      border-color: color-mix(in oklab, var(--color-network) 40%, transparent);\n    }\n  }\n\n  .border-transparent {\n    border-color: #0000;\n  }\n\n  .bg-accent {\n    background-color: var(--color-accent);\n  }\n\n  .bg-canvas {\n    background-color: var(--color-canvas);\n  }\n\n  .bg-surface {\n    background-color: var(--color-surface);\n  }\n\n  .bg-surface-raised {\n    background-color: var(--color-surface-raised);\n  }\n\n  .bg-transparent {\n    background-color: #0000;\n  }\n\n  .fill-surface-raised {\n    fill: var(--color-surface-raised);\n  }\n\n  .p-0 {\n    padding: 0;\n  }\n\n  .p-2 {\n    padding: calc(var(--spacing) * 2);\n  }\n\n  .p-3 {\n    padding: calc(var(--spacing) * 3);\n  }\n\n  .p-4 {\n    padding: calc(var(--spacing) * 4);\n  }\n\n  .p-5 {\n    padding: calc(var(--spacing) * 5);\n  }\n\n  .px-2 {\n    padding-inline: calc(var(--spacing) * 2);\n  }\n\n  .px-3 {\n    padding-inline: calc(var(--spacing) * 3);\n  }\n\n  .px-4 {\n    padding-inline: calc(var(--spacing) * 4);\n  }\n\n  .py-0\\.5 {\n    padding-block: calc(var(--spacing) * .5);\n  }\n\n  .py-1 {\n    padding-block: var(--spacing);\n  }\n\n  .py-1\\.5 {\n    padding-block: calc(var(--spacing) * 1.5);\n  }\n\n  .py-2 {\n    padding-block: calc(var(--spacing) * 2);\n  }\n\n  .py-4 {\n    padding-block: calc(var(--spacing) * 4);\n  }\n\n  .py-8 {\n    padding-block: calc(var(--spacing) * 8);\n  }\n\n  .text-center {\n    text-align: center;\n  }\n\n  .text-left {\n    text-align: left;\n  }\n\n  .font-mono {\n    font-family: var(--font-mono);\n  }\n\n  .text-2xl {\n    font-size: var(--text-2xl);\n    line-height: var(--tw-leading, var(--text-2xl--line-height));\n  }\n\n  .text-base {\n    font-size: var(--text-base);\n    line-height: var(--tw-leading, var(--text-base--line-height));\n  }\n\n  .text-sm {\n    font-size: var(--text-sm);\n    line-height: var(--tw-leading, var(--text-sm--line-height));\n  }\n\n  .text-xs {\n    font-size: var(--text-xs);\n    line-height: var(--tw-leading, var(--text-xs--line-height));\n  }\n\n  .font-medium {\n    --tw-font-weight: var(--font-weight-medium);\n    font-weight: var(--font-weight-medium);\n  }\n\n  .font-semibold {\n    --tw-font-weight: var(--font-weight-semibold);\n    font-weight: var(--font-weight-semibold);\n  }\n\n  .tracking-\\[0\\.12em\\] {\n    --tw-tracking: .12em;\n    letter-spacing: .12em;\n  }\n\n  .tracking-\\[0\\.18em\\] {\n    --tw-tracking: .18em;\n    letter-spacing: .18em;\n  }\n\n  .whitespace-pre-wrap {\n    white-space: pre-wrap;\n  }\n\n  .text-\\[var\\(--sniffy-accent-foreground\\)\\] {\n    color: var(--sniffy-accent-foreground);\n  }\n\n  .text-accent {\n    color: var(--color-accent);\n  }\n\n  .text-danger {\n    color: var(--color-danger);\n  }\n\n  .text-exception {\n    color: var(--color-exception);\n  }\n\n  .text-foreground {\n    color: var(--color-foreground);\n  }\n\n  .text-info {\n    color: var(--color-info);\n  }\n\n  .text-muted {\n    color: var(--color-muted);\n  }\n\n  .text-network {\n    color: var(--color-network);\n  }\n\n  .text-sql {\n    color: var(--color-sql);\n  }\n\n  .text-success {\n    color: var(--color-success);\n  }\n\n  .text-warning {\n    color: var(--color-warning);\n  }\n\n  .uppercase {\n    text-transform: uppercase;\n  }\n\n  .underline {\n    text-decoration-line: underline;\n  }\n\n  .shadow-\\[var\\(--sniffy-shadow\\)\\] {\n    --tw-shadow: var(--sniffy-shadow);\n    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);\n  }\n\n  .shadow-lg {\n    --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, #0000001a), 0 4px 6px -4px var(--tw-shadow-color, #0000001a);\n    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);\n  }\n\n  .shadow-sm {\n    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, #0000001a), 0 1px 2px -1px var(--tw-shadow-color, #0000001a);\n    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);\n  }\n\n  .transition {\n    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;\n    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));\n    transition-duration: var(--tw-duration, var(--default-transition-duration));\n  }\n\n  .transition-transform {\n    transition-property: transform, translate, scale, rotate;\n    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));\n    transition-duration: var(--tw-duration, var(--default-transition-duration));\n  }\n\n  .outline-none {\n    --tw-outline-style: none;\n    outline-style: none;\n  }\n\n  .last\\:border-0:last-child {\n    border-style: var(--tw-border-style);\n    border-width: 0;\n  }\n\n  .last\\:border-r-0:last-child {\n    border-right-style: var(--tw-border-style);\n    border-right-width: 0;\n  }\n\n  @media (hover: hover) {\n    .hover\\:bg-surface-hover:hover {\n      background-color: var(--color-surface-hover);\n    }\n  }\n\n  .focus-visible\\:outline-2:focus-visible {\n    outline-style: var(--tw-outline-style);\n    outline-width: 2px;\n  }\n\n  .focus-visible\\:outline-offset-2:focus-visible {\n    outline-offset: 2px;\n  }\n\n  .focus-visible\\:outline-focus:focus-visible {\n    outline-color: var(--color-focus);\n  }\n\n  .disabled\\:cursor-not-allowed:disabled {\n    cursor: not-allowed;\n  }\n\n  .disabled\\:opacity-50:disabled {\n    opacity: .5;\n  }\n\n  .data-\\[active\\]\\:border-accent[data-active] {\n    border-color: var(--color-accent);\n  }\n\n  .data-\\[active\\]\\:text-accent[data-active] {\n    color: var(--color-accent);\n  }\n\n  .data-\\[ending-style\\]\\:h-0[data-ending-style] {\n    height: 0;\n  }\n\n  .data-\\[panel-open\\]\\:rotate-180[data-panel-open] {\n    rotate: 180deg;\n  }\n\n  .data-\\[starting-style\\]\\:h-0[data-starting-style] {\n    height: 0;\n  }\n\n  @media (prefers-reduced-motion: no-preference) {\n    .motion-safe\\:animate-spin {\n      animation: var(--animate-spin);\n    }\n  }\n\n  @media (min-width: 40rem) {\n    .sm\\:px-8 {\n      padding-inline: calc(var(--spacing) * 8);\n    }\n  }\n\n  .\\[\\&_tbody_tr\\]\\:border-t tbody tr {\n    border-top-style: var(--tw-border-style);\n    border-top-width: 1px;\n  }\n\n  .\\[\\&_tbody_tr\\]\\:border-border tbody tr {\n    border-color: var(--color-border);\n  }\n\n  .\\[\\&_tbody_tr\\]\\:transition-colors tbody tr {\n    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;\n    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));\n    transition-duration: var(--tw-duration, var(--default-transition-duration));\n  }\n\n  .\\[\\&_tbody_tr\\:hover\\]\\:bg-surface-hover\\/40 tbody tr:hover {\n    background-color: var(--color-surface-hover);\n  }\n\n  @supports (color: color-mix(in lab, red, red)) {\n    .\\[\\&_tbody_tr\\:hover\\]\\:bg-surface-hover\\/40 tbody tr:hover {\n      background-color: color-mix(in oklab, var(--color-surface-hover) 40%, transparent);\n    }\n  }\n\n  .\\[\\&_td\\]\\:h-14 td {\n    height: calc(var(--spacing) * 14);\n  }\n\n  .\\[\\&_td\\]\\:px-3 td {\n    padding-inline: calc(var(--spacing) * 3);\n  }\n\n  .\\[\\&_td\\]\\:py-2 td {\n    padding-block: calc(var(--spacing) * 2);\n  }\n\n  .\\[\\&_th\\]\\:h-10 th {\n    height: calc(var(--spacing) * 10);\n  }\n\n  .\\[\\&_th\\]\\:bg-surface-raised th {\n    background-color: var(--color-surface-raised);\n  }\n\n  .\\[\\&_th\\]\\:px-3 th {\n    padding-inline: calc(var(--spacing) * 3);\n  }\n\n  .\\[\\&_th\\]\\:py-2 th {\n    padding-block: calc(var(--spacing) * 2);\n  }\n\n  .\\[\\&_th\\]\\:text-xs th {\n    font-size: var(--text-xs);\n    line-height: var(--tw-leading, var(--text-xs--line-height));\n  }\n\n  .\\[\\&_th\\]\\:font-medium th {\n    --tw-font-weight: var(--font-weight-medium);\n    font-weight: var(--font-weight-medium);\n  }\n\n  .\\[\\&_th\\]\\:tracking-wide th {\n    --tw-tracking: var(--tracking-wide);\n    letter-spacing: var(--tracking-wide);\n  }\n\n  .\\[\\&_th\\]\\:text-muted th {\n    color: var(--color-muted);\n  }\n\n  .\\[\\&_th\\]\\:uppercase th {\n    text-transform: uppercase;\n  }\n}\n\n:root, :host, .sniffy-theme {\n  color-scheme: dark;\n  --sniffy-canvas: #090e17;\n  --sniffy-surface: #111927;\n  --sniffy-surface-raised: #172235;\n  --sniffy-surface-hover: #1e2b40;\n  --sniffy-foreground: #eef4ff;\n  --sniffy-foreground-muted: #9babc3;\n  --sniffy-border: #2c3b52;\n  --sniffy-focus: #8cc8ff;\n  --sniffy-accent: #4ca6ff;\n  --sniffy-accent-foreground: #04111e;\n  --sniffy-success: #54d89a;\n  --sniffy-warning: #ffc45c;\n  --sniffy-danger: #ff7d8a;\n  --sniffy-info: #7bc8ff;\n  --sniffy-sql: #d7a6ff;\n  --sniffy-network: #67d9d0;\n  --sniffy-exception: #ff8e9b;\n  --sniffy-space-1: .25rem;\n  --sniffy-space-2: .5rem;\n  --sniffy-space-3: .75rem;\n  --sniffy-space-4: 1rem;\n  --sniffy-space-6: 1.5rem;\n  --sniffy-radius-sm: .375rem;\n  --sniffy-radius: .625rem;\n  --sniffy-radius-lg: .875rem;\n  --sniffy-shadow: 0 18px 50px #00000073;\n  --sniffy-font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  --sniffy-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;\n  --sniffy-density: 1;\n}\n\n.sniffy-switch {\n  border: 1px solid var(--sniffy-border);\n  background: var(--sniffy-surface-hover);\n  cursor: pointer;\n  border-radius: 999px;\n  flex: none;\n  align-items: center;\n  width: 44px;\n  height: 24px;\n  padding: 2px;\n  transition: background-color .16s, border-color .16s, box-shadow .16s;\n  display: inline-flex;\n  position: relative;\n  box-shadow: inset 0 0 0 1px #0000002e;\n}\n\n.sniffy-switch:hover:not(:disabled) {\n  border-color: var(--sniffy-foreground-muted);\n}\n\n.sniffy-switch[data-checked] {\n  border-color: var(--sniffy-accent);\n  background: var(--sniffy-accent);\n  box-shadow: inset 0 0 0 1px #04111e29;\n}\n\n.sniffy-switch:focus-visible {\n  outline: 2px solid var(--sniffy-focus);\n  outline-offset: 2px;\n}\n\n.sniffy-switch:disabled {\n  cursor: not-allowed;\n  opacity: .5;\n}\n\n.sniffy-switch-thumb {\n  background: var(--sniffy-foreground);\n  border-radius: 50%;\n  width: 18px;\n  height: 18px;\n  transition: transform .16s;\n  display: block;\n  transform: translateX(0);\n  box-shadow: 0 1px 3px #00000073;\n}\n\n.sniffy-switch[data-checked] .sniffy-switch-thumb {\n  background: var(--sniffy-accent-foreground);\n  transform: translateX(20px);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .sniffy-switch, .sniffy-switch-thumb {\n    transition-duration: .01ms;\n  }\n}\n\n:host {\n  all: initial !important;\n  z-index: 2147483647 !important;\n  box-sizing: border-box !important;\n  color-scheme: dark !important;\n  isolation: isolate !important;\n  display: block !important;\n  position: fixed !important;\n  inset: auto 12px 12px auto !important;\n}\n\n#sniffy-root, #sniffy-root *, #sniffy-root :before, #sniffy-root :after {\n  box-sizing: border-box;\n}\n\n#sniffy-root {\n  all: initial;\n  color: var(--sniffy-foreground);\n  font: 14px/1.4 var(--sniffy-font-sans);\n  letter-spacing: normal;\n  text-align: left;\n  --spacing: 4px;\n  --text-xs: 12px;\n  --text-sm: 14px;\n  --text-base: 16px;\n  --text-2xl: 24px;\n  --sniffy-space-1: 4px;\n  --sniffy-space-2: 8px;\n  --sniffy-space-3: 12px;\n  --sniffy-space-4: 16px;\n  --sniffy-space-6: 24px;\n  --sniffy-radius-sm: 6px;\n  --sniffy-radius: 10px;\n  --sniffy-radius-lg: 14px;\n  display: block;\n}\n\n.sniffy-shell {\n  flex-direction: column;\n  align-items: flex-end;\n  gap: 8px;\n  display: flex;\n}\n\n.sniffy-panel {\n  width: min(760px, 100vw - 24px);\n  height: min(540px, 100vh - 24px);\n}\n\n.sniffy-panel[data-maximized=\"true\"] {\n  width: calc(100vw - 24px);\n  height: calc(100vh - 82px);\n}\n\n.sniffy-scroll {\n  scrollbar-color: var(--sniffy-border) transparent;\n}\n\n.sniffy-widget {\n  min-height: 50px;\n}\n\n.sniffy-brand-trigger {\n  flex: 0 0 40px;\n  width: 40px;\n  transition: background-color .18s, color .18s, transform .18s;\n}\n\n.sniffy-brand-trigger[data-updating=\"true\"] {\n  background: #4ca6ff2e;\n  background: var(--sniffy-accent);\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .sniffy-brand-trigger[data-updating=\"true\"] {\n    background: color-mix(in srgb, var(--sniffy-accent) 18%, transparent);\n  }\n}\n\n.sniffy-brand-trigger[data-updating=\"true\"] {\n  color: var(--sniffy-focus);\n  transform: scale(1.04);\n}\n\n.sniffy-counter-tray {\n  opacity: 0;\n  pointer-events: none;\n  transform-origin: 100%;\n  max-width: 0;\n  transition: max-width .18s, opacity .16s, transform .18s;\n  overflow: hidden;\n  transform: translateX(8px);\n}\n\n.sniffy-counter-tray[data-expanded=\"true\"] {\n  opacity: 1;\n  pointer-events: auto;\n  max-width: 360px;\n  transform: translateX(0);\n}\n\n.sniffy-counter {\n  transition: background-color .18s, color .18s, transform .18s;\n}\n\n.sniffy-counter[data-updating=\"true\"] {\n  background: #4ca6ff2e;\n  background: var(--sniffy-accent);\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .sniffy-counter[data-updating=\"true\"] {\n    background: color-mix(in srgb, var(--sniffy-accent) 18%, transparent);\n  }\n}\n\n.sniffy-counter[data-updating=\"true\"] {\n  color: var(--sniffy-accent);\n  transform: scale(1.025);\n}\n\n.sniffy-counter[data-kind=\"exceptions\"][data-updating=\"true\"] {\n  background: #ff7d8a2e;\n  background: var(--sniffy-danger);\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .sniffy-counter[data-kind=\"exceptions\"][data-updating=\"true\"] {\n    background: color-mix(in srgb, var(--sniffy-danger) 18%, transparent);\n  }\n}\n\n.sniffy-counter[data-kind=\"exceptions\"][data-updating=\"true\"] {\n  color: var(--sniffy-danger);\n}\n\n.hljs-keyword, .hljs-built_in, .hljs-type {\n  color: #d7a6ff;\n}\n\n.hljs-string, .hljs-title {\n  color: #8ee6b8;\n}\n\n.hljs-number, .hljs-literal {\n  color: #ffc45c;\n}\n\n.hljs-comment {\n  color: #7688a2;\n}\n\n@media (max-width: 640px) {\n  :host {\n    inset: auto 6px 6px !important;\n  }\n\n  .sniffy-panel {\n    width: calc(100vw - 12px);\n    height: calc(100vh - 12px);\n  }\n\n  .sniffy-summary > div {\n    flex-direction: column;\n    gap: 1px;\n  }\n\n  .sniffy-summary > div > span:nth-child(2) {\n    display: none;\n  }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .sniffy-counter-tray, .sniffy-counter, .sniffy-brand-trigger, #sniffy-root *, #sniffy-root :before, #sniffy-root :after {\n    scroll-behavior: auto !important;\n    transition-duration: .01ms !important;\n    animation-duration: .01ms !important;\n    animation-iteration-count: 1 !important;\n  }\n\n  .sniffy-counter[data-updating=\"true\"], .sniffy-brand-trigger[data-updating=\"true\"] {\n    transform: none;\n  }\n}\n\n@property --tw-space-y-reverse {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0;\n}\n\n@property --tw-border-style {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: solid;\n}\n\n@property --tw-font-weight {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-tracking {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-shadow-color {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-shadow-alpha {\n  syntax: \"<percentage>\";\n  inherits: false;\n  initial-value: 100%;\n}\n\n@property --tw-inset-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-inset-shadow-color {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-inset-shadow-alpha {\n  syntax: \"<percentage>\";\n  inherits: false;\n  initial-value: 100%;\n}\n\n@property --tw-ring-color {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-ring-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-inset-ring-color {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-inset-ring-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-ring-inset {\n  syntax: \"*\";\n  inherits: false\n}\n\n@property --tw-ring-offset-width {\n  syntax: \"<length>\";\n  inherits: false;\n  initial-value: 0;\n}\n\n@property --tw-ring-offset-color {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: #fff;\n}\n\n@property --tw-ring-offset-shadow {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: 0 0 #0000;\n}\n\n@property --tw-outline-style {\n  syntax: \"*\";\n  inherits: false;\n  initial-value: solid;\n}\n\n@keyframes spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n";
 	//#endregion
 	//#region node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.mjs
 	/**
@@ -10348,12 +10348,46 @@ var SniffyProfiler = (function(exports) {
 	* This source code is licensed under the ISC license.
 	* See the LICENSE file in the root directory of this source tree.
 	*/
+	var EyeOff = createLucideIcon("eye-off", [
+		["path", {
+			d: "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",
+			key: "ct8e1f"
+		}],
+		["path", {
+			d: "M14.084 14.158a3 3 0 0 1-4.242-4.242",
+			key: "151rxh"
+		}],
+		["path", {
+			d: "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",
+			key: "13bj9a"
+		}],
+		["path", {
+			d: "m2 2 20 20",
+			key: "1ooewy"
+		}]
+	]);
+	/**
+	* @license lucide-react v1.24.0 - ISC
+	*
+	* This source code is licensed under the ISC license.
+	* See the LICENSE file in the root directory of this source tree.
+	*/
 	var Gauge = createLucideIcon("gauge", [["path", {
 		d: "m12 14 4-4",
 		key: "9kzdfg"
 	}], ["path", {
 		d: "M3.34 19a10 10 0 1 1 17.32 0",
 		key: "19p75a"
+	}]]);
+	/**
+	* @license lucide-react v1.24.0 - ISC
+	*
+	* This source code is licensed under the ISC license.
+	* See the LICENSE file in the root directory of this source tree.
+	*/
+	var LoaderCircle = createLucideIcon("loader-circle", [["path", {
+		d: "M21 12a9 9 0 1 1-6.219-8.56",
+		key: "13zald"
 	}]]);
 	/**
 	* @license lucide-react v1.24.0 - ISC
@@ -13827,7 +13861,7 @@ var SniffyProfiler = (function(exports) {
 	* @param idOverride
 	* @returns {string}
 	*/
-	function useId(idOverride, prefix) {
+	function useId$1(idOverride, prefix) {
 		if (maybeReactUseId !== void 0) {
 			const reactId = maybeReactUseId();
 			return idOverride ?? (prefix ? `${prefix}-${reactId}` : reactId);
@@ -13842,7 +13876,7 @@ var SniffyProfiler = (function(exports) {
 	* @returns {string | undefined}
 	*/
 	function useBaseUiId(idOverride) {
-		return useId(idOverride, "base-ui");
+		return useId$1(idOverride, "base-ui");
 	}
 	//#endregion
 	//#region node_modules/@base-ui/react/internals/reason-parts.mjs
@@ -18750,7 +18784,7 @@ var SniffyProfiler = (function(exports) {
 	var attr = createAttribute("portal");
 	function useFloatingPortalNode(props = {}) {
 		const { ref, container: containerProp, componentProps = EMPTY_OBJECT, elementProps } = props;
-		const uniqueId = useId();
+		const uniqueId = useId$1();
 		const portalContext = usePortalContext();
 		const parentPortalNode = portalContext === null || portalContext === void 0 ? void 0 : portalContext.portalNode;
 		const [containerElement, setContainerElement] = import_react.useState(null);
@@ -21215,7 +21249,7 @@ var SniffyProfiler = (function(exports) {
 		[FOCUSABLE_ATTRIBUTE]: ""
 	};
 	function usePopupStore(externalStore, createStore, treatPopupAsFloatingElement = false) {
-		const floatingId = useId();
+		const floatingId = useId$1();
 		const nested = useFloatingParentNodeId() != null;
 		const internalStoreRef = import_react.useRef(null);
 		if (externalStore === void 0 && internalStoreRef.current === null) internalStoreRef.current = createStore(floatingId, nested);
@@ -21663,7 +21697,7 @@ var SniffyProfiler = (function(exports) {
 	//#region node_modules/@base-ui/react/floating-ui-react/hooks/useFloatingRootContext.mjs
 	function useFloatingRootContext(options) {
 		const { open = false, onOpenChange, elements = {} } = options;
-		const floatingId = useId();
+		const floatingId = useId$1();
 		const nested = useFloatingParentNodeId() != null;
 		const store = useRefWithInit(() => new FloatingRootStore({
 			open,
@@ -23723,11 +23757,8 @@ var SniffyProfiler = (function(exports) {
 			onCheckedChange,
 			"aria-label": label,
 			disabled,
-			className: "relative h-6 w-11 rounded-full border border-border bg-canvas transition data-[checked]:bg-accent focus-visible:outline-2 focus-visible:outline-focus",
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SwitchThumb, {
-				className: "block size-5 rounded-full bg-foreground transition-transform",
-				style: { transform: checked ? "translateX(20px)" : "translateX(2px)" }
-			})
+			className: "sniffy-switch",
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SwitchThumb, { className: "sniffy-switch-thumb" })
 		});
 	}
 	function NumberField({ value, onValueChange, label, disabled = false }) {
@@ -23787,11 +23818,33 @@ var SniffyProfiler = (function(exports) {
 			})
 		})] }) });
 	}
-	function Table({ children, label }) {
+	function Table({ children, label, className }) {
 		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("table", {
 			"aria-label": label,
-			className: "w-full border-collapse text-left text-sm [&_td]:border-t [&_td]:border-border [&_td]:p-2 [&_th]:p-2 [&_th]:text-muted",
+			className: cx("w-full border-collapse text-left text-sm [&_tbody_tr]:border-t [&_tbody_tr]:border-border [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-surface-hover/40 [&_td]:h-14 [&_td]:px-3 [&_td]:py-2 [&_th]:h-10 [&_th]:bg-surface-raised [&_th]:px-3 [&_th]:py-2 [&_th]:text-xs [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted", className),
 			children
+		});
+	}
+	function StatusSlot({ message, kind = "idle", className }) {
+		const visible = Boolean(message);
+		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: cx("relative h-6 min-w-0 overflow-hidden", className),
+			"data-kind": kind,
+			"data-visible": visible,
+			"aria-live": kind === "error" ? "assertive" : "polite",
+			"aria-atomic": "true",
+			children: visible && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+				className: cx("absolute inset-0 flex min-w-0 items-center gap-1.5 truncate text-xs text-muted", kind === "success" && "text-success", kind === "warning" && "text-warning", kind === "error" && "text-danger"),
+				role: kind === "error" ? "alert" : "status",
+				title: message,
+				children: [kind === "loading" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+					className: "shrink-0 motion-safe:animate-spin",
+					size: 13
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "truncate",
+					children: message
+				})]
+			})
 		});
 	}
 	function StateMessage({ kind, children }) {
@@ -23878,39 +23931,39 @@ var SniffyProfiler = (function(exports) {
 			setDelay(statusDelay(item.status));
 		}, [item]);
 		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+			className: "w-20 text-center",
 			"aria-busy": mutation.pending,
 			"data-pending": mutation.pending,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
-				checked: enabled,
-				label: `Enable ${label}`,
-				onCheckedChange: (next) => {
-					setEnabled(next);
-					mutation.queue(registryStatus(next, delay));
-				}
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				className: "inline-flex justify-center",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+					checked: enabled,
+					label: `Enable ${label}`,
+					onCheckedChange: (next) => {
+						setEnabled(next);
+						mutation.queue(registryStatus(next, delay));
+					}
+				})
 			})
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+			className: "min-w-64",
 			"aria-busy": mutation.pending,
 			"data-pending": mutation.pending,
-			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NumberField, {
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center gap-2",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NumberField, {
 					value: delay,
 					label: `${label} delay`,
 					onValueChange: (next) => {
 						setDelay(next);
 						mutation.queue(registryStatus(enabled, next), true);
 					}
-				}),
-				mutation.pending && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-					className: "ml-2 text-xs text-muted",
-					role: "status",
-					children: "Saving…"
-				}),
-				mutation.error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-					className: "mt-1 block text-xs text-danger",
-					role: "alert",
-					children: mutation.error
-				})
-			]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusSlot, {
+					className: "w-28",
+					kind: mutation.error ? "error" : mutation.pending ? "loading" : "idle",
+					message: mutation.error ?? (mutation.pending ? "Saving…" : void 0)
+				})]
+			})
 		})] });
 	}
 	function PersistentControl({ value, client, reload }) {
@@ -23918,36 +23971,41 @@ var SniffyProfiler = (function(exports) {
 		const mutation = useQueuedMutation((next) => client.setPersistent(next), reload);
 		(0, import_react.useEffect)(() => setChecked(value), [value]);
 		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "text-right",
+			className: "flex min-w-52 flex-col items-end",
 			"aria-busy": mutation.pending,
 			"data-pending": mutation.pending,
-			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
-					checked,
-					label: "Keep settings after restart",
-					onCheckedChange: (next) => {
-						setChecked(next);
-						mutation.queue(next);
-					}
-				}),
-				mutation.pending && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-					className: "mt-1 block text-xs text-muted",
-					role: "status",
-					children: "Saving…"
-				}),
-				mutation.error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-					className: "mt-1 block text-xs text-danger",
-					role: "alert",
-					children: mutation.error
-				})
-			]
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+				checked,
+				label: "Keep settings after restart",
+				onCheckedChange: (next) => {
+					setChecked(next);
+					mutation.queue(next);
+				}
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusSlot, {
+				className: "w-52 text-left",
+				kind: mutation.error ? "error" : mutation.pending ? "loading" : "idle",
+				message: mutation.error ?? (mutation.pending ? "Saving…" : void 0)
+			})]
+		});
+	}
+	function RegistryTableSection({ title, children, bordered = false }) {
+		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+			className: bordered ? "border-t border-border" : void 0,
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+				className: "border-b border-border bg-surface px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted",
+				children: title
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "overflow-x-auto",
+				children
+			})]
 		});
 	}
 	function ConnectionRegistryPanel({ client, title = "Network connections" }) {
-		var _registry$dataSources, _registry$sockets, _registry$sockets2;
+		var _registry$dataSources, _registry$dataSources2, _registry$sockets, _registry$sockets2;
 		const [registry, setRegistry] = (0, import_react.useState)();
 		const [error, setError] = (0, import_react.useState)();
 		const [loading, setLoading] = (0, import_react.useState)(true);
+		const titleId = (0, import_react.useId)();
 		const reload = (0, import_react.useCallback)(async () => {
 			setLoading(true);
 			setError(void 0);
@@ -23964,36 +24022,41 @@ var SniffyProfiler = (function(exports) {
 			reload();
 		}, [reload]);
 		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
-			"aria-labelledby": "sniffy-registry-title",
+			"aria-labelledby": titleId,
 			className: "space-y-4",
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "flex items-center justify-between gap-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-						id: "sniffy-registry-title",
-						className: "text-base font-semibold",
-						children: title
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "min-w-0 flex-1",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+							id: titleId,
+							className: "text-base font-semibold",
+							children: title
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusSlot, {
+							className: "max-w-full",
+							kind: error ? "error" : loading ? "loading" : "idle",
+							message: error ?? (loading ? registry ? "Refreshing…" : "Loading…" : void 0)
+						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+						className: "w-28 shrink-0",
 						disabled: loading,
 						"aria-busy": loading,
 						onClick: () => void reload(),
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, {
 							className: loading ? "motion-safe:animate-spin" : "",
 							size: 16
-						}), loading ? "Refreshing…" : "Refresh"]
+						}), "Refresh"]
 					})]
 				}),
 				loading && !registry && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StateMessage, {
 					kind: "loading",
 					children: "Loading connection registry…"
 				}),
-				error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StateMessage, {
-					kind: "error",
-					children: error
-				}),
-				registry && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-					((_registry$dataSources = registry.dataSources) === null || _registry$dataSources === void 0 ? void 0 : _registry$dataSources.length) > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Card, {
-						className: "overflow-x-auto",
+				registry && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
+					className: "overflow-hidden",
+					children: [((_registry$dataSources = registry.dataSources) === null || _registry$dataSources === void 0 ? void 0 : _registry$dataSources.length) > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RegistryTableSection, {
+						title: "Database connections",
 						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Table, {
 							label: "Database connections",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", { children: [
@@ -24015,9 +24078,9 @@ var SniffyProfiler = (function(exports) {
 								})
 							] }, `${item.url}:${item.userName}`)) })]
 						})
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-						className: "overflow-x-auto",
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(RegistryTableSection, {
+						title: "Socket connections",
+						bordered: Boolean((_registry$dataSources2 = registry.dataSources) === null || _registry$dataSources2 === void 0 ? void 0 : _registry$dataSources2.length),
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Table, {
 							label: "Socket connections",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", { children: [
@@ -24039,22 +24102,21 @@ var SniffyProfiler = (function(exports) {
 							kind: "empty",
 							children: "No sockets discovered."
 						})]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-						className: "flex items-center justify-between gap-4 p-4",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-							className: "font-medium",
-							children: "Keep settings after restart"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-							className: "text-sm text-muted",
-							children: "Persist fault-tolerance settings on the server."
-						})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PersistentControl, {
-							value: registry.persistent,
-							client,
-							reload
-						})]
-					})
-				] })
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
+					className: "flex flex-wrap items-center justify-between gap-4 p-4",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+						className: "font-medium",
+						children: "Keep settings after restart"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-sm text-muted",
+						children: "Persist fault-tolerance settings on the server."
+					})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PersistentControl, {
+						value: registry.persistent,
+						client,
+						reload
+					})]
+				})] })
 			]
 		});
 	}
@@ -24112,9 +24174,10 @@ var SniffyProfiler = (function(exports) {
 							className: "border-b border-border bg-surface-raised px-3 py-2 font-medium",
 							children: request.label
 						}),
-						request.error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StateMessage, {
-							kind: "error",
-							children: request.error
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusSlot, {
+							className: "mx-3 my-2",
+							kind: request.error ? "error" : "idle",
+							message: request.error
 						}),
 						!request.stats && !request.error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StateMessage, {
 							kind: "loading",
@@ -24244,9 +24307,10 @@ var SniffyProfiler = (function(exports) {
 		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 			className: "p-3",
 			children: [
-				error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StateMessage, {
-					kind: "error",
-					children: error
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusSlot, {
+					className: "mx-3 mt-3",
+					kind: error ? "error" : "idle",
+					message: error
 				}),
 				!rows && !error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StateMessage, {
 					kind: "loading",
@@ -24298,14 +24362,74 @@ var SniffyProfiler = (function(exports) {
 	function formatBytes(value) {
 		return value < 1e3 ? `${value} B` : value < 1e6 ? `${Math.floor(value / 1e3)} KB` : `${(value / 1e6).toFixed(1)} MB`;
 	}
+	function resolvedServerTime(request) {
+		var _request$stats5;
+		if (request.serverTime === void 0) return 0;
+		return Math.max(request.serverTime, ((_request$stats5 = request.stats) === null || _request$stats5 === void 0 ? void 0 : _request$stats5.time) ?? request.serverTime);
+	}
+	function SummaryStrip({ exceptions, network, serverTime, sql }) {
+		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "sniffy-summary grid grid-cols-4 border-b border-border bg-surface",
+			"aria-label": "Profiler summary",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SummaryMetric, {
+					icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { size: 14 }),
+					label: "Exceptions",
+					value: String(exceptions),
+					color: "text-exception"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SummaryMetric, {
+					icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Network, { size: 14 }),
+					label: "Network bytes",
+					value: formatBytes(network),
+					color: "text-network"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SummaryMetric, {
+					icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Timer, { size: 14 }),
+					label: "Server time",
+					value: formatTime(serverTime),
+					color: "text-info"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SummaryMetric, {
+					icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Database, { size: 14 }),
+					label: "SQL queries",
+					value: String(sql),
+					color: "text-sql"
+				})
+			]
+		});
+	}
+	function SummaryMetric({ icon, label, value, color }) {
+		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex min-w-0 items-center justify-center gap-2 border-r border-border px-2 py-1.5 last:border-r-0",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: color,
+					children: icon
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "truncate text-xs text-muted",
+					children: label
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
+					className: "shrink-0 text-xs",
+					"aria-live": "polite",
+					children: value
+				})
+			]
+		});
+	}
 	function ProfilerApp({ metadata, intercepted, shadowRoot, initialOpen = false }) {
 		const client = (0, import_react.useMemo)(() => createSniffyClient(metadata.baseUrl), [metadata.baseUrl]);
 		const [open, setOpen] = (0, import_react.useState)(initialOpen);
 		const [pinned, setPinned] = (0, import_react.useState)(true);
 		const [pointerInside, setPointerInside] = (0, import_react.useState)(false);
 		const [focusInside, setFocusInside] = (0, import_react.useState)(false);
+		const [triggerActive, setTriggerActive] = (0, import_react.useState)(false);
 		const [temporarilyExpanded, setTemporarilyExpanded] = (0, import_react.useState)(false);
 		const [maximized, setMaximized] = (0, import_react.useState)(false);
+		const [dismissed, setDismissed] = (0, import_react.useState)(false);
+		const [triggerUpdating, setTriggerUpdating] = (0, import_react.useState)(false);
 		const [cleared, setCleared] = (0, import_react.useState)(false);
 		const [requests, setRequests] = (0, import_react.useState)([]);
 		const [updating, setUpdating] = (0, import_react.useState)({
@@ -24317,6 +24441,16 @@ var SniffyProfiler = (function(exports) {
 		const [copyStatus, setCopyStatus] = (0, import_react.useState)();
 		const collapseTimer = (0, import_react.useRef)(void 0);
 		const pulseTimers = (0, import_react.useRef)({});
+		const triggerPulseTimer = (0, import_react.useRef)(void 0);
+		const copyStatusTimer = (0, import_react.useRef)(void 0);
+		const counterButton = (0, import_react.useRef)(null);
+		const brandTrigger = (0, import_react.useRef)(null);
+		const restoreFocusAfterClose = (0, import_react.useRef)(false);
+		const trayExpanded = pinned || pointerInside || focusInside || temporarilyExpanded;
+		const trayExpandedRef = (0, import_react.useRef)(trayExpanded);
+		const openRef = (0, import_react.useRef)(open);
+		trayExpandedRef.current = trayExpanded;
+		openRef.current = open;
 		const cancelCollapse = (0, import_react.useCallback)(() => {
 			if (collapseTimer.current !== void 0) clearTimeout(collapseTimer.current);
 			collapseTimer.current = void 0;
@@ -24342,10 +24476,64 @@ var SniffyProfiler = (function(exports) {
 				}));
 			}, 800);
 		}, []);
+		const pulseCollapsedTrigger = (0, import_react.useCallback)(() => {
+			if (openRef.current || trayExpandedRef.current || triggerPulseTimer.current !== void 0) return;
+			setTriggerUpdating(true);
+			triggerPulseTimer.current = setTimeout(() => {
+				triggerPulseTimer.current = void 0;
+				setTriggerUpdating(false);
+			}, 800);
+		}, []);
+		const showCopyStatus = (0, import_react.useCallback)((message, error) => {
+			if (copyStatusTimer.current !== void 0) clearTimeout(copyStatusTimer.current);
+			setCopyStatus({
+				message,
+				error
+			});
+			copyStatusTimer.current = setTimeout(() => {
+				copyStatusTimer.current = void 0;
+				setCopyStatus(void 0);
+			}, 1800);
+		}, []);
+		const closeProfiler = (0, import_react.useCallback)((restoreFocus) => {
+			restoreFocusAfterClose.current = restoreFocus;
+			setTemporarilyExpanded(true);
+			setOpen(false);
+		}, []);
 		(0, import_react.useEffect)(() => () => {
 			cancelCollapse();
 			Object.values(pulseTimers.current).forEach((timer) => clearTimeout(timer));
+			if (triggerPulseTimer.current !== void 0) clearTimeout(triggerPulseTimer.current);
+			if (copyStatusTimer.current !== void 0) clearTimeout(copyStatusTimer.current);
 		}, [cancelCollapse]);
+		(0, import_react.useEffect)(() => {
+			var _ref;
+			if (open || !restoreFocusAfterClose.current) return;
+			restoreFocusAfterClose.current = false;
+			(_ref = counterButton.current ?? brandTrigger.current) === null || _ref === void 0 || _ref.focus();
+		}, [open]);
+		(0, import_react.useEffect)(() => {
+			if (!open) return;
+			const handlePointerDown = (event) => {
+				if (event.composedPath().includes(shadowRoot.host)) return;
+				closeProfiler(false);
+			};
+			const handleKeyDown = (event) => {
+				if (event.key !== "Escape") return;
+				event.preventDefault();
+				closeProfiler(true);
+			};
+			document.addEventListener("pointerdown", handlePointerDown, true);
+			document.addEventListener("keydown", handleKeyDown, true);
+			return () => {
+				document.removeEventListener("pointerdown", handlePointerDown, true);
+				document.removeEventListener("keydown", handleKeyDown, true);
+			};
+		}, [
+			closeProfiler,
+			open,
+			shadowRoot
+		]);
 		const load = (0, import_react.useCallback)(async (label, url, sqlQueries = 0, serverTime, interceptedRequest = false) => {
 			setRequests((current) => [...current, {
 				label,
@@ -24377,11 +24565,15 @@ var SniffyProfiler = (function(exports) {
 		}, [client, pulseCounters]);
 		(0, import_react.useEffect)(() => {
 			if (metadata.requestId) load(`${metadata.requestMethod || "GET"} ${location.pathname}${metadata.responseCode ? ` - ${metadata.responseCode}` : ""}`, new URL(`request/${metadata.requestId}`, metadata.baseUrl).href);
-			return intercepted.subscribe((request) => void load(request.label, request.detailsUrl, request.sqlQueries, request.timeToFirstByte, true));
+			return intercepted.subscribe((request) => {
+				pulseCollapsedTrigger();
+				load(request.label, request.detailsUrl, request.sqlQueries, request.timeToFirstByte, true);
+			});
 		}, [
 			intercepted,
 			load,
-			metadata
+			metadata,
+			pulseCollapsedTrigger
 		]);
 		const totals = requests.reduce((result, request) => {
 			var _stats$exceptions2;
@@ -24394,12 +24586,9 @@ var SniffyProfiler = (function(exports) {
 			exceptions: 0
 		});
 		const sqlCount = requests.reduce((count, request) => count + request.sqlQueries, cleared ? 0 : metadata.sqlQueries);
-		const serverTime = requests.reduce((time, request) => {
-			var _request$stats5;
-			return request.serverTime === void 0 ? time : time + (((_request$stats5 = request.stats) === null || _request$stats5 === void 0 ? void 0 : _request$stats5.time) ?? request.serverTime);
-		}, cleared ? 0 : metadata.serverTime);
-		const trayExpanded = pinned || open || pointerInside || focusInside || temporarilyExpanded;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		const serverTime = requests.reduce((time, request) => time + resolvedServerTime(request), cleared ? 0 : metadata.serverTime);
+		if (dismissed) return null;
+		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 			className: "sniffy-shell",
 			onPointerEnter: () => {
 				setPointerInside(true);
@@ -24422,21 +24611,21 @@ var SniffyProfiler = (function(exports) {
 				setTemporarilyExpanded(true);
 				scheduleCollapse();
 			},
-			children: [open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
+			children: open ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
 				className: "sniffy-panel flex flex-col overflow-hidden shadow-[var(--sniffy-shadow)]",
 				"data-maximized": maximized,
 				children: [
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
-						className: "flex items-center gap-2 border-b border-border bg-surface-raised px-3 py-2",
+						className: "flex flex-wrap items-center gap-2 border-b border-border bg-surface-raised px-3 py-2",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
 								className: "mr-auto",
 								children: "Sniffy profiler"
 							}),
-							copyStatus && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: copyStatus.error ? "text-xs text-danger" : "text-xs text-success",
-								role: copyStatus.error ? "alert" : "status",
-								children: copyStatus.message
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusSlot, {
+								className: "w-36 shrink-0",
+								kind: (copyStatus === null || copyStatus === void 0 ? void 0 : copyStatus.error) ? "error" : copyStatus ? "success" : "idle",
+								message: copyStatus === null || copyStatus === void 0 ? void 0 : copyStatus.message
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tooltip, {
 								label: "Clear captured data",
@@ -24459,15 +24648,9 @@ var SniffyProfiler = (function(exports) {
 										const report = JSON.stringify(requests.map((request) => request.stats), null, 2);
 										try {
 											await copyText(report, shadowRoot);
-											setCopyStatus({
-												message: "Report copied.",
-												error: false
-											});
+											showCopyStatus("Report copied.", false);
 										} catch (reason) {
-											setCopyStatus({
-												message: reason instanceof Error ? reason.message : "Unable to copy report.",
-												error: true
-											});
+											showCopyStatus(reason instanceof Error ? reason.message : "Unable to copy report.", true);
 										}
 									},
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Clipboard, { size: 16 })
@@ -24482,14 +24665,40 @@ var SniffyProfiler = (function(exports) {
 									children: maximized ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Minimize2, { size: 16 }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Maximize2, { size: 16 })
 								})
 							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tooltip, {
+								label: pinned ? "Allow Sniffy counters to collapse" : "Keep Sniffy counters pinned",
+								portalRoot: shadowRoot,
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+									"aria-label": "Keep Sniffy counters pinned",
+									"aria-pressed": pinned,
+									onClick: () => setPinned((current) => !current),
+									children: pinned ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PinOff, { size: 15 }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pin, { size: 15 })
+								})
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tooltip, {
+								label: "Dismiss Sniffy for this page",
+								portalRoot: shadowRoot,
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+									"aria-label": "Dismiss Sniffy for this page",
+									onClick: () => {
+										setOpen(false);
+										setDismissed(true);
+									},
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EyeOff, { size: 16 })
+								})
+							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
 								"aria-label": "Close profiler",
-								onClick: () => {
-									setOpen(false);
-								},
+								onClick: () => closeProfiler(true),
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { size: 16 })
 							})
 						]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SummaryStrip, {
+						exceptions: totals.exceptions,
+						network: totals.network,
+						serverTime,
+						sql: sqlCount
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Tabs.Root, {
 						defaultValue: "queries",
@@ -24548,74 +24757,92 @@ var SniffyProfiler = (function(exports) {
 						]
 					})
 				]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "sniffy-widget flex items-stretch overflow-hidden rounded-lg border border-border bg-surface shadow-[var(--sniffy-shadow)]",
 				"data-counter-expanded": trayExpanded,
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				children: [(!trayExpanded || triggerActive) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					ref: brandTrigger,
 					className: "sniffy-brand-trigger grid size-10 place-items-center text-accent hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus",
-					"aria-label": open ? "Close Sniffy profiler" : "Open Sniffy profiler",
-					"aria-expanded": open,
-					onClick: () => setOpen((current) => !current),
+					"data-updating": triggerUpdating,
+					"aria-label": "Open Sniffy profiler",
+					"aria-expanded": "false",
+					onPointerEnter: () => setTriggerActive(true),
+					onPointerLeave: () => setTriggerActive(false),
+					onFocus: () => setTriggerActive(true),
+					onBlur: () => setTriggerActive(false),
+					onClick: () => {
+						setTemporarilyExpanded(true);
+						setOpen(true);
+					},
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Gauge, { size: 19 })
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "sniffy-counter-tray flex items-stretch",
 					"data-expanded": trayExpanded,
 					"aria-hidden": !trayExpanded,
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-						className: "flex",
-						"aria-label": "View captured Sniffy details",
-						"aria-expanded": open,
-						tabIndex: trayExpanded ? 0 : -1,
-						onClick: () => {
-							setOpen(true);
-						},
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Counter, {
-								icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { size: 16 }),
-								label: "Exceptions",
-								value: String(totals.exceptions),
-								color: "text-exception",
-								kind: "exceptions",
-								updating: updating.exceptions
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Counter, {
-								icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Network, { size: 16 }),
-								label: "Network bytes",
-								value: formatBytes(totals.network),
-								color: "text-network",
-								kind: "network",
-								updating: updating.network
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Counter, {
-								icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Timer, { size: 16 }),
-								label: "Server time",
-								value: formatTime(serverTime),
-								color: "text-info",
-								kind: "time",
-								updating: updating.time
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Counter, {
-								icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Database, { size: 16 }),
-								label: "SQL queries",
-								value: String(sqlCount),
-								color: "text-sql",
-								kind: "sql",
-								updating: updating.sql
-							})
-						]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-						className: "grid w-9 place-items-center border-l border-border text-muted hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus",
-						"aria-label": "Keep Sniffy counters pinned",
-						"aria-pressed": pinned,
-						tabIndex: trayExpanded ? 0 : -1,
-						onClick: () => {
-							setPinned((current) => !current);
-							setTemporarilyExpanded(true);
-						},
-						children: pinned ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PinOff, { size: 15 }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pin, { size: 15 })
-					})]
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							ref: counterButton,
+							className: "flex",
+							"aria-label": "Toggle Sniffy profiler",
+							"aria-expanded": "false",
+							tabIndex: trayExpanded ? 0 : -1,
+							onClick: () => setOpen((current) => !current),
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Counter, {
+									icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { size: 16 }),
+									label: "Exceptions",
+									value: String(totals.exceptions),
+									color: "text-exception",
+									kind: "exceptions",
+									updating: updating.exceptions
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Counter, {
+									icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Network, { size: 16 }),
+									label: "Network bytes",
+									value: formatBytes(totals.network),
+									color: "text-network",
+									kind: "network",
+									updating: updating.network
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Counter, {
+									icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Timer, { size: 16 }),
+									label: "Server time",
+									value: formatTime(serverTime),
+									color: "text-info",
+									kind: "time",
+									updating: updating.time
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Counter, {
+									icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Database, { size: 16 }),
+									label: "SQL queries",
+									value: String(sqlCount),
+									color: "text-sql",
+									kind: "sql",
+									updating: updating.sql
+								})
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							className: "grid w-9 place-items-center border-l border-border text-muted hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus",
+							"aria-label": "Keep Sniffy counters pinned",
+							"aria-pressed": pinned,
+							tabIndex: trayExpanded ? 0 : -1,
+							onClick: () => {
+								setPinned((current) => !current);
+								setTemporarilyExpanded(true);
+							},
+							children: pinned ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PinOff, { size: 15 }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pin, { size: 15 })
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							className: "grid w-9 place-items-center border-l border-border text-muted hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus",
+							"aria-label": "Dismiss Sniffy for this page",
+							tabIndex: trayExpanded ? 0 : -1,
+							onClick: () => setDismissed(true),
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EyeOff, { size: 15 })
+						})
+					]
 				})]
-			})]
+			})
 		});
 	}
 	function Counter({ icon, label, value, color, kind, updating }) {

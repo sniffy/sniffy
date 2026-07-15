@@ -46,7 +46,8 @@ describe('connection registry controls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     expect(screen.getByRole('table', { name: 'Socket connections' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Refreshing…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDisabled();
+    expect(screen.getByRole('status', { name: 'Refreshing…' })).toBeVisible();
     refresh.reject(new Error('refresh failed'));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('refresh failed');
@@ -101,5 +102,21 @@ describe('connection registry controls', () => {
     await act(async () => Promise.resolve());
     expect(setSocket).toHaveBeenCalledTimes(2);
     expect(setSocket).toHaveBeenLastCalledWith(expect.anything(), 4);
+  });
+
+  it('uses one coherent table shell and fixed per-row status slots', async () => {
+    const getRegistry = vi.fn().mockResolvedValue({
+      ...registry(0),
+      dataSources: [{ url: 'jdbc:test', userName: 'sa', status: -1 }],
+    });
+    render(<ConnectionRegistryPanel client={client({ getRegistry })} />);
+    const dataSources = await screen.findByRole('table', { name: 'Database connections' });
+    const sockets = screen.getByRole('table', { name: 'Socket connections' });
+
+    expect(dataSources.closest('.overflow-hidden')).toBe(sockets.closest('.overflow-hidden'));
+    for (const table of [dataSources, sockets]) {
+      expect(table).toHaveClass('[&_td]:h-14', '[&_th]:bg-surface-raised');
+    }
+    expect(document.querySelectorAll('[data-kind="idle"].w-28')).toHaveLength(2);
   });
 });

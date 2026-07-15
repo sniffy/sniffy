@@ -31,13 +31,11 @@ export const Collapsed: StoryObj<typeof ProfilerApp> = {
     const canvas = within(canvasElement);
     const pin = canvas.getByRole('button', { name: 'Keep Sniffy counters pinned' });
     await expect(pin).toHaveAttribute('aria-pressed', 'true');
-    await userEvent.click(pin);
-    await expect(pin).toHaveAttribute('aria-pressed', 'false');
-    const trigger = canvas.getByRole('button', { name: 'Open Sniffy profiler' });
-    trigger.focus();
-    await userEvent.keyboard('{Enter}');
+    await expect(canvas.queryByRole('button', { name: 'Open Sniffy profiler' })).toBeNull();
+    await userEvent.click(canvas.getByRole('button', { name: 'Toggle Sniffy profiler' }));
     await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
-    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(canvas.queryByRole('button', { name: 'Toggle Sniffy profiler' })).toBeNull();
+    await expect(canvas.getByLabelText('Profiler summary')).toBeVisible();
   },
 };
 
@@ -77,6 +75,10 @@ export const Normal: StoryObj<typeof ProfilerApp> = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Example failure/)).toBeVisible();
+    await expect(canvas.getByLabelText('Profiler summary')).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Dismiss Sniffy for this page' }),
+    ).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Stack trace' }));
     await expect(canvas.getByText(/Service\.call/)).toBeVisible();
   },
@@ -135,6 +137,7 @@ export const Registry: StoryObj<typeof ProfilerApp> = {
     const socketSwitch = canvas.getByRole('switch', {
       name: 'Enable en.wikipedia.org:443 socket',
     });
+    await expect(socketSwitch).toHaveClass('sniffy-switch');
     await userEvent.click(socketSwitch);
     await expect(socketSwitch).not.toBeChecked();
     await userEvent.keyboard(' ');

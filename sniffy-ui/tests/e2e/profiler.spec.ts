@@ -20,7 +20,7 @@ test('mounts one isolated profiler and supports core interactions', async ({ pag
   const profiler = page.locator('sniffy-profiler');
   await expect(profiler).toHaveCount(1);
   await expect(profiler.locator('#sniffy-root')).toBeVisible();
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await expect(profiler.getByText('Sniffy profiler')).toBeVisible();
   await profiler.getByRole('tab', { name: 'Top SQL' }).click();
   await expect(profiler.getByRole('table', { name: 'Top SQL' })).toBeVisible();
@@ -33,7 +33,7 @@ test('mounts one isolated profiler and supports core interactions', async ({ pag
   await profiler.getByRole('button', { name: 'Maximize panel' }).click();
   await expect(profiler.locator('.sniffy-panel')).toHaveAttribute('data-maximized', 'true');
   await profiler.getByRole('button', { name: 'Close profiler' }).click();
-  await expect(profiler.getByRole('button', { name: 'Open Sniffy profiler' })).toBeVisible();
+  await expect(profiler.getByRole('button', { name: 'Toggle Sniffy profiler' })).toBeVisible();
   await expect(
     profiler.getByRole('button', { name: 'Keep Sniffy counters pinned' }),
   ).toHaveAttribute('aria-pressed', 'true');
@@ -47,7 +47,7 @@ test('keeps existing XHR handlers and resolves relative detail URLs', async ({ p
   const profiler = page.locator('sniffy-profiler');
   await expect(profiler.locator('[title="SQL queries"]')).toContainText('4');
   await expect(profiler.locator('[title="Server time"]')).toContainText('168 ms');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await expect(profiler.getByText(/GET .*ajax\.json - 200/)).toBeVisible();
 });
 
@@ -72,7 +72,7 @@ test('resolves no-trailing-slash details and preserves the Sniffy request header
       }),
   );
   const profiler = page.locator('sniffy-profiler');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await expect(profiler.getByText(/GET \/mock\/notrailingslash - 200/)).toBeVisible();
   expect(guardHeader).toBe('false');
   expect(exactDetailsUrl).toBe(
@@ -96,7 +96,7 @@ test('preserves same-origin query/fragment labels and distinguishes cross-origin
     await request('http://127.0.0.1:3001/mock/ajax.json?origin=secondary#details');
   });
   const profiler = page.locator('sniffy-profiler');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await expect(profiler.getByText('GET /mock/ajax.json?view=full#results - 200')).toBeVisible();
   await expect(
     profiler.getByText('GET http://127.0.0.1:3001/mock/ajax.json?origin=secondary#details - 200'),
@@ -131,16 +131,13 @@ test('supports pinning, delayed hover/focus reveal, keyboard use and click fallb
 
   await trigger.focus();
   await expect(tray).toHaveAttribute('data-expanded', 'true');
-  await page.keyboard.press('Enter');
-  await expect(profiler.getByRole('button', { name: 'Close Sniffy profiler' })).toHaveAttribute(
-    'aria-expanded',
-    'true',
-  );
-  await expect(profiler.getByText('Sniffy profiler')).toBeVisible();
-  await expect(tray).toHaveAttribute('data-expanded', 'true');
   expect(await tray.evaluate((element) => getComputedStyle(element).transitionDuration)).toContain(
     '0.18s',
   );
+  await page.keyboard.press('Enter');
+  await expect(profiler.getByText('Sniffy profiler')).toBeVisible();
+  await expect(profiler.locator('.sniffy-widget')).toHaveCount(0);
+  await expect(profiler.getByLabel('Profiler summary')).toBeVisible();
 });
 
 test('compact trigger works in a touch context and reduced motion removes transitions', async ({
@@ -150,14 +147,19 @@ test('compact trigger works in a touch context and reduced motion removes transi
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:3000/mock/mock.html');
   const profiler = page.locator('sniffy-profiler');
+  await profiler
+    .getByRole('button', { name: 'Keep Sniffy counters pinned' })
+    .evaluate((element) => (element as HTMLElement).click());
+  await page.locator('#host-xhr').focus();
+  await page.waitForTimeout(800);
   const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
-  await trigger.tap();
-  await expect(profiler.getByText('Sniffy profiler')).toBeVisible();
   expect(
     await profiler
       .locator('.sniffy-counter-tray')
       .evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration)),
   ).toBeLessThanOrEqual(0.001);
+  await trigger.tap();
+  await expect(profiler.getByText('Sniffy profiler')).toBeVisible();
   await context.close();
 });
 
@@ -190,6 +192,62 @@ test('pulses only counters changed by an intercepted request and clears the stat
   await expect(time).toHaveAttribute('data-updating', 'false');
 });
 
+test('pulses the collapsed trigger and retains empty-details TTFB in the final total', async ({
+  page,
+}) => {
+  await page.goto('/mock/mock.html');
+  await page.clock.install();
+  const profiler = page.locator('sniffy-profiler');
+  await profiler.getByRole('button', { name: 'Keep Sniffy counters pinned' }).click();
+  await page.locator('#host-xhr').focus();
+  await page.mouse.move(0, 0);
+  await page.clock.fastForward(800);
+  const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
+
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.addEventListener('loadend', () => resolve());
+        xhr.open('GET', '/mock/204.json');
+        xhr.send();
+      }),
+  );
+
+  await expect(trigger).toHaveAttribute('data-updating', 'true');
+  await trigger.hover();
+  await expect(profiler.locator('[title="Server time"]')).toContainText('105 ms');
+  await page.clock.fastForward(800);
+  await expect(trigger).toHaveAttribute('data-updating', 'false');
+});
+
+test('replaces the tray while open and supports outside, Escape and session dismiss', async ({
+  page,
+}) => {
+  await page.goto('/mock/mock.html');
+  const profiler = page.locator('sniffy-profiler');
+  const counters = profiler.getByRole('button', { name: 'Toggle Sniffy profiler' });
+  await counters.click();
+  await expect(profiler.locator('.sniffy-widget')).toHaveCount(0);
+  await expect(profiler.getByLabel('Profiler summary')).toBeVisible();
+  await profiler.getByRole('tab', { name: 'Network Connections' }).click();
+  await expect(profiler.locator('.sniffy-panel')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(profiler.locator('.sniffy-panel')).toHaveCount(0);
+  await expect(profiler.getByRole('button', { name: 'Toggle Sniffy profiler' })).toBeFocused();
+
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
+  await page.locator('#host-card').click();
+  await expect(profiler.locator('.sniffy-panel')).toHaveCount(0);
+  await expect(profiler.locator('.sniffy-widget')).toBeVisible();
+
+  await profiler.getByRole('button', { name: 'Dismiss Sniffy for this page' }).click();
+  await expect(profiler.locator('.sniffy-shell')).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('sniffy-profiler').locator('.sniffy-widget')).toBeVisible();
+});
+
 test('supports collapsibles, copy, clear and keyboard tabs', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'clipboard', {
@@ -203,7 +261,7 @@ test('supports collapsibles, copy, clear and keyboard tabs', async ({ page }) =>
   });
   await page.goto('/mock/mock.html');
   const profiler = page.locator('sniffy-profiler');
-  const open = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
+  const open = profiler.getByRole('button', { name: 'Toggle Sniffy profiler' });
   await open.focus();
   await page.keyboard.press('Enter');
   await expect(profiler.getByText('Sniffy profiler')).toBeVisible();
@@ -236,7 +294,7 @@ test('supports collapsibles, copy, clear and keyboard tabs', async ({ page }) =>
   await profiler.getByRole('button', { name: 'Close profiler' }).click();
   await expect(profiler.locator('[title="SQL queries"]')).toContainText('0');
   await expect(profiler.locator('[title="Server time"]')).toContainText('0 ms');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
 });
 
 test('copies with the fallback when Clipboard API is unavailable', async ({ page }) => {
@@ -256,7 +314,7 @@ test('copies with the fallback when Clipboard API is unavailable', async ({ page
   });
   await page.goto('/mock/mock.html');
   const profiler = page.locator('sniffy-profiler');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await profiler.getByRole('button', { name: 'Copy report' }).click();
 
   await expect(profiler.getByText('Report copied.', { exact: true })).toBeVisible();
@@ -284,7 +342,7 @@ test('shows a useful error when Clipboard API and fallback both reject', async (
   });
   await page.goto('/mock/mock.html');
   const profiler = page.locator('sniffy-profiler');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await profiler.getByRole('button', { name: 'Copy report' }).click();
   await expect(profiler.getByRole('alert')).toContainText('Copy is not supported by this browser');
 });
@@ -330,7 +388,7 @@ test('registry controls render and mutate equivalently in profiler and agent', a
     await page.goto(surfaceName === 'profiler' ? '/mock/mock.html' : '/agent/');
     const surface = surfaceName === 'profiler' ? page.locator('sniffy-profiler') : page;
     if (surfaceName === 'profiler') {
-      await surface.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+      await surface.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
       await surface.getByRole('tab', { name: 'Network Connections' }).click();
     }
     const socketSwitch = surface.getByRole('switch', {
@@ -341,8 +399,16 @@ test('registry controls render and mutate equivalently in profiler and agent', a
       socketSwitch.evaluate((element) => ({
         background: getComputedStyle(element).backgroundColor,
         thumb: getComputedStyle(element.firstElementChild as Element).transform,
+        trackSize: [getComputedStyle(element).width, getComputedStyle(element).height],
+        thumbSize: [
+          getComputedStyle(element.firstElementChild as Element).width,
+          getComputedStyle(element.firstElementChild as Element).height,
+        ],
       }));
     const checkedVisual = await visual();
+    expect(checkedVisual.background).not.toBe('rgba(0, 0, 0, 0)');
+    expect(checkedVisual.trackSize).toEqual(['44px', '24px']);
+    expect(checkedVisual.thumbSize).toEqual(['18px', '18px']);
     const mutations: string[] = [];
     const recordMutation = (captured: import('@playwright/test').Request) => {
       if (captured.url().includes(socketSuffix) && captured.method() === 'POST')
@@ -378,8 +444,12 @@ test('registry controls render and mutate equivalently in profiler and agent', a
     const delayResponse = page.waitForResponse(
       (response) => response.url().includes(socketSuffix) && response.request().method() === 'POST',
     );
+    const switchBox = await socketSwitch.boundingBox();
+    const incrementBox = await increment.boundingBox();
     await increment.click({ clickCount: 3 });
     await expect(surface.getByText('Saving…').first()).toBeVisible();
+    expect(await socketSwitch.boundingBox()).toEqual(switchBox);
+    expect(await increment.boundingBox()).toEqual(incrementBox);
     await delayResponse;
     await expect.poll(() => mutations.length).toBe(3);
     expect(mutations).toEqual(['-100', '100', '103']);
@@ -389,11 +459,13 @@ test('registry controls render and mutate equivalently in profiler and agent', a
       surface.locator('input[aria-label="en.wikipedia.org:443 socket delay"]'),
     ).toHaveValue('103');
     page.off('request', recordMutation);
+    return checkedVisual;
   };
 
   try {
-    await exercise('profiler');
-    await exercise('agent');
+    const profilerVisual = await exercise('profiler');
+    const agentVisual = await exercise('agent');
+    expect(agentVisual).toEqual(profilerVisual);
   } finally {
     await request.post(resetPath, { ...textBody, data: '100' });
   }
@@ -414,9 +486,12 @@ test('registry refresh preserves data and reports failure without flicker', asyn
   const refreshResponse = page.waitForResponse((response) =>
     response.url().endsWith('/connectionregistry/'),
   );
+  const stableBox = await table.boundingBox();
   await page.getByRole('button', { name: 'Refresh' }).click();
   await expect(table).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Refreshing…' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Refresh' })).toBeDisabled();
+  await expect(page.getByRole('status', { name: 'Refreshing…' })).toBeVisible();
+  expect(await table.boundingBox()).toEqual(stableBox);
   releaseRefresh();
   await refreshResponse;
   await page.unroute('**/connectionregistry/');
@@ -427,6 +502,7 @@ test('registry refresh preserves data and reports failure without flicker', asyn
   await page.getByRole('button', { name: 'Refresh' }).click();
   await expect(page.getByRole('alert')).toContainText('failed with 503');
   await expect(table).toBeVisible();
+  expect(await table.boundingBox()).toEqual(stableBox);
   const expectedErrors = browserErrors.get(page) ?? [];
   expect(expectedErrors.every((message) => message.includes('503'))).toBe(true);
   expectedErrors.splice(0);
@@ -448,17 +524,17 @@ test('supports dual-origin CORS without runtime assets', async ({ page }) => {
 test('serves real empty, loading, error and many-row playground states', async ({ page }) => {
   await page.goto('/mock/scenarios/loading');
   let profiler = page.locator('sniffy-profiler');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await expect(profiler.getByText('Loading request details…')).toBeVisible();
 
   await page.goto('/mock/scenarios/empty');
   profiler = page.locator('sniffy-profiler');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await expect(profiler.getByText('No SQL queries.')).toBeVisible();
 
   await page.goto('/mock/scenarios/error');
   profiler = page.locator('sniffy-profiler');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await expect(profiler.getByRole('alert')).toContainText('failed with 503');
   const expectedErrors = browserErrors.get(page) ?? [];
   expect(expectedErrors.every((message) => message.includes('503'))).toBe(true);
@@ -466,7 +542,7 @@ test('serves real empty, loading, error and many-row playground states', async (
 
   await page.goto('/mock/scenarios/many');
   profiler = page.locator('sniffy-profiler');
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   await expect(profiler.locator('code.hljs')).toHaveCount(36);
 });
 
@@ -480,11 +556,11 @@ test('isolates hostile host CSS in both directions', async ({ page }) => {
     ),
   );
   const profiler = page.locator('sniffy-profiler');
-  await expect(profiler.getByRole('button', { name: 'Open Sniffy profiler' })).toBeVisible();
+  await expect(profiler.getByRole('button', { name: 'Toggle Sniffy profiler' })).toBeVisible();
   const hostColor = await page
     .locator('#host-status')
     .evaluate((element) => getComputedStyle(element).color);
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
   const profilerColor = await profiler
     .locator('#sniffy-root')
     .evaluate((element) => getComputedStyle(element).color);
@@ -504,7 +580,7 @@ test('keeps collapsed and open geometry independent of host root font size', asy
     await page.goto(url);
     const profiler = page.locator('sniffy-profiler');
     const collapsed = await profiler.locator('.sniffy-widget').boundingBox();
-    await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).click();
+    await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
     const panel = await profiler.locator('.sniffy-panel').boundingBox();
     expect(collapsed).not.toBeNull();
     expect(panel).not.toBeNull();
@@ -535,7 +611,6 @@ test('@visual final profiler and agent states', async ({ page, request }) => {
     timeout: 1_000,
   });
   await expect(widget).toHaveScreenshot('unpinned-widget.png', { animations: 'disabled' });
-  await profiler.getByRole('button', { name: 'Open Sniffy profiler' }).hover();
   await page.evaluate(
     () =>
       new Promise<void>((resolve) => {
@@ -550,6 +625,10 @@ test('@visual final profiler and agent states', async ({ page, request }) => {
   await expect(profiler).toHaveScreenshot('profiler.png', { animations: 'disabled' });
   await profiler.getByRole('tab', { name: 'Network Connections' }).click();
   await expect(profiler.getByRole('table', { name: 'Socket connections' })).toBeVisible();
+  await expect(profiler.locator('.sniffy-panel')).toHaveScreenshot(
+    'profiler-registry-checked.png',
+    { animations: 'disabled' },
+  );
   let releaseRefresh!: () => void;
   const refreshPending = new Promise<void>((resolve) => {
     releaseRefresh = resolve;
@@ -583,6 +662,10 @@ test('@visual final profiler and agent states', async ({ page, request }) => {
   await page.goto('/agent/');
   const agentSwitch = page.getByRole('switch', { name: 'Enable en.wikipedia.org:443 socket' });
   await expect(agentSwitch).not.toBeChecked();
+  await expect(page).toHaveScreenshot('agent-registry-unchecked.png', {
+    fullPage: true,
+    animations: 'disabled',
+  });
   const agentMutation = page.waitForResponse((response) =>
     response.url().includes('/connectionregistry/socket/en.wikipedia.org/443'),
   );

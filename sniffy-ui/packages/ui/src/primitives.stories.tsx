@@ -1,7 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { useState } from 'react';
-import { Badge, Button, Card, Collapsible, NumberField, StateMessage, Switch } from './primitives';
+import {
+  Badge,
+  Button,
+  Card,
+  Collapsible,
+  NumberField,
+  StateMessage,
+  StatusSlot,
+  Switch,
+} from './primitives';
 
 function Gallery() {
   const [enabled, setEnabled] = useState(true);
@@ -21,6 +30,12 @@ function Gallery() {
         at io.sniffy.example.Service.call(Service.java:42)
       </Collapsible>
       <StateMessage kind="empty">Nothing captured yet.</StateMessage>
+      <StatusSlot className="w-64" kind="loading" message="Saving…" />
+      <StatusSlot
+        className="w-64"
+        kind="error"
+        message="A long connection error remains inside this reserved status slot."
+      />
     </Card>
   );
 }

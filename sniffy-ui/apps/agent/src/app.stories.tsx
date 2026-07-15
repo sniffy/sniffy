@@ -16,6 +16,7 @@ export const Desktop: StoryObj<typeof AgentApp> = {
     const socketSwitch = canvas.getByRole('switch', {
       name: 'Enable en.wikipedia.org:443 socket',
     });
+    await expect(socketSwitch).toHaveClass('sniffy-switch');
     await userEvent.click(socketSwitch);
     await expect(socketSwitch).not.toBeChecked();
     socketSwitch.focus();

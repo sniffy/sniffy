@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '@sniffy/theme/tokens.css';
 @import '@sniffy/theme/tailwind.css';
+@import '@sniffy/ui/styles.css';
 @source "../../../packages/ui/src";
 
 :host {
@@ -66,6 +67,16 @@
 .sniffy-brand-trigger {
   width: 40px;
   flex: 0 0 40px;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+.sniffy-brand-trigger[data-updating='true'] {
+  background: rgb(76 166 255 / 18%);
+  background: color-mix(in srgb, var(--sniffy-accent) 18%, transparent);
+  color: var(--sniffy-focus);
+  transform: scale(1.04);
 }
 .sniffy-counter-tray {
   max-width: 0;
@@ -80,7 +91,7 @@
     transform 180ms ease;
 }
 .sniffy-counter-tray[data-expanded='true'] {
-  max-width: 320px;
+  max-width: 360px;
   opacity: 1;
   pointer-events: auto;
   transform: translateX(0);
@@ -127,11 +138,19 @@
     width: calc(100vw - 12px);
     height: calc(100vh - 12px);
   }
+  .sniffy-summary > div {
+    flex-direction: column;
+    gap: 1px;
+  }
+  .sniffy-summary > div > span:nth-child(2) {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sniffy-counter-tray,
   .sniffy-counter,
+  .sniffy-brand-trigger,
   #sniffy-root *,
   #sniffy-root *::before,
   #sniffy-root *::after {
@@ -141,6 +160,9 @@
     animation-iteration-count: 1 !important;
   }
   .sniffy-counter[data-updating='true'] {
+    transform: none;
+  }
+  .sniffy-brand-trigger[data-updating='true'] {
     transform: none;
   }
 }

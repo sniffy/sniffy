@@ -4,7 +4,7 @@ import { Switch as BaseSwitch } from '@base-ui/react/switch';
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
-import { ChevronDown, Minus, Plus } from 'lucide-react';
+import { ChevronDown, LoaderCircle, Minus, Plus } from 'lucide-react';
 
 export function cx(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(' ');
@@ -73,12 +73,9 @@ export function Switch({
       onCheckedChange={onCheckedChange}
       aria-label={label}
       disabled={disabled}
-      className="relative h-6 w-11 rounded-full border border-border bg-canvas transition data-[checked]:bg-accent focus-visible:outline-2 focus-visible:outline-focus"
+      className="sniffy-switch"
     >
-      <BaseSwitch.Thumb
-        className="block size-5 rounded-full bg-foreground transition-transform"
-        style={{ transform: checked ? 'translateX(20px)' : 'translateX(2px)' }}
-      />
+      <BaseSwitch.Thumb className="sniffy-switch-thumb" />
     </BaseSwitch.Root>
   );
 }
@@ -174,14 +171,66 @@ export function Tooltip({
   );
 }
 
-export function Table({ children, label }: { children: ReactNode; label: string }) {
+export function Table({
+  children,
+  label,
+  className,
+}: {
+  children: ReactNode;
+  label: string;
+  className?: string;
+}) {
   return (
     <table
       aria-label={label}
-      className="w-full border-collapse text-left text-sm [&_td]:border-t [&_td]:border-border [&_td]:p-2 [&_th]:p-2 [&_th]:text-muted"
+      className={cx(
+        'w-full border-collapse text-left text-sm [&_tbody_tr]:border-t [&_tbody_tr]:border-border [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-surface-hover/40 [&_td]:h-14 [&_td]:px-3 [&_td]:py-2 [&_th]:h-10 [&_th]:bg-surface-raised [&_th]:px-3 [&_th]:py-2 [&_th]:text-xs [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted',
+        className,
+      )}
     >
       {children}
     </table>
+  );
+}
+
+export type StatusKind = 'idle' | 'loading' | 'success' | 'warning' | 'error';
+
+export function StatusSlot({
+  message,
+  kind = 'idle',
+  className,
+}: {
+  message?: string;
+  kind?: StatusKind;
+  className?: string;
+}) {
+  const visible = Boolean(message);
+  return (
+    <div
+      className={cx('relative h-6 min-w-0 overflow-hidden', className)}
+      data-kind={kind}
+      data-visible={visible}
+      aria-live={kind === 'error' ? 'assertive' : 'polite'}
+      aria-atomic="true"
+    >
+      {visible && (
+        <span
+          className={cx(
+            'absolute inset-0 flex min-w-0 items-center gap-1.5 truncate text-xs text-muted',
+            kind === 'success' && 'text-success',
+            kind === 'warning' && 'text-warning',
+            kind === 'error' && 'text-danger',
+          )}
+          role={kind === 'error' ? 'alert' : 'status'}
+          title={message}
+        >
+          {kind === 'loading' && (
+            <LoaderCircle className="shrink-0 motion-safe:animate-spin" size={13} />
+          )}
+          <span className="truncate">{message}</span>
+        </span>
+      )}
+    </div>
   );
 }
 

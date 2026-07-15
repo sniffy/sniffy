@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '@sniffy/theme/tokens.css';
 @import '@sniffy/theme/tailwind.css';
+@import '@sniffy/ui/styles.css';
 @source "../../../packages/ui/src";
 
 * {
