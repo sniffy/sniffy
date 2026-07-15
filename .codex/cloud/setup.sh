@@ -27,6 +27,39 @@ for command_name in curl tar find mise mvn; do
   fi
 done
 
+configure_github_auth() {
+  if [[ -z "${GH_TOKEN:-}" ]]; then
+    echo "GH_TOKEN is not configured; GitHub push and PR operations will be unavailable."
+    return
+  fi
+
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "GH_TOKEN is configured, but GitHub CLI (gh) is unavailable in the Codex image." >&2
+    exit 1
+  fi
+
+  echo "Configuring persistent GitHub authentication for the agent phase..."
+  local github_token="${GH_TOKEN}"
+  unset GH_TOKEN
+
+  printf '%s\n' "${github_token}" |
+    gh auth login --hostname github.com --git-protocol https --with-token --insecure-storage
+  unset github_token
+
+  gh auth setup-git --hostname github.com
+
+  local can_push
+  can_push="$(gh api repos/sniffy/sniffy --jq '.permissions.push')"
+  if [[ "${can_push}" != "true" ]]; then
+    echo "GH_TOKEN authenticates successfully but does not grant push access to sniffy/sniffy." >&2
+    exit 1
+  fi
+
+  gh auth status --hostname github.com
+}
+
+configure_github_auth
+
 mkdir -p "${JDKS_DIR}" "${HOME}/.m2"
 
 install_jdk8() {
