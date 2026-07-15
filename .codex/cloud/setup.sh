@@ -100,7 +100,7 @@ configure_github_auth() {
   auth_login="$(gh api user --jq '.login')"
   probe_branch="agent/codex-auth-check-$(git rev-parse --short=12 HEAD)"
 
-  if ! push_error="$(git push --dry-run --porcelain origin "HEAD:refs/heads/${probe_branch}" 2>&1)"; then
+  if ! push_error="$(git push --dry-run --porcelain https://github.com/sniffy/sniffy.git "HEAD:refs/heads/${probe_branch}" 2>&1)"; then
     echo "GH_TOKEN authenticates as ${auth_login}, but GitHub rejected a dry-run push to sniffy/sniffy:" >&2
     printf '%s\n' "${push_error}" >&2
     echo "The repository .permissions.push flag only describes the account role; token permissions can be narrower." >&2

@@ -46,7 +46,7 @@ The setup phase has internet access and the agent phase follows the environment'
 Start a small cloud task on `develop` with this prompt:
 
 ```text
-Validate the Sniffy development environment only. Read AGENTS.md, report the active Java and Maven versions, report `gh --version`, verify GitHub authentication with `gh auth status --hostname github.com`, and confirm effective write authorization with `git push --dry-run --porcelain origin "HEAD:refs/heads/agent/codex-auth-check-$(git rev-parse --short=12 HEAD)"`. The dry run must not create a remote ref. Switch to JDK 8 and JDK 25 using .codex/cloud/use-jdk.sh, run git diff --check, and run one small focused Maven test without changing tracked files. Report every command and result. Do not create a branch or pull request.
+Validate the Sniffy development environment only. Read AGENTS.md, report the active Java and Maven versions, report `gh --version`, verify GitHub authentication with `gh auth status --hostname github.com`, and confirm effective write authorization with `git push --dry-run --porcelain https://github.com/sniffy/sniffy.git "HEAD:refs/heads/agent/codex-auth-check-$(git rev-parse --short=12 HEAD)"`. The dry run must not create a remote ref. Switch to JDK 8 and JDK 25 using .codex/cloud/use-jdk.sh, run git diff --check, and run one small focused Maven test without changing tracked files. Report every command and result. Do not create a branch or pull request.
 ```
 
 For manual validation inside a shell:
