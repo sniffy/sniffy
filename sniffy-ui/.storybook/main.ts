@@ -10,7 +10,7 @@ const config: StorybookConfig = {
     '@storybook/addon-mcp',
   ],
   framework: { name: '@storybook/react-vite', options: {} },
-  docs: { autodocs: 'tag' },
+  staticDirs: ['../public'],
   viteFinal: async (config) => {
     config.plugins ??= [];
     config.plugins.push(tailwindcss());

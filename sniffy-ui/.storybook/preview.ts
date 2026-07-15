@@ -7,6 +7,7 @@ import '../apps/profiler/src/styles.css';
 initialize({ onUnhandledRequest: 'error' });
 
 const preview: Preview = {
+  tags: ['autodocs'],
   loaders: [mswLoader],
   parameters: {
     a11y: { test: 'error' },

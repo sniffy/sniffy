@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "scripts" },
+    { "path": ".storybook" },
     { "path": "packages/theme" },
     { "path": "packages/ui" },
     { "path": "packages/api" },
