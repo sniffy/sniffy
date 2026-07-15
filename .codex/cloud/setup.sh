@@ -31,7 +31,7 @@ case "$(uname -m)" in
     ;;
 esac
 
-for command_name in curl tar find install ln sha256sum mise mvn; do
+for command_name in curl tar find git install ln sha256sum mise mvn; do
   if ! command -v "${command_name}" >/dev/null 2>&1; then
     echo "Required command '${command_name}' is unavailable in the Codex image." >&2
     exit 1
@@ -96,13 +96,20 @@ configure_github_auth() {
 
   gh auth setup-git --hostname github.com
 
-  local can_push
-  can_push="$(gh api repos/sniffy/sniffy --jq '.permissions.push')"
-  if [[ "${can_push}" != "true" ]]; then
-    echo "GH_TOKEN authenticates successfully but does not grant push access to sniffy/sniffy." >&2
+  local auth_login probe_branch push_error
+  auth_login="$(gh api user --jq '.login')"
+  probe_branch="agent/codex-auth-check-$(git rev-parse --short=12 HEAD)"
+
+  if ! push_error="$(git push --dry-run --porcelain origin "HEAD:refs/heads/${probe_branch}" 2>&1)"; then
+    echo "GH_TOKEN authenticates as ${auth_login}, but GitHub rejected a dry-run push to sniffy/sniffy:" >&2
+    printf '%s\n' "${push_error}" >&2
+    echo "The repository .permissions.push flag only describes the account role; token permissions can be narrower." >&2
+    echo "For a fine-grained PAT, make the token owner a sniffy organization member and grant Contents: write for sniffy/sniffy." >&2
+    echo "GitHub does not support fine-grained PAT contributions from outside or repository collaborators." >&2
     exit 1
   fi
 
+  echo "Verified Git push authorization with a non-mutating dry run as ${auth_login}."
   gh auth status --hostname github.com
 }
 
