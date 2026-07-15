@@ -52,7 +52,7 @@ install_github_cli() {
       --output "${archive}"
     printf '%s  %s\n' "${GH_SHA256}" "${archive}" | sha256sum --check --status
 
-    tar -xzf "${archive}" -C "${unpack}"
+    tar --no-same-owner -xzf "${archive}" -C "${unpack}"
     extracted="${unpack}/gh_${GH_VERSION}_linux_${GH_ARCH}/bin/gh"
     if [[ ! -x "${extracted}" ]]; then
       echo "Could not locate the extracted GitHub CLI binary." >&2
