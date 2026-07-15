@@ -35,7 +35,7 @@ The repository files cannot create an environment in another user's OpenAI accou
 
 7. Keep agent-phase internet disabled for ordinary implementation tasks. Enable limited internet only when a task explicitly requires current external documentation, vulnerability/advisory lookup, or dependency metadata that was not available during setup.
 8. Add a Codex environment secret named `GH_TOKEN` when Cloud tasks should push branches and create or update pull requests autonomously. Use a dedicated, revocable, fine-grained PAT scoped only to `sniffy/sniffy`, with the minimum required repository permissions: Metadata read, Contents read/write, Pull requests read/write, and Issues read/write. Add Actions permissions only when a task must operate workflow runs.
-9. The setup script consumes `GH_TOKEN` while secrets are available, stores it in GitHub CLI's host configuration, and configures Git to use GitHub CLI as its credential helper. This intentionally makes the PAT's authority available to the agent phase even though the `GH_TOKEN` environment variable itself is removed. Never use a broad personal or organization-wide token for this environment.
+9. The setup script first installs the pinned GitHub CLI release into `~/.local`, verifies its published SHA-256 checksum, then consumes `GH_TOKEN` while secrets are available, stores it in GitHub CLI's host configuration, and configures Git to use GitHub CLI as its credential helper. This intentionally makes the PAT's authority available to the agent phase even though the `GH_TOKEN` environment variable itself is removed. Never use a broad personal or organization-wide token for this environment.
 10. Codex invalidates the environment cache when the setup script or secrets change. Use **Reset cache** if the next task still uses stale credentials or an inconsistent cached toolchain.
 11. In Codex settings, enable code review for this repository. Automatic review may be enabled after the review rules in `AGENTS.md` have produced useful results on several test pull requests.
 
@@ -46,7 +46,7 @@ The setup phase has internet access and the agent phase follows the environment'
 Start a small cloud task on `develop` with this prompt:
 
 ```text
-Validate the Sniffy development environment only. Read AGENTS.md, report the active Java and Maven versions, verify GitHub authentication with `gh auth status --hostname github.com` and confirm push permission using `gh api repos/sniffy/sniffy --jq '.permissions.push'`, switch to JDK 8 and JDK 25 using .codex/cloud/use-jdk.sh, run git diff --check, and run one small focused Maven test without changing tracked files. Report every command and result. Do not create a branch or pull request.
+Validate the Sniffy development environment only. Read AGENTS.md, report the active Java and Maven versions, report `gh --version`, verify GitHub authentication with `gh auth status --hostname github.com` and confirm push permission using `gh api repos/sniffy/sniffy --jq '.permissions.push'`, switch to JDK 8 and JDK 25 using .codex/cloud/use-jdk.sh, run git diff --check, and run one small focused Maven test without changing tracked files. Report every command and result. Do not create a branch or pull request.
 ```
 
 For manual validation inside a shell:
