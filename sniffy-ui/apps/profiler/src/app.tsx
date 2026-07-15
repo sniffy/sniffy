@@ -370,6 +370,7 @@ export function ProfilerApp({
   const pulseTimers = useRef<Partial<Record<CounterKey, ReturnType<typeof setTimeout>>>>({});
   const triggerPulseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const copyStatusTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pinActivationPointerType = useRef<string | undefined>(undefined);
   const counterButton = useRef<HTMLButtonElement | null>(null);
   const brandTrigger = useRef<HTMLButtonElement | null>(null);
   const shell = useRef<HTMLDivElement | null>(null);
@@ -385,20 +386,10 @@ export function ProfilerApp({
     if (collapseTimer.current !== undefined) clearTimeout(collapseTimer.current);
     collapseTimer.current = undefined;
   }, []);
-  const scheduleCollapse = useCallback(
-    (clearInteractionState = false) => {
-      cancelCollapse();
-      collapseTimer.current = setTimeout(() => {
-        if (clearInteractionState) {
-          setPointerInside(false);
-          setFocusInside(false);
-          setTriggerActive(false);
-        }
-        setTemporarilyExpanded(false);
-      }, 750);
-    },
-    [cancelCollapse],
-  );
+  const scheduleCollapse = useCallback(() => {
+    cancelCollapse();
+    collapseTimer.current = setTimeout(() => setTemporarilyExpanded(false), 750);
+  }, [cancelCollapse]);
   const pulseCounters = useCallback((keys: CounterKey[]) => {
     const started = keys.filter((key) => pulseTimers.current[key] === undefined);
     if (started.length === 0) return;
@@ -544,12 +535,14 @@ export function ProfilerApp({
     <div
       ref={shell}
       className="sniffy-shell"
-      onPointerEnter={() => {
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'touch') return;
         setPointerInside(true);
         setTemporarilyExpanded(true);
         cancelCollapse();
       }}
-      onPointerLeave={() => {
+      onPointerLeave={(event) => {
+        if (event.pointerType === 'touch') return;
         setPointerInside(false);
         setTemporarilyExpanded(true);
         scheduleCollapse();
@@ -704,6 +697,8 @@ export function ProfilerApp({
             data-updating={triggerUpdating}
             aria-label="Open Sniffy profiler"
             aria-expanded="false"
+            aria-hidden={!brandTriggerVisible}
+            disabled={!brandTriggerVisible}
             tabIndex={brandTriggerVisible ? 0 : -1}
             onPointerEnter={() => setTriggerActive(true)}
             onPointerLeave={() => setTriggerActive(false)}
@@ -772,11 +767,26 @@ export function ProfilerApp({
               aria-label="Keep Sniffy counters pinned"
               aria-pressed={pinned}
               tabIndex={trayExpanded ? 0 : -1}
-              onClick={() => {
-                if (pinned) scheduleCollapse(true);
+              onPointerDown={(event) => {
+                pinActivationPointerType.current = event.pointerType;
+              }}
+              onPointerCancel={() => {
+                pinActivationPointerType.current = undefined;
+              }}
+              onKeyDown={() => {
+                pinActivationPointerType.current = undefined;
+              }}
+              onClick={(event) => {
+                const activatedByTouch = pinActivationPointerType.current === 'touch';
+                pinActivationPointerType.current = undefined;
+                if (pinned) scheduleCollapse();
                 else cancelCollapse();
                 setPinned(!pinned);
                 setTemporarilyExpanded(true);
+                if (pinned && activatedByTouch) {
+                  event.currentTarget.blur();
+                  setFocusInside(false);
+                }
               }}
             >
               {pinned ? <PinOff size={15} /> : <Pin size={15} />}

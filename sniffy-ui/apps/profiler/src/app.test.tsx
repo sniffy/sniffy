@@ -44,31 +44,80 @@ describe('compact profiler widget', () => {
     vi.restoreAllMocks();
   });
 
-  it('is pinned by default and reveals or delays collapse for pointer, focus and keyboard use', async () => {
+  it('keeps the stable compact trigger inactive while the counter tray is visible', () => {
+    const { container } = fixture();
+    const trigger = container.querySelector('.sniffy-brand-trigger');
+    expect(trigger).toHaveAttribute('data-visible', 'false');
+    expect(trigger).toHaveAttribute('aria-hidden', 'true');
+    expect(trigger).toBeDisabled();
+    expect(trigger).toHaveAttribute('tabindex', '-1');
+    expect(screen.queryByRole('button', { name: 'Open Sniffy profiler' })).toBeNull();
+  });
+
+  it('preserves real mouse hover until pointer leave and the collapse delay', async () => {
+    vi.useFakeTimers();
+    const { container } = fixture();
+    const pin = screen.getByRole('button', { name: 'Keep Sniffy counters pinned' });
+    const tray = pin.parentElement as HTMLElement;
+    const shell = tray.closest('.sniffy-shell') as HTMLElement;
+    expect(pin).toHaveAttribute('aria-pressed', 'true');
+    expect(tray).toHaveAttribute('data-expanded', 'true');
+
+    fireEvent.pointerEnter(shell, { pointerType: 'mouse' });
+    fireEvent.click(pin);
+    expect(pin).toHaveAttribute('aria-pressed', 'false');
+    await act(async () => vi.advanceTimersByTime(750));
+    expect(tray).toHaveAttribute('data-expanded', 'true');
+    fireEvent.pointerLeave(shell, { pointerType: 'mouse' });
+    await act(async () => vi.advanceTimersByTime(750));
+    expect(tray).toHaveAttribute('data-expanded', 'false');
+    const trigger = container.querySelector('.sniffy-brand-trigger');
+    expect(trigger).toHaveAttribute('aria-hidden', 'false');
+    expect(trigger).not.toBeDisabled();
+    expect(trigger).toHaveAttribute('tabindex', '0');
+  });
+
+  it('preserves keyboard focus until blur and the collapse delay', async () => {
     vi.useFakeTimers();
     fixture();
     const pin = screen.getByRole('button', { name: 'Keep Sniffy counters pinned' });
     const tray = pin.parentElement as HTMLElement;
-    expect(pin).toHaveAttribute('aria-pressed', 'true');
-    expect(tray).toHaveAttribute('data-expanded', 'true');
-
+    pin.focus();
+    fireEvent.keyDown(pin, { key: 'Enter' });
     fireEvent.click(pin);
-    expect(pin).toHaveAttribute('aria-pressed', 'false');
-    const shell = tray.closest('.sniffy-shell') as HTMLElement;
+    await act(async () => vi.advanceTimersByTime(750));
+    expect(tray).toHaveAttribute('data-expanded', 'true');
+    expect(pin).toHaveFocus();
+    pin.blur();
     await act(async () => vi.advanceTimersByTime(749));
     expect(tray).toHaveAttribute('data-expanded', 'true');
     await act(async () => vi.advanceTimersByTime(1));
     expect(tray).toHaveAttribute('data-expanded', 'false');
+  });
 
-    fireEvent.pointerEnter(shell);
+  it('collapses after touch unpin without a synthetic pointer leave', async () => {
+    vi.useFakeTimers();
+    fixture();
+    const pin = screen.getByRole('button', { name: 'Keep Sniffy counters pinned' });
+    const tray = pin.parentElement as HTMLElement;
+    const shell = tray.closest('.sniffy-shell') as HTMLElement;
+    fireEvent.pointerEnter(shell, { pointerType: 'touch' });
+    fireEvent.focus(pin);
+    fireEvent.pointerDown(pin, { pointerType: 'touch' });
+    fireEvent.click(pin);
+    await act(async () => vi.advanceTimersByTime(749));
     expect(tray).toHaveAttribute('data-expanded', 'true');
-    expect(screen.getByRole('button', { name: 'Open Sniffy profiler' })).toHaveAttribute(
-      'data-visible',
-      'false',
-    );
-    fireEvent.pointerLeave(shell);
-    await act(async () => vi.advanceTimersByTime(750));
+    await act(async () => vi.advanceTimersByTime(1));
     expect(tray).toHaveAttribute('data-expanded', 'false');
+  });
+
+  it('reveals the tray from the compact trigger and supports keyboard opening', () => {
+    vi.useFakeTimers();
+    fixture();
+    const pin = screen.getByRole('button', { name: 'Keep Sniffy counters pinned' });
+    const tray = pin.parentElement as HTMLElement;
+    fireEvent.click(pin);
+    act(() => vi.advanceTimersByTime(750));
 
     const trigger = screen.getByRole('button', { name: 'Open Sniffy profiler' });
     fireEvent.focus(trigger);

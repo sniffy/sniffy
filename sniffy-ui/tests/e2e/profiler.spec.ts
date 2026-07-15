@@ -133,10 +133,16 @@ test('supports pinning, delayed hover/focus reveal, keyboard use and click fallb
   const profiler = page.locator('sniffy-profiler');
   const tray = profiler.locator('.sniffy-counter-tray');
   const pin = profiler.getByRole('button', { name: 'Keep Sniffy counters pinned' });
+  const triggerNode = profiler.locator('.sniffy-brand-trigger');
   await expect(pin).toHaveAttribute('aria-pressed', 'true');
   await expect(tray).toHaveAttribute('data-expanded', 'true');
+  await expect(triggerNode).toHaveAttribute('data-visible', 'false');
+  await expect(triggerNode).toHaveAttribute('aria-hidden', 'true');
+  await expect(triggerNode).toBeDisabled();
   await pin.click();
   await expect(pin).toHaveAttribute('aria-pressed', 'false');
+  await page.clock.fastForward(800);
+  await expect(tray).toHaveAttribute('data-expanded', 'true');
   const hostButton = page.locator('#host-xhr');
   await hostButton.focus();
   await hostButton.hover();
@@ -144,8 +150,10 @@ test('supports pinning, delayed hover/focus reveal, keyboard use and click fallb
   await expect(tray).toHaveAttribute('data-expanded', 'true');
   await page.clock.fastForward(300);
   await expect(tray).toHaveAttribute('data-expanded', 'false');
+  await expect(triggerNode).toHaveAttribute('aria-hidden', 'false');
+  await expect(triggerNode).toBeEnabled();
 
-  const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
+  const trigger = profiler.locator('.sniffy-brand-trigger');
   await trigger.hover();
   await expect(tray).toHaveAttribute('data-expanded', 'true');
   await hostButton.hover();
@@ -169,12 +177,11 @@ test('compact trigger works in a touch context and reduced motion removes transi
   const context = await browser.newContext({ hasTouch: true, reducedMotion: 'reduce' });
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:3000/mock/mock.html');
+  await page.clock.install();
   const profiler = page.locator('sniffy-profiler');
-  await profiler
-    .getByRole('button', { name: 'Keep Sniffy counters pinned' })
-    .evaluate((element) => (element as HTMLElement).click());
-  await page.locator('#host-xhr').focus();
+  await profiler.getByRole('button', { name: 'Keep Sniffy counters pinned' }).tap();
   const tray = profiler.locator('.sniffy-counter-tray');
+  await page.clock.fastForward(750);
   await expect(tray).toHaveAttribute('data-expanded', 'false');
   const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
   expect(
@@ -229,7 +236,7 @@ test('pulses the collapsed trigger and retains empty-details TTFB in the final t
   await hostButton.focus();
   await hostButton.hover();
   await expect(tray).toHaveAttribute('data-expanded', 'false');
-  const trigger = profiler.getByRole('button', { name: 'Open Sniffy profiler' });
+  const trigger = profiler.locator('.sniffy-brand-trigger');
 
   await page.evaluate(
     () =>
@@ -453,7 +460,13 @@ test('registry controls render and mutate equivalently in profiler and agent', a
     expect(uncheckedVisual.background).not.toBe(checkedVisual.background);
     expect(uncheckedVisual.thumb).not.toBe(checkedVisual.thumb);
 
-    await surface.getByRole('button', { name: 'Refresh' }).click();
+    const refresh = surface.getByRole('button', { name: 'Refresh' });
+    const refreshResponse = page.waitForResponse((response) =>
+      response.url().endsWith('/connectionregistry/'),
+    );
+    await refresh.click();
+    await refreshResponse;
+    await expect(refresh).toBeEnabled();
     await expect(socketSwitch).not.toBeChecked();
     const enableResponse = page.waitForResponse(
       (response) => response.url().includes(socketSuffix) && response.request().method() === 'POST',
