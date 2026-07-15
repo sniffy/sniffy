@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    { "path": "scripts" },
     { "path": "packages/theme" },
     { "path": "packages/ui" },
     { "path": "packages/api" },

@@ -11,7 +11,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "tsx apps/playground/src/server.ts",
+    "dev": "tsx scripts/dev.ts",
+    "dev:agent": "tsx scripts/dev.ts --mode=agent",
+    "dev:profiler": "tsx scripts/dev.ts --mode=profiler",
+    "preview:generated": "tsx scripts/dev.ts --mode=generated",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build --quiet",
     "lint": "eslint . && prettier --check .",

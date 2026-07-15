@@ -4,5 +4,6 @@ storybook-static/
 playwright-report/
 test-results/
 .vite/
+.tmp/
 *.log
 *.tsbuildinfo

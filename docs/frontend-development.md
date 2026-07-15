@@ -11,7 +11,20 @@ npm run dev
 npm run storybook
 ```
 
-The playground prints direct URLs for the legacy-equivalent page, a hostile nested-path page, and the agent UI. It runs on ports 3000 and 3001 so path rewriting and real CORS behavior are testable without MSW. Unexpected requests fail with HTTP 500.
+Choose the workflow that matches the work:
+
+- `npm run storybook` provides fast isolated component and product-state development with Storybook HMR.
+- `npm run dev` starts the full frontend environment: the real playground backend, agent Vite HMR, and profiler automatic rebuild/full-page reload.
+- `npm run dev:agent` focuses on the agent and serves the committed profiler.
+- `npm run dev:profiler` focuses on the injected profiler and serves the committed agent.
+- `npm run preview:generated` serves both committed Maven resources without HMR or source watching.
+- `npm run build` is the only normal command that regenerates committed production resources.
+
+The playground prints direct URLs for `http://127.0.0.1:3000/mock/mock.html`, `http://127.0.0.1:3000/mock/hostile/nested/page`, and `http://127.0.0.1:3000/agent/`. It runs on ports 3000 and 3001 so path rewriting and real CORS behavior are testable without MSW. Unexpected requests fail with HTTP 500.
+
+The development orchestrator owns both HTTP listeners, the agent Vite middleware/HMR server, the profiler watcher, and the profiler reload stream. Agent source updates use React Fast Refresh at the stable `/agent/` route while API calls continue through the same real Express backend. The profiler remains a classic injected IIFE; Vite watches its complete imported module graph and writes only to ignored `sniffy-ui/.tmp/dev/profiler/`. After each successful rebuild, an SSE notification reloads the complete host page. A full reload intentionally creates a fresh global XHR interceptor, React root, and custom element instead of repeatedly injecting scripts into one document. A failed build is logged and sends no reload; a later valid edit rebuilds normally.
+
+Development and generated-resource preview responses use `Cache-Control: no-store`, which avoids stale assets during local review rather than modeling long-lived production caching. SIGINT and SIGTERM close reload streams, HTTP listeners, Vite/HMR sockets, and the watcher; one Ctrl-C should return the terminal without orphan listeners. Startup removes only the orchestrator-owned `.tmp/dev` tree. No development or preview command writes committed Maven resources.
 
 `npm run build` writes the profiler to `sniffy-web-common/src/main/resources/io/sniffy/ui/` and the agent files to `sniffy/src/main/resources/web/`. Maven consumes committed outputs and never requires Node. Always run `npm run check:generated` and `npm run check:bundle`; the latter requires one classic profiler IIFE, rejects dynamic imports/eval/runtime stylesheets/placeholders, and enforces 200 KiB gzip.
 

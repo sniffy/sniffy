@@ -4,7 +4,16 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['node_modules', 'dist', 'storybook-static', 'test-results', 'playwright-report'] },
+  {
+    ignores: [
+      'node_modules',
+      'dist',
+      '.tmp',
+      'storybook-static',
+      'test-results',
+      'playwright-report',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
