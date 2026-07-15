@@ -169,6 +169,17 @@ describe('compact profiler widget', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss Sniffy for this page' }));
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('keeps pointer interactions inside the rendered shell open when the portal ShadowRoot is elsewhere', () => {
+    fixture({ initialOpen: true });
+
+    const network = screen.getByRole('tab', { name: 'Network Connections' });
+    fireEvent.pointerDown(network);
+    fireEvent.click(network);
+
+    expect(screen.getByText('Sniffy profiler')).toBeVisible();
+    expect(network).toHaveAttribute('data-active');
+  });
 });
 
 describe('profiler clipboard support', () => {

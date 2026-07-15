@@ -372,6 +372,7 @@ export function ProfilerApp({
   const copyStatusTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const counterButton = useRef<HTMLButtonElement | null>(null);
   const brandTrigger = useRef<HTMLButtonElement | null>(null);
+  const shell = useRef<HTMLDivElement | null>(null);
   const restoreFocusAfterClose = useRef(false);
   const trayExpanded = pinned || pointerInside || focusInside || temporarilyExpanded;
   const trayExpandedRef = useRef(trayExpanded);
@@ -442,7 +443,7 @@ export function ProfilerApp({
   useEffect(() => {
     if (!open) return;
     const handlePointerDown = (event: PointerEvent) => {
-      if (event.composedPath().includes(shadowRoot.host)) return;
+      if (shell.current && event.composedPath().includes(shell.current)) return;
       closeProfiler(false);
     };
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -456,7 +457,7 @@ export function ProfilerApp({
       document.removeEventListener('pointerdown', handlePointerDown, true);
       document.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [closeProfiler, open, shadowRoot]);
+  }, [closeProfiler, open]);
   const load = useCallback(
     async (
       label: string,
@@ -532,6 +533,7 @@ export function ProfilerApp({
   if (dismissed) return null;
   return (
     <div
+      ref={shell}
       className="sniffy-shell"
       onPointerEnter={() => {
         setPointerInside(true);
@@ -636,12 +638,6 @@ export function ProfilerApp({
               <X size={16} />
             </IconButton>
           </header>
-          <SummaryStrip
-            exceptions={totals.exceptions}
-            network={totals.network}
-            serverTime={serverTime}
-            sql={sqlCount}
-          />
           <Tabs.Root defaultValue="queries" className="flex min-h-0 flex-1 flex-col">
             <Tabs.List
               className="flex border-b border-border bg-surface"
@@ -678,16 +674,13 @@ export function ProfilerApp({
               </Tabs.Panel>
             </div>
           </Tabs.Root>
-          <footer className="border-t border-border px-3 py-2 text-xs text-muted">
-            Powered by{' '}
-            <a
-              className="text-accent underline"
-              href="https://sniffy.io/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Sniffy
-            </a>
+          <footer className="border-t border-border px-3 text-xs text-muted">
+            <SummaryStrip
+              exceptions={totals.exceptions}
+              network={totals.network}
+              serverTime={serverTime}
+              sql={sqlCount}
+            />
           </footer>
         </Card>
       ) : (

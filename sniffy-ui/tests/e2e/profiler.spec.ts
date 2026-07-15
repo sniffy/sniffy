@@ -39,6 +39,28 @@ test('mounts one isolated profiler and supports core interactions', async ({ pag
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('keeps uniform viewport spacing when maximized', async ({ page }) => {
+  const expectUniformSpacing = async (inset: number) => {
+    const viewport = page.viewportSize();
+    const panel = await page.locator('sniffy-profiler').locator('.sniffy-panel').boundingBox();
+    expect(viewport).not.toBeNull();
+    expect(panel).not.toBeNull();
+    expect(panel!.x).toBeCloseTo(inset, 0);
+    expect(panel!.y).toBeCloseTo(inset, 0);
+    expect(viewport!.width - panel!.x - panel!.width).toBeCloseTo(inset, 0);
+    expect(viewport!.height - panel!.y - panel!.height).toBeCloseTo(inset, 0);
+  };
+
+  await page.goto('/mock/mock.html');
+  const profiler = page.locator('sniffy-profiler');
+  await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
+  await profiler.getByRole('button', { name: 'Maximize panel' }).click();
+  await expectUniformSpacing(12);
+
+  await page.setViewportSize({ width: 600, height: 700 });
+  await expectUniformSpacing(6);
+});
+
 test('keeps existing XHR handlers and resolves relative detail URLs', async ({ page }) => {
   await page.goto('/mock/path/subpath/page');
   await page.getByRole('button', { name: 'Run application XHR' }).click();

@@ -56,7 +56,7 @@
 }
 .sniffy-panel[data-maximized='true'] {
   width: calc(100vw - 24px);
-  height: calc(100vh - 82px);
+  height: calc(100vh - 24px);
 }
 .sniffy-scroll {
   scrollbar-color: var(--sniffy-border) transparent;
@@ -135,6 +135,10 @@
     inset: auto 6px 6px 6px !important;
   }
   .sniffy-panel {
+    width: calc(100vw - 12px);
+    height: calc(100vh - 12px);
+  }
+  .sniffy-panel[data-maximized='true'] {
     width: calc(100vw - 12px);
     height: calc(100vh - 12px);
   }

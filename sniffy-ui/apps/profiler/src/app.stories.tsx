@@ -59,21 +59,29 @@ export const UnpinnedInteraction: StoryObj<typeof ProfilerApp> = {
       timeout: 1_000,
     });
     await userEvent.tab();
-    await expect(trigger).toHaveFocus();
+    const focusedTrigger = canvas.getByRole('button', { name: 'Open Sniffy profiler' });
+    await expect(focusedTrigger).toHaveFocus();
     await waitFor(() => expect(pin.parentElement).toHaveAttribute('data-expanded', 'true'));
-    trigger.blur();
+    focusedTrigger.blur();
     await waitFor(() => expect(pin.parentElement).toHaveAttribute('data-expanded', 'false'), {
       timeout: 1_000,
     });
-    await userEvent.click(trigger);
+    await userEvent.click(canvas.getByRole('button', { name: 'Open Sniffy profiler' }));
     await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
   },
 };
 
 export const Normal: StoryObj<typeof ProfilerApp> = {
   args: { metadata, intercepted, shadowRoot, initialOpen: true },
+  render: (args) => (
+    <>
+      <button type="button">Outside profiler</button>
+      <ProfilerApp {...args} />
+    </>
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
     await expect(await canvas.findByText(/Example failure/)).toBeVisible();
     await expect(canvas.getByLabelText('Profiler summary')).toBeVisible();
     await expect(
@@ -81,6 +89,31 @@ export const Normal: StoryObj<typeof ProfilerApp> = {
     ).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Stack trace' }));
     await expect(canvas.getByText(/Service\.call/)).toBeVisible();
+
+    const network = canvas.getByRole('tab', { name: 'Network Connections' });
+    await userEvent.click(network);
+    await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
+    await expect(network).toHaveAttribute('data-active');
+
+    const topSql = canvas.getByRole('tab', { name: 'Top SQL' });
+    await userEvent.click(topSql);
+    await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
+    await expect(topSql).toHaveAttribute('data-active');
+    await expect(await canvas.findByRole('table', { name: 'Top SQL' })).toBeVisible();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Maximize panel' }));
+    await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Restore panel' })).toBeVisible();
+    await userEvent.click(canvas.getByLabelText('Profiler summary'));
+    await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Outside profiler' }));
+    await expect(canvas.queryByText('Sniffy profiler')).toBeNull();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Toggle Sniffy profiler' }));
+    await expect(canvas.getByText('Sniffy profiler')).toBeVisible();
+    await userEvent.keyboard('{Escape}');
+    await expect(canvas.queryByText('Sniffy profiler')).toBeNull();
   },
 };
 
