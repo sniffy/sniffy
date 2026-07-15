@@ -83,9 +83,10 @@ public class DecryptLocalhostHttpsTrafficVertXTest {
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
 
             Vertx vertx = Vertx.vertx();
-            WebClient webClient = WebClient.create(vertx);
+            WebClient webClient = null;
             Throwable failure = null;
             try {
+                webClient = WebClient.create(vertx);
                 HttpRequest<Buffer> httpRequest = webClient
                         .get(port, "localhost", "/")
                         .ssl(true)
@@ -179,10 +180,12 @@ public class DecryptLocalhostHttpsTrafficVertXTest {
     }
 
     private static Throwable closeWebClient(WebClient webClient, Throwable failure) {
-        try {
-            webClient.close();
-        } catch (Throwable e) {
-            failure = addSuppressed(failure, e);
+        if (null != webClient) {
+            try {
+                webClient.close();
+            } catch (Throwable e) {
+                failure = addSuppressed(failure, e);
+            }
         }
         return failure;
     }
