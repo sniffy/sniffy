@@ -101,7 +101,7 @@ configure_github_auth() {
   probe_branch="agent/codex-auth-check-$(git rev-parse --short=12 HEAD)"
 
   if ! push_error="$(git push --dry-run --porcelain https://github.com/sniffy/sniffy.git "HEAD:refs/heads/${probe_branch}" 2>&1)"; then
-    echo "GH_TOKEN authenticates as ${auth_login}, but GitHub rejected a dry-run push to sniffy/sniffy:" >&2
+    echo "GH_TOKEN authenticates as ${auth_login}, but setup could not negotiate a dry-run push to sniffy/sniffy:" >&2
     printf '%s\n' "${push_error}" >&2
     echo "The repository .permissions.push flag only describes the account role; token permissions can be narrower." >&2
     echo "For a fine-grained PAT, make the token owner a sniffy organization member and grant Contents: write for sniffy/sniffy." >&2
@@ -109,7 +109,8 @@ configure_github_auth() {
     exit 1
   fi
 
-  echo "Verified Git push authorization with a non-mutating dry run as ${auth_login}."
+  echo "Verified setup-phase Git push endpoint access with a non-mutating dry run as ${auth_login}."
+  echo "Agent-phase publication also requires github.com and api.github.com plus write HTTP methods in the Codex environment internet policy."
   gh auth status --hostname github.com
 }
 
