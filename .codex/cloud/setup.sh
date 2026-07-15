@@ -10,22 +10,70 @@ set -euo pipefail
 JDKS_DIR="${HOME}/.jdks"
 JDK8_HOME="${JDKS_DIR}/temurin-8"
 ENV_FILE="${HOME}/.sniffy-codex-env"
+GH_VERSION="2.96.0"
+GH_BIN_DIR="${HOME}/.local/bin"
+GH_INSTALL_DIR="${HOME}/.local/share/gh/${GH_VERSION}"
 
 case "$(uname -m)" in
-  x86_64) ADOPTIUM_ARCH="x64" ;;
-  aarch64|arm64) ADOPTIUM_ARCH="aarch64" ;;
+  x86_64)
+    ADOPTIUM_ARCH="x64"
+    GH_ARCH="amd64"
+    GH_SHA256="83d5c2ccad5498f58bf6368acb1ab32588cf43ab3a4b1c301bf36328b1c8bd60"
+    ;;
+  aarch64|arm64)
+    ADOPTIUM_ARCH="aarch64"
+    GH_ARCH="arm64"
+    GH_SHA256="06f86ec7103d41993b76cd78072f43595c34aaa56506d971d9860e67140bf909"
+    ;;
   *)
     echo "Unsupported architecture: $(uname -m)" >&2
     exit 1
     ;;
 esac
 
-for command_name in curl tar find mise mvn; do
+for command_name in curl tar find install ln sha256sum mise mvn; do
   if ! command -v "${command_name}" >/dev/null 2>&1; then
     echo "Required command '${command_name}' is unavailable in the Codex image." >&2
     exit 1
   fi
 done
+
+install_github_cli() {
+  if [[ ! -x "${GH_INSTALL_DIR}/bin/gh" ]]; then
+    echo "Installing GitHub CLI ${GH_VERSION}..."
+    local archive asset extracted unpack
+    asset="gh_${GH_VERSION}_linux_${GH_ARCH}.tar.gz"
+    archive="$(mktemp)"
+    unpack="$(mktemp -d)"
+    trap 'rm -rf "${archive:-}" "${unpack:-}"' RETURN
+
+    curl --fail --location --retry 5 --retry-all-errors --retry-delay 2 \
+      "https://github.com/cli/cli/releases/download/v${GH_VERSION}/${asset}" \
+      --output "${archive}"
+    printf '%s  %s\n' "${GH_SHA256}" "${archive}" | sha256sum --check --status
+
+    tar -xzf "${archive}" -C "${unpack}"
+    extracted="${unpack}/gh_${GH_VERSION}_linux_${GH_ARCH}/bin/gh"
+    if [[ ! -x "${extracted}" ]]; then
+      echo "Could not locate the extracted GitHub CLI binary." >&2
+      exit 1
+    fi
+
+    install -d "${GH_INSTALL_DIR}/bin"
+    install -m 0755 "${extracted}" "${GH_INSTALL_DIR}/bin/gh"
+    rm -rf "${archive}" "${unpack}"
+    trap - RETURN
+  else
+    echo "GitHub CLI ${GH_VERSION} already installed."
+  fi
+
+  install -d "${GH_BIN_DIR}"
+  ln -sfn "${GH_INSTALL_DIR}/bin/gh" "${GH_BIN_DIR}/gh"
+  export PATH="${GH_BIN_DIR}:${PATH}"
+  gh --version
+}
+
+install_github_cli
 
 configure_github_auth() {
   if [[ -z "${GH_TOKEN:-}" ]]; then
@@ -116,7 +164,7 @@ export SNIFFY_JDK17_HOME="${JDK17_HOME}"
 export SNIFFY_JDK21_HOME="${JDK21_HOME}"
 export SNIFFY_JDK25_HOME="${JDK25_HOME}"
 export JAVA_HOME="${JDK25_HOME}"
-export PATH="${JDK25_HOME}/bin:\${PATH}"
+export PATH="${JDK25_HOME}/bin:${GH_BIN_DIR}:\${PATH}"
 EOF_ENV
 
 for shell_file in "${HOME}/.bashrc" "${HOME}/.profile"; do
