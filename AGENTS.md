@@ -48,6 +48,16 @@ constraints for their subtrees.
 - The Codex Cloud environment is described in `docs/codex-workflow.md`. Use `source .codex/cloud/use-jdk.sh <version>`
   to switch among the installed JDK 8, 11, 17, 21, and 25 toolchains.
 - Run focused tests for the changed behavior first.
+- After switching JDKs in the same worktree, run `clean` before the first Maven build under the new JDK or use an
+  isolated checkout/output directory. Never treat `target/` classes compiled by another JDK as evidence for the current
+  runtime; Maven incremental compilation can otherwise reuse bytecode linked to APIs or covariant method descriptors
+  that do not exist on Java 8.
+- For a Java 8 artifact compiled on a newer JDK, `source`/`target` bytecode levels alone are insufficient. Run the
+  configured Java 8 API-signature check during `verify` and, for compatibility-sensitive changes, execute the same
+  modern-JDK-built artifact on a real Java 8 runtime without recompiling it there.
+- Run independent validation obligations as separate commands with individually visible exit statuses. Do not combine
+  multiple JDK/module checks into one opaque long-running chain. A manual interruption is not a result; if a command is
+  intentionally time-bounded, use an explicit timeout, report that timeout, and leave the complete reactor result to CI.
 - Treat every acceptance criterion as an evidence obligation. Verify that its focused test is discovered and executed
   in the test report; compiled tests, unused fixtures, skipped modules, and an overall green CI result are not proof.
 - For NIO changes, run `mvn -pl sniffy-module-nio -am clean test` on Java 8 and the current development JDK.
