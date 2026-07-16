@@ -28,6 +28,9 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -293,7 +296,7 @@ public class SniffyExtensionLauncherTest {
         public void before() throws Throwable { socketOperation(); }
 
         @Test
-        @SocketExpectation(connections = @io.sniffy.test.Count(min = 1), threads = Threads.ANY)
+        @SocketExpectation(connections = @io.sniffy.test.Count(5), threads = Threads.ANY)
         public void socket() throws Throwable {
             socketOperation();
             socketOperation();
@@ -363,11 +366,26 @@ public class SniffyExtensionLauncherTest {
 
     static void socketOperation() throws Throwable {
         EchoServerRule echoServerRule = startServer();
+        Socket socket = null;
         try {
-            Socket socket = new Socket(InetAddress.getByName(null), echoServerRule.getBoundPort());
-            socket.close();
+            socket = new Socket(InetAddress.getByName(null), echoServerRule.getBoundPort());
+            OutputStream outputStream = socket.getOutputStream();
+            outputStream.write(new byte[] {1, 2, 3, 4});
+            outputStream.flush();
+            socket.shutdownOutput();
+            InputStream inputStream = socket.getInputStream();
+            ByteArrayOutputStream response = new ByteArrayOutputStream();
+            int read;
+            while ((read = inputStream.read()) != -1) {
+                response.write(read);
+            }
+            socket.shutdownInput();
             echoServerRule.joinThreads();
+            assertArrayEquals(new byte[] {9, 8, 7}, response.toByteArray());
         } finally {
+            if (socket != null) {
+                socket.close();
+            }
             echoServerRule.after();
         }
     }
