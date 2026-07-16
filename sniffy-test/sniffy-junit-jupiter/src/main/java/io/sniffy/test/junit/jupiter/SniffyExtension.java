@@ -74,7 +74,7 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
             }
             if (state.disableSockets) {
                 state.connectionsRegistrySnapshot = ConnectionsRegistry.INSTANCE.takeSnapshot();
-                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatusVolatile(null, null, -1);
             }
         } catch (Throwable setupFailure) {
             Throwable cleanupFailure = cleanup(state);
@@ -204,8 +204,17 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
             return !sqlExpectations.isEmpty() || !socketExpectations.isEmpty();
         }
 
-        private void restoreConnectionsRegistry() {
-            ConnectionsRegistry.INSTANCE.restoreSnapshot(connectionsRegistrySnapshot);
+        private void restoreConnectionsRegistry() throws Throwable {
+            try {
+                ConnectionsRegistry.INSTANCE.restoreSnapshot(connectionsRegistrySnapshot);
+            } catch (ConnectionsRegistry.ConnectionsRegistryRestoreException e) {
+                List<Throwable> failures = e.getFailures();
+                Throwable first = failures.isEmpty() ? e : failures.get(0);
+                for (int i = 1; i < failures.size(); i++) {
+                    first.addSuppressed(failures.get(i));
+                }
+                throw first;
+            }
         }
     }
 }

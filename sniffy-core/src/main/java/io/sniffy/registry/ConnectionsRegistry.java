@@ -185,12 +185,16 @@ public enum ConnectionsRegistry implements Runnable {
     }
 
     public void setSocketAddressStatus(String hostName, Integer port, Integer connectionStatus) {
+        setSocketAddressStatus(hostName, port, connectionStatus, true);
+    }
+
+    void setSocketAddressStatus(String hostName, Integer port, Integer connectionStatus, boolean persistChange) {
 
         Map<Map.Entry<String, Integer>, Integer> discoveredAddresses = getDiscoveredAddressesImpl();
 
         discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
 
-        if (persistRegistry) {
+        if (persistChange && persistRegistry) {
             try {
                 ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry(this);
             } catch (IOException e) {
@@ -285,6 +289,7 @@ public enum ConnectionsRegistry implements Runnable {
         private final Map<Map.Entry<String, Integer>, Integer> addresses;
         private final Map<Map.Entry<String, String>, Integer> dataSources;
         private final Map<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> connections;
+        private final ConnectionsRegistryStorage.StorageSnapshot storageSnapshot;
 
         private ConnectionsRegistrySnapshot(ConnectionsRegistry registry) {
             this.persistRegistry = registry.persistRegistry;
@@ -292,6 +297,7 @@ public enum ConnectionsRegistry implements Runnable {
             this.addresses = new LinkedHashMap<Map.Entry<String, Integer>, Integer>(registry.getDiscoveredAddressesImpl());
             this.dataSources = new LinkedHashMap<Map.Entry<String, String>, Integer>(registry.getDiscoveredDataSourcesImpl());
             this.connections = new LinkedHashMap<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>>();
+            this.storageSnapshot = ConnectionsRegistryStorage.INSTANCE.takeStorageSnapshot();
             synchronized (registry.sniffySocketImpls) {
                 for (Map.Entry<Map.Entry<String, Integer>, Collection<Reference<SniffyNetworkConnection>>> entry : registry.sniffySocketImpls.entrySet()) {
                     Collection<SniffyNetworkConnection> liveConnections = new ArrayList<SniffyNetworkConnection>();
@@ -309,30 +315,55 @@ public enum ConnectionsRegistry implements Runnable {
         }
 
         private void restore(ConnectionsRegistry registry) {
-            registry.threadLocal = this.threadLocal;
-            restoreMap(registry.getDiscoveredAddressesImpl(), this.addresses);
-            restoreMap(registry.getDiscoveredDataSourcesImpl(), this.dataSources);
-            synchronized (registry.sniffySocketImpls) {
-                registry.sniffySocketImpls.clear();
-                for (Map.Entry<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> entry : this.connections.entrySet()) {
-                    Collection<Reference<SniffyNetworkConnection>> references = Collections.newSetFromMap(
-                            new ConcurrentHashMap<Reference<SniffyNetworkConnection>, Boolean>());
-                    for (SniffyNetworkConnection connection : entry.getValue()) {
-                        references.add(new WeakReference<SniffyNetworkConnection>(connection, registry.sniffySocketReferenceQueue));
+            Throwable failure = null;
+            List<Throwable> failures = new ArrayList<Throwable>();
+            try {
+                registry.threadLocal = this.threadLocal;
+                restoreMap(registry.getDiscoveredAddressesImpl(), this.addresses);
+                restoreMap(registry.getDiscoveredDataSourcesImpl(), this.dataSources);
+                synchronized (registry.sniffySocketImpls) {
+                    registry.sniffySocketImpls.clear();
+                    for (Map.Entry<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> entry : this.connections.entrySet()) {
+                        Collection<Reference<SniffyNetworkConnection>> references = Collections.newSetFromMap(
+                                new ConcurrentHashMap<Reference<SniffyNetworkConnection>, Boolean>());
+                        for (SniffyNetworkConnection connection : entry.getValue()) {
+                            references.add(new WeakReference<SniffyNetworkConnection>(connection, registry.sniffySocketReferenceQueue));
+                        }
+                        registry.sniffySocketImpls.put(entry.getKey(), references);
                     }
-                    registry.sniffySocketImpls.put(entry.getKey(), references);
                 }
+                registry.persistRegistry = this.persistRegistry;
+            } catch (Throwable t) {
+                failure = suppress(failure, t);
+                failures.add(t);
             }
-            registry.persistRegistry = this.persistRegistry;
             for (Map.Entry<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> entry : this.connections.entrySet()) {
                 Integer status = this.addresses.get(entry.getKey());
                 if (status == null) {
                     status = 0;
                 }
                 for (SniffyNetworkConnection connection : entry.getValue()) {
-                    connection.setConnectionStatus(new InetSocketAddress(entry.getKey().getKey(), entry.getKey().getValue()), status);
+                    try {
+                        connection.setConnectionStatus(new InetSocketAddress(entry.getKey().getKey(), entry.getKey().getValue()), status);
+                    } catch (Throwable t) {
+                        failure = suppress(failure, t);
+                        failures.add(t);
+                    }
                 }
             }
+            try {
+                ConnectionsRegistryStorage.INSTANCE.restoreStorageSnapshot(this.storageSnapshot);
+            } catch (Throwable t) {
+                failure = suppress(failure, t);
+                failures.add(t);
+            }
+            if (failure != null) {
+                throw new ConnectionsRegistryRestoreException(failures);
+            }
+        }
+
+        private static Throwable suppress(Throwable failure, Throwable t) {
+            return failure == null ? t : failure;
         }
 
         private static <K, V> void restoreMap(Map<K, V> target, Map<K, V> snapshot) {
@@ -344,6 +375,28 @@ public enum ConnectionsRegistry implements Runnable {
             }
             target.putAll(snapshot);
         }
+    }
+
+    public static final class ConnectionsRegistryRestoreException extends RuntimeException {
+        private final List<Throwable> failures;
+
+        private ConnectionsRegistryRestoreException(List<Throwable> failures) {
+            super(failures.get(0).getMessage(), failures.get(0));
+            this.failures = new ArrayList<Throwable>(failures);
+        }
+
+        public List<Throwable> getFailures() {
+            return Collections.unmodifiableList(failures);
+        }
+    }
+
+    /**
+     * Applies a temporary socket status without persisting the scoped override.
+     *
+     * @since 4.0
+     */
+    public void setSocketAddressStatusVolatile(String hostName, Integer port, Integer connectionStatus) {
+        setSocketAddressStatus(hostName, port, connectionStatus, false);
     }
 
     public boolean isPersistRegistry() {

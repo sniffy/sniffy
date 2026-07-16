@@ -11,6 +11,7 @@ import io.sniffy.socket.Protocol;
 import io.sniffy.socket.SniffyNetworkConnection;
 import io.sniffy.sql.NoSql;
 import io.sniffy.sql.SqlExpectation;
+import io.sniffy.util.IOUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.engine.TestExecutionResult;
@@ -21,6 +22,7 @@ import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 
+import java.io.File;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -31,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 import static org.junit.jupiter.api.Assertions.*;
@@ -125,6 +129,87 @@ public class SniffyExtensionLauncherTest {
         assertEquals("user after resource acquisition", failures.get(0).getMessage());
         assertEquals(1, failures.get(0).getSuppressed().length);
         assertEquals("status cleanup failure", failures.get(0).getSuppressed()[0].getMessage());
+        ConnectionsRegistry.INSTANCE.clear();
+    }
+
+
+    @Test
+    public void disableSocketsDoesNotPersistTemporaryWildcardAndRestoresBackingFile() throws Exception {
+        ConnectionsRegistry.INSTANCE.clear();
+        File file = connectionsRegistryFile();
+        file.delete();
+        ConnectionsRegistry.INSTANCE.setPersistRegistry(true);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("persisted", 321, 4);
+        String before = read(file);
+        assertTrue(before.contains("\"host\":\"persisted\""));
+        assertFalse(before.contains("{,\"status\":-1}"));
+
+        assertTrue(execute(DisableSocketsSample.class).isEmpty());
+        assertEquals(before, read(file));
+
+        SetupFailureAfterResourcesSample.executed = false;
+        TrackingConnection connection = new TrackingConnection("localhost", 321);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(connection.getInetSocketAddress(), connection);
+        String beforeFailure = read(file);
+        connection.throwOnEndpointlessStatus = true;
+        connection.throwOnStatusCall = connection.statusCalls + 1;
+        List<Throwable> failures = execute(SetupFailureAfterResourcesSample.class);
+        assertEquals(1, failures.size());
+        assertEquals("status cleanup failure", failures.get(0).getMessage());
+        assertFalse(SetupFailureAfterResourcesSample.executed);
+        assertEquals(beforeFailure, read(file));
+        ConnectionsRegistry.INSTANCE.clear();
+        file.delete();
+    }
+
+    @Test
+    public void setupFailureAfterSpyAndSnapshotClosesSpyAndRestoresConnectivity() throws Exception {
+        ConnectionsRegistry.INSTANCE.clear();
+        ConnectionsRegistry.INSTANCE.setPersistRegistry(true);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("setup", 125, 7);
+        SetupFailureAfterResourcesSample.executed = false;
+        TrackingConnection connection = new TrackingConnection("localhost", 125);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(connection.getInetSocketAddress(), connection);
+        String before = read(connectionsRegistryFile());
+        connection.throwOnEndpointlessStatus = true;
+        connection.throwOnStatusCall = connection.statusCalls + 1;
+
+        List<Throwable> failures = execute(SetupFailureAfterResourcesSample.class);
+
+        assertEquals(1, failures.size());
+        assertEquals("status cleanup failure", failures.get(0).getMessage());
+        assertEquals(1, failures.get(0).getSuppressed().length);
+        assertTrue(failures.get(0).getSuppressed()[0].getClass().getName().contains("WrongNumberOfQueries"));
+        assertFalse(SetupFailureAfterResourcesSample.executed);
+        assertEquals(Integer.valueOf(7), ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().get(new AbstractMap.SimpleEntry<String, Integer>("setup", 125)));
+        assertEquals(before, read(connectionsRegistryFile()));
+        ConnectionsRegistry.INSTANCE.clear();
+        connectionsRegistryFile().delete();
+    }
+
+    @Test
+    public void bestEffortRestoreContinuesAfterFirstConnectionCallbackFailure() {
+        ConnectionsRegistry.INSTANCE.clear();
+        TrackingConnection first = new TrackingConnection("localhost", 126);
+        TrackingConnection second = new TrackingConnection("localhost", 127);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(first.getInetSocketAddress(), first);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(second.getInetSocketAddress(), second);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 126, 5);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 127, 6);
+        first.throwOnStatusCall = first.statusCalls + 2;
+        second.throwOnStatusCall = 0;
+
+        List<Throwable> failures = execute(DisableSocketsUserFailureWithCleanupFailureSample.class);
+
+        assertEquals(1, failures.size());
+        assertEquals("user after resource acquisition", failures.get(0).getMessage());
+        assertTrue(first.statusCalls >= 4);
+        assertEquals(1, failures.get(0).getSuppressed().length);
+        assertEquals("status cleanup failure", failures.get(0).getSuppressed()[0].getMessage());
+        assertEquals(6, second.status);
+        second.status = 0;
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 127, 9);
+        assertEquals(9, second.status);
         ConnectionsRegistry.INSTANCE.clear();
     }
 
@@ -294,6 +379,18 @@ public class SniffyExtensionLauncherTest {
     }
 
     @ExtendWith(SniffyExtension.class)
+    public static class SetupFailureAfterResourcesSample {
+        static boolean executed;
+        @Test
+        @DisableSockets
+        @SqlExpectation(count = @io.sniffy.test.Count(1))
+        public void setupFailsAfterResources() throws Exception {
+            executed = true;
+            SniffyExtensionTest.query();
+        }
+    }
+
+    @ExtendWith(SniffyExtension.class)
     public static class DisableSocketsUserFailureWithCleanupFailureSample {
         @Test
         @DisableSockets
@@ -318,11 +415,20 @@ public class SniffyExtensionLauncherTest {
         return echoServerRule;
     }
 
+    static File connectionsRegistryFile() {
+        return new File(IOUtil.getApplicationSniffyFolder(), "connectionsRegistry.json");
+    }
+
+    static String read(File file) throws IOException {
+        return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+    }
+
     static class TrackingConnection implements SniffyNetworkConnection {
         private final InetSocketAddress address;
         int status;
         int statusCalls;
         int throwOnStatusCall;
+        boolean throwOnEndpointlessStatus;
 
         TrackingConnection(String host, int port) {
             this.address = new InetSocketAddress(host, port);
@@ -330,11 +436,16 @@ public class SniffyExtensionLauncherTest {
 
         public InetSocketAddress getInetSocketAddress() { return address; }
         public void setConnectionStatus(Integer connectionStatus) {
+            setConnectionStatus(null, connectionStatus, true);
+        }
+        public void setConnectionStatus(InetSocketAddress endpoint, Integer connectionStatus) {
+            setConnectionStatus(endpoint, connectionStatus, false);
+        }
+        private void setConnectionStatus(InetSocketAddress endpoint, Integer connectionStatus, boolean endpointless) {
             statusCalls++;
-            if (statusCalls == throwOnStatusCall) throw new IllegalStateException("status cleanup failure");
+            if (statusCalls == throwOnStatusCall && (!throwOnEndpointlessStatus || endpointless)) throw new IllegalStateException("status cleanup failure");
             status = connectionStatus == null ? 0 : connectionStatus;
         }
-        public void setConnectionStatus(InetSocketAddress endpoint, Integer connectionStatus) { setConnectionStatus(connectionStatus); }
         public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) {}
         public InetSocketAddress getProxiedInetSocketAddress() { return null; }
         public void setFirstPacketSent(boolean firstPacketSent) {}
