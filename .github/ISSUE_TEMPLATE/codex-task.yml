@@ -37,6 +37,25 @@ body:
       label: Non-goals
       description: Explicitly exclude tempting adjacent work.
   - type: textarea
+    id: risk_proof
+    attributes:
+      label: Risk, architecture, and proof matrix
+      description: For each requirement or high-risk lifecycle/compatibility case, state the module/API boundary and the exact test, CI job, or inspection that will prove it. Mark non-applicable risk axes explicitly.
+      placeholder: |
+        | Requirement or risk | Allowed module/API boundary | Proof |
+        | --- | --- | --- |
+        | Java 8 production artifact | production module only; no newer APIs | focused Java 8 test + bytecode contract |
+        | partial setup failure | no global/core redesign | named launcher test proving body did not run and cleanup completed |
+    validations:
+      required: true
+  - type: textarea
+    id: delivery
+    attributes:
+      label: Delivery topology and checkpoints
+      description: State base/head branches, whether an existing PR must be reused, who creates the PR, draft/ready rules, publication proof, and any internal implementation checkpoints. Use one PR unless slices are independently mergeable.
+    validations:
+      required: true
+  - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
@@ -71,6 +90,10 @@ body:
       label: Autonomous readiness
       options:
         - label: Product and compatibility decisions are explicit.
+          required: true
+        - label: Module/API scope boundaries and any global-state or lifecycle decisions are explicit.
+          required: true
+        - label: Every acceptance criterion is mapped to an executable or inspectable proof.
           required: true
         - label: Acceptance criteria are testable.
           required: true
