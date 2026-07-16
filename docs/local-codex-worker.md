@@ -119,23 +119,35 @@ The Hyper-V Manager wizard is acceptable. The following PowerShell path makes th
 
 ### 3.1. Save and run the creation script
 
-Open **Windows PowerShell as Administrator** on the physical host. Create a dedicated script directory and open a new
-script in Notepad:
+Use the stable naming pattern `bedrin-worker-<number>`: the first VM and its Windows hostname are
+`bedrin-worker-1`, and a later independent worker becomes `bedrin-worker-2`. Keep every worker under
+`C:\work\vms\<vm-name>` and keep the reusable installation image at `C:\work\iso\windows.iso`.
+
+Open **Windows PowerShell as Administrator** on the physical host. Create the VM storage directory and open the reusable
+creation script in Notepad:
 
 ```powershell
-New-Item -ItemType Directory -Force -Path "$HOME\Documents\CodexWorker"
-notepad.exe "$HOME\Documents\CodexWorker\create-codex-worker.ps1"
+New-Item -ItemType Directory -Force -Path "C:\work\vms"
+notepad.exe "C:\work\vms\create-bedrin-worker.ps1"
 ```
 
-Accept Notepad's prompt to create the file, paste the complete script below, replace the ISO, VM, and switch paths, then
-save and close Notepad. Starting Notepad with the full `.ps1` path avoids accidentally saving
-`create-codex-worker.ps1.txt`.
+Accept Notepad's prompt to create the file, paste the complete script below, and save and close Notepad. Starting
+Notepad with the full `.ps1` path avoids accidentally saving `create-bedrin-worker.ps1.txt`.
 
 ```powershell
-$vmName = "CodexWorker"
-$vmRoot = "D:\VMs\CodexWorker"
-$isoPath = "D:\ISO\Windows11.iso"
+param(
+  [ValidateRange(1, 99)]
+  [int] $WorkerNumber = 1
+)
+
+$vmName = "bedrin-worker-$WorkerNumber"
+$vmRoot = Join-Path "C:\work\vms" $vmName
+$isoPath = "C:\work\iso\windows.iso"
 $switchName = "Default Switch"
+
+if (-not (Test-Path -LiteralPath $isoPath -PathType Leaf)) {
+  throw "Windows ISO not found: $isoPath"
+}
 
 New-Item -ItemType Directory -Force -Path $vmRoot
 New-VM `
@@ -162,11 +174,13 @@ for that PowerShell process and execute the saved file:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-& "$HOME\Documents\CodexWorker\create-codex-worker.ps1"
+& "C:\work\vms\create-bedrin-worker.ps1" -WorkerNumber 1
 ```
 
-This does not weaken the permanent machine or user execution policy; closing the PowerShell window removes the
-process-scoped override. Do not use a machine-wide `Unrestricted` policy for this runbook.
+This creates `bedrin-worker-1` under `C:\work\vms\bedrin-worker-1`. To create the second worker later, run the
+same script with `-WorkerNumber 2`; do not clone a credential-bearing first VM. The process-scoped override does not
+weaken the permanent machine or user execution policy and disappears when the PowerShell window closes. Do not use a
+machine-wide `Unrestricted` policy for this runbook.
 
 Windows 11 VMs require Generation 2, Secure Boot, a virtual TPM, at least 4 GB RAM, two virtual processors, and 64 GB
 storage. See [Windows 11 requirements: virtual machine
@@ -183,8 +197,8 @@ virtmgmt.msc
 In Hyper-V Manager:
 
 1. Select the local host in the left pane. If it is absent, use **Action > Connect to Server > Local computer**.
-2. Find **CodexWorker** in the center **Virtual Machines** pane.
-3. Right-click **CodexWorker**, select **Connect**, and leave the VMConnect console in the foreground.
+2. Find **bedrin-worker-1** in the center **Virtual Machines** pane.
+3. Right-click **bedrin-worker-1**, select **Connect**, and leave the VMConnect console in the foreground.
 4. Click **Start** in VMConnect.
 5. Immediately click inside the console and press **Space** repeatedly until Windows Setup appears.
 
@@ -198,12 +212,23 @@ During Windows setup:
 
 1. Select Windows 11 Pro, not a regional `N` edition. Home supports WSL2, but Pro makes later RDP and administration
    easier.
-2. Create a dedicated local Windows account for the worker.
-3. Do not sign into GitHub, email, cloud drives, or password managers used on the host.
-4. Apply Windows Update and reboot until no important update remains.
-5. Disable sleep inside the guest. The host may still save the VM during shutdown.
-6. Do not enable shared host drives. Avoid clipboard and device redirection when using an enhanced session.
-7. Create a clean checkpoint before adding ChatGPT and GitHub credentials.
+2. Give Windows the same device name as the Hyper-V VM: `bedrin-worker-1`. Use `bedrin-worker-2` for the later
+   second worker.
+3. To create a local account during Windows 11 Pro OOBE, choose **Set up for work or school**, then
+   **Sign-in options > Domain join instead**. Despite the label, this path creates a local account and does not require
+   joining a domain.
+4. If that option is absent or OOBE has already passed it, finish setup with a dedicated temporary Microsoft account,
+   then use **Settings > Accounts > Your info > Sign in with a local account instead**. Microsoft documents this
+   conversion in [Change from a Microsoft account to a local
+   account](https://support.microsoft.com/en-US/accounts-billing/manage/change-from-a-local-account-to-a-microsoft-account-in-windows).
+   Remove the temporary identity from **Email & accounts** and unlink OneDrive afterward.
+5. Use a dedicated local Windows username such as `worker` and set a strong non-empty password because RDP will need
+   it. Do not use a personal or employer Microsoft account for this VM.
+6. Do not sign into GitHub, email, cloud drives, or password managers used on the host.
+7. Apply Windows Update and reboot until no important update remains.
+8. Disable sleep inside the guest. The host may still save the VM during shutdown.
+9. Do not enable shared host drives. Avoid clipboard and device redirection when using an enhanced session.
+10. Create a clean checkpoint before adding ChatGPT and GitHub credentials.
 
 Checkpoints and VM exports made after login contain cached credentials. Store them only on an encrypted host volume and
 treat them as secrets.
@@ -228,7 +253,7 @@ wsl --list --verbose
 If WSL reports that virtualization is unavailable, stop the VM and re-run this command on the physical host:
 
 ```powershell
-Set-VMProcessor -VMName "CodexWorker" -ExposeVirtualizationExtensions $true
+Set-VMProcessor -VMName "bedrin-worker-1" -ExposeVirtualizationExtensions $true
 ```
 
 Running WSL2 inside a Hyper-V VM is a supported nested-virtualization scenario. See Microsoft's
@@ -690,10 +715,10 @@ worktree boundary.
 From the physical host:
 
 ```powershell
-Get-VM -Name "CodexWorker"
-Get-VMProcessor -VMName "CodexWorker" | Format-List Count,ExposeVirtualizationExtensions
-Get-VMMemory -VMName "CodexWorker"
-Get-VMTPM -VMName "CodexWorker"
+Get-VM -Name "bedrin-worker-1"
+Get-VMProcessor -VMName "bedrin-worker-1" | Format-List Count,ExposeVirtualizationExtensions
+Get-VMMemory -VMName "bedrin-worker-1"
+Get-VMTPM -VMName "bedrin-worker-1"
 ```
 
 Inside the Windows VM and WSL:
