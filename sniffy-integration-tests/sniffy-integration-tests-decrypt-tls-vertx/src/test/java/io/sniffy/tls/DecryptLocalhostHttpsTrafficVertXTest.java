@@ -28,9 +28,9 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.sniffy.socket.NetworkPacket.convertNetworkPacketsToString;
 import static org.junit.Assert.*;
@@ -77,41 +77,63 @@ public class DecryptLocalhostHttpsTrafficVertXTest {
     }
 
     @SuppressWarnings("CharsetObjectCanBeUsed")
-    @Test
+    @Test(timeout = 60000)
     public void testLocalhostHttpsTraffic() throws Exception {
 
         try (Spy<?> spy = Sniffy.spy(SpyConfiguration.builder().captureNetworkTraffic(true).captureStackTraces(true).build())) {
 
             Vertx vertx = Vertx.vertx();
-            HttpRequest<Buffer> httpRequest = WebClient.create(vertx)
-                    .get(port, "localhost", "/")
-                    .ssl(true)
-                    .expect(ResponsePredicate.SC_OK);
+            WebClient webClient = null;
+            Throwable failure = null;
+            try {
+                webClient = WebClient.create(vertx);
+                HttpRequest<Buffer> httpRequest = webClient
+                        .get(port, "localhost", "/")
+                        .ssl(true)
+                        .expect(ResponsePredicate.SC_OK);
 
-            CyclicBarrier cb = new CyclicBarrier(2);
+                CountDownLatch requestComplete = new CountDownLatch(1);
+                AtomicReference<Throwable> asyncFailure = new AtomicReference<Throwable>();
 
-            AtomicBoolean success = new AtomicBoolean(false);
+                httpRequest.send(asyncResult -> {
+                    try {
+                        LOG.debug("HTTP Request complete; received result " + asyncResult + "; succeeded=" + asyncResult.succeeded());
+                        if (asyncResult.failed()) {
+                            Throwable cause = asyncResult.cause();
+                            if (null == cause) {
+                                cause = new AssertionError("Vert.x HTTP request failed without a cause");
+                            }
+                            asyncFailure.set(cause);
+                        }
+                    } catch (Throwable e) {
+                        asyncFailure.compareAndSet(null, e);
+                    } finally {
+                        requestComplete.countDown();
+                    }
+                });
 
-            httpRequest.send(asyncResult -> {
-                LOG.debug("HTTP Request complete; received result " + asyncResult + "; succeeded=" + asyncResult.succeeded());
-                if (asyncResult.failed()) {
-                    asyncResult.cause().printStackTrace();
-                    System.err.println(asyncResult.result().bodyAsString());
+                assertTrue("Timed out waiting for Vert.x HTTPS request completion", requestComplete.await(30, TimeUnit.SECONDS));
+
+                Throwable asyncThrowable = asyncFailure.get();
+                if (null != asyncThrowable) {
+                    throw ExceptionUtil.throwException(asyncThrowable);
                 }
-                success.set(asyncResult.succeeded());
-                try {
-                    cb.await();
-                } catch (InterruptedException | BrokenBarrierException e) {
-                    throw ExceptionUtil.throwException(e);
+
+                {
+                    Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic(
+                            Threads.ANY,
+                            AddressMatchers.exactAddressMatcher("localhost:" + port),
+                            GroupingOptions.builder().
+                                    groupByConnection(false).
+                                    groupByStackTrace(false).
+                                    groupByThread(false).
+                                    build()
+                    );
+
+                    assertEquals(1, networkTraffic.size());
                 }
-            });
 
-            cb.await();
-
-            assertTrue(success.get());
-
-            {
-                Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic(
+                Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
                         Threads.ANY,
                         AddressMatchers.exactAddressMatcher("localhost:" + port),
                         GroupingOptions.builder().
@@ -121,42 +143,85 @@ public class DecryptLocalhostHttpsTrafficVertXTest {
                                 build()
                 );
 
-                assertEquals(1, networkTraffic.size());
+                assertEquals(1, decryptedNetworkTraffic.size());
+
+                Map.Entry<SocketMetaData, List<NetworkPacket>> entry = decryptedNetworkTraffic.entrySet().iterator().next();
+
+                assertNotNull(entry);
+                assertNotNull(entry.getKey());
+                assertNotNull(entry.getValue());
+
+                assertEquals("Expected 2 packets, but instead got " + convertNetworkPacketsToString(entry.getValue()), 2, entry.getValue().size());
+
+                NetworkPacket request = entry.getValue().get(0);
+                NetworkPacket response = entry.getValue().get(1);
+
+                //noinspection SimplifiableAssertion
+                assertEquals(true, request.isSent());
+                //noinspection SimplifiableAssertion
+                assertEquals(false, response.isSent());
+
+                assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).toLowerCase(Locale.ROOT).contains("host: localhost"));
+                assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200"));
+
+            } catch (Throwable e) {
+                failure = e;
+                throw ExceptionUtil.throwException(e);
+            } finally {
+                failure = closeWebClient(webClient, failure);
+                failure = closeVertx(vertx, failure);
+                if (null != failure) {
+                    throw ExceptionUtil.throwException(failure);
+                }
             }
-
-            Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
-                    Threads.ANY,
-                    AddressMatchers.exactAddressMatcher("localhost:" + port),
-                    GroupingOptions.builder().
-                            groupByConnection(false).
-                            groupByStackTrace(false).
-                            groupByThread(false).
-                            build()
-            );
-
-            assertEquals(1, decryptedNetworkTraffic.size());
-
-            Map.Entry<SocketMetaData, List<NetworkPacket>> entry = decryptedNetworkTraffic.entrySet().iterator().next();
-
-            assertNotNull(entry);
-            assertNotNull(entry.getKey());
-            assertNotNull(entry.getValue());
-
-            assertEquals("Expected 2 packets, but instead got " + convertNetworkPacketsToString(entry.getValue()), 2, entry.getValue().size());
-
-            NetworkPacket request = entry.getValue().get(0);
-            NetworkPacket response = entry.getValue().get(1);
-
-            //noinspection SimplifiableAssertion
-            assertEquals(true, request.isSent());
-            //noinspection SimplifiableAssertion
-            assertEquals(false, response.isSent());
-
-            assertTrue(new String(request.getBytes(), Charset.forName("US-ASCII")).toLowerCase(Locale.ROOT).contains("host: localhost"));
-            assertTrue(new String(response.getBytes(), Charset.forName("US-ASCII")).contains("200"));
 
         }
 
+    }
+
+    private static Throwable closeWebClient(WebClient webClient, Throwable failure) {
+        if (null != webClient) {
+            try {
+                webClient.close();
+            } catch (Throwable e) {
+                failure = addSuppressed(failure, e);
+            }
+        }
+        return failure;
+    }
+
+    private static Throwable closeVertx(Vertx vertx, Throwable failure) {
+        final CountDownLatch vertxClosed = new CountDownLatch(1);
+        final AtomicReference<Throwable> closeFailure = new AtomicReference<Throwable>();
+        try {
+            vertx.close(asyncResult -> {
+                try {
+                    if (asyncResult.failed()) {
+                        closeFailure.set(asyncResult.cause());
+                    }
+                } finally {
+                    vertxClosed.countDown();
+                }
+            });
+            if (!vertxClosed.await(30, TimeUnit.SECONDS)) {
+                closeFailure.compareAndSet(null, new AssertionError("Timed out waiting for Vert.x shutdown"));
+            }
+        } catch (Throwable e) {
+            closeFailure.compareAndSet(null, e);
+        }
+        Throwable closeThrowable = closeFailure.get();
+        if (null != closeThrowable) {
+            failure = addSuppressed(failure, closeThrowable);
+        }
+        return failure;
+    }
+
+    private static Throwable addSuppressed(Throwable failure, Throwable suppressed) {
+        if (null == failure) {
+            return suppressed;
+        }
+        failure.addSuppressed(suppressed);
+        return failure;
     }
 
 }
