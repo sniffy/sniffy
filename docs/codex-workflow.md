@@ -59,6 +59,26 @@ source .codex/cloud/use-jdk.sh 25
 mvn -version
 ```
 
+### Cross-JDK and time-bounded validation
+
+Switching `JAVA_HOME` does not invalidate Maven outputs. When two JDKs are used in one worktree, the first Maven command
+under each newly selected JDK must include `clean`, or the runs must use isolated checkouts/output directories. Otherwise
+a Java 8 run can reuse `target/` classes compiled by a newer JDK and fail with misleading linkage errors such as a
+covariant `ByteBuffer.position(int)` or `limit(int)` descriptor that Java 8 does not provide.
+
+For Java 8 artifacts, distinguish three separate proofs:
+
+1. a clean compile and focused test on real JDK 8;
+2. a modern-JDK `verify` run that executes the configured Java 8 API-signature check;
+3. for compatibility-sensitive code, execution on real JDK 8 of the same artifact built on the modern JDK, without
+   recompiling that artifact under JDK 8.
+
+Run focused Jupiter, JUnit 6 consumer, JUnit 4 regression, and diff checks as separate commands. Give an intentionally
+bounded command its own explicit timeout and report the timeout exit status. Do not manually interrupt a combined command
+and present the earlier parts as one completed validation result. If the full reactor cannot finish within the Cloud task
+window, report the focused results separately and make the corresponding GitHub Actions run the authoritative full-reactor
+proof.
+
 ## 4. Definition of Ready for autonomous work
 
 An issue is ready when it states:
