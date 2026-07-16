@@ -77,6 +77,7 @@ export async function createProfilerWatcher({
 } = {}): Promise<ProfilerWatcher> {
   let initialBuild = true;
   let cycleFailed = false;
+  let buildFailed = false;
   let lastSuccessfulOutput: Buffer | undefined;
   let eventQueue = Promise.resolve();
   let resolveReady: (() => void) | undefined;
@@ -133,12 +134,21 @@ export async function createProfilerWatcher({
     else process.env.NODE_ENV = previousNodeEnvironment;
   }
   if (!('on' in result)) throw new Error('Profiler development build did not create a watcher');
+  const reportBuildError = (message: string, error: Error) => {
+    if (!buildFailed) {
+      buildFailed = true;
+      console.error(message, error);
+      onBuildError?.(error);
+    }
+    if (initialBuild) rejectReady?.(error);
+  };
   result.on('event', (event) => {
     if (event.code === 'START') cycleFailed = false;
     else if (event.code === 'END' && !cycleFailed) {
       eventQueue = eventQueue.then(async () => {
         try {
           const output = await readFile(resolve(outDir, 'sniffy.min.js'));
+          buildFailed = false;
           const changed = !lastSuccessfulOutput?.equals(output);
           lastSuccessfulOutput = output;
           if (initialBuild) {
@@ -151,16 +161,12 @@ export async function createProfilerWatcher({
           }
         } catch (error) {
           const buildError = error instanceof Error ? error : new Error(String(error));
-          console.error('[profiler] unable to publish build:', buildError);
-          onBuildError?.(buildError);
-          if (initialBuild) rejectReady?.(buildError);
+          reportBuildError('[profiler] unable to publish build:', buildError);
         }
       });
     } else if (event.code === 'ERROR') {
       cycleFailed = true;
-      console.error('[profiler] build failed:', event.error);
-      onBuildError?.(event.error);
-      if (initialBuild) rejectReady?.(event.error);
+      eventQueue = eventQueue.then(() => reportBuildError('[profiler] build failed:', event.error));
     }
   });
   try {
