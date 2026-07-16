@@ -81,6 +81,7 @@
                 <module>sniffy-integration-tests-tomcat</module>
                 <module>sniffy-integration-tests-tomcat-10.1</module>
                 <module>sniffy-integration-tests-servlet-contract</module>
+                <module>sniffy-integration-tests-junit-jupiter-compat</module>
             </modules>
         </profile>
     </profiles>

@@ -185,16 +185,12 @@ public enum ConnectionsRegistry implements Runnable {
     }
 
     public void setSocketAddressStatus(String hostName, Integer port, Integer connectionStatus) {
-        setSocketAddressStatus(hostName, port, connectionStatus, true);
-    }
-
-    void setSocketAddressStatus(String hostName, Integer port, Integer connectionStatus, boolean persistChange) {
 
         Map<Map.Entry<String, Integer>, Integer> discoveredAddresses = getDiscoveredAddressesImpl();
 
         discoveredAddresses.put(new AbstractMap.SimpleEntry<String, Integer>(hostName, port), connectionStatus);
 
-        if (persistChange && persistRegistry) {
+        if (persistRegistry) {
             try {
                 ConnectionsRegistryStorage.INSTANCE.storeConnectionsRegistry(this);
             } catch (IOException e) {
@@ -231,45 +227,6 @@ public enum ConnectionsRegistry implements Runnable {
 
     }
 
-
-    private boolean isNetworkConnectionRegistered(Map.Entry<String, Integer> endpoint, SniffyNetworkConnection connection) {
-        synchronized (sniffySocketImpls) {
-            Collection<Reference<SniffyNetworkConnection>> references = sniffySocketImpls.get(endpoint);
-            if (references == null) {
-                return false;
-            }
-            for (Iterator<Reference<SniffyNetworkConnection>> iterator = references.iterator(); iterator.hasNext();) {
-                SniffyNetworkConnection registered = iterator.next().get();
-                if (registered == null) {
-                    iterator.remove();
-                } else if (registered == connection) {
-                    return true;
-                }
-            }
-            if (references.isEmpty() && sniffySocketImpls.get(endpoint) == references) {
-                sniffySocketImpls.remove(endpoint);
-            }
-            return false;
-        }
-    }
-
-    private void removeClearedConnectionReferences() {
-        synchronized (sniffySocketImpls) {
-            for (Map.Entry<Map.Entry<String, Integer>, Collection<Reference<SniffyNetworkConnection>>> entry
-                    : sniffySocketImpls.entrySet()) {
-                Collection<Reference<SniffyNetworkConnection>> references = entry.getValue();
-                for (Iterator<Reference<SniffyNetworkConnection>> iterator = references.iterator(); iterator.hasNext();) {
-                    if (iterator.next().get() == null) {
-                        iterator.remove();
-                    }
-                }
-                if (references.isEmpty() && sniffySocketImpls.get(entry.getKey()) == references) {
-                    sniffySocketImpls.remove(entry.getKey());
-                }
-            }
-        }
-    }
-
     private static void collectConnections(Collection<Reference<SniffyNetworkConnection>> references,
                                            Set<SniffyNetworkConnection> connections) {
         if (references == null) return;
@@ -280,10 +237,6 @@ public enum ConnectionsRegistry implements Runnable {
     }
 
     public Map<Map.Entry<String, String>, Integer> getDiscoveredDataSources() {
-        return getDiscoveredDataSourcesImpl();
-    }
-
-    private Map<Map.Entry<String, String>, Integer> getDiscoveredDataSourcesImpl() {
         return threadLocal ? threadLocalDiscoveredDataSources.get() : this.discoveredDataSources;
     }
 
@@ -299,136 +252,6 @@ public enum ConnectionsRegistry implements Runnable {
                 e.printStackTrace();
             }
         }
-    }
-
-
-    /**
-     * Captures the registry state affected by scoped connectivity overrides.
-     *
-     * @since 4.0
-     */
-    public ConnectionsRegistrySnapshot takeSnapshot() {
-        return new ConnectionsRegistrySnapshot(this);
-    }
-
-    /**
-     * Restores a snapshot captured with {@link #takeSnapshot()} without clearing unrelated global state first.
-     *
-     * @since 4.0
-     */
-    public void restoreSnapshot(ConnectionsRegistrySnapshot snapshot) {
-        if (snapshot != null) {
-            snapshot.restore(this);
-        }
-    }
-
-    public static final class ConnectionsRegistrySnapshot {
-        private final boolean persistRegistry;
-        private final boolean threadLocal;
-        private final Map<Map.Entry<String, Integer>, Integer> addresses;
-        private final Map<Map.Entry<String, String>, Integer> dataSources;
-        private final Map<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> connections;
-        private final ConnectionsRegistryStorage.StorageSnapshot storageSnapshot;
-
-        private ConnectionsRegistrySnapshot(ConnectionsRegistry registry) {
-            this.persistRegistry = registry.persistRegistry;
-            this.threadLocal = registry.threadLocal;
-            this.addresses = new LinkedHashMap<Map.Entry<String, Integer>, Integer>(registry.getDiscoveredAddressesImpl());
-            this.dataSources = new LinkedHashMap<Map.Entry<String, String>, Integer>(registry.getDiscoveredDataSourcesImpl());
-            this.connections = new LinkedHashMap<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>>();
-            this.storageSnapshot = ConnectionsRegistryStorage.INSTANCE.takeStorageSnapshot();
-            synchronized (registry.sniffySocketImpls) {
-                for (Map.Entry<Map.Entry<String, Integer>, Collection<Reference<SniffyNetworkConnection>>> entry : registry.sniffySocketImpls.entrySet()) {
-                    Collection<SniffyNetworkConnection> liveConnections = new ArrayList<SniffyNetworkConnection>();
-                    for (Reference<SniffyNetworkConnection> reference : entry.getValue()) {
-                        SniffyNetworkConnection connection = reference.get();
-                        if (connection != null) {
-                            liveConnections.add(connection);
-                        }
-                    }
-                    if (!liveConnections.isEmpty()) {
-                        this.connections.put(entry.getKey(), liveConnections);
-                    }
-                }
-            }
-        }
-
-        private void restore(ConnectionsRegistry registry) {
-            Throwable failure = null;
-            List<Throwable> failures = new ArrayList<Throwable>();
-            try {
-                registry.threadLocal = this.threadLocal;
-                restoreMap(registry.getDiscoveredAddressesImpl(), this.addresses);
-                restoreMap(registry.getDiscoveredDataSourcesImpl(), this.dataSources);
-                registry.removeClearedConnectionReferences();
-                registry.persistRegistry = this.persistRegistry;
-            } catch (Throwable t) {
-                failure = suppress(failure, t);
-                failures.add(t);
-            }
-            for (Map.Entry<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> entry : this.connections.entrySet()) {
-                Integer status = this.addresses.get(entry.getKey());
-                if (status == null) {
-                    continue;
-                }
-                for (SniffyNetworkConnection connection : entry.getValue()) {
-                    if (!registry.isNetworkConnectionRegistered(entry.getKey(), connection)) {
-                        continue;
-                    }
-                    try {
-                        connection.setConnectionStatus(new InetSocketAddress(entry.getKey().getKey(), entry.getKey().getValue()), status);
-                    } catch (Throwable t) {
-                        failure = suppress(failure, t);
-                        failures.add(t);
-                    }
-                }
-            }
-            try {
-                ConnectionsRegistryStorage.INSTANCE.restoreStorageSnapshot(this.storageSnapshot);
-            } catch (Throwable t) {
-                failure = suppress(failure, t);
-                failures.add(t);
-            }
-            if (failure != null) {
-                throw new ConnectionsRegistryRestoreException(failures);
-            }
-        }
-
-        private static Throwable suppress(Throwable failure, Throwable t) {
-            return failure == null ? t : failure;
-        }
-
-        private static <K, V> void restoreMap(Map<K, V> target, Map<K, V> snapshot) {
-            for (Iterator<K> iterator = target.keySet().iterator(); iterator.hasNext();) {
-                K key = iterator.next();
-                if (!snapshot.containsKey(key)) {
-                    iterator.remove();
-                }
-            }
-            target.putAll(snapshot);
-        }
-    }
-
-    public static final class ConnectionsRegistryRestoreException extends RuntimeException {
-        private final List<Throwable> failures;
-
-        private ConnectionsRegistryRestoreException(List<Throwable> failures) {
-            super(failures.get(0).getMessage(), failures.get(0));
-            this.failures = new ArrayList<Throwable>(failures);
-        }
-
-        public List<Throwable> getFailures() {
-            return Collections.unmodifiableList(failures);
-        }
-    }
-
-    /**
-     * Applies a temporary socket status without persisting the scoped override.
-     *
-     * @since 4.0
-     */
-    public void setSocketAddressStatusVolatile(String hostName, Integer port, Integer connectionStatus) {
-        setSocketAddressStatus(hostName, port, connectionStatus, false);
     }
 
     public boolean isPersistRegistry() {

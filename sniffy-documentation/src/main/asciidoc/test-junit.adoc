@@ -96,7 +96,7 @@ To migrate a JUnit 4 test, remove the `@Rule SniffyRule` field, change the test 
 `@SocketExpectation`, `@NoSocketsAllowed`, and `@DisableSockets` keep their semantics.
 
 The `sniffy-junit-jupiter` production artifact is compiled for Java 8 and against a Java-8-compatible JUnit Jupiter 5
-API. The same artifact is also validated with JUnit 6 on Java 17 and newer by the internal `sniffy-junit-jupiter-compat` reactor test-consumer module.
+API. The same artifact is also validated with JUnit 6 on Java 17 and newer by the internal `sniffy-integration-tests/sniffy-integration-tests-junit-jupiter-compat` reactor test-consumer module.
 
 Jupiter dynamic tests produced by `@TestFactory` do not receive ordinary per-dynamic-test before/after callbacks, so
 Sniffy does not claim isolated expectation handling for each generated `DynamicTest`. In addition, `@DisableSockets`

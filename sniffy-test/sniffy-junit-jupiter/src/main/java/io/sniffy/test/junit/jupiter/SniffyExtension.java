@@ -73,8 +73,7 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
                 }
             }
             if (state.disableSockets) {
-                state.connectionsRegistrySnapshot = ConnectionsRegistry.INSTANCE.takeSnapshot();
-                ConnectionsRegistry.INSTANCE.setSocketAddressStatusVolatile(null, null, -1);
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
             }
         } catch (Throwable setupFailure) {
             Throwable cleanupFailure = cleanup(state);
@@ -190,30 +189,21 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
         private final List<SqlExpectation> sqlExpectations;
         private final List<SocketExpectation> socketExpectations;
         private final boolean disableSockets;
-        private ConnectionsRegistry.ConnectionsRegistrySnapshot connectionsRegistrySnapshot;
         private Spy<?> spy;
 
         private State(List<SqlExpectation> sqlExpectations, List<SocketExpectation> socketExpectations, boolean disableSockets) {
             this.sqlExpectations = sqlExpectations;
             this.socketExpectations = socketExpectations;
             this.disableSockets = disableSockets;
-            this.connectionsRegistrySnapshot = null;
         }
 
         private boolean requiresSpy() {
             return !sqlExpectations.isEmpty() || !socketExpectations.isEmpty();
         }
 
-        private void restoreConnectionsRegistry() throws Throwable {
-            try {
-                ConnectionsRegistry.INSTANCE.restoreSnapshot(connectionsRegistrySnapshot);
-            } catch (ConnectionsRegistry.ConnectionsRegistryRestoreException e) {
-                List<Throwable> failures = e.getFailures();
-                Throwable first = failures.isEmpty() ? e : failures.get(0);
-                for (int i = 1; i < failures.size(); i++) {
-                    first.addSuppressed(failures.get(i));
-                }
-                throw first;
+        private void restoreConnectionsRegistry() {
+            if (disableSockets) {
+                ConnectionsRegistry.INSTANCE.clear();
             }
         }
     }
