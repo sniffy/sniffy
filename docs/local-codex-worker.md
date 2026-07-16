@@ -5,7 +5,7 @@ long-running, or Docker-heavy tasks, and remain observable from the ChatGPT desk
 boundary is a disposable Windows virtual machine; the Codex agent and developer toolchain run in WSL2 inside that VM.
 Sniffy is the first concrete project configuration, not the boundary of the worker.
 
-The design was last checked against the linked product documentation on 2026-07-16.
+The design was last checked against the linked product documentation on 2026-07-17.
 
 ## 1. Architecture and decisions
 
@@ -235,15 +235,27 @@ treat them as secrets.
 
 ## 4. Install and constrain WSL2
 
-In an elevated PowerShell terminal inside the Windows VM:
+In an elevated PowerShell terminal inside the Windows VM, update WSL, confirm that the explicitly versioned
+distribution is available, and install Ubuntu 26.04 LTS:
 
 ```powershell
-wsl --install -d Ubuntu-24.04
 wsl --update
+wsl --list --online
+wsl --install -d Ubuntu-26.04
 wsl --set-default-version 2
 ```
 
-Restart Windows, finish the Ubuntu user setup, and verify that the distribution is version 2:
+If the Microsoft Store path fails but `Ubuntu-26.04` appears in the online list, retry the install using WSL's web
+download path:
+
+```powershell
+wsl --install --web-download -d Ubuntu-26.04
+```
+
+Do not use the floating `Ubuntu` name in provisioning: an explicit distribution name keeps later workers on the same
+release. Microsoft documents the distribution list, named installs, and `--web-download` fallback in
+[Install WSL](https://learn.microsoft.com/en-us/windows/wsl/install). Restart Windows, finish the Ubuntu user setup,
+and verify that the distribution is version 2:
 
 ```powershell
 wsl --status
@@ -290,7 +302,7 @@ Then:
 1. Sign in to the ChatGPT desktop app using the same ChatGPT account and workspace as the mobile app.
 2. Open **Settings**, switch the Codex agent from Windows native to **WSL**, and restart the app. The restart is required.
 3. Set WSL as the integrated terminal unless PowerShell is specifically needed.
-4. Add Sniffy from `\\wsl$\Ubuntu-24.04\home\<worker>\src\sniffy\sniffy` as the first local project.
+4. Add Sniffy from `\\wsl$\Ubuntu-26.04\home\<worker>\src\sniffy\sniffy` as the first local project.
 5. Add every later repository as a separate local project; do not point one app project at a directory containing
    multiple repositories.
 6. Select **Set up Remote** in the sidebar and pair the phone using the displayed QR code.
@@ -312,25 +324,53 @@ Run all project tooling inside Ubuntu, not in native Windows. This avoids duplic
 file-watcher problems, and mixed Windows/Linux credentials. Use `~/src/<owner>/<repository>` so repositories with the
 same name cannot collide.
 
-### 6.1. Base packages
+### 6.1. Base packages and shared toolchain
+
+Use `apt` only for operating-system packages. Keep language and build-tool versions in `mise` so the same worker can
+host repositories with different requirements:
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
-  bash bubblewrap build-essential ca-certificates curl git jq maven tar unzip zip
+  bash bubblewrap build-essential ca-certificates curl git jq tar unzip zip
 ```
 
-Install [`mise`](https://mise.jdx.dev/getting-started.html) using its documented installer, ensure it is on `PATH`, then
-install the JDKs expected by the existing Sniffy scripts:
+Install [`mise`](https://mise.jdx.dev/getting-started.html), activate it for Bash, and activate it in the current shell:
 
 ```bash
+curl https://mise.run | sh
+echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+eval "$(~/.local/bin/mise activate bash)"
+mise --version
+```
+
+Sniffy's frontend declares Node.js 24 or newer. Install Node 24 and the Maven 3.9 release line as machine defaults, then
+install the additional JDKs expected by the existing Sniffy scripts:
+
+```bash
+mise use --global node@24 maven@3.9
+
 for version in 11 17 21 25; do
   mise install "java@${version}"
 done
 ```
 
+Node includes `npm`; do not separately install Ubuntu's `nodejs` or `npm` packages. Do not use global npm installs such
+as `sudo npm install -g ...` for repository tools. Maven is machine-managed only until the repository adds a Maven Wrapper or pins it in
+a project `mise.toml`. A repository-level tool declaration must take precedence over these worker defaults.
+
+Verify the shared commands:
+
+```bash
+node --version
+npm --version
+mvn --version
+mise ls
+```
+
 The repository setup script installs Temurin JDK 8 itself. `bubblewrap` is required if the app is later switched back
-from full access to the Linux sandbox.
+from full access to the Linux sandbox. See the `mise`
+[Node.js documentation](https://mise.jdx.dev/lang/node.html) for version selection and npm behavior.
 
 ### 6.2. Docker Engine
 
@@ -378,6 +418,24 @@ Maven, `mise`, and JDK 11/17/21/25 are already available in the Codex universal 
 bash .codex/cloud/setup.sh
 ```
 
+Install the exact frontend dependency tree from the committed lockfile, then use that project-local Playwright CLI to
+install all browser engines used by `sniffy-ui/playwright.config.ts` plus their Ubuntu libraries:
+
+```bash
+cd sniffy-ui
+npm ci
+npx playwright install --with-deps chromium firefox webkit
+npx playwright --version
+cd ..
+```
+
+Do not install `@playwright/test` or Playwright globally. The repository pins its Playwright package in
+`package-lock.json`, and every Playwright version expects matching browser binaries. `npx playwright` resolves the
+local CLI after `npm ci`; the downloaded browsers are shared across this WSL user's worktrees through Playwright's
+default Linux cache at `~/.cache/ms-playwright`. Re-run the `--with-deps` command after a Playwright upgrade or a
+fresh WSL installation. See Playwright's [browser installation
+documentation](https://playwright.dev/docs/browsers).
+
 This compatibility path reuses the existing JDK 8 installation, toolchain generation, GitHub CLI installation,
 environment file, and Maven cache warm-up. Verify both ends of the supported matrix:
 
@@ -394,7 +452,16 @@ for new worktrees after the one-time machine bootstrap:
 
 ```bash
 bash .codex/cloud/maintenance.sh
+(
+  cd sniffy-ui
+  npm ci
+  npx playwright install chromium firefox webkit
+)
 ```
+
+The worktree setup intentionally omits `--with-deps`: Ubuntu browser libraries were installed once during machine
+bootstrap, while this idempotent command ensures browser binaries matching the worktree's locked Playwright version are
+present. If a Playwright upgrade requires new Ubuntu libraries, repeat the one-time `--with-deps` command manually.
 
 Local environment setup scripts execute in WSL when the app agent uses WSL. Configure the environment through the app
 and commit the generated `.codex` configuration only after it has been tested on a second clean worktree.
@@ -733,6 +800,8 @@ git --version
 gh --version
 docker version
 mise --version
+node --version
+npm --version
 mvn -version
 ```
 
@@ -746,6 +815,13 @@ mvn -version
 
 source .codex/cloud/use-jdk.sh 25
 mvn -version
+
+cd sniffy-ui
+npm ci
+npx playwright --version
+npx playwright install --list
+npm run test:e2e
+cd ..
 
 git diff --check
 ```
