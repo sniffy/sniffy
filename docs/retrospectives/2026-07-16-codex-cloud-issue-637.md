@@ -18,11 +18,11 @@ The code outcome was good, but delivery took repeated attempts because task disp
 
 ## What went wrong
 
-1. **Dispatch was declared before it was observable.** Creating an issue or intending to delegate work was treated as if Codex had started. A task is dispatched only after a real top-level @codex trigger has a connector reaction or task link.
-2. **Local completion was confused with publication.** Several tasks reported local branches, commits, or make_pr metadata as if GitHub had received them. The branches, commits, and pull requests did not resolve remotely.
+1. **Dispatch was declared before it was observable.** Creating an issue or intending to delegate work was treated as if Codex had started. A task is dispatched only after a real top-level `@codex` trigger has a connector reaction or task link.
+2. **Local completion was confused with publication.** Several tasks reported local branches, commits, or `make_pr` metadata as if GitHub had received them. The branches, commits, and pull requests did not resolve remotely.
 3. **Publication prerequisites were discovered serially.** The image lacked gh; secrets disappeared after setup; the checkout had no origin; the fine-grained PAT required organization approval; agent internet initially blocked write methods; and a dry-run push produced false confidence. Each gap caused another full task attempt.
 4. **Completed work was repeatedly recreated.** When publication failed, follow-up prompts sometimes rebuilt the implementation instead of first recovering the latest workspace/commit or stopping after a failed write probe.
-5. **The review follow-up used the wrong trigger surface.** An @codex mention inside REQUEST_CHANGES did not start a task. A top-level PR comment also did not trigger while repository code review integration was unavailable. The top-level issue comment was the proven fallback.
+5. **The review follow-up used the wrong trigger surface.** An `@codex` mention inside REQUEST_CHANGES did not start a task. A top-level PR comment also did not trigger while repository code review integration was unavailable. The top-level issue comment was the proven fallback.
 6. **Cloud UI and GitHub state diverged.** A PR created directly with gh can be valid on GitHub while the Codex Cloud UI still says no PR was created for the task. The UI association is useful metadata, not proof of publication.
 7. **The handoff stopped at draft.** After implementation and locally applicable checks were complete, the PR remained draft. Normal autonomous delivery should use draft during work and mark ready for review at handoff unless the task explicitly requests a draft result.
 8. **Monitoring and status language were too optimistic.** Status updates sometimes said an agent was working, a PR existed, or delivery was complete before remote evidence supported those claims.
@@ -51,7 +51,7 @@ The code outcome was good, but delivery took repeated attempts because task disp
 - If publication access is uncertain, perform one reversible real remote-ref round trip before implementation. Stop on failure instead of rebuilding the change.
 - Recover an existing workspace/commit when possible; do not recreate completed work merely because publication failed.
 - Use an explicit repository URL when origin is absent.
-- Push and verify real GitHub state. make_pr metadata and local PR descriptions are not publication.
+- Push and verify real GitHub state. `make_pr` metadata and local PR descriptions are not publication.
 - Create/update the PR as draft while work is incomplete; mark it ready for review after implementation and locally applicable verification finish unless told to keep it draft.
 - Report exact command results and exact resolvable URLs. Link the task, issue, branch, commit, and PR.
 
