@@ -213,6 +213,39 @@ public class SniffyExtensionLauncherTest {
         ConnectionsRegistry.INSTANCE.clear();
     }
 
+
+    @Test
+    public void applicationClosedConnectionRemainsUnregisteredDuringSnapshotRestore() {
+        ConnectionsRegistry.INSTANCE.clear();
+        TrackingConnection closed = new TrackingConnection("localhost", 128);
+        TrackingConnection stillOpen = new TrackingConnection("localhost", 129);
+        TrackingConnection registeredDuringInvocation = new TrackingConnection("localhost", 130);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(closed.getInetSocketAddress(), closed);
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(stillOpen.getInetSocketAddress(), stillOpen);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 128, 5);
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 129, 6);
+        DisableSocketsApplicationLifecycleSample.closed = closed;
+        DisableSocketsApplicationLifecycleSample.stillOpen = stillOpen;
+        DisableSocketsApplicationLifecycleSample.registeredDuringInvocation = registeredDuringInvocation;
+
+        assertTrue(execute(DisableSocketsApplicationLifecycleSample.class).isEmpty());
+
+        int closedCallsAfterCleanup = closed.statusCalls;
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 128, 8);
+        assertEquals(closedCallsAfterCleanup, closed.statusCalls);
+
+        assertEquals(6, stillOpen.status);
+        stillOpen.status = 0;
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 129, 9);
+        assertEquals(9, stillOpen.status);
+
+        int registeredDuringInvocationCalls = registeredDuringInvocation.statusCalls;
+        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("localhost", 130, 10);
+        assertEquals(registeredDuringInvocationCalls + 1, registeredDuringInvocation.statusCalls);
+        assertEquals(10, registeredDuringInvocation.status);
+        ConnectionsRegistry.INSTANCE.clear();
+    }
+
     @Test
     public void restoresRegistryAfterCombinedFailureAndSuppressesExactSniffyFailure() {
         ConnectionsRegistry.INSTANCE.clear();
@@ -368,6 +401,22 @@ public class SniffyExtensionLauncherTest {
             } finally {
                 echoServerRule.after();
             }
+        }
+    }
+
+
+    @ExtendWith(SniffyExtension.class)
+    public static class DisableSocketsApplicationLifecycleSample {
+        static TrackingConnection closed;
+        static TrackingConnection stillOpen;
+        static TrackingConnection registeredDuringInvocation;
+
+        @Test
+        @DisableSockets
+        public void applicationChangesRegistrations() {
+            ConnectionsRegistry.INSTANCE.unregisterNetworkConnection(closed);
+            ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(registeredDuringInvocation.getInetSocketAddress(), registeredDuringInvocation);
+            assertNotNull(stillOpen);
         }
     }
 

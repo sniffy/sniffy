@@ -231,6 +231,45 @@ public enum ConnectionsRegistry implements Runnable {
 
     }
 
+
+    private boolean isNetworkConnectionRegistered(Map.Entry<String, Integer> endpoint, SniffyNetworkConnection connection) {
+        synchronized (sniffySocketImpls) {
+            Collection<Reference<SniffyNetworkConnection>> references = sniffySocketImpls.get(endpoint);
+            if (references == null) {
+                return false;
+            }
+            for (Iterator<Reference<SniffyNetworkConnection>> iterator = references.iterator(); iterator.hasNext();) {
+                SniffyNetworkConnection registered = iterator.next().get();
+                if (registered == null) {
+                    iterator.remove();
+                } else if (registered == connection) {
+                    return true;
+                }
+            }
+            if (references.isEmpty() && sniffySocketImpls.get(endpoint) == references) {
+                sniffySocketImpls.remove(endpoint);
+            }
+            return false;
+        }
+    }
+
+    private void removeClearedConnectionReferences() {
+        synchronized (sniffySocketImpls) {
+            for (Map.Entry<Map.Entry<String, Integer>, Collection<Reference<SniffyNetworkConnection>>> entry
+                    : sniffySocketImpls.entrySet()) {
+                Collection<Reference<SniffyNetworkConnection>> references = entry.getValue();
+                for (Iterator<Reference<SniffyNetworkConnection>> iterator = references.iterator(); iterator.hasNext();) {
+                    if (iterator.next().get() == null) {
+                        iterator.remove();
+                    }
+                }
+                if (references.isEmpty() && sniffySocketImpls.get(entry.getKey()) == references) {
+                    sniffySocketImpls.remove(entry.getKey());
+                }
+            }
+        }
+    }
+
     private static void collectConnections(Collection<Reference<SniffyNetworkConnection>> references,
                                            Set<SniffyNetworkConnection> connections) {
         if (references == null) return;
@@ -321,17 +360,7 @@ public enum ConnectionsRegistry implements Runnable {
                 registry.threadLocal = this.threadLocal;
                 restoreMap(registry.getDiscoveredAddressesImpl(), this.addresses);
                 restoreMap(registry.getDiscoveredDataSourcesImpl(), this.dataSources);
-                synchronized (registry.sniffySocketImpls) {
-                    registry.sniffySocketImpls.clear();
-                    for (Map.Entry<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> entry : this.connections.entrySet()) {
-                        Collection<Reference<SniffyNetworkConnection>> references = Collections.newSetFromMap(
-                                new ConcurrentHashMap<Reference<SniffyNetworkConnection>, Boolean>());
-                        for (SniffyNetworkConnection connection : entry.getValue()) {
-                            references.add(new WeakReference<SniffyNetworkConnection>(connection, registry.sniffySocketReferenceQueue));
-                        }
-                        registry.sniffySocketImpls.put(entry.getKey(), references);
-                    }
-                }
+                registry.removeClearedConnectionReferences();
                 registry.persistRegistry = this.persistRegistry;
             } catch (Throwable t) {
                 failure = suppress(failure, t);
@@ -340,9 +369,12 @@ public enum ConnectionsRegistry implements Runnable {
             for (Map.Entry<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> entry : this.connections.entrySet()) {
                 Integer status = this.addresses.get(entry.getKey());
                 if (status == null) {
-                    status = 0;
+                    continue;
                 }
                 for (SniffyNetworkConnection connection : entry.getValue()) {
+                    if (!registry.isNetworkConnectionRegistered(entry.getKey(), connection)) {
+                        continue;
+                    }
                     try {
                         connection.setConnectionStatus(new InetSocketAddress(entry.getKey().getKey(), entry.getKey().getValue()), status);
                     } catch (Throwable t) {
