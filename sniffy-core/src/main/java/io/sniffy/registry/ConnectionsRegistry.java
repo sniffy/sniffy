@@ -237,6 +237,10 @@ public enum ConnectionsRegistry implements Runnable {
     }
 
     public Map<Map.Entry<String, String>, Integer> getDiscoveredDataSources() {
+        return getDiscoveredDataSourcesImpl();
+    }
+
+    private Map<Map.Entry<String, String>, Integer> getDiscoveredDataSourcesImpl() {
         return threadLocal ? threadLocalDiscoveredDataSources.get() : this.discoveredDataSources;
     }
 
@@ -251,6 +255,94 @@ public enum ConnectionsRegistry implements Runnable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+
+    /**
+     * Captures the registry state affected by scoped connectivity overrides.
+     *
+     * @since 4.0
+     */
+    public ConnectionsRegistrySnapshot takeSnapshot() {
+        return new ConnectionsRegistrySnapshot(this);
+    }
+
+    /**
+     * Restores a snapshot captured with {@link #takeSnapshot()} without clearing unrelated global state first.
+     *
+     * @since 4.0
+     */
+    public void restoreSnapshot(ConnectionsRegistrySnapshot snapshot) {
+        if (snapshot != null) {
+            snapshot.restore(this);
+        }
+    }
+
+    public static final class ConnectionsRegistrySnapshot {
+        private final boolean persistRegistry;
+        private final boolean threadLocal;
+        private final Map<Map.Entry<String, Integer>, Integer> addresses;
+        private final Map<Map.Entry<String, String>, Integer> dataSources;
+        private final Map<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> connections;
+
+        private ConnectionsRegistrySnapshot(ConnectionsRegistry registry) {
+            this.persistRegistry = registry.persistRegistry;
+            this.threadLocal = registry.threadLocal;
+            this.addresses = new LinkedHashMap<Map.Entry<String, Integer>, Integer>(registry.getDiscoveredAddressesImpl());
+            this.dataSources = new LinkedHashMap<Map.Entry<String, String>, Integer>(registry.getDiscoveredDataSourcesImpl());
+            this.connections = new LinkedHashMap<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>>();
+            synchronized (registry.sniffySocketImpls) {
+                for (Map.Entry<Map.Entry<String, Integer>, Collection<Reference<SniffyNetworkConnection>>> entry : registry.sniffySocketImpls.entrySet()) {
+                    Collection<SniffyNetworkConnection> liveConnections = new ArrayList<SniffyNetworkConnection>();
+                    for (Reference<SniffyNetworkConnection> reference : entry.getValue()) {
+                        SniffyNetworkConnection connection = reference.get();
+                        if (connection != null) {
+                            liveConnections.add(connection);
+                        }
+                    }
+                    if (!liveConnections.isEmpty()) {
+                        this.connections.put(entry.getKey(), liveConnections);
+                    }
+                }
+            }
+        }
+
+        private void restore(ConnectionsRegistry registry) {
+            registry.threadLocal = this.threadLocal;
+            restoreMap(registry.getDiscoveredAddressesImpl(), this.addresses);
+            restoreMap(registry.getDiscoveredDataSourcesImpl(), this.dataSources);
+            synchronized (registry.sniffySocketImpls) {
+                registry.sniffySocketImpls.clear();
+                for (Map.Entry<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> entry : this.connections.entrySet()) {
+                    Collection<Reference<SniffyNetworkConnection>> references = Collections.newSetFromMap(
+                            new ConcurrentHashMap<Reference<SniffyNetworkConnection>, Boolean>());
+                    for (SniffyNetworkConnection connection : entry.getValue()) {
+                        references.add(new WeakReference<SniffyNetworkConnection>(connection, registry.sniffySocketReferenceQueue));
+                    }
+                    registry.sniffySocketImpls.put(entry.getKey(), references);
+                }
+            }
+            registry.persistRegistry = this.persistRegistry;
+            for (Map.Entry<Map.Entry<String, Integer>, Collection<SniffyNetworkConnection>> entry : this.connections.entrySet()) {
+                Integer status = this.addresses.get(entry.getKey());
+                if (status == null) {
+                    status = 0;
+                }
+                for (SniffyNetworkConnection connection : entry.getValue()) {
+                    connection.setConnectionStatus(new InetSocketAddress(entry.getKey().getKey(), entry.getKey().getValue()), status);
+                }
+            }
+        }
+
+        private static <K, V> void restoreMap(Map<K, V> target, Map<K, V> snapshot) {
+            for (Iterator<K> iterator = target.keySet().iterator(); iterator.hasNext();) {
+                K key = iterator.next();
+                if (!snapshot.containsKey(key)) {
+                    iterator.remove();
+                }
+            }
+            target.putAll(snapshot);
         }
     }
 

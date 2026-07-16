@@ -26,9 +26,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Native JUnit Jupiter extension for Sniffy SQL and socket expectations.
@@ -75,6 +73,7 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
                 }
             }
             if (state.disableSockets) {
+                state.connectionsRegistrySnapshot = ConnectionsRegistry.INSTANCE.takeSnapshot();
                 ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
             }
         } catch (Throwable setupFailure) {
@@ -191,16 +190,14 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
         private final List<SqlExpectation> sqlExpectations;
         private final List<SocketExpectation> socketExpectations;
         private final boolean disableSockets;
-        private final Map<Map.Entry<String, Integer>, Integer> socketAddressSnapshot;
-        private final Map<Map.Entry<String, String>, Integer> dataSourceSnapshot;
+        private ConnectionsRegistry.ConnectionsRegistrySnapshot connectionsRegistrySnapshot;
         private Spy<?> spy;
 
         private State(List<SqlExpectation> sqlExpectations, List<SocketExpectation> socketExpectations, boolean disableSockets) {
             this.sqlExpectations = sqlExpectations;
             this.socketExpectations = socketExpectations;
             this.disableSockets = disableSockets;
-            this.socketAddressSnapshot = new LinkedHashMap<Map.Entry<String, Integer>, Integer>(ConnectionsRegistry.INSTANCE.getDiscoveredAddresses());
-            this.dataSourceSnapshot = new LinkedHashMap<Map.Entry<String, String>, Integer>(ConnectionsRegistry.INSTANCE.getDiscoveredDataSources());
+            this.connectionsRegistrySnapshot = null;
         }
 
         private boolean requiresSpy() {
@@ -208,13 +205,7 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
         }
 
         private void restoreConnectionsRegistry() {
-            ConnectionsRegistry.INSTANCE.clear();
-            for (Map.Entry<Map.Entry<String, Integer>, Integer> entry : socketAddressSnapshot.entrySet()) {
-                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(entry.getKey().getKey(), entry.getKey().getValue(), entry.getValue());
-            }
-            for (Map.Entry<Map.Entry<String, String>, Integer> entry : dataSourceSnapshot.entrySet()) {
-                ConnectionsRegistry.INSTANCE.setDataSourceStatus(entry.getKey().getKey(), entry.getKey().getValue(), entry.getValue());
-            }
+            ConnectionsRegistry.INSTANCE.restoreSnapshot(connectionsRegistrySnapshot);
         }
     }
 }

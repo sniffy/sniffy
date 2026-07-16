@@ -11,10 +11,13 @@
 
     <artifactId>sniffy-junit-jupiter-compat</artifactId>
     <name>sniffy-junit-jupiter-compat</name>
+    <description>Internal reactor-only JUnit 6 compatibility test consumer; not deployed.</description>
 
     <properties>
         <junit.jupiter.version>6.0.0</junit.jupiter.version>
         <junit.platform.version>6.0.0</junit.platform.version>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.install.skip>true</maven.install.skip>
     </properties>
 
     <dependencies>
