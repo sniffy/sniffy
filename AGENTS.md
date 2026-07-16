@@ -17,6 +17,12 @@ constraints for their subtrees.
 - Preserve unrelated user changes. Do not reset, clean, force-push, rebase shared branches, or rewrite history unless the
   issue explicitly requires it. Prefer a new `agent/<short-description>` branch from `develop` for new work.
 
+- Before editing a task that combines two or more high-risk axes—new public APIs or artifacts, global mutable state,
+  resource lifecycle/failure composition, multiple JDK/framework versions, or cross-reactor module placement—confirm
+  that the issue contains a short design preflight: scope boundaries, module ownership, a failure/lifecycle matrix, and
+  an acceptance-criterion-to-proof matrix. If a material product or public-API decision is unresolved or contradictory,
+  stop before implementation and report that decision instead of inventing a broad compatibility layer.
+
 ## Compatibility and scope
 
 - Preserve Java 8 source, bytecode, and runtime compatibility unless a task explicitly changes the supported baseline.
@@ -42,6 +48,8 @@ constraints for their subtrees.
 - The Codex Cloud environment is described in `docs/codex-workflow.md`. Use `source .codex/cloud/use-jdk.sh <version>`
   to switch among the installed JDK 8, 11, 17, 21, and 25 toolchains.
 - Run focused tests for the changed behavior first.
+- Treat every acceptance criterion as an evidence obligation. Verify that its focused test is discovered and executed
+  in the test report; compiled tests, unused fixtures, skipped modules, and an overall green CI result are not proof.
 - For NIO changes, run `mvn -pl sniffy-module-nio -am clean test` on Java 8 and the current development JDK.
 - For TLS changes, run `mvn -pl sniffy-module-tls -am clean test` on Java 8 and the current development JDK.
 - For cross-module or release-facing changes, run
@@ -52,6 +60,9 @@ constraints for their subtrees.
 ## Pull requests
 
 - Keep pull requests draft until the implementation and locally applicable verification are complete.
+- When credentials and the delivery contract permit it, create the pull request using the authenticated agent account
+  rather than asking a human to create it manually. This preserves formal human review and Request Changes capability.
+  Independently verify that the remote branch SHA and pull request head SHA match before handoff.
 - The pull request description must explain the problem, design, compatibility impact, tests executed, checks not run,
   dependency changes, and remaining risks. Link the authoritative issue.
 - Do not hide limitations. If the environment cannot run a platform-, JDK-, or credential-dependent check, say exactly
@@ -61,6 +72,8 @@ constraints for their subtrees.
 
 - Prioritize correctness, compatibility, resource safety, concurrency, public API stability, and test integrity over
   formatting preferences.
+- Review the complete acceptance-to-proof matrix on the first pass. Avoid serially discovering independent missing
+  requirements across multiple fix cycles when they could be reported together.
 - Flag tests that were weakened, made timing-dependent, skipped, or retried to conceal a failure.
 - Flag accidental Java baseline increases, use of newer JDK APIs in Java 8 artifacts, and unintentional dependency or
   public API changes.
