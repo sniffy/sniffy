@@ -16,6 +16,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.Statement;
 
 @ExtendWith(SniffyExtension.class)
@@ -79,4 +80,26 @@ public class SniffyExtensionTest {
             connection.close();
         }
     }
+    static void queryRows() throws Exception {
+        Class.forName("org.h2.Driver");
+        Connection connection = DriverManager.getConnection("sniffer:jdbc:h2:mem:", "sa", "sa");
+        try {
+            Statement statement = connection.createStatement();
+            try {
+                ResultSet resultSet = statement.executeQuery("SELECT 1");
+                try {
+                    while (resultSet.next()) {
+                        resultSet.getInt(1);
+                    }
+                } finally {
+                    resultSet.close();
+                }
+            } finally {
+                statement.close();
+            }
+        } finally {
+            connection.close();
+        }
+    }
+
 }

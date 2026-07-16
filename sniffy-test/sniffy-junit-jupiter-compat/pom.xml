@@ -9,42 +9,24 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>sniffy-junit-jupiter</artifactId>
+    <artifactId>sniffy-junit-jupiter-compat</artifactId>
+    <name>sniffy-junit-jupiter-compat</name>
 
     <properties>
-        <junit.jupiter.version>5.10.5</junit.jupiter.version>
-        <junit.platform.version>1.10.5</junit.platform.version>
+        <junit.jupiter.version>6.0.0</junit.jupiter.version>
+        <junit.platform.version>6.0.0</junit.platform.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-test-common</artifactId>
+            <artifactId>sniffy-junit-jupiter</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-test-common</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.jupiter.version}</version>
-            <scope>compile</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
             <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
@@ -68,8 +50,23 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <useModulePath>false</useModulePath>
+                    <skipTests>${junit6.compat.skip}</skipTests>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>skip-junit-6-compat-before-java-17</id>
+            <activation>
+                <jdk>(,17)</jdk>
+            </activation>
+            <properties>
+                <junit6.compat.skip>true</junit6.compat.skip>
+                <maven.main.skip>true</maven.main.skip>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>

@@ -26,7 +26,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Native JUnit Jupiter extension for Sniffy SQL and socket expectations.
@@ -44,34 +46,45 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
         Sniffy.initialize();
     }
 
-    public void beforeEach(ExtensionContext context) {
+    public void beforeEach(ExtensionContext context) throws Exception {
         State state = resolveState(context);
-        if (state.requiresSpy()) {
-            Spy<?> spy = Sniffy.spy();
-            for (SqlExpectation sqlExpectation : state.sqlExpectations) {
-                spy = spy.expect(new SqlQueries.SqlExpectation(
-                        Range.parse(sqlExpectation.count()).min,
-                        Range.parse(sqlExpectation.count()).max,
-                        Range.parse(sqlExpectation.rows()).min,
-                        Range.parse(sqlExpectation.rows()).max,
-                        sqlExpectation.threads(),
-                        sqlExpectation.query()
-                ));
-            }
-            for (SocketExpectation socketExpectation : state.socketExpectations) {
-                spy = spy.expect(new TcpConnections.TcpExpectation(
-                        Range.parse(socketExpectation.connections()).min,
-                        Range.parse(socketExpectation.connections()).max,
-                        socketExpectation.threads(),
-                        "".equals(socketExpectation.hostName()) ? null : AddressMatchers.exactAddressMatcher(socketExpectation.hostName())
-                ));
-            }
-            state.spy = spy;
-        }
-        if (state.disableSockets) {
-            ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
-        }
         context.getStore(NAMESPACE).put(context.getUniqueId(), state);
+        try {
+            if (state.requiresSpy()) {
+                Spy<?> spy = Sniffy.spy();
+                state.spy = spy;
+                for (SqlExpectation sqlExpectation : state.sqlExpectations) {
+                    spy = spy.expect(new SqlQueries.SqlExpectation(
+                            Range.parse(sqlExpectation.count()).min,
+                            Range.parse(sqlExpectation.count()).max,
+                            Range.parse(sqlExpectation.rows()).min,
+                            Range.parse(sqlExpectation.rows()).max,
+                            sqlExpectation.threads(),
+                            sqlExpectation.query()
+                    ));
+                    state.spy = spy;
+                }
+                for (SocketExpectation socketExpectation : state.socketExpectations) {
+                    spy = spy.expect(new TcpConnections.TcpExpectation(
+                            Range.parse(socketExpectation.connections()).min,
+                            Range.parse(socketExpectation.connections()).max,
+                            socketExpectation.threads(),
+                            "".equals(socketExpectation.hostName()) ? null : AddressMatchers.exactAddressMatcher(socketExpectation.hostName())
+                    ));
+                    state.spy = spy;
+                }
+            }
+            if (state.disableSockets) {
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
+            }
+        } catch (Throwable setupFailure) {
+            Throwable cleanupFailure = cleanup(state);
+            context.getStore(NAMESPACE).remove(context.getUniqueId());
+            if (cleanupFailure != null) {
+                setupFailure.addSuppressed(cleanupFailure);
+            }
+            rethrow(setupFailure);
+        }
     }
 
     public void afterEach(ExtensionContext context) throws Exception {
@@ -80,6 +93,15 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
             return;
         }
         Throwable primary = context.getExecutionException().orElse(null);
+        Throwable cleanupFailure = cleanup(state);
+        if (primary != null) {
+            if (cleanupFailure != null) primary.addSuppressed(cleanupFailure);
+            rethrow(primary);
+        }
+        if (cleanupFailure != null) rethrow(cleanupFailure);
+    }
+
+    private static Throwable cleanup(State state) {
         Throwable cleanupFailure = null;
         try {
             if (state.spy != null) {
@@ -88,20 +110,14 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
         } catch (Throwable t) {
             cleanupFailure = t;
         } finally {
-            if (state.disableSockets) {
-                try {
-                    ConnectionsRegistry.INSTANCE.clear();
-                } catch (Throwable t) {
-                    if (cleanupFailure == null) cleanupFailure = t;
-                    else cleanupFailure.addSuppressed(t);
-                }
+            try {
+                state.restoreConnectionsRegistry();
+            } catch (Throwable t) {
+                if (cleanupFailure == null) cleanupFailure = t;
+                else cleanupFailure.addSuppressed(t);
             }
         }
-        if (primary != null) {
-            if (cleanupFailure != null) primary.addSuppressed(cleanupFailure);
-            rethrow(primary);
-        }
-        if (cleanupFailure != null) rethrow(cleanupFailure);
+        return cleanupFailure;
     }
 
     private static State resolveState(ExtensionContext context) {
@@ -175,16 +191,30 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
         private final List<SqlExpectation> sqlExpectations;
         private final List<SocketExpectation> socketExpectations;
         private final boolean disableSockets;
+        private final Map<Map.Entry<String, Integer>, Integer> socketAddressSnapshot;
+        private final Map<Map.Entry<String, String>, Integer> dataSourceSnapshot;
         private Spy<?> spy;
 
         private State(List<SqlExpectation> sqlExpectations, List<SocketExpectation> socketExpectations, boolean disableSockets) {
             this.sqlExpectations = sqlExpectations;
             this.socketExpectations = socketExpectations;
             this.disableSockets = disableSockets;
+            this.socketAddressSnapshot = new LinkedHashMap<Map.Entry<String, Integer>, Integer>(ConnectionsRegistry.INSTANCE.getDiscoveredAddresses());
+            this.dataSourceSnapshot = new LinkedHashMap<Map.Entry<String, String>, Integer>(ConnectionsRegistry.INSTANCE.getDiscoveredDataSources());
         }
 
         private boolean requiresSpy() {
             return !sqlExpectations.isEmpty() || !socketExpectations.isEmpty();
+        }
+
+        private void restoreConnectionsRegistry() {
+            ConnectionsRegistry.INSTANCE.clear();
+            for (Map.Entry<Map.Entry<String, Integer>, Integer> entry : socketAddressSnapshot.entrySet()) {
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(entry.getKey().getKey(), entry.getKey().getValue(), entry.getValue());
+            }
+            for (Map.Entry<Map.Entry<String, String>, Integer> entry : dataSourceSnapshot.entrySet()) {
+                ConnectionsRegistry.INSTANCE.setDataSourceStatus(entry.getKey().getKey(), entry.getKey().getValue(), entry.getValue());
+            }
         }
     }
 }

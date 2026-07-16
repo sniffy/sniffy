@@ -55,6 +55,7 @@ Register the extension on the test class or method with `@ExtendWith(SniffyExten
 [source,java]
 ----
 import io.sniffy.sql.SqlExpectation;
+import io.sniffy.test.Count;
 import io.sniffy.test.junit.jupiter.SniffyExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -74,6 +75,11 @@ Socket connectivity can be disabled for a single Jupiter invocation in the same 
 
 [source,java]
 ----
+import io.sniffy.socket.DisableSockets;
+import io.sniffy.test.junit.jupiter.SniffyExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 @ExtendWith(SniffyExtension.class)
 class NetworkTest {
 

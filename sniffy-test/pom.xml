@@ -14,6 +14,7 @@
     <modules>
         <module>sniffy-junit</module>
         <module>sniffy-junit-jupiter</module>
+        <module>sniffy-junit-jupiter-compat</module>
         <module>sniffy-kotest</module>
         <module>sniffy-test-common</module>
         <module>sniffy-testng</module>
