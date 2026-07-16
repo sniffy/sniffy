@@ -114,8 +114,21 @@ mirror for a worker image that will hold credentials.
 
 ## 3. Create the Hyper-V VM
 
-The Hyper-V Manager wizard is acceptable. The following elevated PowerShell example records the intended shape. Replace
-the paths and switch name before running it:
+The Hyper-V Manager wizard is acceptable. The following PowerShell path makes the intended VM shape reproducible.
+
+### 3.1. Save and run the creation script
+
+Open **Windows PowerShell as Administrator** on the physical host. Create a dedicated script directory and open a new
+script in Notepad:
+
+```powershell
+New-Item -ItemType Directory -Force -Path "$HOME\\Documents\\CodexWorker"
+notepad.exe "$HOME\\Documents\\CodexWorker\\create-codex-worker.ps1"
+```
+
+Accept Notepad's prompt to create the file, paste the complete script below, replace the ISO, VM, and switch paths, then
+save and close Notepad. Starting Notepad with the full `.ps1` path avoids accidentally saving
+`create-codex-worker.ps1.txt`.
 
 ```powershell
 $vmName = "CodexWorker"
@@ -141,21 +154,55 @@ Set-VM -Name $vmName -AutomaticStartAction Start -AutomaticStopAction Save
 
 $dvd = Add-VMDvdDrive -VMName $vmName -Path $isoPath -Passthru
 Set-VMFirmware -VMName $vmName -FirstBootDevice $dvd
-Start-VM -Name $vmName
 ```
+
+The script deliberately creates the VM without starting it. In the same elevated PowerShell window, allow scripts only
+for that PowerShell process and execute the saved file:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+& "$HOME\\Documents\\CodexWorker\\create-codex-worker.ps1"
+```
+
+This does not weaken the permanent machine or user execution policy; closing the PowerShell window removes the
+process-scoped override. Do not use a machine-wide `Unrestricted` policy for this runbook.
 
 Windows 11 VMs require Generation 2, Secure Boot, a virtual TPM, at least 4 GB RAM, two virtual processors, and 64 GB
 storage. See [Windows 11 requirements: virtual machine
 support](https://learn.microsoft.com/en-us/windows/whats-new/windows-11-requirements#virtual-machine-support).
 
+### 3.2. Open Hyper-V Manager and boot the ISO
+
+Open the manager from Start by searching for **Hyper-V Manager**, or run:
+
+```powershell
+virtmgmt.msc
+```
+
+In Hyper-V Manager:
+
+1. Select the local host in the left pane. If it is absent, use **Action > Connect to Server > Local computer**.
+2. Find **CodexWorker** in the center **Virtual Machines** pane.
+3. Right-click **CodexWorker**, select **Connect**, and leave the VMConnect console in the foreground.
+4. Click **Start** in VMConnect.
+5. Immediately click inside the console and press **Space** repeatedly until Windows Setup appears.
+
+An official Windows ISO briefly displays **Press any key to boot from CD or DVD**. One keypress is technically enough
+after VMConnect has keyboard focus, but repeated Space presses are a reliable way to acquire focus and catch the
+short prompt. If the Hyper-V UEFI boot summary appears instead, click **Restart now**, click inside the console, and
+repeat the Space presses. On later installer-initiated reboots, do **not** press a key; let the VM boot from its virtual
+disk instead of restarting setup from the ISO.
+
 During Windows setup:
 
-1. Create a dedicated local Windows account for the worker.
-2. Do not sign into GitHub, email, cloud drives, or password managers used on the host.
-3. Apply Windows Update and reboot until no important update remains.
-4. Disable sleep inside the guest. The host may still save the VM during shutdown.
-5. Do not enable shared host drives. Avoid clipboard and device redirection when using an enhanced session.
-6. Create a clean checkpoint before adding ChatGPT and GitHub credentials.
+1. Select Windows 11 Pro, not a regional `N` edition. Home supports WSL2, but Pro makes later RDP and administration
+   easier.
+2. Create a dedicated local Windows account for the worker.
+3. Do not sign into GitHub, email, cloud drives, or password managers used on the host.
+4. Apply Windows Update and reboot until no important update remains.
+5. Disable sleep inside the guest. The host may still save the VM during shutdown.
+6. Do not enable shared host drives. Avoid clipboard and device redirection when using an enhanced session.
+7. Create a clean checkpoint before adding ChatGPT and GitHub credentials.
 
 Checkpoints and VM exports made after login contain cached credentials. Store them only on an encrypted host volume and
 treat them as secrets.
