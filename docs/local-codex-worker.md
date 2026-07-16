@@ -64,14 +64,13 @@ For a Ryzen 9 9900X host with 64 GB RAM:
 | Resource | Worker VM | Rationale |
 | --- | ---: | --- |
 | Virtual processors | 12 | Leaves half of the host's 24 logical processors available |
-| Startup memory | 32 GB | Enough for Windows, WSL, Maven, Docker, and browser tests |
-| Dynamic memory | 16-48 GB | Gives idle memory back while allowing large builds |
+| Memory | 32 GB static | Enough for Windows, WSL, Maven, Docker, and browser tests without nested-memory resizing |
 | System disk | 300 GB dynamically expanding | Room for Maven, npm, Docker layers, worktrees, and logs |
 | VM generation | 2 | Required for Windows 11 Secure Boot and virtual TPM |
 | Network | Hyper-V Default Switch initially | NAT outbound access without exposing host files |
 
-These are starting values, not a compatibility contract. Reduce Docker/WSL concurrency before assigning so much memory
-that the host starts paging.
+These are starting values, not a compatibility contract. Static memory removes one source of nested-virtualization
+surprises. Reduce Docker/WSL concurrency before assigning so much memory that the host starts paging.
 
 ### 2.3. Windows media and licensing
 
@@ -105,7 +104,7 @@ New-VM `
   -SwitchName $switchName
 
 Set-VMProcessor -VMName $vmName -Count 12 -ExposeVirtualizationExtensions $true
-Set-VMMemory -VMName $vmName -DynamicMemoryEnabled $true -MinimumBytes 16GB -StartupBytes 32GB -MaximumBytes 48GB
+Set-VMMemory -VMName $vmName -DynamicMemoryEnabled $false -StartupBytes 32GB
 Set-VMFirmware -VMName $vmName -EnableSecureBoot On -SecureBootTemplate MicrosoftWindows
 Set-VMKeyProtector -VMName $vmName -NewLocalKeyProtector
 Enable-VMTPM -VMName $vmName
@@ -235,6 +234,14 @@ instructions](https://docs.docker.com/engine/install/ubuntu/). Enable the servic
 use the Docker socket:
 
 ```bash
+systemctl is-system-running
+```
+
+If WSL does not have systemd enabled, enable it through `/etc/wsl.conf` using Microsoft's
+[WSL systemd instructions](https://learn.microsoft.com/en-us/windows/wsl/systemd), run `wsl --shutdown` from
+PowerShell, and reopen Ubuntu. Then continue:
+
+```bash
 sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"
 ```
@@ -328,12 +335,14 @@ not support user-owned Projects, so keep the worker's book of work owned by the 
 Authenticate from WSL without putting the token in a command argument or Git remote URL:
 
 ```bash
-gh auth login --hostname github.com --git-protocol https --with-token
+read -rsp "GitHub PAT: " github_pat && echo
+printf '%s\n' "${github_pat}" | gh auth login --hostname github.com --git-protocol https --with-token
+unset github_pat
 gh auth setup-git --hostname github.com
 gh auth status --hostname github.com
 ```
 
-Paste the token on standard input when prompted. Configure a distinct commit identity:
+Configure a distinct commit identity:
 
 ```bash
 git config --global user.name "Sniffy Codex Worker"
