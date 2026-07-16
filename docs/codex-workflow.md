@@ -150,6 +150,7 @@ Reply on the issue and pull request with exact resolvable URLs, the full SHA, an
 remains, stop without repeatedly rebuilding the same change and report the exact command/output plus the smallest
 permission or decision needed.
 ```
+
 ## 7. Operating model
 
 ### Product Owner — Dmitry
