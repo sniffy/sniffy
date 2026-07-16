@@ -84,7 +84,7 @@ Choose the guest edition separately from the physical host edition:
 | --- | --- | --- | --- |
 | Windows 11 Enterprise Evaluation | Yes | Yes | Free, licensed 90-day evaluation; best for proving the setup |
 | Windows 11 Home | Yes | No | Smallest sufficient long-lived guest after assigning a valid Home license |
-| Windows 11 Pro | Yes | Yes | Also works, but its additional virtualization features are not required here |
+| Windows 11 Pro | Yes | Yes | Recommended here for RDP and easier administration after assigning a valid Pro license |
 
 Windows 11 Home is technically sufficient for the worker guest. Microsoft explicitly supports WSL2 on
 [Windows 11 Home](https://learn.microsoft.com/en-us/windows/wsl/faq#is-wsl-2-available-on-windows-10-home-and-windows-11-home).
@@ -97,8 +97,9 @@ outer VM.
 For the first build, either use the official
 [Windows 11 Enterprise 90-day evaluation](https://www.microsoft.com/en-us/evalcenter/evaluate-windows-11-enterprise) or
 download Microsoft's normal [multi-edition Windows 11 ISO](https://www.microsoft.com/en-us/software-download/windows11)
-and install Home. Treat the evaluation as disposable and plan to rebuild rather than assuming it can be converted
-in-place to Home later.
+and install Pro. Home remains technically sufficient, but this runbook recommends Pro because accepting inbound RDP
+and using its administration tools are useful when operating an unattended worker. Treat the evaluation as disposable
+and plan to rebuild rather than assuming it can be converted in-place to Home or Pro later.
 
 The normal installer allows **I don't have a product key**, but an unactivated Home or Pro installation is not a free
 license. A host Windows license does not automatically license a second Windows instance in a VM. For a permanent
@@ -122,8 +123,8 @@ Open **Windows PowerShell as Administrator** on the physical host. Create a dedi
 script in Notepad:
 
 ```powershell
-New-Item -ItemType Directory -Force -Path "$HOME\\Documents\\CodexWorker"
-notepad.exe "$HOME\\Documents\\CodexWorker\\create-codex-worker.ps1"
+New-Item -ItemType Directory -Force -Path "$HOME\Documents\CodexWorker"
+notepad.exe "$HOME\Documents\CodexWorker\create-codex-worker.ps1"
 ```
 
 Accept Notepad's prompt to create the file, paste the complete script below, replace the ISO, VM, and switch paths, then
@@ -161,7 +162,7 @@ for that PowerShell process and execute the saved file:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-& "$HOME\\Documents\\CodexWorker\\create-codex-worker.ps1"
+& "$HOME\Documents\CodexWorker\create-codex-worker.ps1"
 ```
 
 This does not weaken the permanent machine or user execution policy; closing the PowerShell window removes the
