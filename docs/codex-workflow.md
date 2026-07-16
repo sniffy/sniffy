@@ -109,21 +109,47 @@ The script requires authenticated `gh`, a clean working tree, and an installed C
 
 ## 6. Starting and following up cloud work
 
-1. Refine the issue with the autonomous task template.
-2. Select the `sniffy` environment and the intended base branch in Codex Cloud, then reference the issue as the authoritative specification.
-3. For complex architectural work, select the strongest available coding model and Extra High reasoning. For small mechanical tasks, use the default reasoning level unless deeper analysis is needed.
-4. Ask for implementation, validation, and a draft pull request—not merely a plan.
-5. Review the cloud task summary, commands, tests, and diff.
-6. Use a follow-up task for bounded corrections.
-7. On a Codex-created pull request, a comment such as `@codex fix the CI failures` starts another cloud task with that pull request as context when the GitHub integration has permission.
-8. Request a high-signal review with `@codex review`, or rely on automatic reviews after they have been enabled.
+1. Refine the issue with the autonomous task template and make the issue thread the authoritative dispatch record.
+2. Start implementation from a top-level issue comment containing `@codex`. Record the comment URL and do not describe
+   the task as started until the Codex connector reacts or posts a task link. A mention inside a submitted GitHub review
+   is not a reliable task trigger. Pull-request comment triggers additionally depend on Codex code review being enabled;
+   use the authoritative issue thread as the fallback for implementation and correction tasks.
+3. Select the `sniffy` environment and current `develop`. For complex architectural work, select the strongest available
+   coding model and High or Extra High reasoning.
+4. Ask for implementation, validation, actual GitHub publication, and a ready-for-review handoff—not merely a plan,
+   local commit, `make_pr` call, or draft that remains draft after the work is complete.
+5. Require the agent to push the branch, create or update the intended pull request, and verify the remote branch, full
+   commit SHA, pull-request URL, base/head branches, draft state, and head SHA through `git ls-remote`, `gh api`, and
+   `gh pr view` before reporting success. A dry-run push is not publication.
+6. Treat Codex Cloud UI metadata as informative rather than authoritative. A pull request created directly with `gh`
+   may not appear as attached in the Cloud UI; the resolvable GitHub branch, commit, and pull-request URLs are the source
+   of truth. Link the Cloud task from the issue and link the issue/task from the pull request whenever possible.
+7. Review the complete remote diff, issue acceptance criteria, `AGENTS.md`, comments, review threads, and every relevant
+   CI job. Do not approve from an agent summary alone.
+8. For bounded corrections, leave precise review feedback and dispatch a new top-level `@codex` comment on the
+   authoritative issue that links the existing pull request, branch, review, and required checks. Use a pull-request
+   comment only after its trigger is known to work.
+9. Request a high-signal review with `@codex review`, or rely on automatic reviews after they have been enabled.
 
 A standard dispatch prompt is:
 
 ```text
-Implement the complete linked issue autonomously. Read AGENTS.md and the entire issue thread first; the issue is authoritative. Make ordinary engineering decisions yourself using the most conservative maintainable option. Implement the change, add or update tests and documentation, run all checks available in the environment, review the final diff, and open a draft pull request linked to the issue. Do not stop for a plan or ask for routine clarification. If a genuine blocker remains, leave the repository clean and report the exact blocker and the smallest decision or permission needed.
-```
+@codex Implement the complete linked issue autonomously from current develop. Read AGENTS.md, docs/codex-workflow.md,
+and the entire issue thread first; the issue is authoritative. Make ordinary conservative engineering decisions without
+asking for routine clarification. Implement the change, add or update tests and documentation, run every applicable
+focused and repository check, and review the final diff.
 
+Use a new agent/<short-description> branch unless the issue names an existing pull-request branch. Publish real GitHub
+state: push the branch, create or update the intended pull request, and verify the remote branch, full commit SHA,
+pull-request URL, base/head branches, draft state, and head SHA with git ls-remote, gh api, and gh pr view. Do not treat a
+local commit, make_pr metadata, or a Cloud summary as publication. Use a draft while work is incomplete, then mark the
+pull request ready for review after implementation and locally applicable verification are complete unless this issue
+explicitly requires it to remain draft. Do not merge or enable auto-merge.
+
+Reply on the issue and pull request with exact resolvable URLs, the full SHA, and exact check results. If a genuine blocker
+remains, stop without repeatedly rebuilding the same change and report the exact command/output plus the smallest
+permission or decision needed.
+```
 ## 7. Operating model
 
 ### Product Owner — Dmitry
@@ -137,7 +163,10 @@ Implement the complete linked issue autonomously. Read AGENTS.md and the entire 
 - owns the book of work in GitHub Projects and issues;
 - converts discussions into issues with explicit requirements, non-goals, acceptance criteria, and validation;
 - selects Cloud, unattended local Codex, or human-led execution;
-- dispatches ready tasks and tracks blockers, CI, reviews, and follow-ups;
+- dispatches ready tasks and tracks the trigger reaction/task link, remote branch, pull request, blockers, CI, reviews,
+  and follow-ups;
+- distinguishes dispatched, working, locally complete, published, ready for review, approved, and merged states; never
+  infers one state from another or from an agent summary;
 - reviews implementation and architecture against the issue and `AGENTS.md`;
 - keeps project status and issue descriptions current;
 - prepares a weekly retrospective.
@@ -183,9 +212,15 @@ The delivery lead reviews:
 - documentation and migration impact;
 - accidental generated files or unrelated edits.
 
-A task is done only when required checks pass, known limitations are documented, review findings are resolved or accepted explicitly, and the issue/project state is updated.
+A task is done only when the implementation is published and remotely verified, the pull request has reached the
+requested review state, required checks pass, known limitations are documented, review findings are resolved or accepted
+explicitly, and the issue/project state is updated.
 
-## 10. Weekly retrospective
+## 10. Incident retrospectives
+
+- [Issue #637 / PR #643: Codex Cloud delivery and publication](retrospectives/2026-07-16-codex-cloud-issue-637.md)
+
+## 11. Weekly retrospective
 
 The weekly retrospective should cover:
 
