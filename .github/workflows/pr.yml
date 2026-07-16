@@ -15,6 +15,54 @@ env:
   MAVEN_OPTS: -Dkotlin.environment.keepalive=true
 # TODO: somehow grab test results from the github action
 jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-26.04
+    env:
+      HOME: /root
+      PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
+    container:
+      image: node:24-bookworm-slim@sha256:cb4e8f7c443347358b7875e717c29e27bf9befc8f5a26cf18af3c3dec80e58c5
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: sniffy-ui
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+          cache-dependency-path: sniffy-ui/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit and Storybook interaction tests
+        run: npm run test
+      - name: Build Storybook
+        run: npm run storybook:build
+      - name: Build production assets
+        run: npm run build
+      - name: Verify generated assets
+        run: npm run check:generated
+      - name: Validate bundle
+        run: npm run check:bundle
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+      - name: Playwright end-to-end tests
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: frontend-browser-results
+          path: |
+            sniffy-ui/playwright-report/
+            sniffy-ui/test-results/
   smoke-test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30

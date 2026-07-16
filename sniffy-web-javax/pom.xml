@@ -22,7 +22,10 @@
                 <directory>src/main/resources</directory>
             </resource>
             <resource>
-                <directory>target/generated-resources</directory>
+                <directory>../sniffy-web-common/src/main/resources</directory>
+                <includes>
+                    <include>io/sniffy/ui/**</include>
+                </includes>
             </resource>
         </resources>
 
@@ -36,35 +39,6 @@
                     <testSource>1.8</testSource>
                     <testTarget>1.8</testTarget>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.10</version>
-                <executions>
-                    <execution>
-                        <id>unpack</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>io.sniffy</groupId>
-                                    <artifactId>sniffy-ui</artifactId>
-                                    <version>${sniffy.ui.version}</version>
-                                    <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
-                                    <includes>
-                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.min.js,
-                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.js,
-                                        META-INF/resources/webjars/sniffy/${sniffy.ui.version}/dist/sniffy.map
-                                    </includes>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -174,26 +148,6 @@
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.sniffy</groupId>
-            <artifactId>sniffy-ui</artifactId>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.webjars.bower</groupId>
-                    <artifactId>minified</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.webjars.bower</groupId>
-                    <artifactId>highlightjs</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.webjars.bower</groupId>
-                    <artifactId>clipboard</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>

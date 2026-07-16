@@ -1,0 +1,24 @@
+@import 'tailwindcss';
+@import '@sniffy/theme/tokens.css';
+@import '@sniffy/theme/tailwind.css';
+@import '@sniffy/ui/styles.css';
+@source "../../../packages/ui/src";
+
+* {
+  box-sizing: border-box;
+}
+html {
+  min-height: 100%;
+  background: var(--sniffy-canvas);
+  color: var(--sniffy-foreground);
+  font-family: var(--sniffy-font-sans);
+}
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: radial-gradient(circle at top, #17243a 0, var(--sniffy-canvas) 42rem);
+}
+button,
+input {
+  font: inherit;
+}

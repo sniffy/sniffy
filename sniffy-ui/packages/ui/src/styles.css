@@ -1,0 +1,61 @@
+.sniffy-switch {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  padding: 2px;
+  border: 1px solid var(--sniffy-border);
+  border-radius: 999px;
+  background: var(--sniffy-surface-hover);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 18%);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.sniffy-switch:hover:not(:disabled) {
+  border-color: var(--sniffy-foreground-muted);
+}
+
+.sniffy-switch[data-checked] {
+  border-color: var(--sniffy-accent);
+  background: var(--sniffy-accent);
+  box-shadow: inset 0 0 0 1px rgb(4 17 30 / 16%);
+}
+
+.sniffy-switch:focus-visible {
+  outline: 2px solid var(--sniffy-focus);
+  outline-offset: 2px;
+}
+
+.sniffy-switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.sniffy-switch-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sniffy-foreground);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 45%);
+  transform: translateX(0);
+  transition: transform 160ms ease;
+}
+
+.sniffy-switch[data-checked] .sniffy-switch-thumb {
+  transform: translateX(20px);
+  background: var(--sniffy-accent-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sniffy-switch,
+  .sniffy-switch-thumb {
+    transition-duration: 0.01ms;
+  }
+}

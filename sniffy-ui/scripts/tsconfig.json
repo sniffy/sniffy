@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["dev.ts", "dev.test.ts", "../apps/playground/src/server.ts"]
+}

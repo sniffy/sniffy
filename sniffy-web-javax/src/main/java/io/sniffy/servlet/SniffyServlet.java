@@ -4,6 +4,7 @@ import com.codahale.metrics.Timer;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import io.sniffy.Sniffy;
+import io.sniffy.servlet.internal.UiResourceLoader;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.registry.ConnectionsRegistryStorage;
 import io.sniffy.socket.SocketMetaData;
@@ -56,14 +57,12 @@ public class SniffyServlet extends HttpServlet {
     protected byte[] javascriptSource;
     protected byte[] javascriptMap;
 
-    private final static String SNIFFY_UI_VERSION = "3.1.8"; // TODO: avoid changing it each time
-
     public SniffyServlet(Map<String, RequestStats> cache) {
         this.cache = cache;
         try {
-            javascript = loadResource("/META-INF/resources/webjars/sniffy/" + SNIFFY_UI_VERSION + "/dist/sniffy.min.js");
-            javascriptSource = loadResource("/META-INF/resources/webjars/sniffy/" + SNIFFY_UI_VERSION + "/dist/sniffy.js");
-            javascriptMap = loadResource("/META-INF/resources/webjars/sniffy/" + SNIFFY_UI_VERSION + "/dist/sniffy.map");
+            javascript = UiResourceLoader.load("sniffy.min.js");
+            javascriptSource = UiResourceLoader.load("sniffy.js");
+            javascriptMap = UiResourceLoader.load("sniffy.map");
         } catch (IOException e) {
             // TODO: log me maybe?
         }
@@ -354,24 +353,6 @@ public class SniffyServlet extends HttpServlet {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.YEAR, 1);
         response.setDateHeader("Expires", calendar.getTimeInMillis());
-    }
-
-    private static byte[] loadResource(String resourceName) throws IOException {
-        InputStream is = null;
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            is = SniffyFilter.class.getResourceAsStream(resourceName);
-            byte[] buff = new byte[1024];
-            int count;
-            while ((count = is.read(buff)) > 0) {
-                baos.write(buff, 0, count);
-            }
-            return baos.toByteArray();
-        } finally {
-            if (null != is) {
-                is.close();
-            }
-        }
     }
 
 }

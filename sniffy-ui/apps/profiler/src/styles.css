@@ -1,0 +1,183 @@
+@import 'tailwindcss';
+@import '@sniffy/theme/tokens.css';
+@import '@sniffy/theme/tailwind.css';
+@import '@sniffy/ui/styles.css';
+@source "../../../packages/ui/src";
+
+:host {
+  all: initial !important;
+  position: fixed !important;
+  inset: auto 12px 12px auto !important;
+  z-index: 2147483647 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  color-scheme: dark !important;
+  isolation: isolate !important;
+}
+
+#sniffy-root,
+#sniffy-root *,
+#sniffy-root *::before,
+#sniffy-root *::after {
+  box-sizing: border-box;
+}
+
+#sniffy-root {
+  all: initial;
+  display: block;
+  color: var(--sniffy-foreground);
+  font: 14px/1.4 var(--sniffy-font-sans);
+  letter-spacing: normal;
+  text-align: left;
+  --spacing: 4px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-2xl: 24px;
+  --sniffy-space-1: 4px;
+  --sniffy-space-2: 8px;
+  --sniffy-space-3: 12px;
+  --sniffy-space-4: 16px;
+  --sniffy-space-6: 24px;
+  --sniffy-radius-sm: 6px;
+  --sniffy-radius: 10px;
+  --sniffy-radius-lg: 14px;
+}
+
+.sniffy-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.sniffy-panel {
+  width: min(760px, calc(100vw - 24px));
+  height: min(540px, calc(100vh - 24px));
+}
+.sniffy-panel[data-maximized='true'] {
+  width: calc(100vw - 24px);
+  height: calc(100vh - 24px);
+}
+.sniffy-scroll {
+  scrollbar-color: var(--sniffy-border) transparent;
+}
+.sniffy-widget {
+  min-height: 50px;
+}
+.sniffy-brand-trigger {
+  width: 40px;
+  flex: 0 0 40px;
+  opacity: 1;
+  transition:
+    flex-basis 180ms ease,
+    width 180ms ease,
+    opacity 160ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+.sniffy-brand-trigger[data-visible='false'] {
+  width: 0;
+  flex-basis: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.sniffy-brand-trigger[data-updating='true'] {
+  background: rgb(76 166 255 / 18%);
+  background: color-mix(in srgb, var(--sniffy-accent) 18%, transparent);
+  color: var(--sniffy-focus);
+  transform: scale(1.04);
+}
+.sniffy-counter-tray {
+  height: 48px;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(8px);
+  transform-origin: right center;
+  transition:
+    max-width 180ms ease,
+    opacity 160ms ease,
+    transform 180ms ease;
+}
+.sniffy-counter-tray[data-expanded='true'] {
+  max-width: 360px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+.sniffy-counter {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+.sniffy-counter[data-updating='true'] {
+  background: rgb(76 166 255 / 18%);
+  background: color-mix(in srgb, var(--sniffy-accent) 18%, transparent);
+  color: var(--sniffy-accent);
+  transform: scale(1.025);
+}
+.sniffy-counter[data-kind='exceptions'][data-updating='true'] {
+  background: rgb(255 125 138 / 18%);
+  background: color-mix(in srgb, var(--sniffy-danger) 18%, transparent);
+  color: var(--sniffy-danger);
+}
+.hljs-keyword,
+.hljs-built_in,
+.hljs-type {
+  color: #d7a6ff;
+}
+.hljs-string,
+.hljs-title {
+  color: #8ee6b8;
+}
+.hljs-number,
+.hljs-literal {
+  color: #ffc45c;
+}
+.hljs-comment {
+  color: #7688a2;
+}
+
+@media (max-width: 640px) {
+  :host {
+    inset: auto 6px 6px 6px !important;
+  }
+  .sniffy-panel {
+    width: calc(100vw - 12px);
+    height: calc(100vh - 12px);
+  }
+  .sniffy-panel[data-maximized='true'] {
+    width: calc(100vw - 12px);
+    height: calc(100vh - 12px);
+  }
+  .sniffy-summary > div {
+    flex-direction: column;
+    gap: 1px;
+  }
+  .sniffy-summary > div > span:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sniffy-counter-tray,
+  .sniffy-counter,
+  .sniffy-brand-trigger,
+  #sniffy-root *,
+  #sniffy-root *::before,
+  #sniffy-root *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .sniffy-counter[data-updating='true'] {
+    transform: none;
+  }
+  .sniffy-brand-trigger[data-updating='true'] {
+    transform: none;
+  }
+}

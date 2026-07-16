@@ -23,6 +23,7 @@ import java.util.List;
 
 import static io.sniffy.servlet.SniffyFilter.SNIFFY_RESOURCE_URI_PREFIX;
 import static io.sniffy.servlet.SniffyFilter.SNIFFY_URI_PREFIX;
+import static io.sniffy.servlet.SniffyFilter.JAVASCRIPT_URI;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
@@ -48,6 +49,15 @@ public class RestControllerTest {
         ResponseEntity<String> entity = restTemplate.getForEntity("http://localhost:" + localServerPort + "/restservice", String.class);
         assertNotNull(entity);
         assertNotNull(entity.getHeaders().getFirst("Sniffy-Sql-Queries"));
+    }
+
+    @Test
+    public void sharedProfilerResourceIsAvailable() {
+        ResponseEntity<String> entity = restTemplate.getForEntity(
+                "http://localhost:" + localServerPort + "/" + JAVASCRIPT_URI, String.class);
+        assertTrue(entity.getStatusCode().is2xxSuccessful());
+        assertTrue(entity.getBody().contains("sniffy-profiler"));
+        assertTrue(entity.getBody().contains("sourceMappingURL=sniffy.map"));
     }
 
     public static class Connectivity {
