@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.net.ConnectException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ServerSocketChannel;
@@ -44,8 +45,8 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
     @Test
     public void copiesHeapBufferWithoutChangingApplicationState() {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5});
-        buffer.position(4);
-        buffer.limit(5);
+        position(buffer, 4);
+        limit(buffer, 5);
 
         assertArrayEquals(new byte[]{1, 2, 3}, SniffySocketChannel.copyBytes(buffer, 1, 3));
         assertEquals(4, buffer.position());
@@ -56,8 +57,8 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
     public void copiesDirectAndReadOnlyBuffersWithoutChangingState() {
         ByteBuffer direct = ByteBuffer.allocateDirect(6);
         direct.put(new byte[]{10, 11, 12, 13, 14, 15});
-        direct.position(5);
-        direct.limit(6);
+        position(direct, 5);
+        limit(direct, 6);
         ByteBuffer readOnly = direct.asReadOnlyBuffer();
 
         assertArrayEquals(new byte[]{11, 12, 13}, SniffySocketChannel.copyBytes(readOnly, 1, 3));
@@ -72,13 +73,13 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         ByteBuffer second = ByteBuffer.wrap(new byte[]{4, 5, 6, 7});
         ByteBuffer ignoredTail = ByteBuffer.wrap(new byte[]{88});
 
-        first.position(1); // initial position
-        second.position(0); // initial position
+        position(first, 1); // initial position
+        position(second, 0); // initial position
         int[] initialPositions = new int[]{first.position(), second.position()};
 
         // Simulate a partial gathering write: all of the first range and one byte of the second.
-        first.position(4);
-        second.position(1);
+        position(first, 4);
+        position(second, 1);
 
         ByteBuffer[] buffers = new ByteBuffer[]{ignored, first, second, ignoredTail};
         assertArrayEquals(new byte[]{1, 2, 3, 4},
@@ -109,7 +110,8 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
             int split = BaseSocketTest.REQUEST.length / 2;
             ByteBuffer first = ByteBuffer.wrap(BaseSocketTest.REQUEST, 0, split).slice().asReadOnlyBuffer();
             ByteBuffer second = ByteBuffer.allocateDirect(BaseSocketTest.REQUEST.length - split);
-            second.put(BaseSocketTest.REQUEST, split, BaseSocketTest.REQUEST.length - split).flip();
+            second.put(BaseSocketTest.REQUEST, split, BaseSocketTest.REQUEST.length - split);
+            flip(second);
             ByteBuffer[] sources = new ByteBuffer[]{ByteBuffer.wrap(new byte[]{99}), first, second,
                     ByteBuffer.wrap(new byte[]{88})};
 
@@ -333,11 +335,11 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
                     int read;
                     while ((read = accepted.read(buffer)) >= 0) {
                         if (read > 0) {
-                            buffer.flip();
+                            flip(buffer);
                             byte[] bytes = new byte[buffer.remaining()];
                             buffer.get(bytes);
                             physicalBytes.write(bytes, 0, bytes.length);
-                            buffer.clear();
+                            clear(buffer);
                         }
                     }
                 } catch (Throwable e) {
@@ -419,7 +421,7 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
                 assertTrue(channel.read(channelResponse) >= 0);
             }
             byte[] response = new byte[BaseSocketTest.RESPONSE.length];
-            channelResponse.flip();
+            flip(channelResponse);
             channelResponse.get(response, 0, responseSplit);
             InputStream stream = socket.getInputStream();
             int responseOffset = responseSplit;
@@ -438,8 +440,8 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
     private static byte[] join(ByteBuffer first, ByteBuffer second) {
         ByteBuffer firstCopy = first.duplicate();
         ByteBuffer secondCopy = second.duplicate();
-        firstCopy.flip();
-        secondCopy.flip();
+        flip(firstCopy);
+        flip(secondCopy);
         byte[] bytes = new byte[firstCopy.remaining() + secondCopy.remaining()];
         firstCopy.get(bytes, 0, firstCopy.remaining());
         secondCopy.get(bytes, first.position(), secondCopy.remaining());
@@ -473,6 +475,22 @@ public class SniffySocketChannelBufferTest extends BaseSocketTest {
         public void setSniffyNetworkConnection(SniffyNetworkConnection sniffyNetworkConnection) {
             this.connection = sniffyNetworkConnection;
         }
+    }
+
+    private static void position(ByteBuffer buffer, int position) {
+        ((Buffer) buffer).position(position);
+    }
+
+    private static void limit(ByteBuffer buffer, int limit) {
+        ((Buffer) buffer).limit(limit);
+    }
+
+    private static void flip(ByteBuffer buffer) {
+        ((Buffer) buffer).flip();
+    }
+
+    private static void clear(ByteBuffer buffer) {
+        ((Buffer) buffer).clear();
     }
 
 }

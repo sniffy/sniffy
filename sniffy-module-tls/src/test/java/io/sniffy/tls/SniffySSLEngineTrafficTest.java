@@ -11,6 +11,7 @@ import org.mockito.stubbing.Answer;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
@@ -35,7 +36,7 @@ public class SniffySSLEngineTrafficTest {
         final ByteBuffer first = ascii("abc");
         final ByteBuffer second = ascii("defg");
         final ByteBuffer ignoredTail = ascii("ignored-tail");
-        first.position(1);
+        position(first, 1);
         final ByteBuffer[] sources = new ByteBuffer[]{ignoredHead, first, second, ignoredTail};
         final ByteBuffer encrypted = ByteBuffer.allocate(16);
         final byte[] produced = new byte[]{22, 3};
@@ -43,8 +44,8 @@ public class SniffySSLEngineTrafficTest {
         when(delegate.wrap(same(sources), eq(1), eq(2), same(encrypted)))
                 .thenAnswer(new Answer<SSLEngineResult>() {
                     @Override public SSLEngineResult answer(InvocationOnMock invocation) {
-                        first.position(first.position() + 1);       // "b"
-                        second.position(second.position() + 2);    // "de"
+                        position(first, first.position() + 1);       // "b"
+                        position(second, second.position() + 2);    // "de"
                         encrypted.put(produced);
                         return new SSLEngineResult(OK, NOT_HANDSHAKING, 3, produced.length);
                     }
@@ -91,7 +92,7 @@ public class SniffySSLEngineTrafficTest {
         when(delegate.unwrap(same(encrypted), same(destinations), eq(1), eq(2)))
                 .thenAnswer(new Answer<SSLEngineResult>() {
                     @Override public SSLEngineResult answer(InvocationOnMock invocation) {
-                        encrypted.position(encrypted.position() + 2);
+                        position(encrypted, encrypted.position() + 2);
                         first.put((byte) 'x');
                         second.put((byte) 'y').put((byte) 'z');
                         return new SSLEngineResult(OK, NOT_HANDSHAKING, 2, 3);
@@ -114,6 +115,10 @@ public class SniffySSLEngineTrafficTest {
                 eq(false), eq(Protocol.TCP), plaintext.capture(), eq(0), eq(3));
         assertArrayEquals(asciiBytes("xyz"), plaintext.getValue());
         verifyNoMoreInteractions(connection);
+    }
+
+    private static void position(ByteBuffer buffer, int position) {
+        ((Buffer) buffer).position(position);
     }
 
     private static ByteBuffer ascii(String value) {

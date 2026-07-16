@@ -13,6 +13,7 @@ import io.sniffy.util.StringUtil;
 
 import javax.net.ssl.*;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -289,8 +290,8 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
 
     private static byte[] copyBytes(ByteBuffer buffer, int position, int length) {
         ByteBuffer duplicate = buffer.duplicate();
-        duplicate.limit(position + length);
-        duplicate.position(position);
+        limit(duplicate, position + length);
+        position(duplicate, position);
         byte[] bytes = new byte[length];
         duplicate.get(bytes);
         return bytes;
@@ -311,8 +312,8 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
                     buffer.position() - initialPositions[i], reportedBytes - destinationOffset);
             if (transferred > 0) {
                 ByteBuffer duplicate = buffer.duplicate();
-                duplicate.limit(initialPositions[i] + transferred);
-                duplicate.position(initialPositions[i]);
+                limit(duplicate, initialPositions[i] + transferred);
+                position(duplicate, initialPositions[i]);
                 duplicate.get(bytes, destinationOffset, transferred);
                 destinationOffset += transferred;
             }
@@ -325,6 +326,14 @@ public class SniffySSLEngine extends SSLEngine implements SniffySSLNetworkConnec
         byte[] exactBytes = new byte[destinationOffset];
         System.arraycopy(bytes, 0, exactBytes, 0, destinationOffset);
         return exactBytes;
+    }
+
+    private static void position(ByteBuffer buffer, int position) {
+        ((Buffer) buffer).position(position);
+    }
+
+    private static void limit(ByteBuffer buffer, int limit) {
+        ((Buffer) buffer).limit(limit);
     }
 
     @Override

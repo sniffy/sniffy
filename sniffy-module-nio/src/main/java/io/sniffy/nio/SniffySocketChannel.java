@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -360,8 +361,8 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
 
     static byte[] copyBytes(ByteBuffer buffer, int position, int length) {
         ByteBuffer duplicate = buffer.duplicate();
-        duplicate.limit(position + length);
-        duplicate.position(position);
+        limit(duplicate, position + length);
+        position(duplicate, position);
         byte[] bytes = new byte[length];
         duplicate.get(bytes);
         return bytes;
@@ -378,8 +379,8 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
             int transferred = Math.min(buffer.position() - initialPositions[i], capturedLength - destinationOffset);
             if (transferred > 0) {
                 ByteBuffer duplicate = buffer.duplicate();
-                duplicate.limit(initialPositions[i] + transferred);
-                duplicate.position(initialPositions[i]);
+                limit(duplicate, initialPositions[i] + transferred);
+                position(duplicate, initialPositions[i]);
                 duplicate.get(bytes, destinationOffset, transferred);
                 destinationOffset += transferred;
             }
@@ -390,6 +391,14 @@ public class SniffySocketChannel extends SniffySocketChannelAdapter implements S
         byte[] exactBytes = new byte[destinationOffset];
         System.arraycopy(bytes, 0, exactBytes, 0, destinationOffset);
         return exactBytes;
+    }
+
+    private static void position(ByteBuffer buffer, int position) {
+        ((Buffer) buffer).position(position);
+    }
+
+    private static void limit(ByteBuffer buffer, int limit) {
+        ((Buffer) buffer).limit(limit);
     }
 
     void processOutboundBytes(byte[] bytes, boolean captureNetworkTraffic) {
