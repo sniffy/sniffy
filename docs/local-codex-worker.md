@@ -356,8 +356,8 @@ done
 ```
 
 Node includes `npm`; do not separately install Ubuntu's `nodejs` or `npm` packages. Do not use global npm installs such
-as `sudo npm install -g ...` for repository tools. Maven is machine-managed only until the repository adds a Maven Wrapper or pins it in
-a project `mise.toml`. A repository-level tool declaration must take precedence over these worker defaults.
+as `sudo npm install -g ...` for repository tools. Maven is machine-managed only until the repository adds a Maven Wrapper
+or pins it in a project `mise.toml`. A repository-level tool declaration must take precedence over these worker defaults.
 
 Verify the shared commands:
 
