@@ -9,6 +9,8 @@ import io.sniffy.socket.EchoServerRule;
 import io.sniffy.socket.NoSocketsAllowed;
 import io.sniffy.socket.SocketExpectation;
 import io.sniffy.socket.SocketExpectations;
+import io.sniffy.socket.SniffyNetworkConnection;
+import io.sniffy.socket.Protocol;
 import io.sniffy.sql.NoSql;
 import io.sniffy.sql.SqlExpectation;
 import io.sniffy.sql.SqlExpectations;
@@ -36,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 import static org.junit.jupiter.api.Assertions.*;
@@ -134,11 +137,27 @@ public class SniffyExtensionLauncherTest {
     public void setupFailureAfterResourcesRollsBackWithoutExecutingBody() {
         ConnectionsRegistry.INSTANCE.clear();
         SetupFailureAfterResourcesSample.executed = false;
+        SetupFailureAfterResourcesSample.connection = new ThrowingNetworkConnection();
+        ConnectionsRegistry.INSTANCE.resolveSocketAddressStatus(
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 12345),
+                SetupFailureAfterResourcesSample.connection
+        );
         List<Throwable> failures = execute(SetupFailureAfterResourcesSample.class);
         assertEquals(1, failures.size());
+        assertEquals("injected setup failure", failures.get(0).getMessage());
         assertFalse(SetupFailureAfterResourcesSample.executed);
         assertTrue(ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().isEmpty());
-        assertEquals(0, failures.get(0).getSuppressed().length);
+        assertEquals(1, failures.get(0).getSuppressed().length);
+        assertTrue(failures.get(0).getSuppressed()[0].getClass().getName().contains("WrongNumberOfQueries"));
+        SetupFailureAfterResourcesSample.connection = null;
+    }
+
+    @Test
+    public void monitorsSqlAcrossBeforeTestAndAllAfterEachMethods() {
+        MultipleAfterEachLifecycleSample.afterInvocations.set(0);
+        List<Throwable> failures = execute(MultipleAfterEachLifecycleSample.class);
+        assertTrue(failures.isEmpty(), failures.toString());
+        assertEquals(2, MultipleAfterEachLifecycleSample.afterInvocations.get());
     }
 
     @Test
@@ -344,14 +363,39 @@ public class SniffyExtensionLauncherTest {
     @ExtendWith(SniffyExtension.class)
     public static class SetupFailureAfterResourcesSample {
         static boolean executed;
+        static ThrowingNetworkConnection connection;
+
         @Test
         @DisableSockets
-        @SqlExpectations({
-                @SqlExpectation(count = @io.sniffy.test.Count(0)),
-                @SqlExpectation(count = @io.sniffy.test.Count(min = 3, max = 1))
-        })
+        @SqlExpectation(count = @io.sniffy.test.Count(1))
         public void setupFailsAfterResources() throws Exception {
             executed = true;
+            SniffyExtensionTest.query();
+        }
+    }
+
+    public static class ParentAfterEachLifecycleSample {
+        @AfterEach
+        public void parentAfter() throws Exception {
+            MultipleAfterEachLifecycleSample.afterInvocations.incrementAndGet();
+            SniffyExtensionTest.query();
+        }
+    }
+
+    @ExtendWith(SniffyExtension.class)
+    public static class MultipleAfterEachLifecycleSample extends ParentAfterEachLifecycleSample {
+        static final AtomicInteger afterInvocations = new AtomicInteger();
+
+        @BeforeEach
+        public void before() throws Exception { SniffyExtensionTest.query(); }
+
+        @Test
+        @SqlExpectation(count = @io.sniffy.test.Count(4))
+        public void test() throws Exception { SniffyExtensionTest.query(); }
+
+        @AfterEach
+        public void childAfter() throws Exception {
+            afterInvocations.incrementAndGet();
             SniffyExtensionTest.query();
         }
     }
@@ -362,6 +406,31 @@ public class SniffyExtensionLauncherTest {
         @DisableSockets
         @SqlExpectation(count = @io.sniffy.test.Count(1))
         public void failsAfterResourceAcquisition() { throw new IllegalStateException("user after resource acquisition"); }
+    }
+
+    static class ThrowingNetworkConnection implements SniffyNetworkConnection {
+        public InetSocketAddress getInetSocketAddress() { return new InetSocketAddress(InetAddress.getLoopbackAddress(), 12345); }
+        public void setConnectionStatus(Integer connectionStatus) { if (Integer.valueOf(-1).equals(connectionStatus)) throw new IllegalStateException("injected setup failure"); }
+        public void setProxiedInetSocketAddress(InetSocketAddress proxiedAddress) { }
+        public InetSocketAddress getProxiedInetSocketAddress() { return null; }
+        public void setFirstPacketSent(boolean firstPacketSent) { }
+        public boolean isFirstPacketSent() { return false; }
+        public int getPotentiallyBufferedInputBytes() { return 0; }
+        public void setPotentiallyBufferedInputBytes(int potentiallyBufferedInputBytes) { }
+        public int getPotentiallyBufferedOutputBytes() { return 0; }
+        public void setPotentiallyBufferedOutputBytes(int potentiallyBufferedOutputBytes) { }
+        public long getLastReadThreadId() { return 0; }
+        public void setLastReadThreadId(long lastReadThreadId) { }
+        public long getLastWriteThreadId() { return 0; }
+        public void setLastWriteThreadId(long lastWriteThreadId) { }
+        public void logSocket(long millis) { }
+        public void logSocket(long millis, int bytesDown, int bytesUp) { }
+        public void checkConnectionAllowed() throws ConnectException { }
+        public void checkConnectionAllowed(int numberOfSleepCycles) throws ConnectException { }
+        public void checkConnectionAllowed(InetSocketAddress inetSocketAddress) throws ConnectException { }
+        public void checkConnectionAllowed(InetSocketAddress inetSocketAddress, int numberOfSleepCycles) throws ConnectException { }
+        public void logTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) { }
+        public void logDecryptedTraffic(boolean sent, Protocol protocol, byte[] traffic, int off, int len) { }
     }
 
     static void socketOperation() throws Throwable {

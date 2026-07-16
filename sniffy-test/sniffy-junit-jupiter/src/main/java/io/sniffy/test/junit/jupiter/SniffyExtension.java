@@ -57,19 +57,7 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback, I
     }
 
     public void interceptAfterEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
-        Throwable primary = null;
-        try {
-            invocation.proceed();
-        } catch (Throwable t) {
-            primary = t;
-        }
-        State state = extensionContext.getStore(NAMESPACE).remove(key(extensionContext), State.class);
-        Throwable cleanupFailure = cleanup(state);
-        if (primary != null) {
-            if (cleanupFailure != null) primary.addSuppressed(cleanupFailure);
-            throw primary;
-        }
-        if (cleanupFailure != null) rethrow(cleanupFailure);
+        invocation.proceed();
     }
 
     public void afterEach(ExtensionContext context) throws Exception {
@@ -98,9 +86,6 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback, I
                 Spy<?> spy = Sniffy.spy();
                 state.spy = spy;
             }
-            if (state.disableSockets) {
-                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
-            }
             if (state.spy != null) {
                 Spy<?> spy = state.spy;
                 for (SqlExpectation sqlExpectation : state.sqlExpectations) {
@@ -123,6 +108,9 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback, I
                     ));
                     state.spy = spy;
                 }
+            }
+            if (state.disableSockets) {
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
             }
         } catch (Throwable setupFailure) {
             Throwable cleanupFailure = cleanup(state);
