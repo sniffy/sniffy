@@ -22,9 +22,12 @@ import io.sniffy.util.Range;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +37,7 @@ import java.util.List;
  *
  * @since 4.0
  */
-public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
+public class SniffyExtension implements BeforeEachCallback, AfterEachCallback, InvocationInterceptor {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(SniffyExtension.class);
 
@@ -45,12 +48,61 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
     }
 
     public void beforeEach(ExtensionContext context) throws Exception {
+        ensureSetup(context);
+    }
+
+    public void interceptBeforeEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+        ensureSetup(extensionContext);
+        invocation.proceed();
+    }
+
+    public void interceptAfterEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+        Throwable primary = null;
+        try {
+            invocation.proceed();
+        } catch (Throwable t) {
+            primary = t;
+        }
+        State state = extensionContext.getStore(NAMESPACE).remove(key(extensionContext), State.class);
+        Throwable cleanupFailure = cleanup(state);
+        if (primary != null) {
+            if (cleanupFailure != null) primary.addSuppressed(cleanupFailure);
+            throw primary;
+        }
+        if (cleanupFailure != null) rethrow(cleanupFailure);
+    }
+
+    public void afterEach(ExtensionContext context) throws Exception {
+        State state = context.getStore(NAMESPACE).remove(key(context), State.class);
+        if (state == null) {
+            return;
+        }
+        Throwable primary = context.getExecutionException().orElse(null);
+        Throwable cleanupFailure = cleanup(state);
+        if (primary != null) {
+            if (cleanupFailure != null) primary.addSuppressed(cleanupFailure);
+            rethrow(primary);
+        }
+        if (cleanupFailure != null) rethrow(cleanupFailure);
+    }
+
+    private static void ensureSetup(ExtensionContext context) throws Exception {
+        State existing = context.getStore(NAMESPACE).get(key(context), State.class);
+        if (existing != null) {
+            return;
+        }
         State state = resolveState(context);
-        context.getStore(NAMESPACE).put(context.getUniqueId(), state);
+        context.getStore(NAMESPACE).put(key(context), state);
         try {
             if (state.requiresSpy()) {
                 Spy<?> spy = Sniffy.spy();
                 state.spy = spy;
+            }
+            if (state.disableSockets) {
+                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
+            }
+            if (state.spy != null) {
+                Spy<?> spy = state.spy;
                 for (SqlExpectation sqlExpectation : state.sqlExpectations) {
                     spy = spy.expect(new SqlQueries.SqlExpectation(
                             Range.parse(sqlExpectation.count()).min,
@@ -72,12 +124,9 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
                     state.spy = spy;
                 }
             }
-            if (state.disableSockets) {
-                ConnectionsRegistry.INSTANCE.setSocketAddressStatus(null, null, -1);
-            }
         } catch (Throwable setupFailure) {
             Throwable cleanupFailure = cleanup(state);
-            context.getStore(NAMESPACE).remove(context.getUniqueId());
+            context.getStore(NAMESPACE).remove(key(context));
             if (cleanupFailure != null) {
                 setupFailure.addSuppressed(cleanupFailure);
             }
@@ -85,21 +134,14 @@ public class SniffyExtension implements BeforeEachCallback, AfterEachCallback {
         }
     }
 
-    public void afterEach(ExtensionContext context) throws Exception {
-        State state = context.getStore(NAMESPACE).remove(context.getUniqueId(), State.class);
-        if (state == null) {
-            return;
-        }
-        Throwable primary = context.getExecutionException().orElse(null);
-        Throwable cleanupFailure = cleanup(state);
-        if (primary != null) {
-            if (cleanupFailure != null) primary.addSuppressed(cleanupFailure);
-            rethrow(primary);
-        }
-        if (cleanupFailure != null) rethrow(cleanupFailure);
+    private static String key(ExtensionContext context) {
+        return context.getRequiredTestClass().getName() + "#" + context.getRequiredTestMethod().toGenericString();
     }
 
     private static Throwable cleanup(State state) {
+        if (state == null) {
+            return null;
+        }
         Throwable cleanupFailure = null;
         try {
             if (state.spy != null) {

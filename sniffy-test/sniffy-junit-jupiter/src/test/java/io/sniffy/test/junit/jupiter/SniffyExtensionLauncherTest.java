@@ -1,14 +1,19 @@
 package io.sniffy.test.junit.jupiter;
 
 import io.sniffy.Expectation;
+import io.sniffy.Threads;
 import io.sniffy.NoQueriesAllowed;
 import io.sniffy.registry.ConnectionsRegistry;
 import io.sniffy.socket.DisableSockets;
 import io.sniffy.socket.EchoServerRule;
 import io.sniffy.socket.NoSocketsAllowed;
 import io.sniffy.socket.SocketExpectation;
+import io.sniffy.socket.SocketExpectations;
 import io.sniffy.sql.NoSql;
 import io.sniffy.sql.SqlExpectation;
+import io.sniffy.sql.SqlExpectations;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.engine.TestExecutionResult;
@@ -50,11 +55,14 @@ public class SniffyExtensionLauncherTest {
 
 
     @Test
-    public void coversSqlRowsNoSqlLegacyAndInheritance() {
+    public void coversSqlRowsNoSqlLegacyContainersAndInheritance() {
         assertTrue(execute(SqlRowsSample.class).isEmpty());
         assertEquals(1, execute(FailingSqlRowsSample.class).size());
         assertEquals(1, execute(NoSqlSample.class).size());
+        assertEquals(1, execute(NoQueriesAllowedSample.class).size());
         assertTrue(execute(LegacyExpectationSample.class).isEmpty());
+        assertTrue(execute(LegacyExpectationsContainerSample.class).isEmpty());
+        assertTrue(execute(SqlExpectationsContainerSample.class).isEmpty());
         assertTrue(execute(InheritedSqlSample.class).isEmpty());
         assertTrue(execute(MethodOverridesClassSample.class).isEmpty());
     }
@@ -70,6 +78,21 @@ public class SniffyExtensionLauncherTest {
         assertTrue(execute(DisableSocketsSample.class).isEmpty());
         assertTrue(ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().isEmpty());
         ConnectionsRegistry.INSTANCE.clear();
+    }
+
+
+    @Test
+    public void coversSocketContainerAnnotation() {
+        ConnectionsRegistry.INSTANCE.clear();
+        List<Throwable> socketContainerFailures = execute(SocketExpectationsContainerSample.class);
+        assertTrue(socketContainerFailures.isEmpty(), socketContainerFailures.toString());
+    }
+
+    @Test
+    public void monitorsSocketActivityInBeforeTestAndAfterEach() {
+        ConnectionsRegistry.INSTANCE.clear();
+        List<Throwable> socketLifecycleFailures = execute(SocketLifecycleSample.class);
+        assertTrue(socketLifecycleFailures.isEmpty(), socketLifecycleFailures.toString());
     }
 
     @Test
@@ -105,13 +128,25 @@ public class SniffyExtensionLauncherTest {
     }
 
     @Test
-    public void setupFailureRestoresRegistry() {
+    public void setupFailureAfterResourcesRollsBackWithoutExecutingBody() {
         ConnectionsRegistry.INSTANCE.clear();
-        ConnectionsRegistry.INSTANCE.setSocketAddressStatus("before", 123, 7);
-        List<Throwable> failures = execute(InvalidRangeSetupFailureSample.class);
+        SetupFailureAfterResourcesSample.executed = false;
+        List<Throwable> failures = execute(SetupFailureAfterResourcesSample.class);
         assertEquals(1, failures.size());
-        assertTrue(ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().containsKey(new AbstractMap.SimpleEntry<String, Integer>("before", 123)));
+        assertFalse(SetupFailureAfterResourcesSample.executed);
+        assertTrue(ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().isEmpty());
+        assertEquals(0, failures.get(0).getSuppressed().length);
+    }
+
+    @Test
+    public void disableSocketsCombinedFailureKeepsUserPrimaryAndCleansRegistry() {
         ConnectionsRegistry.INSTANCE.clear();
+        List<Throwable> failures = execute(DisableSocketsUserFailureWithCleanupFailureSample.class);
+        assertEquals(1, failures.size());
+        assertEquals("user after resource acquisition", failures.get(0).getMessage());
+        assertEquals(1, failures.get(0).getSuppressed().length);
+        assertTrue(failures.get(0).getSuppressed()[0].getClass().getName().contains("WrongNumberOfQueries"));
+        assertTrue(ConnectionsRegistry.INSTANCE.getDiscoveredAddresses().isEmpty());
     }
 
     @Test
@@ -185,10 +220,37 @@ public class SniffyExtensionLauncherTest {
     }
 
     @ExtendWith(SniffyExtension.class)
+    public static class NoQueriesAllowedSample {
+        @Test
+        @NoQueriesAllowed
+        public void noQueriesAllowed() throws Exception { SniffyExtensionTest.query(); }
+    }
+
+    @ExtendWith(SniffyExtension.class)
     public static class LegacyExpectationSample {
         @Test
         @Expectation(1)
         public void legacy() throws Exception { SniffyExtensionTest.query(); }
+    }
+
+    @ExtendWith(SniffyExtension.class)
+    public static class LegacyExpectationsContainerSample {
+        @Test
+        @io.sniffy.Expectations({@Expectation(2), @Expectation(2)})
+        public void legacyContainer() throws Exception {
+            SniffyExtensionTest.query();
+            SniffyExtensionTest.query();
+        }
+    }
+
+    @ExtendWith(SniffyExtension.class)
+    public static class SqlExpectationsContainerSample {
+        @Test
+        @SqlExpectations({@SqlExpectation(count = @io.sniffy.test.Count(2)), @SqlExpectation(count = @io.sniffy.test.Count(2))})
+        public void sqlContainer() throws Exception {
+            SniffyExtensionTest.query();
+            SniffyExtensionTest.query();
+        }
     }
 
     @SqlExpectation(count = @io.sniffy.test.Count(1))
@@ -214,6 +276,32 @@ public class SniffyExtensionLauncherTest {
         @Test
         @SocketExpectation(connections = @io.sniffy.test.Count(1))
         public void socket() throws Throwable { socketOperation(); }
+    }
+
+    @ExtendWith(SniffyExtension.class)
+    public static class SocketExpectationsContainerSample {
+        @Test
+        @SocketExpectations({@SocketExpectation(connections = @io.sniffy.test.Count(min = 0), threads = Threads.ANY), @SocketExpectation(connections = @io.sniffy.test.Count(min = 0), threads = Threads.ANY)})
+        public void socketContainer() throws Throwable {
+            socketOperation();
+        }
+    }
+
+    @ExtendWith(SniffyExtension.class)
+    public static class SocketLifecycleSample {
+        @BeforeEach
+        public void before() throws Throwable { socketOperation(); }
+
+        @Test
+        @SocketExpectation(connections = @io.sniffy.test.Count(min = 1), threads = Threads.ANY)
+        public void socket() throws Throwable {
+            socketOperation();
+            socketOperation();
+            socketOperation();
+        }
+
+        @AfterEach
+        public void after() throws Throwable { socketOperation(); }
     }
 
     @ExtendWith(SniffyExtension.class)
@@ -251,18 +339,14 @@ public class SniffyExtensionLauncherTest {
 
 
     @ExtendWith(SniffyExtension.class)
-    public static class InvalidRangeSetupFailureSample {
-        @Test
-        @SqlExpectation(count = @io.sniffy.test.Count(min = 3, max = 1))
-        public void invalid() throws Exception { SniffyExtensionTest.query(); }
-    }
-
-    @ExtendWith(SniffyExtension.class)
     public static class SetupFailureAfterResourcesSample {
         static boolean executed;
         @Test
         @DisableSockets
-        @SqlExpectation(count = @io.sniffy.test.Count(1))
+        @SqlExpectations({
+                @SqlExpectation(count = @io.sniffy.test.Count(0)),
+                @SqlExpectation(count = @io.sniffy.test.Count(min = 3, max = 1))
+        })
         public void setupFailsAfterResources() throws Exception {
             executed = true;
             SniffyExtensionTest.query();
@@ -273,7 +357,7 @@ public class SniffyExtensionLauncherTest {
     public static class DisableSocketsUserFailureWithCleanupFailureSample {
         @Test
         @DisableSockets
-        @SqlExpectation(count = @io.sniffy.test.Count(0))
+        @SqlExpectation(count = @io.sniffy.test.Count(1))
         public void failsAfterResourceAcquisition() { throw new IllegalStateException("user after resource acquisition"); }
     }
 
