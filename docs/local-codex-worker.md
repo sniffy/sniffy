@@ -1,0 +1,581 @@
+# Local Codex worker on a Windows virtual machine
+
+This runbook describes an always-on local worker for Sniffy that can execute privileged, long-running, or Docker-heavy
+tasks while remaining observable from the ChatGPT desktop and mobile apps. The security boundary is a disposable
+Windows virtual machine; the Codex agent and developer toolchain run in WSL2 inside that VM.
+
+The design was last checked against the linked product documentation on 2026-07-16.
+
+## 1. Architecture and decisions
+
+```mermaid
+flowchart TD
+    Host["Windows host<br/>Hyper-V"] --> VM["Windows 11 VM<br/>disposable boundary"]
+    Phone["ChatGPT mobile<br/>Remote"] --> App["ChatGPT desktop app<br/>Codex + Scheduled"]
+    VM --> App
+    App --> WSL["Codex agent<br/>Ubuntu on WSL2"]
+    WSL --> Repo["Sniffy checkout<br/>Git + gh + Maven"]
+    WSL --> Docker["Docker Engine<br/>Playwright and services"]
+```
+
+The important choices are:
+
+- Run the ChatGPT desktop app on Windows because the app supplies local projects, worktrees, Scheduled tasks, review
+  UI, and [Remote connections](https://learn.chatgpt.com/docs/remote-connections) from mobile.
+- Configure the app's Codex agent to run in WSL2. Local setup scripts then run in WSL, so Bash, `curl`, Linux Docker,
+  and the existing repository scripts work without Cygwin.
+- Treat the complete Windows VM as disposable and trusted by the agent. Full access inside the VM is acceptable only
+  because the VM has no access to host files, host credentials, or unrelated repositories.
+- Install Docker Engine inside WSL2. Containers are tools available to Codex, not the outer isolation boundary.
+- Use a dedicated GitHub identity and a short-lived, repository-scoped token. GitHub branch rules remain the final
+  write boundary.
+- Use a ChatGPT desktop app Scheduled task as the dispatcher. A shell script can launch `codex exec`, but that is a CLI
+  run rather than a supported way to inject a new local task into the app UI.
+
+This worker complements Codex Cloud. Route ordinary clean, bounded tasks to Cloud and use this worker when persistent
+artifacts, Docker, special networking, privileged tools, or long debugging sessions make a local environment preferable.
+
+## 2. Host and VM prerequisites
+
+### 2.1. Host
+
+The Hyper-V host must run Windows 11 Pro, Enterprise, or another edition that includes Hyper-V. Enable AMD-V/SVM in
+UEFI and enable Hyper-V from an elevated PowerShell session:
+
+```powershell
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+```
+
+Restart the host and verify:
+
+```powershell
+systeminfo.exe
+Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All
+```
+
+Microsoft supports nested virtualization on Windows 11 hosts with AMD Ryzen or later processors. The outer VM must use
+configuration version 9.3 or later. See [Run Hyper-V in a virtual machine with nested
+virtualization](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/enable-nested-virtualization).
+
+### 2.2. Recommended allocation
+
+For a Ryzen 9 9900X host with 64 GB RAM:
+
+| Resource | Worker VM | Rationale |
+| --- | ---: | --- |
+| Virtual processors | 12 | Leaves half of the host's 24 logical processors available |
+| Memory | 32 GB static | Enough for Windows, WSL, Maven, Docker, and browser tests without nested-memory resizing |
+| System disk | 300 GB dynamically expanding | Room for Maven, npm, Docker layers, worktrees, and logs |
+| VM generation | 2 | Required for Windows 11 Secure Boot and virtual TPM |
+| Network | Hyper-V Default Switch initially | NAT outbound access without exposing host files |
+
+These are starting values, not a compatibility contract. Static memory removes one source of nested-virtualization
+surprises. Reduce Docker/WSL concurrency before assigning so much memory that the host starts paging.
+
+### 2.3. Windows media and licensing
+
+Use the official [Windows 11 Enterprise 90-day evaluation](https://www.microsoft.com/en-us/evalcenter/evaluate-windows-11-enterprise)
+for the initial build. It is free for evaluation but is not a permanent production license.
+
+The normal Windows installer also allows **I don't have a product key**, but an unactivated installation is not a free
+license. A host Windows license does not automatically license a second Windows instance in a VM. See
+[Activate Windows](https://support.microsoft.com/en-us/windows/activation/activate-windows) and the
+[Windows license terms](https://www.microsoft.com/en-us/useterms). Do not use activation bypasses or unofficial KMS
+services.
+
+## 3. Create the Hyper-V VM
+
+The Hyper-V Manager wizard is acceptable. The following elevated PowerShell example records the intended shape. Replace
+the paths and switch name before running it:
+
+```powershell
+$vmName = "SniffyCodexWorker"
+$vmRoot = "D:\VMs\SniffyCodexWorker"
+$isoPath = "D:\ISO\Windows11EnterpriseEvaluation.iso"
+$switchName = "Default Switch"
+
+New-Item -ItemType Directory -Force -Path $vmRoot
+New-VM `
+  -Name $vmName `
+  -Generation 2 `
+  -MemoryStartupBytes 32GB `
+  -NewVHDPath "$vmRoot\system.vhdx" `
+  -NewVHDSizeBytes 300GB `
+  -SwitchName $switchName
+
+Set-VMProcessor -VMName $vmName -Count 12 -ExposeVirtualizationExtensions $true
+Set-VMMemory -VMName $vmName -DynamicMemoryEnabled $false -StartupBytes 32GB
+Set-VMFirmware -VMName $vmName -EnableSecureBoot On -SecureBootTemplate MicrosoftWindows
+Set-VMKeyProtector -VMName $vmName -NewLocalKeyProtector
+Enable-VMTPM -VMName $vmName
+Set-VM -Name $vmName -AutomaticStartAction Start -AutomaticStopAction Save
+
+$dvd = Add-VMDvdDrive -VMName $vmName -Path $isoPath -Passthru
+Set-VMFirmware -VMName $vmName -FirstBootDevice $dvd
+Start-VM -Name $vmName
+```
+
+Windows 11 VMs require Generation 2, Secure Boot, a virtual TPM, at least 4 GB RAM, two virtual processors, and 64 GB
+storage. See [Windows 11 requirements: virtual machine
+support](https://learn.microsoft.com/en-us/windows/whats-new/windows-11-requirements#virtual-machine-support).
+
+During Windows setup:
+
+1. Create a dedicated local Windows account for the worker.
+2. Do not sign into GitHub, email, cloud drives, or password managers used on the host.
+3. Apply Windows Update and reboot until no important update remains.
+4. Disable sleep inside the guest. The host may still save the VM during shutdown.
+5. Do not enable shared host drives. Avoid clipboard and device redirection when using an enhanced session.
+6. Create a clean checkpoint before adding ChatGPT and GitHub credentials.
+
+Checkpoints and VM exports made after login contain cached credentials. Store them only on an encrypted host volume and
+treat them as secrets.
+
+## 4. Install and constrain WSL2
+
+In an elevated PowerShell terminal inside the Windows VM:
+
+```powershell
+wsl --install -d Ubuntu-24.04
+wsl --update
+wsl --set-default-version 2
+```
+
+Restart Windows, finish the Ubuntu user setup, and verify that the distribution is version 2:
+
+```powershell
+wsl --status
+wsl --list --verbose
+```
+
+If WSL reports that virtualization is unavailable, stop the VM and re-run this command on the physical host:
+
+```powershell
+Set-VMProcessor -VMName "SniffyCodexWorker" -ExposeVirtualizationExtensions $true
+```
+
+Running WSL2 inside a Hyper-V VM is a supported nested-virtualization scenario. See Microsoft's
+[nested virtualization overview](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/nested-virtualization#run-wsl2-in-a-hyper-v-vm-running-nested-on-hyper-v).
+
+Optionally constrain the nested WSL VM in `%USERPROFILE%\.wslconfig` so that Windows retains resources for the desktop
+app:
+
+```ini
+[wsl2]
+memory=22GB
+processors=10
+swap=8GB
+```
+
+Apply changes with:
+
+```powershell
+wsl --shutdown
+```
+
+The outer Hyper-V VM remains the security boundary; `.wslconfig` is resource control, not security isolation.
+
+## 5. Install the ChatGPT desktop app and Remote
+
+Install the current Windows app inside the VM:
+
+```powershell
+winget install --id 9PLM9XGG6VKS -s msstore
+```
+
+Then:
+
+1. Sign in to the ChatGPT desktop app using the same ChatGPT account and workspace as the mobile app.
+2. Open **Settings**, switch the Codex agent from Windows native to **WSL**, and restart the app. The restart is required.
+3. Set WSL as the integrated terminal unless PowerShell is specifically needed.
+4. Add the repository from `\\wsl$\Ubuntu-24.04\home\<worker>\src\sniffy`.
+5. Select **Set up Remote** in the sidebar and pair the phone using the displayed QR code.
+6. Enable launch at login and keep the Windows session signed in. Keep it unlocked when a task uses Computer Use.
+
+The current Windows app and WSL behavior are documented in [ChatGPT desktop app for
+Windows](https://learn.chatgpt.com/docs/windows/windows-app). Remote setup and host availability are documented in
+[Remote connections](https://learn.chatgpt.com/docs/remote-connections).
+
+For an unattended machine, decide explicitly how reboots are handled:
+
+- **Supervised default:** log in manually after Windows Update or a host restart, then start the app.
+- **Always-on:** use a dedicated low-value local account with automatic login and app startup. This improves recovery
+  but stores a reusable Windows login secret inside the VM; it does not remove the need for least-privilege PATs.
+
+## 6. Provision the WSL developer environment
+
+Run all project tooling inside Ubuntu, not in native Windows. This avoids duplicate Git checkouts, path translation,
+file-watcher problems, and mixed Windows/Linux credentials.
+
+### 6.1. Base packages
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  bash bubblewrap build-essential ca-certificates curl git jq maven tar unzip zip
+```
+
+Install [`mise`](https://mise.jdx.dev/getting-started.html) using its documented installer, ensure it is on `PATH`, then
+install the JDKs expected by the existing Sniffy scripts:
+
+```bash
+for version in 11 17 21 25; do
+  mise install "java@${version}"
+done
+```
+
+The repository setup script installs Temurin JDK 8 itself. `bubblewrap` is required if the app is later switched back
+from full access to the Linux sandbox.
+
+### 6.2. Docker Engine
+
+Install Docker Engine inside Ubuntu using the official [Docker Engine for Ubuntu
+instructions](https://docs.docker.com/engine/install/ubuntu/). Enable the service and allow the dedicated worker user to
+use the Docker socket:
+
+```bash
+systemctl is-system-running
+```
+
+If WSL does not have systemd enabled, enable it through `/etc/wsl.conf` using Microsoft's
+[WSL systemd instructions](https://learn.microsoft.com/en-us/windows/wsl/systemd), run `wsl --shutdown` from
+PowerShell, and reopen Ubuntu. Then continue:
+
+```bash
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+```
+
+Exit all WSL shells, run `wsl --shutdown` from PowerShell, reopen Ubuntu, and verify:
+
+```bash
+docker version
+docker run --rm hello-world
+```
+
+Membership in the `docker` group is effectively root access inside WSL. That is intentional only because the whole VM
+is dedicated to the worker. Docker Desktop is not required.
+
+### 6.3. Clone and bootstrap Sniffy
+
+```bash
+mkdir -p ~/src
+cd ~/src
+git clone https://github.com/sniffy/sniffy.git
+cd sniffy
+git switch develop
+```
+
+On a clean Ubuntu installation, `.codex/cloud/setup.sh` cannot be the very first command: it assumes `curl`, Git,
+Maven, `mise`, and JDK 11/17/21/25 are already available in the Codex universal image. After the bootstrap above, run:
+
+```bash
+bash .codex/cloud/setup.sh
+```
+
+This compatibility path reuses the existing JDK 8 installation, toolchain generation, GitHub CLI installation,
+environment file, and Maven cache warm-up. Verify both ends of the supported matrix:
+
+```bash
+source .codex/cloud/use-jdk.sh 8
+mvn -version
+
+source .codex/cloud/use-jdk.sh 25
+mvn -version
+```
+
+In the app's [local environment](https://learn.chatgpt.com/docs/environments/local-environment), use this setup command
+for new worktrees after the one-time machine bootstrap:
+
+```bash
+bash .codex/cloud/maintenance.sh
+```
+
+Local environment setup scripts execute in WSL when the app agent uses WSL. Configure the environment through the app
+and commit the generated `.codex` configuration only after it has been tested on a second clean worktree.
+
+### 6.4. Portable environment direction
+
+There is no single industry-standard file that installs Windows features, Ubuntu packages, language runtimes, Docker,
+and project dependencies across every platform. Keep the layers explicit:
+
+| Layer | Recommended source of truth |
+| --- | --- |
+| VM and Windows features | Hyper-V PowerShell/runbook, later an idempotent provisioning script |
+| OS packages | `winget` for Windows-only apps; `apt` for the WSL distribution |
+| Java/Node/Python versions | Repository `mise.toml` in a follow-up change |
+| Maven version and invocation | Maven Wrapper plus `pom.xml` |
+| Codex worktree setup/actions | App local environment configuration under `.codex` |
+| Agent conventions and checks | `AGENTS.md` |
+| Optional editor/container environment | Development Container specification |
+
+The next portability improvement should extract cloud-image assumptions from `.codex/cloud/setup.sh` into a shared,
+idempotent Linux toolchain script and add a small WSL bootstrap. A `mise.toml` and Maven Wrapper would make versions
+declarative. Keep Dev Containers as an optional reproducible development target, not as the outer boundary for this
+worker.
+
+Do not install Cygwin. WSL2 already supplies the Linux system that Bash scripts, `curl`, Docker, and Playwright expect.
+Git Bash may remain useful for an occasional native-Windows terminal, but the worker should not depend on it.
+
+## 7. GitHub identity and least privilege
+
+Prefer a dedicated machine account that is a member of the `sniffy` organization. Create a fine-grained PAT with:
+
+- resource owner `sniffy`;
+- repository access limited to `sniffy/sniffy`;
+- repository permissions: Metadata read, Contents read/write, Issues read/write, and Pull requests read/write;
+- organization permission: Projects read/write for the organization-owned book of work;
+- Workflows read/write only when authorized tasks may change `.github/workflows/`;
+- a short expiration and an explicit rotation reminder.
+
+GitHub documents both the [fine-grained PAT limitations](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens)
+and the organization-level [Projects permission](https://docs.github.com/en/rest/projects/projects). Fine-grained PATs do
+not support user-owned Projects, so keep the worker's book of work owned by the `sniffy` organization.
+
+Authenticate from WSL without putting the token in a command argument or Git remote URL:
+
+```bash
+read -rsp "GitHub PAT: " github_pat && echo
+printf '%s\n' "${github_pat}" | gh auth login --hostname github.com --git-protocol https --with-token
+unset github_pat
+gh auth setup-git --hostname github.com
+gh auth status --hostname github.com
+```
+
+Configure a distinct commit identity:
+
+```bash
+git config --global user.name "Sniffy Codex Worker"
+git config --global user.email "<machine-account-noreply-address>"
+```
+
+Validate effective access instead of trusting the token settings page:
+
+```bash
+gh repo view sniffy/sniffy
+gh project list --owner sniffy
+git ls-remote https://github.com/sniffy/sniffy.git refs/heads/develop
+```
+
+The `gh project` command documents `project` as the minimum classic-token scope. For a fine-grained token, the equivalent
+is the organization Projects permission. If the project commands fail, fix that one permission rather than replacing
+the token with an unrestricted classic PAT.
+
+Protect `develop` with a server-side ruleset requiring pull requests and disallowing force pushes and deletion. The
+machine account must not bypass the ruleset.
+
+## 8. Codex permissions inside the VM
+
+Use the app's permission selector to set **Full access** for this worker. The equivalent local Codex defaults are:
+
+```toml
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+```
+
+The Windows app stores its configuration under `%USERPROFILE%\.codex`. Configure it in the app or through **Settings >
+Configuration**; do not copy this full-access configuration to a normal workstation. The app, CLI, and IDE share
+configuration layers, while a separate CLI installed inside WSL uses the WSL home directory unless `CODEX_HOME` is
+explicitly shared.
+
+Full access removes the inner Codex sandbox. It does not bypass Windows/Hyper-V, the dedicated GitHub token, or GitHub
+branch protection. Preserve those outer controls:
+
+- no host filesystem mounts or unrelated credentials;
+- no personal browser profile inside the VM;
+- no PAT with organization administration, secrets, packages, or workflow permission unless required;
+- no force push, merge, or branch-rule bypass;
+- no unreviewed VM snapshot restore after token rotation.
+
+## 9. App-native task dispatch
+
+### 9.1. Why Scheduled tasks are the dispatcher
+
+The supported app-native path is a [Scheduled task](https://learn.chatgpt.com/docs/automations) scoped to the local
+Sniffy project. It can run in a dedicated background worktree, appears in the app's **Scheduled** inbox, and remains
+visible through Remote while the machine and desktop app are running.
+
+There is currently no documented stable shell API that creates a new local task inside the ChatGPT desktop app UI.
+`codex exec` and `.codex/local/run-issue.sh` remain useful CLI fallbacks, but a CLI run is not the same app task. The
+experimental `codex app-server` is intended for development/debugging and should not be the production dispatcher.
+
+Therefore:
+
+1. Create one Scheduled task in the ChatGPT desktop app.
+2. Attach it to the local Sniffy project.
+3. Select a dedicated background worktree.
+4. Start with a conservative interval such as every 30 minutes.
+5. Let each run claim at most one issue.
+6. Keep the VM powered on, the Windows account signed in, and the app running.
+
+Scheduled tasks run unattended and use the default sandbox settings. Full access is intentional here only because the
+VM is disposable and isolated.
+
+### 9.2. Claim contract
+
+The GitHub Project is the source of truth. An eligible item must:
+
+- be an Issue in `sniffy/sniffy`, not a draft item or pull request;
+- have project Status `Ready for agent`;
+- satisfy the Definition of Ready in `docs/codex-workflow.md`;
+- have no existing active local-worker claim or implementation pull request;
+- not require a product decision or permission absent from the worker token.
+
+For one worker, this claim sequence is sufficient:
+
+1. List at most 100 matching items and choose deterministically by project Priority, then oldest issue number.
+2. Re-read the selected issue, comments, linked pull requests, and project fields immediately before claiming.
+3. Set Status to `In progress: local`.
+4. Add the machine account as assignee and add `agent:local`.
+5. Post a claim comment containing the worker name, branch, timestamp, and Scheduled run link when available.
+6. If any claim mutation fails, undo mutations that succeeded and stop without editing code.
+
+Useful discovery commands are:
+
+```bash
+project_number="<ORGANIZATION_PROJECT_NUMBER>"
+
+gh project view "${project_number}" --owner sniffy --format json
+gh project field-list "${project_number}" --owner sniffy --format json
+gh project item-list "${project_number}" \
+  --owner sniffy \
+  --query 'repo:sniffy/sniffy status:"Ready for agent"' \
+  --limit 100 \
+  --format json
+```
+
+To update the single-select Status field, resolve the project ID, item ID, Status field ID, and target option ID from
+the JSON above, then run:
+
+```bash
+gh project item-edit \
+  --id "${item_id}" \
+  --project-id "${project_id}" \
+  --field-id "${status_field_id}" \
+  --single-select-option-id "${in_progress_local_option_id}"
+```
+
+The command shapes are documented in the GitHub CLI manuals for
+[`gh project item-list`](https://cli.github.com/manual/gh_project_item-list),
+[`gh project field-list`](https://cli.github.com/manual/gh_project_field-list), and
+[`gh project item-edit`](https://cli.github.com/manual/gh_project_item-edit).
+
+GitHub Projects field updates do not provide a compare-and-swap claim primitive. Do not run multiple workers against
+this simple protocol. Before adding a second worker, introduce a single coordinator or another atomic lease mechanism.
+
+### 9.3. Scheduled task prompt
+
+Replace the project number and test this prompt manually before enabling the schedule:
+
+```text
+Run one Sniffy local-worker cycle in the selected WSL project and its dedicated worktree.
+
+Use organization project <PROJECT_NUMBER> owned by sniffy as the book of work. Select at most one Issue from
+sniffy/sniffy whose Status is "Ready for agent". Prefer the highest project Priority, then the oldest issue number. If
+there is no eligible issue, report a no-op and change nothing.
+
+Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and comments, linked pull requests, and the
+current remote develop branch. Confirm that the issue satisfies Definition of Ready and that there is no existing local
+claim or implementation PR. If it is not ready, do not claim it; report the exact missing decision or acceptance proof.
+
+Claim it by changing project Status to "In progress: local", assigning the dedicated worker account, adding
+"agent:local", and posting a comment with the worker name, timestamp, and intended agent/issue-N branch. If any claim
+mutation fails, roll back mutations already made and stop before editing code.
+
+After a successful claim, follow AGENTS.md and the issue as the source of truth. Create or reuse agent/issue-N from the
+latest origin/develop without force-pushing. Implement the issue end to end, add or update tests and documentation, run
+all applicable focused checks as separately reported commands, inspect the final diff, commit, push, and create or
+update the pull request. Do not merge or enable auto-merge.
+
+Verify the remote branch, full head SHA, PR URL, base/head branches, and PR head SHA. Move project Status to "Review"
+only after publication is verified. If a genuine blocker remains, set Status to "Agent blocked" and post the exact
+blocker and smallest required decision. Never claim or implement more than one issue in this run.
+```
+
+The worker performs the issue directly in the Scheduled task. It must not call `.codex/local/run-issue.sh`, because that
+would launch a second, nested CLI agent and lose the app-native task lifecycle.
+
+## 10. Validation checklist
+
+### 10.1. VM and WSL
+
+From the physical host:
+
+```powershell
+Get-VM -Name "SniffyCodexWorker"
+Get-VMProcessor -VMName "SniffyCodexWorker" | Format-List Count,ExposeVirtualizationExtensions
+Get-VMMemory -VMName "SniffyCodexWorker"
+Get-VMTPM -VMName "SniffyCodexWorker"
+```
+
+Inside the Windows VM and WSL:
+
+```powershell
+wsl --status
+wsl --list --verbose
+```
+
+```bash
+git --version
+gh --version
+docker version
+mise --version
+mvn -version
+```
+
+### 10.2. Repository toolchains
+
+```bash
+cd ~/src/sniffy
+
+source .codex/cloud/use-jdk.sh 8
+mvn -version
+
+source .codex/cloud/use-jdk.sh 25
+mvn -version
+
+git diff --check
+```
+
+Run one small focused Maven test and one Docker smoke test. Do not treat a cache warm-up as proof that the full reactor
+passes.
+
+### 10.3. GitHub publication
+
+First run the reversible remote-ref validation prompt from `docs/codex-workflow.md`. Verify that the PAT can also read
+and update the organization Project. Delete the probe branch and confirm that no remote ref remains.
+
+### 10.4. App, Scheduled, and mobile
+
+1. Start a manual read-only task in the local WSL project and confirm commands execute in Linux.
+2. Create a disposable worktree task and confirm the local environment setup completes.
+3. Pair Remote and inspect the running task, diff, and terminal output from the mobile app.
+4. Run the worker prompt manually against a project view with no eligible issues; it must produce a no-op.
+5. Add one disposable ready issue, run the task once, and verify claim fields, branch, PR, and `Review` transition.
+6. Revoke or rotate the test PAT and confirm the old token no longer authenticates.
+
+Do not enable the recurring schedule until all six checks pass.
+
+## 11. Operations and recovery
+
+- Keep Windows, WSL, the ChatGPT desktop app, Docker, `gh`, and toolchains updated during a defined maintenance window.
+- Review the first several Scheduled runs. Pause the schedule after unexpected claims, repeated no-op errors, or a
+  publication mismatch.
+- Archive old Scheduled runs so their background worktrees can be cleaned up.
+- Monitor free disk space in the outer VHDX, the WSL virtual disk, Maven cache, Docker storage, and Git worktrees.
+- Reboot and revalidate after changes to Hyper-V, WSL, Docker, app agent mode, PAT permissions, or `.codex` setup files.
+- On suspected compromise: stop the VM, revoke the PAT, disconnect Remote, invalidate active ChatGPT sessions if needed,
+  and rebuild from the pre-credential checkpoint or clean media.
+- Do not restore an old credential-bearing checkpoint after revocation without rotating every secret it contains.
+- When the Windows evaluation approaches expiry, rebuild or license the guest; activation bypass is not part of this
+  design.
+
+## 12. Explicit non-goals
+
+- This runbook does not make unactivated Windows a licensed permanent installation.
+- It does not expose the physical host filesystem or Docker daemon to Codex.
+- It does not use Cygwin as a compatibility layer.
+- It does not require Docker Desktop or a Dev Container to contain the agent.
+- It does not use UI automation to click through the ChatGPT desktop app.
+- It does not make a multi-worker GitHub Project claim protocol safe.
+- It does not authorize the worker to merge pull requests, bypass branch rules, or manage unrelated repositories.

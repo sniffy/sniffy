@@ -9,6 +9,7 @@ This document describes the one-time Codex Cloud setup for Sniffy and the operat
 - `.codex/cloud/maintenance.sh` refreshes dependencies when a cached cloud environment is resumed on another branch.
 - `.codex/cloud/use-jdk.sh` switches the current shell between installed JDKs.
 - `.codex/local/run-issue.sh` prepares an issue branch and launches unattended local Codex in an isolated machine.
+- `docs/local-codex-worker.md` is the Hyper-V, Windows app, WSL2, Docker, GitHub Project, Scheduled task, and Remote runbook for the always-on local worker.
 - `.github/ISSUE_TEMPLATE/codex-task.yml` provides a Definition-of-Ready template for autonomous tasks.
 
 Codex loads `AGENTS.md` automatically. More specific instructions can be added later in subdirectories when a module needs different build or review rules.
@@ -191,6 +192,8 @@ bash .codex/local/run-issue.sh NUMBER [BRANCH_NAME]
 The script requires authenticated `gh`, a clean working tree, and an installed Codex CLI. It fetches the issue text, switches to an existing issue branch or creates `agent/issue-NUMBER` from the default branch, and starts Codex with `gpt-5.6-sol`, Extra High reasoning, no approvals, search enabled, and `danger-full-access`. Override the defaults with `CODEX_MODEL` and `CODEX_REASONING_EFFORT`.
 
 `danger-full-access` is appropriate only inside the isolated environment because it grants the agent the same filesystem and network authority as the executing user.
+
+For the app-native Windows VM route, follow [Local Codex worker on a Windows virtual machine](local-codex-worker.md). Its ChatGPT desktop app Scheduled task claims and executes one ready project item directly so the run remains visible through the app and Remote. `.codex/local/run-issue.sh` remains the unattended CLI fallback; do not invoke it from inside an app Scheduled task.
 
 ## 6. Starting and following up cloud work
 
