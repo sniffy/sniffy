@@ -136,6 +136,10 @@ describe('frontend development infrastructure', () => {
           (await readFile(resolve(output, 'sniffy.min.js'), 'utf8')).includes('recovered'),
         'recovery rebuild',
       );
+
+      await writeFile(dependency, 'export const message = ;\n');
+      await waitFor(() => buildErrors === 2, 'a build error after recovery');
+      expect(successfulRebuilds).toBe(2);
     } finally {
       await watcher.close();
       await rm(directory, { recursive: true, force: true });
