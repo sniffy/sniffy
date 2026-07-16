@@ -5,7 +5,7 @@ This document describes the one-time Codex Cloud setup for Sniffy and the operat
 ## 1. What is stored in the repository
 
 - `AGENTS.md` contains repository-wide engineering, autonomy, verification, and review rules.
-- `.codex/cloud/setup.sh` installs Maven and Temurin JDK 8, 11, 17, 21, and 25, writes Maven toolchains, persists the environment, and primes the Maven dependency cache.
+- `.codex/cloud/setup.sh` installs Maven and Temurin JDK 8, 11, 17, 21, and 25, writes Maven toolchains, persists the environment, configures GitHub authentication when the `GH_TOKEN` secret is present, and primes the Maven dependency cache.
 - `.codex/cloud/maintenance.sh` refreshes dependencies when a cached cloud environment is resumed on another branch.
 - `.codex/cloud/use-jdk.sh` switches the current shell between installed JDKs.
 - `.codex/local/run-issue.sh` prepares an issue branch and launches unattended local Codex in an isolated machine.
@@ -33,10 +33,11 @@ The repository files cannot create an environment in another user's OpenAI accou
    bash .codex/cloud/maintenance.sh
    ```
 
-7. Keep agent-phase internet disabled for ordinary implementation tasks. Enable limited internet only when a task explicitly requires current external documentation, vulnerability/advisory lookup, or dependency metadata that was not available during setup.
-8. Do not add repository or Maven Central credentials: Sniffy is public and its normal build should use public dependencies. Add a secret only for a task that genuinely requires a private external service. Cloud secrets are intended for setup and are removed before the agent phase.
-9. Reset the environment cache after changing the setup or maintenance scripts, or when the cached toolchain becomes inconsistent.
-10. In Codex settings, enable code review for this repository. Automatic review may be enabled after the review rules in `AGENTS.md` have produced useful results on several test pull requests.
+7. Codex Cloud setup always has internet access, but the agent phase is offline by default and follows a separate environment policy. For tasks that must publish branches or pull requests, set **Agent internet access** to **On**, allow only `github.com` and `api.github.com`, and enable `GET`, `HEAD`, `OPTIONS`, `POST`, `PUT`, `PATCH`, and `DELETE`. A read-only method policy can let `git push --dry-run` succeed while the real `POST /git-receive-pack` and GitHub API writes fail with HTTP 403. Keep broader internet access disabled unless the task explicitly needs it.
+8. Add a Codex environment secret named `GH_TOKEN` when Cloud tasks should push branches and create or update pull requests autonomously. Prefer a dedicated, revocable, fine-grained PAT whose owner is a member of the `sniffy` organization. Set the resource owner to `sniffy`, select only `sniffy/sniffy`, and grant Metadata read, Contents read/write, Pull requests read/write, and Issues read/write. Add Actions permissions only when a task must operate workflow runs. GitHub does not support fine-grained PAT contributions from outside or repository collaborators; for such an account, either make it an organization member before issuing the token or, if organization policy permits, use a short-lived classic PAT with the `public_repo` scope.
+9. The setup script first installs the pinned GitHub CLI release into `~/.local`, verifies its published SHA-256 checksum, then consumes `GH_TOKEN` while secrets are available, stores it in GitHub CLI's host configuration, and configures Git to use GitHub CLI as its credential helper. Its non-mutating `git push --dry-run` verifies setup-phase endpoint and credential-helper connectivity only; it does not prove token write permission or agent-phase `POST` access. The repository API's `.permissions.push` field is also insufficient because it reports the account role without proving that the token can write. This intentionally makes the PAT's authority available to the agent phase even though the `GH_TOKEN` environment variable itself is removed. Never use a broad personal or organization-wide token for this environment.
+10. Codex invalidates the environment cache when the setup script or secrets change. Use **Reset cache** if the next task still uses stale credentials or an inconsistent cached toolchain.
+11. In Codex settings, enable code review for this repository. Automatic review may be enabled after the review rules in `AGENTS.md` have produced useful results on several test pull requests.
 
 The setup phase has internet access and the agent phase follows the environment's configured internet policy. Cached environments may be reused, so the maintenance script must remain safe and idempotent.
 
@@ -45,7 +46,7 @@ The setup phase has internet access and the agent phase follows the environment'
 Start a small cloud task on `develop` with this prompt:
 
 ```text
-Validate the Sniffy development environment only. Read AGENTS.md, report the active Java and Maven versions, switch to JDK 8 and JDK 25 using .codex/cloud/use-jdk.sh, run git diff --check, and run one small focused Maven test without changing tracked files. Report every command and result. Do not create a pull request.
+Validate the Sniffy development environment only. Read AGENTS.md, report the active Java and Maven versions, report `gh --version`, and verify GitHub authentication with `gh auth status --hostname github.com`. Prove effective token and agent-network write access with a reversible remote-ref round trip: set `probe_branch="agent/codex-auth-check-$(git rev-parse --short=12 HEAD)"`, run `git push --porcelain https://github.com/sniffy/sniffy.git "HEAD:refs/heads/${probe_branch}"`, delete it with `gh api --method DELETE "repos/sniffy/sniffy/git/refs/heads/${probe_branch}"`, and confirm `git ls-remote --heads https://github.com/sniffy/sniffy.git "${probe_branch}"` returns no ref. Stop and report the exact output if creation or cleanup fails. Switch to JDK 8 and JDK 25 using .codex/cloud/use-jdk.sh, run git diff --check, and run one small focused Maven test without changing tracked files. Report every command and result. Do not leave a remote branch or open a pull request.
 ```
 
 For manual validation inside a shell:
