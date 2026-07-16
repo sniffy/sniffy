@@ -12,8 +12,12 @@ constraints for their subtrees.
   material decisions in the pull request. Stop only for a real blocker such as missing credentials, unavailable external
   infrastructure, destructive ambiguity, or mutually incompatible acceptance criteria.
 - Complete the task end to end when permissions allow: implement, add or update tests, run applicable checks, review the
-  diff, commit, push, and update or open a draft pull request. Never merge a pull request unless the task explicitly says
-  to do so.
+  diff, commit, push, and update or open a pull request. Use a draft while implementation or locally applicable
+  verification is still in progress; unless the task explicitly requires a draft handoff, mark it ready for review after
+  the implementation and those checks are complete. Never merge a pull request unless the task explicitly says to do so.
+- Treat GitHub remote state as the publication source of truth. A local branch, local commit, `make_pr` metadata, or a
+  final summary does not prove delivery. Before reporting publication, verify a resolvable remote branch, full commit SHA,
+  pull-request URL, base/head branches, draft state, and head SHA through GitHub.
 - Preserve unrelated user changes. Do not reset, clean, force-push, rebase shared branches, or rewrite history unless the
   issue explicitly requires it. Prefer a new `agent/<short-description>` branch from `develop` for new work.
 
@@ -51,9 +55,13 @@ constraints for their subtrees.
 
 ## Pull requests
 
-- Keep pull requests draft until the implementation and locally applicable verification are complete.
+- Keep pull requests draft only while implementation or locally applicable verification is incomplete. Unless the task
+  explicitly requires a draft handoff, mark the pull request ready for review after both are complete and remote
+  publication has been verified.
+- Cloud checkouts may not have an `origin` remote. Use an explicit repository URL or configure the intended remote rather
+  than treating a missing remote as successful local completion.
 - The pull request description must explain the problem, design, compatibility impact, tests executed, checks not run,
-  dependency changes, and remaining risks. Link the authoritative issue.
+  dependency changes, and remaining risks. Link the authoritative issue and include the exact published head SHA.
 - Do not hide limitations. If the environment cannot run a platform-, JDK-, or credential-dependent check, say exactly
   what is missing and leave CI to perform that check.
 
