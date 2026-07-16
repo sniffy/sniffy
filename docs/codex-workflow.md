@@ -74,6 +74,50 @@ An issue is ready when it states:
 
 The issue must not delegate unresolved product decisions to Codex. Implementation choices may remain open when a conservative, maintainable answer can be derived from the repository.
 
+
+## 4.1. Complex-task design and proof preflight
+
+A task needs a preflight before implementation when it combines two or more of these risk axes:
+
+- a new published artifact or public API;
+- global mutable state, concurrency, resource ownership, or cleanup;
+- failure composition where primary and suppressed exceptions matter;
+- multiple JDK, framework, engine, or platform versions;
+- cross-reactor module placement or a test-only compatibility consumer;
+- migration or compatibility requirements that can conflict with existing behavior.
+
+The preflight is a short addition to the authoritative issue, not a speculative design document. It must resolve:
+
+1. **Scope boundary:** which modules and APIs may change, and which tempting adjacent redesigns are excluded.
+2. **Architecture ownership:** where production code, test-only consumers, compatibility checks, and documentation belong.
+3. **Lifecycle/failure matrix:** success, user failure, framework failure, partial setup, cleanup failure, and combined failure.
+4. **Compatibility matrix:** the exact built artifact, runtime/JDK/framework combinations, and whether sources are rebuilt or the same artifact is consumed.
+5. **Acceptance-to-proof matrix:** every criterion mapped to a focused test, CI job, static inspection, or explicitly documented manual check.
+6. **Delivery topology:** base/head branch, existing or new PR, PR author identity, draft/ready transition, and publication verification.
+
+If the preflight exposes a product decision—especially whether to add a public/core API or preserve unrelated global
+state—the delivery lead resolves it before dispatch. Codex should not infer such a decision from a cleanup requirement.
+
+A green build is evidence only for tests that were actually discovered and executed. The proof matrix must name the
+test class or CI job and later be checked against Surefire/CI output.
+
+## 4.2. Slicing complex work without creating micro-PR overhead
+
+Split work into separate issues or pull requests only when the slices are independently useful, reviewable, and
+mergeable. Do not create a PR per test or per callback merely to make the task look smaller.
+
+For a cohesive cross-cutting feature, prefer one draft PR with explicit implementation checkpoints:
+
+1. module/artifact skeleton and compatibility boundary;
+2. production lifecycle and happy-path tests;
+3. failure/cleanup matrix and regression tests;
+4. cross-version consumer and reactor/CI wiring;
+5. documentation, final proof-matrix audit, and ready-for-review handoff.
+
+A short read-only design/refinement task before implementation is often cheaper than multiple review/fix loops. For a
+feature that combines global state, failure composition, and multiple runtime versions, use that refinement step even
+when the final implementation remains one PR.
+
 ## 5. Routing tasks
 
 ### Use Codex Cloud by default when
@@ -109,20 +153,42 @@ The script requires authenticated `gh`, a clean working tree, and an installed C
 
 ## 6. Starting and following up cloud work
 
-1. Refine the issue with the autonomous task template.
+1. Refine the issue with the autonomous task template. For a complex task, complete the design/proof preflight and review it before dispatch.
 2. Select the `sniffy` environment and the intended base branch in Codex Cloud, then reference the issue as the authoritative specification.
 3. For complex architectural work, select the strongest available coding model and Extra High reasoning. For small mechanical tasks, use the default reasoning level unless deeper analysis is needed.
 4. Ask for implementation, validation, and a draft pull request—not merely a plan.
-5. Review the cloud task summary, commands, tests, and diff.
-6. Use a follow-up task for bounded corrections.
+5. Review the cloud task summary, commands, tests, complete diff, and the acceptance-to-proof matrix in one pass. Confirm named tests were actually executed.
+6. Use a follow-up task for bounded corrections. If review changes architecture or product scope, first update the authoritative issue and mark conflicting older guidance as superseded.
 7. On a Codex-created pull request, a comment such as `@codex fix the CI failures` starts another cloud task with that pull request as context when the GitHub integration has permission.
 8. Request a high-signal review with `@codex review`, or rely on automatic reviews after they have been enabled.
 
 A standard dispatch prompt is:
 
 ```text
-Implement the complete linked issue autonomously. Read AGENTS.md and the entire issue thread first; the issue is authoritative. Make ordinary engineering decisions yourself using the most conservative maintainable option. Implement the change, add or update tests and documentation, run all checks available in the environment, review the final diff, and open a draft pull request linked to the issue. Do not stop for a plan or ask for routine clarification. If a genuine blocker remains, leave the repository clean and report the exact blocker and the smallest decision or permission needed.
+Implement the complete linked issue autonomously. Read AGENTS.md and the entire issue thread first; the issue is authoritative. Make ordinary engineering decisions yourself using the most conservative maintainable option. Implement the change, add or update tests and documentation, run all checks available in the environment, review the final diff, and open a draft pull request linked to the issue. Do not stop for a plan or ask for routine clarification. Before editing, turn every acceptance criterion into a proof matrix and identify any unresolved scope, public-API, global-state, lifecycle, module-placement, or compatibility decision. Do not implement through a material ambiguity. During handoff, report which focused test or CI job proves each criterion, confirm those tests actually executed, verify the real remote branch and PR head SHA match, and create the PR using the authenticated agent account when authorized so the human reviewer retains formal review capability. If a genuine blocker remains, leave the repository clean and report the exact blocker and the smallest decision or permission needed.
 ```
+
+### Review convergence and escalation
+
+The first review should be comprehensive: inspect the full diff, all acceptance criteria, test discovery/execution,
+module boundaries, compatibility evidence, documentation, and CI. Report independent findings together.
+
+After each follow-up, review the new delta and re-run the full proof matrix. Do not assume an older green run covers a
+new head.
+
+Use a **two-substantive-round rule**: after two review/fix rounds, or immediately after an architectural/product-scope
+reversal, stop issuing another narrow patch prompt. Re-baseline the authoritative issue, collapse or mark superseded
+guidance, and choose one of:
+
+- one fresh comprehensive Cloud task against the current remote head;
+- unattended local Codex on the same branch when persistent artifacts, long builds, or repeated debugging matter;
+- a human decision/design pass before further coding.
+
+Switching to local Codex can reduce cold-start and task-window friction, but it does not repair an ambiguous
+specification. The preflight and proof matrix remain mandatory for both routes.
+
+When possible, let the dedicated agent identity create the PR. A human-owned PR can prevent the same human account from
+submitting a formal Request Changes review, reducing review state to convention-based comments.
 
 ## 7. Operating model
 
@@ -196,6 +262,7 @@ The weekly retrospective should cover:
 - CI failures, escaped defects, and repeated review findings;
 - tasks that required human clarification and how to improve their issue specification;
 - changes needed in `AGENTS.md`, setup scripts, templates, or the test matrix;
+- number of substantive review/fix rounds, whether the two-round re-baseline rule was triggered, and why;
 - the next week's top priorities and capacity risks.
 
 The retrospective should result in concrete issue/template/instruction changes, not only a narrative summary.
