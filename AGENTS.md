@@ -12,10 +12,19 @@ constraints for their subtrees.
   material decisions in the pull request. Stop only for a real blocker such as missing credentials, unavailable external
   infrastructure, destructive ambiguity, or mutually incompatible acceptance criteria.
 - Complete the task end to end when permissions allow: implement, add or update tests, run applicable checks, review the
-  diff, commit, push, and update or open a draft pull request. Never merge a pull request unless the task explicitly says
-  to do so.
+  diff, commit, push, and update or open a pull request. Use a draft while implementation or locally applicable
+  verification is still in progress; unless the task explicitly requires a draft handoff, mark it ready for review after
+  the implementation and those checks are complete. Never merge a pull request unless the task explicitly says to do so.
+- Treat GitHub remote state as the publication source of truth. A local branch, local commit, `make_pr` metadata, or a
+  final summary does not prove delivery. Before reporting publication, verify a resolvable remote branch, full commit SHA,
+  pull-request URL, base/head branches, draft state, and matching head SHA through GitHub.
 - Preserve unrelated user changes. Do not reset, clean, force-push, rebase shared branches, or rewrite history unless the
   issue explicitly requires it. Prefer a new `agent/<short-description>` branch from `develop` for new work.
+- Before editing a task that combines two or more high-risk axes—new public APIs or artifacts, global mutable state,
+  resource lifecycle/failure composition, multiple JDK/framework versions, or cross-reactor module placement—confirm
+  that the issue contains a short design preflight: scope boundaries, module ownership, a failure/lifecycle matrix, and
+  an acceptance-criterion-to-proof matrix. If a material product or public-API decision is unresolved or contradictory,
+  stop before implementation and report that decision instead of inventing a broad compatibility layer.
 
 ## Compatibility and scope
 
@@ -42,6 +51,18 @@ constraints for their subtrees.
 - The Codex Cloud environment is described in `docs/codex-workflow.md`. Use `source .codex/cloud/use-jdk.sh <version>`
   to switch among the installed JDK 8, 11, 17, 21, and 25 toolchains.
 - Run focused tests for the changed behavior first.
+- After switching JDKs in the same worktree, run `clean` before the first Maven build under the new JDK or use an
+  isolated checkout/output directory. Never treat `target/` classes compiled by another JDK as evidence for the current
+  runtime; Maven incremental compilation can otherwise reuse bytecode linked to APIs or covariant method descriptors
+  that do not exist on Java 8.
+- For a Java 8 artifact compiled on a newer JDK, `source`/`target` bytecode levels alone are insufficient. Run the
+  configured Java 8 API-signature check during `verify` and, for compatibility-sensitive changes, execute the same
+  modern-JDK-built artifact on a real Java 8 runtime without recompiling it there.
+- Run independent validation obligations as separate commands with individually visible exit statuses. Do not combine
+  multiple JDK/module checks into one opaque long-running chain. A manual interruption is not a result; if a command is
+  intentionally time-bounded, use an explicit timeout, report that timeout, and leave the complete reactor result to CI.
+- Treat every acceptance criterion as an evidence obligation. Verify that its focused test is discovered and executed
+  in the test report; compiled tests, unused fixtures, skipped modules, and an overall green CI result are not proof.
 - For NIO changes, run `mvn -pl sniffy-module-nio -am clean test` on Java 8 and the current development JDK.
 - For TLS changes, run `mvn -pl sniffy-module-tls -am clean test` on Java 8 and the current development JDK.
 - For cross-module or release-facing changes, run
@@ -51,9 +72,15 @@ constraints for their subtrees.
 
 ## Pull requests
 
-- Keep pull requests draft until the implementation and locally applicable verification are complete.
+- Keep pull requests draft only while implementation or locally applicable verification is incomplete. Unless the task
+  explicitly requires a draft handoff, mark the pull request ready for review after both are complete and remote
+  publication has been verified.
+- When credentials and the delivery contract permit it, create the pull request using the authenticated agent account
+  rather than asking a human to create it manually. This preserves formal human review and Request Changes capability.
+- Cloud checkouts may not have an `origin` remote. Use an explicit repository URL or configure the intended remote rather
+  than treating a missing remote as successful local completion.
 - The pull request description must explain the problem, design, compatibility impact, tests executed, checks not run,
-  dependency changes, and remaining risks. Link the authoritative issue.
+  dependency changes, and remaining risks. Link the authoritative issue and include the exact published head SHA.
 - Do not hide limitations. If the environment cannot run a platform-, JDK-, or credential-dependent check, say exactly
   what is missing and leave CI to perform that check.
 
@@ -61,6 +88,8 @@ constraints for their subtrees.
 
 - Prioritize correctness, compatibility, resource safety, concurrency, public API stability, and test integrity over
   formatting preferences.
+- Review the complete acceptance-to-proof matrix on the first pass. Avoid serially discovering independent missing
+  requirements across multiple fix cycles when they could be reported together.
 - Flag tests that were weakened, made timing-dependent, skipped, or retried to conceal a failure.
 - Flag accidental Java baseline increases, use of newer JDK APIs in Java 8 artifacts, and unintentional dependency or
   public API changes.
