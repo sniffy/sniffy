@@ -26,3 +26,79 @@ You don't have to use in the majority of use cases.
 ```java
 @RunWith(SniffyRunner.class)
 ```
+=== JUnit Jupiter (JUnit 5 and JUnit 6)
+
+Sniffy also provides a native Jupiter extension in a separate artifact. Add the dependency explicitly; the artifact does
+not use ServiceLoader auto-detection and therefore does not activate Sniffy for every Jupiter test in the application.
+
+Maven:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-junit-jupiter</artifactId>
+    <version>${sniffy.version}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+Gradle:
+
+[source,groovy]
+----
+testImplementation "io.sniffy:sniffy-junit-jupiter:${sniffyVersion}"
+----
+
+Register the extension on the test class or method with `@ExtendWith(SniffyExtension.class)`:
+
+[source,java]
+----
+import io.sniffy.sql.SqlExpectation;
+import io.sniffy.test.Count;
+import io.sniffy.test.junit.jupiter.SniffyExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+@ExtendWith(SniffyExtension.class)
+class DatabaseTest {
+
+    @Test
+    @SqlExpectation(count = @Count(1))
+    void executesOneQuery() {
+        // open JDBC connections with a sniffer: JDBC URL and execute one statement
+    }
+}
+----
+
+Socket connectivity can be disabled for a single Jupiter invocation in the same way as with the JUnit 4 rule:
+
+[source,java]
+----
+import io.sniffy.socket.DisableSockets;
+import io.sniffy.test.junit.jupiter.SniffyExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+@ExtendWith(SniffyExtension.class)
+class NetworkTest {
+
+    @Test
+    @DisableSockets
+    void doesNotConnectToTheNetwork() {
+        // opening a new socket fails while this invocation is running
+    }
+}
+----
+
+To migrate a JUnit 4 test, remove the `@Rule SniffyRule` field, change the test imports to Jupiter, and add explicit
+`@ExtendWith(SniffyExtension.class)`. Existing Sniffy annotations such as `@SqlExpectation`, `@NoSql`,
+`@SocketExpectation`, `@NoSocketsAllowed`, and `@DisableSockets` keep their semantics.
+
+The `sniffy-junit-jupiter` production artifact is compiled for Java 8 and against a Java-8-compatible JUnit Jupiter 5
+API. The same artifact is also validated with JUnit 6 on Java 17 and newer by the internal `sniffy-integration-tests/sniffy-integration-tests-junit-jupiter-compat` reactor test-consumer module.
+
+Jupiter dynamic tests produced by `@TestFactory` do not receive ordinary per-dynamic-test before/after callbacks, so
+Sniffy does not claim isolated expectation handling for each generated `DynamicTest`. In addition, `@DisableSockets`
+uses Sniffy's JVM-global connectivity registry; avoid running unrelated network tests in parallel with a test that has
+socket disabling enabled.

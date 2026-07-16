@@ -83,6 +83,15 @@
                 <module>sniffy-integration-tests-servlet-contract</module>
             </modules>
         </profile>
+        <profile>
+            <id>junit-jupiter-compat-integration-tests</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <modules>
+                <module>sniffy-integration-tests-junit-jupiter-compat</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>
