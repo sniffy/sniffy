@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./base.css": "./src/base.css",
+    "./dark.css": "./src/dark.css",
     "./tokens.css": "./src/tokens.css",
     "./tailwind.css": "./src/tailwind.css"
   }
