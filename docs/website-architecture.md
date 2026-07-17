@@ -242,7 +242,7 @@ Arrows mean "must complete before." Parallel siblings still require separate aut
                     ├──> #667 network failures
                     └──> #668 traffic/TLS
 
-#670 historical inventory ──> #671 Sniffy 3.1 archive (also needs #658)
+#655 architecture ──> #670 historical inventory ──> #671 Sniffy 3.1 archive (also needs #658)
 
 #669 independent deployment
   requires #659, #661, #662, #663, #664, and #665
@@ -254,9 +254,9 @@ Arrows mean "must complete before." Parallel siblings still require separate aut
 
 Issue #658 depends only on #655 and #656; #657 is not its prerequisite. #663 is the convergence point and requires both
 #657 and #658. Issue #666 is the MVP's required complete landing; #667 and #668 are additional landing content and may
-proceed in parallel after #665 when authorized. #670/#671, including the Sniffy 3.1 archive, are follow-up scope: #671
-may proceed after both #658 and #670, but neither issue blocks MVP acceptance or cutover. #672 is always post-cutover and
-post-stabilization.
+proceed in parallel after #665 when authorized. #670/#671, including the Sniffy 3.1 archive, are follow-up scope: #670
+requires #655, and #671 may proceed after both #658 and #670, but neither issue blocks MVP acceptance or cutover. #672
+is always post-cutover and post-stabilization.
 
 ## Acceptance-to-proof matrix
 
