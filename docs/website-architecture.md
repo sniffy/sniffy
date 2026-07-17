@@ -29,7 +29,8 @@ The MVP provides:
 
 1. a branded homepage and site shell;
 2. current and next documentation, migrated to MDX with live, tagged source snippets;
-3. stable versioned documentation and compatibility for useful legacy documentation URLs and anchors;
+3. stable current documentation, a reserved contract for later versioned archives, and compatibility for useful legacy
+   documentation URLs and anchors;
 4. a reusable use-case landing-page pattern and at least one complete landing page;
 5. validation and production deployment independent of Sniffy artifact releases; and
 6. a controlled `sniffy.io` cutover with a tested rollback.
@@ -37,8 +38,9 @@ The MVP provides:
 Explicit non-goals are implementing the site in this task, changing production or generated assets, refactoring theme
 tokens, migrating content, changing a deployment workflow, publishing a blog in the MVP, or retiring the legacy system
 before stabilization. `demo.sniffy.io` and its application are excluded: no route, DNS, deployment, content, or runtime
-change to the demo belongs to this initiative. Additional use-case pages, historical-version recovery beyond the planned
-3.1 archive, the Git-backed blog, and Asciidoctor retirement are follow-up scope.
+change to the demo belongs to this initiative. Additional use-case pages, historical-version recovery, the Git-backed
+blog, and Asciidoctor retirement are follow-up scope. Specifically, #670 (historical inventory) and #671 (including the
+Sniffy 3.1 archive) are follow-up work and do not block MVP acceptance or cutover.
 
 ## Ownership and repository placement
 
@@ -147,7 +149,7 @@ canonical origin while preserving path, query, and fragment where the platform p
 | `/` | Branded homepage. It is not documentation and must not redirect to docs. |
 | `/docs/` | Current stable documentation. This is the canonical stable-doc URL. |
 | `/docs/next/` | Documentation for unreleased `develop`; clearly labelled non-stable and excluded from stable-version canonicalization. |
-| `/docs/<version>/` | Immutable released snapshot, with normalized version label chosen by #670 (at minimum `/docs/3.1/` for the planned archive). Existing version URLs may never be silently repointed to different content. |
+| `/docs/<version>/` | Reserved contract for follow-up #670/#671. Each route is an immutable released snapshot, with its normalized version label chosen by #670 (at minimum `/docs/3.1/` for the planned Sniffy 3.1 archive). Existing version URLs may never be silently repointed to different content. |
 | `/docs/latest/` | Permanent compatibility alias that redirects to `/docs/`, retaining the remainder of a legacy topic path, query, and fragment where supported. It is not a separately authored version. |
 | `/use-cases/<slug>/` | Canonical namespace for reusable landing pages. Initial slugs are owned by #666-#668; old landing paths redirect to their approved equivalents after parity review. |
 | `/blog/` | Reserved. Before #673 enables a reviewed Git-backed blog, it must not expose sample posts or an accidental Docusaurus blog; return a deliberate not-found response or an explicit, non-indexed placeholder chosen in #673. |
@@ -180,8 +182,9 @@ reviewed change, but release success and site availability remain independent fa
 
 ### Stages and gates
 
-1. **Record and baseline (#655, #670).** Preserve inventories of current source includes, generated pages and anchors,
-   public Pages paths, response behavior, historical versions, and the external repository commit. No traffic changes.
+1. **Record and baseline (#655).** Preserve inventories of current source includes, generated pages and anchors, public
+   Pages paths, response behavior, and the external repository commit. No traffic changes. Historical-version inventory
+   remains follow-up #670 and is not a cutover gate.
 2. **Build foundations (#656-#660).** Refactor reusable tokens, add opt-in light theme, create the application and CI,
    and implement tagged snippets. The legacy site remains production.
 3. **Migrate and prove current docs (#661-#662).** Port content without hand-copying snippet bodies. Produce a
@@ -195,8 +198,9 @@ reviewed change, but release success and site availability remain independent fa
 6. **Cut over (management#9).** In a privileged, scheduled operation, record pre-change DNS/Pages settings and TTLs,
    publish the approved head, move the custom domain as required, and run acceptance probes for canonical host, required
    routes, redirects, assets, anchors, and TLS. Do not modify `demo.sniffy.io`.
-7. **Stabilize and retire (#671-#673).** Monitor through an agreed stabilization window. Publish the 3.1 archive when
-   its inventory is proven. Only then may #672 remove the Maven Asciidoctor module and obsolete legacy publication;
+7. **Follow up, stabilize, and retire (#670-#673).** Monitor through an agreed stabilization window. #670/#671 may
+   inventory historical versions and publish the 3.1 archive without gating MVP acceptance or cutover. Only after the
+   archive and stabilization gates are met may #672 remove the Maven Asciidoctor module and obsolete legacy publication;
    #673 may enable the blog independently after its prerequisites are stable.
 
 ### Rollback contract
@@ -223,19 +227,22 @@ public contract.
 Arrows mean "must complete before." Parallel siblings still require separate authorization from the sequencing owner.
 
 ```text
-#655 architecture
-├── #656 shared tokens ──> #657 light theme ──┐
-│                    └──> #658 site app <────┘
-│                           ├──> #659 site CI
-│                           ├──> #660 snippets ──┐
-│                           │                    ├──> #661 MDX docs ──> #662 compatibility
-│                           └────────────────────┘
-│                           └──> #663 shell ──> #664 homepage
-│                                      └──────> #665 landing system
-│                                                  ├──> #666 SQL/N+1
-│                                                  ├──> #667 network failures
-│                                                  └──> #668 traffic/TLS
-└── #670 historical inventory ──> #671 Sniffy 3.1 archive (also needs #658)
+#655 architecture ──> #656 shared tokens
+#656 shared tokens ──> #657 light theme
+#655 architecture + #656 shared tokens ──> #658 site app
+
+#658 site app ──> #659 site CI
+#658 site app ──> #660 snippets
+#658 site app + #660 snippets ──> #661 MDX docs ──> #662 compatibility
+
+#657 light theme + #658 site app ──> #663 shell
+#663 shell ──> #664 homepage
+#663 shell ──> #665 landing system
+#665 landing system ──> #666 SQL/N+1
+                    ├──> #667 network failures
+                    └──> #668 traffic/TLS
+
+#670 historical inventory ──> #671 Sniffy 3.1 archive (also needs #658)
 
 #669 independent deployment
   requires #659, #661, #662, #663, #664, and #665
@@ -245,9 +252,11 @@ Arrows mean "must complete before." Parallel siblings still require separate aut
 #673 Git-backed blog requires stable #658, #659, #663, and #669
 ```
 
-Issue #666 is the MVP's required complete landing; #667 and #668 are additional landing content and may proceed in parallel
-after #665 when authorized. #671 may proceed after both #658 and #670 and need not block MVP cutover unless management#8
-makes the archive part of MVP acceptance. #672 is always post-cutover and post-stabilization.
+Issue #658 depends only on #655 and #656; #657 is not its prerequisite. #663 is the convergence point and requires both
+#657 and #658. Issue #666 is the MVP's required complete landing; #667 and #668 are additional landing content and may
+proceed in parallel after #665 when authorized. #670/#671, including the Sniffy 3.1 archive, are follow-up scope: #671
+may proceed after both #658 and #670, but neither issue blocks MVP acceptance or cutover. #672 is always post-cutover and
+post-stabilization.
 
 ## Acceptance-to-proof matrix
 
