@@ -1,35 +1,3 @@
-:root,
-:host,
-.sniffy-theme {
-  color-scheme: dark;
-  --sniffy-canvas: #090e17;
-  --sniffy-surface: #111927;
-  --sniffy-surface-raised: #172235;
-  --sniffy-surface-hover: #1e2b40;
-  --sniffy-foreground: #eef4ff;
-  --sniffy-foreground-muted: #9babc3;
-  --sniffy-border: #2c3b52;
-  --sniffy-focus: #8cc8ff;
-  --sniffy-accent: #4ca6ff;
-  --sniffy-accent-foreground: #04111e;
-  --sniffy-success: #54d89a;
-  --sniffy-warning: #ffc45c;
-  --sniffy-danger: #ff7d8a;
-  --sniffy-info: #7bc8ff;
-  --sniffy-sql: #d7a6ff;
-  --sniffy-network: #67d9d0;
-  --sniffy-exception: #ff8e9b;
-  --sniffy-space-1: 0.25rem;
-  --sniffy-space-2: 0.5rem;
-  --sniffy-space-3: 0.75rem;
-  --sniffy-space-4: 1rem;
-  --sniffy-space-6: 1.5rem;
-  --sniffy-radius-sm: 0.375rem;
-  --sniffy-radius: 0.625rem;
-  --sniffy-radius-lg: 0.875rem;
-  --sniffy-shadow: 0 18px 50px rgb(0 0 0 / 0.45);
-  --sniffy-font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --sniffy-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --sniffy-density: 1;
-}
+/* Backward-compatible aggregate entry point. New consumers should import base.css and dark.css explicitly. */
+@import './base.css';
+@import './dark.css';

@@ -1,0 +1,22 @@
+:root,
+:host,
+.sniffy-theme {
+  color-scheme: dark;
+  --sniffy-canvas: #090e17;
+  --sniffy-surface: #111927;
+  --sniffy-surface-raised: #172235;
+  --sniffy-surface-hover: #1e2b40;
+  --sniffy-foreground: #eef4ff;
+  --sniffy-foreground-muted: #9babc3;
+  --sniffy-border: #2c3b52;
+  --sniffy-focus: #8cc8ff;
+  --sniffy-accent: #4ca6ff;
+  --sniffy-accent-foreground: #04111e;
+  --sniffy-success: #54d89a;
+  --sniffy-warning: #ffc45c;
+  --sniffy-danger: #ff7d8a;
+  --sniffy-info: #7bc8ff;
+  --sniffy-sql: #d7a6ff;
+  --sniffy-network: #67d9d0;
+  --sniffy-exception: #ff8e9b;
+}
