@@ -109,13 +109,16 @@ constraints for their subtrees.
   dependency changes, and remaining risks. Link the authoritative issue and include the exact published head SHA.
 - Do not hide limitations. If the environment cannot run a platform-, JDK-, or credential-dependent check, say exactly
   what is missing and leave CI to perform that check.
-- A `REQUEST_CHANGES` review does not dispatch or resume Codex Cloud. Whenever a maintainer expects an agent to continue
-  after review, the maintainer must also post a separate, explicit `@codex` follow-up comment that summarizes every
-  blocking review item and tells the agent not to merge.
-- After that dispatch comment, schedule a status check for 15 minutes later and a second check 15 minutes after the first;
-  if the work is still incomplete, continue monitoring hourly. Do not mark the task as actively being fixed merely
-  because a review was submitted: verify that the explicit dispatch comment exists and that the agent has acknowledged
-  it or pushed a new commit. This dispatch and monitoring contract applies to every agent-authored pull request.
+- A `REQUEST_CHANGES` review does not dispatch or resume Codex Cloud, and an `@codex` mention in a pull-request
+  conversation can invoke the review integration instead of the coding agent. Whenever a maintainer expects an agent to
+  continue after review, post a separate, explicit `@codex` follow-up comment on the original implementation issue, not
+  on the pull request. Summarize every blocking review item, name the existing pull-request branch, and state `continue
+  implementation; do not review; do not open a new PR` and that the agent must not merge.
+- After that issue dispatch comment, verify an `eyes` acknowledgement on that exact comment or equivalent run evidence
+  before treating the agent as started. Schedule a status check for 15 minutes later and a second check 15 minutes after
+  the first; if the work is still incomplete, continue monitoring hourly. Do not mark the task as actively being fixed
+  merely because a review or dispatch comment was submitted. This dispatch and monitoring contract applies to every
+  agent-authored pull request.
 
 ## Review guidelines
 
