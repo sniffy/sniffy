@@ -644,7 +644,7 @@ Replace the project number and test this prompt manually before enabling the sch
 ```text
 Run one Sniffy local-worker cycle in the selected WSL project and its dedicated worktree.
 
-Use organization project <PROJECT_NUMBER> owned by sniffy as the book of work. Select at most one Issue from
+Use organization project 2 (https://github.com/orgs/sniffy/projects/2) owned by sniffy as the book of work. Select at most one Issue from
 sniffy/sniffy whose Status is "Ready for agent". Prefer the highest project Priority, then the oldest issue number. If
 there is no eligible issue, report a no-op and change nothing.
 
@@ -652,7 +652,7 @@ Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and 
 current remote develop branch. Confirm that the issue satisfies Definition of Ready and that there is no existing local
 claim or implementation PR. If it is not ready, do not claim it; report the exact missing decision or acceptance proof.
 
-Claim it by changing project Status to "In progress: local", assigning the dedicated worker account, adding
+Claim it by changing project Status to "In progress", assigning the dedicated worker account, adding
 "agent:local", and posting a comment with the worker name, timestamp, and intended agent/issue-N branch. If any claim
 mutation fails, roll back mutations already made and stop before editing code.
 
@@ -662,7 +662,7 @@ all applicable focused checks as separately reported commands, inspect the final
 update the pull request. Do not merge or enable auto-merge.
 
 Verify the remote branch, full head SHA, PR URL, base/head branches, and PR head SHA. Move project Status to "Review"
-only after publication is verified. If a genuine blocker remains, set Status to "Agent blocked" and post the exact
+only after publication is verified. If a genuine blocker remains, set Status to "Blocked" and post the exact
 blocker and smallest required decision. Never claim or implement more than one issue in this run.
 ```
 
