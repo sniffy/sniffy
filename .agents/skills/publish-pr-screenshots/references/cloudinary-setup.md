@@ -54,6 +54,12 @@ CLOUDINARY_UPLOAD_PRESET
 
 Do not rely on a setup-only secret for the upload preset, because Codex Cloud removes setup secrets before the agent phase. Keep the preset narrowly restricted in Cloudinary and rotate it if it becomes public or abused.
 
+Run `bash .codex/cloud/setup.sh` before the agent phase. The setup script installs/selects Node.js 24.15.0 for repository tooling and persists `NODE_USE_ENV_PROXY=1`, which makes Node fetch use the Codex Cloud HTTP(S) proxy. In the agent phase, invoke the publisher through:
+
+```bash
+.agents/skills/publish-pr-screenshots/scripts/codex-cloud-publish-pr-screenshots.sh --help
+```
+
 Enable agent internet access with this minimum allowlist:
 
 ```text

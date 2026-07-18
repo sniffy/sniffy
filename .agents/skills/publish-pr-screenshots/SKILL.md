@@ -36,7 +36,13 @@ A process-level environment variable takes precedence over the same variable in 
 
 The configured preset owns the Cloudinary asset folder, allowed formats, file-size limit, unique naming, and overwrite policy. `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, the Cloudinary product-environment ID, and a separate asset-folder variable are not used by this skill.
 
-For Codex Cloud, enable agent internet access and allow:
+For Codex Cloud, run `bash .codex/cloud/setup.sh` before the agent phase. Setup selects the repository-supported Node 24 runtime and persists `NODE_USE_ENV_PROXY=1` so Node fetch uses the Codex Cloud environment proxy. Invoke the publisher through the repository-owned wrapper:
+
+```bash
+.agents/skills/publish-pr-screenshots/scripts/codex-cloud-publish-pr-screenshots.sh --help
+```
+
+Then enable agent internet access and allow:
 
 | Domain | Methods | Purpose |
 | --- | --- | --- |
@@ -54,8 +60,7 @@ See [Cloudinary setup](references/cloudinary-setup.md) for local and cloud examp
 Use this after the relevant visual tests pass and the new baselines have been inspected and intentionally approved.
 
 ```bash
-node --env-file-if-exists=.env.local \
-  .agents/skills/publish-pr-screenshots/scripts/publish-pr-screenshots.mjs \
+.agents/skills/publish-pr-screenshots/scripts/codex-cloud-publish-pr-screenshots.sh \
   baselines --repo sniffy/sniffy --pr <number>
 ```
 
@@ -81,8 +86,7 @@ If the block is absent, the script appends it. It rejects malformed or duplicate
 Use this to make useful browser-test failure PNGs visible directly in a PR comment:
 
 ```bash
-node --env-file-if-exists=.env.local \
-  .agents/skills/publish-pr-screenshots/scripts/publish-pr-screenshots.mjs \
+.agents/skills/publish-pr-screenshots/scripts/codex-cloud-publish-pr-screenshots.sh \
   diagnostics --repo sniffy/sniffy --pr <number> \
   --heading "WebKit compact-trigger failure" \
   --file path/to/expected.png \

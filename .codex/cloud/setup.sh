@@ -11,6 +11,7 @@ JDKS_DIR="${HOME}/.jdks"
 JDK8_HOME="${JDKS_DIR}/temurin-8"
 ENV_FILE="${HOME}/.sniffy-codex-env"
 GH_VERSION="2.96.0"
+NODE_VERSION="24.15.0"
 GH_BIN_DIR="${HOME}/.local/bin"
 GH_INSTALL_DIR="${HOME}/.local/share/gh/${GH_VERSION}"
 
@@ -118,6 +119,15 @@ configure_github_auth
 
 mkdir -p "${JDKS_DIR}" "${HOME}/.m2"
 
+install_node24() {
+  if ! mise where "node@${NODE_VERSION}" >/dev/null 2>&1; then
+    echo "Installing Node.js ${NODE_VERSION} for Sniffy frontend and Codex Cloud tooling..."
+    mise install "node@${NODE_VERSION}"
+  else
+    echo "Node.js ${NODE_VERSION} already installed."
+  fi
+}
+
 install_jdk8() {
   if [[ -x "${JDK8_HOME}/bin/java" ]]; then
     echo "Temurin JDK 8 already installed."
@@ -158,7 +168,10 @@ builtin_jdk_home() {
   printf '%s\n' "${home}"
 }
 
+install_node24
 install_jdk8
+
+NODE24_HOME="$(mise where "node@${NODE_VERSION}")"
 
 JDK11_HOME="$(builtin_jdk_home 11)"
 JDK17_HOME="$(builtin_jdk_home 17)"
@@ -172,7 +185,8 @@ export SNIFFY_JDK17_HOME="${JDK17_HOME}"
 export SNIFFY_JDK21_HOME="${JDK21_HOME}"
 export SNIFFY_JDK25_HOME="${JDK25_HOME}"
 export JAVA_HOME="${JDK25_HOME}"
-export PATH="${JDK25_HOME}/bin:${GH_BIN_DIR}:\${PATH}"
+export PATH="${NODE24_HOME}/bin:${JDK25_HOME}/bin:${GH_BIN_DIR}:\${PATH}"
+export NODE_USE_ENV_PROXY="1"
 EOF_ENV
 
 for shell_file in "${HOME}/.bashrc" "${HOME}/.profile"; do
@@ -203,6 +217,7 @@ EOF_TOOLCHAINS
 printf 'Using Codex-provided Maven: %s\n' "$(command -v mvn)"
 java -version
 mvn -version
+node -v
 
 bash .codex/cloud/warm-maven-cache.sh
 
