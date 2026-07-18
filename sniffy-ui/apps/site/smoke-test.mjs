@@ -10,6 +10,11 @@ const root = join(appRoot, 'build-test');
 const workspaceRoot = dirname(dirname(appRoot));
 const rootPackageJson = JSON.parse(await readFile(join(workspaceRoot, 'package.json'), 'utf8'));
 const sitePackageJson = JSON.parse(await readFile(join(appRoot, 'package.json'), 'utf8'));
+const uiPackageJson = JSON.parse(
+  await readFile(join(workspaceRoot, 'packages/ui/package.json'), 'utf8'),
+);
+const docusaurusConfig = await readFile(join(appRoot, 'docusaurus.config.ts'), 'utf8');
+const customCss = await readFile(join(appRoot, 'src/css/custom.css'), 'utf8');
 const requiredRoutes = ['/', '/docs/'];
 const reservedRoutes = ['/blog/', '/docs/next/', '/docs/3.1.13/'];
 const contentTypes = new Map([
@@ -27,21 +32,60 @@ function assertWorkspaceContract() {
     Array.isArray(rootPackageJson.workspaces) && rootPackageJson.workspaces.includes('apps/*'),
     'root workspace must include apps/* so @sniffy/site stays workspace-bound',
   );
-  assert(
-    rootPackageJson.scripts?.['site:test'] === 'npm run test -w @sniffy/site',
-    'root site:test must delegate to the @sniffy/site workspace test script',
-  );
+  for (const scriptName of ['site:dev', 'site:build', 'site:test']) {
+    const commandName = scriptName.slice('site:'.length);
+    assert(
+      rootPackageJson.scripts?.[scriptName] === `npm run ${commandName} -w @sniffy/site`,
+      `root ${scriptName} must delegate to the @sniffy/site workspace ${commandName} script`,
+    );
+  }
   assert(
     rootPackageJson.scripts?.build === 'node scripts/build.mjs',
     'root production build command must remain the generated-resource build',
+  );
+  assert(
+    sitePackageJson.scripts?.dev === 'docusaurus start --host 127.0.0.1',
+    '@sniffy/site dev script must stay local to the site workspace',
+  );
+  assert(
+    sitePackageJson.scripts?.build === 'docusaurus build',
+    '@sniffy/site build script must stay local to the site workspace',
+  );
+  assert(
+    sitePackageJson.scripts?.test ===
+      'docusaurus build --out-dir build-test && node smoke-test.mjs',
+    '@sniffy/site test script must build the site and run committed smoke assertions',
   );
   assert(
     sitePackageJson.dependencies?.['@sniffy/theme'] === '0.0.0',
     '@sniffy/site must consume the workspace @sniffy/theme package',
   );
   assert(
+    sitePackageJson.dependencies?.react === uiPackageJson.dependencies?.react &&
+      sitePackageJson.dependencies?.['react-dom'] === uiPackageJson.dependencies?.['react-dom'],
+    '@sniffy/site React dependencies must stay aligned with the @sniffy/ui workspace React versions',
+  );
+  assert(
     !('sockjs' in (rootPackageJson.overrides ?? {})),
     'root overrides must not force the sockjs transitive uuid dependency',
+  );
+  assert(
+    customCss.includes("@import '@sniffy/theme/base.css';") &&
+      customCss.includes("@import '@sniffy/theme/dark.css';"),
+    'site CSS must import shared @sniffy/theme base and dark entry points',
+  );
+  assert(
+    !/(^|[^-\w])(?:#[0-9a-fA-F]{3,8}|black|white)(?![-\w])/u.test(customCss),
+    'site CSS must not duplicate product palette literals',
+  );
+  assert(docusaurusConfig.includes('blog: false'), 'Docusaurus blog routes must remain disabled');
+  assert(
+    !/versions\s*:/u.test(docusaurusConfig),
+    'Docusaurus historical/versioned docs must remain disabled',
+  );
+  assert(
+    docusaurusConfig.includes('disableSwitch: true'),
+    'Docusaurus theme switch must remain disabled until the light theme is implemented',
   );
   console.log('workspace contract assertions passed');
 }
@@ -76,8 +120,9 @@ const server = createServer(async (request, response) => {
     });
     response.end(body);
   } catch (error) {
+    console.error('site smoke static server failed to read a route fixture', error);
     response.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
-    response.end(String(error));
+    response.end('Internal Server Error');
   }
 });
 
