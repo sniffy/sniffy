@@ -1,0 +1,29 @@
+---
+title: Tagged source snippets
+---
+
+Use the build-time `SourceSnippet` element to keep examples linked to tested repository sources:
+
+```mdx
+<SourceSnippet
+  file="sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java"
+  region="testVerifyApi"
+  language="java"
+/>
+```
+
+The file path is relative to the repository root. The region matches an AsciiDoc-style
+`tag::name[]` / `end::name[]` pair, and the language is passed to the generated syntax-highlighted
+listing.
+
+<SourceSnippet
+  file="sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java"
+  region="testVerifyApi"
+  language="java"
+/>
+
+Snippet extraction normalizes line endings, removes blank boundary lines, and strips the smallest
+shared indentation from non-blank lines. The site build fails with the source and region in the
+error when a path escapes the repository, a file or tag is missing, or tag markers are duplicate,
+ambiguous, or malformed. Source files are read only while the site is built; the generated site
+does not fetch source code at runtime.

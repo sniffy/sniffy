@@ -1,5 +1,11 @@
 import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import sourceSnippetRemarkPlugin from './src/source-snippets';
+
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 const config: Config = {
   title: 'Sniffy',
@@ -19,6 +25,7 @@ const config: Config = {
           routeBasePath: 'docs',
           sidebarPath: false,
           lastVersion: 'current',
+          remarkPlugins: [[sourceSnippetRemarkPlugin, { repositoryRoot }]],
           versions: {
             current: {
               label: 'Current',
