@@ -4,7 +4,6 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Sniffy',
   tagline: 'Java observability and testing utilities',
-  favicon: 'img/favicon.ico',
   url: 'https://sniffy.io',
   baseUrl: '/',
   organizationName: 'sniffy',
@@ -35,13 +34,10 @@ const config: Config = {
     ],
   ],
   themeConfig: {
-    navbar: {
-      title: 'Sniffy',
-      items: [{ to: '/docs/', label: 'Docs', position: 'left' }],
-    },
-    footer: {
-      style: 'dark',
-      copyright: `Copyright © ${new Date().getFullYear()} Sniffy`,
+    colorMode: {
+      defaultMode: 'dark',
+      disableSwitch: true,
+      respectPrefersColorScheme: false,
     },
   } satisfies Preset.ThemeConfig,
 };

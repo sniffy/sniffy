@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "docusaurus start --host 127.0.0.1",
     "build": "docusaurus build",
-    "test": "docusaurus build --out-dir build-test"
+    "test": "docusaurus build --out-dir build-test && node smoke-test.mjs"
   },
   "dependencies": {
     "@docusaurus/core": "3.10.2",

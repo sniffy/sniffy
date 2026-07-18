@@ -9,12 +9,20 @@
   --ifm-color-content: var(--sniffy-foreground);
   --ifm-color-content-secondary: var(--sniffy-foreground-muted);
   --ifm-color-primary: var(--sniffy-accent);
-  --ifm-color-primary-dark: color-mix(in srgb, var(--sniffy-accent) 85%, black);
-  --ifm-color-primary-darker: color-mix(in srgb, var(--sniffy-accent) 75%, black);
-  --ifm-color-primary-darkest: color-mix(in srgb, var(--sniffy-accent) 65%, black);
-  --ifm-color-primary-light: color-mix(in srgb, var(--sniffy-accent) 85%, white);
-  --ifm-color-primary-lighter: color-mix(in srgb, var(--sniffy-accent) 75%, white);
-  --ifm-color-primary-lightest: color-mix(in srgb, var(--sniffy-accent) 65%, white);
+  --ifm-color-primary-dark: color-mix(in srgb, var(--sniffy-accent) 85%, var(--sniffy-canvas));
+  --ifm-color-primary-darker: color-mix(in srgb, var(--sniffy-accent) 75%, var(--sniffy-canvas));
+  --ifm-color-primary-darkest: color-mix(in srgb, var(--sniffy-accent) 65%, var(--sniffy-canvas));
+  --ifm-color-primary-light: color-mix(in srgb, var(--sniffy-accent) 85%, var(--sniffy-foreground));
+  --ifm-color-primary-lighter: color-mix(
+    in srgb,
+    var(--sniffy-accent) 75%,
+    var(--sniffy-foreground)
+  );
+  --ifm-color-primary-lightest: color-mix(
+    in srgb,
+    var(--sniffy-accent) 65%,
+    var(--sniffy-foreground)
+  );
   --ifm-color-primary-contrast-background: var(--sniffy-accent);
   --ifm-color-primary-contrast-foreground: var(--sniffy-accent-foreground);
   --ifm-color-emphasis-0: var(--sniffy-canvas);
