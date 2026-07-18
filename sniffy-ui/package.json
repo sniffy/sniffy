@@ -14,16 +14,19 @@
     "dev": "tsx scripts/dev.ts",
     "dev:agent": "tsx scripts/dev.ts --mode=agent",
     "dev:profiler": "tsx scripts/dev.ts --mode=profiler",
+    "dev:site": "npm run start --workspace @sniffy/site",
     "preview:generated": "tsx scripts/dev.ts --mode=generated",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build --quiet",
     "lint": "eslint . && prettier --check .",
     "typecheck": "tsc -b",
     "test": "vitest run",
+    "test:site": "npm run build:site && vitest run --project unit apps/site/src/site.test.ts && npm test --workspace @sniffy/site",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:update": "playwright test --project=chromium-visual --update-snapshots",
     "build": "node scripts/build.mjs",
+    "build:site": "npm run build --workspace @sniffy/site",
     "check:generated": "node scripts/check-generated.mjs",
     "check:bundle": "node scripts/check-bundle.mjs"
   },
@@ -61,5 +64,13 @@
     "workerDirectory": [
       "public"
     ]
+  },
+  "overrides": {
+    "copy-webpack-plugin": {
+      "serialize-javascript": "7.0.7"
+    },
+    "css-minimizer-webpack-plugin": {
+      "serialize-javascript": "7.0.7"
+    }
   }
 }

@@ -1,0 +1,44 @@
+@import '@sniffy/theme/base.css';
+@import '@sniffy/theme/dark.css';
+
+/*
+ * Infima-to-Sniffy adapter. Product colors remain owned by @sniffy/theme;
+ * Docusaurus variations are derived from its semantic tokens.
+ */
+:root {
+  color-scheme: dark;
+  --ifm-font-family-base: var(--sniffy-font-sans);
+  --ifm-font-family-monospace: var(--sniffy-font-mono);
+  --ifm-background-color: var(--sniffy-canvas);
+  --ifm-background-surface-color: var(--sniffy-surface);
+  --ifm-font-color-base: var(--sniffy-foreground);
+  --ifm-font-color-secondary: var(--sniffy-foreground-muted);
+  --ifm-color-content: var(--sniffy-foreground);
+  --ifm-color-content-secondary: var(--sniffy-foreground-muted);
+  --ifm-color-primary: var(--sniffy-accent);
+  --ifm-color-primary-dark: color-mix(in srgb, var(--sniffy-accent), var(--sniffy-canvas) 10%);
+  --ifm-color-primary-darker: color-mix(in srgb, var(--sniffy-accent), var(--sniffy-canvas) 16%);
+  --ifm-color-primary-darkest: color-mix(in srgb, var(--sniffy-accent), var(--sniffy-canvas) 26%);
+  --ifm-color-primary-light: color-mix(in srgb, var(--sniffy-accent), var(--sniffy-foreground) 10%);
+  --ifm-color-primary-lighter: color-mix(
+    in srgb,
+    var(--sniffy-accent),
+    var(--sniffy-foreground) 16%
+  );
+  --ifm-color-primary-lightest: color-mix(
+    in srgb,
+    var(--sniffy-accent),
+    var(--sniffy-foreground) 26%
+  );
+  --ifm-color-success: var(--sniffy-success);
+  --ifm-color-warning: var(--sniffy-warning);
+  --ifm-color-danger: var(--sniffy-danger);
+  --ifm-color-info: var(--sniffy-info);
+  --ifm-color-emphasis-200: var(--sniffy-surface-raised);
+  --ifm-color-emphasis-300: var(--sniffy-border);
+  --ifm-navbar-background-color: var(--sniffy-surface);
+  --ifm-footer-background-color: var(--sniffy-surface);
+  --ifm-code-background: var(--sniffy-surface-raised);
+  --ifm-global-radius: var(--sniffy-radius);
+  --ifm-global-shadow-lw: var(--sniffy-shadow);
+}

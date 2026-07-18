@@ -1,4 +1,6 @@
 node_modules/
+.docusaurus/
+build/
 dist/
 storybook-static/
 playwright-report/
