@@ -2,9 +2,14 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { extname, join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname, extname, join, normalize, relative, sep } from 'node:path';
 
-const root = new URL('./build-test/', import.meta.url).pathname;
+const appRoot = dirname(fileURLToPath(import.meta.url));
+const root = join(appRoot, 'build-test');
+const workspaceRoot = dirname(dirname(appRoot));
+const rootPackageJson = JSON.parse(await readFile(join(workspaceRoot, 'package.json'), 'utf8'));
+const sitePackageJson = JSON.parse(await readFile(join(appRoot, 'package.json'), 'utf8'));
 const requiredRoutes = ['/', '/docs/'];
 const reservedRoutes = ['/blog/', '/docs/next/', '/docs/3.1.13/'];
 const contentTypes = new Map([
@@ -13,13 +18,48 @@ const contentTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
 ]);
 
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+function assertWorkspaceContract() {
+  assert(
+    Array.isArray(rootPackageJson.workspaces) && rootPackageJson.workspaces.includes('apps/*'),
+    'root workspace must include apps/* so @sniffy/site stays workspace-bound',
+  );
+  assert(
+    rootPackageJson.scripts?.['site:test'] === 'npm run test -w @sniffy/site',
+    'root site:test must delegate to the @sniffy/site workspace test script',
+  );
+  assert(
+    rootPackageJson.scripts?.build === 'node scripts/build.mjs',
+    'root production build command must remain the generated-resource build',
+  );
+  assert(
+    sitePackageJson.dependencies?.['@sniffy/theme'] === '0.0.0',
+    '@sniffy/site must consume the workspace @sniffy/theme package',
+  );
+  assert(
+    !('sockjs' in (rootPackageJson.overrides ?? {})),
+    'root overrides must not force the sockjs transitive uuid dependency',
+  );
+  console.log('workspace contract assertions passed');
+}
+
+function isInsideRoot(candidate) {
+  const rel = relative(root, candidate);
+  return rel === '' || (!rel.startsWith('..') && !rel.startsWith(sep) && !/^[A-Za-z]:/.test(rel));
+}
+
 function routeFile(pathname) {
-  const normalized = normalize(pathname).replace(/^([/\\])+/, '');
+  const normalized = normalize(decodeURIComponent(pathname)).replace(/^([/\\])+/, '');
   const candidate = pathname.endsWith('/')
     ? join(root, normalized, 'index.html')
     : join(root, normalized);
-  return candidate.startsWith(root) ? candidate : join(root, '404.html');
+  return isInsideRoot(candidate) ? candidate : join(root, '404.html');
 }
+
+assertWorkspaceContract();
 
 const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? '/', 'http://127.0.0.1');
