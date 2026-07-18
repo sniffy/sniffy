@@ -25,6 +25,10 @@ constraints for their subtrees.
   that the issue contains a short design preflight: scope boundaries, module ownership, a failure/lifecycle matrix, and
   an acceptance-criterion-to-proof matrix. If a material product or public-API decision is unresolved or contradictory,
   stop before implementation and report that decision instead of inventing a broad compatibility layer.
+- Before routing substantial work to Codex Cloud or unattended local Codex, apply the risk-axis and proof-matrix rules in
+  `docs/retrospectives/2026-07-18-docusaurus-cloud-vs-local.md`. Prefer local execution for first-of-kind architectural or
+  visual patterns and Cloud for isolated, fully specified tasks with deterministic Cloud-available proof. Do not estimate
+  task suitability from changed-line or lockfile size alone.
 
 ## Compatibility and scope
 
