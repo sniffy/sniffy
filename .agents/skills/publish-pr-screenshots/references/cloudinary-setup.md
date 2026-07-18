@@ -4,12 +4,36 @@ The skill uses unsigned uploads. Only the cloud name and restricted upload prese
 
 ## Local Codex
 
-Configure the variables outside the repository, for example in a private shell profile, `direnv`, or a password-manager-backed environment:
+The recommended repository-local setup is an ignored `.env.local` file:
 
 ```bash
-export CLOUDINARY_CLOUD_NAME='<cloud-name>'
-export CLOUDINARY_UPLOAD_PRESET='<restricted-unsigned-preset>'
+cp .env.local.example .env.local
 ```
+
+Fill in only:
+
+```text
+CLOUDINARY_CLOUD_NAME=<cloud-name>
+CLOUDINARY_UPLOAD_PRESET=<restricted-unsigned-preset>
+```
+
+Then run the publisher with Node's built-in env-file support:
+
+```bash
+node --env-file=.env.local \
+  .agents/skills/publish-pr-screenshots/scripts/publish-pr-screenshots.mjs --help
+```
+
+For commands that should still work when `.env.local` is absent, use:
+
+```bash
+node --env-file-if-exists=.env.local \
+  .agents/skills/publish-pr-screenshots/scripts/publish-pr-screenshots.mjs --help
+```
+
+`.env.local` is ignored by Git. Never put real values in `.env.local.example`.
+
+A shell profile, `direnv`, or a password-manager-backed environment is also valid. Variables already exported by the shell take precedence over values loaded from the env file.
 
 Verify the local GitHub CLI session separately:
 
