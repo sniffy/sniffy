@@ -1,0 +1,23 @@
+.main {
+  min-height: calc(100vh - var(--ifm-navbar-height));
+  background: var(--ifm-background-color);
+}
+
+.hero {
+  margin: 0 auto;
+  max-width: 48rem;
+  padding: calc(var(--sniffy-space-6) * 3) var(--sniffy-space-4);
+}
+
+.eyebrow {
+  color: var(--ifm-color-primary);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summary {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 1.2rem;
+  line-height: 1.7;
+}

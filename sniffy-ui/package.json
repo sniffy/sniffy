@@ -25,7 +25,10 @@
     "test:e2e:update": "playwright test --project=chromium-visual --update-snapshots",
     "build": "node scripts/build.mjs",
     "check:generated": "node scripts/check-generated.mjs",
-    "check:bundle": "node scripts/check-bundle.mjs"
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "site:dev": "npm run dev -w @sniffy/site",
+    "site:build": "npm run build -w @sniffy/site",
+    "site:test": "npm run test -w @sniffy/site"
   },
   "devDependencies": {
     "@eslint/js": "9.39.2",

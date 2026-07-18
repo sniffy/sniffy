@@ -1,0 +1,44 @@
+@import '@sniffy/theme/base.css';
+@import '@sniffy/theme/dark.css';
+
+:root {
+  --ifm-font-family-base: var(--sniffy-font-sans);
+  --ifm-font-family-monospace: var(--sniffy-font-mono);
+  --ifm-background-color: var(--sniffy-canvas);
+  --ifm-background-surface-color: var(--sniffy-surface);
+  --ifm-color-content: var(--sniffy-foreground);
+  --ifm-color-content-secondary: var(--sniffy-foreground-muted);
+  --ifm-color-primary: var(--sniffy-accent);
+  --ifm-color-primary-dark: color-mix(in srgb, var(--sniffy-accent) 85%, black);
+  --ifm-color-primary-darker: color-mix(in srgb, var(--sniffy-accent) 75%, black);
+  --ifm-color-primary-darkest: color-mix(in srgb, var(--sniffy-accent) 65%, black);
+  --ifm-color-primary-light: color-mix(in srgb, var(--sniffy-accent) 85%, white);
+  --ifm-color-primary-lighter: color-mix(in srgb, var(--sniffy-accent) 75%, white);
+  --ifm-color-primary-lightest: color-mix(in srgb, var(--sniffy-accent) 65%, white);
+  --ifm-color-primary-contrast-background: var(--sniffy-accent);
+  --ifm-color-primary-contrast-foreground: var(--sniffy-accent-foreground);
+  --ifm-color-emphasis-0: var(--sniffy-canvas);
+  --ifm-color-emphasis-100: var(--sniffy-surface);
+  --ifm-color-emphasis-200: var(--sniffy-surface-raised);
+  --ifm-color-emphasis-300: var(--sniffy-border);
+  --ifm-color-emphasis-600: var(--sniffy-foreground-muted);
+  --ifm-color-emphasis-700: var(--sniffy-foreground-muted);
+  --ifm-color-emphasis-900: var(--sniffy-foreground);
+  --ifm-navbar-background-color: var(--sniffy-surface);
+  --ifm-navbar-link-color: var(--sniffy-foreground);
+  --ifm-footer-background-color: var(--sniffy-surface);
+  --ifm-link-color: var(--sniffy-accent);
+  --ifm-menu-color-active: var(--sniffy-accent);
+  --ifm-toc-link-color: var(--sniffy-foreground-muted);
+  --ifm-code-background: var(--sniffy-surface-raised);
+  --ifm-card-background-color: var(--sniffy-surface);
+  --ifm-global-radius: var(--sniffy-radius);
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* Reserved by architecture contract; intentionally not enabled until follow-up issues add content. */
+/* Future blog route: /blog/ */
+/* Future historical docs route: /docs/<version>/ */
