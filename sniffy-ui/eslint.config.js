@@ -7,6 +7,8 @@ export default tseslint.config(
   {
     ignores: [
       'node_modules',
+      '**/.docusaurus/**',
+      'apps/site/build/**',
       'dist',
       '.tmp',
       'storybook-static',

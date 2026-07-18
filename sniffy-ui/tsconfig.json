@@ -9,6 +9,7 @@
     { "path": "packages/fixtures" },
     { "path": "apps/profiler" },
     { "path": "apps/agent" },
-    { "path": "apps/playground" }
+    { "path": "apps/playground" },
+    { "path": "apps/site" }
   ]
 }

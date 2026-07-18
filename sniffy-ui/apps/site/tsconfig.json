@@ -1,0 +1,12 @@
+{
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "composite": true,
+    "ignoreDeprecations": "6.0",
+    "noEmit": true,
+    "tsBuildInfoFile": "../../.tmp/tsbuild/site.tsbuildinfo",
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["docusaurus.config.ts", "playwright.config.ts", "src", "tests"]
+}
