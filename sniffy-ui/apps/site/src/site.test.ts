@@ -22,16 +22,47 @@ describe('@sniffy/site workspace contract', () => {
     });
   });
 
-  it('keeps Java-resource production builds separate from site commands', () => {
-    const packageJson = readJson(resolve(workspace, 'package.json'));
+  it('aligns React exactly with the existing UI workspace', () => {
+    const sitePackageJson = readJson(resolve(site, 'package.json'));
+    const uiPackageJson = readJson(resolve(workspace, 'packages/ui/package.json'));
 
-    expect(packageJson.scripts).toMatchObject({
+    expect(sitePackageJson.dependencies).toMatchObject({
+      react: uiPackageJson.dependencies.react,
+      'react-dom': uiPackageJson.dependencies['react-dom'],
+    });
+  });
+
+  it('keeps Java-resource production builds separate from delegated site commands', () => {
+    const workspacePackageJson = readJson(resolve(workspace, 'package.json'));
+    const sitePackageJson = readJson(resolve(site, 'package.json'));
+
+    expect(workspacePackageJson.workspaces).toContain('apps/*');
+    expect(workspacePackageJson.scripts).toMatchObject({
       build: 'node scripts/build.mjs',
       'build:site': 'npm run build --workspace @sniffy/site',
       'dev:site': 'npm run start --workspace @sniffy/site',
       'test:site':
         'npm run build:site && vitest run --project unit apps/site/src/site.test.ts && npm test --workspace @sniffy/site',
     });
+    expect(sitePackageJson.scripts).toMatchObject({
+      start: 'docusaurus start',
+      build: 'docusaurus build',
+      test: 'playwright test --config playwright.config.ts',
+    });
+  });
+
+  it('scopes the serialize-javascript security exception to affected build plugins', () => {
+    const packageJson = readJson(resolve(workspace, 'package.json'));
+
+    expect(packageJson.overrides).toEqual({
+      'copy-webpack-plugin': {
+        'serialize-javascript': '7.0.7',
+      },
+      'css-minimizer-webpack-plugin': {
+        'serialize-javascript': '7.0.7',
+      },
+    });
+    expect(packageJson.overrides).not.toHaveProperty('sockjs');
   });
 
   it('adapts Infima to shared theme layers without copying palette literals', () => {

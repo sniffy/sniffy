@@ -66,6 +66,11 @@
     ]
   },
   "overrides": {
-    "serialize-javascript": "7.0.5"
+    "copy-webpack-plugin": {
+      "serialize-javascript": "7.0.7"
+    },
+    "css-minimizer-webpack-plugin": {
+      "serialize-javascript": "7.0.7"
+    }
   }
 }
