@@ -1,3 +1,4 @@
+// tag::JUnitUsage[]
 package io.sniffy.test.junit.usage;
 
 import io.sniffy.socket.DisableSockets;
@@ -41,3 +42,4 @@ public class JUnitUsageTest {
     }
 
 }
+// end::JUnitUsage[]

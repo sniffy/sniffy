@@ -1,10 +1,57 @@
 ---
-slug: /
 title: Sniffy documentation
+sidebar_position: 1
 ---
 
-This minimal route reserves the home of the current stable documentation.
+## Overview
 
-[See a tagged source snippet from the repository](./source-snippets/).
+Sniffy is a Java profiler which shows the results directly in your browser.
+It also brings profiling to your unit (or rather component) tests and allows you to disable certain outgoing connections for fault-tolerance testing.
+It can even record network traffic sent via Java plain old Socket API as well as TCP NIO channels.
 
-[Return to the website home page](/).
+### In-browser profiler
+
+![demo](/img/docs/demo.gif)
+
+### Asserting number of queries in unit tests
+
+<SourceSnippet
+  file="sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit/usage/JUnitOverviewTest.java"
+  region="JUnitOverview"
+  language="java"
+/>
+
+### Testing bad connectivity
+
+Discover all outgoing network connections from your server and disable them right from your browser:
+
+![network-connections](/img/docs/network-connections.png)
+
+Sniffy will throw a `java.net.ConnectException` when your application tries to connect to address disallowed by Sniffy.
+It's also possible to specify a fixed delay for all sent and received TCP packets.
+
+### Simulating no connectivity in unit tests
+
+<SourceSnippet
+  file="sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit/usage/DisableConnectivityOverviewTest.java"
+  region="DisableSocketsOverview"
+  language="java"
+/>
+
+### Recording network traffic
+
+<SourceSnippet
+  file="sniffy-core/src/test/java/io/sniffy/socket/CaptureTrafficOverviewTest.java"
+  region="CaptureTrafficOverview"
+  language="java"
+/>
+
+## Explore the documentation
+
+- [Installation](/docs/installation/)
+- [Application setup](/docs/setup/spring/)
+- [Configuration and NIO monitoring](/docs/configuration/)
+- [Testing integrations](/docs/testing/api/)
+- [Network fault emulation](/docs/network/fault-emulation/)
+- [Traffic capture and TLS inspection](/docs/network/traffic-capture/)
+- [Migration guidance](/docs/migration/to-4/)

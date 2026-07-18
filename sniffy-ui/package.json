@@ -21,7 +21,7 @@
     "lint": "eslint . && prettier --check .",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:site": "npm run build:site && vitest run --project unit apps/site/src/site.test.ts apps/site/src/source-snippets.test.ts && npm test --workspace @sniffy/site",
+    "test:site": "npm run build:site && vitest run --project unit apps/site/src/site.test.ts apps/site/src/source-snippets.test.ts apps/site/src/documentation.test.ts && npm test --workspace @sniffy/site",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:update": "playwright test --project=chromium-visual --update-snapshots",

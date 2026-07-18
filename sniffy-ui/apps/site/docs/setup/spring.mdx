@@ -1,0 +1,37 @@
+---
+title: Spring
+sidebar_position: 1
+---
+
+Add `sniffy-spring` for Spring Framework 7 / Spring Boot 4 applications using Jakarta Servlet, or
+`sniffy-spring-javax` for Spring Framework 5.3 / Spring Boot 2.7 applications using Javax Servlet. Then add
+`@EnableSniffy` to your application class:
+
+```java
+package com.acme;
+
+import io.sniffy.boot.EnableSniffy;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+@EnableAutoConfiguration
+@EnableSniffy // <1>
+public class Application {
+
+    public static void main(String[] args) throws ClassNotFoundException {
+        SpringApplication.run(Application.class, args);
+    }
+
+}
+```
+
+1. Put this annotation on a class with spring configuration.
+
+It will wrap all existing datasources with `SniffyDataSource` and also create an instance of `SniffyFilter` with bean id
+`sniffyFilter` which will inject the Sniffy widget into HTML pages. The annotation package remains
+`io.sniffy.boot.EnableSniffy` in both variants, so application source normally needs no changes when moving between
+the two supported Spring generations.
+
+With a Spring Boot embedded servlet container this is sufficient. Otherwise, also create a mapping for this filter.

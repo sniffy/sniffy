@@ -23,7 +23,7 @@ const config: Config = {
       {
         docs: {
           routeBasePath: 'docs',
-          sidebarPath: false,
+          sidebarPath: './sidebars.ts',
           lastVersion: 'current',
           remarkPlugins: [[sourceSnippetRemarkPlugin, { repositoryRoot }]],
           versions: {
