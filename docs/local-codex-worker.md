@@ -332,7 +332,7 @@ host repositories with different requirements:
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
-  bash bubblewrap build-essential ca-certificates curl git jq tar unzip zip
+  bash bubblewrap build-essential ca-certificates curl git jq tar unzip zip gh
 ```
 
 Install [`mise`](https://mise.jdx.dev/getting-started.html), activate it for Bash, and activate it in the current shell:
