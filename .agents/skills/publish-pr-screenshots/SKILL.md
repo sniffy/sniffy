@@ -24,6 +24,16 @@ CLOUDINARY_UPLOAD_PRESET
 
 Do not commit their values. The upload preset name is not a cryptographic secret, but anyone who obtains it may be able to consume the restricted preset, so keep it in environment configuration and rotate it if abused.
 
+For local work, copy `.env.local.example` to ignored `.env.local`, fill in the two values, and invoke Node with the repository-local env file:
+
+```bash
+cp .env.local.example .env.local
+node --env-file=.env.local \
+  .agents/skills/publish-pr-screenshots/scripts/publish-pr-screenshots.mjs --help
+```
+
+A process-level environment variable takes precedence over the same variable in `.env.local`. Do not add the real values to `.env.local.example`.
+
 The configured preset owns the Cloudinary asset folder, allowed formats, file-size limit, unique naming, and overwrite policy. `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, the Cloudinary product-environment ID, and a separate asset-folder variable are not used by this skill.
 
 For Codex Cloud, enable agent internet access and allow:
@@ -44,7 +54,8 @@ See [Cloudinary setup](references/cloudinary-setup.md) for local and cloud examp
 Use this after the relevant visual tests pass and the new baselines have been inspected and intentionally approved.
 
 ```bash
-node .agents/skills/publish-pr-screenshots/scripts/publish-pr-screenshots.mjs \
+node --env-file-if-exists=.env.local \
+  .agents/skills/publish-pr-screenshots/scripts/publish-pr-screenshots.mjs \
   baselines --repo sniffy/sniffy --pr <number>
 ```
 
@@ -70,7 +81,8 @@ If the block is absent, the script appends it. It rejects malformed or duplicate
 Use this to make useful browser-test failure PNGs visible directly in a PR comment:
 
 ```bash
-node .agents/skills/publish-pr-screenshots/scripts/publish-pr-screenshots.mjs \
+node --env-file-if-exists=.env.local \
+  .agents/skills/publish-pr-screenshots/scripts/publish-pr-screenshots.mjs \
   diagnostics --repo sniffy/sniffy --pr <number> \
   --heading "WebKit compact-trigger failure" \
   --file path/to/expected.png \
