@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 import {
   BASELINE_DIRECTORY,
   SCREENSHOT_SECTION_END,
   SCREENSHOT_SECTION_START,
   assertAllowedRepositoryPath,
   buildScreenshotMarkdown,
+  inspectScreenshot,
   normalizeRepositoryPath,
   parseArgs,
   replaceMarkedSection,
@@ -61,6 +65,29 @@ test('restricts baselines to the reviewed baseline directory', () => {
     /inside the repository/,
   );
   assert.throws(() => assertAllowedRepositoryPath('trace.zip', 'diagnostics'), /Only PNG/);
+});
+
+test('rejects baseline files that escape after filesystem resolution', async () => {
+  const repositoryRoot = await mkdtemp(resolve(tmpdir(), 'sniffy-pr-screenshots-test-'));
+  await mkdir(resolve(repositoryRoot, BASELINE_DIRECTORY), { recursive: true });
+  await mkdir(resolve(repositoryRoot, 'sniffy-documentation/src/main/asciidoc/images'), {
+    recursive: true,
+  });
+  const escapedPath =
+    `${BASELINE_DIRECTORY}/../../../../sniffy-documentation/src/main/asciidoc/images/agent-ui.png`;
+  try {
+    await writeFile(
+      resolve(repositoryRoot, 'sniffy-documentation/src/main/asciidoc/images/agent-ui.png'),
+      'png',
+    );
+
+    await assert.rejects(
+      () => inspectScreenshot(repositoryRoot, escapedPath, 'baselines'),
+      /must be under/,
+    );
+  } finally {
+    await rm(repositoryRoot, { recursive: true, force: true });
+  }
 });
 
 test('appends a screenshot section when markers are absent', () => {

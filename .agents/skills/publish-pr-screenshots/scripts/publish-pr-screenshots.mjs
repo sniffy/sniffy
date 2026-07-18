@@ -128,13 +128,15 @@ export function assertAllowedRepositoryPath(repositoryPath, mode) {
   return normalized;
 }
 
-async function inspectScreenshot(repositoryRoot, repositoryPath, mode) {
+export async function inspectScreenshot(repositoryRoot, repositoryPath, mode) {
   const normalized = assertAllowedRepositoryPath(repositoryPath, mode);
   const absolute = await realpath(resolve(repositoryRoot, normalized));
   const inside = relative(repositoryRoot, absolute);
   if (!inside || inside === '..' || inside.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`)) {
     throw new Error(`Screenshot resolves outside the repository: ${repositoryPath}`);
   }
+  const canonicalRepositoryPath = normalizeRepositoryPath(inside);
+  assertAllowedRepositoryPath(canonicalRepositoryPath, mode);
   const metadata = await stat(absolute);
   if (!metadata.isFile()) throw new Error(`Screenshot is not a file: ${repositoryPath}`);
   if (metadata.size === 0) throw new Error(`Screenshot is empty: ${repositoryPath}`);
