@@ -6,12 +6,17 @@ coverage:
         target: auto
         threshold: 1%
         if_not_found: failure
+        # The base commit predates flagged uploads. Remove after develop has
+        # received its first backend and frontend reports.
+        informational: true
         flags:
           - backend
       frontend:
         target: auto
         threshold: 1%
         if_not_found: failure
+        # Keep both project statuses visible while bootstrapping the baseline.
+        informational: true
         flags:
           - frontend
     patch:
