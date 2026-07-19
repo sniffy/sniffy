@@ -42,7 +42,7 @@ describe('@sniffy/site workspace contract', () => {
       'build:site': 'npm run build --workspace @sniffy/site',
       'dev:site': 'npm run start --workspace @sniffy/site',
       'test:site':
-        'npm run build:site && vitest run --project unit apps/site/src/site.test.ts apps/site/src/source-snippets.test.ts apps/site/src/documentation.test.ts && npm test --workspace @sniffy/site',
+        'npm run build:site && vitest run --project unit apps/site/src/site.test.ts apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts && npm test --workspace @sniffy/site',
     });
     expect(sitePackageJson.scripts).toMatchObject({
       start: 'docusaurus start',

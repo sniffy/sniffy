@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import sourceSnippetRemarkPlugin from './src/source-snippets';
+import productVersionRemarkPlugin from './src/product-version';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -25,7 +26,10 @@ const config: Config = {
           routeBasePath: 'docs',
           sidebarPath: './sidebars.ts',
           lastVersion: 'current',
-          remarkPlugins: [[sourceSnippetRemarkPlugin, { repositoryRoot }]],
+          remarkPlugins: [
+            [productVersionRemarkPlugin, { repositoryRoot }],
+            [sourceSnippetRemarkPlugin, { repositoryRoot }],
+          ],
           versions: {
             current: {
               label: 'Current',

@@ -10,7 +10,7 @@ However some containers are using complicated ClassLoader's and require some add
 
 If you want to use Sniffy with WildFly you need to add it as a `module`.
 
-In order to do that unzip the `sniffy-{VERSION}-jboss-module.zip` (available in maven Nexus central repository as `io.sniffy:sniffy:jar:jboss-module` artifact) archive to `modules/system/layers/base` folder.
+In order to do that unzip the `sniffy-@sniffy.version@-jboss-module.zip` (available in maven Nexus central repository as `io.sniffy:sniffy:jar:jboss-module` artifact) archive to `modules/system/layers/base` folder.
 Edit the `modules/system/layers/base/io/sniffy/main/module.xml` file and specify a module containing your actual JDBC driver:
 
 <SourceSnippet file="sniffy/src/jboss-module/module.xml" region="WildFlyModule" language="xml" />
@@ -50,7 +50,7 @@ Edit the `jboss-deployment-structure.xml` file inside your web application and a
 
 ### Use Sniffy with Tomcat
 
-If you're using datasources managed within Tomcat rather that within your web application, place `sniffy-<VERSION>.jar` to the `lib` folder
+If you're using datasources managed within Tomcat rather that within your web application, place `sniffy-@sniffy.version@.jar` to the `lib` folder
 And add `sniffy:` prefix to the Datasource configuration in `conf/server.xml` file. For example
 
 ```xml

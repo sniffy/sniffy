@@ -4,25 +4,25 @@ sidebar_position: 2
 ---
 
 Sniffy comes with an uber-jar which doesn't require any additional dependencies to be installed.
-Just grab the `sniffy-{sniffy-version}.jar` from our [releases page](https://github.com/sniffy/sniffy/releases/latest) and add it to the classpath of your application.
+Just grab the `sniffy-@sniffy.version@.jar` from our [releases page](https://github.com/sniffy/sniffy/releases/latest) and add it to the classpath of your application.
 
 > **Note:** The Sniffy 4.x aggregate jar remains Java 8 and Javax Servlet compatible. Jakarta Servlet applications should
 > use the modular artifacts below instead.
 
-> **Warning:** If you're using an application server like Tomcat and you're defining a datasource on application server level, `sniffy-{sniffy-version}.jar` should be added to the common classloader classpath and should be _absent_ in web application classpath.
+> **Warning:** If you're using an application server like Tomcat and you're defining a datasource on application server level, `sniffy-@sniffy.version@.jar` should be added to the common classloader classpath and should be _absent_ in web application classpath.
 
 ## Non-Servlet applications
 
 Standalone sniffy uber-jar also works with non-Servlet applications (Currently only fault tolerance testing and TCP delay are supported in this mode).
 Just add following parameter to your java application command line:
-`-javaagent:sniffy-<VERSION>.jar=5559`
+`-javaagent:sniffy-@sniffy.version@.jar=5559`
 
 Here `5559` is the port where connectivity controls are available - just point your browser to 5559 port on your host (Say http://localhost:5559 ).
 Below is an example of connections discovered in IntelliJ Idea:
 
 ![agent-ui](/img/docs/agent-ui.png)
 
-Advanced syntax takes comma separated parameters: `-javaagent:sniffy-<VERSION>.jar=sniffyPort=5559,monitorNio=true`
+Advanced syntax takes comma separated parameters: `-javaagent:sniffy-@sniffy.version@.jar=sniffyPort=5559,monitorNio=true`
 
 ## Spring Boot Integration
 
@@ -39,13 +39,13 @@ For a Jakarta Spring Boot application use:
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-spring</artifactId>
-    <version>{sniffy-version}</version>
+    <version>@sniffy.version@</version>
 </dependency>
 ```
 
 ```groovy
 dependencies {
-    implementation 'io.sniffy:sniffy-spring:{sniffy-version}'
+    implementation 'io.sniffy:sniffy-spring:@sniffy.version@'
 }
 ```
 
@@ -55,7 +55,7 @@ For a Java 8 / Spring Boot 2.7 application use:
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-spring-javax</artifactId>
-    <version>{sniffy-version}</version>
+    <version>@sniffy.version@</version>
 </dependency>
 ```
 
@@ -79,7 +79,7 @@ For a Jakarta Servlet 5.0+ application without Spring use:
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-web</artifactId>
-    <version>{sniffy-version}</version>
+    <version>@sniffy.version@</version>
 </dependency>
 ```
 
@@ -89,7 +89,7 @@ For a Java 8 / Javax Servlet application use:
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-web-javax</artifactId>
-    <version>{sniffy-version}</version>
+    <version>@sniffy.version@</version>
 </dependency>
 ```
 
@@ -106,14 +106,14 @@ Sniffy artifacts for unit test frameworks are distributed via Maven Central repo
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-junit</artifactId>
-    <version>{sniffy-version}</version>
+    <version>@sniffy.version@</version>
     <scope>test</scope>
 </dependency>
 ```
 
 ```groovy
 dependencies {
-    testCompile 'io.sniffy:sniffy-junit:{sniffy-version}'
+    testCompile 'io.sniffy:sniffy-junit:@sniffy.version@'
 }
 ```
 
@@ -123,14 +123,14 @@ dependencies {
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-spring-test</artifactId>
-    <version>{sniffy-version}</version>
+    <version>@sniffy.version@</version>
     <scope>test</scope>
 </dependency>
 ```
 
 ```groovy
 dependencies {
-    testCompile 'io.sniffy:sniffy-spring-test:{sniffy-version}'
+    testCompile 'io.sniffy:sniffy-spring-test:@sniffy.version@'
 }
 ```
 
@@ -140,13 +140,13 @@ dependencies {
 <dependency>
     <groupId>io.sniffy</groupId>
     <artifactId>sniffy-testng</artifactId>
-    <version>{sniffy-version}</version>
+    <version>@sniffy.version@</version>
     <scope>test</scope>
 </dependency>
 ```
 
 ```groovy
 dependencies {
-    testCompile 'io.sniffy:sniffy-testng:{sniffy-version}'
+    testCompile 'io.sniffy:sniffy-testng:@sniffy.version@'
 }
 ```

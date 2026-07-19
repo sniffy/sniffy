@@ -76,6 +76,10 @@ describe('migrated documentation contract', () => {
     expect(allMdx).not.toContain('include::');
   });
 
+  it('contains no unresolved AsciiDoc-style placeholders', () => {
+    expect(allMdx).not.toMatch(/(?<!\$)\{[A-Za-z][A-Za-z0-9_-]*\}/);
+  });
+
   it('keeps all legacy images in the site without changing the legacy module', () => {
     for (const image of ['agent-ui.png', 'demo.gif', 'network-connections.png']) {
       const legacy = resolve(legacyRoot, 'images', image);
