@@ -1,0 +1,512 @@
+name: Prepare local worker continuation support
+
+on:
+  push:
+    branches:
+      - agent/local-worker-continuations
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/local-worker-continuations
+          fetch-depth: 0
+      - name: Apply repository workflow and worker-prompt changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+
+          worker_path = Path('docs/local-codex-worker.md')
+          worker = worker_path.read_text()
+
+          old_eligibility = dedent('''\
+          - be an Issue in `sniffy/sniffy`, not a draft item or pull request;
+          - have project Status `Ready for agent`;
+          - satisfy the Definition of Ready in `docs/codex-workflow.md`;
+          - have no existing active local-worker claim or implementation pull request;
+          - not require a product decision or permission absent from the worker token.
+          ''')
+          new_eligibility = dedent('''\
+          - be an Issue in `sniffy/sniffy`, not a draft item or pull request;
+          - have project Status `Ready for agent` and Executor `Local Codex`;
+          - satisfy the Definition of Ready in `docs/codex-workflow.md`;
+          - be either:
+            - **fresh work** with no active local-worker claim and no implementation pull request; or
+            - an explicitly re-queued **continuation** with an existing local-worker claim, writable branch, and open
+              implementation pull request that has actionable maintainer feedback or failing required checks;
+          - not require a product decision or permission absent from the worker token.
+
+          For continuation work, `Ready for agent` is an explicit lease renewal. Historical claim comments, the existing
+          `agent/issue-N` branch, and the open pull request are required context rather than disqualifiers. An item whose
+          Status is still `In progress` or `Review` is not eligible for another Scheduled run, which prevents two worker
+          cycles from editing the same branch concurrently.
+          ''')
+          if old_eligibility not in worker:
+              raise SystemExit('claim eligibility block not found')
+          worker = worker.replace(old_eligibility, new_eligibility, 1)
+
+          old_claim_sequence = dedent('''\
+          1. List at most 100 matching items and choose deterministically by project Priority, then oldest issue number.
+          2. Re-read the selected issue, comments, linked pull requests, and project fields immediately before claiming.
+          3. Set Status to `In progress: local`.
+          4. Add the machine account as assignee and add `agent:local`.
+          5. Post a claim comment containing the worker name, branch, timestamp, and Scheduled run link when available.
+          6. If any claim mutation fails, undo mutations that succeeded and stop without editing code.
+          ''')
+          new_claim_sequence = dedent('''\
+          1. List at most 100 matching items. Prefer an explicitly re-queued continuation so review loops close before new
+             work starts, then choose deterministically by project Priority and oldest issue number.
+          2. Re-read the selected issue, all comments, project fields, linked pull requests, review threads, and current CI
+             immediately before claiming.
+          3. Classify the item as fresh work or a continuation. For a continuation, verify that the existing pull request is
+             open, its head branch is writable by the worker, and the latest maintainer instructions identify actionable
+             fixes or required failed checks.
+          4. Set Status to `In progress`.
+          5. Add the machine account as assignee and add `agent:local` when missing.
+          6. For fresh work, post a claim comment containing the worker name, intended `agent/issue-N` branch, timestamp,
+             and Scheduled run link when available. For a continuation, post a continuation-claim comment containing the
+             existing branch, pull request, current head SHA, timestamp, and feedback scope.
+          7. If any claim mutation fails, undo mutations that succeeded and stop without editing code.
+          ''')
+          if old_claim_sequence not in worker:
+              raise SystemExit('claim sequence block not found')
+          worker = worker.replace(old_claim_sequence, new_claim_sequence, 1)
+
+          old_prompt = dedent('''\
+          Run one Sniffy local-worker cycle in the selected WSL project and its dedicated worktree.
+
+          Use organization project 2 (https://github.com/orgs/sniffy/projects/2) owned by sniffy as the book of work. Select at most one Issue from
+          sniffy/sniffy whose Status is "Ready for agent". Prefer the highest project Priority, then the oldest issue number. If
+          there is no eligible issue, report a no-op and change nothing.
+
+          Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and comments, linked pull requests, and the
+          current remote develop branch. Confirm that the issue satisfies Definition of Ready and that there is no existing local
+          claim or implementation PR. If it is not ready, do not claim it; report the exact missing decision or acceptance proof.
+
+          Claim it by changing project Status to "In progress", assigning the dedicated worker account, adding
+          "agent:local", and posting a comment with the worker name, timestamp, and intended agent/issue-N branch. If any claim
+          mutation fails, roll back mutations already made and stop before editing code.
+
+          After a successful claim, follow AGENTS.md and the issue as the source of truth. Create or reuse agent/issue-N from the
+          latest origin/develop without force-pushing. Implement the issue end to end, add or update tests and documentation, run
+          all applicable focused checks as separately reported commands, inspect the final diff, commit, push, and create or
+          update the pull request. Do not merge or enable auto-merge.
+
+          Verify the remote branch, full head SHA, PR URL, base/head branches, and PR head SHA. Move project Status to "Review"
+          only after publication is verified. If a genuine blocker remains, set Status to "Blocked" and post the exact
+          blocker and smallest required decision. Never claim or implement more than one issue in this run.
+          ''')
+          new_prompt = dedent('''\
+          Run one Sniffy local-worker cycle in the selected WSL project and its dedicated worktree.
+
+          Use organization project 2 (https://github.com/orgs/sniffy/projects/2) owned by sniffy as the book of work. Select at
+          most one Issue from sniffy/sniffy whose Status is "Ready for agent" and Executor is "Local Codex". Prefer an
+          explicitly re-queued continuation that already has an open local-worker pull request and actionable maintainer
+          feedback, then prefer the highest project Priority and oldest issue number. If there is no eligible issue, report a
+          no-op and change nothing.
+
+          Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and all comments, project fields, linked
+          pull requests, review submissions and threads, current CI, and the current remote develop branch. Confirm that the
+          issue satisfies Definition of Ready and classify it as either fresh work or a continuation.
+
+          Fresh work has no active local claim and no implementation pull request. A continuation is eligible when the issue was
+          deliberately returned to "Ready for agent", an existing local-worker branch and open implementation PR are present,
+          and maintainer feedback or required failed checks call for more implementation. For a continuation, historical claim
+          comments and the open PR are required context, not reasons for a guarded no-op. Do not continue a PR owned by another
+          executor or a branch the worker cannot update; report that exact blocker instead.
+
+          Claim the item by changing project Status to "In progress", assigning the dedicated worker account when missing,
+          adding "agent:local" when missing, and posting a claim comment. For fresh work, record the intended agent/issue-N
+          branch. For a continuation, record "Claimed continuation", the existing branch, PR number, current head SHA,
+          timestamp, and feedback scope. If any claim mutation fails, roll back mutations already made and stop before editing
+          code.
+
+          After a successful fresh claim, create agent/issue-N from the latest origin/develop without force-pushing. After a
+          successful continuation claim, fetch and check out the exact existing PR head branch. Do not reset it to develop,
+          rebase or rewrite its published history, create a replacement branch, or open a separate PR. Verify that local HEAD,
+          the remote branch, and the existing PR head agree before editing. Address all actionable review feedback and relevant
+          failing checks on that PR, preserving unrelated work already on the branch.
+
+          Follow AGENTS.md and the issue as the source of truth. Implement the fresh task or continuation fixes end to end, add
+          or update tests and documentation, run all applicable focused checks as separately reported commands, inspect the
+          final diff, commit, push, and create or update the pull request. Do not merge or enable auto-merge.
+
+          Verify the remote branch, full head SHA, PR URL, base/head branches, and PR head SHA. Move project Status to "Review"
+          only after publication is verified and the requested continuation proof is satisfied; when the maintainer explicitly
+          requires green remote CI, verify that CI before moving to Review. If a genuine blocker remains, set Status to
+          "Blocked" and post the exact blocker and smallest required decision. Never claim or implement more than one issue in
+          this run.
+          ''')
+          if old_prompt not in worker:
+              raise SystemExit('scheduled task prompt block not found')
+          worker = worker.replace(old_prompt, new_prompt, 1)
+          worker_path.write_text(worker)
+
+          expression = '$' + '{{'
+
+          project_status = dedent('''\
+          name: Update project status
+
+          on:
+            issue_comment:
+              types: [created]
+
+          permissions:
+            contents: read
+            issues: write
+
+          concurrency:
+            group: project-status-@@ github.repository }}-@@ github.event.issue.number }}
+            cancel-in-progress: false
+
+          jobs:
+            update-status:
+              if: >-
+                github.event.issue.pull_request == null &&
+                (
+                  github.event.comment.user.login == 'bedrin' ||
+                  (
+                    vars.PRODUCT_MANAGER_LOGIN != '' &&
+                    github.event.comment.user.login == vars.PRODUCT_MANAGER_LOGIN
+                  )
+                ) &&
+                startsWith(github.event.comment.body, '/project-status ')
+              runs-on: ubuntu-latest
+
+              steps:
+                - name: Update Sniffy Product & Delivery status
+                  uses: actions/github-script@v9
+                  with:
+                    github-token: @@ secrets.PROJECT_TOKEN }}
+                    script: |
+                      const organization = 'sniffy';
+                      const projectNumber = 2;
+                      const commandPrefix = '/project-status ';
+                      const requestedStatus = context.payload.comment.body
+                        .slice(commandPrefix.length)
+                        .trim();
+
+                      const allowedStatuses = [
+                        'Draft',
+                        'Analyzing',
+                        'Needs Dmitry',
+                        'Ready for implementation',
+                        'Ready for agent',
+                        'In progress',
+                        'Review',
+                        'Ready to merge',
+                        'Blocked',
+                        'Done'
+                      ];
+
+                      if (!allowedStatuses.includes(requestedStatus)) {
+                        core.setFailed(
+                          `Unknown status "${requestedStatus}". Allowed values: ${allowedStatuses.join(', ')}`
+                        );
+                        return;
+                      }
+
+                      const issueNodeId = context.payload.issue.node_id;
+
+                      const result = await github.graphql(
+                        `query($organization: String!, $projectNumber: Int!, $issueNodeId: ID!) {
+                          organization(login: $organization) {
+                            projectV2(number: $projectNumber) {
+                              id
+                              field(name: "Status") {
+                                ... on ProjectV2SingleSelectField {
+                                  id
+                                  options {
+                                    id
+                                    name
+                                  }
+                                }
+                              }
+                            }
+                          }
+                          node(id: $issueNodeId) {
+                            ... on Issue {
+                              projectItems(first: 50) {
+                                nodes {
+                                  id
+                                  project {
+                                    id
+                                    number
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }`,
+                        { organization, projectNumber, issueNodeId }
+                      );
+
+                      const project = result.organization?.projectV2;
+                      if (!project) {
+                        core.setFailed(`Project ${organization}/${projectNumber} was not found or is not accessible.`);
+                        return;
+                      }
+
+                      const statusField = project.field;
+                      if (!statusField) {
+                        core.setFailed('The project does not contain a single-select field named Status.');
+                        return;
+                      }
+
+                      const statusOption = statusField.options.find(option => option.name === requestedStatus);
+                      if (!statusOption) {
+                        core.setFailed(`Status option "${requestedStatus}" does not exist in the project.`);
+                        return;
+                      }
+
+                      const projectItem = result.node?.projectItems?.nodes.find(
+                        item => item.project?.id === project.id
+                      );
+                      if (!projectItem) {
+                        core.setFailed('This issue is not present in Sniffy Product & Delivery.');
+                        return;
+                      }
+
+                      await github.graphql(
+                        `mutation(
+                          $projectId: ID!,
+                          $itemId: ID!,
+                          $fieldId: ID!,
+                          $optionId: String!
+                        ) {
+                          updateProjectV2ItemFieldValue(
+                            input: {
+                              projectId: $projectId,
+                              itemId: $itemId,
+                              fieldId: $fieldId,
+                              value: { singleSelectOptionId: $optionId }
+                            }
+                          ) {
+                            projectV2Item { id }
+                          }
+                        }`,
+                        {
+                          projectId: project.id,
+                          itemId: projectItem.id,
+                          fieldId: statusField.id,
+                          optionId: statusOption.id
+                        }
+                      );
+
+                      core.notice(`Updated project status to "${requestedStatus}".`);
+
+                - name: Acknowledge the command and preserve the audit trail
+                  if: @@ success() }}
+                  uses: actions/github-script@v9
+                  with:
+                    github-token: @@ github.token }}
+                    script: |
+                      try {
+                        await github.rest.reactions.createForIssueComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          comment_id: context.payload.comment.id,
+                          content: '+1'
+                        });
+                      } catch (error) {
+                        core.warning(`Status was updated, but the command could not be acknowledged: ${error.message}`);
+                      }
+          ''').replace('@@', expression)
+
+          project_field = dedent('''\
+          name: Update project field
+
+          on:
+            issue_comment:
+              types: [created]
+
+          permissions:
+            contents: read
+            issues: write
+
+          concurrency:
+            group: project-field-@@ github.repository }}-@@ github.event.issue.number }}
+            cancel-in-progress: false
+
+          jobs:
+            update-field:
+              if: >-
+                github.event.issue.pull_request == null &&
+                (
+                  github.event.comment.user.login == 'bedrin' ||
+                  (
+                    vars.PRODUCT_MANAGER_LOGIN != '' &&
+                    github.event.comment.user.login == vars.PRODUCT_MANAGER_LOGIN
+                  )
+                ) &&
+                startsWith(github.event.comment.body, '/project-field ')
+              runs-on: ubuntu-latest
+
+              steps:
+                - name: Update Sniffy Product & Delivery field
+                  uses: actions/github-script@v9
+                  with:
+                    github-token: @@ secrets.PROJECT_TOKEN }}
+                    script: |
+                      const organization = 'sniffy';
+                      const projectNumber = 2;
+                      const prefix = '/project-field ';
+                      const command = context.payload.comment.body.slice(prefix.length).trim();
+                      const separator = command.indexOf('=');
+                      if (separator < 1) {
+                        core.setFailed('Expected /project-field Field name=Value');
+                        return;
+                      }
+
+                      const requestedField = command.slice(0, separator).trim();
+                      const requestedValue = command.slice(separator + 1).trim();
+                      if (!requestedValue) {
+                        core.setFailed('The project field value must not be empty.');
+                        return;
+                      }
+
+                      const issueNodeId = context.payload.issue.node_id;
+                      const result = await github.graphql(
+                        `query($organization: String!, $projectNumber: Int!, $issueNodeId: ID!) {
+                          organization(login: $organization) {
+                            projectV2(number: $projectNumber) {
+                              id
+                              fields(first: 100) {
+                                nodes {
+                                  __typename
+                                  ... on ProjectV2Field { id name dataType }
+                                  ... on ProjectV2SingleSelectField {
+                                    id
+                                    name
+                                    options { id name }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                          node(id: $issueNodeId) {
+                            ... on Issue {
+                              projectItems(first: 50) {
+                                nodes {
+                                  id
+                                  project { id number }
+                                }
+                              }
+                            }
+                          }
+                        }`,
+                        { organization, projectNumber, issueNodeId }
+                      );
+
+                      const project = result.organization?.projectV2;
+                      if (!project) {
+                        core.setFailed(`Project ${organization}/${projectNumber} was not found or is not accessible.`);
+                        return;
+                      }
+
+                      const field = project.fields.nodes.find(candidate => candidate.name === requestedField);
+                      if (!field) {
+                        core.setFailed(`Project field "${requestedField}" was not found.`);
+                        return;
+                      }
+
+                      const projectItem = result.node?.projectItems?.nodes.find(
+                        item => item.project?.id === project.id
+                      );
+                      if (!projectItem) {
+                        core.setFailed('This issue is not present in Sniffy Product & Delivery.');
+                        return;
+                      }
+
+                      if (field.__typename === 'ProjectV2SingleSelectField') {
+                        const option = field.options.find(candidate => candidate.name === requestedValue);
+                        if (!option) {
+                          core.setFailed(
+                            `Option "${requestedValue}" does not exist for ${requestedField}. ` +
+                            `Allowed values: ${field.options.map(candidate => candidate.name).join(', ')}`
+                          );
+                          return;
+                        }
+
+                        await github.graphql(
+                          `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                            updateProjectV2ItemFieldValue(input: {
+                              projectId: $projectId,
+                              itemId: $itemId,
+                              fieldId: $fieldId,
+                              value: { singleSelectOptionId: $optionId }
+                            }) { projectV2Item { id } }
+                          }`,
+                          {
+                            projectId: project.id,
+                            itemId: projectItem.id,
+                            fieldId: field.id,
+                            optionId: option.id
+                          }
+                        );
+                      } else if (field.__typename === 'ProjectV2Field' && field.dataType === 'TEXT') {
+                        await github.graphql(
+                          `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $text: String!) {
+                            updateProjectV2ItemFieldValue(input: {
+                              projectId: $projectId,
+                              itemId: $itemId,
+                              fieldId: $fieldId,
+                              value: { text: $text }
+                            }) { projectV2Item { id } }
+                          }`,
+                          {
+                            projectId: project.id,
+                            itemId: projectItem.id,
+                            fieldId: field.id,
+                            text: requestedValue
+                          }
+                        );
+                      } else {
+                        core.setFailed(
+                          `Field "${requestedField}" has unsupported type ${field.__typename}/${field.dataType || 'unknown'}.`
+                        );
+                        return;
+                      }
+
+                      core.notice(`Updated ${requestedField} to "${requestedValue}".`);
+
+                - name: Remove the service command comment
+                  if: @@ success() }}
+                  uses: actions/github-script@v9
+                  with:
+                    github-token: @@ github.token }}
+                    script: |
+                      try {
+                        await github.rest.issues.deleteComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          comment_id: context.payload.comment.id
+                        });
+                      } catch (error) {
+                        core.warning(`Field was updated, but the command comment could not be removed: ${error.message}`);
+                      }
+          ''').replace('@@', expression)
+
+          Path('.github/workflows/project-status.yml').write_text(project_status)
+          Path('.github/workflows/project-field.yml').write_text(project_field)
+          PY
+
+          rm .github/workflows/bootstrap-local-worker-continuations.yml
+          git diff --check
+      - name: Commit and publish prepared changes
+        shell: bash
+        run: |
+          git config user.name 'Sniffy automation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/local-codex-worker.md .github/workflows/project-status.yml .github/workflows/project-field.yml
+          git rm .github/workflows/bootstrap-local-worker-continuations.yml
+          git commit -m 'Support local worker continuation tasks'
+          git push origin HEAD:agent/local-worker-continuations
