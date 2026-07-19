@@ -17,10 +17,11 @@ env:
 jobs:
   frontend:
     name: Frontend
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     env:
       HOME: /root
       PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
+      DOCKER_CONFIG: /tmp/.docker
     container:
       image: node:24-bookworm-slim@sha256:cb4e8f7c443347358b7875e717c29e27bf9befc8f5a26cf18af3c3dec80e58c5
     timeout-minutes: 30
@@ -42,8 +43,23 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Unit and Storybook interaction tests
-        run: npm run test
+      - name: Unit and Storybook interaction tests with coverage
+        run: npm run test:coverage
+      - name: Install Codecov uploader dependencies
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends --yes ca-certificates curl git gnupg
+          rm -rf /var/lib/apt/lists/*
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./sniffy-ui/coverage/lcov.info
+          flags: frontend
+          disable_search: true
+          fail_ci_if_error: true
+          version: v11.3.1
+          name: frontend
       - name: Build Storybook
         run: npm run storybook:build
       - name: Build production assets
@@ -135,6 +151,7 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
   arch-matrix:
     runs-on: ubuntu-26.04
     timeout-minutes: 90
@@ -235,6 +252,7 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
   test-matrix:
     needs:
       - smoke-test
@@ -312,6 +330,7 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
   analyze:
     needs:
       - smoke-test

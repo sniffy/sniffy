@@ -2,6 +2,7 @@ node_modules/
 .docusaurus/
 build/
 dist/
+coverage/
 storybook-static/
 playwright-report/
 test-results/
