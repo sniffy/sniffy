@@ -618,16 +618,21 @@ test('keeps collapsed and open geometry independent of host root font size', asy
   const measure = async (url: string) => {
     await page.goto(url);
     const profiler = page.locator('sniffy-profiler');
-    const collapsed = await profiler.locator('.sniffy-widget').boundingBox();
+    const widget = profiler.locator('.sniffy-widget');
+    const collapsed = await widget.boundingBox();
+    const borderRadius = await widget.evaluate(
+      (element) => getComputedStyle(element).borderTopLeftRadius,
+    );
     await profiler.getByRole('button', { name: 'Toggle Sniffy profiler' }).click();
     const panel = await profiler.locator('.sniffy-panel').boundingBox();
     expect(collapsed).not.toBeNull();
     expect(panel).not.toBeNull();
-    return { collapsed: collapsed!, panel: panel! };
+    return { collapsed: collapsed!, panel: panel!, borderRadius };
   };
   const normal = await measure('/mock/mock.html');
   for (const rootFontSize of [10, 16, 32, 48]) {
     const hostile = await measure(`/mock/hostile/root-${rootFontSize}/page`);
+    expect(hostile.borderRadius).toBe(normal.borderRadius);
     for (const key of ['width', 'height'] as const) {
       expect(Math.abs(hostile.collapsed[key] - normal.collapsed[key])).toBeLessThanOrEqual(1);
       expect(Math.abs(hostile.panel[key] - normal.panel[key])).toBeLessThanOrEqual(1);
