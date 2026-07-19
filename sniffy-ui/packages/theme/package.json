@@ -6,6 +6,7 @@
   "exports": {
     "./base.css": "./src/base.css",
     "./dark.css": "./src/dark.css",
+    "./light.css": "./src/light.css",
     "./tokens.css": "./src/tokens.css",
     "./tailwind.css": "./src/tailwind.css"
   }
