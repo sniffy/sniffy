@@ -44,6 +44,11 @@ jobs:
         run: npm run typecheck
       - name: Unit and Storybook interaction tests with coverage
         run: npm run test:coverage
+      - name: Install Codecov uploader dependencies
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends --yes curl git gnupg
+          rm -rf /var/lib/apt/lists/*
       - name: Upload frontend coverage
         uses: codecov/codecov-action@v7
         with:
