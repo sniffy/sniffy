@@ -1,3 +1,4 @@
+// tag::TestNgUsage[]
 package io.sniffy.test.testng.usage;
 
 import io.sniffy.socket.DisableSockets;
@@ -39,3 +40,4 @@ public class UsageTestNg {
     }
 
 }
+// end::TestNgUsage[]

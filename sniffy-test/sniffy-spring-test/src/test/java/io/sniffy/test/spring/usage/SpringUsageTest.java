@@ -1,3 +1,4 @@
+// tag::SpringUsage[]
 package io.sniffy.test.spring.usage;
 
 import io.sniffy.socket.DisableSockets;
@@ -46,3 +47,4 @@ public class SpringUsageTest {
     }
 
 }
+// end::SpringUsage[]

@@ -1,0 +1,152 @@
+---
+title: Installation
+sidebar_position: 2
+---
+
+Sniffy comes with an uber-jar which doesn't require any additional dependencies to be installed.
+Just grab the `sniffy-@sniffy.version@.jar` from our [releases page](https://github.com/sniffy/sniffy/releases/latest) and add it to the classpath of your application.
+
+> **Note:** The Sniffy 4.x aggregate jar remains Java 8 and Javax Servlet compatible. Jakarta Servlet applications should
+> use the modular artifacts below instead.
+
+> **Warning:** If you're using an application server like Tomcat and you're defining a datasource on application server level, `sniffy-@sniffy.version@.jar` should be added to the common classloader classpath and should be _absent_ in web application classpath.
+
+## Non-Servlet applications
+
+Standalone sniffy uber-jar also works with non-Servlet applications (Currently only fault tolerance testing and TCP delay are supported in this mode).
+Just add following parameter to your java application command line:
+`-javaagent:sniffy-@sniffy.version@.jar=5559`
+
+Here `5559` is the port where connectivity controls are available - just point your browser to 5559 port on your host (Say http://localhost:5559 ).
+Below is an example of connections discovered in IntelliJ Idea:
+
+![agent-ui](/img/docs/agent-ui.png)
+
+Advanced syntax takes comma separated parameters: `-javaagent:sniffy-@sniffy.version@.jar=sniffyPort=5559,monitorNio=true`
+
+## Spring Boot Integration
+
+Choose the integration artifact which matches the Servlet namespace used by your Spring generation.
+
+| Artifact              | Servlet namespace        | Spring line                                  | Java baseline |
+| --------------------- | ------------------------ | -------------------------------------------- | ------------- |
+| `sniffy-spring`       | Jakarta Servlet 6.1      | Spring Framework 7.0.8 / Spring Boot 4.1.0   | Java 17       |
+| `sniffy-spring-javax` | Javax Servlet 3.1 or 4.0 | Spring Framework 5.3.39 / Spring Boot 2.7.18 | Java 8        |
+
+For a Jakarta Spring Boot application use:
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-spring</artifactId>
+    <version>@sniffy.version@</version>
+</dependency>
+```
+
+```groovy
+dependencies {
+    implementation 'io.sniffy:sniffy-spring:@sniffy.version@'
+}
+```
+
+For a Java 8 / Spring Boot 2.7 application use:
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-spring-javax</artifactId>
+    <version>@sniffy.version@</version>
+</dependency>
+```
+
+Do not put both namespace variants on one application classpath.
+
+## Servlet Filter Integration
+
+`sniffy-web` is compiled against Jakarta Servlet 5.0 and is part of the Java 8 reactor. Its focused tests run on
+Java 8, and the same artifact is exercised against each supported Jakarta container line:
+
+| Artifact           | Java used by the verification | Servlet/container line               | What the integration test verifies                                                                           |
+| ------------------ | ----------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `sniffy-web-javax` | Java 8                        | Tomcat 9.0.120 / Javax Servlet 4.0   | The legacy Javax filter loads, intercepts a request, and injects the Sniffy response metadata and widget.    |
+| `sniffy-web`       | Java 8                        | Tomcat 10.0.27 / Jakarta Servlet 5.0 | The Servlet 5 artifact runs on its minimum Java baseline and performs the same real filter request contract. |
+| `sniffy-web`       | Java 17+                      | Tomcat 10.1.57 / Jakarta Servlet 6.0 | The Servlet 5-compiled artifact remains runtime-compatible with the current Tomcat 10.1 line.                |
+| `sniffy-web`       | Java 17+                      | Tomcat 11.0.24 / Jakarta Servlet 6.1 | The Servlet 5-compiled artifact remains runtime-compatible with the current Servlet 6.1 container line.      |
+
+For a Jakarta Servlet 5.0+ application without Spring use:
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-web</artifactId>
+    <version>@sniffy.version@</version>
+</dependency>
+```
+
+For a Java 8 / Javax Servlet application use:
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-web-javax</artifactId>
+    <version>@sniffy.version@</version>
+</dependency>
+```
+
+Both artifacts register `io.sniffy.servlet.SniffyFilter` using the same `web.xml` or programmatic configuration;
+only the Servlet types in method signatures differ. See [Servlet filter setup](/docs/setup/filter/) for the complete filter mapping.
+
+## Sniffy Test
+
+Sniffy artifacts for unit test frameworks are distributed via Maven Central repository and can be downloaded using your favorite package manager.
+
+### JUnit
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-junit</artifactId>
+    <version>@sniffy.version@</version>
+    <scope>test</scope>
+</dependency>
+```
+
+```groovy
+dependencies {
+    testCompile 'io.sniffy:sniffy-junit:@sniffy.version@'
+}
+```
+
+### Spring Test
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-spring-test</artifactId>
+    <version>@sniffy.version@</version>
+    <scope>test</scope>
+</dependency>
+```
+
+```groovy
+dependencies {
+    testCompile 'io.sniffy:sniffy-spring-test:@sniffy.version@'
+}
+```
+
+### TestNG
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-testng</artifactId>
+    <version>@sniffy.version@</version>
+    <scope>test</scope>
+</dependency>
+```
+
+```groovy
+dependencies {
+    testCompile 'io.sniffy:sniffy-testng:@sniffy.version@'
+}
+```

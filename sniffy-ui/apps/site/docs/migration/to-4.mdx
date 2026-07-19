@@ -1,0 +1,27 @@
+---
+title: Migration to Sniffy 4.0
+sidebar_position: 1
+---
+
+Sniffy 4.0 separates the Javax and Jakarta Servlet ecosystems. This avoids mixing incompatible copies of the Servlet
+API and lets each Spring generation use its native namespace without source generation or bytecode rewriting.
+
+| Use case                             | Artifact              | Supported ecosystem                                                    | Minimum Java                                                                          |
+| ------------------------------------ | --------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Servlet filter on a modern container | `sniffy-web`          | Jakarta Servlet 5.0+; tested with Tomcat 10.0.27, 10.1.57, and 11.0.24 | Java 8 for the artifact and Tomcat 10.0; Java 17+ verification for Tomcat 10.1 and 11 |
+| Servlet filter on a legacy container | `sniffy-web-javax`    | Javax Servlet 3.1/4.0; tested with Tomcat 9.0.120                      | Java 8                                                                                |
+| Modern Spring integration            | `sniffy-spring`       | Spring Framework 7.0.8, Spring Boot 4.1.0, Jakarta Servlet 6.1         | Java 17                                                                               |
+| Legacy Spring integration            | `sniffy-spring-javax` | Spring Framework 5.3.39, Spring Boot 2.7.18, Javax Servlet             | Java 8                                                                                |
+
+Existing Javax Servlet users must change `sniffy-web` to `sniffy-web-javax`. Existing Spring Boot 2 users who use
+`@EnableSniffy` must use `sniffy-spring-javax`; it transitively supplies the matching web integration. For a Jakarta
+application use `sniffy-web`, or `sniffy-spring` when `@EnableSniffy` and automatic datasource wrapping are needed.
+
+The public filter and Spring annotation class names are unchanged. Configuration keys, URL endpoints, headers, and
+widget behavior are also unchanged. Only Maven/Gradle coordinates need to change for legacy applications.
+
+The `sniffy` aggregate jar remains a Java 8 and Javax-compatible convenience artifact. Applications using Jakarta
+Servlet must use the modular Jakarta artifacts instead of the aggregate jar.
+
+Never install both `sniffy-web` and `sniffy-web-javax`, or both Spring variants, in the same application. Their public
+classes intentionally have the same names and differ only in their Servlet API types.

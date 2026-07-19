@@ -1,3 +1,4 @@
+// tag::KotestUsage[]
 package io.sniffy.test.kotest.usage
 
 import com.hazelcast.client.HazelcastClient
@@ -92,3 +93,4 @@ class KotestUsageTests : StringSpec({
     }
 
 })
+// end::KotestUsage[]

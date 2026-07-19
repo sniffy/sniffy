@@ -1,3 +1,4 @@
+// tag::SpringSharedConnectionUsage[]
 package io.sniffy.test.spring.usage;
 
 import io.qameta.allure.Feature;
@@ -51,3 +52,4 @@ public class SpringSharedConnectionUsageTest {
     }
 
 }
+// end::SpringSharedConnectionUsage[]
