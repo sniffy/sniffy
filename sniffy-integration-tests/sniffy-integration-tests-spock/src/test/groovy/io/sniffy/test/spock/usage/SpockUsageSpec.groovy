@@ -1,3 +1,4 @@
+// tag::SpockUsage[]
 package io.sniffy.test.spock.usage
 
 import groovy.sql.Sql
@@ -47,3 +48,4 @@ class SpockUsageSpec extends Specification {
     }
 
 }
+// end::SpockUsage[]

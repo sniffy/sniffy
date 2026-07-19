@@ -1,0 +1,60 @@
+---
+title: Spring Test
+sidebar_position: 5
+---
+
+Sniffy comes with a [Spring Framework](http://projects.spring.io/spring-framework/) via `SniffySpringTestListener` spring [@TestExecutionListener](http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#testcontext-tel-config).
+Just add `@TestExecutionListeners(SniffySpringTestListener.class)` to your Spring test class and place appropriate expectations on your test methods like shown below.
+
+<SourceSnippet
+  file="sniffy-test/sniffy-spring-test/src/test/java/io/sniffy/test/spring/usage/SpringUsageTest.java"
+  region="SpringUsage"
+  language="java"
+/>
+1. Integrate Sniffy to your test using `@TestExecutionListeners(SniffySpringTestListener.class)`. 2.
+Now just add `@SqlExpectation` annotation to define number of queries allowed for given method. 3.
+Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer. 4. Do not make
+any changes in your code - just add the `@TestExecutionListeners(SniffySpringTestListener.class)`
+and put annotations on your test method. 5. Add `@DisableSockets` annotation on your test method or
+test class and any attempt to open a network connection will fail 6. All socket operations executed
+within test method annotated with `@DisableSockets` will throw a `java.net.ConnectException`
+
+### @SharedConnection - rolling back all JDBC transactions started within a test
+
+Sniffy provides convenient annotations for shared connection data source in Spring unit tests.
+Consider example below:
+
+<SourceSnippet
+  file="sniffy-test/sniffy-spring-test/src/test/java/io/sniffy/test/spring/usage/SpringSharedConnectionUsageTest.java"
+  region="SpringSharedConnectionUsage"
+  language="java"
+/>
+1. Integrate Sniffy to your test using `@TestExecutionListeners(SniffySpringTestListener.class)`. 2.
+`@EnableSharedConnection` will automatically wrap all your data sources with
+`SharedConnectionDataSource` 3. `@SharedConnection` annotation will make the current connection
+(started because of `@Transactional` annotation before each test) as master 4. Insert two rows into
+table using master connection 5. Another slave connection obtained in another thread will still see
+the results of these inserts although the isolation level is `READ_COMITTED` and master transaction
+has not been committed
+
+### @DisableSocketsGlobally - disabling all network connectivity in a spring application
+
+You can disable all network communications in your spring test (or in fact even in your spring application should you have such a use case) using a dedicated annotation.
+
+```
+@DisableSocketsGloballyConfiguration
+```
+
+This annotation works before the beans of your application are initialized, so it will capture and disable all network connections.
+
+### Troubleshooting
+
+1. Spring test context is no longer loaded when I add `@TestExecutionListeners(SniffySpringTestListener.class)`
+
+The reason is that by default Spring does not merge the test execution listeners.
+Using this configuration you're removing the predefined listeners which initialize the context.
+Change the _mergeMode_ parameter to _MERGE_WITH_DEFAULTS_ as shown below:
+
+```java
+@TestExecutionListeners(value = SniffySpringTestListener.class, mergeMode = MERGE_WITH_DEFAULTS)
+```
