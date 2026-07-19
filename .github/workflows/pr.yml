@@ -42,8 +42,16 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Unit and Storybook interaction tests
-        run: npm run test
+      - name: Unit and Storybook interaction tests with coverage
+        run: npm run test:coverage
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./sniffy-ui/coverage/lcov.info
+          flags: frontend
+          disable_search: true
+          name: frontend
       - name: Build Storybook
         run: npm run storybook:build
       - name: Build production assets
@@ -135,6 +143,7 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
   arch-matrix:
     runs-on: ubuntu-26.04
     timeout-minutes: 90
@@ -235,6 +244,7 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
   test-matrix:
     needs:
       - smoke-test
@@ -312,6 +322,7 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
   analyze:
     needs:
       - smoke-test

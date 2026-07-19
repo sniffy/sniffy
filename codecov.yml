@@ -1,0 +1,36 @@
+coverage:
+  status:
+    project:
+      default: off
+      backend:
+        target: auto
+        threshold: 1%
+        if_not_found: failure
+        flags:
+          - backend
+      frontend:
+        target: auto
+        threshold: 1%
+        if_not_found: failure
+        flags:
+          - frontend
+    patch:
+      default: off
+      backend:
+        target: auto
+        threshold: 1%
+        if_not_found: failure
+        flags:
+          - backend
+      frontend:
+        target: auto
+        threshold: 1%
+        if_not_found: failure
+        flags:
+          - frontend
+
+flags:
+  backend:
+    carryforward: false
+  frontend:
+    carryforward: false

@@ -10,6 +10,24 @@ const workspace = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [react()],
   test: {
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: [
+        'apps/*/src/**/*.{ts,tsx}',
+        'packages/*/src/**/*.{ts,tsx}',
+        'scripts/**/*.{ts,tsx}',
+      ],
+      exclude: [
+        '**/*.d.ts',
+        '**/*.stories.{ts,tsx}',
+        '**/*.test.{ts,tsx}',
+        '**/__fixtures__/**',
+        'packages/fixtures/**',
+        'tests/**',
+      ],
+    },
     projects: [
       {
         extends: true,
@@ -23,7 +41,6 @@ export default defineConfig({
             'packages/**/*.test.{ts,tsx}',
             'scripts/**/*.test.ts',
           ],
-          coverage: { reporter: ['text', 'html'] },
         },
       },
       {
