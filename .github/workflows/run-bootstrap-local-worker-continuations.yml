@@ -6,7 +6,7 @@ on:
       - develop
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   prepare:
@@ -35,15 +35,12 @@ jobs:
           Path('/tmp/apply-local-worker-continuations.sh').write_text(script)
           PY
           bash /tmp/apply-local-worker-continuations.sh
-          rm -f .github/workflows/bootstrap-local-worker-continuations.yml
-          rm -f .github/workflows/run-bootstrap-local-worker-continuations.yml
-          git diff --check
-      - name: Upload prepared files
-        uses: actions/upload-artifact@v7
-        with:
-          name: local-worker-continuation-prepared-files
-          path: |
-            docs/local-codex-worker.md
-            .github/workflows/project-status.yml
-            .github/workflows/project-field.yml
-          if-no-files-found: error
+          git diff --check -- docs/local-codex-worker.md
+      - name: Commit and publish the worker prompt
+        shell: bash
+        run: |
+          git config user.name 'Sniffy automation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/local-codex-worker.md
+          git commit -m 'Teach local worker to resume pull requests'
+          git push origin HEAD:agent/local-worker-continuations
