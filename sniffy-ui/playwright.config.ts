@@ -16,12 +16,20 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://127.0.0.1:3000/mock/mock.html',
-    reuseExistingServer: false,
-    timeout: 30_000,
-  },
+  webServer: [
+    {
+      command: 'npm run dev',
+      url: 'http://127.0.0.1:3000/mock/mock.html',
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+    {
+      command: 'npm run storybook -- --ci --host 127.0.0.1',
+      url: 'http://127.0.0.1:6006/iframe.html',
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+  ],
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] }, grepInvert: /@visual/ },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] }, grepInvert: /@visual/ },

@@ -70,13 +70,17 @@ describe('@sniffy/site workspace contract', () => {
 
     expect(styles).toContain("@import '@sniffy/theme/base.css';");
     expect(styles).toContain("@import '@sniffy/theme/dark.css';");
+    expect(styles).toContain("@import '@sniffy/theme/light.css';");
     expect(styles).toContain('--ifm-color-primary: var(--sniffy-accent);');
     expect(styles).not.toMatch(/#[\da-f]{3,8}\b/i);
   });
 
-  it('enables current docs while leaving future routes disabled', () => {
+  it('enables both shared themes and current docs while leaving future routes disabled', () => {
     const config = readFileSync(resolve(site, 'docusaurus.config.ts'), 'utf8');
 
+    expect(config).toContain("defaultMode: 'dark'");
+    expect(config).toContain('disableSwitch: false');
+    expect(config).toContain('respectPrefersColorScheme: true');
     expect(config).toContain("routeBasePath: 'docs'");
     expect(config).toContain("lastVersion: 'current'");
     expect(config).toContain('blog: false');

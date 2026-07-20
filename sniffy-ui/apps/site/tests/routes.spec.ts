@@ -20,6 +20,44 @@ test('the current documentation renders at /docs/', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Sniffy documentation' })).toBeVisible();
 });
 
+test('the site follows light preference and allows an explicit dark selection', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  const response = await page.goto('/');
+
+  expect(response?.status()).toBe(200);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect
+    .poll(() =>
+      page
+        .locator('html')
+        .evaluate((element) =>
+          getComputedStyle(element).getPropertyValue('--sniffy-canvas').trim(),
+        ),
+    )
+    .toBe('#f7f9fc');
+
+  const toggle = page.getByRole('button', {
+    name: 'Switch between dark and light mode (currently system mode)',
+  });
+  await toggle.click();
+  const lightToggle = page.getByRole('button', {
+    name: 'Switch between dark and light mode (currently light mode)',
+  });
+  await lightToggle.click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect
+    .poll(() =>
+      page
+        .locator('html')
+        .evaluate((element) =>
+          getComputedStyle(element).getPropertyValue('--sniffy-canvas').trim(),
+        ),
+    )
+    .toBe('#090e17');
+});
+
 for (const [route, heading] of [
   ['/docs/installation/', 'Installation'],
   ['/docs/setup/filter/', 'Servlet filter'],

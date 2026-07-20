@@ -1,0 +1,22 @@
+.sniffy-theme-light,
+[data-theme='light'],
+:host(.sniffy-theme-light) {
+  color-scheme: light;
+  --sniffy-canvas: #f7f9fc;
+  --sniffy-surface: #ffffff;
+  --sniffy-surface-raised: #eef2f7;
+  --sniffy-surface-hover: #e4ebf3;
+  --sniffy-foreground: #172033;
+  --sniffy-foreground-muted: #52657d;
+  --sniffy-border: #7a8ba3;
+  --sniffy-focus: #005ea8;
+  --sniffy-accent: #005ea8;
+  --sniffy-accent-foreground: #ffffff;
+  --sniffy-success: #18794e;
+  --sniffy-warning: #8a4b00;
+  --sniffy-danger: #b4233a;
+  --sniffy-info: #005ea8;
+  --sniffy-sql: #6b3fa0;
+  --sniffy-network: #006b68;
+  --sniffy-exception: #b4233a;
+}

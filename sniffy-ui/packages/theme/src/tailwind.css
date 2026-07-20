@@ -1,4 +1,4 @@
-@theme {
+@theme inline {
   --color-canvas: var(--sniffy-canvas);
   --color-surface: var(--sniffy-surface);
   --color-surface-raised: var(--sniffy-surface-raised);

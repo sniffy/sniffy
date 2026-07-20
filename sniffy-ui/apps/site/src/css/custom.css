@@ -1,12 +1,12 @@
 @import '@sniffy/theme/base.css';
 @import '@sniffy/theme/dark.css';
+@import '@sniffy/theme/light.css';
 
 /*
  * Infima-to-Sniffy adapter. Product colors remain owned by @sniffy/theme;
  * Docusaurus variations are derived from its semantic tokens.
  */
 :root {
-  color-scheme: dark;
   --ifm-font-family-base: var(--sniffy-font-sans);
   --ifm-font-family-monospace: var(--sniffy-font-mono);
   --ifm-background-color: var(--sniffy-canvas);

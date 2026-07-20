@@ -1,6 +1,9 @@
 :root,
 :host,
-.sniffy-theme {
+.sniffy-theme,
+.sniffy-theme-dark,
+[data-theme='dark'],
+:host(.sniffy-theme-dark) {
   color-scheme: dark;
   --sniffy-canvas: #090e17;
   --sniffy-surface: #111927;
