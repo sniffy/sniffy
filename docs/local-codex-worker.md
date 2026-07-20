@@ -590,19 +590,34 @@ VM is disposable and isolated.
 The GitHub Project is the source of truth. An eligible item must:
 
 - be an Issue in `sniffy/sniffy`, not a draft item or pull request;
-- have project Status `Ready for agent`;
+- have project Status `Ready for agent` and Executor `Local Codex`;
 - satisfy the Definition of Ready in `docs/codex-workflow.md`;
-- have no existing active local-worker claim or implementation pull request;
+- be either:
+  - **fresh work** with no active local-worker claim and no implementation pull request; or
+  - an explicitly re-queued **continuation** with an existing local-worker claim, writable branch, and open
+    implementation pull request that has actionable maintainer feedback or failing required checks;
 - not require a product decision or permission absent from the worker token.
+
+For continuation work, `Ready for agent` is an explicit lease renewal. Historical claim comments, the existing
+`agent/issue-N` branch, and the open pull request are required context rather than disqualifiers. An item whose
+Status is still `In progress` or `Review` is not eligible for another Scheduled run, which prevents two worker
+cycles from editing the same branch concurrently.
 
 For one worker, this claim sequence is sufficient:
 
-1. List at most 100 matching items and choose deterministically by project Priority, then oldest issue number.
-2. Re-read the selected issue, comments, linked pull requests, and project fields immediately before claiming.
-3. Set Status to `In progress: local`.
-4. Add the machine account as assignee and add `agent:local`.
-5. Post a claim comment containing the worker name, branch, timestamp, and Scheduled run link when available.
-6. If any claim mutation fails, undo mutations that succeeded and stop without editing code.
+1. List at most 100 matching items. Prefer an explicitly re-queued continuation so review loops close before new
+   work starts, then choose deterministically by project Priority and oldest issue number.
+2. Re-read the selected issue, all comments, project fields, linked pull requests, review threads, and current CI
+   immediately before claiming.
+3. Classify the item as fresh work or a continuation. For a continuation, verify that the existing pull request is
+   open, its head branch is writable by the worker, and the latest maintainer instructions identify actionable
+   fixes or required failed checks.
+4. Set Status to `In progress`.
+5. Add the machine account as assignee and add `agent:local` when missing.
+6. For fresh work, post a claim comment containing the worker name, intended `agent/issue-N` branch, timestamp,
+   and Scheduled run link when available. For a continuation, post a continuation-claim comment containing the
+   existing branch, pull request, current head SHA, timestamp, and feedback scope.
+7. If any claim mutation fails, undo mutations that succeeded and stop without editing code.
 
 Useful discovery commands are:
 
@@ -644,26 +659,43 @@ Replace the project number and test this prompt manually before enabling the sch
 ```text
 Run one Sniffy local-worker cycle in the selected WSL project and its dedicated worktree.
 
-Use organization project 2 (https://github.com/orgs/sniffy/projects/2) owned by sniffy as the book of work. Select at most one Issue from
-sniffy/sniffy whose Status is "Ready for agent". Prefer the highest project Priority, then the oldest issue number. If
-there is no eligible issue, report a no-op and change nothing.
+Use organization project 2 (https://github.com/orgs/sniffy/projects/2) owned by sniffy as the book of work. Select at
+most one Issue from sniffy/sniffy whose Status is "Ready for agent" and Executor is "Local Codex". Prefer an
+explicitly re-queued continuation that already has an open local-worker pull request and actionable maintainer
+feedback, then prefer the highest project Priority and oldest issue number. If there is no eligible issue, report a
+no-op and change nothing.
 
-Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and comments, linked pull requests, and the
-current remote develop branch. Confirm that the issue satisfies Definition of Ready and that there is no existing local
-claim or implementation PR. If it is not ready, do not claim it; report the exact missing decision or acceptance proof.
+Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and all comments, project fields, linked
+pull requests, review submissions and threads, current CI, and the current remote develop branch. Confirm that the
+issue satisfies Definition of Ready and classify it as either fresh work or a continuation.
 
-Claim it by changing project Status to "In progress", assigning the dedicated worker account, adding
-"agent:local", and posting a comment with the worker name, timestamp, and intended agent/issue-N branch. If any claim
-mutation fails, roll back mutations already made and stop before editing code.
+Fresh work has no active local claim and no implementation pull request. A continuation is eligible when the issue was
+deliberately returned to "Ready for agent", an existing local-worker branch and open implementation PR are present,
+and maintainer feedback or required failed checks call for more implementation. For a continuation, historical claim
+comments and the open PR are required context, not reasons for a guarded no-op. Do not continue a PR owned by another
+executor or a branch the worker cannot update; report that exact blocker instead.
 
-After a successful claim, follow AGENTS.md and the issue as the source of truth. Create or reuse agent/issue-N from the
-latest origin/develop without force-pushing. Implement the issue end to end, add or update tests and documentation, run
-all applicable focused checks as separately reported commands, inspect the final diff, commit, push, and create or
-update the pull request. Do not merge or enable auto-merge.
+Claim the item by changing project Status to "In progress", assigning the dedicated worker account when missing,
+adding "agent:local" when missing, and posting a claim comment. For fresh work, record the intended agent/issue-N
+branch. For a continuation, record "Claimed continuation", the existing branch, PR number, current head SHA,
+timestamp, and feedback scope. If any claim mutation fails, roll back mutations already made and stop before editing
+code.
+
+After a successful fresh claim, create agent/issue-N from the latest origin/develop without force-pushing. After a
+successful continuation claim, fetch and check out the exact existing PR head branch. Do not reset it to develop,
+rebase or rewrite its published history, create a replacement branch, or open a separate PR. Verify that local HEAD,
+the remote branch, and the existing PR head agree before editing. Address all actionable review feedback and relevant
+failing checks on that PR, preserving unrelated work already on the branch.
+
+Follow AGENTS.md and the issue as the source of truth. Implement the fresh task or continuation fixes end to end, add
+or update tests and documentation, run all applicable focused checks as separately reported commands, inspect the
+final diff, commit, push, and create or update the pull request. Do not merge or enable auto-merge.
 
 Verify the remote branch, full head SHA, PR URL, base/head branches, and PR head SHA. Move project Status to "Review"
-only after publication is verified. If a genuine blocker remains, set Status to "Blocked" and post the exact
-blocker and smallest required decision. Never claim or implement more than one issue in this run.
+only after publication is verified and the requested continuation proof is satisfied; when the maintainer explicitly
+requires green remote CI, verify that CI before moving to Review. If a genuine blocker remains, set Status to
+"Blocked" and post the exact blocker and smallest required decision. Never claim or implement more than one issue in
+this run.
 ```
 
 The worker performs the issue directly in the Scheduled task. It must not call `.codex/local/run-issue.sh`, because that

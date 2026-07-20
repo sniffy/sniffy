@@ -1,0 +1,171 @@
+name: Update project field
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: project-field-${{ github.repository }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  update-field:
+    if: >-
+      github.event.issue.pull_request == null &&
+      (
+        github.event.comment.user.login == 'bedrin' ||
+        (
+          vars.PRODUCT_MANAGER_LOGIN != '' &&
+          github.event.comment.user.login == vars.PRODUCT_MANAGER_LOGIN
+        )
+      ) &&
+      startsWith(github.event.comment.body, '/project-field ')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Update Sniffy Product & Delivery field
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const organization = 'sniffy';
+            const projectNumber = 2;
+            const prefix = '/project-field ';
+            const command = context.payload.comment.body.slice(prefix.length).trim();
+            const separator = command.indexOf('=');
+            if (separator < 1) {
+              core.setFailed('Expected /project-field Field name=Value');
+              return;
+            }
+
+            const requestedField = command.slice(0, separator).trim();
+            const requestedValue = command.slice(separator + 1).trim();
+            if (!requestedValue) {
+              core.setFailed('The project field value must not be empty.');
+              return;
+            }
+
+            const issueNodeId = context.payload.issue.node_id;
+            const result = await github.graphql(
+              `query($organization: String!, $projectNumber: Int!, $issueNodeId: ID!) {
+                organization(login: $organization) {
+                  projectV2(number: $projectNumber) {
+                    id
+                    fields(first: 100) {
+                      nodes {
+                        __typename
+                        ... on ProjectV2Field { id name dataType }
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options { id name }
+                        }
+                      }
+                    }
+                  }
+                }
+                node(id: $issueNodeId) {
+                  ... on Issue {
+                    projectItems(first: 50) {
+                      nodes {
+                        id
+                        project { id number }
+                      }
+                    }
+                  }
+                }
+              }`,
+              { organization, projectNumber, issueNodeId }
+            );
+
+            const project = result.organization?.projectV2;
+            if (!project) {
+              core.setFailed(`Project ${organization}/${projectNumber} was not found or is not accessible.`);
+              return;
+            }
+
+            const field = project.fields.nodes.find(candidate => candidate.name === requestedField);
+            if (!field) {
+              core.setFailed(`Project field "${requestedField}" was not found.`);
+              return;
+            }
+
+            const projectItem = result.node?.projectItems?.nodes.find(
+              item => item.project?.id === project.id
+            );
+            if (!projectItem) {
+              core.setFailed('This issue is not present in Sniffy Product & Delivery.');
+              return;
+            }
+
+            if (field.__typename === 'ProjectV2SingleSelectField') {
+              const option = field.options.find(candidate => candidate.name === requestedValue);
+              if (!option) {
+                core.setFailed(
+                  `Option "${requestedValue}" does not exist for ${requestedField}. ` +
+                  `Allowed values: ${field.options.map(candidate => candidate.name).join(', ')}`
+                );
+                return;
+              }
+
+              await github.graphql(
+                `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId,
+                    itemId: $itemId,
+                    fieldId: $fieldId,
+                    value: { singleSelectOptionId: $optionId }
+                  }) { projectV2Item { id } }
+                }`,
+                {
+                  projectId: project.id,
+                  itemId: projectItem.id,
+                  fieldId: field.id,
+                  optionId: option.id
+                }
+              );
+            } else if (field.__typename === 'ProjectV2Field' && field.dataType === 'TEXT') {
+              await github.graphql(
+                `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $text: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId,
+                    itemId: $itemId,
+                    fieldId: $fieldId,
+                    value: { text: $text }
+                  }) { projectV2Item { id } }
+                }`,
+                {
+                  projectId: project.id,
+                  itemId: projectItem.id,
+                  fieldId: field.id,
+                  text: requestedValue
+                }
+              );
+            } else {
+              core.setFailed(
+                `Field "${requestedField}" has unsupported type ${field.__typename}/${field.dataType || 'unknown'}.`
+              );
+              return;
+            }
+
+            core.notice(`Updated ${requestedField} to "${requestedValue}".`);
+
+      - name: Remove the service command comment
+        if: ${{ success() }}
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            try {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id
+              });
+            } catch (error) {
+              core.warning(`Field was updated, but the command comment could not be removed: ${error.message}`);
+            }
