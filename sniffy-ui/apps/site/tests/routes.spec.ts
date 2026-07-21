@@ -10,6 +10,9 @@ test('the minimal homepage renders at /', async ({ page }) => {
     'href',
     '/docs/',
   );
+  await page.getByRole('link', { name: 'Open the documentation scaffold' }).click();
+  await expect(page).toHaveURL(/\/docs\/$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Sniffy documentation' })).toBeVisible();
 });
 
 test('the current documentation renders at /docs/', async ({ page }) => {

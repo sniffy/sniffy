@@ -16,6 +16,12 @@ const config: Config = {
   trailingSlash: true,
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'throw',
+      onBrokenMarkdownImages: 'throw',
+    },
+  },
   organizationName: 'sniffy',
   projectName: 'sniffy',
   presets: [

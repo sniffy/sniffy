@@ -1,10 +1,18 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const workspace = resolve(site, '../..');
+const repository = resolve(workspace, '..');
 const readJson = (path: string) => JSON.parse(readFileSync(path, 'utf8')) as Record<string, any>;
+
+function allFiles(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = resolve(directory, entry.name);
+    return entry.isDirectory() ? allFiles(path) : [path];
+  });
+}
 
 describe('@sniffy/site workspace contract', () => {
   it('pins one compatible Docusaurus release across the application', () => {
@@ -78,6 +86,10 @@ describe('@sniffy/site workspace contract', () => {
   it('enables both shared themes and current docs while leaving future routes disabled', () => {
     const config = readFileSync(resolve(site, 'docusaurus.config.ts'), 'utf8');
 
+    expect(config).toContain("onBrokenLinks: 'throw'");
+    expect(config).toContain("onBrokenAnchors: 'throw'");
+    expect(config).toContain("onBrokenMarkdownLinks: 'throw'");
+    expect(config).toContain("onBrokenMarkdownImages: 'throw'");
     expect(config).toContain("defaultMode: 'dark'");
     expect(config).toContain('disableSwitch: false');
     expect(config).toContain('respectPrefersColorScheme: true');
@@ -85,5 +97,77 @@ describe('@sniffy/site workspace contract', () => {
     expect(config).toContain("lastVersion: 'current'");
     expect(config).toContain('blog: false');
     expect(config).not.toMatch(/versioned_(docs|sidebars)/);
+  });
+});
+
+describe('website validation workflow contract', () => {
+  const workflow = readFileSync(resolve(repository, '.github/workflows/website.yml'), 'utf8');
+
+  it('supports manual, develop-push, and path-filtered pull-request validation', () => {
+    expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).toMatch(/push:\n[\s\S]*?branches:\n\s+- develop\n[\s\S]*?paths:/);
+    expect(workflow).toMatch(/pull_request:\n\s+paths:/);
+    expect(workflow).toContain('sniffy-ui/apps/site/**');
+    expect(workflow).toContain('sniffy-ui/packages/theme/**');
+    expect(workflow).not.toMatch(/^\s+- ['"]?\*\*\/\*\.java/m);
+  });
+
+  it('tracks every repository source consumed by a tagged site snippet', () => {
+    const mdx = allFiles(resolve(site, 'docs'))
+      .filter((file) => file.endsWith('.mdx'))
+      .map((file) => readFileSync(file, 'utf8'))
+      .join('\n');
+    const sources = [...mdx.matchAll(/<SourceSnippet\s+file="([^"]+)"/g)].map(([, file]) => file);
+
+    expect(new Set(sources).size).toBeGreaterThan(0);
+    for (const source of new Set(sources)) {
+      expect(workflow).toContain(source);
+    }
+  });
+
+  it('keeps validation read-only, explicit, and independent from release publication', () => {
+    for (const step of [
+      'Install locked dependencies',
+      'Lint website sources',
+      'Check website formatting',
+      'Typecheck frontend workspace',
+      'Test website contracts',
+      'Build website with broken link and image validation',
+      'Test desktop and mobile website navigation',
+      'Upload complete static website',
+    ]) {
+      expect(workflow).toContain(`- name: ${step}`);
+    }
+    const contentsPermission = ['content', 's: read'].join('');
+    expect(workflow).toContain(`permissions:\n  ${contentsPermission}`);
+    expect(workflow).not.toContain('secrets.');
+    expect(workflow).not.toMatch(/\bmvn\b/);
+    expect(workflow).not.toMatch(/npm run (?:build|check:generated|check:bundle)(?:\s|$)/);
+    expect(workflow).not.toMatch(/deploy|pages/i);
+  });
+
+  it('uploads the complete static build while preserving generated-resource checks elsewhere', () => {
+    const pullRequestWorkflow = readFileSync(
+      resolve(repository, '.github/workflows/pr.yml'),
+      'utf8',
+    );
+
+    expect(workflow).toContain('uses: actions/upload-artifact@v7');
+    expect(workflow).toContain('path: sniffy-ui/apps/site/build/');
+    expect(workflow).toContain('if-no-files-found: error');
+    expect(pullRequestWorkflow).toContain('run: npm run build');
+    expect(pullRequestWorkflow).toContain('run: npm run check:generated');
+    expect(pullRequestWorkflow).toContain('run: npm run check:bundle');
+  });
+
+  it('runs the website browser suite at desktop and mobile viewports', () => {
+    const playwright = readFileSync(resolve(site, 'playwright.config.ts'), 'utf8');
+
+    expect(playwright).toContain("name: 'desktop-chromium'");
+    expect(playwright).toContain("devices['Desktop Chrome']");
+    expect(playwright).toContain("testMatch: '**/routes.spec.ts'");
+    expect(playwright).toContain("name: 'mobile-chromium'");
+    expect(playwright).toContain("devices['Pixel 7']");
+    expect(playwright).toContain("testMatch: '**/mobile.spec.ts'");
   });
 });
