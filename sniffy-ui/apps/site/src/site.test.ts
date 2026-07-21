@@ -153,6 +153,9 @@ describe('website validation workflow contract', () => {
     );
 
     expect(workflow).toContain('uses: actions/upload-artifact@v7');
+    expect(workflow).toContain(
+      'name: sniffy-website-${{ github.event.pull_request.head.sha || github.sha }}',
+    );
     expect(workflow).toContain('path: sniffy-ui/apps/site/build/');
     expect(workflow).toContain('if-no-files-found: error');
     expect(pullRequestWorkflow).toContain('run: npm run build');
