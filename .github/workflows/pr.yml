@@ -79,6 +79,80 @@ jobs:
           path: |
             sniffy-ui/playwright-report/
             sniffy-ui/test-results/
+  website:
+    name: Website
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      HOME: /root
+      PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
+    container:
+      image: node:24-bookworm-slim@sha256:cb4e8f7c443347358b7875e717c29e27bf9befc8f5a26cf18af3c3dec80e58c5
+    defaults:
+      run:
+        working-directory: sniffy-ui
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+          cache-dependency-path: sniffy-ui/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint website sources
+        run: npx eslint apps/site packages/theme
+
+      - name: Check website formatting
+        run: >-
+          npx prettier --check
+          ../.github/workflows/pr.yml
+          ../docs/frontend-development.md
+          apps/site
+          packages/theme
+          package.json
+          package-lock.json
+          tsconfig.json
+          tsconfig.base.json
+          vitest.config.ts
+          eslint.config.js
+
+      - name: Typecheck frontend workspace
+        run: npm run typecheck
+
+      - name: Test website contracts
+        run: >-
+          npx vitest run --project unit
+          apps/site/src/site.test.ts
+          apps/site/src/source-snippets.test.ts
+          apps/site/src/product-version.test.ts
+          apps/site/src/documentation.test.ts
+          packages/theme/src/theme.test.ts
+
+      - name: Build website with broken link and image validation
+        run: npm run build:site
+
+      - name: Test desktop and mobile website navigation
+        run: npm test --workspace @sniffy/site
+
+      - name: Upload complete static website
+        uses: actions/upload-artifact@v7
+        with:
+          name: sniffy-website-${{ github.event.pull_request.head.sha || github.sha }}
+          path: sniffy-ui/apps/site/build/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 14
   smoke-test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -105,7 +179,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'temurin'
+          distribution: "temurin"
       - name: Set up Maven
         uses: stCarolas/setup-maven@v5
         with:
@@ -159,7 +233,7 @@ jobs:
       - smoke-test
     strategy:
       matrix:
-        platform: [ linux/arm, linux/arm64, linux/s390x, linux/ppc64le ]
+        platform: [linux/arm, linux/arm64, linux/s390x, linux/ppc64le]
     name: Test with ${{ matrix.platform }} AdoptOpenJDK 11
     steps:
       - uses: actions/checkout@v7
@@ -180,7 +254,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: 11
-          distribution: 'temurin'
+          distribution: "temurin"
       - name: Set up Maven
         uses: stCarolas/setup-maven@v5
         with:
@@ -261,9 +335,9 @@ jobs:
     strategy:
       matrix:
         # test against LTS versions of JDK up to 21:
-#        java: [ 8, 11, 17, 21 ]
-        java: [ 8, 11, 17, 21, 25 ]
-        os: [ ubuntu-26.04, windows-2025, macos-26, macos-26-intel ]
+        #        java: [ 8, 11, 17, 21 ]
+        java: [8, 11, 17, 21, 25]
+        os: [ubuntu-26.04, windows-2025, macos-26, macos-26-intel]
         exclude:
           - java: 8
             os: ubuntu-26.04
@@ -284,7 +358,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'temurin'
+          distribution: "temurin"
       - name: Set up Maven
         uses: stCarolas/setup-maven@v5
         with:
@@ -347,7 +421,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: 17
-          distribution: 'temurin'
+          distribution: "temurin"
       - name: Set up Maven
         uses: stCarolas/setup-maven@v5
         with:

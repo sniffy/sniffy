@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -6,13 +6,6 @@ const site = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const workspace = resolve(site, '../..');
 const repository = resolve(workspace, '..');
 const readJson = (path: string) => JSON.parse(readFileSync(path, 'utf8')) as Record<string, any>;
-
-function allFiles(directory: string): string[] {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = resolve(directory, entry.name);
-    return entry.isDirectory() ? allFiles(path) : [path];
-  });
-}
 
 describe('@sniffy/site workspace contract', () => {
   it('pins one compatible Docusaurus release across the application', () => {
@@ -101,28 +94,15 @@ describe('@sniffy/site workspace contract', () => {
 });
 
 describe('website validation workflow contract', () => {
-  const workflow = readFileSync(resolve(repository, '.github/workflows/website.yml'), 'utf8');
+  const workflow = readFileSync(resolve(repository, '.github/workflows/pr.yml'), 'utf8');
+  const websiteJob = workflow.match(/\n {2}website:\n([\s\S]*?)\n {2}smoke-test:\n/)?.[1];
 
-  it('supports manual, develop-push, and path-filtered pull-request validation', () => {
+  it('runs as an always-on job in the existing pull-request workflow', () => {
+    expect(websiteJob).toBeDefined();
     expect(workflow).toContain('workflow_dispatch:');
-    expect(workflow).toMatch(/push:\n[\s\S]*?branches:\n\s+- develop\n[\s\S]*?paths:/);
-    expect(workflow).toMatch(/pull_request:\n\s+paths:/);
-    expect(workflow).toContain('sniffy-ui/apps/site/**');
-    expect(workflow).toContain('sniffy-ui/packages/theme/**');
-    expect(workflow).not.toMatch(/^\s+- ['"]?\*\*\/\*\.java/m);
-  });
-
-  it('tracks every repository source consumed by a tagged site snippet', () => {
-    const mdx = allFiles(resolve(site, 'docs'))
-      .filter((file) => file.endsWith('.mdx'))
-      .map((file) => readFileSync(file, 'utf8'))
-      .join('\n');
-    const sources = [...mdx.matchAll(/<SourceSnippet\s+file="([^"]+)"/g)].map(([, file]) => file);
-
-    expect(new Set(sources).size).toBeGreaterThan(0);
-    for (const source of new Set(sources)) {
-      expect(workflow).toContain(source);
-    }
+    expect(workflow).toMatch(/push:\n\s+branches:\n\s+- develop/);
+    expect(workflow).toMatch(/pull_request:\n\s+branches-ignore:/);
+    expect(workflow).not.toMatch(/^\s+paths:/m);
   });
 
   it('keeps validation read-only, explicit, and independent from release publication', () => {
@@ -136,31 +116,26 @@ describe('website validation workflow contract', () => {
       'Test desktop and mobile website navigation',
       'Upload complete static website',
     ]) {
-      expect(workflow).toContain(`- name: ${step}`);
+      expect(websiteJob).toContain(`- name: ${step}`);
     }
     const contentsPermission = ['content', 's: read'].join('');
-    expect(workflow).toContain(`permissions:\n  ${contentsPermission}`);
-    expect(workflow).not.toContain('secrets.');
-    expect(workflow).not.toMatch(/\bmvn\b/);
-    expect(workflow).not.toMatch(/npm run (?:build|check:generated|check:bundle)(?:\s|$)/);
-    expect(workflow).not.toMatch(/deploy|pages/i);
+    expect(websiteJob).toContain(`permissions:\n      ${contentsPermission}`);
+    expect(websiteJob).not.toContain('secrets.');
+    expect(websiteJob).not.toMatch(/\bmvn\b/);
+    expect(websiteJob).not.toMatch(/npm run (?:build|check:generated|check:bundle)(?:\s|$)/);
+    expect(websiteJob).not.toMatch(/deploy|pages/i);
   });
 
   it('uploads the complete static build while preserving generated-resource checks elsewhere', () => {
-    const pullRequestWorkflow = readFileSync(
-      resolve(repository, '.github/workflows/pr.yml'),
-      'utf8',
-    );
-
-    expect(workflow).toContain('uses: actions/upload-artifact@v7');
-    expect(workflow).toContain(
+    expect(websiteJob).toContain('uses: actions/upload-artifact@v7');
+    expect(websiteJob).toContain(
       'name: sniffy-website-${{ github.event.pull_request.head.sha || github.sha }}',
     );
-    expect(workflow).toContain('path: sniffy-ui/apps/site/build/');
-    expect(workflow).toContain('if-no-files-found: error');
-    expect(pullRequestWorkflow).toContain('run: npm run build');
-    expect(pullRequestWorkflow).toContain('run: npm run check:generated');
-    expect(pullRequestWorkflow).toContain('run: npm run check:bundle');
+    expect(websiteJob).toContain('path: sniffy-ui/apps/site/build/');
+    expect(websiteJob).toContain('if-no-files-found: error');
+    expect(workflow).toContain('run: npm run build');
+    expect(workflow).toContain('run: npm run check:generated');
+    expect(workflow).toContain('run: npm run check:bundle');
   });
 
   it('runs the website browser suite at desktop and mobile viewports', () => {
