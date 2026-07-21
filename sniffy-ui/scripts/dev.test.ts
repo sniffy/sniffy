@@ -12,6 +12,15 @@ async function waitFor(predicate: () => boolean | Promise<boolean>, message: str
   }
 }
 
+async function fileContains(filePath: string, expected: string) {
+  try {
+    return (await readFile(filePath, 'utf8')).includes(expected);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
 function canConnect(port: number) {
   return new Promise<boolean>((resolvePromise) => {
     const socket = createConnection({ host: '127.0.0.1', port });
@@ -121,7 +130,7 @@ describe('frontend development infrastructure', () => {
       await waitFor(
         async () =>
           successfulRebuilds === 1 &&
-          (await readFile(resolve(output, 'sniffy.min.js'), 'utf8')).includes('valid-change'),
+          (await fileContains(resolve(output, 'sniffy.min.js'), 'valid-change')),
         'one successful rebuild',
       );
 
@@ -133,7 +142,7 @@ describe('frontend development infrastructure', () => {
       await waitFor(
         async () =>
           successfulRebuilds === 2 &&
-          (await readFile(resolve(output, 'sniffy.min.js'), 'utf8')).includes('recovered'),
+          (await fileContains(resolve(output, 'sniffy.min.js'), 'recovered')),
         'recovery rebuild',
       );
 
