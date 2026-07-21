@@ -112,12 +112,21 @@ jobs:
               return;
             }
 
-            const projectItem = result.node?.projectItems?.nodes.find(
+            let projectItem = result.node?.projectItems?.nodes.find(
               item => item.project?.id === project.id
             );
             if (!projectItem) {
-              core.setFailed('This issue is not present in Sniffy Product & Delivery.');
-              return;
+              const addItemResult = await github.graphql(
+                `mutation($projectId: ID!, $issueNodeId: ID!) {
+                  addProjectV2ItemById(input: {
+                    projectId: $projectId,
+                    contentId: $issueNodeId
+                  }) { item { id } }
+                }`,
+                { projectId: project.id, issueNodeId }
+              );
+              projectItem = addItemResult.addProjectV2ItemById.item;
+              core.notice('Added this issue to Sniffy Product & Delivery.');
             }
 
             await github.graphql(
