@@ -654,49 +654,9 @@ this simple protocol. Before adding a second worker, introduce a single coordina
 
 ### 9.3. Scheduled task prompt
 
-Replace the project number and test this prompt manually before enabling the schedule:
-
-```text
-Run one Sniffy local-worker cycle in the selected WSL project and its dedicated worktree.
-
-Use organization project 2 (https://github.com/orgs/sniffy/projects/2) owned by sniffy as the book of work. Select at
-most one Issue from sniffy/sniffy whose Status is "Ready for agent" and Executor is "Local Codex". Prefer an
-explicitly re-queued continuation that already has an open local-worker pull request and actionable maintainer
-feedback, then prefer the highest project Priority and oldest issue number. If there is no eligible issue, report a
-no-op and change nothing.
-
-Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and all comments, project fields, linked
-pull requests, review submissions and threads, current CI, and the current remote develop branch. Confirm that the
-issue satisfies Definition of Ready and classify it as either fresh work or a continuation.
-
-Fresh work has no active local claim and no implementation pull request. A continuation is eligible when the issue was
-deliberately returned to "Ready for agent", an existing local-worker branch and open implementation PR are present,
-and maintainer feedback or required failed checks call for more implementation. For a continuation, historical claim
-comments and the open PR are required context, not reasons for a guarded no-op. Do not continue a PR owned by another
-executor or a branch the worker cannot update; report that exact blocker instead.
-
-Claim the item by changing project Status to "In progress", assigning the dedicated worker account when missing,
-adding "agent:local" when missing, and posting a claim comment. For fresh work, record the intended agent/issue-N
-branch. For a continuation, record "Claimed continuation", the existing branch, PR number, current head SHA,
-timestamp, and feedback scope. If any claim mutation fails, roll back mutations already made and stop before editing
-code.
-
-After a successful fresh claim, create agent/issue-N from the latest origin/develop without force-pushing. After a
-successful continuation claim, fetch and check out the exact existing PR head branch. Do not reset it to develop,
-rebase or rewrite its published history, create a replacement branch, or open a separate PR. Verify that local HEAD,
-the remote branch, and the existing PR head agree before editing. Address all actionable review feedback and relevant
-failing checks on that PR, preserving unrelated work already on the branch.
-
-Follow AGENTS.md and the issue as the source of truth. Implement the fresh task or continuation fixes end to end, add
-or update tests and documentation, run all applicable focused checks as separately reported commands, inspect the
-final diff, commit, push, and create or update the pull request. Do not merge or enable auto-merge.
-
-Verify the remote branch, full head SHA, PR URL, base/head branches, and PR head SHA. Move project Status to "Review"
-only after publication is verified and the requested continuation proof is satisfied; when the maintainer explicitly
-requires green remote CI, verify that CI before moving to Review. If a genuine blocker remains, set Status to
-"Blocked" and post the exact blocker and smallest required decision. Never claim or implement more than one issue in
-this run.
-```
+Use [`.codex/local/scheduled-task-prompt.md`](../.codex/local/scheduled-task-prompt.md) as the single canonical prompt.
+Replace the project number if necessary, copy that file's prompt text into the ChatGPT Scheduled task, and test it
+manually before enabling the schedule.
 
 The worker performs the issue directly in the Scheduled task. It must not call `.codex/local/run-issue.sh`, because that
 would launch a second, nested CLI agent and lose the app-native task lifecycle.
