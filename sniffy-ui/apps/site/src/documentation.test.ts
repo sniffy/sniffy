@@ -2,12 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  currentDocsPath,
-  legacyDocsPath,
-  parseLegacyRouteMap,
-  renderLegacyDocsPage,
-} from './legacy-docs';
+import { currentDocsPath, legacyDocsPath, parseLegacyRouteMap } from './legacy-docs';
 
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRoot = resolve(site, '../../..');
@@ -39,15 +34,14 @@ describe('legacy documentation compatibility', () => {
     );
   });
 
-  it('renders a static entry point with a current-docs canonical and safe fallback', () => {
-    const html = renderLegacyDocsPage(routes);
+  it('defines the compatibility and fallback paths', () => {
+    const page = readFileSync(resolve(site, 'src/legacy-docs-page.tsx'), 'utf8');
 
     expect(legacyDocsPath).toBe('/docs/latest/');
-    expect(html).toContain('<link rel="canonical" href="https://sniffy.io/docs/">');
-    expect(html).toContain('decodeURIComponent(rawAnchor)');
-    expect(html).toContain('Object.prototype.hasOwnProperty.call(routes, anchor)');
-    expect(html).toContain(`var fallback = ${JSON.stringify(currentDocsPath)}`);
-    expect(html).toContain('<a href="/docs/">');
+    expect(currentDocsPath).toBe('/docs/');
+    expect(page).toContain('href={`https://sniffy.io${currentDocsPath}`}');
+    expect(page).toContain('decodeURIComponent(window.location.hash.slice(1))');
+    expect(page).toContain('Object.prototype.hasOwnProperty.call(routes, anchor)');
   });
 });
 

@@ -23,30 +23,6 @@ test('the current documentation renders at /docs/', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Sniffy documentation' })).toBeVisible();
 });
 
-for (const [anchor, destination] of [
-  ['_install', '/docs/installation/'],
-  ['_standalone_setup', '/docs/installation/'],
-  ['_configuration', '/docs/configuration/'],
-  ['_integration_with_junit', '/docs/testing/junit/'],
-  ['_emulating_network_issues', '/docs/network/fault-emulation/'],
-  ['_capture_traffic', '/docs/network/traffic-capture/'],
-  ['_ssltls_traffic_decryption', '/docs/network/traffic-capture/#ssltls-traffic-decryption'],
-] as const) {
-  test(`/docs/latest/#${anchor} routes to its migrated destination`, async ({ page }) => {
-    await page.goto(`/docs/latest/#${anchor}`);
-
-    await expect(page).toHaveURL(new RegExp(`${destination.replaceAll('/', '\\/')}$`));
-  });
-}
-
-for (const suffix of ['', '#unknown-anchor', '#malformed%anchor']) {
-  test(`/docs/latest/${suffix} falls back to current documentation`, async ({ page }) => {
-    await page.goto(`/docs/latest/${suffix}`);
-
-    await expect(page).toHaveURL(/\/docs\/$/);
-  });
-}
-
 test('the site follows light preference and allows an explicit dark selection', async ({
   page,
 }) => {

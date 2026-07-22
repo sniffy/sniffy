@@ -1,10 +1,11 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import type { Plugin } from '@docusaurus/types';
+import type { LoadContext, Plugin } from '@docusaurus/types';
 
-export const legacyDocsPath = '/docs/latest/';
-export const currentDocsPath = '/docs/';
+import { legacyDocsPath } from './legacy-docs-routes';
+
+export { currentDocsPath, legacyDocsPath } from './legacy-docs-routes';
 
 function asciidoctorFragmentId(heading: string): string {
   return `_${heading
@@ -40,55 +41,32 @@ export function parseLegacyRouteMap(markdown: string): Record<string, string> {
   return routes;
 }
 
-export function renderLegacyDocsPage(routes: Record<string, string>): string {
-  const serializedRoutes = JSON.stringify(routes).replace(/</g, '\\u003c');
-
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sniffy documentation</title>
-    <link rel="canonical" href="https://sniffy.io${currentDocsPath}">
-    <script>
-      (function () {
-        var routes = ${serializedRoutes};
-        var fallback = ${JSON.stringify(currentDocsPath)};
-        var rawAnchor = window.location.hash.slice(1);
-        var anchor;
-        try {
-          anchor = decodeURIComponent(rawAnchor);
-        } catch (error) {
-          anchor = '';
-        }
-        window.location.replace(Object.prototype.hasOwnProperty.call(routes, anchor) ? routes[anchor] : fallback);
-      })();
-    </script>
-  </head>
-  <body>
-    <main>
-      <h1>Sniffy documentation has moved</h1>
-      <p><a href="${currentDocsPath}">Continue to the current Sniffy documentation.</a></p>
-    </main>
-  </body>
-</html>
-`;
-}
-
-export default function legacyDocsPlugin(): Plugin {
+export default function legacyDocsPlugin({ siteDir }: LoadContext): Plugin {
   return {
     name: 'sniffy-legacy-docs-compatibility',
-    async postBuild({ outDir, siteDir }) {
+    async loadContent() {
       const mapping = await readFile(
         resolve(siteDir, 'docs/migration/asciidoc-route-map.mdx'),
         'utf8',
       );
-      const outputDirectory = resolve(outDir, 'docs/latest');
-      await mkdir(outputDirectory, { recursive: true });
-      await writeFile(
-        resolve(outputDirectory, 'index.html'),
-        renderLegacyDocsPage(parseLegacyRouteMap(mapping)),
+      return parseLegacyRouteMap(mapping);
+    },
+    async contentLoaded({ content, actions }) {
+      const routesData = await actions.createData(
+        'legacy-docs-routes.json',
+        JSON.stringify(content),
       );
+      const component = resolve(siteDir, 'src/legacy-docs-page.tsx');
+
+      // The non-exact route also accepts the historical explicit index.html URL
+      // in the development server. Static generation writes the directory route
+      // to that same file, so both URLs share one implementation and artifact.
+      actions.addRoute({
+        path: legacyDocsPath,
+        exact: false,
+        component,
+        modules: { routes: routesData },
+      });
     },
   };
 }
