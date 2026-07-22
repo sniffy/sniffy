@@ -137,6 +137,7 @@ jobs:
           apps/site/src/source-snippets.test.ts
           apps/site/src/product-version.test.ts
           apps/site/src/documentation.test.ts
+          apps/site/src/legacy-docs.test.ts
           packages/theme/src/theme.test.ts
 
       - name: Build website with broken link and image validation
