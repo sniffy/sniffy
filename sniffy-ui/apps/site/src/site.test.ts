@@ -134,9 +134,11 @@ describe('@sniffy/site workspace contract', () => {
     expect(readme).toContain('Windows');
     expect(readme).toContain('No dependency installation or repository checkout is required.');
     expect(preview).toContain("options = { host: '127.0.0.1', port: 4173 }");
+    expect(preview).toContain("resolve(root, '404.html')");
     expect(preview).not.toMatch(/from ['"][^n.]/);
     expect(verification).toContain("import { chromium } from '@playwright/test';");
     expect(verification).toContain("page.goto(url, { waitUntil: 'networkidle' })");
+    expect(verification).toContain('This trail went cold.');
   });
 });
 

@@ -44,11 +44,15 @@ try {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error));
 
-  for (const route of ['', 'docs/']) {
+  for (const { route, status, headingText } of [
+    { route: '', status: 200, headingText: 'Sniffy' },
+    { route: 'docs/', status: 200, headingText: 'Sniffy documentation' },
+    { route: 'missing-shell-route/', status: 404, headingText: 'This trail went cold.' },
+  ]) {
     const url = `${previewUrl}${route}`;
     const response = await page.goto(url, { waitUntil: 'networkidle' });
     const heading = await page.locator('h1').first().textContent();
-    if (response?.status() !== 200 || !heading?.includes('Sniffy')) {
+    if (response?.status() !== status || !heading?.includes(headingText)) {
       throw new Error(`Artifact preview failed for ${url}: HTTP ${response?.status()}`);
     }
     process.stdout.write(`Verified ${url} renders over HTTP.\n`);

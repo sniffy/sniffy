@@ -52,6 +52,35 @@ const sendText = (response, statusCode, message) => {
   response.end(`${message}\n`);
 };
 
+const sendFile = (request, response, file, statusCode = 200) => {
+  response.writeHead(statusCode, {
+    'Cache-Control': 'no-store',
+    'Content-Length': file.stat.size,
+    'Content-Type': mimeTypes.get(extname(file.path).toLowerCase()) ?? 'application/octet-stream',
+  });
+
+  if (request.method === 'HEAD') {
+    response.end();
+    return;
+  }
+
+  createReadStream(file.path).pipe(response);
+};
+
+const sendNotFound = async (request, response) => {
+  try {
+    const path = resolve(root, '404.html');
+    const fileStat = await stat(path);
+    if (!fileStat.isFile()) {
+      sendText(response, 404, 'Not Found');
+      return;
+    }
+    sendFile(request, response, { path, stat: fileStat }, 404);
+  } catch {
+    sendText(response, 404, 'Not Found');
+  }
+};
+
 const resolveRequestPath = async (requestUrl) => {
   const url = new URL(requestUrl, 'http://localhost');
   const decodedPath = decodeURIComponent(url.pathname).replaceAll('\\', '/');
@@ -80,29 +109,17 @@ const server = createServer(async (request, response) => {
   try {
     const file = await resolveRequestPath(request.url ?? '/');
     if (!file?.stat.isFile()) {
-      sendText(response, 404, 'Not Found');
+      await sendNotFound(request, response);
       return;
     }
-
-    response.writeHead(200, {
-      'Cache-Control': 'no-store',
-      'Content-Length': file.stat.size,
-      'Content-Type': mimeTypes.get(extname(file.path).toLowerCase()) ?? 'application/octet-stream',
-    });
-
-    if (request.method === 'HEAD') {
-      response.end();
-      return;
-    }
-
-    createReadStream(file.path).pipe(response);
+    sendFile(request, response, file);
   } catch (error) {
     if (error instanceof URIError) {
       sendText(response, 400, 'Bad Request');
       return;
     }
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      sendText(response, 404, 'Not Found');
+      await sendNotFound(request, response);
       return;
     }
     process.stderr.write(`${String(error)}\n`);
