@@ -2,6 +2,8 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import './legacy-docs.test';
+
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRoot = resolve(site, '../../..');
 const legacyRoot = resolve(repositoryRoot, 'sniffy-documentation/src/main/asciidoc');
