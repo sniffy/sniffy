@@ -167,10 +167,13 @@ translation that does not discard the fragment. Redirects must be single-hop, av
 
 ## Build, validation, and deployment lifecycle
 
-The site has a site-specific workflow and deployable artifact. It installs the locked npm workspace, builds Docusaurus,
-validates links/routes/redirects/snippets, and publishes only the static site. It must not invoke Maven deployment, sign
-artifacts, require Maven Central credentials, or wait for a Sniffy release event. Maven release workflows must not deploy
-the site.
+The existing pull-request workflow has an always-on `Website` job and a downloadable static-site artifact. The job
+installs the locked npm workspace, builds Docusaurus, validates links/routes/redirects/snippets, and uploads only the
+static site. The artifact preserves the production `baseUrl` and includes a dependency-free Node preview launcher,
+version pin, and concise macOS/Linux/Windows instructions; CI serves the packaged artifact with that launcher and checks
+the homepage and current-documentation routes over HTTP before upload. It must not invoke Maven deployment, sign
+artifacts, require Maven Central credentials, or wait for a Sniffy release event. Maven release workflows must not
+deploy the site.
 
 Pull requests that affect the site run site validation through #659. Production publication through #669 is authorized
 from a reviewed main-repository revision using a concurrency guard and an auditable environment. The exact Pages host,

@@ -18,5 +18,16 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 30_000,
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'desktop-chromium',
+      testMatch: '**/routes.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'mobile-chromium',
+      testMatch: '**/mobile.spec.ts',
+      use: { ...devices['Pixel 7'] },
+    },
+  ],
 });

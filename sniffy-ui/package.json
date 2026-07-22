@@ -28,6 +28,8 @@
     "test:e2e:update": "playwright test --project=chromium-visual --update-snapshots",
     "build": "node scripts/build.mjs",
     "build:site": "npm run build --workspace @sniffy/site",
+    "package:site-artifact": "node apps/site/scripts/package-artifact.mjs",
+    "verify:site-artifact": "node apps/site/scripts/verify-artifact.mjs",
     "check:generated": "node scripts/check-generated.mjs",
     "check:bundle": "node scripts/check-bundle.mjs"
   },

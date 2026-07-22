@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const workspace = resolve(site, '../..');
+const repository = resolve(workspace, '..');
 const readJson = (path: string) => JSON.parse(readFileSync(path, 'utf8')) as Record<string, any>;
 
 describe('@sniffy/site workspace contract', () => {
@@ -41,8 +42,10 @@ describe('@sniffy/site workspace contract', () => {
       build: 'node scripts/build.mjs',
       'build:site': 'npm run build --workspace @sniffy/site',
       'dev:site': 'npm run start --workspace @sniffy/site',
+      'package:site-artifact': 'node apps/site/scripts/package-artifact.mjs',
       'test:site':
         'npm run build:site && vitest run --project unit apps/site/src/site.test.ts apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts && npm test --workspace @sniffy/site',
+      'verify:site-artifact': 'node apps/site/scripts/verify-artifact.mjs',
     });
     expect(sitePackageJson.scripts).toMatchObject({
       start: 'docusaurus start',
@@ -78,6 +81,10 @@ describe('@sniffy/site workspace contract', () => {
   it('enables both shared themes and current docs while leaving future routes disabled', () => {
     const config = readFileSync(resolve(site, 'docusaurus.config.ts'), 'utf8');
 
+    expect(config).toContain("onBrokenLinks: 'throw'");
+    expect(config).toContain("onBrokenAnchors: 'throw'");
+    expect(config).toContain("onBrokenMarkdownLinks: 'throw'");
+    expect(config).toContain("onBrokenMarkdownImages: 'throw'");
     expect(config).toContain("defaultMode: 'dark'");
     expect(config).toContain('disableSwitch: false');
     expect(config).toContain('respectPrefersColorScheme: true');
@@ -85,5 +92,85 @@ describe('@sniffy/site workspace contract', () => {
     expect(config).toContain("lastVersion: 'current'");
     expect(config).toContain('blog: false');
     expect(config).not.toMatch(/versioned_(docs|sidebars)/);
+  });
+
+  it('keeps the production base URL and packages a dependency-free cross-platform preview', () => {
+    const config = readFileSync(resolve(site, 'docusaurus.config.ts'), 'utf8');
+    const readme = readFileSync(resolve(site, 'artifact/README.md'), 'utf8');
+    const preview = readFileSync(resolve(site, 'scripts/preview.mjs'), 'utf8');
+    const verification = readFileSync(resolve(site, 'scripts/verify-artifact.mjs'), 'utf8');
+
+    expect(config).toContain("baseUrl: '/'");
+    expect(readFileSync(resolve(site, 'artifact/.node-version'), 'utf8').trim()).toBe('24.18.0');
+    expect(readme).toContain('node preview.mjs');
+    expect(readme).toContain('macOS or Linux');
+    expect(readme).toContain('Windows');
+    expect(readme).toContain('No dependency installation or repository checkout is required.');
+    expect(preview).toContain("options = { host: '127.0.0.1', port: 4173 }");
+    expect(preview).not.toMatch(/from ['"][^n.]/);
+    expect(verification).toContain("import { chromium } from '@playwright/test';");
+    expect(verification).toContain("page.goto(url, { waitUntil: 'networkidle' })");
+  });
+});
+
+describe('website validation workflow contract', () => {
+  const workflow = readFileSync(resolve(repository, '.github/workflows/pr.yml'), 'utf8');
+  const websiteJob = workflow.match(/\n {2}website:\n([\s\S]*?)\n {2}smoke-test:\n/)?.[1];
+
+  it('runs as an always-on job in the existing pull-request workflow', () => {
+    expect(websiteJob).toBeDefined();
+    expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).toMatch(/push:\n\s+branches:\n\s+- develop/);
+    expect(workflow).toMatch(/pull_request:\n\s+branches-ignore:/);
+    expect(workflow).not.toMatch(/^\s+paths:/m);
+  });
+
+  it('keeps validation read-only, explicit, and independent from release publication', () => {
+    for (const step of [
+      'Install locked dependencies',
+      'Lint website sources',
+      'Check website formatting',
+      'Typecheck frontend workspace',
+      'Test website contracts',
+      'Build website with broken link and image validation',
+      'Test desktop and mobile website navigation',
+      'Package reviewable website artifact',
+      'Verify downloaded website preview',
+      'Upload complete reviewable website',
+    ]) {
+      expect(websiteJob).toContain(`- name: ${step}`);
+    }
+    const contentsPermission = ['content', 's: read'].join('');
+    expect(websiteJob).toContain(`permissions:\n      ${contentsPermission}`);
+    expect(websiteJob).not.toContain('secrets.');
+    expect(websiteJob).not.toMatch(/\bmvn\b/);
+    expect(websiteJob).not.toMatch(/npm run (?:build|check:generated|check:bundle)(?:\s|$)/);
+    expect(websiteJob).not.toMatch(/deploy|pages/i);
+  });
+
+  it('uploads the complete static build while preserving generated-resource checks elsewhere', () => {
+    expect(websiteJob).toContain('uses: actions/upload-artifact@v7');
+    expect(websiteJob).toContain(
+      'name: sniffy-website-${{ github.event.pull_request.head.sha || github.sha }}',
+    );
+    expect(websiteJob).toContain('path: sniffy-ui/apps/site/build/');
+    expect(websiteJob).toContain('if-no-files-found: error');
+    expect(websiteJob).toContain('include-hidden-files: true');
+    expect(websiteJob).toContain('run: npm run package:site-artifact');
+    expect(websiteJob).toContain('run: npm run verify:site-artifact');
+    expect(workflow).toContain('run: npm run build');
+    expect(workflow).toContain('run: npm run check:generated');
+    expect(workflow).toContain('run: npm run check:bundle');
+  });
+
+  it('runs the website browser suite at desktop and mobile viewports', () => {
+    const playwright = readFileSync(resolve(site, 'playwright.config.ts'), 'utf8');
+
+    expect(playwright).toContain("name: 'desktop-chromium'");
+    expect(playwright).toContain("devices['Desktop Chrome']");
+    expect(playwright).toContain("testMatch: '**/routes.spec.ts'");
+    expect(playwright).toContain("name: 'mobile-chromium'");
+    expect(playwright).toContain("devices['Pixel 7']");
+    expect(playwright).toContain("testMatch: '**/mobile.spec.ts'");
   });
 });
