@@ -42,8 +42,10 @@ describe('@sniffy/site workspace contract', () => {
       build: 'node scripts/build.mjs',
       'build:site': 'npm run build --workspace @sniffy/site',
       'dev:site': 'npm run start --workspace @sniffy/site',
+      'package:site-artifact': 'node apps/site/scripts/package-artifact.mjs',
       'test:site':
         'npm run build:site && vitest run --project unit apps/site/src/site.test.ts apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts && npm test --workspace @sniffy/site',
+      'verify:site-artifact': 'node apps/site/scripts/verify-artifact.mjs',
     });
     expect(sitePackageJson.scripts).toMatchObject({
       start: 'docusaurus start',
@@ -91,6 +93,24 @@ describe('@sniffy/site workspace contract', () => {
     expect(config).toContain('blog: false');
     expect(config).not.toMatch(/versioned_(docs|sidebars)/);
   });
+
+  it('keeps the production base URL and packages a dependency-free cross-platform preview', () => {
+    const config = readFileSync(resolve(site, 'docusaurus.config.ts'), 'utf8');
+    const readme = readFileSync(resolve(site, 'artifact/README.md'), 'utf8');
+    const preview = readFileSync(resolve(site, 'scripts/preview.mjs'), 'utf8');
+    const verification = readFileSync(resolve(site, 'scripts/verify-artifact.mjs'), 'utf8');
+
+    expect(config).toContain("baseUrl: '/'");
+    expect(readFileSync(resolve(site, 'artifact/.node-version'), 'utf8').trim()).toBe('24.18.0');
+    expect(readme).toContain('node preview.mjs');
+    expect(readme).toContain('macOS or Linux');
+    expect(readme).toContain('Windows');
+    expect(readme).toContain('No dependency installation or repository checkout is required.');
+    expect(preview).toContain("options = { host: '127.0.0.1', port: 4173 }");
+    expect(preview).not.toMatch(/from ['"][^n.]/);
+    expect(verification).toContain("import { chromium } from '@playwright/test';");
+    expect(verification).toContain("page.goto(url, { waitUntil: 'networkidle' })");
+  });
 });
 
 describe('website validation workflow contract', () => {
@@ -114,7 +134,9 @@ describe('website validation workflow contract', () => {
       'Test website contracts',
       'Build website with broken link and image validation',
       'Test desktop and mobile website navigation',
-      'Upload complete static website',
+      'Package reviewable website artifact',
+      'Verify downloaded website preview',
+      'Upload complete reviewable website',
     ]) {
       expect(websiteJob).toContain(`- name: ${step}`);
     }
@@ -133,6 +155,9 @@ describe('website validation workflow contract', () => {
     );
     expect(websiteJob).toContain('path: sniffy-ui/apps/site/build/');
     expect(websiteJob).toContain('if-no-files-found: error');
+    expect(websiteJob).toContain('include-hidden-files: true');
+    expect(websiteJob).toContain('run: npm run package:site-artifact');
+    expect(websiteJob).toContain('run: npm run verify:site-artifact');
     expect(workflow).toContain('run: npm run build');
     expect(workflow).toContain('run: npm run check:generated');
     expect(workflow).toContain('run: npm run check:bundle');

@@ -145,7 +145,13 @@ jobs:
       - name: Test desktop and mobile website navigation
         run: npm test --workspace @sniffy/site
 
-      - name: Upload complete static website
+      - name: Package reviewable website artifact
+        run: npm run package:site-artifact
+
+      - name: Verify downloaded website preview
+        run: npm run verify:site-artifact
+
+      - name: Upload complete reviewable website
         uses: actions/upload-artifact@v7
         with:
           name: sniffy-website-${{ github.event.pull_request.head.sha || github.sha }}
