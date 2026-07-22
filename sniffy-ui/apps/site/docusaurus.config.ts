@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import sourceSnippetRemarkPlugin from './src/source-snippets';
 import productVersionRemarkPlugin from './src/product-version';
+import legacyDocsPlugin from './src/legacy-docs';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -24,6 +25,7 @@ const config: Config = {
   },
   organizationName: 'sniffy',
   projectName: 'sniffy',
+  plugins: [legacyDocsPlugin],
   presets: [
     [
       'classic',
