@@ -75,7 +75,14 @@ describe('@sniffy/site workspace contract', () => {
     expect(styles).toContain("@import '@sniffy/theme/dark.css';");
     expect(styles).toContain("@import '@sniffy/theme/light.css';");
     expect(styles).toContain('--ifm-color-primary: var(--sniffy-accent);');
+    expect(styles).toContain('--sniffy-site-header-height:');
     expect(styles).not.toMatch(/#[\da-f]{3,8}\b/i);
+
+    for (const theme of ['base', 'dark', 'light']) {
+      expect(
+        readFileSync(resolve(workspace, `packages/theme/src/${theme}.css`), 'utf8'),
+      ).not.toContain('--sniffy-site-');
+    }
   });
 
   it('enables both shared themes and current docs while leaving future routes disabled', () => {
@@ -88,10 +95,30 @@ describe('@sniffy/site workspace contract', () => {
     expect(config).toContain("defaultMode: 'dark'");
     expect(config).toContain('disableSwitch: false');
     expect(config).toContain('respectPrefersColorScheme: true');
+    expect(config).toContain("favicon: 'img/brand/sniffy-mark.svg'");
+    expect(config).toContain("image: 'img/brand/sniffy-social.svg'");
+    expect(config).toContain("label: 'Documentation'");
+    expect(config).toContain("label: 'Use cases'");
+    expect(config).toContain("label: 'GitHub'");
     expect(config).toContain("routeBasePath: 'docs'");
     expect(config).toContain("lastVersion: 'current'");
     expect(config).toContain('blog: false');
     expect(config).not.toMatch(/versioned_(docs|sidebars)/);
+  });
+
+  it('keeps brand assets and the narrow 404 wrapper inside the site application', () => {
+    for (const path of [
+      'static/img/brand/sniffy-mark.svg',
+      'static/img/brand/sniffy-mark-dark.svg',
+      'static/img/brand/sniffy-social.svg',
+      'src/theme/NotFound/Content/index.tsx',
+    ]) {
+      expect(readFileSync(resolve(site, path), 'utf8')).not.toHaveLength(0);
+    }
+
+    const notFound = readFileSync(resolve(site, 'src/theme/NotFound/Content/index.tsx'), 'utf8');
+    expect(notFound).toContain('This trail went cold.');
+    expect(notFound).toContain('aria-label="Page recovery"');
   });
 
   it('keeps the production base URL and packages a dependency-free cross-platform preview', () => {
@@ -172,5 +199,6 @@ describe('website validation workflow contract', () => {
     expect(playwright).toContain("name: 'mobile-chromium'");
     expect(playwright).toContain("devices['Pixel 7']");
     expect(playwright).toContain("testMatch: '**/mobile.spec.ts'");
+    expect(playwright).toContain("snapshotPathTemplate: '{testDir}/visual-baselines/{arg}{ext}'");
   });
 });

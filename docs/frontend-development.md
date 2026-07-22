@@ -33,3 +33,10 @@ The profiler derives its backend from the resolved `#sniffy-header` script URL, 
 `npm run test` runs unit tests plus Storybook interaction/accessibility tests in Chromium. Install all browser engines with `npx playwright install chromium firefox webkit`, then use `npm run test:e2e` for behavior coverage in Chromium, Firefox, and WebKit. Visual baselines live in `tests/e2e/visual-baselines/` and are updated only with `npm run test:e2e:update` in the pinned Playwright Linux/Chromium environment used by CI; inspect both profiler and agent images before committing them.
 
 The existing `Check Pull Request` workflow includes an always-on `Website` job for every pull request. It reports locked dependency installation, lint, formatting, typecheck, site contract tests, the Docusaurus production build, and desktop/mobile Playwright smoke coverage as separate steps, then uploads the complete `apps/site/build/` directory as a downloadable artifact. The artifact includes a README, the CI Node version pin, and a dependency-free `preview.mjs` launcher. After extraction, `node preview.mjs` serves the unchanged production build on macOS, Linux, or Windows; opening `index.html` through `file://` is intentionally unsupported because the production site uses `baseUrl: /`. CI starts that packaged launcher and verifies `/` and `/docs/` over HTTP before upload. The job also runs with the workflow's existing manual and `develop`-push triggers; it stays independent from Maven publication and never deploys the site.
+
+The branded site shell aliases shared semantic tokens in `apps/site/src/css/custom.css`. Variables prefixed
+`--sniffy-site-` are private Docusaurus layout decisions; product identity, semantic colors, typography, spacing,
+and radii remain owned by `@sniffy/theme`. Review shell changes with `npm run test:site`, including the committed
+desktop/mobile light/dark baselines and accessibility audit. The review artifact remains the easiest way to inspect
+the unchanged production build on another machine: download it, extract it, run `node preview.mjs`, and open the
+printed HTTP URL.

@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { expectNoAccessibilityViolations } from './accessibility';
+
 test('the minimal homepage renders at /', async ({ page }) => {
   const response = await page.goto('/');
 
@@ -13,6 +15,29 @@ test('the minimal homepage renders at /', async ({ page }) => {
   await page.getByRole('link', { name: 'Open the documentation scaffold' }).click();
   await expect(page).toHaveURL(/\/docs\/$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Sniffy documentation' })).toBeVisible();
+});
+
+test('the branded shell exposes primary navigation and footer landmarks', async ({ page }) => {
+  await page.goto('/');
+
+  const navigation = page.getByRole('navigation', { name: 'Main' });
+  await expect(navigation).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Documentation' })).toHaveAttribute(
+    'href',
+    '/docs/',
+  );
+  await expect(navigation.getByText('Use cases', { exact: true })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+    'href',
+    'https://github.com/sniffy/sniffy',
+  );
+  await expect(navigation.getByText('Search docs')).toBeVisible();
+
+  const footer = page.getByRole('contentinfo');
+  await expect(footer).toBeVisible();
+  await expect(footer.getByText('Product', { exact: true })).toBeVisible();
+  await expect(footer.getByText('Use cases', { exact: true })).toBeVisible();
+  await expect(footer.getByText('Project', { exact: true })).toBeVisible();
 });
 
 test('the current documentation renders at /docs/', async ({ page }) => {
@@ -60,6 +85,95 @@ test('the site follows light preference and allows an explicit dark selection', 
     )
     .toBe('#090e17');
 });
+
+test('keyboard navigation exposes a visible focus indicator and activates documentation', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  let reachedDocumentation = false;
+  for (let index = 0; index < 8; index += 1) {
+    await page.keyboard.press('Tab');
+    reachedDocumentation = await page.evaluate(
+      () => (document.activeElement as HTMLAnchorElement | null)?.pathname === '/docs/',
+    );
+    if (reachedDocumentation) break;
+  }
+
+  expect(reachedDocumentation).toBe(true);
+  const focused = page.locator(':focus');
+  const focusStyle = await focused.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { style: style.outlineStyle, width: Number.parseFloat(style.outlineWidth) };
+  });
+  expect(focusStyle.style).not.toBe('none');
+  expect(focusStyle.width).toBeGreaterThanOrEqual(2);
+
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/docs\/$/);
+});
+
+test('the shell respects reduced motion and passes a representative accessibility audit', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.goto('/docs/installation/');
+
+  const transitionSeconds = await page.locator('.navbar').evaluate((element) =>
+    Math.max(
+      ...getComputedStyle(element)
+        .transitionDuration.split(',')
+        .map((duration) => Number.parseFloat(duration) * (duration.includes('ms') ? 0.001 : 1)),
+    ),
+  );
+  expect(transitionSeconds).toBeLessThanOrEqual(0.001);
+  await expect(page.getByRole('main')).toHaveCount(1);
+  await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(1);
+  await expect(page.getByRole('contentinfo')).toHaveCount(1);
+  await expectNoAccessibilityViolations(page);
+});
+
+test('the branded 404 offers useful recovery links and remains accessible', async ({ page }) => {
+  const response = await page.goto('/missing-shell-route/');
+
+  expect(response?.status()).toBe(404);
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'This trail went cold.' }),
+  ).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Page recovery' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Browse documentation' })).toHaveAttribute(
+    'href',
+    '/docs/',
+  );
+  await expectNoAccessibilityViolations(page);
+});
+
+for (const colorScheme of ['dark', 'light'] as const) {
+  test(`the ${colorScheme} desktop homepage shell matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await expect(page).toHaveScreenshot(`home-desktop-${colorScheme}.png`, {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test(`the ${colorScheme} desktop documentation chrome matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/docs/installation/');
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await expect(page).toHaveScreenshot(`docs-desktop-${colorScheme}.png`, {
+      animations: 'disabled',
+    });
+  });
+}
 
 for (const [route, heading] of [
   ['/docs/installation/', 'Installation'],

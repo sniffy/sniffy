@@ -11,9 +11,10 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../.
 
 const config: Config = {
   title: 'Sniffy',
-  tagline: 'Sniffy website foundation',
+  tagline: 'Java application observability and resilience testing',
   url: 'https://sniffy.io',
   baseUrl: '/',
+  favicon: 'img/brand/sniffy-mark.svg',
   trailingSlash: true,
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
@@ -53,6 +54,85 @@ const config: Config = {
     ],
   ],
   themeConfig: {
+    image: 'img/brand/sniffy-social.svg',
+    metadata: [
+      {
+        name: 'description',
+        content: 'Sniffy brings SQL and network observability into Java applications and tests.',
+      },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+    ],
+    navbar: {
+      title: 'Sniffy',
+      logo: {
+        alt: '',
+        src: 'img/brand/sniffy-mark.svg',
+        srcDark: 'img/brand/sniffy-mark-dark.svg',
+        width: 34,
+        height: 34,
+      },
+      items: [
+        {
+          type: 'docSidebar',
+          sidebarId: 'docsSidebar',
+          position: 'left',
+          label: 'Documentation',
+        },
+        {
+          type: 'dropdown',
+          label: 'Use cases',
+          position: 'left',
+          items: [
+            { label: 'SQL query assertions', to: '/docs/testing/api/' },
+            { label: 'Network fault testing', to: '/docs/network/fault-emulation/' },
+            { label: 'Traffic and TLS capture', to: '/docs/network/traffic-capture/' },
+          ],
+        },
+        {
+          type: 'html',
+          position: 'right',
+          className: 'sniffy-search-item',
+          value:
+            '<span class="sniffy-search-placeholder" aria-label="Documentation search is coming soon"><span>Search docs</span><kbd aria-hidden="true">⌘ K</kbd></span>',
+        },
+        {
+          href: 'https://github.com/sniffy/sniffy',
+          label: 'GitHub',
+          position: 'right',
+        },
+      ],
+    },
+    footer: {
+      style: 'light',
+      links: [
+        {
+          title: 'Product',
+          items: [
+            { label: 'Documentation', to: '/docs/' },
+            { label: 'Installation', to: '/docs/installation/' },
+            { label: 'Configuration', to: '/docs/configuration/' },
+          ],
+        },
+        {
+          title: 'Use cases',
+          items: [
+            { label: 'Query assertions', to: '/docs/testing/api/' },
+            { label: 'Network fault testing', to: '/docs/network/fault-emulation/' },
+            { label: 'Traffic capture', to: '/docs/network/traffic-capture/' },
+          ],
+        },
+        {
+          title: 'Project',
+          items: [
+            { label: 'GitHub repository', href: 'https://github.com/sniffy/sniffy' },
+            { label: 'Releases', href: 'https://github.com/sniffy/sniffy/releases' },
+            { label: 'Issue tracker', href: 'https://github.com/sniffy/sniffy/issues' },
+          ],
+        },
+      ],
+      copyright: 'Sniffy is open source software.',
+    },
     colorMode: {
       defaultMode: 'dark',
       disableSwitch: false,
