@@ -2,12 +2,54 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import './legacy-docs.test';
+import {
+  currentDocsPath,
+  legacyDocsPath,
+  parseLegacyRouteMap,
+  renderLegacyDocsPage,
+} from './legacy-docs';
 
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRoot = resolve(site, '../../..');
 const legacyRoot = resolve(repositoryRoot, 'sniffy-documentation/src/main/asciidoc');
 const docsRoot = resolve(site, 'docs');
+
+describe('legacy documentation compatibility', () => {
+  const mapping = readFileSync(resolve(docsRoot, 'migration/asciidoc-route-map.mdx'), 'utf8');
+  const routes = parseLegacyRouteMap(mapping);
+
+  it('maps the real IDs emitted by the assembled legacy Asciidoctor page', () => {
+    const captureTrafficSource = readFileSync(resolve(legacyRoot, 'capture-traffic.adoc'), 'utf8');
+
+    expect(Object.keys(routes).length).toBeGreaterThan(150);
+    expect(routes).toMatchObject({
+      _install: '/docs/installation/',
+      _standalone_setup: '/docs/installation/',
+      _configuration: '/docs/configuration/',
+      _integration_with_junit: '/docs/testing/junit/',
+      _emulating_network_issues: '/docs/network/fault-emulation/',
+      _capture_traffic: '/docs/network/traffic-capture/',
+      _ssltls_traffic_decryption: '/docs/network/traffic-capture/#ssltls-traffic-decryption',
+    });
+    expect(mapping).toContain(
+      'input for the separately scoped legacy URL and anchor compatibility',
+    );
+    expect(captureTrafficSource).toContain(
+      'https://sniffy.io/docs/latest/#_standalone_setup[Standalone Setup]',
+    );
+  });
+
+  it('renders a static entry point with a current-docs canonical and safe fallback', () => {
+    const html = renderLegacyDocsPage(routes);
+
+    expect(legacyDocsPath).toBe('/docs/latest/');
+    expect(html).toContain('<link rel="canonical" href="https://sniffy.io/docs/">');
+    expect(html).toContain('decodeURIComponent(rawAnchor)');
+    expect(html).toContain('Object.prototype.hasOwnProperty.call(routes, anchor)');
+    expect(html).toContain(`var fallback = ${JSON.stringify(currentDocsPath)}`);
+    expect(html).toContain('<a href="/docs/">');
+  });
+});
 
 const sourceRegionOverrides: Record<string, string> = {
   'sniffy/src/jboss-module/module.xml': 'WildFlyModule',

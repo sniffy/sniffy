@@ -25,10 +25,12 @@ test('the current documentation renders at /docs/', async ({ page }) => {
 
 for (const [anchor, destination] of [
   ['_install', '/docs/installation/'],
+  ['_standalone_setup', '/docs/installation/'],
   ['_configuration', '/docs/configuration/'],
-  ['_integration-with-junit', '/docs/testing/junit/'],
-  ['_emulating-network-issues', '/docs/network/fault-emulation/'],
-  ['_capture-traffic', '/docs/network/traffic-capture/'],
+  ['_integration_with_junit', '/docs/testing/junit/'],
+  ['_emulating_network_issues', '/docs/network/fault-emulation/'],
+  ['_capture_traffic', '/docs/network/traffic-capture/'],
+  ['_ssltls_traffic_decryption', '/docs/network/traffic-capture/#ssltls-traffic-decryption'],
 ] as const) {
   test(`/docs/latest/#${anchor} routes to its migrated destination`, async ({ page }) => {
     await page.goto(`/docs/latest/#${anchor}`);

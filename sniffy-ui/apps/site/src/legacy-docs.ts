@@ -6,18 +6,33 @@ import type { Plugin } from '@docusaurus/types';
 export const legacyDocsPath = '/docs/latest/';
 export const currentDocsPath = '/docs/';
 
+function asciidoctorFragmentId(heading: string): string {
+  return `_${heading
+    .toLowerCase()
+    .replace(/[`*@]/g, '')
+    .replace(/\//g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')}`;
+}
+
 export function parseLegacyRouteMap(markdown: string): Record<string, string> {
   const routes: Record<string, string> = {};
-  const row = /^\|\s*`[^`]+#([^`]+)`\s*\|.*?\|\s*\[`([^`]+)`\]\([^)]*\)\s*\|$/gm;
+  const row = /^\|\s*`[^`]+#([^`]+)`\s*\|\s*(.*?)\s*\|\s*\[`([^`]+)`\]\([^)]*\)\s*\|$/gm;
+  const generatedIdOccurrences: Record<string, number> = {};
 
   for (const match of markdown.matchAll(row)) {
     const anchor = match[1];
-    const destination = match[2];
+    const heading = match[2];
+    const destination = match[3];
+    const generatedId = asciidoctorFragmentId(heading);
+    const occurrence = (generatedIdOccurrences[generatedId] ?? 0) + 1;
+    generatedIdOccurrences[generatedId] = occurrence;
+    const actualLegacyId = occurrence === 1 ? generatedId : `${generatedId}_${occurrence}`;
 
-    // The assembled Asciidoctor page exposed generated IDs with a leading
-    // underscore. Keep the unprefixed spelling too, as it is the source ID
-    // recorded by the migration inventory and was also used by external links.
-    for (const legacyAnchor of [anchor, `_${anchor}`]) {
+    // Preserve inventory spellings used by old inbound links, but derive the
+    // generated ID from the legacy heading. Asciidoctor 1.6 used underscores,
+    // removed punctuation such as '/', and suffixed duplicate IDs.
+    for (const legacyAnchor of [anchor, `_${anchor}`, actualLegacyId]) {
       routes[legacyAnchor] ??= destination;
     }
   }
