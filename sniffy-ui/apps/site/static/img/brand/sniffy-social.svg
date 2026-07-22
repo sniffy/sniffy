@@ -1,15 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
   <title id="title">Sniffy</title>
-  <desc id="description">Sniffy social preview placeholder</desc>
+  <desc id="description">Sniffy social preview wordmark</desc>
   <rect width="1200" height="630" fill="#000"/>
-  <g transform="translate(96 104)" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="18">
-    <path d="M12 52c36-40 108-40 144 0"/>
-    <path d="M34 102c25-27 75-27 100 0"/>
-    <path d="M58 150c13-14 37-14 50 0"/>
-  </g>
-  <circle cx="179" cy="288" r="15" fill="#fff"/>
-  <text x="320" y="275" fill="#fff" font-family="system-ui, sans-serif" font-size="124" font-weight="760">Sniffy</text>
-  <text x="320" y="354" fill="#fff" font-family="system-ui, sans-serif" font-size="36">Java observability and resilience testing</text>
+  <text x="96" y="275" fill="#fff" font-family="system-ui, sans-serif" font-size="124" font-weight="680">Sniffy</text>
+  <text x="96" y="354" fill="#fff" font-family="system-ui, sans-serif" font-size="36">Java observability and resilience testing</text>
   <path d="M96 494h1008" stroke="#fff" stroke-opacity=".35" stroke-width="2"/>
   <text x="96" y="550" fill="#fff" font-family="ui-monospace, monospace" font-size="25">sniffy.io</text>
 </svg>

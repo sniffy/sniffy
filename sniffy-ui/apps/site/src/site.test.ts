@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -95,26 +95,29 @@ describe('@sniffy/site workspace contract', () => {
     expect(config).toContain("defaultMode: 'dark'");
     expect(config).toContain('disableSwitch: false');
     expect(config).toContain('respectPrefersColorScheme: true');
-    expect(config).toContain("favicon: 'img/brand/sniffy-mark.svg'");
+    expect(config).toContain("favicon: 'favicon.ico'");
     expect(config).toContain("image: 'img/brand/sniffy-social.svg'");
     expect(config).toContain("label: 'Documentation'");
     expect(config).toContain("label: 'Use cases'");
     expect(config).toContain("label: 'GitHub'");
+    expect(config).not.toContain('sniffy-search-item');
+    expect(config).not.toMatch(/navbar:\s*\{[\s\S]*?logo:\s*\{/);
     expect(config).toContain("routeBasePath: 'docs'");
     expect(config).toContain("lastVersion: 'current'");
     expect(config).toContain('blog: false');
     expect(config).not.toMatch(/versioned_(docs|sidebars)/);
   });
 
-  it('keeps brand assets and the narrow 404 wrapper inside the site application', () => {
+  it('keeps established and wordmark assets with the narrow 404 wrapper inside the site', () => {
     for (const path of [
-      'static/img/brand/sniffy-mark.svg',
-      'static/img/brand/sniffy-mark-dark.svg',
       'static/img/brand/sniffy-social.svg',
       'src/theme/NotFound/Content/index.tsx',
     ]) {
       expect(readFileSync(resolve(site, path), 'utf8')).not.toHaveLength(0);
     }
+    expect(readFileSync(resolve(site, 'static/favicon.ico')).byteLength).toBeGreaterThan(0);
+    expect(existsSync(resolve(site, 'static/img/brand/sniffy-mark.svg'))).toBe(false);
+    expect(existsSync(resolve(site, 'static/img/brand/sniffy-mark-dark.svg'))).toBe(false);
 
     const notFound = readFileSync(resolve(site, 'src/theme/NotFound/Content/index.tsx'), 'utf8');
     expect(notFound).toContain('This trail went cold.');

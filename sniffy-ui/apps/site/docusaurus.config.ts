@@ -14,7 +14,7 @@ const config: Config = {
   tagline: 'Java application observability and resilience testing',
   url: 'https://sniffy.io',
   baseUrl: '/',
-  favicon: 'img/brand/sniffy-mark.svg',
+  favicon: 'favicon.ico',
   trailingSlash: true,
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
@@ -65,13 +65,6 @@ const config: Config = {
     ],
     navbar: {
       title: 'Sniffy',
-      logo: {
-        alt: '',
-        src: 'img/brand/sniffy-mark.svg',
-        srcDark: 'img/brand/sniffy-mark-dark.svg',
-        width: 34,
-        height: 34,
-      },
       items: [
         {
           type: 'docSidebar',
@@ -88,13 +81,6 @@ const config: Config = {
             { label: 'Network fault testing', to: '/docs/network/fault-emulation/' },
             { label: 'Traffic and TLS capture', to: '/docs/network/traffic-capture/' },
           ],
-        },
-        {
-          type: 'html',
-          position: 'right',
-          className: 'sniffy-search-item',
-          value:
-            '<span class="sniffy-search-placeholder" aria-label="Documentation search is coming soon"><span>Search docs</span><kbd aria-hidden="true">⌘ K</kbd></span>',
         },
         {
           href: 'https://github.com/sniffy/sniffy',

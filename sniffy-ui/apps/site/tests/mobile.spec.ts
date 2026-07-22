@@ -24,7 +24,7 @@ test('the mobile menu exposes the shell navigation without horizontal overflow',
   await expect(sidebar.getByRole('link', { name: 'Documentation' })).toBeVisible();
   await expect(sidebar.getByText('Use cases', { exact: true })).toBeVisible();
   await expect(sidebar.getByRole('link', { name: 'GitHub' })).toBeVisible();
-  await expect(sidebar.getByText('Search docs')).toBeVisible();
+  await expect(sidebar.getByText('Search docs')).toHaveCount(0);
   await expect(
     sidebar.getByRole('button', { name: /Switch between dark and light mode/ }),
   ).toBeVisible();
@@ -36,6 +36,41 @@ test('the mobile menu exposes the shell navigation without horizontal overflow',
   expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
 });
 
+test('the mobile configuration table scrolls to its final column without page overflow', async ({
+  page,
+}) => {
+  await page.goto('/docs/configuration/');
+
+  const tableRegion = page.getByRole('region', { name: 'Sniffy configuration properties' });
+  await expect(tableRegion).toBeVisible();
+  const geometry = await tableRegion.evaluate((region) => {
+    const clientWidth = region.clientWidth;
+    const scrollWidth = region.scrollWidth;
+    region.scrollLeft = scrollWidth;
+    const lastHeader = region.querySelector('th:last-child');
+    const regionBox = region.getBoundingClientRect();
+    const headerBox = lastHeader?.getBoundingClientRect();
+    return {
+      clientWidth,
+      scrollWidth,
+      scrollLeft: region.scrollLeft,
+      documentClientWidth: document.documentElement.clientWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      regionRight: regionBox.right,
+      headerLeft: headerBox?.left,
+      headerRight: headerBox?.right,
+      headerText: lastHeader?.textContent?.trim(),
+    };
+  });
+
+  expect(geometry.scrollWidth).toBeGreaterThan(geometry.clientWidth);
+  expect(geometry.scrollLeft).toBeGreaterThan(0);
+  expect(geometry.headerText).toBe('Default Value');
+  expect(geometry.headerLeft).toBeGreaterThanOrEqual(0);
+  expect(geometry.headerRight).toBeLessThanOrEqual(geometry.regionRight + 1);
+  expect(geometry.documentScrollWidth).toBe(geometry.documentClientWidth);
+});
+
 for (const colorScheme of ['dark', 'light'] as const) {
   test(`the ${colorScheme} mobile shell matches its reviewed baseline`, async ({ page }) => {
     await page.emulateMedia({ colorScheme });
@@ -45,6 +80,22 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await expect(page).toHaveScreenshot(`home-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       fullPage: true,
+    });
+  });
+
+  test(`the ${colorScheme} mobile configuration table matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/docs/configuration/');
+
+    const tableRegion = page.getByRole('region', { name: 'Sniffy configuration properties' });
+    await tableRegion.evaluate((region) => {
+      region.scrollLeft = region.scrollWidth;
+    });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await expect(page).toHaveScreenshot(`configuration-mobile-${colorScheme}.png`, {
+      animations: 'disabled',
     });
   });
 }

@@ -10,6 +10,13 @@ This configuration can be overriden in `web.xml` and/or `@EnableSniffy` annotati
 
 **Configuration properties**
 
+<div
+  className="sniffy-table-scroll"
+  role="region"
+  aria-label="Sniffy configuration properties"
+  tabIndex={0}
+>
+
 | System Property                         | Environment Variable                     | Sniffy Agent parameter | Description                                                                                                                                                                                              | Default Value                                                                     |
 | --------------------------------------- | ---------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | -Dio.sniffy.logLevel                    | IO_SNIFFY_LOG_LEVEL                      | N/A                    | Sniffy logging level; allowed values are: TRACE, DEBUG, INFO, ERROR, OFF                                                                                                                                 | info                                                                              |
@@ -31,6 +38,8 @@ This configuration can be overriden in `web.xml` and/or `@EnableSniffy` annotati
 | -Dio.sniffy.socketFaultInjectionEnabled | IO_SNIFFY_SOCKET_FAULT_INJECTION_ENABLED | N/A                    | Enable injecting network faults if monitorSocket or monitorNio are enabled                                                                                                                               | true                                                                              |
 | -Dio.sniffy.useSecureCookie             | IO_SNIFFY_USE_SECURE_COOKIE              | N/A                    | Mark cookies set by Sniffy as secure                                                                                                                                                                     | true                                                                              |
 | -Dio.sniffy.flushResponse               | IO_SNIFFY_FLUSH_RESPONSE                 | N/A                    | Force flush servlet response if possible                                                                                                                                                                 | true                                                                              |
+
+</div>
 
 See [NIO monitoring](./nio-monitoring/).
 

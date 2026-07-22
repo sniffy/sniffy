@@ -31,7 +31,8 @@ test('the branded shell exposes primary navigation and footer landmarks', async 
     'href',
     'https://github.com/sniffy/sniffy',
   );
-  await expect(navigation.getByText('Search docs')).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Sniffy' }).locator('img')).toHaveCount(0);
+  await expect(navigation.getByText('Search docs')).toHaveCount(0);
 
   const footer = page.getByRole('contentinfo');
   await expect(footer).toBeVisible();
@@ -46,6 +47,44 @@ test('the current documentation renders at /docs/', async ({ page }) => {
   expect(response?.status()).toBe(200);
   await expect(page).toHaveTitle(/Sniffy documentation \| Sniffy/);
   await expect(page.getByRole('heading', { level: 1, name: 'Sniffy documentation' })).toBeVisible();
+});
+
+test('the configuration table keeps every column reachable without page overflow', async ({
+  page,
+}) => {
+  await page.goto('/docs/configuration/');
+
+  const tableRegion = page.getByRole('region', { name: 'Sniffy configuration properties' });
+  await expect(tableRegion).toBeVisible();
+  await expect(tableRegion).toHaveAttribute('tabindex', '0');
+
+  const initialGeometry = await tableRegion.evaluate((region) => ({
+    clientWidth: region.clientWidth,
+    scrollWidth: region.scrollWidth,
+  }));
+  expect(initialGeometry.scrollWidth).toBeGreaterThan(initialGeometry.clientWidth);
+
+  const finalGeometry = await tableRegion.evaluate((region) => {
+    region.scrollLeft = region.scrollWidth;
+    const lastHeader = region.querySelector('th:last-child');
+    const regionBox = region.getBoundingClientRect();
+    const headerBox = lastHeader?.getBoundingClientRect();
+    return {
+      documentClientWidth: document.documentElement.clientWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      scrollLeft: region.scrollLeft,
+      regionRight: regionBox.right,
+      headerLeft: headerBox?.left,
+      headerRight: headerBox?.right,
+      headerText: lastHeader?.textContent?.trim(),
+    };
+  });
+
+  expect(finalGeometry.scrollLeft).toBeGreaterThan(0);
+  expect(finalGeometry.headerText).toBe('Default Value');
+  expect(finalGeometry.headerLeft).toBeGreaterThanOrEqual(0);
+  expect(finalGeometry.headerRight).toBeLessThanOrEqual(finalGeometry.regionRight + 1);
+  expect(finalGeometry.documentScrollWidth).toBe(finalGeometry.documentClientWidth);
 });
 
 test('the site follows light preference and allows an explicit dark selection', async ({
@@ -170,6 +209,22 @@ for (const colorScheme of ['dark', 'light'] as const) {
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
     await expect(page).toHaveScreenshot(`docs-desktop-${colorScheme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`the ${colorScheme} desktop configuration table matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/docs/configuration/');
+
+    const tableRegion = page.getByRole('region', { name: 'Sniffy configuration properties' });
+    await tableRegion.evaluate((region) => {
+      region.scrollLeft = region.scrollWidth;
+    });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await expect(page).toHaveScreenshot(`configuration-desktop-${colorScheme}.png`, {
       animations: 'disabled',
     });
   });

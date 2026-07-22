@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Sniffy">
-  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="6">
-    <path d="M14 21c9-10 27-10 36 0"/>
-    <path d="M19 31c7-7 19-7 26 0"/>
-    <path d="M25 41c4-4 10-4 14 0"/>
-  </g>
-  <circle cx="32" cy="50" r="5" fill="#fff"/>
-</svg>
