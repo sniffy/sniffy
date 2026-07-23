@@ -9,6 +9,18 @@ const workspace = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@docusaurus/router': resolve(
+        workspace,
+        'node_modules/@docusaurus/core/lib/client/exports/router.js',
+      ),
+      '@docusaurus/useDocusaurusContext': resolve(
+        workspace,
+        'node_modules/@docusaurus/core/lib/client/exports/useDocusaurusContext.js',
+      ),
+    },
+  },
   test: {
     coverage: {
       provider: 'v8',
