@@ -16,3 +16,6 @@
   font-family: 'Sniffy Visual Test', sans-serif !important;
   font-synthesis: none !important;
 }
+[data-shell-external-link] {
+  display: none !important;
+}

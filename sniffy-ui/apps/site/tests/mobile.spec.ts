@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 
 import { prepareGitHubStarsScreenshot } from './github-stars-visual';
+import { prepareShellScreenshot } from './shell-visual';
 
 const shellScreenshotStyle = path.join(__dirname, 'screenshot-stability.css');
 
@@ -125,6 +126,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await page.goto('/');
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareShellScreenshot(page);
     await expect(page).toHaveScreenshot(`home-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       fullPage: true,
@@ -181,6 +183,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
       region.scrollLeft = region.scrollWidth;
     });
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareShellScreenshot(page);
     await expect(page).toHaveScreenshot(`configuration-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       stylePath: shellScreenshotStyle,
@@ -203,6 +206,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
       .evaluate((input) => {
         input.style.caretColor = 'transparent';
       });
+    await prepareShellScreenshot(page);
     await expect(page).toHaveScreenshot(`search-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       stylePath: shellScreenshotStyle,
