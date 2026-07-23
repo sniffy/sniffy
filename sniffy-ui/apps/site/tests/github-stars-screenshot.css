@@ -12,7 +12,7 @@
   font-style: normal;
   font-weight: 700;
 }
-a[aria-label^='Sniffy GitHub repository'],
-a[aria-label^='Sniffy GitHub repository'] * {
+a:has(> [data-testid='github-star-count']),
+a:has(> [data-testid='github-star-count']) * {
   font-family: 'Sniffy Visual Test', sans-serif !important;
 }
