@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { expectNoAccessibilityViolations } from './accessibility';
 import { prepareGitHubStarsScreenshot } from './github-stars-visual';
-import { prepareShellScreenshot, restoreShellScreenshot } from './shell-visual';
+import { prepareShellScreenshot } from './shell-visual';
 
 const shellScreenshotStyle = path.join(__dirname, 'screenshot-stability.css');
 
@@ -352,7 +352,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
       fullPage: true,
       stylePath: shellScreenshotStyle,
     });
-    await restoreShellScreenshot(page);
+    await page.reload();
     await prepareGitHubStarsScreenshot(page);
     await expect(
       page.getByRole('navigation', { name: 'Main' }).getByRole('link', {

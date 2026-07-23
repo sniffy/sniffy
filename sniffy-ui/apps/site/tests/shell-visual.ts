@@ -23,14 +23,3 @@ export async function prepareShellScreenshot(page: Page): Promise<void> {
     }
   });
 }
-
-export async function restoreShellScreenshot(page: Page): Promise<void> {
-  await page.locator('a[data-shell-original-html]').evaluateAll((links) => {
-    for (const link of links) {
-      link.innerHTML = link.getAttribute('data-shell-original-html') ?? '';
-      link.setAttribute('class', link.getAttribute('data-shell-original-class') ?? '');
-      link.removeAttribute('data-shell-original-html');
-      link.removeAttribute('data-shell-original-class');
-    }
-  });
-}
