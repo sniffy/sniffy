@@ -1,11 +1,1 @@
-/* Runtime GitHub data has focused asserted baselines; keep unrelated shell baselines stable. */
-a:has(> [data-testid='github-star-count']) {
-  gap: 0 !important;
-}
-.navbar__link:has(> [data-testid='github-star-count']) {
-  display: inline !important;
-}
-a:has(> [data-testid='github-star-count']) > svg:not([data-shell-external-link]),
-a:has(> [data-testid='github-star-count']) > [data-testid='github-star-count'] {
-  display: none !important;
-}
+/* Runtime GitHub data has focused asserted baselines; shell DOM is neutralized by shell-visual.ts. */
