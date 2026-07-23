@@ -1,5 +1,18 @@
+import { render, screen, within } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+import Home from './pages/index';
+
+vi.mock('@docusaurus/useDocusaurusContext', () => ({
+  default: () => ({
+    siteConfig: {
+      customFields: {
+        productVersion: '4.0.0-SNAPSHOT',
+      },
+    },
+  }),
+}));
 
 const site = resolve(import.meta.dirname, '..');
 const workspace = resolve(site, '../..');
@@ -7,6 +20,38 @@ const homepage = readFileSync(resolve(site, 'src/pages/index.tsx'), 'utf8');
 const config = readFileSync(resolve(site, 'docusaurus.config.ts'), 'utf8');
 
 describe('Sniffy homepage contract', () => {
+  it('renders the product story, current integrations, and versioned installation examples', () => {
+    render(<Home />);
+
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Make invisible I/O observable—and testable.',
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('img', { name: /Sniffy profiler showing executed SQL/ }),
+    ).toHaveAttribute('src', '/img/home/sniffy-profiler.png');
+    expect(screen.getByRole('link', { name: 'Start with Sniffy' })).toHaveAttribute(
+      'href',
+      '/docs/installation/',
+    );
+
+    const useCases = screen.getByRole('region', {
+      name: 'See behavior. Set expectations. Break assumptions safely.',
+    });
+    for (const heading of [
+      'SQL profiling and assertions',
+      'Network fault testing',
+      'Traffic and TLS capture',
+    ]) {
+      expect(within(useCases).getByRole('heading', { level: 3, name: heading })).toBeVisible();
+    }
+
+    expect(screen.getByText(/io\.sniffy:sniffy-spring:4\.0\.0-SNAPSHOT/)).toBeVisible();
+    expect(screen.getByText(/<version>4\.0\.0-SNAPSHOT<\/version>/)).toBeVisible();
+  });
+
   it('uses the root product version for both installation examples', () => {
     expect(config).toContain('productVersion: readProductVersion(repositoryRoot)');
     expect(homepage).toContain('siteConfig.customFields?.productVersion');
