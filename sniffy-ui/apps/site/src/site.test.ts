@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -75,7 +75,14 @@ describe('@sniffy/site workspace contract', () => {
     expect(styles).toContain("@import '@sniffy/theme/dark.css';");
     expect(styles).toContain("@import '@sniffy/theme/light.css';");
     expect(styles).toContain('--ifm-color-primary: var(--sniffy-accent);');
+    expect(styles).toContain('--sniffy-site-header-height:');
     expect(styles).not.toMatch(/#[\da-f]{3,8}\b/i);
+
+    for (const theme of ['base', 'dark', 'light']) {
+      expect(
+        readFileSync(resolve(workspace, `packages/theme/src/${theme}.css`), 'utf8'),
+      ).not.toContain('--sniffy-site-');
+    }
   });
 
   it('enables both shared themes and current docs while leaving future routes disabled', () => {
@@ -88,10 +95,33 @@ describe('@sniffy/site workspace contract', () => {
     expect(config).toContain("defaultMode: 'dark'");
     expect(config).toContain('disableSwitch: false');
     expect(config).toContain('respectPrefersColorScheme: true');
+    expect(config).toContain("favicon: 'favicon.ico'");
+    expect(config).toContain("image: 'img/brand/sniffy-social.svg'");
+    expect(config).toContain("label: 'Documentation'");
+    expect(config).toContain("label: 'Use cases'");
+    expect(config).toContain("label: 'GitHub'");
+    expect(config).not.toContain('sniffy-search-item');
+    expect(config).not.toMatch(/navbar:\s*\{[\s\S]*?logo:\s*\{/);
     expect(config).toContain("routeBasePath: 'docs'");
     expect(config).toContain("lastVersion: 'current'");
     expect(config).toContain('blog: false');
     expect(config).not.toMatch(/versioned_(docs|sidebars)/);
+  });
+
+  it('keeps established and wordmark assets with the narrow 404 wrapper inside the site', () => {
+    for (const path of [
+      'static/img/brand/sniffy-social.svg',
+      'src/theme/NotFound/Content/index.tsx',
+    ]) {
+      expect(readFileSync(resolve(site, path), 'utf8')).not.toHaveLength(0);
+    }
+    expect(readFileSync(resolve(site, 'static/favicon.ico')).byteLength).toBeGreaterThan(0);
+    expect(existsSync(resolve(site, 'static/img/brand/sniffy-mark.svg'))).toBe(false);
+    expect(existsSync(resolve(site, 'static/img/brand/sniffy-mark-dark.svg'))).toBe(false);
+
+    const notFound = readFileSync(resolve(site, 'src/theme/NotFound/Content/index.tsx'), 'utf8');
+    expect(notFound).toContain('This trail went cold.');
+    expect(notFound).toContain('aria-label="Page recovery"');
   });
 
   it('keeps the production base URL and packages a dependency-free cross-platform preview', () => {
@@ -107,9 +137,11 @@ describe('@sniffy/site workspace contract', () => {
     expect(readme).toContain('Windows');
     expect(readme).toContain('No dependency installation or repository checkout is required.');
     expect(preview).toContain("options = { host: '127.0.0.1', port: 4173 }");
+    expect(preview).toContain("resolve(root, '404.html')");
     expect(preview).not.toMatch(/from ['"][^n.]/);
     expect(verification).toContain("import { chromium } from '@playwright/test';");
     expect(verification).toContain("page.goto(url, { waitUntil: 'networkidle' })");
+    expect(verification).toContain('This trail went cold.');
   });
 });
 
@@ -172,5 +204,6 @@ describe('website validation workflow contract', () => {
     expect(playwright).toContain("name: 'mobile-chromium'");
     expect(playwright).toContain("devices['Pixel 7']");
     expect(playwright).toContain("testMatch: '**/mobile.spec.ts'");
+    expect(playwright).toContain("snapshotPathTemplate: '{testDir}/visual-baselines/{arg}{ext}'");
   });
 });
