@@ -1,0 +1,4 @@
+/* Use the same metrically compatible font across the pinned Linux CI and local review hosts. */
+a[aria-label^='Sniffy GitHub repository'] {
+  font-family: Arial, sans-serif !important;
+}

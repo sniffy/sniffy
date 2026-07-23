@@ -1,0 +1,8 @@
+/* Runtime GitHub data has focused asserted baselines; keep unrelated shell baselines stable. */
+a[aria-label^='Sniffy GitHub repository'] {
+  gap: 0 !important;
+}
+a[aria-label^='Sniffy GitHub repository'] > svg,
+a[aria-label^='Sniffy GitHub repository'] > [data-testid='github-star-count'] {
+  display: none !important;
+}

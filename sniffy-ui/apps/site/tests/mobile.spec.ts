@@ -1,4 +1,8 @@
 import { expect, test } from '@playwright/test';
+import path from 'node:path';
+
+const shellScreenshotStyle = path.join(__dirname, 'screenshot-stability.css');
+const githubScreenshotStyle = path.join(__dirname, 'github-stars-screenshot.css');
 
 test.beforeEach(async ({ page }) => {
   await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
@@ -123,6 +127,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await expect(page).toHaveScreenshot(`home-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       fullPage: true,
+      stylePath: shellScreenshotStyle,
     });
   });
 
@@ -139,6 +144,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
     await expect(githubLink).toHaveScreenshot(`github-stars-populated-mobile-${colorScheme}.png`, {
       animations: 'disabled',
+      stylePath: githubScreenshotStyle,
     });
   });
 
@@ -159,6 +165,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
     await expect(githubLink).toHaveScreenshot(`github-stars-fallback-mobile-${colorScheme}.png`, {
       animations: 'disabled',
+      stylePath: githubScreenshotStyle,
     });
   });
 
@@ -175,6 +182,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
     await expect(page).toHaveScreenshot(`configuration-mobile-${colorScheme}.png`, {
       animations: 'disabled',
+      stylePath: shellScreenshotStyle,
     });
   });
 
@@ -196,6 +204,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
       });
     await expect(page).toHaveScreenshot(`search-mobile-${colorScheme}.png`, {
       animations: 'disabled',
+      stylePath: shellScreenshotStyle,
     });
   });
 }
