@@ -1,4 +1,4 @@
-import { useHistory } from '@docusaurus/router';
+import { useHistory, useLocation } from '@docusaurus/router';
 import { useContextualSearchFilters } from '@docusaurus/theme-common';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { usePluginData } from '@docusaurus/useGlobalData';
@@ -44,10 +44,13 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
     'default',
   ) as SearchPluginData;
   const history = useHistory();
+  const location = useLocation();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const indexesRef = useRef<Awaited<ReturnType<typeof loadSearchIndexes>>>([]);
+  const previousRouteRef = useRef(`${location.pathname}${location.search}${location.hash}`);
+  const restoreFocusOnCloseRef = useRef(true);
   const [activeResult, setActiveResult] = useState(-1);
   const [indexState, setIndexState] = useState<IndexState>('idle');
   const [isMac, setIsMac] = useState(false);
@@ -55,11 +58,42 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
 
-  const closeSearch = useCallback(() => {
-    dialogRef.current?.close();
+  const resetSearch = useCallback(() => {
+    setOpen(false);
+    setQuery('');
+    setResults([]);
+    setActiveResult(-1);
   }, []);
 
+  const closeSearch = useCallback(
+    (restoreFocus = true) => {
+      restoreFocusOnCloseRef.current = restoreFocus;
+      resetSearch();
+
+      const dialog = dialogRef.current;
+      if (dialog?.open || dialog?.hasAttribute('open')) {
+        dialog.close();
+      }
+      if (!restoreFocus) {
+        triggerRef.current?.blur();
+      }
+    },
+    [resetSearch],
+  );
+
+  const finishClose = useCallback(() => {
+    const restoreFocus = restoreFocusOnCloseRef.current;
+    restoreFocusOnCloseRef.current = true;
+    resetSearch();
+    if (restoreFocus) {
+      requestAnimationFrame(() => triggerRef.current?.focus());
+    } else {
+      triggerRef.current?.blur();
+    }
+  }, [resetSearch]);
+
   const openSearch = useCallback(() => {
+    restoreFocusOnCloseRef.current = true;
     setQuery('');
     setResults([]);
     setActiveResult(-1);
@@ -115,6 +149,14 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
   }, [baseUrl, handleSearchBarToggle, indexState, open, searchPluginData.developmentIndex, tags]);
 
   useEffect(() => {
+    const route = `${location.pathname}${location.search}${location.hash}`;
+    if (route === previousRouteRef.current) return;
+
+    previousRouteRef.current = route;
+    closeSearch(false);
+  }, [closeSearch, location.hash, location.pathname, location.search]);
+
+  useEffect(() => {
     if (indexState !== 'ready') return;
 
     try {
@@ -128,17 +170,9 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
     }
   }, [indexState, query]);
 
-  const finishClose = useCallback(() => {
-    setOpen(false);
-    setQuery('');
-    setResults([]);
-    setActiveResult(-1);
-    requestAnimationFrame(() => triggerRef.current?.focus());
-  }, []);
-
   const navigateToResult = useCallback(
     (result: SearchResult) => {
-      closeSearch();
+      closeSearch(false);
       history.push(result.url);
     },
     [closeSearch, history],
@@ -209,7 +243,7 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
           <button
             aria-label="Close documentation search"
             className={styles.close}
-            onClick={closeSearch}
+            onClick={() => closeSearch()}
             type="button"
           >
             Esc

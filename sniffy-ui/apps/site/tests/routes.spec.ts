@@ -216,6 +216,55 @@ test('local documentation search covers representative pages and section anchors
   await input.press('ArrowUp');
   await input.press('Enter');
   await expect(page).toHaveURL(/\/docs\/network\/traffic-capture\/(?:#.*)?$/);
+  await expect(dialog).not.toBeVisible();
+});
+
+test('result navigation always dismisses search across page, anchor, and same-route changes', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  const trigger = page.getByRole('button', { name: /Search docs/ });
+  const dialog = page.getByRole('dialog', { name: 'Search Sniffy docs' });
+  const input = dialog.getByRole('combobox', {
+    name: 'Search current Sniffy documentation',
+  });
+
+  for (let iteration = 0; iteration < 2; iteration += 1) {
+    await trigger.click();
+    await input.fill('sql');
+    const crossPageResult = dialog.locator('a[href="/docs/testing/api/"]').first();
+    await expect(crossPageResult).toBeVisible();
+    await crossPageResult.click();
+    await expect(page).toHaveURL(/\/docs\/testing\/api\/$/);
+    await expect(dialog).not.toBeVisible();
+    await expect(trigger).not.toBeFocused();
+
+    await trigger.click();
+    await input.fill('SSL TLS traffic decryption');
+    const sectionResult = dialog
+      .locator('a[href="/docs/network/traffic-capture/#ssltls-traffic-decryption"]')
+      .first();
+    await expect(sectionResult).toBeVisible();
+    await sectionResult.focus();
+    await sectionResult.press('Enter');
+    await expect(page).toHaveURL(/\/docs\/network\/traffic-capture\/#ssltls-traffic-decryption$/);
+    await expect(dialog).not.toBeVisible();
+    await expect(trigger).not.toBeFocused();
+
+    await trigger.click();
+    await dialog.evaluate((element) => {
+      element.dataset.lifecycleMarker = 'same-route';
+    });
+    await input.fill('traffic capture');
+    const samePageResult = dialog.locator('a[href="/docs/network/traffic-capture/"]').first();
+    await expect(samePageResult).toBeVisible();
+    await samePageResult.click();
+    await expect(page).toHaveURL(/\/docs\/network\/traffic-capture\/$/);
+    await expect(dialog).not.toBeVisible();
+    await expect(page.locator('dialog')).toHaveAttribute('data-lifecycle-marker', 'same-route');
+    await expect(trigger).not.toBeFocused();
+  }
 });
 
 test('local documentation search fails closed for malformed index data', async ({ page }) => {

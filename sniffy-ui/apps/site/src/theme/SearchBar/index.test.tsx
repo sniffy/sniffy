@@ -5,11 +5,13 @@ import SearchBar from './index';
 const mocks = vi.hoisted(() => ({
   historyPush: vi.fn(),
   loadSearchIndexes: vi.fn(),
+  location: { hash: '', pathname: '/', search: '' },
   searchIndexes: vi.fn(),
 }));
 
 vi.mock('@docusaurus/router', () => ({
   useHistory: () => ({ push: mocks.historyPush }),
+  useLocation: () => mocks.location,
 }));
 
 vi.mock('@docusaurus/theme-common', () => ({
@@ -65,13 +67,16 @@ describe('documentation search bar', () => {
     mocks.historyPush.mockReset();
     mocks.loadSearchIndexes.mockReset();
     mocks.searchIndexes.mockReset();
+    mocks.location.hash = '';
+    mocks.location.pathname = '/';
+    mocks.location.search = '';
 
     HTMLDialogElement.prototype.showModal = function showModal() {
-      this.open = true;
+      this.setAttribute('open', '');
     };
     HTMLDialogElement.prototype.close = function close() {
-      if (!this.open) return;
-      this.open = false;
+      if (!this.hasAttribute('open')) return;
+      this.removeAttribute('open');
       this.dispatchEvent(new Event('close'));
     };
   });
@@ -151,14 +156,16 @@ describe('documentation search bar', () => {
     );
   });
 
-  it('selects results with the keyboard or pointer and navigates without a page reload', async () => {
+  it('closes and resets search before keyboard or pointer navigation without restoring focus', async () => {
     mocks.loadSearchIndexes.mockResolvedValue([]);
     mocks.searchIndexes.mockImplementation((_indexes, query: string) =>
       query.trim().length > 0 ? results : [],
     );
     render(<SearchBar />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Search docs' }));
+    const trigger = screen.getByRole('button', { name: 'Search docs' });
+    fireEvent.click(trigger);
+    const dialog = screen.getByRole('dialog', { name: 'Search Sniffy docs' });
     const input = screen.getByRole('combobox', {
       name: 'Search current Sniffy documentation',
     });
@@ -177,10 +184,42 @@ describe('documentation search bar', () => {
     expect(mocks.historyPush).toHaveBeenCalledWith(
       '/docs/network/traffic-capture/#ssltls-traffic-decryption',
     );
+    expect(dialog).not.toHaveAttribute('open');
+    expect(input).toHaveValue('');
+    expect(screen.queryAllByRole('option')).toHaveLength(0);
+    await waitFor(() => expect(trigger).not.toHaveFocus());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Search docs' }));
+    fireEvent.click(trigger);
     fireEvent.change(input, { target: { value: 'traffic capture' } });
     fireEvent.click((await screen.findAllByRole('option'))[0]);
     expect(mocks.historyPush).toHaveBeenLastCalledWith('/docs/network/traffic-capture/');
+    expect(dialog).not.toHaveAttribute('open');
+    expect(input).toHaveValue('');
+    await waitFor(() => expect(trigger).not.toHaveFocus());
+  });
+
+  it('defensively closes and resets search when the current route changes', async () => {
+    mocks.loadSearchIndexes.mockResolvedValue([]);
+    mocks.searchIndexes.mockImplementation((_indexes, query: string) =>
+      query.trim().length > 0 ? results : [],
+    );
+    const { rerender } = render(<SearchBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search docs' }));
+    const dialog = screen.getByRole('dialog', { name: 'Search Sniffy docs' });
+    const input = screen.getByRole('combobox', {
+      name: 'Search current Sniffy documentation',
+    });
+    fireEvent.change(input, { target: { value: 'traffic capture' } });
+    await screen.findAllByRole('option');
+
+    mocks.location.pathname = '/docs/network/traffic-capture/';
+    mocks.location.hash = '#ssltls-traffic-decryption';
+    rerender(<SearchBar />);
+
+    await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
+    expect(input).toHaveValue('');
+    expect(screen.queryAllByRole('option')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Search docs' })).not.toHaveFocus();
   });
 });
