@@ -134,6 +134,7 @@ jobs:
         run: >-
           npx vitest run --project unit
           apps/site/src/site.test.ts
+          apps/site/src/homepage.test.ts
           apps/site/src/source-snippets.test.ts
           apps/site/src/product-version.test.ts
           apps/site/src/documentation.test.ts
