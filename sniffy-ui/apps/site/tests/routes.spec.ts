@@ -176,7 +176,7 @@ test('local documentation search covers representative pages and section anchors
   page,
 }) => {
   await page.goto('/');
-  await page.keyboard.press('Control+K');
+  await page.locator('body').press('Control+KeyK');
 
   const dialog = page.getByRole('dialog', { name: 'Search Sniffy docs' });
   const input = dialog.getByRole('combobox', {
