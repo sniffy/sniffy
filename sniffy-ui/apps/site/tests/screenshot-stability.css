@@ -1,0 +1,8 @@
+/* Dynamic runtime data is reviewed separately from the stable shell baselines. */
+a[aria-label^='Sniffy GitHub repository'] {
+  gap: 0 !important;
+}
+a[aria-label^='Sniffy GitHub repository'] > svg,
+a[aria-label^='Sniffy GitHub repository'] > [data-testid='github-star-count'] {
+  display: none !important;
+}

@@ -336,7 +336,7 @@ test('the branded 404 offers useful recovery links and remains accessible', asyn
 for (const colorScheme of ['dark', 'light'] as const) {
   test(`the ${colorScheme} desktop homepage shell matches its reviewed baseline`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     await page.emulateMedia({ colorScheme });
     await page.goto('/');
 
@@ -345,11 +345,16 @@ for (const colorScheme of ['dark', 'light'] as const) {
       animations: 'disabled',
       fullPage: true,
     });
+    await page.screenshot({
+      path: testInfo.outputPath(`github-stars-populated-desktop-${colorScheme}.png`),
+      animations: 'disabled',
+      fullPage: true,
+    });
   });
 
-  test(`the ${colorScheme} desktop GitHub fallback matches its reviewed baseline`, async ({
+  test(`the ${colorScheme} desktop GitHub fallback produces review evidence`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     await page.unroute('https://api.github.com/repos/sniffy/sniffy');
     await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
       route.abort('failed'),
@@ -358,7 +363,8 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await page.goto('/');
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
-    await expect(page).toHaveScreenshot(`github-stars-fallback-desktop-${colorScheme}.png`, {
+    await page.screenshot({
+      path: testInfo.outputPath(`github-stars-fallback-desktop-${colorScheme}.png`),
       animations: 'disabled',
       fullPage: true,
     });

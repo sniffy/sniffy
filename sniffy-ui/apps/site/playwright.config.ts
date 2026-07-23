@@ -7,6 +7,9 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: [['list']],
+  expect: {
+    toHaveScreenshot: { stylePath: './tests/screenshot-stability.css' },
+  },
   snapshotPathTemplate: '{testDir}/visual-baselines/{arg}{ext}',
   use: {
     baseURL: 'http://127.0.0.1:3100',

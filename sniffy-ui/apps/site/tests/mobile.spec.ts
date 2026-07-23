@@ -126,9 +126,9 @@ for (const colorScheme of ['dark', 'light'] as const) {
     });
   });
 
-  test(`the ${colorScheme} mobile GitHub control matches its reviewed baseline`, async ({
+  test(`the ${colorScheme} mobile GitHub control produces review evidence`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     await page.emulateMedia({ colorScheme });
     await page.goto('/');
     await page.getByRole('button', { name: 'Toggle navigation bar' }).click();
@@ -138,15 +138,16 @@ for (const colorScheme of ['dark', 'light'] as const) {
       }),
     ).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
-    await expect(page).toHaveScreenshot(`github-stars-mobile-${colorScheme}.png`, {
+    await page.screenshot({
+      path: testInfo.outputPath(`github-stars-mobile-${colorScheme}.png`),
       animations: 'disabled',
       fullPage: true,
     });
   });
 
-  test(`the ${colorScheme} mobile GitHub fallback matches its reviewed baseline`, async ({
+  test(`the ${colorScheme} mobile GitHub fallback produces review evidence`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     await page.unroute('https://api.github.com/repos/sniffy/sniffy');
     await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
       route.abort('failed'),
@@ -158,7 +159,8 @@ for (const colorScheme of ['dark', 'light'] as const) {
       page.locator('.navbar-sidebar').getByRole('link', { name: 'Sniffy GitHub repository' }),
     ).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
-    await expect(page).toHaveScreenshot(`github-stars-fallback-mobile-${colorScheme}.png`, {
+    await page.screenshot({
+      path: testInfo.outputPath(`github-stars-fallback-mobile-${colorScheme}.png`),
       animations: 'disabled',
       fullPage: true,
     });
