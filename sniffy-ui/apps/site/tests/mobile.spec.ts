@@ -126,28 +126,25 @@ for (const colorScheme of ['dark', 'light'] as const) {
     });
   });
 
-  test(`the ${colorScheme} mobile GitHub control produces review evidence`, async ({
+  test(`the ${colorScheme} mobile GitHub control matches its reviewed baseline`, async ({
     page,
-  }, testInfo) => {
+  }) => {
     await page.emulateMedia({ colorScheme });
     await page.goto('/');
     await page.getByRole('button', { name: 'Toggle navigation bar' }).click();
-    await expect(
-      page.locator('.navbar-sidebar').getByRole('link', {
-        name: 'Sniffy GitHub repository, 12,345 stars',
-      }),
-    ).toBeVisible();
+    const githubLink = page.locator('.navbar-sidebar').getByRole('link', {
+      name: 'Sniffy GitHub repository, 12,345 stars',
+    });
+    await expect(githubLink).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
-    await page.screenshot({
-      path: testInfo.outputPath(`github-stars-mobile-${colorScheme}.png`),
+    await expect(githubLink).toHaveScreenshot(`github-stars-populated-mobile-${colorScheme}.png`, {
       animations: 'disabled',
-      fullPage: true,
     });
   });
 
-  test(`the ${colorScheme} mobile GitHub fallback produces review evidence`, async ({
+  test(`the ${colorScheme} mobile GitHub fallback matches its reviewed baseline`, async ({
     page,
-  }, testInfo) => {
+  }) => {
     await page.unroute('https://api.github.com/repos/sniffy/sniffy');
     await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
       route.abort('failed'),
@@ -155,14 +152,13 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await page.emulateMedia({ colorScheme });
     await page.goto('/');
     await page.getByRole('button', { name: 'Toggle navigation bar' }).click();
-    await expect(
-      page.locator('.navbar-sidebar').getByRole('link', { name: 'Sniffy GitHub repository' }),
-    ).toBeVisible();
+    const githubLink = page
+      .locator('.navbar-sidebar')
+      .getByRole('link', { name: 'Sniffy GitHub repository' });
+    await expect(githubLink).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
-    await page.screenshot({
-      path: testInfo.outputPath(`github-stars-fallback-mobile-${colorScheme}.png`),
+    await expect(githubLink).toHaveScreenshot(`github-stars-fallback-mobile-${colorScheme}.png`, {
       animations: 'disabled',
-      fullPage: true,
     });
   });
 
@@ -193,6 +189,11 @@ for (const colorScheme of ['dark', 'light'] as const) {
       .fill('traffic capture');
 
     await expect(page.getByRole('option').first()).toBeVisible();
+    await page
+      .getByRole('combobox', { name: 'Search current Sniffy documentation' })
+      .evaluate((input) => {
+        input.style.caretColor = 'transparent';
+      });
     await expect(page).toHaveScreenshot(`search-mobile-${colorScheme}.png`, {
       animations: 'disabled',
     });

@@ -7,9 +7,6 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: [['list']],
-  expect: {
-    toHaveScreenshot: { stylePath: './tests/screenshot-stability.css' },
-  },
   snapshotPathTemplate: '{testDir}/visual-baselines/{arg}{ext}',
   use: {
     baseURL: 'http://127.0.0.1:3100',
@@ -48,7 +45,7 @@ export default defineConfig({
     },
     {
       name: 'dev-compatibility-chromium',
-      testMatch: ['**/legacy-docs.spec.ts', '**/dev-search.spec.ts'],
+      testMatch: ['**/legacy-docs.spec.ts', '**/dev-search.spec.ts', '**/dev-github-stars.spec.ts'],
       use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3200' },
     },
   ],
