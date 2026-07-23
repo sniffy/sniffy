@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 
+import { githubScreenshotStyle, prepareGitHubStarsScreenshot } from './github-stars-visual';
+
 const shellScreenshotStyle = path.join(__dirname, 'screenshot-stability.css');
-const githubScreenshotStyle = path.join(__dirname, 'github-stars-screenshot.css');
 
 test.beforeEach(async ({ page }) => {
   await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
@@ -142,6 +143,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
     });
     await expect(githubLink).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareGitHubStarsScreenshot(page);
     await expect(githubLink).toHaveScreenshot(`github-stars-populated-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       stylePath: githubScreenshotStyle,
@@ -163,6 +165,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
       .getByRole('link', { name: 'Sniffy GitHub repository' });
     await expect(githubLink).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareGitHubStarsScreenshot(page);
     await expect(githubLink).toHaveScreenshot(`github-stars-fallback-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       stylePath: githubScreenshotStyle,
