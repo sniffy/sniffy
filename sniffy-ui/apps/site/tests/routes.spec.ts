@@ -2,19 +2,76 @@ import { expect, test } from '@playwright/test';
 
 import { expectNoAccessibilityViolations } from './accessibility';
 
-test('the minimal homepage renders at /', async ({ page }) => {
+test('the homepage explains Sniffy and routes visitors into current documentation', async ({
+  page,
+}) => {
   const response = await page.goto('/');
 
   expect(response?.status()).toBe(200);
-  await expect(page).toHaveTitle(/Website foundation \| Sniffy/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Sniffy' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Open the documentation scaffold' })).toHaveAttribute(
+  await expect(page).toHaveTitle(/Java observability and resilience testing \| Sniffy/);
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Make invisible I/O observable—and testable.',
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('img', { name: /Sniffy profiler showing executed SQL/ }),
+  ).toHaveJSProperty('naturalWidth', 760);
+  await expect(page.getByRole('link', { name: 'Start with Sniffy' })).toHaveAttribute(
+    'href',
+    '/docs/installation/',
+  );
+  await expect(page.getByRole('link', { name: /Explore the documentation/ })).toHaveAttribute(
     'href',
     '/docs/',
   );
-  await page.getByRole('link', { name: 'Open the documentation scaffold' }).click();
-  await expect(page).toHaveURL(/\/docs\/$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Sniffy documentation' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      level: 2,
+      name: 'See behavior. Set expectations. Break assumptions safely.',
+    }),
+  ).toBeVisible();
+  await expect(page.getByText('io.sniffy:sniffy-spring:4.0.0-SNAPSHOT')).toBeVisible();
+  await page.getByRole('link', { name: 'Start with Sniffy' }).click();
+  await expect(page).toHaveURL(/\/docs\/installation\/$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Installation' })).toBeVisible();
+});
+
+test('homepage metadata, links, accessibility, and reflow are production-ready', async ({
+  page,
+  request,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.goto('/');
+
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://sniffy.io/');
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    'content',
+    'https://sniffy.io/',
+  );
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    'content',
+    'https://sniffy.io/img/brand/sniffy-social.svg',
+  );
+
+  const useCaseLinks = [
+    ['Explore query assertions', '/docs/testing/api/'],
+    ['Test network failures', '/docs/network/fault-emulation/'],
+    ['Inspect network traffic', '/docs/network/traffic-capture/'],
+  ] as const;
+  for (const [label, href] of useCaseLinks) {
+    await expect(page.getByRole('link', { name: new RegExp(label) })).toHaveAttribute('href', href);
+    expect((await request.get(href)).status()).toBe(200);
+  }
+
+  const geometry = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(geometry.scrollWidth).toBe(geometry.clientWidth);
+  await expect(page.getByRole('main')).toHaveCount(1);
+  await expectNoAccessibilityViolations(page);
 });
 
 test('the branded shell exposes primary navigation and footer landmarks', async ({ page }) => {
