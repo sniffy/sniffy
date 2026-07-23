@@ -149,6 +149,10 @@ describe('@sniffy/site workspace contract', () => {
     expect(verification).toContain('Search current Sniffy documentation');
     expect(verification).toContain('traffic capture');
     expect(verification).toContain('This trail went cold.');
+    expect(verification).toContain('return route.fulfill({ json: {} })');
+    expect(verification).toContain("getByRole('link', { name: 'Sniffy GitHub repository' })");
+    expect(verification).toContain("getByTestId('github-star-count')");
+    expect(verification).toContain("message.type() === 'error'");
   });
 
   it('uses a pinned local search indexer with a Sniffy-owned resilient search dialog', () => {
