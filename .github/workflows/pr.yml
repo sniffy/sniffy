@@ -150,6 +150,14 @@ jobs:
       - name: Test desktop and mobile website navigation
         run: npm test --workspace @sniffy/site
 
+      - name: Upload website visual failures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: website-visual-failures-${{ github.event.pull_request.head.sha || github.sha }}
+          path: sniffy-ui/test-results/site/
+          if-no-files-found: error
+
       - name: Package reviewable website artifact
         run: npm run package:site-artifact
 
