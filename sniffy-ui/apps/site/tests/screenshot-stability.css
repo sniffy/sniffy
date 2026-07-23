@@ -2,6 +2,9 @@
 a:has(> [data-testid='github-star-count']) {
   gap: 0 !important;
 }
+.navbar__link:has(> [data-testid='github-star-count']) {
+  display: inline !important;
+}
 a:has(> [data-testid='github-star-count']) > svg:not([data-shell-external-link]),
 a:has(> [data-testid='github-star-count']) > [data-testid='github-star-count'] {
   display: none !important;
