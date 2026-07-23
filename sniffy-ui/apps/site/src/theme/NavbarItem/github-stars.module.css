@@ -1,0 +1,51 @@
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--sniffy-space-2);
+  white-space: nowrap;
+}
+
+.githubIcon,
+.starIcon {
+  flex: 0 0 auto;
+}
+
+.githubIcon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.countSlot {
+  display: inline-flex;
+  width: 3.75rem;
+  min-height: 1.6rem;
+  align-items: center;
+}
+
+.count {
+  display: inline-flex;
+  min-width: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--sniffy-site-divider);
+  border-radius: 999px;
+  color: var(--sniffy-foreground);
+  background: var(--sniffy-surface-raised);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.starIcon {
+  width: 0.8rem;
+  height: 0.8rem;
+  color: var(--sniffy-warning);
+}
+
+@media (max-width: 996px) {
+  .link {
+    width: 100%;
+  }
+}

@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
+    route.fulfill({ json: { stargazers_count: 12_345 } }),
+  );
+});
+
 test('the mobile homepage renders and navigates to current documentation', async ({ page }) => {
   const response = await page.goto('/');
 
@@ -23,7 +29,9 @@ test('the mobile menu exposes the shell navigation without horizontal overflow',
   await expect(sidebar).toBeVisible();
   await expect(sidebar.getByRole('link', { name: 'Documentation' })).toBeVisible();
   await expect(sidebar.getByText('Use cases', { exact: true })).toBeVisible();
-  await expect(sidebar.getByRole('link', { name: 'GitHub' })).toBeVisible();
+  await expect(
+    sidebar.getByRole('link', { name: 'Sniffy GitHub repository, 12,345 stars' }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: /Search docs/ })).toBeVisible();
   await expect(
     sidebar.getByRole('button', { name: /Switch between dark and light mode/ }),
@@ -113,6 +121,44 @@ for (const colorScheme of ['dark', 'light'] as const) {
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
     await expect(page).toHaveScreenshot(`home-mobile-${colorScheme}.png`, {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test(`the ${colorScheme} mobile GitHub control matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Toggle navigation bar' }).click();
+    await expect(
+      page.locator('.navbar-sidebar').getByRole('link', {
+        name: 'Sniffy GitHub repository, 12,345 stars',
+      }),
+    ).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await expect(page).toHaveScreenshot(`github-stars-mobile-${colorScheme}.png`, {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test(`the ${colorScheme} mobile GitHub fallback matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.unroute('https://api.github.com/repos/sniffy/sniffy');
+    await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
+      route.abort('failed'),
+    );
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Toggle navigation bar' }).click();
+    await expect(
+      page.locator('.navbar-sidebar').getByRole('link', { name: 'Sniffy GitHub repository' }),
+    ).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await expect(page).toHaveScreenshot(`github-stars-fallback-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       fullPage: true,
     });

@@ -2,6 +2,12 @@ import { expect, test } from '@playwright/test';
 
 import { expectNoAccessibilityViolations } from './accessibility';
 
+test.beforeEach(async ({ page }) => {
+  await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
+    route.fulfill({ json: { stargazers_count: 12_345 } }),
+  );
+});
+
 test('the minimal homepage renders at /', async ({ page }) => {
   const response = await page.goto('/');
 
@@ -27,10 +33,10 @@ test('the branded shell exposes primary navigation and footer landmarks', async 
     '/docs/',
   );
   await expect(navigation.getByText('Use cases', { exact: true })).toBeVisible();
-  await expect(navigation.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
-    'href',
-    'https://github.com/sniffy/sniffy',
-  );
+  await expect(
+    navigation.getByRole('link', { name: 'Sniffy GitHub repository, 12,345 stars' }),
+  ).toHaveAttribute('href', 'https://github.com/sniffy/sniffy');
+  await expect(navigation.getByText('12K')).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Sniffy' }).locator('img')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Search docs/ })).toBeVisible();
 
@@ -39,6 +45,18 @@ test('the branded shell exposes primary navigation and footer landmarks', async 
   await expect(footer.getByText('Product', { exact: true })).toBeVisible();
   await expect(footer.getByText('Use cases', { exact: true })).toBeVisible();
   await expect(footer.getByText('Project', { exact: true })).toBeVisible();
+});
+
+test('the repository link remains usable when GitHub is unavailable', async ({ page }) => {
+  await page.unroute('https://api.github.com/repos/sniffy/sniffy');
+  await page.route('https://api.github.com/repos/sniffy/sniffy', (route) => route.abort('failed'));
+  await page.goto('/');
+
+  const link = page.getByRole('navigation', { name: 'Main' }).getByRole('link', {
+    name: 'Sniffy GitHub repository',
+  });
+  await expect(link).toHaveAttribute('href', 'https://github.com/sniffy/sniffy');
+  await expect(link.getByTestId('github-star-count')).toBeEmpty();
 });
 
 test('the current documentation renders at /docs/', async ({ page }) => {
@@ -324,6 +342,23 @@ for (const colorScheme of ['dark', 'light'] as const) {
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
     await expect(page).toHaveScreenshot(`home-desktop-${colorScheme}.png`, {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test(`the ${colorScheme} desktop GitHub fallback matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.unroute('https://api.github.com/repos/sniffy/sniffy');
+    await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
+      route.abort('failed'),
+    );
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await expect(page).toHaveScreenshot(`github-stars-fallback-desktop-${colorScheme}.png`, {
       animations: 'disabled',
       fullPage: true,
     });
