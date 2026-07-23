@@ -59,8 +59,8 @@ describe('documentation search index', () => {
   it('loads, validates, and caches a same-origin generated index', async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify(createPayload())));
 
-    const first = await loadSearchIndexes('/', ['docs-default-current'], fetcher);
-    const second = await loadSearchIndexes('/', ['docs-default-current'], fetcher);
+    const first = await loadSearchIndexes('/', ['docs-default-current'], { fetcher });
+    const second = await loadSearchIndexes('/', ['docs-default-current'], { fetcher });
 
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(first).toHaveLength(1);
@@ -78,8 +78,32 @@ describe('documentation search index', () => {
     );
 
     await expect(
-      loadSearchIndexes('/', ['default', 'docs-default-current'], fetcher),
+      loadSearchIndexes('/', ['default', 'docs-default-current'], { fetcher }),
     ).resolves.toHaveLength(1);
+  });
+
+  it('uses the current development index when production JSON is absent', async () => {
+    const fetcher = vi.fn(async () => new Response('development shell'));
+
+    const indexes = await loadSearchIndexes('/', ['docs-default-current'], {
+      developmentIndex: createPayload(),
+      fetcher,
+    });
+
+    expect(searchIndexes(indexes, 'network fault')).toMatchObject([
+      {
+        pageTitle: 'Network fault emulation',
+        sectionTitle: 'Connection delay',
+        url: '/docs/network/fault-emulation/#connection-delay',
+      },
+    ]);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await expect(
+      loadSearchIndexes('/', ['docs-default-current'], {
+        developmentIndex: { documents: [], index: null },
+        fetcher,
+      }),
+    ).rejects.toThrow('invalid shape');
   });
 
   it('returns section-aware results and safely handles empty input', () => {
@@ -109,20 +133,16 @@ describe('documentation search index', () => {
 
   it('reports HTTP and serialized-index failures without returning partial data', async () => {
     await expect(
-      loadSearchIndexes(
-        '/',
-        ['docs-default-current'],
-        vi.fn(async () => new Response('missing', { status: 404 })),
-      ),
+      loadSearchIndexes('/', ['docs-default-current'], {
+        fetcher: vi.fn(async () => new Response('missing', { status: 404 })),
+      }),
     ).rejects.toThrow('HTTP 404');
 
     resetSearchIndexCacheForTests();
     await expect(
-      loadSearchIndexes(
-        '/',
-        ['docs-default-current'],
-        vi.fn(async () => new Response('{"documents":[],"index":{"version":"broken"}}')),
-      ),
+      loadSearchIndexes('/', ['docs-default-current'], {
+        fetcher: vi.fn(async () => new Response('{"documents":[],"index":{"version":"broken"}}')),
+      }),
     ).rejects.toThrow();
   });
 });

@@ -1,6 +1,7 @@
 import { useHistory } from '@docusaurus/router';
 import { useContextualSearchFilters } from '@docusaurus/theme-common';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import { usePluginData } from '@docusaurus/useGlobalData';
 import {
   type ChangeEvent,
   type KeyboardEvent,
@@ -19,6 +20,10 @@ type SearchBarProps = {
 
 type IndexState = 'error' | 'idle' | 'loading' | 'ready';
 
+type SearchPluginData = {
+  developmentIndex?: unknown;
+};
+
 const suggestedQueries = ['Installation', 'Configuration', 'SQL assertions', 'Traffic capture'];
 const currentDocsSearchTag = 'docs-default-current';
 
@@ -34,6 +39,10 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
     siteConfig: { baseUrl },
   } = useDocusaurusContext();
   const { tags } = useContextualSearchFilters();
+  const searchPluginData = usePluginData(
+    '@cmfcmf/docusaurus-search-local',
+    'default',
+  ) as SearchPluginData;
   const history = useHistory();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -86,7 +95,9 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
 
     if (indexState === 'idle') {
       setIndexState('loading');
-      loadSearchIndexes(baseUrl, [...tags, currentDocsSearchTag])
+      loadSearchIndexes(baseUrl, [...tags, currentDocsSearchTag], {
+        developmentIndex: searchPluginData.developmentIndex,
+      })
         .then((indexes) => {
           indexesRef.current = indexes;
           setIndexState('ready');
@@ -101,7 +112,7 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
       delete document.documentElement.dataset.sniffySearchOpen;
       handleSearchBarToggle?.(false);
     };
-  }, [baseUrl, handleSearchBarToggle, indexState, open, tags]);
+  }, [baseUrl, handleSearchBarToggle, indexState, open, searchPluginData.developmentIndex, tags]);
 
   useEffect(() => {
     if (indexState !== 'ready') return;

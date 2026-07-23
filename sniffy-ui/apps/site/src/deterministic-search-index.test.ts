@@ -1,6 +1,6 @@
 import lunr from 'lunr';
 
-import { normalizeSearchIndex } from './deterministic-search-index';
+import { createDevelopmentSearchIndex, normalizeSearchIndex } from './deterministic-search-index';
 
 function createPayload(order: number[]) {
   const source = [
@@ -60,5 +60,76 @@ describe('deterministic documentation search index', () => {
       { id: 2, sectionRoute: '/docs/installation/' },
     ]);
     expect(lunr.Index.load(first.index).search('installation')).toMatchObject([{ ref: '2' }]);
+  });
+
+  it('builds deterministic current-doc development sections from MDX sources', () => {
+    const sources = [
+      {
+        pageTitle: 'Using the Sniffy API',
+        route: '/docs/testing/api/',
+        source: [
+          '---',
+          'title: Using the Sniffy API',
+          '---',
+          'Write SQL query assertions against recorded traffic.',
+          '### Functional approach',
+          'Use `Sniffy.execute()` to validate SQL queries.',
+        ].join('\n'),
+      },
+      {
+        pageTitle: 'Traffic capture',
+        route: '/docs/network/traffic-capture/',
+        source: '### SSL/TLS Traffic Decryption\nDecrypt captured network traffic.',
+      },
+    ];
+    const first = createDevelopmentSearchIndex(sources);
+    const second = createDevelopmentSearchIndex([...sources].reverse());
+    const index = lunr.Index.load(first.index);
+
+    expect(JSON.stringify(first)).toBe(JSON.stringify(second));
+    expect(first.documents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sectionRoute: '/docs/network/traffic-capture/#ssltls-traffic-decryption',
+          sectionTitle: 'SSL/TLS Traffic Decryption',
+        }),
+        expect.objectContaining({
+          sectionRoute: '/docs/testing/api/',
+          sectionTitle: 'Using the Sniffy API',
+        }),
+      ]),
+    );
+    expect(index.search('sql')).not.toHaveLength(0);
+  });
+
+  it('matches Docusaurus heading slugs without indexing fenced-code headings', () => {
+    const result = createDevelopmentSearchIndex([
+      {
+        pageTitle: 'Repeated sections',
+        route: '/docs/repeated/',
+        source: [
+          '```md',
+          '## Not a heading',
+          '```',
+          '## Repeated *heading*',
+          'First section with a [searchable link](https://example.com).',
+          '## Repeated *heading*',
+          'Second section.',
+        ].join('\n'),
+      },
+    ]);
+
+    expect(result.documents.map(({ sectionRoute }) => sectionRoute)).toEqual([
+      '/docs/repeated/',
+      '/docs/repeated/#repeated-heading',
+      '/docs/repeated/#repeated-heading-1',
+    ]);
+    expect(lunr.Index.load(result.index).search('searchable')).not.toHaveLength(0);
+  });
+
+  it('rejects an empty development source set', () => {
+    expect(() => createDevelopmentSearchIndex([])).toThrow(
+      'The current documentation sources produced no development search index.',
+    );
   });
 });

@@ -176,6 +176,8 @@ describe('@sniffy/site workspace contract', () => {
     expect(index).toContain('Array.from(new Set(tags.filter(Boolean)))');
     expect(index).toContain('Array.from(bestByUrl.values())');
     expect(index).toContain("!document.sectionRoute.startsWith('/docs/')");
+    expect(deterministicIndex).toContain('createDevelopmentSearchIndex');
+    expect(deterministicIndex).toContain('async allContentLoaded(props)');
     expect(verifier).toContain("'SSL TLS traffic decryption'");
     expect(verifier).toContain('/docs/network/traffic-capture/#ssltls-traffic-decryption');
   });
@@ -242,6 +244,7 @@ describe('website validation workflow contract', () => {
     expect(playwright).toContain("name: 'mobile-chromium'");
     expect(playwright).toContain("devices['Pixel 7']");
     expect(playwright).toContain("testMatch: '**/mobile.spec.ts'");
+    expect(playwright).toContain("'**/dev-search.spec.ts'");
     expect(playwright).toContain("snapshotPathTemplate: '{testDir}/visual-baselines/{arg}{ext}'");
   });
 });

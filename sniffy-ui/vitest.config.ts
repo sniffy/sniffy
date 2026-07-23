@@ -19,6 +19,10 @@ export default defineConfig({
         workspace,
         'node_modules/@docusaurus/core/lib/client/exports/useDocusaurusContext.js',
       ),
+      '@docusaurus/useGlobalData': resolve(
+        workspace,
+        'node_modules/@docusaurus/core/lib/client/exports/useGlobalData.js',
+      ),
     },
   },
   test: {

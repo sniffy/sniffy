@@ -20,6 +20,10 @@ vi.mock('@docusaurus/useDocusaurusContext', () => ({
   default: () => ({ siteConfig: { baseUrl: '/' } }),
 }));
 
+vi.mock('@docusaurus/useGlobalData', () => ({
+  usePluginData: () => ({}),
+}));
+
 vi.mock('./search-index', () => ({
   loadSearchIndexes: mocks.loadSearchIndexes,
   searchIndexes: mocks.searchIndexes,
@@ -100,7 +104,9 @@ describe('documentation search bar', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading the local documentation index');
     expect(document.documentElement.dataset.sniffySearchOpen).toBe('true');
     expect(handleSearchBarToggle).toHaveBeenCalledWith(true);
-    expect(mocks.loadSearchIndexes).toHaveBeenCalledWith('/', ['docs-default-current']);
+    expect(mocks.loadSearchIndexes).toHaveBeenCalledWith('/', ['docs-default-current'], {
+      developmentIndex: undefined,
+    });
 
     await act(async () => indexRequest.resolve([]));
     fireEvent.change(input, { target: { value: 'missing guide' } });

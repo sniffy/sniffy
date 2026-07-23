@@ -8,7 +8,7 @@ export type SearchIndexDocument = {
   type: 'blog' | 'docs' | 'page';
 };
 
-type SearchIndexPayload = {
+export type SearchIndexPayload = {
   documents: SearchIndexDocument[];
   index: lunr.Index;
 };
@@ -21,6 +21,11 @@ export type SearchResult = {
 };
 
 const searchIndexCache = new Map<string, Promise<SearchIndexPayload>>();
+
+type LoadSearchIndexOptions = {
+  developmentIndex?: unknown;
+  fetcher?: typeof fetch;
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -77,8 +82,9 @@ async function fetchSearchIndex(url: string, fetcher: typeof fetch): Promise<Sea
 export async function loadSearchIndexes(
   baseUrl: string,
   tags: string[],
-  fetcher: typeof fetch = fetch,
+  options: LoadSearchIndexOptions = {},
 ): Promise<SearchIndexPayload[]> {
+  const { developmentIndex, fetcher = fetch } = options;
   const uniqueTags = Array.from(new Set(tags.filter(Boolean)));
   if (uniqueTags.length === 0) {
     throw new Error('No documentation search context is available.');
@@ -89,7 +95,10 @@ export async function loadSearchIndexes(
       const url = `${baseUrl}search-index-${tag}.json`;
       let cached = searchIndexCache.get(url);
       if (!cached) {
-        cached = fetchSearchIndex(url, fetcher);
+        cached = fetchSearchIndex(url, fetcher).catch((error: unknown) => {
+          searchIndexCache.delete(url);
+          throw error;
+        });
         searchIndexCache.set(url, cached);
       }
       return cached;
@@ -100,6 +109,9 @@ export async function loadSearchIndexes(
   );
 
   if (indexes.length === 0) {
+    if (developmentIndex !== undefined) {
+      return [parseSearchIndex(developmentIndex)];
+    }
     const failures = settled.flatMap((result) =>
       result.status === 'rejected' ? [result.reason] : [],
     );
