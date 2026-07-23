@@ -32,7 +32,7 @@ test('the branded shell exposes primary navigation and footer landmarks', async 
     'https://github.com/sniffy/sniffy',
   );
   await expect(navigation.getByRole('link', { name: 'Sniffy' }).locator('img')).toHaveCount(0);
-  await expect(navigation.getByText('Search docs')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Search docs/ })).toBeVisible();
 
   const footer = page.getByRole('contentinfo');
   await expect(footer).toBeVisible();
@@ -172,6 +172,134 @@ test('the shell respects reduced motion and passes a representative accessibilit
   await expectNoAccessibilityViolations(page);
 });
 
+test('local documentation search covers representative pages and section anchors', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.locator('body').press('Control+KeyK');
+
+  const dialog = page.getByRole('dialog', { name: 'Search Sniffy docs' });
+  const input = dialog.getByRole('combobox', {
+    name: 'Search current Sniffy documentation',
+  });
+  await expect(dialog).toBeVisible();
+  await expect(input).toBeFocused();
+  await expect(dialog.getByText('Suggested searches')).toBeVisible();
+
+  for (const [query, href] of [
+    ['installation', '/docs/installation/'],
+    ['configuration', '/docs/configuration/'],
+    ['SQL assertions', '/docs/testing/api/'],
+    ['network fault simulation', '/docs/network/fault-emulation/'],
+    ['traffic capture', '/docs/network/traffic-capture/'],
+    ['SSL TLS traffic decryption', '/docs/network/traffic-capture/#ssltls-traffic-decryption'],
+  ] as const) {
+    await input.fill(query);
+    await expect(dialog.locator(`a[href="${href}"]`).first()).toBeVisible();
+  }
+
+  await input.fill('no-such-sniffy-documentation-result');
+  await expect(dialog.getByText(/No documentation results/)).toBeVisible();
+  await input.fill('');
+  await expect(dialog.getByRole('option')).toHaveCount(0);
+
+  await input.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole('button', { name: /Search docs/ })).toBeFocused();
+
+  await page.getByRole('button', { name: /Search docs/ }).click();
+  await input.fill('traffic capture');
+  const firstResult = dialog.getByRole('option').first();
+  await expect(firstResult).toHaveAttribute('aria-selected', 'true');
+  await input.press('ArrowDown');
+  await expect(firstResult).toHaveAttribute('aria-selected', 'false');
+  await input.press('ArrowUp');
+  await input.press('Enter');
+  await expect(page).toHaveURL(/\/docs\/network\/traffic-capture\/(?:#.*)?$/);
+  await expect(dialog).not.toBeVisible();
+});
+
+test('result navigation always dismisses search across page, anchor, and same-route changes', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  const trigger = page.getByRole('button', { name: /Search docs/ });
+  const dialog = page.getByRole('dialog', { name: 'Search Sniffy docs' });
+  const input = dialog.getByRole('combobox', {
+    name: 'Search current Sniffy documentation',
+  });
+
+  for (let iteration = 0; iteration < 2; iteration += 1) {
+    await trigger.click();
+    await input.fill('sql');
+    const crossPageResult = dialog.locator('a[href="/docs/testing/api/"]').first();
+    await expect(crossPageResult).toBeVisible();
+    await crossPageResult.click();
+    await expect(page).toHaveURL(/\/docs\/testing\/api\/$/);
+    await expect(dialog).not.toBeVisible();
+    await expect(trigger).not.toBeFocused();
+
+    await trigger.click();
+    await input.fill('SSL TLS traffic decryption');
+    const sectionResult = dialog
+      .locator('a[href="/docs/network/traffic-capture/#ssltls-traffic-decryption"]')
+      .first();
+    await expect(sectionResult).toBeVisible();
+    await sectionResult.focus();
+    await sectionResult.press('Enter');
+    await expect(page).toHaveURL(/\/docs\/network\/traffic-capture\/#ssltls-traffic-decryption$/);
+    await expect(dialog).not.toBeVisible();
+    await expect(trigger).not.toBeFocused();
+
+    await trigger.click();
+    await dialog.evaluate((element) => {
+      element.dataset.lifecycleMarker = 'same-route';
+    });
+    await input.fill('traffic capture');
+    const samePageResult = dialog.locator('a[href="/docs/network/traffic-capture/"]').first();
+    await expect(samePageResult).toBeVisible();
+    await samePageResult.click();
+    await expect(page).toHaveURL(/\/docs\/network\/traffic-capture\/$/);
+    await expect(dialog).not.toBeVisible();
+    await expect(page.locator('dialog')).toHaveAttribute('data-lifecycle-marker', 'same-route');
+    await expect(trigger).not.toBeFocused();
+  }
+});
+
+test('local documentation search fails closed for malformed index data', async ({ page }) => {
+  const pageErrors: Error[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+  await page.route('**/search-index-*.json', async (route) => {
+    await route.fulfill({
+      body: '{"documents":[{"id":1,"sectionRoute":"/blog/not-docs/"}],"index":{}}',
+      contentType: 'application/json',
+      status: 200,
+    });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Search docs/ }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Search Sniffy docs' });
+  await expect(dialog.getByText('Search is temporarily unavailable.')).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Browse all documentation' })).toHaveAttribute(
+    'href',
+    '/docs/',
+  );
+  expect(pageErrors).toEqual([]);
+});
+
+test('the open search dialog is keyboard-contained and accessible', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /Search docs/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Search Sniffy docs' });
+  await dialog
+    .getByRole('combobox', { name: 'Search current Sniffy documentation' })
+    .fill('configuration');
+  await expect(dialog.getByRole('option').first()).toBeVisible();
+  await expectNoAccessibilityViolations(page);
+});
+
 test('the branded 404 offers useful recovery links and remains accessible', async ({ page }) => {
   const response = await page.goto('/missing-shell-route/');
 
@@ -209,6 +337,22 @@ for (const colorScheme of ['dark', 'light'] as const) {
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
     await expect(page).toHaveScreenshot(`docs-desktop-${colorScheme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`the ${colorScheme} desktop search dialog matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+    await page.getByRole('button', { name: /Search docs/ }).click();
+    await page
+      .getByRole('combobox', { name: 'Search current Sniffy documentation' })
+      .fill('traffic capture');
+
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await expect(page).toHaveScreenshot(`search-desktop-${colorScheme}.png`, {
       animations: 'disabled',
     });
   });

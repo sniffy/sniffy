@@ -6,7 +6,7 @@
     "ignoreDeprecations": "6.0",
     "noEmit": true,
     "tsBuildInfoFile": "../../.tmp/tsbuild/site.tsbuildinfo",
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["docusaurus.config.ts", "playwright.config.ts", "src", "tests"]
 }

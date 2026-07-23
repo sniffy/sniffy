@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import sourceSnippetRemarkPlugin from './src/source-snippets';
 import productVersionRemarkPlugin from './src/product-version';
 import legacyDocsPlugin from './src/legacy-docs';
+import deterministicSearchPlugin from './src/deterministic-search-index';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -26,7 +27,19 @@ const config: Config = {
   },
   organizationName: 'sniffy',
   projectName: 'sniffy',
-  plugins: [legacyDocsPlugin],
+  plugins: [
+    legacyDocsPlugin,
+    [
+      deterministicSearchPlugin,
+      {
+        indexDocs: true,
+        indexBlog: false,
+        indexPages: false,
+        language: 'en',
+        maxSearchResults: 8,
+      },
+    ],
+  ],
   presets: [
     [
       'classic',
