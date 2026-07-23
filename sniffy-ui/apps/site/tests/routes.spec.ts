@@ -33,6 +33,12 @@ test('the homepage explains Sniffy and routes visitors into current documentatio
     }),
   ).toBeVisible();
   await expect(page.getByText('io.sniffy:sniffy-spring:4.0.0-SNAPSHOT')).toBeVisible();
+  await expect(page.getByText('Jakarta Spring Boot 4 · Java 17+')).toBeVisible();
+  await expect(page.getByText(/Using Java 8 or Spring Boot 2\.7/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'sniffy-spring-javax' })).toHaveAttribute(
+    'href',
+    '/docs/installation/#spring-boot-integration',
+  );
   await page.getByRole('link', { name: 'Start with Sniffy' }).click();
   await expect(page).toHaveURL(/\/docs\/installation\/$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Installation' })).toBeVisible();

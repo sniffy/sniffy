@@ -50,6 +50,12 @@ describe('Sniffy homepage contract', () => {
 
     expect(screen.getByText(/io\.sniffy:sniffy-spring:4\.0\.0-SNAPSHOT/)).toBeVisible();
     expect(screen.getByText(/<version>4\.0\.0-SNAPSHOT<\/version>/)).toBeVisible();
+    expect(screen.getByText('Jakarta Spring Boot 4 · Java 17+')).toBeVisible();
+    expect(screen.getByText(/Using Java 8 or Spring Boot 2\.7/)).toBeVisible();
+    expect(screen.getByRole('link', { name: 'sniffy-spring-javax' })).toHaveAttribute(
+      'href',
+      '/docs/installation/#spring-boot-integration',
+    );
   });
 
   it('uses the root product version for both installation examples', () => {
@@ -103,5 +109,7 @@ describe('Sniffy homepage contract', () => {
     expect(provenance).toContain(
       'npm run test:e2e:update -- --grep "@visual final profiler and agent states"',
     );
+    expect(provenance).toContain('`apps/site/src/homepage.test.tsx`');
+    expect(provenance).not.toContain('`apps/site/src/homepage.test.ts`');
   });
 });

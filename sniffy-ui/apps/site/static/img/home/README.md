@@ -18,5 +18,5 @@ Then sync the reviewed source image into the site:
 cp tests/e2e/visual-baselines/profiler.png apps/site/static/img/home/sniffy-profiler.png
 ```
 
-`apps/site/src/homepage.test.ts` prevents the published copy from drifting from that reviewed
+`apps/site/src/homepage.test.tsx` prevents the published copy from drifting from that reviewed
 source.

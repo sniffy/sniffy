@@ -172,12 +172,19 @@ export default function Home(): React.JSX.Element {
           aria-labelledby="install-title"
         >
           <div className="sniffy-home__install-copy">
-            <p className="sniffy-home__eyebrow">Start with one dependency</p>
+            <p className="sniffy-home__eyebrow">Jakarta Spring Boot 4 · Java 17+</p>
             <h2 id="install-title">Bring request-level evidence into your next run.</h2>
             <p>
-              The examples below use the version from Sniffy’s root build, so the homepage stays
-              aligned with the current repository line. The installation guide covers Java, Spring,
-              and Servlet compatibility in detail.
+              The Maven and Gradle snippets below use <code>sniffy-spring</code> for Jakarta Spring
+              Boot 4 applications on Java 17 or newer. Their version comes from Sniffy’s root build,
+              so the homepage stays aligned with the current repository line.
+            </p>
+            <p>
+              Using Java 8 or Spring Boot 2.7? Choose{' '}
+              <Link to="/docs/installation/#spring-boot-integration">
+                <code>sniffy-spring-javax</code>
+              </Link>{' '}
+              instead.
             </p>
             <Link className="sniffy-home__text-link" to="/docs/installation/">
               Read the installation guide <span aria-hidden="true">→</span>
