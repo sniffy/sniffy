@@ -137,10 +137,15 @@ jobs:
           apps/site/src/source-snippets.test.ts
           apps/site/src/product-version.test.ts
           apps/site/src/documentation.test.ts
+          apps/site/src/deterministic-search-index.test.ts
+          apps/site/src/theme/SearchBar/search-index.test.ts
           packages/theme/src/theme.test.ts
 
       - name: Build website with broken link and image validation
         run: npm run build:site
+
+      - name: Verify generated documentation search index
+        run: npm run verify:site-search-index
 
       - name: Test desktop and mobile website navigation
         run: npm test --workspace @sniffy/site

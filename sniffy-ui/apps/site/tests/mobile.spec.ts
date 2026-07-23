@@ -24,7 +24,7 @@ test('the mobile menu exposes the shell navigation without horizontal overflow',
   await expect(sidebar.getByRole('link', { name: 'Documentation' })).toBeVisible();
   await expect(sidebar.getByText('Use cases', { exact: true })).toBeVisible();
   await expect(sidebar.getByRole('link', { name: 'GitHub' })).toBeVisible();
-  await expect(sidebar.getByText('Search docs')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Search docs/ })).toBeVisible();
   await expect(
     sidebar.getByRole('button', { name: /Switch between dark and light mode/ }),
   ).toBeVisible();
@@ -71,6 +71,41 @@ test('the mobile configuration table scrolls to its final column without page ov
   expect(geometry.documentScrollWidth).toBe(geometry.documentClientWidth);
 });
 
+test('the mobile search dialog coexists with navigation without clipping or page overflow', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /Search docs/ }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Search Sniffy docs' });
+  const input = dialog.getByRole('combobox', {
+    name: 'Search current Sniffy documentation',
+  });
+  await expect(dialog).toBeVisible();
+  await input.fill('configuration');
+  await expect(dialog.getByRole('option').first()).toBeVisible();
+
+  const geometry = await page.evaluate(() => {
+    const dialog = document.querySelector('dialog');
+    return {
+      clientWidth: document.documentElement.clientWidth,
+      dialogLeft: dialog?.getBoundingClientRect().left,
+      dialogRight: dialog?.getBoundingClientRect().right,
+      isModal: dialog?.matches(':modal'),
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
+  expect(geometry.isModal).toBe(true);
+  expect(geometry.dialogLeft).toBeGreaterThanOrEqual(0);
+  expect(geometry.dialogRight).toBeLessThanOrEqual(geometry.clientWidth);
+  expect(geometry.scrollWidth).toBe(geometry.clientWidth);
+
+  await input.press('Escape');
+  await expect(page.getByRole('button', { name: /Search docs/ })).toBeFocused();
+  await page.getByRole('button', { name: 'Toggle navigation bar' }).click();
+  await expect(page.locator('.navbar-sidebar')).toBeVisible();
+});
+
 for (const colorScheme of ['dark', 'light'] as const) {
   test(`the ${colorScheme} mobile shell matches its reviewed baseline`, async ({ page }) => {
     await page.emulateMedia({ colorScheme });
@@ -95,6 +130,22 @@ for (const colorScheme of ['dark', 'light'] as const) {
     });
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
     await expect(page).toHaveScreenshot(`configuration-mobile-${colorScheme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`the ${colorScheme} mobile search dialog matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+    await page.getByRole('button', { name: /Search docs/ }).click();
+    await page
+      .getByRole('combobox', { name: 'Search current Sniffy documentation' })
+      .fill('traffic capture');
+
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await expect(page).toHaveScreenshot(`search-mobile-${colorScheme}.png`, {
       animations: 'disabled',
     });
   });

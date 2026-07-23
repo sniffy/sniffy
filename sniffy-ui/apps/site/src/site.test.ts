@@ -44,7 +44,8 @@ describe('@sniffy/site workspace contract', () => {
       'dev:site': 'npm run start --workspace @sniffy/site',
       'package:site-artifact': 'node apps/site/scripts/package-artifact.mjs',
       'test:site':
-        'npm run build:site && vitest run --project unit apps/site/src/site.test.ts apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts && npm test --workspace @sniffy/site',
+        'npm run build:site && npm run verify:site-search-index && vitest run --project unit apps/site/src/site.test.ts apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts apps/site/src/deterministic-search-index.test.ts apps/site/src/theme/SearchBar/search-index.test.ts && npm test --workspace @sniffy/site',
+      'verify:site-search-index': 'node apps/site/scripts/verify-search-index.mjs',
       'verify:site-artifact': 'node apps/site/scripts/verify-artifact.mjs',
     });
     expect(sitePackageJson.scripts).toMatchObject({
@@ -100,6 +101,10 @@ describe('@sniffy/site workspace contract', () => {
     expect(config).toContain("label: 'Documentation'");
     expect(config).toContain("label: 'Use cases'");
     expect(config).toContain("label: 'GitHub'");
+    expect(config).toContain('deterministicSearchPlugin');
+    expect(config).toContain('indexDocs: true');
+    expect(config).toContain('indexBlog: false');
+    expect(config).toContain('indexPages: false');
     expect(config).not.toContain('sniffy-search-item');
     expect(config).not.toMatch(/navbar:\s*\{[\s\S]*?logo:\s*\{/);
     expect(config).toContain("routeBasePath: 'docs'");
@@ -141,7 +146,38 @@ describe('@sniffy/site workspace contract', () => {
     expect(preview).not.toMatch(/from ['"][^n.]/);
     expect(verification).toContain("import { chromium } from '@playwright/test';");
     expect(verification).toContain("page.goto(url, { waitUntil: 'networkidle' })");
+    expect(verification).toContain('Search current Sniffy documentation');
+    expect(verification).toContain('traffic capture');
     expect(verification).toContain('This trail went cold.');
+  });
+
+  it('uses a pinned local search indexer with a Sniffy-owned resilient search dialog', () => {
+    const packageJson = readJson(resolve(site, 'package.json'));
+    const config = readFileSync(resolve(site, 'docusaurus.config.ts'), 'utf8');
+    const search = readFileSync(resolve(site, 'src/theme/SearchBar/index.tsx'), 'utf8');
+    const index = readFileSync(resolve(site, 'src/theme/SearchBar/search-index.ts'), 'utf8');
+    const deterministicIndex = readFileSync(
+      resolve(site, 'src/deterministic-search-index.ts'),
+      'utf8',
+    );
+    const verifier = readFileSync(resolve(site, 'scripts/verify-search-index.mjs'), 'utf8');
+
+    expect(packageJson.dependencies).toMatchObject({
+      '@cmfcmf/docusaurus-search-local': '2.0.1',
+      lunr: '2.3.9',
+    });
+    expect(packageJson.devDependencies).toMatchObject({ '@types/lunr': '2.3.7' });
+    expect(config).toContain('maxSearchResults: 8');
+    expect(search).toContain("currentDocsSearchTag = 'docs-default-current'");
+    expect(search).toContain('aria-keyshortcuts="Meta+K Control+K"');
+    expect(search).toContain('Search is temporarily unavailable.');
+    expect(search).toContain('history.push(result.url)');
+    expect(deterministicIndex).toContain('normalizeGeneratedSearchIndexes(props.outDir)');
+    expect(index).toContain('Array.from(new Set(tags.filter(Boolean)))');
+    expect(index).toContain('Array.from(bestByUrl.values())');
+    expect(index).toContain("!document.sectionRoute.startsWith('/docs/')");
+    expect(verifier).toContain("'SSL TLS traffic decryption'");
+    expect(verifier).toContain('/docs/network/traffic-capture/#ssltls-traffic-decryption');
   });
 });
 
@@ -165,6 +201,7 @@ describe('website validation workflow contract', () => {
       'Typecheck frontend workspace',
       'Test website contracts',
       'Build website with broken link and image validation',
+      'Verify generated documentation search index',
       'Test desktop and mobile website navigation',
       'Package reviewable website artifact',
       'Verify downloaded website preview',
@@ -189,6 +226,7 @@ describe('website validation workflow contract', () => {
     expect(websiteJob).toContain('if-no-files-found: error');
     expect(websiteJob).toContain('include-hidden-files: true');
     expect(websiteJob).toContain('run: npm run package:site-artifact');
+    expect(websiteJob).toContain('run: npm run verify:site-search-index');
     expect(websiteJob).toContain('run: npm run verify:site-artifact');
     expect(workflow).toContain('run: npm run build');
     expect(workflow).toContain('run: npm run check:generated');

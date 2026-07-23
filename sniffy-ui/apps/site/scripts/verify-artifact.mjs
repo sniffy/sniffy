@@ -58,6 +58,20 @@ try {
     process.stdout.write(`Verified ${url} renders over HTTP.\n`);
   }
 
+  await page.goto(previewUrl, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Search docs/ }).click();
+  const searchInput = page.getByRole('combobox', {
+    name: 'Search current Sniffy documentation',
+  });
+  await searchInput.fill('traffic capture');
+  await page.getByRole('option').first().waitFor();
+  await searchInput.press('Enter');
+  await page.waitForURL(/\/docs\/network\/traffic-capture\/(?:#.*)?$/);
+  await page
+    .getByRole('heading', { level: 1, name: 'Traffic capture and TLS inspection' })
+    .waitFor();
+  process.stdout.write('Verified packaged documentation search navigates over HTTP.\n');
+
   if (pageErrors.length > 0) {
     throw new AggregateError(pageErrors, 'Artifact preview raised browser page errors.');
   }
