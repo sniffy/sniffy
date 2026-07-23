@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 
-import { githubScreenshotStyle, prepareGitHubStarsScreenshot } from './github-stars-visual';
+import { prepareGitHubStarsScreenshot } from './github-stars-visual';
 
 const shellScreenshotStyle = path.join(__dirname, 'screenshot-stability.css');
 
@@ -146,7 +146,6 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await prepareGitHubStarsScreenshot(page);
     await expect(githubLink).toHaveScreenshot(`github-stars-populated-mobile-${colorScheme}.png`, {
       animations: 'disabled',
-      stylePath: githubScreenshotStyle,
     });
   });
 
@@ -168,7 +167,6 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await prepareGitHubStarsScreenshot(page);
     await expect(githubLink).toHaveScreenshot(`github-stars-fallback-mobile-${colorScheme}.png`, {
       animations: 'disabled',
-      stylePath: githubScreenshotStyle,
     });
   });
 
