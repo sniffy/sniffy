@@ -34,6 +34,11 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
     {
+      name: 'sql-profiling-chromium',
+      testMatch: '**/sql-profiling.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
       name: 'mobile-chromium',
       testMatch: '**/mobile.spec.ts',
       use: { ...devices['Pixel 7'] },
@@ -50,6 +55,7 @@ export default defineConfig({
         '**/dev-search.spec.ts',
         '**/dev-github-stars.spec.ts',
         '**/dev-use-case.spec.ts',
+        '**/dev-sql-profiling.spec.ts',
       ],
       use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3200' },
     },

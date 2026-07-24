@@ -92,6 +92,11 @@ try {
       status: 200,
       headingText: 'Make database behavior part of the test contract.',
     },
+    {
+      route: 'use-cases/sql-profiling/',
+      status: 200,
+      headingText: 'See the database work behind each request.',
+    },
     { route: 'missing-shell-route/', status: 404, headingText: 'This trail went cold.' },
   ]) {
     const url = `${previewUrl}${route}`;
@@ -116,6 +121,18 @@ try {
   }
   await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
   process.stdout.write('Verified packaged use-case metadata and related documentation.\n');
+
+  await page.goto(`${previewUrl}use-cases/sql-profiling/`, { waitUntil: 'networkidle' });
+  if (
+    (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
+      'https://sniffy.io/use-cases/sql-profiling/' ||
+    (await page.locator('meta[property="og:title"]').getAttribute('content')) !==
+      'SQL profiling and N+1 diagnosis with Sniffy'
+  ) {
+    throw new Error('Artifact preview did not preserve SQL profiling metadata.');
+  }
+  await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
+  process.stdout.write('Verified packaged SQL profiling metadata and related documentation.\n');
 
   await page.goto(previewUrl, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /Search docs/ }).click();
