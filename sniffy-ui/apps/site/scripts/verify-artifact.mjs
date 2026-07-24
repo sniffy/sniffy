@@ -76,8 +76,17 @@ try {
   );
 
   for (const { route, status, headingText } of [
-    { route: '', status: 200, headingText: 'Sniffy' },
+    {
+      route: '',
+      status: 200,
+      headingText: 'Make invisible I/O observable—and testable.',
+    },
     { route: 'docs/', status: 200, headingText: 'Sniffy documentation' },
+    {
+      route: 'docs/network/traffic-capture/',
+      status: 200,
+      headingText: 'Traffic capture and TLS inspection',
+    },
     { route: 'missing-shell-route/', status: 404, headingText: 'This trail went cold.' },
   ]) {
     const url = `${previewUrl}${route}`;

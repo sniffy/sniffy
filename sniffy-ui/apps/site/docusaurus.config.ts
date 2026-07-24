@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import sourceSnippetRemarkPlugin from './src/source-snippets';
-import productVersionRemarkPlugin from './src/product-version';
+import productVersionRemarkPlugin, { readProductVersion } from './src/product-version';
 import legacyDocsPlugin from './src/legacy-docs';
 import deterministicSearchPlugin from './src/deterministic-search-index';
 
@@ -27,6 +27,9 @@ const config: Config = {
   },
   organizationName: 'sniffy',
   projectName: 'sniffy',
+  customFields: {
+    productVersion: readProductVersion(repositoryRoot),
+  },
   plugins: [
     legacyDocsPlugin,
     [

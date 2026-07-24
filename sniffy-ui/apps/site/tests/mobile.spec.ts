@@ -17,12 +17,31 @@ test('the mobile homepage renders and navigates to current documentation', async
 
   expect(response?.status()).toBe(200);
   expect(page.viewportSize()).toMatchObject({ width: 412, height: 839 });
-  await expect(page.getByRole('heading', { level: 1, name: 'Sniffy' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Make invisible I/O observable—and testable.',
+    }),
+  ).toBeVisible();
+  const productImage = page.getByRole('img', { name: /Sniffy profiler showing executed SQL/ });
+  await expect(productImage).toBeVisible();
+  const imageGeometry = await productImage.evaluate((image) => {
+    const bounds = image.getBoundingClientRect();
+    return {
+      left: bounds.left,
+      right: bounds.right,
+      viewportWidth: document.documentElement.clientWidth,
+      documentWidth: document.documentElement.scrollWidth,
+    };
+  });
+  expect(imageGeometry.left).toBeGreaterThanOrEqual(0);
+  expect(imageGeometry.right).toBeLessThanOrEqual(imageGeometry.viewportWidth);
+  expect(imageGeometry.documentWidth).toBe(imageGeometry.viewportWidth);
 
-  await page.getByRole('link', { name: 'Open the documentation scaffold' }).click();
+  await page.getByRole('link', { name: 'Start with Sniffy' }).click();
 
-  await expect(page).toHaveURL(/\/docs\/$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Sniffy documentation' })).toBeVisible();
+  await expect(page).toHaveURL(/\/docs\/installation\/$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Installation' })).toBeVisible();
 });
 
 test('the mobile menu exposes the shell navigation without horizontal overflow', async ({
