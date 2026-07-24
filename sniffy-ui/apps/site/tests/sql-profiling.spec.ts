@@ -48,6 +48,16 @@ test('SQL profiling output, links, accessibility, keyboard focus, landmarks, and
   await expect(page.getByRole('main')).toHaveCount(1);
   await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
+  await expect(page.getByText(/sniffy-web supports Jakarta Servlet 5\.0 and newer/)).toBeVisible();
+  await expect(
+    page.getByText(/sniffy-web-javax supports Javax Servlet 3\.1 and 4\.0/),
+  ).toBeVisible();
+  await expect(page.getByLabel('Jakarta Servlet 5.0+: add sniffy-web code example')).toContainText(
+    '<artifactId>sniffy-web</artifactId>',
+  );
+  await expect(
+    page.getByLabel('Javax Servlet 3.1/4.0: add sniffy-web-javax code example'),
+  ).toContainText('<artifactId>sniffy-web-javax</artifactId>');
   const related = page.getByRole('navigation', { name: 'Related documentation' });
   for (const href of [
     '/docs/installation/',

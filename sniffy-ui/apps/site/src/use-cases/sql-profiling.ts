@@ -61,6 +61,7 @@ export function createSqlProfilingUseCase(productVersion: string) {
     solution: {
       body: [
         'With the web filter and JDBC instrumentation configured, the Sniffy browser widget associates observed database activity with the served request. Open its SQL details to inspect statements and timing without adding a separate live-demo backend to this page.',
+        'Choose the web artifact that matches the application: sniffy-web supports Jakarta Servlet 5.0 and newer, while sniffy-web-javax supports Javax Servlet 3.1 and 4.0. Install only the matching variant, not both.',
         'If the evidence shows a regression-prone boundary, add a Spy or framework expectation in a test. Browser profiling supports diagnosis; explicit SqlQueries expectations provide the automated pass-or-fail contract.',
       ],
     },
@@ -89,7 +90,16 @@ export function createSqlProfilingUseCase(productVersion: string) {
     codeExamples: [
       {
         code: `<dependency>\n  <groupId>io.sniffy</groupId>\n  <artifactId>sniffy-web</artifactId>\n  <version>${version}</version>\n</dependency>`,
-        label: 'Add browser profiling support',
+        label: 'Jakarta Servlet 5.0+: add sniffy-web',
+        language: 'Maven',
+        source: {
+          label: 'Current installation documentation',
+          path: 'sniffy-ui/apps/site/docs/installation/index.mdx',
+        },
+      },
+      {
+        code: `<dependency>\n  <groupId>io.sniffy</groupId>\n  <artifactId>sniffy-web-javax</artifactId>\n  <version>${version}</version>\n</dependency>`,
+        label: 'Javax Servlet 3.1/4.0: add sniffy-web-javax',
         language: 'Maven',
         source: {
           label: 'Current installation documentation',

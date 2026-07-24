@@ -39,6 +39,19 @@ describe('SQL profiling use-case page', () => {
     );
     expect(screen.getByText(/evidence, not an automatic diagnosis/)).toBeVisible();
     expect(screen.getByText(/Browser profiling supports diagnosis/)).toBeVisible();
+    expect(screen.getByText(/sniffy-web supports Jakarta Servlet 5\.0 and newer/)).toBeVisible();
+    expect(screen.getByText(/sniffy-web-javax supports Javax Servlet 3\.1 and 4\.0/)).toBeVisible();
+    expect(screen.getByText(/Install only the matching variant, not both/)).toBeVisible();
+    expect(
+      screen.getByRole('region', {
+        name: 'Jakarta Servlet 5.0+: add sniffy-web code example',
+      }),
+    ).toHaveTextContent('<artifactId>sniffy-web</artifactId>');
+    expect(
+      screen.getByRole('region', {
+        name: 'Javax Servlet 3.1/4.0: add sniffy-web-javax code example',
+      }),
+    ).toHaveTextContent('<artifactId>sniffy-web-javax</artifactId>');
     const docs = screen.getByRole('navigation', { name: 'Related documentation' });
     for (const link of content.metadata.relatedDocs)
       expect(within(docs).getByRole('link', { name: new RegExp(link.label) })).toHaveAttribute(
@@ -52,9 +65,10 @@ describe('SQL profiling use-case page', () => {
       resolve(repository, 'sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java'),
       'utf8',
     );
-    const java = content.codeExamples[1];
+    const java = content.codeExamples[2];
     const normalize = (value: string) => value.replaceAll(/\s+/g, ' ').trim();
     expect(content.codeExamples[0].code).toContain('<version>4.0.0-SNAPSHOT</version>');
+    expect(content.codeExamples[1].code).toContain('<version>4.0.0-SNAPSHOT</version>');
     expect(normalize(source)).toContain(normalize(java.code));
     expect(java.source?.region).toBe('testFunctionalApi');
     expect(readFileSync(resolve(site, 'static/img/home/README.md'), 'utf8')).toContain(
