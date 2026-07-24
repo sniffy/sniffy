@@ -140,12 +140,20 @@ describe('traffic capture use-case page', () => {
     expect(configurationSource).toContain(
       '"io.sniffy.monitorSocket", "IO_SNIFFY_MONITOR_SOCKET", "false"',
     );
+    expect(filterSource).toContain(
+      'String monitorSocket = filterConfig.getInitParameter("monitor-socket")',
+    );
+    expect(filterSource).toContain('null == monitorSocket || Boolean.parseBoolean(monitorSocket)');
     expect(filterSource).toContain('setMonitorSocket(true)');
     expect(agentSource).toContain('SniffyConfiguration.INSTANCE.setMonitorSocket(true)');
+    expect(agentSource).not.toContain('kvSplit[0].equals("monitorSocket")');
     expect(publishedSetup).toContain('-Dio.sniffy.monitorSocket=true');
     expect(publishedCopy).toContain('defaults to false');
     expect(publishedCopy).toContain(
-      'SniffyFilter and the standalone javaagent enable classic Socket monitoring implicitly',
+      'SniffyFilter enables classic Socket monitoring by default unless monitor-socket=false is configured.',
+    );
+    expect(publishedCopy).toContain(
+      'The standalone javaagent enables classic Socket monitoring at startup and has no equivalent monitorSocket=false agent argument.',
     );
   });
 
