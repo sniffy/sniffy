@@ -96,8 +96,8 @@ const config: Config = {
           ],
         },
         {
+          type: 'custom-githubStars',
           href: 'https://github.com/sniffy/sniffy',
-          label: 'GitHub',
           position: 'right',
         },
       ],

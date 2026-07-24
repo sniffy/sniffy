@@ -42,7 +42,38 @@ const browser = await chromium.launch();
 try {
   const page = await browser.newPage();
   const pageErrors = [];
+  const consoleErrors = [];
+  let blockedGitHubRequests = 0;
   page.on('pageerror', (error) => pageErrors.push(error));
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  await page.route('https://api.github.com/repos/sniffy/sniffy', (route) => {
+    blockedGitHubRequests += 1;
+    // Never let the packaged-preview check reach the live API. An unusable response
+    // exercises the same graceful fallback without Chromium logging a network error.
+    return route.fulfill({ json: {} });
+  });
+
+  await page.goto(previewUrl, { waitUntil: 'networkidle' });
+  const githubLink = page.getByRole('link', { name: 'Sniffy GitHub repository' }).first();
+  await githubLink.waitFor();
+  if ((await githubLink.getAttribute('href')) !== 'https://github.com/sniffy/sniffy') {
+    throw new Error('Artifact preview fallback does not link to the Sniffy GitHub repository.');
+  }
+  const countSlot = githubLink.getByTestId('github-star-count');
+  if ((await countSlot.textContent())?.trim() !== '') {
+    throw new Error('Artifact preview fallback rendered a GitHub star count.');
+  }
+  if (blockedGitHubRequests === 0) {
+    throw new Error('Artifact preview did not attempt the blocked GitHub repository API.');
+  }
+  if (pageErrors.length > 0 || consoleErrors.length > 0) {
+    throw new Error('Artifact preview fallback raised a page or console error.');
+  }
+  process.stdout.write(
+    'Verified packaged preview keeps the GitHub link usable without a fallback count when the repository API is unavailable.\n',
+  );
 
   for (const { route, status, headingText } of [
     { route: '', status: 200, headingText: 'Sniffy' },

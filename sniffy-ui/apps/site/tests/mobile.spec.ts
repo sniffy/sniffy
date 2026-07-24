@@ -1,4 +1,16 @@
 import { expect, test } from '@playwright/test';
+import path from 'node:path';
+
+import { prepareGitHubStarsScreenshot } from './github-stars-visual';
+import { prepareShellScreenshot } from './shell-visual';
+
+const shellScreenshotStyle = path.join(__dirname, 'screenshot-stability.css');
+
+test.beforeEach(async ({ page }) => {
+  await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
+    route.fulfill({ json: { stargazers_count: 12_345 } }),
+  );
+});
 
 test('the mobile homepage renders and navigates to current documentation', async ({ page }) => {
   const response = await page.goto('/');
@@ -23,7 +35,9 @@ test('the mobile menu exposes the shell navigation without horizontal overflow',
   await expect(sidebar).toBeVisible();
   await expect(sidebar.getByRole('link', { name: 'Documentation' })).toBeVisible();
   await expect(sidebar.getByText('Use cases', { exact: true })).toBeVisible();
-  await expect(sidebar.getByRole('link', { name: 'GitHub' })).toBeVisible();
+  await expect(
+    sidebar.getByRole('link', { name: 'Sniffy GitHub repository, 12,345 stars' }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: /Search docs/ })).toBeVisible();
   await expect(
     sidebar.getByRole('button', { name: /Switch between dark and light mode/ }),
@@ -112,9 +126,49 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await page.goto('/');
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareShellScreenshot(page);
     await expect(page).toHaveScreenshot(`home-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       fullPage: true,
+      stylePath: shellScreenshotStyle,
+    });
+  });
+
+  test(`the ${colorScheme} mobile GitHub control matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Toggle navigation bar' }).click();
+    const githubLink = page.locator('.navbar-sidebar').getByRole('link', {
+      name: 'Sniffy GitHub repository, 12,345 stars',
+    });
+    await expect(githubLink).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareGitHubStarsScreenshot(page);
+    await expect(githubLink).toHaveScreenshot(`github-stars-populated-mobile-${colorScheme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`the ${colorScheme} mobile GitHub fallback matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.unroute('https://api.github.com/repos/sniffy/sniffy');
+    await page.route('https://api.github.com/repos/sniffy/sniffy', (route) =>
+      route.abort('failed'),
+    );
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Toggle navigation bar' }).click();
+    const githubLink = page
+      .locator('.navbar-sidebar')
+      .getByRole('link', { name: 'Sniffy GitHub repository' });
+    await expect(githubLink).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareGitHubStarsScreenshot(page);
+    await expect(githubLink).toHaveScreenshot(`github-stars-fallback-mobile-${colorScheme}.png`, {
+      animations: 'disabled',
     });
   });
 
@@ -129,8 +183,10 @@ for (const colorScheme of ['dark', 'light'] as const) {
       region.scrollLeft = region.scrollWidth;
     });
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareShellScreenshot(page);
     await expect(page).toHaveScreenshot(`configuration-mobile-${colorScheme}.png`, {
       animations: 'disabled',
+      stylePath: shellScreenshotStyle,
     });
   });
 
@@ -145,8 +201,15 @@ for (const colorScheme of ['dark', 'light'] as const) {
       .fill('traffic capture');
 
     await expect(page.getByRole('option').first()).toBeVisible();
+    await page
+      .getByRole('combobox', { name: 'Search current Sniffy documentation' })
+      .evaluate((input) => {
+        input.style.caretColor = 'transparent';
+      });
+    await prepareShellScreenshot(page);
     await expect(page).toHaveScreenshot(`search-mobile-${colorScheme}.png`, {
       animations: 'disabled',
+      stylePath: shellScreenshotStyle,
     });
   });
 }
