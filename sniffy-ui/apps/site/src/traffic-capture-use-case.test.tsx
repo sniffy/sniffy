@@ -116,6 +116,39 @@ describe('traffic capture use-case page', () => {
     expect(pageCopy).not.toMatch(/host-wide visibility|every TLS stack|universal packet capture/i);
   });
 
+  it('publishes the classic Socket monitoring prerequisite hidden by the source test fixture', () => {
+    const configurationSource = readFileSync(
+      resolve(
+        repository,
+        'sniffy-core/src/main/java/io/sniffy/configuration/SniffyConfiguration.java',
+      ),
+      'utf8',
+    );
+    const filterSource = readFileSync(
+      resolve(repository, 'sniffy-web/src/main/java/io/sniffy/servlet/SniffyFilter.java'),
+      'utf8',
+    );
+    const agentSource = readFileSync(
+      resolve(repository, 'sniffy/src/main/java/io/sniffy/SniffyAgent.java'),
+      'utf8',
+    );
+    const publishedSetup = trafficCaptureUseCase.codeExamples
+      .map((example) => example.code)
+      .join('\n');
+    const publishedCopy = trafficCaptureUseCase.solution.body.join(' ');
+
+    expect(configurationSource).toContain(
+      '"io.sniffy.monitorSocket", "IO_SNIFFY_MONITOR_SOCKET", "false"',
+    );
+    expect(filterSource).toContain('setMonitorSocket(true)');
+    expect(agentSource).toContain('SniffyConfiguration.INSTANCE.setMonitorSocket(true)');
+    expect(publishedSetup).toContain('-Dio.sniffy.monitorSocket=true');
+    expect(publishedCopy).toContain('defaults to false');
+    expect(publishedCopy).toContain(
+      'SniffyFilter and the standalone javaagent enable classic Socket monitoring implicitly',
+    );
+  });
+
   it('keeps traffic-specific content out of the route and shared layout', () => {
     const route = readFileSync(
       resolve(site, 'src/pages/use-cases/traffic-capture/index.tsx'),

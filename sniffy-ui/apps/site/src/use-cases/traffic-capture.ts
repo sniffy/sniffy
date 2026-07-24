@@ -58,7 +58,8 @@ export const trafficCaptureUseCase = defineUseCase({
   },
   solution: {
     body: [
-      'Create a Spy with network traffic capture enabled around the work you need to inspect. Sniffy records successful reads and writes on monitored classic sockets and, when enabled, IP TCP SocketChannel paths. NetworkPacket values retain bytes, direction, timestamp, and optional thread or stack information for programmatic checks.',
+      'Create a Spy with network traffic capture enabled around the work you need to inspect. The Spy setting records payloads but does not enable classic Socket monitoring by itself: io.sniffy.monitorSocket defaults to false, so enable it explicitly for a direct Spy setup. SniffyFilter and the standalone javaagent enable classic Socket monitoring implicitly unless configured otherwise.',
+      'Sniffy records successful reads and writes on monitored classic sockets and, when enabled, IP TCP SocketChannel paths. NetworkPacket values retain bytes, direction, timestamp, and optional thread or stack information for programmatic checks.',
       'TLS plaintext inspection is a separate opt-in capability. Enable TLS decryption and initialize Sniffy before application code caches JSSE objects; supported SSLSocket and SSLEngine paths publish plaintext through getDecryptedNetworkTraffic while getNetworkTraffic remains the raw transport view.',
       'The boundary is deliberate: Sniffy does not capture another process or every packet on the host. UDP DatagramChannel, UNIX-domain channels, NIO2/AIO, native transports such as explicitly enabled Netty native transport or Apache APR, and TLS stacks outside the supported JSSE interception paths are not covered.',
     ],
@@ -117,9 +118,10 @@ export const trafficCaptureUseCase = defineUseCase({
       },
     },
     {
-      code: `-Dio.sniffy.monitorNio=true
+      code: `-Dio.sniffy.monitorSocket=true
+-Dio.sniffy.monitorNio=true
 -Dio.sniffy.decryptTls=true`,
-      label: 'Opt into NIO and TLS inspection',
+      label: 'Enable classic Socket, NIO, and TLS inspection',
       language: 'JVM options',
       source: {
         label: 'Current configuration reference',

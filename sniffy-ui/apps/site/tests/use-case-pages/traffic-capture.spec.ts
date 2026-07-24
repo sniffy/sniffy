@@ -49,6 +49,8 @@ test('the traffic capture page is precise, linked, keyboard-accessible, and meta
   );
 
   await expect(page.getByText(/not from a host-wide packet sniffer/)).toBeVisible();
+  await expect(page.getByText(/monitorSocket defaults to false/)).toBeVisible();
+  await expect(page.getByText(/-Dio\.sniffy\.monitorSocket=true/)).toBeVisible();
   await expect(page.getByText(/does not capture another process/)).toBeVisible();
   await expect(page.getByText(/UDP DatagramChannel/)).toBeVisible();
   await expect(page.getByText(/native transports/)).toBeVisible();
