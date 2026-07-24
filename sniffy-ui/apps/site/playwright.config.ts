@@ -45,7 +45,12 @@ export default defineConfig({
     },
     {
       name: 'dev-compatibility-chromium',
-      testMatch: ['**/legacy-docs.spec.ts', '**/dev-search.spec.ts', '**/dev-github-stars.spec.ts'],
+      testMatch: [
+        '**/legacy-docs.spec.ts',
+        '**/dev-search.spec.ts',
+        '**/dev-github-stars.spec.ts',
+        '**/dev-use-case.spec.ts',
+      ],
       use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3200' },
     },
   ],

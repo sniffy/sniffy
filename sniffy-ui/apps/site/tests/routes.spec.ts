@@ -386,6 +386,79 @@ test('the open search dialog is keyboard-contained and accessible', async ({ pag
   await expectNoAccessibilityViolations(page);
 });
 
+test('the database query testing page is complete, linked, and accessible', async ({ page }) => {
+  const response = await page.goto('/use-cases/database-query-testing/');
+
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Make database behavior part of the test contract.',
+    }),
+  ).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    'https://sniffy.io/use-cases/database-query-testing/',
+  );
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    /query-count and affected-row assertions/,
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    'content',
+    'https://sniffy.io/use-cases/database-query-testing/',
+  );
+  await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
+    'content',
+    'Database query testing with Sniffy',
+  );
+
+  const relatedDocumentation = page.getByRole('navigation', {
+    name: 'Related documentation',
+  });
+  for (const href of [
+    '/docs/installation/',
+    '/docs/testing/api/',
+    '/docs/testing/junit/',
+    '/docs/setup/datasource/',
+  ]) {
+    await expect(relatedDocumentation.locator(`a[href="${href}"]`)).toBeVisible();
+  }
+
+  const productImage = page.getByRole('img', {
+    name: /Sniffy profiler showing executed SQL statements/,
+  });
+  await expect(productImage).toBeVisible();
+  await expect(productImage).toHaveAttribute('src', '/img/home/sniffy-profiler.png');
+  const codeExample = page.getByRole('region', { name: 'Make the expectation executable.' });
+  await codeExample.getByLabel('Verify the direct API result code example').focus();
+  await expect(codeExample.getByLabel('Verify the direct API result code example')).toBeFocused();
+
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
+  await expectNoAccessibilityViolations(page);
+});
+
+test('the database query testing page respects reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/use-cases/database-query-testing/');
+
+  const motion = await page.locator('.sniffy-use-case').evaluate((element) => {
+    const style = getComputedStyle(element);
+    const toMilliseconds = (duration: string) =>
+      Number.parseFloat(duration) * (duration.endsWith('ms') ? 1 : 1000);
+    return {
+      animationDuration: toMilliseconds(style.animationDuration),
+      transitionDuration: toMilliseconds(style.transitionDuration),
+    };
+  });
+  expect(motion.animationDuration).toBeLessThanOrEqual(0.01);
+  expect(motion.transitionDuration).toBeLessThanOrEqual(0.01);
+});
+
 test('the branded 404 offers useful recovery links and remains accessible', async ({ page }) => {
   const response = await page.goto('/missing-shell-route/');
 
@@ -457,6 +530,21 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await prepareShellScreenshot(page);
     await expect(page).toHaveScreenshot(`docs-desktop-${colorScheme}.png`, {
       animations: 'disabled',
+      stylePath: shellScreenshotStyle,
+    });
+  });
+
+  test(`the ${colorScheme} desktop database query testing page matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/use-cases/database-query-testing/');
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareShellScreenshot(page);
+    await expect(page).toHaveScreenshot(`database-query-testing-desktop-${colorScheme}.png`, {
+      animations: 'disabled',
+      fullPage: true,
       stylePath: shellScreenshotStyle,
     });
   });

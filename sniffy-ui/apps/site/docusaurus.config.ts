@@ -93,7 +93,7 @@ const config: Config = {
           label: 'Use cases',
           position: 'left',
           items: [
-            { label: 'SQL query assertions', to: '/docs/testing/api/' },
+            { label: 'Query assertions', to: '/use-cases/database-query-testing/' },
             { label: 'Network fault testing', to: '/docs/network/fault-emulation/' },
             { label: 'Traffic and TLS capture', to: '/docs/network/traffic-capture/' },
           ],
@@ -119,7 +119,7 @@ const config: Config = {
         {
           title: 'Use cases',
           items: [
-            { label: 'Query assertions', to: '/docs/testing/api/' },
+            { label: 'Query assertions', to: '/use-cases/database-query-testing/' },
             { label: 'Network fault testing', to: '/docs/network/fault-emulation/' },
             { label: 'Traffic capture', to: '/docs/network/traffic-capture/' },
           ],
