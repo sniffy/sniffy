@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 
+import { expectNoAccessibilityViolations } from './accessibility';
 import { prepareGitHubStarsScreenshot } from './github-stars-visual';
 import { prepareShellScreenshot } from './shell-visual';
 
@@ -42,6 +43,29 @@ test('the mobile homepage renders and navigates to current documentation', async
 
   await expect(page).toHaveURL(/\/docs\/installation\/$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Installation' })).toBeVisible();
+});
+
+test('the mobile database query testing page reflows without horizontal overflow', async ({
+  page,
+}) => {
+  const response = await page.goto('/use-cases/database-query-testing/');
+
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Make database behavior part of the test contract.',
+    }),
+  ).toBeVisible();
+  const geometry = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    mainRight: document.querySelector('main')?.getBoundingClientRect().right,
+  }));
+  expect(geometry.scrollWidth).toBe(geometry.clientWidth);
+  expect(geometry.mainRight).toBeLessThanOrEqual(geometry.clientWidth);
+  await expect(page.getByRole('navigation', { name: 'Related documentation' })).toBeVisible();
+  await expectNoAccessibilityViolations(page);
 });
 
 test('the mobile menu exposes the shell navigation without horizontal overflow', async ({
@@ -167,6 +191,21 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await prepareGitHubStarsScreenshot(page);
     await expect(githubLink).toHaveScreenshot(`github-stars-populated-mobile-${colorScheme}.png`, {
       animations: 'disabled',
+    });
+  });
+
+  test(`the ${colorScheme} mobile database query testing page matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/use-cases/database-query-testing/');
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareShellScreenshot(page);
+    await expect(page).toHaveScreenshot(`database-query-testing-mobile-${colorScheme}.png`, {
+      animations: 'disabled',
+      fullPage: true,
+      stylePath: shellScreenshotStyle,
     });
   });
 

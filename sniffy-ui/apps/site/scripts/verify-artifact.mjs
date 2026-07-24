@@ -87,6 +87,11 @@ try {
       status: 200,
       headingText: 'Traffic capture and TLS inspection',
     },
+    {
+      route: 'use-cases/database-query-testing/',
+      status: 200,
+      headingText: 'Make database behavior part of the test contract.',
+    },
     { route: 'missing-shell-route/', status: 404, headingText: 'This trail went cold.' },
   ]) {
     const url = `${previewUrl}${route}`;
@@ -97,6 +102,20 @@ try {
     }
     process.stdout.write(`Verified ${url} renders over HTTP.\n`);
   }
+
+  await page.goto(`${previewUrl}use-cases/database-query-testing/`, {
+    waitUntil: 'networkidle',
+  });
+  if (
+    (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
+      'https://sniffy.io/use-cases/database-query-testing/' ||
+    (await page.locator('meta[property="og:title"]').getAttribute('content')) !==
+      'Database query testing with Sniffy'
+  ) {
+    throw new Error('Artifact preview did not preserve the use-case canonical or social metadata.');
+  }
+  await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
+  process.stdout.write('Verified packaged use-case metadata and related documentation.\n');
 
   await page.goto(previewUrl, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /Search docs/ }).click();
