@@ -12,7 +12,8 @@ Use `database-query-testing.ts` as the representative example. A new page should
 - call `defineUseCase` so missing metadata, invalid routes, missing documentation links, or invalid media dimensions
   fail deterministically during tests and the Docusaurus build;
 - use a canonical `/use-cases/<slug>/` route and current trailing-slash `/docs/` links;
-- keep page-specific wording and arrays here rather than adding topic conditionals to the layout;
+- keep every page-specific section eyebrow, title, paragraph, and array here rather than adding topic wording or
+  conditionals to the layout;
 - cite repository paths and tagged regions for technical code examples;
 - use reviewed Sniffy media with written provenance instead of mocked or invented product UI;
 - add focused render/metadata/source tests, direct route and artifact checks, accessibility coverage, and desktop/mobile

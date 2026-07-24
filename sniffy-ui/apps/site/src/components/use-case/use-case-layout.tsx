@@ -158,8 +158,8 @@ export function UseCaseLayout({
 
         <section className="sniffy-use-case__split" aria-labelledby="problem-title">
           <div>
-            <p className="sniffy-use-case__eyebrow">The testing gap</p>
-            <h2 id="problem-title">{content.problem.title}</h2>
+            <p className="sniffy-use-case__eyebrow">{content.sectionHeadings.problem.eyebrow}</p>
+            <h2 id="problem-title">{content.sectionHeadings.problem.title}</h2>
           </div>
           <div>
             {content.problem.body.map((paragraph) => (
@@ -170,8 +170,8 @@ export function UseCaseLayout({
 
         <section className="sniffy-use-case__split" aria-labelledby="solution-title">
           <div>
-            <p className="sniffy-use-case__eyebrow">The Sniffy approach</p>
-            <h2 id="solution-title">{content.solution.title}</h2>
+            <p className="sniffy-use-case__eyebrow">{content.sectionHeadings.solution.eyebrow}</p>
+            <h2 id="solution-title">{content.sectionHeadings.solution.title}</h2>
           </div>
           <div>
             {content.solution.body.map((paragraph) => (
@@ -182,16 +182,20 @@ export function UseCaseLayout({
 
         <section className="sniffy-use-case__section" aria-labelledby="capabilities-title">
           <div className="sniffy-use-case__section-heading">
-            <p className="sniffy-use-case__eyebrow">Assertions with context</p>
-            <h2 id="capabilities-title">Test database behavior, not just return values.</h2>
+            <p className="sniffy-use-case__eyebrow">
+              {content.sectionHeadings.capabilities.eyebrow}
+            </p>
+            <h2 id="capabilities-title">{content.sectionHeadings.capabilities.title}</h2>
           </div>
           <UseCaseCapabilityList capabilities={content.capabilities} />
         </section>
 
         <section className="sniffy-use-case__section" aria-labelledby="examples-title">
           <div className="sniffy-use-case__section-heading">
-            <p className="sniffy-use-case__eyebrow">Repository-backed examples</p>
-            <h2 id="examples-title">Make the expectation executable.</h2>
+            <p className="sniffy-use-case__eyebrow">
+              {content.sectionHeadings.codeExamples.eyebrow}
+            </p>
+            <h2 id="examples-title">{content.sectionHeadings.codeExamples.title}</h2>
           </div>
           <div className="sniffy-use-case__code-grid">
             {content.codeExamples.map((example) => (
@@ -202,8 +206,10 @@ export function UseCaseLayout({
 
         <section className="sniffy-use-case__section" aria-labelledby="result-title">
           <div className="sniffy-use-case__section-heading">
-            <p className="sniffy-use-case__eyebrow">Visible evidence</p>
-            <h2 id="result-title">See the statements behind the request.</h2>
+            <p className="sniffy-use-case__eyebrow">
+              {content.sectionHeadings.productResult.eyebrow}
+            </p>
+            <h2 id="result-title">{content.sectionHeadings.productResult.title}</h2>
           </div>
           <div className="sniffy-use-case__result-grid">
             <UseCaseProductResult result={content.productResult} />
@@ -217,15 +223,17 @@ export function UseCaseLayout({
 
         <section className="sniffy-use-case__section" aria-labelledby="related-title">
           <div className="sniffy-use-case__section-heading">
-            <p className="sniffy-use-case__eyebrow">Go deeper</p>
-            <h2 id="related-title">Use the current documentation as the source of truth.</h2>
+            <p className="sniffy-use-case__eyebrow">
+              {content.sectionHeadings.relatedDocumentation.eyebrow}
+            </p>
+            <h2 id="related-title">{content.sectionHeadings.relatedDocumentation.title}</h2>
           </div>
           <UseCaseRelatedDocumentation relatedDocs={metadata.relatedDocs} />
         </section>
 
         <section className="sniffy-use-case__cta" aria-labelledby="use-case-cta-title">
-          <p className="sniffy-use-case__eyebrow">From observation to regression test</p>
-          <h2 id="use-case-cta-title">{content.cta.title}</h2>
+          <p className="sniffy-use-case__eyebrow">{content.sectionHeadings.cta.eyebrow}</p>
+          <h2 id="use-case-cta-title">{content.sectionHeadings.cta.title}</h2>
           <p>{content.cta.body}</p>
           <div className="sniffy-use-case__actions">
             <Link className="button button--primary button--lg" to={content.cta.primary.href}>

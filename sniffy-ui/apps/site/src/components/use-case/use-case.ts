@@ -32,6 +32,11 @@ export type UseCaseCodeExample = {
   };
 };
 
+export type UseCaseSectionHeading = {
+  readonly eyebrow: string;
+  readonly title: string;
+};
+
 export type UseCasePageContent = {
   readonly capabilities: readonly [
     {
@@ -48,7 +53,6 @@ export type UseCasePageContent = {
     readonly body: string;
     readonly primary: { readonly href: SiteRoute; readonly label: string };
     readonly secondary: { readonly href: SiteRoute; readonly label: string };
-    readonly title: string;
   };
   readonly eyebrow: string;
   readonly hero: {
@@ -59,7 +63,6 @@ export type UseCasePageContent = {
   readonly metadata: UseCaseMetadata;
   readonly problem: {
     readonly body: readonly [string, ...string[]];
-    readonly title: string;
   };
   readonly productResult: {
     readonly alt: string;
@@ -70,9 +73,17 @@ export type UseCasePageContent = {
     readonly src: SiteAsset;
     readonly width: number;
   };
+  readonly sectionHeadings: {
+    readonly capabilities: UseCaseSectionHeading;
+    readonly codeExamples: UseCaseSectionHeading;
+    readonly cta: UseCaseSectionHeading;
+    readonly problem: UseCaseSectionHeading;
+    readonly productResult: UseCaseSectionHeading;
+    readonly relatedDocumentation: UseCaseSectionHeading;
+    readonly solution: UseCaseSectionHeading;
+  };
   readonly solution: {
     readonly body: readonly [string, ...string[]];
-    readonly title: string;
   };
 };
 
@@ -125,9 +136,19 @@ export function defineUseCase<const T extends UseCasePageContent>(content: T): R
   requireText(content.eyebrow, 'eyebrow');
   requireText(content.hero.title, 'hero.title');
   requireText(content.hero.body, 'hero.body');
-  requireText(content.problem.title, 'problem.title');
-  requireText(content.solution.title, 'solution.title');
-  requireText(content.cta.title, 'cta.title');
+  const sectionHeadings = [
+    ['capabilities', content.sectionHeadings.capabilities],
+    ['codeExamples', content.sectionHeadings.codeExamples],
+    ['cta', content.sectionHeadings.cta],
+    ['problem', content.sectionHeadings.problem],
+    ['productResult', content.sectionHeadings.productResult],
+    ['relatedDocumentation', content.sectionHeadings.relatedDocumentation],
+    ['solution', content.sectionHeadings.solution],
+  ] as const;
+  for (const [section, heading] of sectionHeadings) {
+    requireText(heading.eyebrow, `sectionHeadings.${section}.eyebrow`);
+    requireText(heading.title, `sectionHeadings.${section}.title`);
+  }
   if (content.capabilities.length === 0 || content.codeExamples.length === 0) {
     throw new Error('A use-case page must include capabilities and code examples.');
   }

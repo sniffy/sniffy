@@ -57,14 +57,12 @@ export function createDatabaseQueryTestingUseCase(productVersion: string) {
         'A test can return the right object while quietly issuing too many statements, updating the wrong number of rows, or performing unexpected work on another thread. Functional assertions alone do not expose that cost or behavior.',
         'Log inspection helps after a failure, but it does not create a repeatable boundary. The useful question is not only “did this call succeed?”—it is also “what database work did this call perform?”',
       ],
-      title: 'Correct output can hide incorrect database work.',
     },
     solution: {
       body: [
         'Start a Sniffy Spy around the code under test or register the matching test-framework integration. Sniffy observes JDBC calls during that scope and evaluates explicit expectations when the scope completes.',
         'The application keeps using ordinary JDBC, a datasource, or its existing framework. Your test gains a focused assertion over the recorded behavior, and a failed expectation reports the database activity that crossed the boundary.',
       ],
-      title: 'Observe the real JDBC path and assert its shape.',
     },
     capabilities: [
       {
@@ -131,6 +129,36 @@ export function createDatabaseQueryTestingUseCase(productVersion: string) {
       src: '/img/home/sniffy-profiler.png',
       width: 760,
     },
+    sectionHeadings: {
+      capabilities: {
+        eyebrow: 'Assertions with context',
+        title: 'Test database behavior, not just return values.',
+      },
+      codeExamples: {
+        eyebrow: 'Repository-backed examples',
+        title: 'Make the expectation executable.',
+      },
+      cta: {
+        eyebrow: 'From observation to regression test',
+        title: 'Give the next database regression a precise failure.',
+      },
+      problem: {
+        eyebrow: 'The testing gap',
+        title: 'Correct output can hide incorrect database work.',
+      },
+      productResult: {
+        eyebrow: 'Visible evidence',
+        title: 'See the statements behind the request.',
+      },
+      relatedDocumentation: {
+        eyebrow: 'Go deeper',
+        title: 'Use the current documentation as the source of truth.',
+      },
+      solution: {
+        eyebrow: 'The Sniffy approach',
+        title: 'Observe the real JDBC path and assert its shape.',
+      },
+    },
     cta: {
       body: 'Start with one behavior that matters: the maximum number of statements a path may execute, the rows a write may affect, or the thread on which database work must stay.',
       primary: {
@@ -141,7 +169,6 @@ export function createDatabaseQueryTestingUseCase(productVersion: string) {
         href: '/docs/testing/api/',
         label: 'Read the query assertion API',
       },
-      title: 'Give the next database regression a precise failure.',
     },
   });
 }
