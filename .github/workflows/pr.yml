@@ -151,6 +151,14 @@ jobs:
       - name: Test desktop and mobile website navigation
         run: npm test --workspace @sniffy/site
 
+      - name: Upload temporary website browser diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: temporary-website-browser-diagnostics-${{ github.sha }}
+          path: sniffy-ui/test-results/site/
+          if-no-files-found: error
+
       - name: Package reviewable website artifact
         run: npm run package:site-artifact
 
