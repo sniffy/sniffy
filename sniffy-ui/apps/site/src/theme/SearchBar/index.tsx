@@ -88,7 +88,7 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
     if (restoreFocus) {
       requestAnimationFrame(() => triggerRef.current?.focus());
     } else {
-      triggerRef.current?.blur();
+      requestAnimationFrame(() => triggerRef.current?.blur());
     }
   }, [resetSearch]);
 
