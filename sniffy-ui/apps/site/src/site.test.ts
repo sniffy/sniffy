@@ -44,7 +44,7 @@ describe('@sniffy/site workspace contract', () => {
       'dev:site': 'npm run start --workspace @sniffy/site',
       'package:site-artifact': 'node apps/site/scripts/package-artifact.mjs',
       'test:site':
-        'npm run build:site && npm run verify:site-search-index && vitest run --project unit apps/site/src/site.test.ts apps/site/src/homepage.test.tsx apps/site/src/use-case.test.tsx apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts apps/site/src/deterministic-search-index.test.ts apps/site/src/theme/SearchBar/index.test.tsx apps/site/src/theme/SearchBar/search-index.test.ts apps/site/src/theme/NavbarItem/GitHubStarsNavbarItem.test.tsx && npm test --workspace @sniffy/site',
+        'npm run build:site && npm run verify:site-search-index && vitest run --project unit apps/site/src/site.test.ts apps/site/src/homepage.test.tsx apps/site/src/use-case.test.tsx apps/site/src/traffic-capture-use-case.test.tsx apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts apps/site/src/deterministic-search-index.test.ts apps/site/src/theme/SearchBar/index.test.tsx apps/site/src/theme/SearchBar/search-index.test.ts apps/site/src/theme/NavbarItem/GitHubStarsNavbarItem.test.tsx && npm test --workspace @sniffy/site',
       'verify:site-search-index': 'node apps/site/scripts/verify-search-index.mjs',
       'verify:site-artifact': 'node apps/site/scripts/verify-artifact.mjs',
     });
@@ -150,6 +150,8 @@ describe('@sniffy/site workspace contract', () => {
     expect(verification).toContain('traffic capture');
     expect(verification).toContain('use-cases/database-query-testing/');
     expect(verification).toContain('Make database behavior part of the test contract.');
+    expect(verification).toContain('use-cases/traffic-capture/');
+    expect(verification).toContain('Follow network bytes from the Java call that moved them.');
     expect(verification).toContain('This trail went cold.');
     expect(verification).toContain('return route.fulfill({ json: {} })');
     expect(verification).toContain("getByRole('link', { name: 'Sniffy GitHub repository' })");
@@ -246,11 +248,14 @@ describe('website validation workflow contract', () => {
 
     expect(playwright).toContain("name: 'desktop-chromium'");
     expect(playwright).toContain("devices['Desktop Chrome']");
-    expect(playwright).toContain("testMatch: '**/routes.spec.ts'");
+    expect(playwright).toContain("'**/routes.spec.ts'");
+    expect(playwright).toContain("'**/use-case-pages/*.spec.ts'");
     expect(playwright).toContain("name: 'mobile-chromium'");
     expect(playwright).toContain("devices['Pixel 7']");
-    expect(playwright).toContain("testMatch: '**/mobile.spec.ts'");
+    expect(playwright).toContain("'**/mobile.spec.ts'");
+    expect(playwright).toContain("'**/use-case-pages/mobile/*.spec.ts'");
     expect(playwright).toContain("'**/dev-search.spec.ts'");
+    expect(playwright).toContain("'**/use-case-pages/dev/*.spec.ts'");
     expect(playwright).toContain("snapshotPathTemplate: '{testDir}/visual-baselines/{arg}{ext}'");
   });
 });
