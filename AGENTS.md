@@ -30,6 +30,32 @@ constraints for their subtrees.
   visual patterns and Cloud for isolated, fully specified tasks with deterministic Cloud-available proof. Do not estimate
   task suitability from changed-line or lockfile size alone.
 
+## Standard tooling and infrastructure approval
+
+- For established engineering domains such as dependency scanning, vulnerability management, formatting, linting,
+  build orchestration, release automation, test reporting, coverage, packaging, and scaffolding, prefer maintained,
+  widely adopted tools, official actions, platform features, and ecosystem-standard declarative configuration. Compose
+  and configure those capabilities before writing custom code. Do not recreate capabilities already provided by npm,
+  Maven, GitHub, Dependabot, GitHub Dependency Review, OSV-Scanner, CodeQL, Renovate, established linters/build systems,
+  or equivalent maintained tooling.
+- Evaluate maintenance status, ecosystem adoption, update path, security and permissions model, portability, expected
+  failure/noise semantics, and operational burden—not only whether custom code can be made to pass tests.
+- Bespoke build, CI, release, dependency, or security infrastructure requires a maintainer-approved rationale in the
+  authoritative issue before implementation. It must state: the exact requirement and observable gap; maintained
+  alternatives evaluated; why configuration or composition is insufficient; the smallest custom surface; owner and
+  maintenance burden; security and permissions model; deterministic test strategy; upgrade and compatibility strategy;
+  operational failure/noise semantics; and the removal condition and exit or migration plan. Missing approval is a
+  blocker, not permission to invent a framework.
+- Every new CI workflow or materially new job additionally requires the issue to document why an existing workflow or
+  job cannot host the check; its trigger model; least-privilege permissions; required-check or blocking semantics;
+  expected signal and acceptable noise; the maintainer response to failure; owner and lifecycle/removal condition; and
+  overlap with existing GitHub or platform signals.
+- Review architecture and operational simplicity before accepting green CI. Ask whether common-problem custom code is
+  being introduced, which standard tools were considered, whether declarative composition can achieve the outcome,
+  whether the custom surface is proportionate, and who maintains it as upstream formats, APIs, or advisories change.
+- Resolve policy and architecture before implementation. If a task discovers a need for shared infrastructure, stop,
+  create a separate issue, and obtain the required design approval instead of expanding an unrelated pull request.
+
 ## Compatibility and scope
 
 - Preserve Java 8 source, bytecode, and runtime compatibility unless a task explicitly changes the supported baseline.
