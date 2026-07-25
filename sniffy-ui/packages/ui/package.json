@@ -10,7 +10,7 @@
   "dependencies": {
     "@base-ui/react": "1.6.0",
     "@sniffy/api": "0.0.0",
-    "lucide-react": "1.24.0",
+    "lucide-react": "1.27.0",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   }
