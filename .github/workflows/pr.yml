@@ -64,11 +64,12 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           AUDIT_HEAD_SHA: ${{ github.sha }}
-        run: >-
-          npm run dependency-security:pr --
-          --base "$BASE_SHA"
-          --head "$HEAD_SHA"
-          --audit-head "$AUDIT_HEAD_SHA"
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          npm run dependency-security:pr -- \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --audit-head "$AUDIT_HEAD_SHA"
       - name: Report PR comparison not applicable
         if: github.event_name != 'pull_request'
         run: >-
