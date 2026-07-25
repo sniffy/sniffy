@@ -30,6 +30,25 @@ constraints for their subtrees.
   visual patterns and Cloud for isolated, fully specified tasks with deterministic Cloud-available proof. Do not estimate
   task suitability from changed-line or lockfile size alone.
 
+## Codex model selection and budget
+
+- Treat model cost as an engineering constraint. Do not default every task to the strongest model or highest reasoning
+  level when the task has already been decomposed and specified by a maintainer or project-management agent.
+- Use Terra with medium reasoning as the default for well-scoped implementation work: focused bug fixes, CI fixes,
+  review follow-ups, tests, documentation, dependency updates, localized refactors, and module moves with clear acceptance
+  criteria. Use low reasoning for mechanical edits where the exact files and required transformation are already known.
+- Escalate to Sol with high reasoning only when the task materially benefits from repository-wide or architectural
+  reasoning, such as a new public API, a first-of-kind design, concurrency or lifecycle defects, cross-version Java
+  compatibility, subtle performance work, or an unresolved failure that persisted after a focused Terra attempt.
+- Prefer staged escalation over expensive retries: first give Terra a precise task, acceptance criteria, relevant files,
+  and required checks; inspect its diff and failure evidence; then route only the unresolved part to Sol. Do not restart
+  the entire task on Sol merely because one check failed or one review item remains.
+- Avoid duplicate planning. When an upstream agent or maintainer provides a concrete breakdown and design decisions,
+  execute that plan rather than spending a high-reasoning pass rediscovering it. Surface contradictions or missing proof
+  obligations, but do not redo settled analysis without evidence that it is wrong.
+- Record model escalations in the task or pull-request notes when they are non-obvious, including the specific complexity
+  or failed attempt that justified Sol. This is for cost and workflow calibration, not for judging implementation quality.
+
 ## Compatibility and scope
 
 - Preserve Java 8 source, bytecode, and runtime compatibility unless a task explicitly changes the supported baseline.
