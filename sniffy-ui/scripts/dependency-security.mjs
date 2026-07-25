@@ -17,26 +17,168 @@ const severityRank = new Map([
   ['critical', 4],
 ]);
 
-const policyFiles = new Set([
+const alwaysDependencyInputFiles = new Set([
   '.github/workflows/dependency-security.yml',
-  '.github/workflows/pr.yml',
   'sniffy-ui/dependency-security-exceptions.json',
   'sniffy-ui/dependency-security-overrides.json',
   'sniffy-ui/scripts/dependency-security.mjs',
 ]);
+const manifestDependencyFields = [
+  'name',
+  'version',
+  'workspaces',
+  'packageManager',
+  'engines',
+  'devEngines',
+  'os',
+  'cpu',
+  'libc',
+  'bin',
+  'config',
+  'dependencies',
+  'devDependencies',
+  'optionalDependencies',
+  'peerDependencies',
+  'peerDependenciesMeta',
+  'bundleDependencies',
+  'bundledDependencies',
+  'overrides',
+];
+const installLifecycleScripts = [
+  'preinstall',
+  'install',
+  'postinstall',
+  'prepublish',
+  'preprepare',
+  'prepare',
+  'postprepare',
+];
+const dependencyPolicyScriptPattern = /^(?:dependency-security(?::|$)|audit(?::|$))/;
+const workflowPolicyStart = '# dependency-security-policy:start';
+const workflowPolicyEnd = '# dependency-security-policy:end';
 
-export function isDependencyInput(file) {
+function isDependencyInputCandidate(file) {
   const normalized = file.replaceAll('\\', '/').replace(/^\.\/+/, '');
 
   return (
-    policyFiles.has(normalized) ||
+    alwaysDependencyInputFiles.has(normalized) ||
+    normalized === '.github/workflows/pr.yml' ||
     /^sniffy-ui\/(?:.+\/)?(?:package(?:-lock)?|npm-shrinkwrap)\.json$/.test(normalized) ||
     /^sniffy-ui\/(?:.+\/)?\.npmrc$/.test(normalized)
   );
 }
 
-export function dependencyInputs(files) {
-  return [...new Set(files.filter(isDependencyInput))].sort();
+function manifestDependencyState(content) {
+  if (content === null) {
+    return null;
+  }
+
+  const manifest = JSON.parse(content);
+  const state = Object.fromEntries(
+    manifestDependencyFields
+      .filter((field) => Object.hasOwn(manifest, field))
+      .map((field) => [field, canonicalJsonValue(manifest[field])]),
+  );
+  const dependencyScripts = Object.fromEntries(
+    Object.entries(manifest.scripts ?? {})
+      .filter(
+        ([script]) =>
+          installLifecycleScripts.includes(script) || dependencyPolicyScriptPattern.test(script),
+      )
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
+  if (Object.keys(dependencyScripts).length > 0) {
+    state.dependencyScripts = dependencyScripts;
+  }
+  return state;
+}
+
+function canonicalJsonValue(value) {
+  if (Array.isArray(value)) {
+    return value.map(canonicalJsonValue);
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, nested]) => [key, canonicalJsonValue(nested)]),
+    );
+  }
+  return value;
+}
+
+function workflowDependencyPolicy(content) {
+  if (content === null) {
+    return null;
+  }
+
+  const sections = [];
+  let active = false;
+  let current = [];
+  for (const line of content.split(/\r?\n/)) {
+    if (line.includes(workflowPolicyStart)) {
+      if (active) {
+        throw new Error(`nested ${workflowPolicyStart} marker`);
+      }
+      active = true;
+      current = [];
+      continue;
+    }
+    if (line.includes(workflowPolicyEnd)) {
+      if (!active) {
+        throw new Error(`${workflowPolicyEnd} marker has no matching start`);
+      }
+      sections.push(current.join('\n').trim());
+      active = false;
+      continue;
+    }
+    if (active) {
+      current.push(line);
+    }
+  }
+  if (active) {
+    throw new Error(`${workflowPolicyStart} marker has no matching end`);
+  }
+  return sections;
+}
+
+function dependencyInputChanged({ file, baseContent, headContent }) {
+  const normalized = file.replaceAll('\\', '/').replace(/^\.\/+/, '');
+  if (!isDependencyInputCandidate(normalized)) {
+    return false;
+  }
+  if (alwaysDependencyInputFiles.has(normalized)) {
+    return true;
+  }
+  if (
+    /^sniffy-ui\/(?:.+\/)?(?:package-lock|npm-shrinkwrap)\.json$/.test(normalized) ||
+    /^sniffy-ui\/(?:.+\/)?\.npmrc$/.test(normalized)
+  ) {
+    return true;
+  }
+  if (baseContent === undefined || headContent === undefined) {
+    throw new Error(`${normalized} requires base and head content for semantic classification`);
+  }
+
+  const baseState =
+    normalized === '.github/workflows/pr.yml'
+      ? workflowDependencyPolicy(baseContent)
+      : manifestDependencyState(baseContent);
+  const headState =
+    normalized === '.github/workflows/pr.yml'
+      ? workflowDependencyPolicy(headContent)
+      : manifestDependencyState(headContent);
+  return JSON.stringify(baseState) !== JSON.stringify(headState);
+}
+
+export function dependencyInputs(changes) {
+  return [
+    ...new Set(
+      changes
+        .filter(dependencyInputChanged)
+        .map(({ file }) => file.replaceAll('\\', '/').replace(/^\.\/+/, '')),
+    ),
+  ].sort();
 }
 
 function advisoryId(via) {
@@ -493,14 +635,14 @@ export function validateOverrides(packageJson, registry, now = new Date()) {
 }
 
 export function assessPullRequest({
-  changedFiles,
+  dependencyInputFiles,
   baseAudit,
   baseLockfile,
   headAudit,
   headLockfile,
   exceptions = [],
 }) {
-  const inputs = dependencyInputs(changedFiles);
+  const inputs = dependencyInputFiles;
   if (inputs.length === 0) {
     return {
       skipped: true,
@@ -541,6 +683,29 @@ function run(command, arguments_, options = {}) {
     );
   }
   return result;
+}
+
+function revisionFile(revision, file) {
+  const result = run('git', ['show', `${revision}:${file}`], { accept: [0, 128] });
+  return result.status === 0 ? result.stdout : null;
+}
+
+function dependencyChanges(changedFiles, base, head) {
+  return changedFiles.filter(isDependencyInputCandidate).map((file) => {
+    const normalized = file.replaceAll('\\', '/').replace(/^\.\/+/, '');
+    const needsSemanticContent =
+      normalized === '.github/workflows/pr.yml' ||
+      /^sniffy-ui\/(?:.+\/)?package\.json$/.test(normalized);
+    return {
+      file,
+      ...(needsSemanticContent
+        ? {
+            baseContent: revisionFile(base, file),
+            headContent: revisionFile(head, file),
+          }
+        : {}),
+    };
+  });
 }
 
 async function readJson(file) {
@@ -656,12 +821,12 @@ async function runPullRequest(arguments_) {
   const changedFiles = run('git', ['diff', '--name-only', `${mergeBase}...${head}`])
     .stdout.split(/\r?\n/)
     .filter(Boolean);
-  const inputs = dependencyInputs(changedFiles);
+  const inputs = dependencyInputs(dependencyChanges(changedFiles, mergeBase, head));
 
   if (inputs.length === 0) {
     await writeSummary(
       '## Dependency vulnerability comparison\n\n' +
-        'Skipped: PR dependency graph is unchanged. Repository-wide advisory drift is reported by the independent Dependency Security workflow.\n',
+        'Skipped: semantic base/head classification found no dependency input changes. Repository-wide advisory drift is reported by the independent Dependency Security workflow.\n',
     );
     return;
   }
@@ -672,7 +837,7 @@ async function runPullRequest(arguments_) {
   const baseState = await auditRevision(mergeBase);
   const headState = await auditRevision(auditHead);
   const result = assessPullRequest({
-    changedFiles,
+    dependencyInputFiles: inputs,
     baseAudit: baseState.audit,
     baseLockfile: baseState.lockfile,
     headAudit: headState.audit,

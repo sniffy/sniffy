@@ -43,15 +43,49 @@ function addAdvisory(audit, lockfile) {
   };
 }
 
-test('detects manifests, lockfiles, npm configuration, and policy inputs', () => {
+const workflowPolicy = `name: Check Pull Request
+# dependency-security-policy:start
+- name: Install frontend dependencies
+  run: npm ci
+# dependency-security-policy:end
+- name: Lint
+  run: npm run lint
+`;
+
+function manifest(change = {}) {
+  return JSON.stringify({
+    name: '@sniffy/frontend',
+    version: '0.0.0',
+    private: true,
+    scripts: {
+      'test:site': 'npm run test:site',
+      ...change.scripts,
+    },
+    devDependencies: {
+      vitest: '4.1.10',
+      ...change.devDependencies,
+    },
+    ...change.fields,
+  });
+}
+
+test('classifies dependency inputs semantically', () => {
   assert.deepEqual(
     dependencyInputs([
-      'README.md',
-      'sniffy-ui/apps/site/package.json',
-      'sniffy-ui/package-lock.json',
-      'sniffy-ui/.npmrc',
-      'sniffy-ui/dependency-security-exceptions.json',
-      '.github/workflows/pr.yml',
+      { file: 'README.md' },
+      {
+        file: 'sniffy-ui/apps/site/package.json',
+        baseContent: manifest(),
+        headContent: manifest({ devDependencies: { vitest: '4.2.0' } }),
+      },
+      { file: 'sniffy-ui/package-lock.json' },
+      { file: 'sniffy-ui/.npmrc' },
+      { file: 'sniffy-ui/dependency-security-exceptions.json' },
+      {
+        file: '.github/workflows/pr.yml',
+        baseContent: workflowPolicy,
+        headContent: workflowPolicy.replace('npm ci', 'npm ci --ignore-scripts'),
+      },
     ]),
     [
       '.github/workflows/pr.yml',
@@ -63,9 +97,92 @@ test('detects manifests, lockfiles, npm configuration, and policy inputs', () =>
   );
 });
 
+test('treats introducing or removing workflow policy sections as dependency-impacting', () => {
+  assert.deepEqual(
+    dependencyInputs([
+      {
+        file: '.github/workflows/pr.yml',
+        baseContent: 'name: Check Pull Request\n',
+        headContent: workflowPolicy,
+      },
+    ]),
+    ['.github/workflows/pr.yml'],
+  );
+});
+
+test('skips #710-style script-only manifest changes and unrelated workflow edits', () => {
+  assert.deepEqual(
+    dependencyInputs([
+      {
+        file: 'sniffy-ui/package.json',
+        baseContent: manifest(),
+        headContent: manifest({
+          scripts: {
+            'test:site': 'npm run test:site apps/site/src/traffic-capture-use-case.test.tsx',
+          },
+        }),
+      },
+      {
+        file: '.github/workflows/pr.yml',
+        baseContent: workflowPolicy,
+        headContent: workflowPolicy.replace('npm run lint', 'npm run lint -- --quiet'),
+      },
+    ]),
+    [],
+  );
+});
+
+test('detects override and install-lifecycle manifest changes', () => {
+  assert.deepEqual(
+    dependencyInputs([
+      {
+        file: 'sniffy-ui/package.json',
+        baseContent: manifest(),
+        headContent: manifest({
+          fields: { overrides: { minimatch: '10.2.5' } },
+        }),
+      },
+      {
+        file: 'sniffy-ui/apps/site/package.json',
+        baseContent: manifest(),
+        headContent: manifest({
+          scripts: { postinstall: 'node scripts/postinstall.mjs' },
+        }),
+      },
+    ]),
+    ['sniffy-ui/apps/site/package.json', 'sniffy-ui/package.json'],
+  );
+});
+
+test('detects audit-policy script changes while ignoring dependency key order', () => {
+  assert.deepEqual(
+    dependencyInputs([
+      {
+        file: 'sniffy-ui/package.json',
+        baseContent: manifest({
+          scripts: { 'dependency-security:pr': 'node scripts/dependency-security.mjs pr' },
+        }),
+        headContent: manifest({
+          scripts: { 'dependency-security:pr': 'echo skipped' },
+        }),
+      },
+      {
+        file: 'sniffy-ui/apps/site/package.json',
+        baseContent: manifest({
+          devDependencies: { alpha: '1.0.0', zulu: '1.0.0' },
+        }),
+        headContent: manifest({
+          devDependencies: { zulu: '1.0.0', alpha: '1.0.0' },
+        }),
+      },
+    ]),
+    ['sniffy-ui/package.json'],
+  );
+});
+
 test('skips an unchanged dependency graph without requiring audit fixtures', () => {
   const result = assessPullRequest({
-    changedFiles: ['sniffy-ui/apps/site/src/pages/index.tsx'],
+    dependencyInputFiles: [],
   });
 
   assert.equal(result.skipped, true);

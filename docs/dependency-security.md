@@ -9,10 +9,13 @@ Dependabot, and default-branch monitoring. Java and Maven dependencies remain ou
 
 ## Pull-request classification
 
-A pull request is dependency-impacting when its diff changes any npm manifest or workspace manifest, lockfile,
+A pull request is dependency-impacting when its diff changes dependency-affecting npm manifest fields, a lockfile,
 `npm-shrinkwrap.json`, `.npmrc`, dependency override, dependency-security exception/override registry, dependency
-comparison implementation, or workflow step that controls npm installation or audit behavior. The executable detector
-is `sniffy-ui/scripts/dependency-security.mjs`; its focused offline contracts are run by
+comparison implementation, or workflow steps that control npm installation or audit behavior. Ordinary manifest
+scripts and metadata do not change dependency impact unless they are npm install lifecycle or dependency-security/audit
+scripts. The PR workflow marks its dependency-security policy sections explicitly, so unrelated workflow edits do not
+trigger the comparison. The executable semantic base/head detector is
+`sniffy-ui/scripts/dependency-security.mjs`; its focused offline contracts are run by
 `npm run dependency-security:test`.
 
 The `Check Pull Request` workflow uses the actual merge base between the current PR base and head:
