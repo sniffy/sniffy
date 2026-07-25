@@ -117,6 +117,12 @@ An issue is ready when it states:
 
 The issue must not delegate unresolved product decisions to Codex. Implementation choices may remain open when a conservative, maintainable answer can be derived from the repository.
 
+Every issue must classify dependency impact during preflight. If npm manifests, workspace manifests, lockfiles,
+overrides, audit exceptions, or dependency-install/audit semantics may change, map the work to the merge-base
+vulnerability comparison in `docs/dependency-security.md`. If dependency inputs are unchanged, a newly published
+advisory belongs to the independent repository-health signal and a separate remediation issue; it must not silently
+broaden the feature pull request.
+
 ### 4.1. Complex-task design and proof preflight
 
 A task needs a preflight before implementation when it combines two or more of these risk axes:

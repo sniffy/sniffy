@@ -48,6 +48,22 @@ body:
         | partial setup failure | no global/core redesign | named launcher test proving body did not run and cleanup completed |
     validations:
       required: true
+  - type: dropdown
+    id: dependency_impact
+    attributes:
+      label: Dependency impact
+      description: Classify npm manifests, workspace manifests, lockfiles, overrides, audit exceptions, and install/audit semantics. Dependency-impacting work must use docs/dependency-security.md; unrelated feature work must route repository-wide advisory drift to a separate issue.
+      options:
+        - No dependency inputs change
+        - Dependency-impacting with no authorized exception
+        - Dependency-impacting with an explicit maintainer exception
+    validations:
+      required: true
+  - type: textarea
+    id: dependency_proof
+    attributes:
+      label: Dependency proof or exception
+      description: For dependency-impacting work, state the merge-base comparison proof. For an exception, record the advisory/package/path, safe-alternative analysis, risk, owner, review date, follow-up issue, removal condition, and authorizing issue/PR.
   - type: textarea
     id: delivery
     attributes:
@@ -100,4 +116,6 @@ body:
         - label: The agent may make ordinary implementation decisions without asking for approval.
           required: true
         - label: Required credentials, external services, and branch constraints are documented.
+          required: true
+        - label: Dependency impact is classified and any exception is explicitly authorized and fully documented.
           required: true

@@ -16,6 +16,8 @@ If there is no eligible issue, report a no-op and change nothing.
 
 Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and all comments, all project fields, linked pull requests, review submissions and unresolved review threads, current CI, and the current remote develop branch. Confirm that the issue satisfies Definition of Ready and classify it as either fresh work or a continuation.
 
+Before treating a red npm audit as actionable continuation feedback, classify the published diff using docs/dependency-security.md. If the pull request does not change dependency inputs, do not broaden it into dependency/toolchain remediation merely because a new advisory affects the unchanged graph. Preserve the feature PR and require a separately authorized policy or remediation issue.
+
 Fresh work has no active local claim and no implementation pull request.
 
 A continuation is eligible when all of the following are true:

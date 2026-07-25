@@ -30,6 +30,8 @@ jobs:
         working-directory: sniffy-ui
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 24.18.0
@@ -41,6 +43,10 @@ jobs:
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Lint
         run: npm run lint
+      - name: Test dependency security policy
+        run: npm run dependency-security:test
+      - name: Validate dependency security registries
+        run: npm run dependency-security:validate
       - name: Typecheck
         run: npm run typecheck
       - name: Unit and Storybook interaction tests with coverage
@@ -68,8 +74,23 @@ jobs:
         run: npm run check:generated
       - name: Validate bundle
         run: npm run check:bundle
-      - name: Audit frontend dependencies
-        run: npm audit --audit-level=high
+      - name: Compare dependency vulnerability risk
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          AUDIT_HEAD_SHA: ${{ github.sha }}
+        run: >-
+          npm run dependency-security:pr --
+          --base "$BASE_SHA"
+          --head "$HEAD_SHA"
+          --audit-head "$AUDIT_HEAD_SHA"
+      - name: Report PR comparison not applicable
+        if: github.event_name != 'pull_request'
+        run: >-
+          echo "Dependency vulnerability comparison is pull-request-only;
+          current repository health is reported by the Dependency Security workflow."
+          >> "$GITHUB_STEP_SUMMARY"
       - name: Playwright end-to-end tests
         run: npm run test:e2e
       - uses: actions/upload-artifact@v7
@@ -116,7 +137,11 @@ jobs:
       - name: Check website formatting
         run: >-
           npx prettier --check
+          ../.github/ISSUE_TEMPLATE/codex-task.yml
+          ../.github/dependabot.yml
+          ../.github/workflows/dependency-security.yml
           ../.github/workflows/pr.yml
+          ../docs/dependency-security.md
           ../docs/frontend-development.md
           apps/site
           packages/theme

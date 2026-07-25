@@ -611,7 +611,10 @@ For one worker, this claim sequence is sufficient:
    immediately before claiming.
 3. Classify the item as fresh work or a continuation. For a continuation, verify that the existing pull request is
    open, its head branch is writable by the worker, and the latest maintainer instructions identify actionable
-   fixes or required failed checks.
+   fixes or required failed checks. Classify a failed npm audit before expanding scope: if the published diff does not
+   change a dependency input defined by `docs/dependency-security.md`, preserve the feature PR, link a separate
+   remediation issue, and treat the failure as repository-health/policy work unless the maintainer explicitly re-queues
+   that separate concern.
 4. Set Status to `In progress`.
 5. Add the machine account as assignee and add `agent:local` when missing.
 6. For fresh work, post a claim comment containing the worker name, intended `agent/issue-N` branch, timestamp,

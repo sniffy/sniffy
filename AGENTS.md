@@ -39,6 +39,10 @@ constraints for their subtrees.
   focused fix into an unrelated redesign.
 - Prefer the smallest compatible dependency update. Do not perform broad dependency modernization as part of an
   unrelated task. Document security-motivated upgrades and compatibility trade-offs in the pull request.
+- Classify whether a task changes dependency inputs during preflight. Follow `docs/dependency-security.md`: an
+  unchanged feature-PR dependency graph is not responsible for newly published repository-wide advisories, while a
+  dependency-impacting PR must prove no vulnerability regression or carry an explicit, complete maintainer exception.
+  Keep remediation in a dedicated issue and pull request.
 
 ## Concurrency and lifecycle
 
@@ -80,8 +84,9 @@ constraints for their subtrees.
   and the root workspace scripts; do not hand-edit generated Java resources.
 - Keep profiler CSS and Base UI portals inside its open ShadowRoot. Do not add dynamic imports, runtime assets, host-page
   mutations, global CSS, or absolute backend assumptions.
-- Run lint, typecheck, Vitest, Storybook build, production build, generated-resource comparison, bundle validation, npm
-  audit, and Playwright for UI changes. Review `npm run dev` playground pages and visual diffs before updating baselines.
+- Run lint, typecheck, Vitest, Storybook build, production build, generated-resource comparison, bundle validation, the
+  applicable dependency-security comparison/health command, and Playwright for UI changes. Review `npm run dev`
+  playground pages and visual diffs before updating baselines.
 - Storybook's MCP addon is optional for local exploration. CI and tests must never require an external AI or MCP service.
 
 ### Visual evidence contract

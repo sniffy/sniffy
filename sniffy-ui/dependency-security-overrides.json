@@ -1,0 +1,28 @@
+{
+  "overrides": [
+    {
+      "selector": "copy-webpack-plugin>serialize-javascript",
+      "version": "7.0.7",
+      "rationale": "copy-webpack-plugin 11 declares serialize-javascript 6.x, whose latest compatible release remains affected by a high-severity advisory; the parent-scoped override uses the patched 7.x line without changing unrelated consumers.",
+      "dependencyPath": "@docusaurus/core -> @docusaurus/bundler -> copy-webpack-plugin@11.0.0 -> serialize-javascript@7.0.7",
+      "compatibilityProof": "Node 24 clean install, Docusaurus development and production builds, site contracts, and browser route tests exercise the copy plugin successfully; npm ls reports the intentional parent-range exception documented in PR #681.",
+      "upstream": "https://github.com/webpack-contrib/copy-webpack-plugin/blob/master/package.json",
+      "owner": "sniffy maintainers",
+      "reviewDate": "2026-10-25",
+      "removalCondition": "Remove when the current Docusaurus/copy-webpack-plugin path accepts a patched serialize-javascript release within its declared range, then prove npm ci, dependency audit, site build, and browser contracts without the override.",
+      "authorization": "https://github.com/sniffy/sniffy/pull/681"
+    },
+    {
+      "selector": "css-minimizer-webpack-plugin>serialize-javascript",
+      "version": "7.0.7",
+      "rationale": "css-minimizer-webpack-plugin 5 declares serialize-javascript 6.x, whose latest compatible release remains affected by a high-severity advisory; the parent-scoped override uses the patched 7.x line without changing unrelated consumers.",
+      "dependencyPath": "@docusaurus/core -> @docusaurus/bundler -> css-minimizer-webpack-plugin@5.0.1 -> serialize-javascript@7.0.7",
+      "compatibilityProof": "Node 24 clean install, Docusaurus production minification, site contracts, and browser route tests exercise the minimizer successfully; npm ls reports the intentional parent-range exception documented in PR #681.",
+      "upstream": "https://github.com/webpack-contrib/css-minimizer-webpack-plugin/blob/master/package.json",
+      "owner": "sniffy maintainers",
+      "reviewDate": "2026-10-25",
+      "removalCondition": "Remove when the current Docusaurus/css-minimizer-webpack-plugin path accepts a patched serialize-javascript release within its declared range, then prove npm ci, dependency audit, site build, and browser contracts without the override.",
+      "authorization": "https://github.com/sniffy/sniffy/pull/681"
+    }
+  ]
+}

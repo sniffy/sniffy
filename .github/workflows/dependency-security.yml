@@ -1,0 +1,57 @@
+name: Dependency Security
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+  push:
+    branches:
+      - develop
+      - master
+    paths:
+      - ".github/workflows/dependency-security.yml"
+      - ".github/workflows/pr.yml"
+      - "sniffy-ui/**/.npmrc"
+      - "sniffy-ui/**/package.json"
+      - "sniffy-ui/**/package-lock.json"
+      - "sniffy-ui/**/npm-shrinkwrap.json"
+      - "sniffy-ui/dependency-security-exceptions.json"
+      - "sniffy-ui/dependency-security-overrides.json"
+      - "sniffy-ui/scripts/dependency-security.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-security-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  npm-audit:
+    name: Current npm vulnerability health
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: node:24-bookworm-slim@sha256:cb4e8f7c443347358b7875e717c29e27bf9befc8f5a26cf18af3c3dec80e58c5
+    defaults:
+      run:
+        working-directory: sniffy-ui
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+          cache-dependency-path: sniffy-ui/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate exception and override registries
+        run: npm run dependency-security:validate
+
+      - name: Report current repository vulnerabilities
+        run: npm run dependency-security:health

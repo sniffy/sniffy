@@ -1,5 +1,26 @@
 version: 2
 updates:
+  # Frontend npm workspace
+  - package-ecosystem: "npm"
+    directory: "/sniffy-ui"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "04:30"
+    open-pull-requests-limit: 10
+    groups:
+      frontend-patch-and-minor:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
