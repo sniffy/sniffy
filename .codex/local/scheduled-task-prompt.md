@@ -16,6 +16,8 @@ If there is no eligible issue, report a no-op and change nothing.
 
 Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and all comments, all project fields, linked pull requests, review submissions and unresolved review threads, current CI, and the current remote develop branch. Confirm that the issue satisfies Definition of Ready and classify it as either fresh work or a continuation.
 
+Apply the standard-tooling and infrastructure-approval gate in AGENTS.md before implementation. For common build, CI, release, dependency, or security problems, prefer maintained tools, official actions, platform features, and declarative configuration. Bespoke infrastructure or a materially new workflow/job is not ready unless the authoritative issue contains the required maintainer-approved alternatives, gap, ownership, security, test, upgrade, operational, and removal rationale. If that approval is absent, set Status to "Blocked" and report the missing decision instead of inventing infrastructure.
+
 Fresh work has no active local claim and no implementation pull request.
 
 A continuation is eligible when all of the following are true:
