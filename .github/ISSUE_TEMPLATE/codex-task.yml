@@ -49,6 +49,23 @@ body:
     validations:
       required: true
   - type: textarea
+    id: standard_tooling
+    attributes:
+      label: Standard tooling and infrastructure rationale
+      description: Evaluate maintained tools and declarative composition first. Write "Not applicable - no shared infrastructure change" when appropriate.
+      placeholder: |
+        For bespoke infrastructure, record the maintainer-approved:
+        1. Exact requirement and observable gap
+        2. Maintained alternatives evaluated and why composition is insufficient
+        3. Smallest custom surface and maintenance owner
+        4. Security/permissions model and deterministic tests
+        5. Upgrade/compatibility strategy and failure/noise semantics
+        6. Removal condition and migration plan
+
+        For a new workflow or materially new job, also record why an existing job cannot host it, triggers, least privilege, required-check behavior, maintainer response, lifecycle, and overlap with platform signals.
+    validations:
+      required: true
+  - type: textarea
     id: delivery
     attributes:
       label: Delivery topology and checkpoints
@@ -94,6 +111,8 @@ body:
         - label: Module/API scope boundaries and any global-state or lifecycle decisions are explicit.
           required: true
         - label: Every acceptance criterion is mapped to an executable or inspectable proof.
+          required: true
+        - label: Maintained alternatives were assessed; bespoke infrastructure or new CI topology has explicit maintainer approval.
           required: true
         - label: Acceptance criteria are testable.
           required: true

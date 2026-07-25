@@ -4,6 +4,11 @@ Sniffy is a Java profiler which shows results directly in your browser. It also 
 
 **ALWAYS reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
+`AGENTS.md` is the authoritative repository policy. In particular, follow its standard-tooling and infrastructure-
+approval gate: prefer maintained tools and declarative configuration for common build, CI, release, dependency, and
+security problems, and do not implement bespoke infrastructure or a materially new workflow/job without the required
+maintainer-approved issue rationale.
+
 ## Working Effectively
 
 **CRITICAL BUILD REQUIREMENTS:**

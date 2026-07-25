@@ -14,3 +14,17 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
+
+  # Frontend npm workspace
+  - package-ecosystem: "npm"
+    directory: "/sniffy-ui"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "05:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+      include: "scope"

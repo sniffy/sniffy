@@ -25,6 +25,21 @@ The first check must never be delayed until the hourly monitor. Returning an exi
 
 Each check should verify that the intended executor claimed the task, continues on the expected branch and pull request, and has not silently stalled or opened a duplicate pull request. Executor verification must use the GitHub Project `Executor` field rather than inferring the executor from assignee or labels.
 
+## Architecture and tooling review
+
+`AGENTS.md` is the canonical standard-tooling and infrastructure-approval policy. Before dispatch and again during
+completion review, ask:
+
+- Is the change solving a common engineering problem with custom code?
+- Which maintained standard tools, official actions, or platform features were considered?
+- Can declarative configuration or composition achieve the same outcome?
+- Is any custom surface proportionate to the repository-specific gap?
+- Who maintains it when upstream formats, APIs, or advisories change?
+
+Green tests do not justify a bespoke framework that duplicates maintained tooling without the issue-level approval,
+alternatives analysis, ownership, security, operational, upgrade, and removal rationale required by `AGENTS.md`. Apply
+the additional workflow/job gate there before accepting new CI topology.
+
 ## Completion review
 
 After the agent reports completion, the supervisor must independently inspect:
