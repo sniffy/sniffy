@@ -30,12 +30,12 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop-chromium',
-      testMatch: '**/routes.spec.ts',
+      testMatch: ['**/routes.spec.ts', '**/use-case-pages/*.spec.ts'],
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'mobile-chromium',
-      testMatch: '**/mobile.spec.ts',
+      testMatch: ['**/mobile.spec.ts', '**/use-case-pages/mobile/*.spec.ts'],
       use: { ...devices['Pixel 7'] },
     },
     {
@@ -50,6 +50,7 @@ export default defineConfig({
         '**/dev-search.spec.ts',
         '**/dev-github-stars.spec.ts',
         '**/dev-use-case.spec.ts',
+        '**/use-case-pages/dev/*.spec.ts',
       ],
       use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3200' },
     },
