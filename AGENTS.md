@@ -106,8 +106,11 @@ constraints for their subtrees.
   and the root workspace scripts; do not hand-edit generated Java resources.
 - Keep profiler CSS and Base UI portals inside its open ShadowRoot. Do not add dynamic imports, runtime assets, host-page
   mutations, global CSS, or absolute backend assumptions.
-- Run lint, typecheck, Vitest, Storybook build, production build, generated-resource comparison, bundle validation, npm
-  audit, and Playwright for UI changes. Review `npm run dev` playground pages and visual diffs before updating baselines.
+- Run lint, typecheck, Vitest, Storybook build, production build, generated-resource comparison, bundle validation, and
+  Playwright for UI changes. GitHub Dependency Review is the causal pull-request gate for newly introduced
+  vulnerabilities. Use `npm audit` as diagnostic or remediation evidence for dependency-security work, not as a reason
+  to broaden an unrelated feature pull request; Dependabot and issue #712 own the current frontend vulnerability
+  baseline. Review `npm run dev` playground pages and visual diffs before updating baselines.
 - Storybook's MCP addon is optional for local exploration. CI and tests must never require an external AI or MCP service.
 
 ### Visual evidence contract
