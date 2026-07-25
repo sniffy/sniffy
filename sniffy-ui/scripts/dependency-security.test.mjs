@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -51,6 +52,25 @@ const workflowPolicy = `name: Check Pull Request
 - name: Lint
   run: npm run lint
 `;
+
+test('trusts the mounted CI workspace before the live pull-request comparison', () => {
+  const workflow = readFileSync(new URL('../../.github/workflows/pr.yml', import.meta.url), 'utf8');
+  const comparisonStep = workflow.match(
+    /- name: Compare dependency vulnerability risk\n([\s\S]*?)(?=\n {6}- name:)/,
+  )?.[0];
+
+  assert.ok(comparisonStep, 'dependency comparison step must remain present');
+  const trustWorkspace = 'git config --global --add safe.directory "$GITHUB_WORKSPACE"';
+  assert.ok(
+    comparisonStep.indexOf(trustWorkspace) >= 0,
+    'container HOME must trust the mounted workspace independently of actions/checkout',
+  );
+  assert.ok(
+    comparisonStep.indexOf(trustWorkspace) <
+      comparisonStep.indexOf('npm run dependency-security:pr'),
+    'workspace trust must be configured before Git merge-base inspection',
+  );
+});
 
 function manifest(change = {}) {
   return JSON.stringify({
