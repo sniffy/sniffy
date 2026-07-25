@@ -18,6 +18,8 @@ jobs:
   frontend:
     name: Frontend
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     env:
       HOME: /root
       PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
@@ -30,6 +32,11 @@ jobs:
         working-directory: sniffy-ui
     steps:
       - uses: actions/checkout@v7
+      - name: Review dependency changes
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: high
       - uses: actions/setup-node@v6
         with:
           node-version: 24.18.0
@@ -68,8 +75,6 @@ jobs:
         run: npm run check:generated
       - name: Validate bundle
         run: npm run check:bundle
-      - name: Audit frontend dependencies
-        run: npm audit --audit-level=high
       - name: Playwright end-to-end tests
         run: npm run test:e2e
       - uses: actions/upload-artifact@v7

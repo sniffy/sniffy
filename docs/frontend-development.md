@@ -32,6 +32,17 @@ The profiler derives its backend from the resolved `#sniffy-header` script URL, 
 
 `npm run test` runs unit tests plus Storybook interaction/accessibility tests in Chromium. Install all browser engines with `npx playwright install chromium firefox webkit`, then use `npm run test:e2e` for behavior coverage in Chromium, Firefox, and WebKit. Visual baselines live in `tests/e2e/visual-baselines/` and are updated only with `npm run test:e2e:update` in the pinned Playwright Linux/Chromium environment used by CI; inspect both profiler and agent images before committing them.
 
+## Dependency security
+
+The pull-request workflow uses GitHub Dependency Review to fail when a pull request introduces a vulnerability with
+`high` or `critical` severity. Because that maintained action compares the base and head dependency graphs, newly
+published advisories for an unchanged graph do not make unrelated feature pull requests responsible for baseline
+remediation. Weekly Dependabot updates for `/sniffy-ui` and repository Dependabot alerts own current-state visibility
+and update proposals.
+
+Use `npm audit` locally for diagnosis and as remediation evidence for dependency-security work such as issue #712. Do
+not expand an unrelated feature pull request to repair the existing advisory baseline.
+
 The existing `Check Pull Request` workflow includes an always-on `Website` job for every pull request. It reports locked dependency installation, lint, formatting, typecheck, site contract tests, the Docusaurus production build, deterministic documentation-index verification, and desktop/mobile Playwright coverage as separate steps, then uploads the complete `apps/site/build/` directory as a downloadable artifact. The local search index contains only current `/docs/` pages and useful section headings; the Sniffy-owned search dialog loads it lazily and requires no hosted service or backend. During `npm run dev:site`, the Docusaurus plugin builds an in-memory index from its current loaded MDX sources and refreshes it through the normal documentation watch/reload cycle, so a clean development checkout supports search without a preceding build or a stale checked-in index. The port-3200 Playwright project verifies that real development path. The artifact includes a README, the CI Node version pin, and a dependency-free `preview.mjs` launcher. After extraction, `node preview.mjs` serves the unchanged production build on macOS, Linux, or Windows; opening `index.html` through `file://` is intentionally unsupported because the production site uses `baseUrl: /`. CI starts that packaged launcher and verifies `/`, `/docs/`, a representative keyboard search, and the branded 404 response over HTTP before upload. The job also runs with the workflow's existing manual and `develop`-push triggers; it stays independent from Maven publication and never deploys the site.
 
 The branded site shell aliases shared semantic tokens in `apps/site/src/css/custom.css`. Variables prefixed
