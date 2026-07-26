@@ -97,6 +97,11 @@ try {
       status: 200,
       headingText: 'See the database work behind each request.',
     },
+    {
+      route: 'use-cases/traffic-capture/',
+      status: 200,
+      headingText: 'Follow network bytes from the Java call that moved them.',
+    },
     { route: 'missing-shell-route/', status: 404, headingText: 'This trail went cold.' },
   ]) {
     const url = `${previewUrl}${route}`;
@@ -133,6 +138,22 @@ try {
   }
   await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
   process.stdout.write('Verified packaged SQL profiling metadata and related documentation.\n');
+
+  await page.goto(`${previewUrl}use-cases/traffic-capture/`, {
+    waitUntil: 'networkidle',
+  });
+  if (
+    (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
+      'https://sniffy.io/use-cases/traffic-capture/' ||
+    (await page.locator('meta[property="og:title"]').getAttribute('content')) !==
+      'Java traffic capture and TLS inspection with Sniffy'
+  ) {
+    throw new Error(
+      'Artifact preview did not preserve the traffic-capture canonical or social metadata.',
+    );
+  }
+  await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
+  process.stdout.write('Verified packaged traffic-capture metadata and related documentation.\n');
 
   await page.goto(previewUrl, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /Search docs/ }).click();

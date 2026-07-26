@@ -160,6 +160,18 @@ A short read-only design/refinement task before implementation is often cheaper 
 feature that combines global state, failure composition, and multiple runtime versions, use that refinement step even
 when the final implementation remains one PR.
 
+### 4.3. Standard tooling and infrastructure gate
+
+`AGENTS.md` is the canonical policy for standard tooling and bespoke infrastructure. During refinement, first determine
+whether a maintained tool, official action, platform feature, or declarative configuration already covers the
+requirement. Prefer configuring or composing that standard capability over custom build, CI, release, dependency, or
+security code.
+
+Do not dispatch bespoke infrastructure unless the authoritative issue contains the maintainer-approved alternatives and
+rationale required by `AGENTS.md`. Apply the additional trigger, permissions, required-check, noise, response, ownership,
+lifecycle, and overlap analysis before adding a workflow or materially new job. Missing rationale is a Definition-of-Ready
+failure. If the need emerges during another task, stop and refine a separate infrastructure issue before implementation.
+
 ## 5. Routing tasks
 
 ### Use Codex Cloud by default when
@@ -318,6 +330,8 @@ Useful labels include `agent:cloud`, `agent:local`, `agent:blocked`, `needs:prod
 The delivery lead reviews:
 
 - whether the implementation matches every acceptance criterion;
+- whether a standard maintained tool or declarative composition covers the requirement, and any bespoke infrastructure
+  or new workflow/job has the issue-level approval and operational rationale required by `AGENTS.md`;
 - compatibility and public API impact;
 - module boundaries and unnecessary complexity;
 - test quality, discovery, execution, and whether tests were weakened or made flaky;

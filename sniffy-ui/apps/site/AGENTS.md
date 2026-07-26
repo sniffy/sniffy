@@ -41,7 +41,9 @@ These rules apply to every change under `sniffy-ui/apps/site` in addition to the
 
 - Run `npm ci`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build:site`, and `npm run test:site`.
 - For any frontend change, also run the repository-required Storybook build, existing production build,
-  `check:generated`, `check:bundle`, audit, and applicable Playwright checks.
+  `check:generated`, `check:bundle`, and applicable Playwright checks. Use `npm audit` for dependency diagnostics or
+  remediation evidence; ordinary site changes rely on the pull-request Dependency Review gate and must not absorb the
+  existing advisory baseline.
 - Verify `/`, `/docs/`, and the deliberate 404 behavior for reserved routes against the production site build.
 - Review desktop and meaningful mobile states and attach review-only screenshots to the pull request, never to this
   directory or repository history.
