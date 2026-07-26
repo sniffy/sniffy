@@ -98,6 +98,11 @@ try {
       headingText: 'See the database work behind each request.',
     },
     {
+      route: 'use-cases/network-fault-testing/',
+      status: 200,
+      headingText: 'Exercise failure paths without pretending to be the whole network.',
+    },
+    {
       route: 'use-cases/traffic-capture/',
       status: 200,
       headingText: 'Follow network bytes from the Java call that moved them.',
@@ -138,6 +143,22 @@ try {
   }
   await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
   process.stdout.write('Verified packaged SQL profiling metadata and related documentation.\n');
+
+  await page.goto(`${previewUrl}use-cases/network-fault-testing/`, {
+    waitUntil: 'networkidle',
+  });
+  if (
+    (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
+      'https://sniffy.io/use-cases/network-fault-testing/' ||
+    (await page.locator('meta[property="og:title"]').getAttribute('content')) !==
+      'Java network fault and resilience testing with Sniffy'
+  ) {
+    throw new Error(
+      'Artifact preview did not preserve the network-fault canonical or social metadata.',
+    );
+  }
+  await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
+  process.stdout.write('Verified packaged network-fault metadata and related documentation.\n');
 
   await page.goto(`${previewUrl}use-cases/traffic-capture/`, {
     waitUntil: 'networkidle',
