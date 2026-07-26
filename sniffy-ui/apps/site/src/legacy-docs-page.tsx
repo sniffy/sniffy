@@ -1,4 +1,5 @@
 import Head from '@docusaurus/Head';
+import { useBaseUrlUtils } from '@docusaurus/useBaseUrl';
 import { useEffect } from 'react';
 
 import { currentDocsPath } from './legacy-docs-routes';
@@ -8,6 +9,8 @@ interface Props {
 }
 
 export default function LegacyDocsPage({ routes }: Props) {
+  const { withBaseUrl } = useBaseUrlUtils();
+
   useEffect(() => {
     let anchor = '';
     try {
@@ -15,10 +18,11 @@ export default function LegacyDocsPage({ routes }: Props) {
     } catch {
       // Malformed percent encoding deliberately uses the safe fallback.
     }
-    window.location.replace(
-      Object.prototype.hasOwnProperty.call(routes, anchor) ? routes[anchor] : currentDocsPath,
-    );
-  }, [routes]);
+    const destination = Object.prototype.hasOwnProperty.call(routes, anchor)
+      ? routes[anchor]
+      : currentDocsPath;
+    window.location.replace(withBaseUrl(destination));
+  }, [routes, withBaseUrl]);
 
   return (
     <>
@@ -29,7 +33,7 @@ export default function LegacyDocsPage({ routes }: Props) {
       <main>
         <h1>Sniffy documentation has moved</h1>
         <p>
-          <a href={currentDocsPath}>Continue to the current Sniffy documentation.</a>
+          <a href={withBaseUrl(currentDocsPath)}>Continue to the current Sniffy documentation.</a>
         </p>
       </main>
     </>

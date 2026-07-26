@@ -6,6 +6,18 @@ import process from 'node:process';
 import lunr from 'lunr';
 
 const build = resolve(import.meta.dirname, '../build');
+const baseUrl = process.env.SNIFFY_SITE_BASE_URL ?? '/';
+if (
+  !baseUrl.startsWith('/') ||
+  !baseUrl.endsWith('/') ||
+  baseUrl.includes('//') ||
+  baseUrl.split('/').some((segment) => segment === '.' || segment === '..')
+) {
+  throw new Error(`SNIFFY_SITE_BASE_URL must have one leading and trailing slash: ${baseUrl}`);
+}
+const qualifyRoute = (route) => (baseUrl === '/' ? route : `${baseUrl.slice(0, -1)}${route}`);
+const currentDocsPrefix = qualifyRoute('/docs/');
+const nextDocsPrefix = qualifyRoute('/docs/next/');
 const indexFiles = (await readdir(build))
   .filter((file) => /^search-index-.+\.json$/.test(file))
   .sort();
@@ -50,9 +62,9 @@ for (const file of indexFiles) {
       typeof document.pageTitle !== 'string' ||
       typeof document.sectionTitle !== 'string' ||
       typeof document.sectionRoute !== 'string' ||
-      !document.sectionRoute.startsWith('/docs/') ||
-      document.sectionRoute.startsWith('/docs/next/') ||
-      /^\/docs\/\d/.test(document.sectionRoute) ||
+      !document.sectionRoute.startsWith(currentDocsPrefix) ||
+      document.sectionRoute.startsWith(nextDocsPrefix) ||
+      /^\d/.test(document.sectionRoute.slice(currentDocsPrefix.length)) ||
       document.type !== 'docs'
     ) {
       throw new Error(`${file} contains an invalid or out-of-scope document.`);
@@ -89,11 +101,11 @@ function search(input) {
 }
 
 for (const [query, expectedRoute] of [
-  ['installation', '/docs/installation/'],
-  ['configuration', '/docs/configuration/'],
-  ['SQL assertions', '/docs/testing/api/'],
-  ['network fault simulation', '/docs/network/fault-emulation/'],
-  ['traffic capture', '/docs/network/traffic-capture/'],
+  ['installation', qualifyRoute('/docs/installation/')],
+  ['configuration', qualifyRoute('/docs/configuration/')],
+  ['SQL assertions', qualifyRoute('/docs/testing/api/')],
+  ['network fault simulation', qualifyRoute('/docs/network/fault-emulation/')],
+  ['traffic capture', qualifyRoute('/docs/network/traffic-capture/')],
 ]) {
   if (!search(query).some(({ sectionRoute }) => sectionRoute.startsWith(expectedRoute))) {
     throw new Error(`Generated search index did not map "${query}" to ${expectedRoute}.`);
@@ -103,7 +115,7 @@ for (const [query, expectedRoute] of [
 if (
   !search('SSL TLS traffic decryption').some(
     ({ sectionRoute }) =>
-      sectionRoute === '/docs/network/traffic-capture/#ssltls-traffic-decryption',
+      sectionRoute === qualifyRoute('/docs/network/traffic-capture/#ssltls-traffic-decryption'),
   )
 ) {
   throw new Error('Generated search index did not preserve the TLS section anchor.');

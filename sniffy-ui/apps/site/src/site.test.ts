@@ -135,6 +135,7 @@ describe('@sniffy/site workspace contract', () => {
     const readme = readFileSync(resolve(site, 'artifact/README.md'), 'utf8');
     const preview = readFileSync(resolve(site, 'scripts/preview.mjs'), 'utf8');
     const verification = readFileSync(resolve(site, 'scripts/verify-artifact.mjs'), 'utf8');
+    const legacyDocsPage = readFileSync(resolve(site, 'src/legacy-docs-page.tsx'), 'utf8');
 
     expect(resolveSiteDeployment({})).toEqual({
       url: 'https://sniffy.io',
@@ -182,6 +183,9 @@ describe('@sniffy/site workspace contract', () => {
     expect(verification).toContain("getByRole('link', { name: 'Sniffy GitHub repository' })");
     expect(verification).toContain("getByTestId('github-star-count')");
     expect(verification).toContain("message.type() === 'error'");
+    expect(legacyDocsPage).toContain("import { useBaseUrlUtils } from '@docusaurus/useBaseUrl';");
+    expect(legacyDocsPage).toContain('window.location.replace(withBaseUrl(destination));');
+    expect(legacyDocsPage).toContain('href={withBaseUrl(currentDocsPath)}');
   });
 
   it('uses a pinned local search indexer with a Sniffy-owned resilient search dialog', () => {
@@ -337,6 +341,7 @@ describe('website deployment workflow contract', () => {
       'Package reviewable website artifact',
       'Verify packaged website preview',
       'Build GitHub Pages artifact',
+      'Verify Pages documentation search index',
       'Record immutable artifact identity',
       'Upload GitHub Pages artifact',
       'Deploy GitHub Pages artifact',

@@ -8,11 +8,15 @@ call a hosting API directly.
 ## Activation and operator boundary
 
 Repository maintainers own the protected `github-pages` environment and the repository's Pages
-settings. Before the first deployment, they must review the existing Pages and custom-domain state,
-configure the Pages build source as **GitHub Actions**, and apply any required environment reviewers.
-Changing the Pages source, custom domain, DNS, `CNAME`, or HTTPS settings is a privileged maintainer
-operation and is not performed by the workflow. The custom-domain cutover remains exclusively
-authorized by [management issue #9](https://github.com/sniffy/management/issues/9).
+settings. For `sniffy/sniffy`, maintainers have configured the Pages build source as **GitHub
+Actions** and restricted the `github-pages` environment to deployments from `develop`. The workflow
+does not change those repository settings or the environment's protection rules.
+
+The canonical `https://sniffy.io/` site is published separately from `sniffy/sniffy.github.io`,
+whose `CNAME` records `sniffy.io`. This workflow creates the `sniffy/sniffy` project-site
+deployment; it does not publish to that repository or change its content, custom domain, DNS,
+`CNAME`, or HTTPS settings. The custom-domain cutover remains exclusively authorized by
+[management issue #9](https://github.com/sniffy/management/issues/9).
 
 The deployment job receives only:
 
@@ -34,7 +38,13 @@ Before upload, the workflow repeats the complete site contract with Node 24.18.0
 `npm ci`: lint, formatting, typecheck, focused contract tests, broken-link and image validation,
 search-index verification, desktop/mobile browser tests, portable artifact packaging, and packaged
 artifact browser verification. It then rebuilds with the origin and base path reported by GitHub
-Pages.
+Pages. It does not hard-code the project-site URL: `actions/configure-pages` supplies the build
+origin and base path, and `actions/deploy-pages` supplies the deployed URL. That URL may reflect an
+organization Pages custom domain and path; it is deployment evidence, not a root-domain cutover.
+
+Because the deployment workflow and its `develop`-only environment policy do not permit an
+unmerged feature branch to publish, the first production proof occurs only after this workflow is
+reviewed and merged to `develop`.
 
 The official Pages artifact is named `sniffy-pages-<full-commit-sha>`. A
 `.sniffy-deployment.json` manifest inside it records the deployed commit, Pages origin/base path,
@@ -70,6 +80,6 @@ Maven artifact:
 
 This procedure rebuilds only the deterministic static site from the known-good Git revision and
 publishes it through the isolated Pages workflow. Restoring or changing the canonical
-`sniffy.io` domain, DNS, TLS, or the legacy site is a separate cutover rollback owned by management
-issue #9 and the architecture contract in
+`sniffy.io` domain, DNS, TLS, or the separate `sniffy/sniffy.github.io` site is a cutover rollback
+owned by management issue #9 and the architecture contract in
 [`website-architecture.md`](website-architecture.md#rollback-contract).
