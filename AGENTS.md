@@ -30,13 +30,53 @@ constraints for their subtrees.
   visual patterns and Cloud for isolated, fully specified tasks with deterministic Cloud-available proof. Do not estimate
   task suitability from changed-line or lockfile size alone.
 
+## Standard tooling and infrastructure approval
+
+- For established engineering domains such as dependency scanning, vulnerability management, formatting, linting,
+  build orchestration, release automation, test reporting, coverage, packaging, and scaffolding, prefer maintained,
+  widely adopted tools, official actions, platform features, and ecosystem-standard declarative configuration. Compose
+  and configure those capabilities before writing custom code. Do not recreate capabilities already provided by npm,
+  Maven, GitHub, Dependabot, GitHub Dependency Review, OSV-Scanner, CodeQL, Renovate, established linters/build systems,
+  or equivalent maintained tooling.
+- Evaluate maintenance status, ecosystem adoption, update path, security and permissions model, portability, expected
+  failure/noise semantics, and operational burden—not only whether custom code can be made to pass tests.
+- Bespoke build, CI, release, dependency, or security infrastructure requires a maintainer-approved rationale in the
+  authoritative issue before implementation. It must state: the exact requirement and observable gap; maintained
+  alternatives evaluated; why configuration or composition is insufficient; the smallest custom surface; owner and
+  maintenance burden; security and permissions model; deterministic test strategy; upgrade and compatibility strategy;
+  operational failure/noise semantics; and the removal condition and exit or migration plan. Missing approval is a
+  blocker, not permission to invent a framework.
+- Every new CI workflow or materially new job additionally requires the issue to document why an existing workflow or
+  job cannot host the check; its trigger model; least-privilege permissions; required-check or blocking semantics;
+  expected signal and acceptable noise; the maintainer response to failure; owner and lifecycle/removal condition; and
+  overlap with existing GitHub or platform signals.
+- Review architecture and operational simplicity before accepting green CI. Ask whether common-problem custom code is
+  being introduced, which standard tools were considered, whether declarative composition can achieve the outcome,
+  whether the custom surface is proportionate, and who maintains it as upstream formats, APIs, or advisories change.
+- Resolve policy and architecture before implementation. If a task discovers a need for shared infrastructure, stop,
+  create a separate issue, and obtain the required design approval instead of expanding an unrelated pull request.
+
+## Compatibility and scope
+
+- Preserve Java 8 source, bytecode, and runtime compatibility unless a task explicitly changes the supported baseline.
+  Do not use post-Java-8 language features or APIs in shared production or test sources. JDK-specific integrations must
+  stay behind capability probes, isolated modules, or Maven profiles.
+- Keep changes inside the requested behavior. Preserve public contracts and existing user changes; do not turn a
+  focused fix into an unrelated redesign.
+- Prefer the smallest compatible dependency update. Do not perform broad dependency modernization as part of an
+  unrelated task. Document security-motivated upgrades and compatibility trade-offs in the pull request.
+
 ## Codex model selection and budget
 
 - Treat model cost as an engineering constraint. Do not default every task to the strongest model or highest reasoning
   level when the task has already been decomposed and specified by a maintainer or project-management agent.
-- Use Terra with medium reasoning as the default for well-scoped implementation work: focused bug fixes, CI fixes,
-  review follow-ups, tests, documentation, dependency updates, localized refactors, and module moves with clear acceptance
-  criteria. Use low reasoning for mechanical edits where the exact files and required transformation are already known.
+- Explicit issue or project routing overrides the defaults. For the local dispatcher, `agent:model:luna` means GPT-5.6
+  Luna with low reasoning, `agent:model:sol` means GPT-5.6 Sol with high reasoning, and an issue without a stronger route
+  defaults to GPT-5.6 Terra with medium reasoning.
+- Use Terra with medium reasoning for well-scoped implementation work: focused bug fixes, CI fixes, review follow-ups,
+  tests, documentation, dependency updates, localized refactors, and module moves with clear acceptance criteria.
+- Use Luna with low reasoning only for mechanical edits where the exact files and required transformation are already
+  known and no material design, compatibility, failure-analysis, or proof decision remains.
 - Escalate to Sol with high reasoning only when the task materially benefits from repository-wide or architectural
   reasoning, such as a new public API, a first-of-kind design, concurrency or lifecycle defects, cross-version Java
   compatibility, subtle performance work, or an unresolved failure that persisted after a focused Terra attempt.
@@ -48,16 +88,6 @@ constraints for their subtrees.
   obligations, but do not redo settled analysis without evidence that it is wrong.
 - Record model escalations in the task or pull-request notes when they are non-obvious, including the specific complexity
   or failed attempt that justified Sol. This is for cost and workflow calibration, not for judging implementation quality.
-
-## Compatibility and scope
-
-- Preserve Java 8 source, bytecode, and runtime compatibility unless a task explicitly changes the supported baseline.
-  Do not use post-Java-8 language features or APIs in shared production or test sources. JDK-specific integrations must
-  stay behind capability probes, isolated modules, or Maven profiles.
-- Keep changes inside the requested behavior. Preserve public contracts and existing user changes; do not turn a
-  focused fix into an unrelated redesign.
-- Prefer the smallest compatible dependency update. Do not perform broad dependency modernization as part of an
-  unrelated task. Document security-motivated upgrades and compatibility trade-offs in the pull request.
 
 ## Concurrency and lifecycle
 
@@ -99,8 +129,11 @@ constraints for their subtrees.
   and the root workspace scripts; do not hand-edit generated Java resources.
 - Keep profiler CSS and Base UI portals inside its open ShadowRoot. Do not add dynamic imports, runtime assets, host-page
   mutations, global CSS, or absolute backend assumptions.
-- Run lint, typecheck, Vitest, Storybook build, production build, generated-resource comparison, bundle validation, npm
-  audit, and Playwright for UI changes. Review `npm run dev` playground pages and visual diffs before updating baselines.
+- Run lint, typecheck, Vitest, Storybook build, production build, generated-resource comparison, bundle validation, and
+  Playwright for UI changes. GitHub Dependency Review is the causal pull-request gate for newly introduced
+  vulnerabilities. Use `npm audit` as diagnostic or remediation evidence for dependency-security work, not as a reason
+  to broaden an unrelated feature pull request; Dependabot and issue #712 own the current frontend vulnerability
+  baseline. Review `npm run dev` playground pages and visual diffs before updating baselines.
 - Storybook's MCP addon is optional for local exploration. CI and tests must never require an external AI or MCP service.
 
 ### Visual evidence contract
