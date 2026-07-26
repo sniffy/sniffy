@@ -1,65 +1,62 @@
-# Sniffy local Codex scheduled-task prompt
+# Sniffy local Codex dispatcher prompt
 
-Copy the text block below verbatim into the ChatGPT desktop app Scheduled task that dispatches the local Sniffy worker. The prompt supports both a fresh implementation and a continuation of an existing local-worker pull request.
+Copy the text block below into a Scheduled task **attached to one persistent dispatcher chat** in the ChatGPT/Codex desktop app. Configure the task to run every 15 minutes against the local Sniffy project checkout, not a new worktree. The desktop app must use WSL for the Codex agent so all repository and GitHub commands run in Linux.
+
+The dispatcher is intentionally read-only with respect to source code. A no-op cycle stays in the same dispatcher chat. An eligible issue is handed to a one-time standalone Scheduled task, which creates exactly one dedicated worker chat and one isolated worktree for that issue.
 
 ```text
-Run one Sniffy local-worker cycle in the selected WSL project and its dedicated worktree.
+Run one Sniffy dispatcher cycle in this existing dispatcher chat.
 
-Use organization project 2 (https://github.com/orgs/sniffy/projects/2) owned by sniffy as the book of work. Select at most one Issue from sniffy/sniffy whose Status is "Ready for agent" and Executor is "Local Codex".
+Repository: sniffy/sniffy
+Book of work: organization project 2, https://github.com/orgs/sniffy/projects/2
+Base branch: develop
+Ready status: Ready for agent
+Executor: Local Codex
+Canonical worker template: .codex/local/worker-task-prompt.md
 
-Prioritize eligible work in this order:
+This chat is a coordinator only. Never edit source files, create an implementation branch, run tests, launch codex exec, or implement an issue in this dispatcher chat.
 
-1. An explicitly re-queued continuation that already has an open local-worker pull request and actionable maintainer review feedback or required failing checks.
-2. Otherwise, fresh work by highest project Priority and oldest issue number.
+1. Read AGENTS.md, docs/codex-workflow.md, this prompt, and the worker template before making queue decisions.
+2. Inspect project 2 and select at most one Issue from sniffy/sniffy whose Status is "Ready for agent" and Executor is "Local Codex".
+3. Do not dispatch a second issue while another local-worker item is still genuinely active. Inspect the issue, project state, claim comments, linked pull request, and current remote state instead of relying on a stale label alone.
+4. Prefer an explicitly re-queued continuation with an existing local-worker pull request and actionable maintainer feedback or failing required checks. Otherwise choose fresh work by project Priority and oldest issue number.
+5. Confirm that the selected issue satisfies the Definition of Ready in docs/codex-workflow.md. Read the complete issue and comments, relevant project fields, linked pull requests, review submissions and unresolved threads, and current CI. Apply the standard-tooling and infrastructure-approval gate in AGENTS.md.
+6. If no eligible issue exists, create no task, no chat, no worktree, no branch, and no GitHub mutation. Reply only NO_CHANGE.
+7. Classify the selected item as fresh work or an explicitly re-queued continuation. A continuation must have an open writable local-worker pull request and branch plus actionable feedback or required failing checks. Do not continue work owned by another executor.
+8. Select the worker model and reasoning effort from explicit issue or project routing. Use these defaults when no stronger instruction exists:
+   - agent:model:luna -> GPT-5.6 Luna with low reasoning;
+   - agent:model:sol -> GPT-5.6 Sol with high reasoning;
+   - otherwise -> GPT-5.6 Terra with medium reasoning.
+9. Claim the issue before spawning the worker:
+   - set project Status to "In progress";
+   - add the dedicated local-worker account as assignee when missing;
+   - add agent:local when missing;
+   - post a claim comment with worker name, fresh/continuation mode, intended or existing branch, existing pull request when applicable, selected model and reasoning, and an ISO-8601 timestamp.
+10. If any claim mutation fails, roll back mutations already made and stop before creating a task.
+11. Read .codex/local/worker-task-prompt.md and replace every placeholder with the selected issue, branch, pull request, model, and reasoning values. Do not leave unresolved placeholders in the child prompt.
+12. Using the desktop app's native Scheduled task capability, create one NEW ONE-TIME STANDALONE task:
+    - title: "Sniffy #<issue-number>: <issue-title>";
+    - run once as soon as possible;
+    - destination: a new standalone chat, never this dispatcher chat;
+    - project: the current local Sniffy project;
+    - environment: a new isolated Git worktree;
+    - model and reasoning: the values selected above;
+    - prompt: the fully rendered worker template.
+13. Do not use shell UI automation, Python observers, codex app-server, codex exec, or .codex/local/run-issue.sh to create the worker. The child must be an app-owned task so its chat remains visible in the desktop app and Remote.
+14. After the child task is confirmed created, post a second issue comment containing the exact child task title and timestamp. Keep Status "In progress". Report the issue number, worker task title, model, reasoning, and fresh/continuation mode in this dispatcher chat.
+15. If child-task creation fails, remove the local claim changes, restore Status "Ready for agent", post the exact failure on the issue, and report the error here. Never leave an issue silently claimed without a confirmed worker task.
 
-If there is no eligible issue, report a no-op and change nothing.
-
-Before claiming, read AGENTS.md, docs/codex-workflow.md, the complete issue and all comments, all project fields, linked pull requests, review submissions and unresolved review threads, current CI, and the current remote develop branch. Confirm that the issue satisfies Definition of Ready and classify it as either fresh work or a continuation.
-
-Apply the standard-tooling and infrastructure-approval gate in AGENTS.md before implementation. For common build, CI, release, dependency, or security problems, prefer maintained tools, official actions, platform features, and declarative configuration. Bespoke infrastructure or a materially new workflow/job is not ready unless the authoritative issue contains the required maintainer-approved alternatives, gap, ownership, security, test, upgrade, operational, and removal rationale. If that approval is absent, set Status to "Blocked" and report the missing decision instead of inventing infrastructure.
-
-Fresh work has no active local claim and no implementation pull request.
-
-A continuation is eligible when all of the following are true:
-
-- the issue was deliberately returned to "Ready for agent";
-- Executor is "Local Codex";
-- the issue remains assigned to the dedicated local worker or can safely be assigned to it;
-- an existing local-worker claim, agent:local label, writable agent/issue-N branch, and open implementation pull request are present;
-- maintainer review feedback or required failed checks call for additional implementation.
-
-For a continuation, the historical local claim, assignee, agent:local label, existing branch, and open pull request are required context. They are not reasons for a guarded no-op. The existence of an implementation pull request disqualifies only fresh work; it does not disqualify an explicitly re-queued continuation.
-
-Do not continue a pull request owned by another executor or a branch the worker cannot update. Report that exact blocker instead.
-
-Claim the selected item by changing project Status to "In progress". Add the dedicated worker account as assignee and add agent:local only when missing. Post a claim comment.
-
-For fresh work, record the intended agent/issue-N branch.
-
-For a continuation, post "Claimed continuation" and record the existing branch, pull-request number, current head SHA, timestamp, and feedback scope. Preserve the existing claim and pull request rather than creating replacements.
-
-If any claim mutation fails, roll back mutations already made and stop before editing code.
-
-After a successful fresh claim, create agent/issue-N from the latest origin/develop without force-pushing.
-
-After a successful continuation claim, fetch and check out the exact existing pull-request head branch. Do not reset it to develop, rebase or rewrite its published history, create a replacement branch, or open a separate pull request. Verify that local HEAD, the remote branch, and the existing pull-request head agree before editing. Address all actionable review feedback and relevant failing checks on that pull request while preserving unrelated work already on the branch.
-
-Follow AGENTS.md and the issue as the source of truth. Implement the fresh task or continuation fixes end to end, add or update tests and documentation, run all applicable focused checks as separately reported commands, inspect the final diff, commit, push, and create or update the pull request. Do not merge or enable auto-merge.
-
-Verify the remote branch, full head SHA, pull-request URL, base/head branches, and pull-request head SHA. Move project Status to "Review" only after publication is verified and the requested continuation proof is satisfied. When the maintainer explicitly requires green remote CI, verify that CI before moving to Review.
-
-If a genuine blocker remains, set Status to "Blocked" and post the exact blocker and smallest required decision. Never claim or implement more than one issue in this run.
+Never dispatch the same issue twice. Never merge or enable auto-merge.
 ```
 
-## Continuation smoke test
+## Required smoke test
 
-Before enabling the recurring schedule, test the prompt against a disposable or intentionally re-queued issue with:
+Before enabling the recurring dispatcher, use a disposable issue or a read-only child prompt to verify that a run of an in-chat Scheduled task can create one one-time standalone child task in the current desktop-app version. The smoke test must prove:
 
-- `Status = Ready for agent`;
-- `Executor = Local Codex`;
-- an existing local claim and `agent:local` label;
-- the local-worker assignee;
-- an existing `agent/issue-N` branch and open pull request;
-- actionable `CHANGES_REQUESTED` feedback.
+- an empty queue adds no chat and no worktree;
+- one eligible issue creates exactly one worker chat;
+- the worker chat uses the expected WSL project and a separate worktree;
+- the task title contains the issue number;
+- a failed child creation rolls the claim back.
 
-The worker must claim the continuation, reuse the existing branch and pull request, and must not report a no-op merely because the claim or pull request already exists.
+Repeat this smoke test after material desktop-app Scheduled-task changes. If nested task creation is unavailable, pause the dispatcher and use the documented manual app workflow; do not silently replace it with external UI automation.
