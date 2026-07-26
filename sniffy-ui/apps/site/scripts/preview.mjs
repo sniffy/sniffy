@@ -5,7 +5,6 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, URL } from 'node:url';
 
-const root = dirname(fileURLToPath(import.meta.url));
 const mimeTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
   ['.gif', 'image/gif'],
@@ -26,17 +25,28 @@ const mimeTypes = new Map([
   ['.xml', 'application/xml; charset=utf-8'],
 ]);
 
-const options = { host: '127.0.0.1', port: 4173 };
+const options = {
+  baseUrl: '/',
+  host: '127.0.0.1',
+  port: 4173,
+  root: dirname(fileURLToPath(import.meta.url)),
+};
 
 for (let index = 2; index < process.argv.length; index += 1) {
   const argument = process.argv[index];
   const value = process.argv[index + 1];
 
-  if (argument === '--host' && value) {
+  if (argument === '--base-url' && value) {
+    options.baseUrl = value;
+    index += 1;
+  } else if (argument === '--host' && value) {
     options.host = value;
     index += 1;
   } else if (argument === '--port' && value) {
     options.port = Number(value);
+    index += 1;
+  } else if (argument === '--root' && value) {
+    options.root = value;
     index += 1;
   } else {
     throw new Error(`Unknown or incomplete argument: ${argument}`);
@@ -46,6 +56,15 @@ for (let index = 2; index < process.argv.length; index += 1) {
 if (!Number.isInteger(options.port) || options.port < 0 || options.port > 65_535) {
   throw new Error(`Invalid port: ${options.port}`);
 }
+if (
+  !options.baseUrl.startsWith('/') ||
+  !options.baseUrl.endsWith('/') ||
+  options.baseUrl.includes('//')
+) {
+  throw new Error(`Invalid base URL: ${options.baseUrl}`);
+}
+
+const root = resolve(options.root);
 
 const sendText = (response, statusCode, message) => {
   response.writeHead(statusCode, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -84,7 +103,11 @@ const sendNotFound = async (request, response) => {
 const resolveRequestPath = async (requestUrl) => {
   const url = new URL(requestUrl, 'http://localhost');
   const decodedPath = decodeURIComponent(url.pathname).replaceAll('\\', '/');
-  const relativePath = decodedPath.replace(/^\/+/, '') || 'index.html';
+  if (!decodedPath.startsWith(options.baseUrl)) {
+    return undefined;
+  }
+  const relativePath =
+    decodedPath.slice(options.baseUrl.length).replace(/^\/+/, '') || 'index.html';
   let target = resolve(root, relativePath);
 
   if (target !== root && !target.startsWith(`${root}${sep}`)) {

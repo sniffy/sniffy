@@ -118,7 +118,9 @@ jobs:
           apps/site/src/source-snippets.test.ts
           apps/site/src/product-version.test.ts
           apps/site/src/documentation.test.ts
+          apps/site/src/deployment-config.test.ts
           apps/site/src/deterministic-search-index.test.ts
+          apps/site/src/legacy-docs-page.test.tsx
           apps/site/src/theme/SearchBar/search-index.test.ts
           packages/theme/src/theme.test.ts
 
@@ -151,6 +153,11 @@ jobs:
         env:
           SNIFFY_SITE_BASE_URL: ${{ format('{0}/', steps.pages.outputs.base_path) }}
         run: npm run verify:site-search-index
+
+      - name: Verify GitHub Pages artifact
+        env:
+          SNIFFY_SITE_BASE_URL: ${{ format('{0}/', steps.pages.outputs.base_path) }}
+        run: npm run verify:site-artifact
 
       - name: Record immutable artifact identity
         id: artifact

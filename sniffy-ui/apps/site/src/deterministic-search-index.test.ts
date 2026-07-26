@@ -60,16 +60,16 @@ describe('deterministic documentation search index', () => {
       '/blog/',
       '/404.html',
     ]);
-    expect(
-      qualifySearchRoutesForBaseUrl(
-        ['docs/', '/blog/', '/sniffy/docs/already-qualified/', '404.html'],
-        '/sniffy/',
-      ),
-    ).toEqual([
+    expect(qualifySearchRoutesForBaseUrl(['docs/', '/blog/', '404.html'], '/sniffy/')).toEqual([
       '/sniffy/docs/',
       '/sniffy/blog/',
-      '/sniffy/docs/already-qualified/',
       '/sniffy/404.html',
+    ]);
+  });
+
+  it('does not double-prefix a route already qualified for the Pages base URL', () => {
+    expect(qualifySearchRoutesForBaseUrl(['/sniffy/docs/already-qualified/'], '/sniffy/')).toEqual([
+      '/sniffy/docs/already-qualified/',
     ]);
   });
 

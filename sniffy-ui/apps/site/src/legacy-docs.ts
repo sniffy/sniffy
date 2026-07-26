@@ -7,6 +7,12 @@ import { legacyDocsPath } from './legacy-docs-routes';
 
 export { currentDocsPath, legacyDocsPath } from './legacy-docs-routes';
 
+export function qualifyLegacyDocsPath(baseUrl: string): string {
+  return legacyDocsPath.startsWith(baseUrl)
+    ? legacyDocsPath
+    : `${baseUrl}${legacyDocsPath.replace(/^\/+/, '')}`;
+}
+
 function asciidoctorFragmentId(heading: string): string {
   return `_${heading
     .toLowerCase()
@@ -41,7 +47,7 @@ export function parseLegacyRouteMap(markdown: string): Record<string, string> {
   return routes;
 }
 
-export default function legacyDocsPlugin({ siteDir }: LoadContext): Plugin {
+export default function legacyDocsPlugin({ baseUrl, siteDir }: LoadContext): Plugin {
   return {
     name: 'sniffy-legacy-docs-compatibility',
     async loadContent() {
@@ -62,7 +68,7 @@ export default function legacyDocsPlugin({ siteDir }: LoadContext): Plugin {
       // in the development server. Static generation writes the directory route
       // to that same file, so both URLs share one implementation and artifact.
       actions.addRoute({
-        path: legacyDocsPath,
+        path: qualifyLegacyDocsPath(baseUrl),
         exact: false,
         component,
         modules: { routes: routesData },

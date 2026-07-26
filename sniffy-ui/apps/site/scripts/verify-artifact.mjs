@@ -1,14 +1,24 @@
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { clearTimeout, setTimeout } from 'node:timers';
 import { setTimeout as delay } from 'node:timers/promises';
+import { URL } from 'node:url';
 import { chromium } from '@playwright/test';
 
 const build = resolve(import.meta.dirname, '../build');
+const baseUrl = process.env.SNIFFY_SITE_BASE_URL?.trim() || '/';
+if (!baseUrl.startsWith('/') || !baseUrl.endsWith('/') || baseUrl.includes('//')) {
+  throw new Error(`SNIFFY_SITE_BASE_URL must have one leading and trailing slash: ${baseUrl}`);
+}
+const packagedPreview = resolve(build, 'preview.mjs');
+const previewScript = existsSync(packagedPreview)
+  ? packagedPreview
+  : resolve(import.meta.dirname, 'preview.mjs');
 const preview = spawn(
   process.execPath,
-  [resolve(build, 'preview.mjs'), '--host', '127.0.0.1', '--port', '0'],
+  [previewScript, '--root', build, '--base-url', baseUrl, '--host', '127.0.0.1', '--port', '0'],
   { stdio: ['ignore', 'pipe', 'pipe'] },
 );
 
@@ -40,6 +50,9 @@ const previewUrl = await new Promise((resolveUrl, reject) => {
 const browser = await chromium.launch();
 
 try {
+  const previewSiteUrl = new URL(baseUrl, previewUrl).toString();
+  const previewRoute = (route) => new URL(route, previewSiteUrl).toString();
+  const canonicalRoute = (route) => new URL(route, 'https://sniffy.io/').toString();
   const page = await browser.newPage();
   const pageErrors = [];
   const consoleErrors = [];
@@ -55,7 +68,7 @@ try {
     return route.fulfill({ json: {} });
   });
 
-  await page.goto(previewUrl, { waitUntil: 'networkidle' });
+  await page.goto(previewSiteUrl, { waitUntil: 'networkidle' });
   const githubLink = page.getByRole('link', { name: 'Sniffy GitHub repository' }).first();
   await githubLink.waitFor();
   if ((await githubLink.getAttribute('href')) !== 'https://github.com/sniffy/sniffy') {
@@ -109,7 +122,7 @@ try {
     },
     { route: 'missing-shell-route/', status: 404, headingText: 'This trail went cold.' },
   ]) {
-    const url = `${previewUrl}${route}`;
+    const url = previewRoute(route);
     const response = await page.goto(url, { waitUntil: 'networkidle' });
     const heading = await page.locator('h1').first().textContent();
     if (response?.status() !== status || !heading?.includes(headingText)) {
@@ -118,12 +131,26 @@ try {
     process.stdout.write(`Verified ${url} renders over HTTP.\n`);
   }
 
-  await page.goto(`${previewUrl}use-cases/database-query-testing/`, {
+  const staticAssetUrl = previewRoute('img/brand/sniffy-social.svg');
+  const staticAssetResponse = await page.request.get(staticAssetUrl);
+  if (
+    staticAssetResponse.status() !== 200 ||
+    !staticAssetResponse.headers()['content-type']?.startsWith('image/svg+xml')
+  ) {
+    throw new Error(`Artifact preview failed for static asset ${staticAssetUrl}.`);
+  }
+  process.stdout.write(`Verified ${staticAssetUrl} serves a static asset.\n`);
+
+  await page.goto(previewRoute('docs/latest/#_configuration'));
+  await page.waitForURL(new URL(`${baseUrl}docs/configuration/`, previewUrl).toString());
+  process.stdout.write('Verified packaged legacy documentation redirect honors the base URL.\n');
+
+  await page.goto(previewRoute('use-cases/database-query-testing/'), {
     waitUntil: 'networkidle',
   });
   if (
     (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
-      'https://sniffy.io/use-cases/database-query-testing/' ||
+      canonicalRoute('use-cases/database-query-testing/') ||
     (await page.locator('meta[property="og:title"]').getAttribute('content')) !==
       'Database query testing with Sniffy'
   ) {
@@ -132,10 +159,10 @@ try {
   await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
   process.stdout.write('Verified packaged use-case metadata and related documentation.\n');
 
-  await page.goto(`${previewUrl}use-cases/sql-profiling/`, { waitUntil: 'networkidle' });
+  await page.goto(previewRoute('use-cases/sql-profiling/'), { waitUntil: 'networkidle' });
   if (
     (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
-      'https://sniffy.io/use-cases/sql-profiling/' ||
+      canonicalRoute('use-cases/sql-profiling/') ||
     (await page.locator('meta[property="og:title"]').getAttribute('content')) !==
       'SQL profiling and N+1 diagnosis with Sniffy'
   ) {
@@ -144,12 +171,12 @@ try {
   await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
   process.stdout.write('Verified packaged SQL profiling metadata and related documentation.\n');
 
-  await page.goto(`${previewUrl}use-cases/network-fault-testing/`, {
+  await page.goto(previewRoute('use-cases/network-fault-testing/'), {
     waitUntil: 'networkidle',
   });
   if (
     (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
-      'https://sniffy.io/use-cases/network-fault-testing/' ||
+      canonicalRoute('use-cases/network-fault-testing/') ||
     (await page.locator('meta[property="og:title"]').getAttribute('content')) !==
       'Java network fault and resilience testing with Sniffy'
   ) {
@@ -160,12 +187,12 @@ try {
   await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
   process.stdout.write('Verified packaged network-fault metadata and related documentation.\n');
 
-  await page.goto(`${previewUrl}use-cases/traffic-capture/`, {
+  await page.goto(previewRoute('use-cases/traffic-capture/'), {
     waitUntil: 'networkidle',
   });
   if (
     (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
-      'https://sniffy.io/use-cases/traffic-capture/' ||
+      canonicalRoute('use-cases/traffic-capture/') ||
     (await page.locator('meta[property="og:title"]').getAttribute('content')) !==
       'Java traffic capture and TLS inspection with Sniffy'
   ) {
@@ -176,7 +203,7 @@ try {
   await page.getByRole('navigation', { name: 'Related documentation' }).waitFor();
   process.stdout.write('Verified packaged traffic-capture metadata and related documentation.\n');
 
-  await page.goto(previewUrl, { waitUntil: 'networkidle' });
+  await page.goto(previewSiteUrl, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /Search docs/ }).click();
   const searchInput = page.getByRole('combobox', {
     name: 'Search current Sniffy documentation',
@@ -184,7 +211,10 @@ try {
   await searchInput.fill('traffic capture');
   await page.getByRole('option').first().waitFor();
   await searchInput.press('Enter');
-  await page.waitForURL(/\/docs\/network\/traffic-capture\/(?:#.*)?$/);
+  const expectedSearchPath = `${baseUrl}docs/network/traffic-capture/`;
+  await page.waitForURL(
+    (url) => url.pathname === expectedSearchPath && (url.hash === '' || url.hash.startsWith('#')),
+  );
   await page
     .getByRole('heading', { level: 1, name: 'Traffic capture and TLS inspection' })
     .waitFor();

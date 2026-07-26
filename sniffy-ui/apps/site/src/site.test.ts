@@ -46,7 +46,7 @@ describe('@sniffy/site workspace contract', () => {
       'dev:site': 'npm run start --workspace @sniffy/site',
       'package:site-artifact': 'node apps/site/scripts/package-artifact.mjs',
       'test:site':
-        'npm run build:site && npm run verify:site-search-index && vitest run --project unit apps/site/src/site.test.ts apps/site/src/homepage.test.tsx apps/site/src/use-case.test.tsx apps/site/src/sql-profiling.test.tsx apps/site/src/traffic-capture-use-case.test.tsx apps/site/src/network-fault-testing.test.tsx apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts apps/site/src/deterministic-search-index.test.ts apps/site/src/theme/SearchBar/index.test.tsx apps/site/src/theme/SearchBar/search-index.test.ts apps/site/src/theme/NavbarItem/GitHubStarsNavbarItem.test.tsx && npm test --workspace @sniffy/site',
+        'npm run build:site && npm run verify:site-search-index && vitest run --project unit apps/site/src/site.test.ts apps/site/src/homepage.test.tsx apps/site/src/use-case.test.tsx apps/site/src/sql-profiling.test.tsx apps/site/src/traffic-capture-use-case.test.tsx apps/site/src/network-fault-testing.test.tsx apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts apps/site/src/deployment-config.test.ts apps/site/src/deterministic-search-index.test.ts apps/site/src/legacy-docs-page.test.tsx apps/site/src/theme/SearchBar/index.test.tsx apps/site/src/theme/SearchBar/search-index.test.ts apps/site/src/theme/NavbarItem/GitHubStarsNavbarItem.test.tsx && npm test --workspace @sniffy/site',
       'verify:site-search-index': 'node apps/site/scripts/verify-search-index.mjs',
       'verify:site-artifact': 'node apps/site/scripts/verify-artifact.mjs',
     });
@@ -150,22 +150,16 @@ describe('@sniffy/site workspace contract', () => {
       url: 'https://sniffy.github.io',
       baseUrl: '/sniffy/',
     });
-    expect(() =>
-      resolveSiteDeployment({
-        SNIFFY_SITE_URL: 'https://sniffy.github.io/sniffy/',
-      }),
-    ).toThrow('absolute HTTP(S) origin');
-    expect(() =>
-      resolveSiteDeployment({
-        SNIFFY_SITE_BASE_URL: '../sniffy/',
-      }),
-    ).toThrow('absolute path');
     expect(readFileSync(resolve(site, 'artifact/.node-version'), 'utf8').trim()).toBe('24.18.0');
     expect(readme).toContain('node preview.mjs');
     expect(readme).toContain('macOS or Linux');
     expect(readme).toContain('Windows');
     expect(readme).toContain('No dependency installation or repository checkout is required.');
-    expect(preview).toContain("options = { host: '127.0.0.1', port: 4173 }");
+    expect(preview).toContain("host: '127.0.0.1'");
+    expect(preview).toContain('port: 4173');
+    expect(preview).toContain("baseUrl: '/'");
+    expect(preview).toContain("argument === '--root'");
+    expect(preview).toContain("argument === '--base-url'");
     expect(preview).toContain("resolve(root, '404.html')");
     expect(preview).not.toMatch(/from ['"][^n.]/);
     expect(verification).toContain("import { chromium } from '@playwright/test';");
@@ -342,6 +336,7 @@ describe('website deployment workflow contract', () => {
       'Verify packaged website preview',
       'Build GitHub Pages artifact',
       'Verify Pages documentation search index',
+      'Verify GitHub Pages artifact',
       'Record immutable artifact identity',
       'Upload GitHub Pages artifact',
       'Deploy GitHub Pages artifact',
@@ -353,5 +348,8 @@ describe('website deployment workflow contract', () => {
     expect(workflow).toContain('name: sniffy-pages-${{ steps.revision.outputs.sha }}');
     expect(workflow).toContain('> apps/site/build/.sniffy-deployment.json');
     expect(workflow).toContain('content_digest=');
+    expect(workflow.indexOf('- name: Verify GitHub Pages artifact')).toBeLessThan(
+      workflow.indexOf('- name: Record immutable artifact identity'),
+    );
   });
 });
