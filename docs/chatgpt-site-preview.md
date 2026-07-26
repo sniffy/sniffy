@@ -1,8 +1,8 @@
 # ChatGPT website preview and screenshot runbook
 
-Use this runbook when a ChatGPT review needs to inspect a Sniffy website pull request in a real browser. Serve immutable
-exact-head output over localhost HTTP, load it normally in Chromium, and capture reproducible evidence. Do not substitute
-an altered or inlined document for the built site.
+Use this runbook when ChatGPT needs to inspect a Sniffy website pull request in a real browser. Serve immutable exact-head
+output over localhost HTTP, load it normally in Chromium, and capture reproducible evidence. Never substitute an altered
+or inlined document for the built site.
 
 ## Evidence and truthfulness contract
 
@@ -17,7 +17,7 @@ Never:
 - call a `curl` response a browser test;
 - reuse screenshots from a different head without saying so;
 - empty the managed Chromium `URLBlocklist` or leave a changed policy behind;
-- claim that a screenshot was attached to GitHub when it was only shown in ChatGPT.
+- claim that an image was attached to GitHub when it was only shown in ChatGPT.
 
 If real localhost HTTP navigation cannot be made to work, stop and use exact-head CI evidence or an agent with a supported
 browser environment. Do not fabricate a preview.
@@ -64,20 +64,29 @@ Prefer the dependency-free preview launcher and README included in the packaged 
 
 ```bash
 site_dir=/mnt/data/sniffy-site-<exact-head-sha>
+route=/use-cases/example/
 port=4173
+
 python3 -m http.server "$port" \
   --bind 127.0.0.1 \
   --directory "$site_dir" \
   >/tmp/sniffy-site-preview.log 2>&1 &
 server_pid=$!
 
+for attempt in $(seq 1 50); do
+  if curl --fail --silent "http://127.0.0.1:${port}${route}" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.1
+done
+
 curl --fail --silent --show-error \
   --output /dev/null \
   --write-out 'HTTP %{http_code}\n' \
-  "http://127.0.0.1:${port}/use-cases/example/"
+  "http://127.0.0.1:${port}${route}"
 ```
 
-A `200` response proves only HTTP serving. Chromium must still load scripts, styles, images, and the page itself.
+A `200` response proves only HTTP serving. Chromium must still load the actual scripts, styles, images, and page.
 
 ## Allow only the exact localhost preview in managed Chromium
 
@@ -141,10 +150,11 @@ evidence.
 ## Open the real page with Playwright
 
 Python Playwright can drive the installed `/usr/bin/chromium`; no browser download is required when outbound DNS is
-unavailable. The script below uses normal HTTP navigation and captures desktop/mobile × light/dark full-page screenshots.
+unavailable. This tested procedure captures desktop/mobile × light/dark full-page screenshots from normal HTTP
+navigation.
 
 ```bash
-export SNIFFY_PREVIEW_URL="http://127.0.0.1:${port}/use-cases/example/"
+export SNIFFY_PREVIEW_URL="http://127.0.0.1:${port}${route}"
 export SNIFFY_PREVIEW_SHA="<exact-head-sha>"
 export SNIFFY_SCREENSHOT_DIR="/mnt/data/sniffy-preview-${SNIFFY_PREVIEW_SHA}"
 mkdir -p "$SNIFFY_SCREENSHOT_DIR"
@@ -153,11 +163,14 @@ python3 <<'PY'
 import json
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright
 
 url = os.environ["SNIFFY_PREVIEW_URL"]
 sha = os.environ["SNIFFY_PREVIEW_SHA"]
 out = Path(os.environ["SNIFFY_SCREENSHOT_DIR"])
+parts = urlsplit(url)
+origin = f"{parts.scheme}://{parts.netloc}"
 variants = [("desktop", 1440, 900), ("mobile", 390, 844)]
 themes = ["light", "dark"]
 results = []
@@ -177,6 +190,7 @@ with sync_playwright() as playwright:
             )
             page = context.new_page()
             console_errors = []
+            page_errors = []
             failed_requests = []
             page.on(
                 "console",
@@ -184,21 +198,27 @@ with sync_playwright() as playwright:
                 if message.type == "error"
                 else None,
             )
+            page.on("pageerror", lambda error: page_errors.append(str(error)))
             page.on(
                 "requestfailed",
                 lambda request: failed_requests.append(
-                    {"url": request.url, "failure": request.failure}
+                    {
+                        "url": request.url,
+                        "failure": request.failure,
+                        "sameOrigin": request.url.startswith(origin),
+                    }
                 ),
             )
             page.add_init_script(
                 f"localStorage.setItem('theme', {json.dumps(theme)});"
             )
 
-            response = page.goto(url, wait_until="networkidle")
+            response = page.goto(url, wait_until="load", timeout=15_000)
             if response is None or response.status != 200:
                 raise RuntimeError(f"Navigation failed for {url}: {response}")
+            page.locator("h1").first.wait_for(state="visible", timeout=10_000)
+            page.wait_for_timeout(500)
 
-            page.locator("h1").first.wait_for(state="visible")
             dimensions = page.evaluate(
                 """() => ({
                     documentWidth: document.documentElement.scrollWidth,
@@ -207,6 +227,7 @@ with sync_playwright() as playwright:
                     theme: document.documentElement.dataset.theme
                 })"""
             )
+            local_failures = [item for item in failed_requests if item["sameOrigin"]]
             if dimensions["documentWidth"] > dimensions["viewportWidth"]:
                 raise RuntimeError(
                     f"Horizontal overflow: {dimensions['documentWidth']} > "
@@ -216,12 +237,12 @@ with sync_playwright() as playwright:
                 raise RuntimeError(
                     f"Theme mismatch: expected {theme}, rendered {dimensions['theme']}"
                 )
-            if console_errors or failed_requests:
+            if page_errors or local_failures:
                 raise RuntimeError(
                     json.dumps(
                         {
-                            "consoleErrors": console_errors,
-                            "failedRequests": failed_requests,
+                            "pageErrors": page_errors,
+                            "sameOriginRequestFailures": local_failures,
                         },
                         indent=2,
                     )
@@ -244,6 +265,7 @@ with sync_playwright() as playwright:
                     "h1": page.locator("h1").first.inner_text(),
                     "dimensions": dimensions,
                     "consoleErrors": console_errors,
+                    "pageErrors": page_errors,
                     "failedRequests": failed_requests,
                     "screenshot": str(filename),
                 }
@@ -256,7 +278,8 @@ print(json.dumps(results, indent=2))
 PY
 ```
 
-Do not work around a browser failure by editing or inlining the generated site.
+Console errors and failed external requests are retained in `evidence.json` for inspection. JavaScript page errors and
+failed same-origin requests are blockers. Do not work around a browser failure by editing or inlining the generated site.
 
 ## Restore and verify policy
 
@@ -281,7 +304,7 @@ Open every generated PNG and inspect it. Report:
 - server command and HTTP result;
 - browser executable and Playwright binding;
 - route, viewport, theme, title, H1, document width, and viewport width;
-- console errors and failed requests;
+- console errors, JavaScript page errors, and failed requests;
 - screenshot and `evidence.json` paths;
 - byte-for-byte policy restoration result;
 - any difference from repository visual baselines.
