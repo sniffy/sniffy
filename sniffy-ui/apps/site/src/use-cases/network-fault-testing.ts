@@ -117,7 +117,7 @@ export function createNetworkFaultTestingUseCase(productVersion: string) {
         },
       },
       {
-        code: `@ExtendWith(SniffyExtension.class)\nclass NetworkFallbackTest {\n\n  @Test\n  @DisableSockets\n  void fallsBackWhenRemoteConnectionsAreUnavailable() {\n    assertEquals("cached", service.load());\n  }\n}`,
+        code: `import io.sniffy.socket.DisableSockets;\nimport io.sniffy.test.junit.jupiter.SniffyExtension;\nimport org.junit.jupiter.api.Test;\nimport org.junit.jupiter.api.extension.ExtendWith;\n\n@ExtendWith(SniffyExtension.class)\nclass NetworkTest {\n\n    @Test\n    @DisableSockets\n    void doesNotConnectToTheNetwork() {\n        // opening a new socket fails while this invocation is running\n    }\n}`,
         label: 'Block monitored connections for one test',
         language: 'Java',
         source: {

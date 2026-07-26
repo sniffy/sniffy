@@ -14,6 +14,15 @@ const repository = resolve(site, '../../..');
 const content = createNetworkFaultTestingUseCase('3.2.1-SNAPSHOT');
 
 describe('network fault testing use-case page', () => {
+  it.each(['', String(undefined)])(
+    'rejects the missing repository product version %j',
+    (productVersion) => {
+      expect(() => createNetworkFaultTestingUseCase(productVersion)).toThrow(
+        'The network fault testing page requires the repository product version.',
+      );
+    },
+  );
+
   it('renders focused metadata, boundaries, repository-version examples, and real product evidence', () => {
     render(<NetworkFaultTestingPage />);
 
@@ -126,6 +135,18 @@ describe('network fault testing use-case page', () => {
       expect(copy).toContain(limitation);
   });
 
+  it('displays the exact Java example from its claimed repository source', () => {
+    const javaExample = content.codeExamples.find((example) => example.language === 'Java');
+    expect(javaExample).toBeDefined();
+
+    const source = readFileSync(resolve(repository, javaExample!.source.path), 'utf8');
+    const documentedJavaBlocks = [...source.matchAll(/```java\n([\s\S]*?)\n```/g)].map(
+      ([, code]) => code,
+    );
+
+    expect(documentedJavaBlocks).toContain(javaExample!.code);
+  });
+
   it('keeps the route and shared layout free of page-specific contracts', () => {
     const route = readFileSync(
       resolve(site, 'src/pages/use-cases/network-fault-testing/index.tsx'),
@@ -137,7 +158,7 @@ describe('network fault testing use-case page', () => {
     );
     expect(route).toContain('<UseCaseLayout content={content} />');
     expect(layout).not.toContain('Discover before disrupting');
-    expect(layout).not.toContain('NetworkFallbackTest');
+    expect(layout).not.toContain('NetworkTest');
   });
 
   it('uses the documented byte-identical profiler fixture instead of invented UI', () => {
