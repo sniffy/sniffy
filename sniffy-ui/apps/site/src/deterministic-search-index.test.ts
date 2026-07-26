@@ -1,6 +1,10 @@
 import lunr from 'lunr';
 
-import { createDevelopmentSearchIndex, normalizeSearchIndex } from './deterministic-search-index';
+import {
+  createDevelopmentSearchIndex,
+  normalizeSearchIndex,
+  qualifySearchRoutesForBaseUrl,
+} from './deterministic-search-index';
 
 function createPayload(order: number[]) {
   const source = [
@@ -50,6 +54,25 @@ function createPayload(order: number[]) {
 }
 
 describe('deterministic documentation search index', () => {
+  it('qualifies Docusaurus routes for root and project Pages base URLs', () => {
+    expect(qualifySearchRoutesForBaseUrl(['docs/', '/blog/', '/404.html'], '/')).toEqual([
+      '/docs/',
+      '/blog/',
+      '/404.html',
+    ]);
+    expect(
+      qualifySearchRoutesForBaseUrl(
+        ['docs/', '/blog/', '/sniffy/docs/already-qualified/', '404.html'],
+        '/sniffy/',
+      ),
+    ).toEqual([
+      '/sniffy/docs/',
+      '/sniffy/blog/',
+      '/sniffy/docs/already-qualified/',
+      '/sniffy/404.html',
+    ]);
+  });
+
   it('canonicalizes document identifiers and serialized Lunr references', () => {
     const first = normalizeSearchIndex(createPayload([0, 1]));
     const second = normalizeSearchIndex(createPayload([1, 0]));

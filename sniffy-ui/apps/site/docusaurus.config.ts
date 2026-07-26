@@ -7,14 +7,16 @@ import sourceSnippetRemarkPlugin from './src/source-snippets';
 import productVersionRemarkPlugin, { readProductVersion } from './src/product-version';
 import legacyDocsPlugin from './src/legacy-docs';
 import deterministicSearchPlugin from './src/deterministic-search-index';
+import { resolveSiteDeployment } from './src/deployment-config';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const deployment = resolveSiteDeployment();
 
 const config: Config = {
   title: 'Sniffy',
   tagline: 'Java application observability and resilience testing',
-  url: 'https://sniffy.io',
-  baseUrl: '/',
+  url: deployment.url,
+  baseUrl: deployment.baseUrl,
   favicon: 'favicon.ico',
   trailingSlash: true,
   onBrokenLinks: 'throw',

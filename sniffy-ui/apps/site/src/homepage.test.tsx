@@ -61,6 +61,7 @@ describe('Sniffy homepage contract', () => {
   it('uses the root product version for both installation examples', () => {
     expect(config).toContain('productVersion: readProductVersion(repositoryRoot)');
     expect(homepage).toContain('siteConfig.customFields?.productVersion');
+    expect(homepage).toContain("useBaseUrl('/img/home/sniffy-profiler.png')");
     expect(homepage).toContain('<version>${productVersion}</version>');
     expect(homepage).toContain('io.sniffy:sniffy-spring:${productVersion}');
     expect(homepage).not.toMatch(/io\.sniffy:sniffy-spring:\d/);

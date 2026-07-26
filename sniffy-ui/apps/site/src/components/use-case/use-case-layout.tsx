@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/no-noninteractive-tabindex -- Horizontal code regions must be keyboard-scrollable. */
 import Link from '@docusaurus/Link';
 import Head from '@docusaurus/Head';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
 
 import type {
@@ -53,6 +54,8 @@ export function UseCaseProductResult({
 }: {
   readonly result: UseCasePageContent['productResult'];
 }): React.JSX.Element {
+  const productImage = useBaseUrl(result.src);
+
   return (
     <figure className="sniffy-use-case__product">
       <div className="sniffy-use-case__product-frame">
@@ -62,7 +65,7 @@ export function UseCaseProductResult({
           <span />
           <strong>Sniffy request evidence</strong>
         </div>
-        <img src={result.src} width={result.width} height={result.height} alt={result.alt} />
+        <img src={productImage} width={result.width} height={result.height} alt={result.alt} />
       </div>
       <figcaption>
         <strong>{result.caption}</strong>

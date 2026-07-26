@@ -1,0 +1,198 @@
+name: Deploy website
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full commit SHA already merged to develop; defaults to the dispatched ref
+        required: false
+        type: string
+  push:
+    branches:
+      - develop
+    paths:
+      - .github/workflows/website-deploy.yml
+      - sniffy-ui/apps/site/**
+      - sniffy-ui/packages/theme/**
+      - sniffy-ui/package.json
+      - sniffy-ui/package-lock.json
+      - sniffy-ui/tsconfig.json
+      - sniffy-ui/tsconfig.base.json
+      - sniffy-ui/vitest.config.ts
+      - sniffy-ui/eslint.config.js
+      - sniffy-core/src/test/**
+      - sniffy-test/**/src/test/**
+      - sniffy-integration-tests/**/src/test/**
+      - sniffy/src/jboss-module/module.xml
+      - pom.xml
+
+permissions: {}
+
+concurrency:
+  group: sniffy-website-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Validate and deploy website
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    env:
+      HOME: /root
+      PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
+    container:
+      image: node:24-bookworm-slim@sha256:cb4e8f7c443347358b7875e717c29e27bf9befc8f5a26cf18af3c3dec80e58c5
+    defaults:
+      run:
+        working-directory: sniffy-ui
+    steps:
+      - name: Check out deployment revision
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.revision || github.sha }}
+
+      - name: Verify immutable reviewed revision
+        id: revision
+        env:
+          REQUESTED_REVISION: ${{ inputs.revision }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          revision="$(git rev-parse HEAD)"
+          if [ -n "$REQUESTED_REVISION" ] && ! printf '%s' "$REQUESTED_REVISION" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "Manual deployment requires a full 40-character commit SHA." >&2
+            exit 1
+          fi
+          git fetch --no-tags origin develop
+          if ! git merge-base --is-ancestor "$revision" origin/develop; then
+            echo "Deployment revision $revision is not merged to origin/develop." >&2
+            exit 1
+          fi
+          echo "sha=$revision" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+          cache-dependency-path: sniffy-ui/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint website sources
+        run: npx eslint apps/site packages/theme
+
+      - name: Check website formatting
+        run: >-
+          npx prettier --check
+          ../.github/workflows/website-deploy.yml
+          ../docs/website-deployment.md
+          apps/site
+          packages/theme
+          package.json
+          package-lock.json
+          tsconfig.json
+          tsconfig.base.json
+          vitest.config.ts
+          eslint.config.js
+
+      - name: Typecheck frontend workspace
+        run: npm run typecheck
+
+      - name: Test website contracts
+        run: >-
+          npx vitest run --project unit
+          apps/site/src/site.test.ts
+          apps/site/src/homepage.test.tsx
+          apps/site/src/source-snippets.test.ts
+          apps/site/src/product-version.test.ts
+          apps/site/src/documentation.test.ts
+          apps/site/src/deterministic-search-index.test.ts
+          apps/site/src/theme/SearchBar/search-index.test.ts
+          packages/theme/src/theme.test.ts
+
+      - name: Build website with production defaults
+        run: npm run build:site
+
+      - name: Verify generated documentation search index
+        run: npm run verify:site-search-index
+
+      - name: Test desktop and mobile website navigation
+        run: npm test --workspace @sniffy/site
+
+      - name: Package reviewable website artifact
+        run: npm run package:site-artifact
+
+      - name: Verify packaged website preview
+        run: npm run verify:site-artifact
+
+      - name: Read GitHub Pages configuration
+        id: pages
+        uses: actions/configure-pages@v6
+
+      - name: Build GitHub Pages artifact
+        env:
+          SNIFFY_SITE_URL: ${{ steps.pages.outputs.origin }}
+          SNIFFY_SITE_BASE_URL: ${{ format('{0}/', steps.pages.outputs.base_path) }}
+        run: npm run build:site
+
+      - name: Record immutable artifact identity
+        id: artifact
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          ORIGIN: ${{ steps.pages.outputs.origin }}
+          REVISION: ${{ steps.revision.outputs.sha }}
+        run: |
+          content_digest="$(
+            find apps/site/build -type f -print0 \
+              | sort -z \
+              | xargs -0 sha256sum \
+              | sha256sum \
+              | cut -d ' ' -f 1
+          )"
+          printf '{\n  "commit": "%s",\n  "contentDigest": "sha256:%s",\n  "origin": "%s",\n  "basePath": "%s"\n}\n' \
+            "$REVISION" "$content_digest" "$ORIGIN" "$BASE_PATH" \
+            > apps/site/build/.sniffy-deployment.json
+          echo "content-digest=$content_digest" >> "$GITHUB_OUTPUT"
+
+      - name: Upload GitHub Pages artifact
+        id: upload
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: sniffy-pages-${{ steps.revision.outputs.sha }}
+          path: sniffy-ui/apps/site/build/
+          retention-days: 14
+          include-hidden-files: true
+
+      - name: Deploy GitHub Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: sniffy-pages-${{ steps.revision.outputs.sha }}
+
+      - name: Record deployment evidence
+        env:
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact_id }}
+          CONTENT_DIGEST: ${{ steps.artifact.outputs.content-digest }}
+          DEPLOYED_URL: ${{ steps.deployment.outputs.page_url }}
+          REVISION: ${{ steps.revision.outputs.sha }}
+        run: |
+          {
+            echo "### Sniffy website deployment"
+            echo
+            echo "- Commit: \`$REVISION\`"
+            echo "- Artifact: \`sniffy-pages-$REVISION\` (ID \`$ARTIFACT_ID\`)"
+            echo "- Content digest: \`sha256:$CONTENT_DIGEST\`"
+            echo "- URL: $DEPLOYED_URL"
+          } >> "$GITHUB_STEP_SUMMARY"

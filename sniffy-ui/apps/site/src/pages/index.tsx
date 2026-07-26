@@ -1,5 +1,6 @@
 import Link from '@docusaurus/Link';
 import Head from '@docusaurus/Head';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 
@@ -39,6 +40,7 @@ const useCases = [
 
 export default function Home(): React.JSX.Element {
   const { siteConfig } = useDocusaurusContext();
+  const profilerImage = useBaseUrl('/img/home/sniffy-profiler.png');
   const productVersion = String(siteConfig.customFields?.productVersion);
   const mavenSnippet = `<dependency>
   <groupId>io.sniffy</groupId>
@@ -95,7 +97,7 @@ export default function Home(): React.JSX.Element {
               <strong>request /mock/mock.html</strong>
             </div>
             <img
-              src="/img/home/sniffy-profiler.png"
+              src={profilerImage}
               width="760"
               height="540"
               alt="Sniffy profiler showing executed SQL, network traffic, an exception, and request timing for a Java web request"

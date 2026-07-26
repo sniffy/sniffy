@@ -7,12 +7,12 @@ import {
   searchIndexes,
 } from './search-index';
 
-function createPayload() {
+function createPayload(baseUrl = '/') {
   const source = [
     {
       id: 1,
       pageTitle: 'Installation',
-      sectionRoute: '/docs/installation/',
+      sectionRoute: `${baseUrl}docs/installation/`,
       sectionTitle: 'Installation',
       type: 'docs' as const,
       content: 'Install Sniffy from Maven Central.',
@@ -20,7 +20,7 @@ function createPayload() {
     {
       id: 2,
       pageTitle: 'Network fault emulation',
-      sectionRoute: '/docs/network/fault-emulation/#connection-delay',
+      sectionRoute: `${baseUrl}docs/network/fault-emulation/#connection-delay`,
       sectionTitle: 'Connection delay',
       type: 'docs' as const,
       content: 'Simulate network faults and connection latency.',
@@ -68,6 +68,21 @@ describe('documentation search index', () => {
     expect(fetcher).toHaveBeenCalledWith('/search-index-docs-default-current.json', {
       credentials: 'same-origin',
     });
+  });
+
+  it('loads and validates generated routes under a project Pages base URL', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(createPayload('/sniffy/'))));
+
+    const indexes = await loadSearchIndexes('/sniffy/', ['docs-default-current'], { fetcher });
+
+    expect(fetcher).toHaveBeenCalledWith('/sniffy/search-index-docs-default-current.json', {
+      credentials: 'same-origin',
+    });
+    expect(searchIndexes(indexes, 'network fault')).toMatchObject([
+      {
+        url: '/sniffy/docs/network/fault-emulation/#connection-delay',
+      },
+    ]);
   });
 
   it('uses an available contextual index when another tag is absent', async () => {
@@ -129,6 +144,10 @@ describe('documentation search index', () => {
     const outOfScope = createPayload();
     outOfScope.documents[0].sectionRoute = '/blog/release/';
     expect(() => parseSearchIndex(outOfScope)).toThrow('invalid route or identifier');
+
+    expect(() => parseSearchIndex(createPayload(), '/sniffy/')).toThrow(
+      'invalid route or identifier',
+    );
   });
 
   it('reports HTTP and serialized-index failures without returning partial data', async () => {

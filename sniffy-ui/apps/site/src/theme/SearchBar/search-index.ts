@@ -43,7 +43,7 @@ function isSearchIndexDocument(value: unknown): value is SearchIndexDocument {
   );
 }
 
-export function parseSearchIndex(payload: unknown): SearchIndexPayload {
+export function parseSearchIndex(payload: unknown, baseUrl = '/'): SearchIndexPayload {
   if (!isRecord(payload) || !Array.isArray(payload.documents) || !isRecord(payload.index)) {
     throw new Error('The documentation search index has an invalid shape.');
   }
@@ -53,10 +53,11 @@ export function parseSearchIndex(payload: unknown): SearchIndexPayload {
   }
 
   const ids = new Set<number>();
+  const expectedDocsPrefix = `${baseUrl}docs/`;
   for (const document of payload.documents) {
     if (
       ids.has(document.id) ||
-      !document.sectionRoute.startsWith('/docs/') ||
+      !document.sectionRoute.startsWith(expectedDocsPrefix) ||
       document.pageTitle.trim().length === 0
     ) {
       throw new Error('The documentation search index contains an invalid route or identifier.');
@@ -70,13 +71,17 @@ export function parseSearchIndex(payload: unknown): SearchIndexPayload {
   };
 }
 
-async function fetchSearchIndex(url: string, fetcher: typeof fetch): Promise<SearchIndexPayload> {
+async function fetchSearchIndex(
+  url: string,
+  baseUrl: string,
+  fetcher: typeof fetch,
+): Promise<SearchIndexPayload> {
   const response = await fetcher(url, { credentials: 'same-origin' });
   if (!response.ok) {
     throw new Error(`The documentation search index returned HTTP ${response.status}.`);
   }
 
-  return parseSearchIndex(await response.json());
+  return parseSearchIndex(await response.json(), baseUrl);
 }
 
 export async function loadSearchIndexes(
@@ -95,7 +100,7 @@ export async function loadSearchIndexes(
       const url = `${baseUrl}search-index-${tag}.json`;
       let cached = searchIndexCache.get(url);
       if (!cached) {
-        cached = fetchSearchIndex(url, fetcher).catch((error: unknown) => {
+        cached = fetchSearchIndex(url, baseUrl, fetcher).catch((error: unknown) => {
           searchIndexCache.delete(url);
           throw error;
         });
@@ -110,7 +115,7 @@ export async function loadSearchIndexes(
 
   if (indexes.length === 0) {
     if (developmentIndex !== undefined) {
-      return [parseSearchIndex(developmentIndex)];
+      return [parseSearchIndex(developmentIndex, baseUrl)];
     }
     const failures = settled.flatMap((result) =>
       result.status === 'rejected' ? [result.reason] : [],
