@@ -1,6 +1,20 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
+
+import searchLocalPlugin from '@cmfcmf/docusaurus-search-local';
+import type { LoadContext, Plugin } from '@docusaurus/types';
 import lunr from 'lunr';
 
-import { createDevelopmentSearchIndex, normalizeSearchIndex } from './deterministic-search-index';
+import deterministicSearchPlugin, {
+  createDevelopmentSearchIndex,
+  normalizeSearchIndex,
+  qualifySearchRoutesForBaseUrl,
+} from './deterministic-search-index';
+
+vi.mock('@cmfcmf/docusaurus-search-local', () => ({
+  default: vi.fn(),
+}));
 
 function createPayload(order: number[]) {
   const source = [
@@ -50,6 +64,59 @@ function createPayload(order: number[]) {
 }
 
 describe('deterministic documentation search index', () => {
+  it('qualifies Docusaurus routes for root and project Pages base URLs', () => {
+    expect(qualifySearchRoutesForBaseUrl(['docs/', '/blog/', '/404.html'], '/')).toEqual([
+      '/docs/',
+      '/blog/',
+      '/404.html',
+    ]);
+    expect(qualifySearchRoutesForBaseUrl(['docs/', '/blog/', '404.html'], '/sniffy/')).toEqual([
+      '/sniffy/docs/',
+      '/sniffy/blog/',
+      '/sniffy/404.html',
+    ]);
+  });
+
+  it('does not double-prefix a route already qualified for the Pages base URL', () => {
+    expect(qualifySearchRoutesForBaseUrl(['/sniffy/docs/already-qualified/'], '/sniffy/')).toEqual([
+      '/sniffy/docs/already-qualified/',
+    ]);
+  });
+
+  it('qualifies routes before forwarding the upstream plugin post-build lifecycle', async () => {
+    const outDir = await mkdtemp(resolve(tmpdir(), 'sniffy-search-plugin-'));
+    const upstreamPostBuild = vi.fn<NonNullable<Plugin['postBuild']>>(async (props) => {
+      await writeFile(
+        resolve(props.outDir, 'search-index-test.json'),
+        JSON.stringify(createPayload([0, 1])),
+      );
+    });
+    vi.mocked(searchLocalPlugin).mockReturnValue({
+      name: 'test-search-plugin',
+      postBuild: upstreamPostBuild,
+    });
+    const plugin = deterministicSearchPlugin({ siteDir: '/site' } as LoadContext, {});
+    const props = {
+      baseUrl: '/sniffy/',
+      marker: { preserved: true },
+      outDir,
+      routesPaths: ['docs/', '/sniffy/already-qualified/'],
+    } as unknown as Parameters<NonNullable<Plugin['postBuild']>>[0];
+
+    try {
+      if (!plugin.postBuild) throw new Error('Expected the wrapped plugin to define postBuild.');
+      await plugin.postBuild(props);
+
+      expect(upstreamPostBuild).toHaveBeenCalledOnce();
+      expect(upstreamPostBuild).toHaveBeenCalledWith({
+        ...props,
+        routesPaths: ['/sniffy/docs/', '/sniffy/already-qualified/'],
+      });
+    } finally {
+      await rm(outDir, { force: true, recursive: true });
+    }
+  });
+
   it('canonicalizes document identifiers and serialized Lunr references', () => {
     const first = normalizeSearchIndex(createPayload([0, 1]));
     const second = normalizeSearchIndex(createPayload([1, 0]));

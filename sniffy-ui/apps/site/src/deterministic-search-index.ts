@@ -47,6 +47,12 @@ export type DevelopmentSearchSource = {
   source: string;
 };
 
+export function qualifySearchRoutesForBaseUrl(routesPaths: string[], baseUrl: string) {
+  return routesPaths.map((route) =>
+    route.startsWith(baseUrl) ? route : `${baseUrl}${route.replace(/^\/+/, '')}`,
+  );
+}
+
 type DocsLoadedContent = {
   loadedVersions?: {
     docs?: {
@@ -350,7 +356,10 @@ export default function deterministicSearchPlugin(context: LoadContext, options:
       }
     },
     async postBuild(props) {
-      await upstreamPostBuild?.(props);
+      await upstreamPostBuild?.({
+        ...props,
+        routesPaths: qualifySearchRoutesForBaseUrl(props.routesPaths, props.baseUrl),
+      });
       await normalizeGeneratedSearchIndexes(props.outDir);
     },
   };

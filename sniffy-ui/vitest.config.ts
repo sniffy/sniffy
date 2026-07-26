@@ -13,6 +13,7 @@ export default defineConfig({
     alias: {
       '@docusaurus/Head': resolve(workspace, 'tests/docusaurus-head-stub.tsx'),
       '@docusaurus/Link': resolve(workspace, 'tests/docusaurus-link-stub.tsx'),
+      '@docusaurus/useBaseUrl': resolve(workspace, 'tests/docusaurus-base-url-stub.ts'),
       '@docusaurus/router': resolve(
         workspace,
         'node_modules/@docusaurus/core/lib/client/exports/router.js',

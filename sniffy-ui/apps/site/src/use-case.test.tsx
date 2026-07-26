@@ -198,6 +198,9 @@ describe('use-case content contract', () => {
     expect(
       screen.getByRole('img', { name: /Sniffy profiler showing executed SQL statements/ }),
     ).toHaveAttribute('src', '/img/home/sniffy-profiler.png');
+    expect(
+      readFileSync(resolve(site, 'src/components/use-case/use-case-layout.tsx'), 'utf8'),
+    ).toContain('useBaseUrl(result.src)');
     expect(screen.getByText(/sniffy-junit-jupiter/)).toBeVisible();
     expect(screen.getByText(/<version>4\.0\.0-SNAPSHOT<\/version>/)).toBeVisible();
     expect(screen.getByText(/SqlQueries\.atMostOneQuery/)).toBeVisible();

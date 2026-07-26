@@ -2,7 +2,12 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { currentDocsPath, legacyDocsPath, parseLegacyRouteMap } from './legacy-docs';
+import {
+  currentDocsPath,
+  legacyDocsPath,
+  parseLegacyRouteMap,
+  qualifyLegacyDocsPath,
+} from './legacy-docs';
 
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRoot = resolve(site, '../../..');
@@ -39,6 +44,8 @@ describe('legacy documentation compatibility', () => {
 
     expect(legacyDocsPath).toBe('/docs/latest/');
     expect(currentDocsPath).toBe('/docs/');
+    expect(qualifyLegacyDocsPath('/')).toBe('/docs/latest/');
+    expect(qualifyLegacyDocsPath('/sniffy/')).toBe('/sniffy/docs/latest/');
     expect(page).toContain('href={`https://sniffy.io${currentDocsPath}`}');
     expect(page).toContain('decodeURIComponent(window.location.hash.slice(1))');
     expect(page).toContain('Object.prototype.hasOwnProperty.call(routes, anchor)');
