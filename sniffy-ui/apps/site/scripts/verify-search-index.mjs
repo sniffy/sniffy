@@ -18,19 +18,25 @@ if (
 const qualifyRoute = (route) => (baseUrl === '/' ? route : `${baseUrl.slice(0, -1)}${route}`);
 const currentDocsPrefix = qualifyRoute('/docs/');
 const nextDocsPrefix = qualifyRoute('/docs/next/');
+const archivedDocsPrefix = qualifyRoute('/docs/3.1/');
 const indexFiles = (await readdir(build))
   .filter((file) => /^search-index-.+\.json$/.test(file))
   .sort();
 
-if (indexFiles.length !== 1) {
-  throw new Error(`Expected one current-documentation search index, found ${indexFiles.length}.`);
+const expectedIndexFiles = [
+  'search-index-docs-default-3.1.json',
+  'search-index-docs-default-current.json',
+];
+if (JSON.stringify(indexFiles) !== JSON.stringify(expectedIndexFiles)) {
+  throw new Error(`Expected isolated current and 3.1 indexes, found ${indexFiles.join(', ')}.`);
 }
 
-const documents = [];
-const indexes = [];
+const documents = new Map();
+const indexes = new Map();
 const digest = createHash('sha256');
 
 for (const file of indexFiles) {
+  const scope = file.includes('docs-default-3.1') ? 'archived' : 'current';
   const bytes = await readFile(resolve(build, file));
   digest.update(bytes);
   const parsed = JSON.parse(bytes.toString('utf8'));
@@ -56,15 +62,19 @@ for (const file of indexFiles) {
 
   const ids = new Set();
   for (const document of parsed.documents) {
+    const currentRoute =
+      document.sectionRoute.startsWith(currentDocsPrefix) &&
+      !document.sectionRoute.startsWith(nextDocsPrefix) &&
+      !document.sectionRoute.startsWith(archivedDocsPrefix) &&
+      !/^\d/.test(document.sectionRoute.slice(currentDocsPrefix.length));
+    const archivedRoute = document.sectionRoute.startsWith(archivedDocsPrefix);
     if (
       !Number.isInteger(document.id) ||
       ids.has(document.id) ||
       typeof document.pageTitle !== 'string' ||
       typeof document.sectionTitle !== 'string' ||
       typeof document.sectionRoute !== 'string' ||
-      !document.sectionRoute.startsWith(currentDocsPrefix) ||
-      document.sectionRoute.startsWith(nextDocsPrefix) ||
-      /^\d/.test(document.sectionRoute.slice(currentDocsPrefix.length)) ||
+      (scope === 'current' ? !currentRoute : !archivedRoute) ||
       document.type !== 'docs'
     ) {
       throw new Error(`${file} contains an invalid or out-of-scope document.`);
@@ -72,32 +82,33 @@ for (const file of indexFiles) {
     ids.add(document.id);
   }
 
-  documents.push(...parsed.documents);
-  indexes.push(lunr.Index.load(parsed.index));
+  documents.set(scope, parsed.documents);
+  indexes.set(scope, lunr.Index.load(parsed.index));
 }
 
-function search(input) {
+function search(scope, input) {
   const terms = input.toLocaleLowerCase('en').split(/\s+/).filter(Boolean);
-  return indexes
-    .flatMap((index) =>
-      index.query((query) => {
-        for (const term of terms) {
-          query.term(term, { boost: 6, fields: ['title'] });
-          query.term(term, {
-            boost: 3,
-            fields: ['title'],
-            wildcard: lunr.Query.wildcard.TRAILING,
-          });
-          query.term(term, { fields: ['content'] });
-          query.term(term, {
-            boost: 0.8,
-            fields: ['content'],
-            wildcard: lunr.Query.wildcard.TRAILING,
-          });
-        }
-      }),
-    )
-    .flatMap((match) => documents.filter(({ id }) => id.toString() === match.ref));
+  const index = indexes.get(scope);
+  const scopedDocuments = documents.get(scope);
+  if (!index || !scopedDocuments) throw new Error(`Missing ${scope} search index.`);
+  return index
+    .query((query) => {
+      for (const term of terms) {
+        query.term(term, { boost: 6, fields: ['title'] });
+        query.term(term, {
+          boost: 3,
+          fields: ['title'],
+          wildcard: lunr.Query.wildcard.TRAILING,
+        });
+        query.term(term, { fields: ['content'] });
+        query.term(term, {
+          boost: 0.8,
+          fields: ['content'],
+          wildcard: lunr.Query.wildcard.TRAILING,
+        });
+      }
+    })
+    .flatMap((match) => scopedDocuments.filter(({ id }) => id.toString() === match.ref));
 }
 
 for (const [query, expectedRoute] of [
@@ -107,13 +118,15 @@ for (const [query, expectedRoute] of [
   ['network fault simulation', qualifyRoute('/docs/network/fault-emulation/')],
   ['traffic capture', qualifyRoute('/docs/network/traffic-capture/')],
 ]) {
-  if (!search(query).some(({ sectionRoute }) => sectionRoute.startsWith(expectedRoute))) {
+  if (
+    !search('current', query).some(({ sectionRoute }) => sectionRoute.startsWith(expectedRoute))
+  ) {
     throw new Error(`Generated search index did not map "${query}" to ${expectedRoute}.`);
   }
 }
 
 if (
-  !search('SSL TLS traffic decryption').some(
+  !search('current', 'SSL TLS traffic decryption').some(
     ({ sectionRoute }) =>
       sectionRoute === qualifyRoute('/docs/network/traffic-capture/#ssltls-traffic-decryption'),
   )
@@ -121,6 +134,43 @@ if (
   throw new Error('Generated search index did not preserve the TLS section anchor.');
 }
 
+for (const [query, expectedRoute] of [
+  ['Sniffy 3.1 documentation', qualifyRoute('/docs/3.1/')],
+  ['JUnit Rule', qualifyRoute('/docs/3.1/testing/junit/')],
+  ['shared connection', qualifyRoute('/docs/3.1/testing/shared-connection/')],
+]) {
+  if (
+    !search('archived', query).some(({ sectionRoute }) => sectionRoute.startsWith(expectedRoute))
+  ) {
+    throw new Error(`Archived search index did not map "${query}" to ${expectedRoute}.`);
+  }
+}
+
+if (
+  search('current', 'Sniffy 3.1 documentation').some(({ sectionRoute }) =>
+    sectionRoute.startsWith(archivedDocsPrefix),
+  ) ||
+  search('archived', '4.0.0-SNAPSHOT').some(
+    ({ sectionRoute }) => !sectionRoute.startsWith(archivedDocsPrefix),
+  )
+) {
+  throw new Error('Current and archived search results are not isolated.');
+}
+
+const sitemap = await readFile(resolve(build, 'sitemap.xml'), 'utf8');
+for (const route of [
+  qualifyRoute('/docs/'),
+  qualifyRoute('/docs/3.1/'),
+  qualifyRoute('/docs/3.1/testing/junit/'),
+]) {
+  if (!sitemap.includes(`${route}</loc>`)) {
+    throw new Error(`Generated sitemap does not contain ${route}.`);
+  }
+}
+if (sitemap.includes(qualifyRoute('/docs/3.0/'))) {
+  throw new Error('Generated sitemap unexpectedly publishes an unavailable 3.0 archive.');
+}
+
 process.stdout.write(
-  `Verified ${indexFiles.length} deterministic current-docs index with ${documents.length} sections (sha256 ${digest.digest('hex')}).\n`,
+  `Verified ${indexFiles.length} deterministic isolated indexes with ${[...documents.values()].reduce((total, entries) => total + entries.length, 0)} sections (sha256 ${digest.digest('hex')}).\n`,
 );

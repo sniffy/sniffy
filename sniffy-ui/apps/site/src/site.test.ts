@@ -47,12 +47,14 @@ describe('@sniffy/site workspace contract', () => {
       'package:site-artifact': 'node apps/site/scripts/package-artifact.mjs',
       'test:site':
         'npm run build:site && npm run verify:site-search-index && vitest run --project unit apps/site/src/site.test.ts apps/site/src/homepage.test.tsx apps/site/src/use-case.test.tsx apps/site/src/sql-profiling.test.tsx apps/site/src/traffic-capture-use-case.test.tsx apps/site/src/network-fault-testing.test.tsx apps/site/src/source-snippets.test.ts apps/site/src/product-version.test.ts apps/site/src/documentation.test.ts apps/site/src/deployment-config.test.ts apps/site/src/deterministic-search-index.test.ts apps/site/src/legacy-docs-page.test.tsx apps/site/src/theme/SearchBar/index.test.tsx apps/site/src/theme/SearchBar/search-index.test.ts apps/site/src/theme/NavbarItem/GitHubStarsNavbarItem.test.tsx && npm test --workspace @sniffy/site',
+      'verify:site-archive': 'node apps/site/scripts/verify-archive.mjs',
       'verify:site-search-index': 'node apps/site/scripts/verify-search-index.mjs',
       'verify:site-artifact': 'node apps/site/scripts/verify-artifact.mjs',
     });
     expect(sitePackageJson.scripts).toMatchObject({
       start: 'docusaurus start',
-      build: 'docusaurus build',
+      build: 'node scripts/verify-archive.mjs && docusaurus build',
+      serve: 'node scripts/preview.mjs --root build',
       test: 'playwright test --config playwright.config.ts',
     });
   });
@@ -88,8 +90,12 @@ describe('@sniffy/site workspace contract', () => {
     }
   });
 
-  it('enables both shared themes and current docs while leaving future routes disabled', () => {
+  it('enables both shared themes and the authorized 3.1 archive only', () => {
     const config = readFileSync(resolve(site, 'docusaurus.config.ts'), 'utf8');
+    const versions = readJson(resolve(site, 'versions.json'));
+    const archivedSidebars = readJson(
+      resolve(site, 'versioned_sidebars/version-3.1-sidebars.json'),
+    );
 
     expect(config).toContain("onBrokenLinks: 'throw'");
     expect(config).toContain("onBrokenAnchors: 'throw'");
@@ -111,8 +117,13 @@ describe('@sniffy/site workspace contract', () => {
     expect(config).not.toMatch(/navbar:\s*\{[\s\S]*?logo:\s*\{/);
     expect(config).toContain("routeBasePath: 'docs'");
     expect(config).toContain("lastVersion: 'current'");
+    expect(config).toContain("type: 'docsVersionDropdown'");
+    expect(config).toContain("label: '3.1 (archived)'");
+    expect(config).toContain("path: '3.1'");
+    expect(config).toContain("className: 'sniffy-docs-archive'");
+    expect(versions).toEqual(['3.1']);
+    expect(archivedSidebars.docsSidebar).toHaveLength(7);
     expect(config).toContain('blog: false');
-    expect(config).not.toMatch(/versioned_(docs|sidebars)/);
   });
 
   it('keeps established and wordmark assets with the narrow 404 wrapper inside the site', () => {
@@ -200,6 +211,8 @@ describe('@sniffy/site workspace contract', () => {
     expect(packageJson.devDependencies).toMatchObject({ '@types/lunr': '2.3.7' });
     expect(config).toContain('maxSearchResults: 8');
     expect(search).toContain("currentDocsSearchTag = 'docs-default-current'");
+    expect(search).toContain("tags.includes('docs-default-3.1')");
+    expect(search).toContain('selectDocumentationSearchTags(tags)');
     expect(search).toContain('aria-keyshortcuts="Meta+K Control+K"');
     expect(search).toContain('Search is temporarily unavailable.');
     expect(search).toContain('history.push(result.url)');
@@ -214,6 +227,8 @@ describe('@sniffy/site workspace contract', () => {
     expect(deterministicIndex).toContain('createDevelopmentSearchIndex');
     expect(deterministicIndex).toContain('async allContentLoaded(props)');
     expect(verifier).toContain("'SSL TLS traffic decryption'");
+    expect(verifier).toContain("'search-index-docs-default-3.1.json'");
+    expect(verifier).toContain("search('archived', query)");
     expect(verifier).toContain('/docs/network/traffic-capture/#ssltls-traffic-decryption');
   });
 });

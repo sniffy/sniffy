@@ -1,0 +1,78 @@
+---
+sidebar_label: Integration with JUnit
+---
+
+import ArchiveBanner from '@site/src/components/ArchiveBanner';
+
+<ArchiveBanner />
+
+# Integration with JUnit
+
+Sniffy comes with a [JUnit](http://junit.org/) `@Rule` for quick integration with test framework. Just add `@Rule public final SniffyRule sniffyRule = new SniffyRule();` to your JUnit test class and place appropriate expectations on your test methods like shown below.
+
+<!-- archived-snippet:sniffy-test-sniffy-junit-src-test-java-io-sniffy-test-junit-usage-junitusagetest--whole-file -->
+
+```java
+package io.sniffy.test.junit.usage;
+
+import io.sniffy.socket.DisableSockets;
+import io.sniffy.sql.SqlExpectation;
+import io.sniffy.test.Count;
+import io.sniffy.test.junit.SniffyRule;
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.Socket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
+public class JUnitUsageTest {
+
+    @Rule
+    public final SniffyRule sniffyRule = new SniffyRule(); // <1>
+
+    @Test
+    @SqlExpectation(count = @Count(1)) // <2>
+    public void testJUnitIntegration() throws SQLException {
+        final Connection connection = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa"); // <3>
+        connection.createStatement().execute("SELECT 1 FROM DUAL"); // <4>
+    }
+
+    @Test
+    @DisableSockets // <5>
+    public void testDisableSockets() throws IOException {
+        try {
+            new Socket("google.com", 22); // <6>
+            fail("Sniffy should have thrown ConnectException");
+        } catch (ConnectException e) {
+            assertNotNull(e);
+        }
+    }
+
+}
+```
+
+1.  \- Integrate Sniffy to your test using @Rule annotation and a SniffyRule field.
+2.  \- Now just add `@SqlExpectation` annotation to define number of queries allowed for given method.
+3.  \- Just add `sniffy:` in front of your JDBC connection URL in order to enable sniffer.
+4.  \- Do not make any changes in your code - just add the `@Rule SniffyRule` and put annotations on your test method.
+5.  \- Add `@DisableSockets` annotation on your test method or test class and any attempt to open a network connection will fail
+6.  \- All socket operations executed within test method annotated with `@DisableSockets` will throw a `java.net.ConnectException`
+
+You can enable more verbose logging by using a `SniffyRule` constructor which takes `io.sniffy.log.PolyglogLevel` enum value for logging customization. By default, Sniffy logs output to system output stream, but it might change in future releases.
+
+## JUnit Runner
+
+Sniffy comes with a JUnit runner class `SniffyRunner` which can be used for eagerly initializing Sniffy. It might be useful in certain conditions such as testing custom security providers installed in runtime.
+
+You don’t have to use in the majority of use cases.
+
+```java
+@RunWith(SniffyRunner.class)
+```

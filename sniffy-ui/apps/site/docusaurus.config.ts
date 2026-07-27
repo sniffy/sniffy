@@ -62,6 +62,13 @@ const config: Config = {
               label: 'Current',
               path: '',
             },
+            '3.1': {
+              label: '3.1 (archived)',
+              path: '3.1',
+              banner: 'none',
+              badge: true,
+              className: 'sniffy-docs-archive',
+            },
           },
         },
         blog: false,
@@ -89,6 +96,10 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'Documentation',
+        },
+        {
+          type: 'docsVersionDropdown',
+          position: 'left',
         },
         {
           type: 'dropdown',

@@ -1,0 +1,69 @@
+---
+sidebar_label: Integration with Spock Framework
+---
+
+import ArchiveBanner from '@site/src/components/ArchiveBanner';
+
+<ArchiveBanner />
+
+# Integration with Spock Framework
+
+[Spock Framework](https://github.com/spockframework/spock) is a developer testing and specification framework for Java and Groovy applications.
+
+Sniffy can be integrated with Spock Framework using `Spy` field and standard spock `then` block:
+
+<!-- archived-snippet:sniffy-integration-tests-sniffy-integration-tests-spock-src-test-groovy-io-sniffy-test-spock-usage-spockusagespec--whole-file -->
+
+```groovy
+package io.sniffy.test.spock.usage
+
+import groovy.sql.Sql
+import io.sniffy.Sniffy
+import io.sniffy.sql.SqlQueries
+import io.sniffy.sql.WrongNumberOfQueriesError
+import spock.lang.FailsWith
+import spock.lang.Shared
+import spock.lang.Specification
+
+class SpockUsageSpec extends Specification {
+
+    @Shared sql = Sql.newInstance("sniffy:jdbc:h2:mem:", "sa", "sa")
+
+    def spy = Sniffy.spy()
+
+    @FailsWith(WrongNumberOfQueriesError)
+    "Execute single query - negative"() {
+        when:
+        sql.execute("SELECT 1 FROM DUAL")
+        sql.execute("SELECT 1 FROM DUAL")
+
+        then:
+        spy.verify(SqlQueries.exactQueries(1))
+    }
+
+    def "Execute single query"() {
+        when:
+        sql.execute("SELECT 1 FROM DUAL")
+
+        then:
+        spy.verify(SqlQueries.exactQueries(1)).reset()
+
+        when:
+        sql.execute("SELECT 1 FROM DUAL")
+
+        then:
+        spy.verify(SqlQueries.exactQueries(1))
+    }
+
+    def "Execute single query - another one"() {
+        when:
+        sql.execute("SELECT 1 FROM DUAL")
+
+        then:
+        spy.verify(SqlQueries.exactQueries(1))
+    }
+
+}
+```
+
+Do not forget to call `reset()` method on the spy object if you have multiple when-then blocks in a single test method

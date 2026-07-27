@@ -27,6 +27,11 @@ type SearchPluginData = {
 const suggestedQueries = ['Installation', 'Configuration', 'SQL assertions', 'Traffic capture'];
 const currentDocsSearchTag = 'docs-default-current';
 
+export function selectDocumentationSearchTags(tags: string[]) {
+  const contextualDocsTags = tags.filter((tag) => tag.startsWith('docs-default-'));
+  return contextualDocsTags.length > 0 ? contextualDocsTags : [currentDocsSearchTag];
+}
+
 function isMacPlatform() {
   const platform =
     (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ??
@@ -129,7 +134,7 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
 
     if (indexState === 'idle') {
       setIndexState('loading');
-      loadSearchIndexes(baseUrl, [...tags, currentDocsSearchTag], {
+      loadSearchIndexes(baseUrl, selectDocumentationSearchTags(tags), {
         developmentIndex: searchPluginData.developmentIndex,
       })
         .then((indexes) => {
@@ -261,7 +266,11 @@ export default function SearchBar({ handleSearchBarToggle }: SearchBarProps) {
             aria-autocomplete="list"
             aria-controls="sniffy-search-results"
             aria-expanded={query.trim().length > 0}
-            aria-label="Search current Sniffy documentation"
+            aria-label={
+              tags.includes('docs-default-3.1')
+                ? 'Search archived Sniffy 3.1 documentation'
+                : 'Search current Sniffy documentation'
+            }
             autoComplete="off"
             className={styles.input}
             onChange={handleQueryChange}

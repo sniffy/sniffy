@@ -1,0 +1,79 @@
+---
+sidebar_label: Migration from 3.0.x to 3.1.x
+---
+
+import ArchiveBanner from '@site/src/components/ArchiveBanner';
+
+<ArchiveBanner />
+
+# Migration from 3.0.x to 3.1.x
+
+## Sniffy Filter
+
+Starting from version `3.1.0` injection of HTML is no longer considered experimental and enabled by default.
+
+## Maven artifacts
+
+Sniffy test support has been extracted to a separate artifacts. You should now use following artifacts if you want to use Sniffy in your unit tests:
+
+| Old artifact          | New artifact                      | Test framework   |
+| --------------------- | --------------------------------- | ---------------- |
+| io.sniffy:sniffy:test | io.sniffy:sniffy-junit:test       | JUnit            |
+| io.sniffy:sniffy:test | io.sniffy:sniffy-spring-test:test | Spring Framework |
+| io.sniffy:sniffy:test | io.sniffy:sniffy-testng:test      | TestNG           |
+| io.sniffy:sniffy:test | io.sniffy:sniffy-core:test        | Spock Framework  |
+
+## JDBC Connection String
+
+`sniffer:` connection is deprecated as of Sniffy 3.1.0. You should use `sniffy:` instead like shown below:
+
+```
+sniffy:jdbc:h2:mem:
+```
+
+## Deprecated Classes
+
+Some of Sniffy classes are deprecated as of version 3.1.0 with an equivalent replacement as shown in the table below:
+
+| Deprecated class                          | New class                                      |
+| ----------------------------------------- | ---------------------------------------------- |
+| ~~io.sniffy.MockDriver~~                  | io.sniffy.sql.SniffyDriver                     |
+| ~~io.sniffy.Query~~                       | io.sniffy.sql.SqlStatement                     |
+| ~~io.sniffy.Sniffer~~                     | io.sniffy.Sniffy                               |
+| ~~io.sniffy.WrongNumberOfQueriesError~~   | io.sniffy.sql.WrongNumberOfQueriesError        |
+| ~~io.sniffy.servlet.SnifferFilter~~       | io.sniffy.servlet.SniffyFilter                 |
+| ~~io.sniffy.junit.QueryCounter~~          | io.sniffy.test.junit.SniffyRule                |
+| ~~io.sniffy.spring.QueryCounterListener~~ | io.sniffy.test.spring.SniffySpringTestListener |
+| ~~io.sniffy.Expectation~~                 | io.sniffy.sql.SqlExpectation                   |
+| ~~io.sniffy.Expectations~~                | io.sniffy.sql.SqlExpectations                  |
+| ~~io.sniffy.NoQueriesAllowed~~            | io.sniffy.sql.NoSql                            |
+| ~~io.sniffy.testng.QueryCounter~~         | io.sniffy.test.testng.SniffyTestNgListener     |
+
+## Deprecated Methods
+
+### io.sniffy.Sniffer.\*
+
+Some methods in `io.sniffy.Sniffer` class are now deprecated and although they’re still available in `io.sniffy.Sniffy` class they will be removed completely in future versions of Sniffy.
+
+| Deprecated method        | Replacement                                                                   |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| ~~executedStatements()~~ | spy().getExecutedStatements(Threads threadMatcher, boolean removeStackTraces) |
+| ~~expect\*(…​)~~         | expect(Spy.Expectation expectation)                                           |
+
+### io.sniffy.Spy.\*
+
+Some methods in `io.sniffy.Spy` class are now deprecated and will be removed completely in future versions of Sniffy.
+
+| Deprecated method        | Replacement                                                                   |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| ~~executedStatements()~~ | spy().getExecutedStatements(Threads threadMatcher, boolean removeStackTraces) |
+| ~~expect\*(…​)~~         | expect(Spy.Expectation expectation)                                           |
+| ~~verify\*(…​)~~         | verify(Spy.Expectation expectation)                                           |
+
+## Deprecated annotations
+
+`@EnableSniffy(excludePattern="…​")` has been deprecated in favor of `@EnableSniffy(advanced = @SniffyAdvancedConfiguration(excludePattern = "…​",))`
+
+## Type changes
+
+Property `rows` in `io.sniffy.sql.SqlStats` has been changed from `AtomicInteger` to `AtomicLong` in release `3.1.13`

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -159,5 +160,60 @@ describe('migrated documentation contract', () => {
     ]) {
       expect(sidebars).toContain(`'${doc}'`);
     }
+  });
+});
+
+describe('archived Sniffy 3.1 documentation contract', () => {
+  const archiveRoot = resolve(site, 'versioned_docs/version-3.1');
+  const manifest = JSON.parse(
+    readFileSync(resolve(archiveRoot, '_archive-manifest.json'), 'utf8'),
+  ) as {
+    assets: { committedPath: string; committedSha256: string }[];
+    snippets: {
+      excerptPath: string;
+      excerptSha256: string;
+      id: string;
+      language: string;
+      owningArchivedPages: string[];
+      sourceBlobSha: string;
+    }[];
+    sourceCommit: string;
+    sourceTag: string;
+  };
+  const archivedPages = allFiles(archiveRoot).filter((file) => extname(file) === '.mdx');
+
+  it('pins the complete archive to the authorized source revision', () => {
+    expect(manifest.sourceTag).toBe('v3.1.14');
+    expect(manifest.sourceCommit).toBe('55f744f6a32dd68ee8d5d31c54796e9b5d75aad1');
+    expect(archivedPages).toHaveLength(17);
+    expect(manifest.snippets).toHaveLength(14);
+    expect(manifest.assets).toHaveLength(3);
+  });
+
+  it('renders only committed hash-verified historical snippets', () => {
+    for (const snippet of manifest.snippets) {
+      const excerpt = readFileSync(resolve(archiveRoot, snippet.excerptPath), 'utf8');
+      expect(createHash('sha256').update(excerpt).digest('hex')).toBe(snippet.excerptSha256);
+      expect(snippet.sourceBlobSha).toMatch(/^[0-9a-f]{40}$/);
+      for (const owner of snippet.owningArchivedPages) {
+        const page = readFileSync(resolve(archiveRoot, owner), 'utf8');
+        expect(page).toContain(`<!-- archived-snippet:${snippet.id} -->`);
+        expect(page).toContain(`\`\`\`${snippet.language}\n${excerpt.replace(/\n$/, '')}\n\`\`\``);
+      }
+    }
+    const allArchivedMdx = archivedPages.map((file) => readFileSync(file, 'utf8')).join('\n');
+    expect(allArchivedMdx).not.toContain('<SourceSnippet');
+    expect(allArchivedMdx).not.toContain('4.0.0-SNAPSHOT');
+  });
+
+  it('labels every archived page and preserves the 3.1.14 coordinates', () => {
+    for (const page of archivedPages) {
+      const source = readFileSync(page, 'utf8');
+      expect(source).toContain('<ArchiveBanner />');
+      expect(source).toContain("import ArchiveBanner from '@site/src/components/ArchiveBanner';");
+    }
+    const installation = readFileSync(resolve(archiveRoot, 'installation/index.mdx'), 'utf8');
+    expect(installation.match(/3\.1\.14/g)?.length).toBeGreaterThanOrEqual(7);
+    expect(JSON.parse(readFileSync(resolve(site, 'versions.json'), 'utf8'))).toEqual(['3.1']);
   });
 });

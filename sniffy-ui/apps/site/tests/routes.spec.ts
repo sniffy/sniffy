@@ -474,6 +474,74 @@ test('the branded 404 offers useful recovery links and remains accessible', asyn
   await expectNoAccessibilityViolations(page);
 });
 
+test('the archived 3.1 documentation is navigable, isolated, and explicitly unsupported', async ({
+  page,
+  request,
+}) => {
+  const response = await page.goto('/docs/3.1/');
+
+  expect(response?.status()).toBe(200);
+  await expect(page.locator('html')).toHaveClass(/sniffy-docs-archive/);
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Sniffy 3.1 documentation' }),
+  ).toBeVisible();
+  const banner = page.getByRole('complementary', { name: 'Archived documentation notice' });
+  await expect(banner).toContainText('unsupported version');
+  await expect(banner.getByRole('link', { name: 'current documentation' })).toHaveAttribute(
+    'href',
+    '/docs/',
+  );
+  await expect(banner.getByRole('link', { name: 'migration guidance' })).toHaveAttribute(
+    'href',
+    '/docs/migration/to-4/',
+  );
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    'https://sniffy.io/docs/3.1/',
+  );
+
+  const mainNavigation = page.getByRole('navigation', { name: 'Main' });
+  const versionSelector = mainNavigation.locator('a[role="button"][href="/docs/3.1/"]');
+  await expect(versionSelector).toBeVisible();
+  await expect(versionSelector).toHaveText('3.1 (archived)');
+  await expect(mainNavigation.locator('a[href="/docs/"]', { hasText: 'Current' })).toHaveCount(1);
+  await page.getByRole('button', { name: 'Testing integrations' }).click();
+  await expect(
+    page.locator('.theme-doc-sidebar-menu a[href="/docs/3.1/testing/junit/"]'),
+  ).toHaveCount(1);
+  await expect(page.getByRole('link', { name: /Next.*Installation/ })).toHaveAttribute(
+    'href',
+    '/docs/3.1/installation/',
+  );
+
+  await page.getByRole('button', { name: /Search docs/ }).click();
+  const search = page.getByRole('combobox', {
+    name: 'Search archived Sniffy 3.1 documentation',
+  });
+  await search.fill('JUnit Rule');
+  const results = page.getByRole('option');
+  await expect(results.first()).toBeVisible();
+  await expect(results.first()).toHaveAttribute('href', /\/docs\/3\.1\/testing\/junit\//);
+  for (const href of await results.evaluateAll((options) =>
+    options.map((option) => option.getAttribute('href')),
+  )) {
+    expect(href).toMatch(/^\/docs\/3\.1\//);
+  }
+
+  for (const route of [
+    '/docs/3.1/testing/junit/',
+    '/docs/3.1/network/traffic-capture/',
+    '/docs/3.1/migration/to-3.1/',
+    '/docs/latest/',
+  ]) {
+    expect((await request.get(route)).status()).toBe(200);
+  }
+  for (const route of ['/docs/3.0/', '/docs/2.3/', '/docs/2.0/', '/docs/1.4/']) {
+    expect((await request.get(route)).status()).toBe(404);
+  }
+  await expectNoAccessibilityViolations(page);
+});
+
 for (const colorScheme of ['dark', 'light'] as const) {
   test(`the ${colorScheme} desktop homepage shell matches its reviewed baseline`, async ({
     page,
@@ -529,6 +597,20 @@ for (const colorScheme of ['dark', 'light'] as const) {
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
     await prepareShellScreenshot(page);
     await expect(page).toHaveScreenshot(`docs-desktop-${colorScheme}.png`, {
+      animations: 'disabled',
+      stylePath: shellScreenshotStyle,
+    });
+  });
+
+  test(`the ${colorScheme} desktop archived documentation matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/docs/3.1/');
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareShellScreenshot(page);
+    await expect(page).toHaveScreenshot(`archive-desktop-${colorScheme}.png`, {
       animations: 'disabled',
       stylePath: shellScreenshotStyle,
     });
@@ -627,7 +709,7 @@ test('a tagged Java region renders as a syntax-highlighted listing', async ({ pa
   await expect(snippet).not.toContainText('tag::testVerifyApi');
 });
 
-for (const route of ['/blog/', '/docs/next/', '/docs/3.1/']) {
+for (const route of ['/blog/', '/docs/next/', '/docs/3.0/']) {
   test(`${route} remains reserved and disabled`, async ({ page }) => {
     const response = await page.goto(route);
 

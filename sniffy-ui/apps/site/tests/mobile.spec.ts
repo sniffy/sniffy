@@ -163,6 +163,32 @@ test('the mobile search dialog coexists with navigation without clipping or page
   await expect(page.locator('.navbar-sidebar')).toBeVisible();
 });
 
+test('the mobile archived documentation exposes its banner, version navigation, and search', async ({
+  page,
+}) => {
+  const response = await page.goto('/docs/3.1/');
+
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole('complementary', { name: 'Archived documentation notice' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Toggle navigation bar' }).click();
+  const sidebar = page.locator('.navbar-sidebar');
+  await expect(sidebar.getByText('Versions', { exact: true })).toBeVisible();
+  await expect(sidebar.getByText('3.1 (archived)', { exact: true })).toBeVisible();
+  await sidebar.locator('.navbar-sidebar__close').click();
+  await page.getByRole('button', { name: /Search docs/ }).click();
+  await expect(
+    page.getByRole('combobox', { name: 'Search archived Sniffy 3.1 documentation' }),
+  ).toBeVisible();
+  const geometry = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(geometry.scrollWidth).toBe(geometry.clientWidth);
+  await expectNoAccessibilityViolations(page);
+});
+
 for (const colorScheme of ['dark', 'light'] as const) {
   test(`the ${colorScheme} mobile shell matches its reviewed baseline`, async ({ page }) => {
     await page.emulateMedia({ colorScheme });
@@ -266,6 +292,20 @@ for (const colorScheme of ['dark', 'light'] as const) {
       });
     await prepareShellScreenshot(page);
     await expect(page).toHaveScreenshot(`search-mobile-${colorScheme}.png`, {
+      animations: 'disabled',
+      stylePath: shellScreenshotStyle,
+    });
+  });
+
+  test(`the ${colorScheme} mobile archived documentation matches its reviewed baseline`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/docs/3.1/');
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await prepareShellScreenshot(page);
+    await expect(page).toHaveScreenshot(`archive-mobile-${colorScheme}.png`, {
       animations: 'disabled',
       stylePath: shellScreenshotStyle,
     });
