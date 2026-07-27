@@ -48,6 +48,8 @@ for (let index = 2; index < process.argv.length; index += 1) {
   } else if (argument === '--root' && value) {
     options.root = value;
     index += 1;
+  } else if (argument === '--no-open') {
+    // Kept for compatibility with Docusaurus' serve CLI and existing test harnesses.
   } else {
     throw new Error(`Unknown or incomplete argument: ${argument}`);
   }

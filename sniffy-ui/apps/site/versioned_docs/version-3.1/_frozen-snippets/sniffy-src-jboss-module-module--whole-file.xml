@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.3" name="io.sniffy">
+
+    <resources>
+        <resource-root path="sniffy.jar"/>
+    </resources>
+
+    <dependencies>
+        <!-- Try import some well known modules with JDBC drivers -->
+        <module name="com.h2database.h2" optional="true"/>
+
+        <module name="com.oracle" optional="true"/>
+        <module name="oracle.jdbc" optional="true"/>
+        <module name="com.oracle.jdbc" optional="true"/>
+        <!-- insert a reference to module with your JDBC driver here -->
+
+        <module name="javax.servlet.api" export="true"/>
+        <module name="sun.jdk"/>
+    </dependencies>
+</module>

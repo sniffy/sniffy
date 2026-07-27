@@ -96,6 +96,11 @@ try {
     },
     { route: 'docs/', status: 200, headingText: 'Sniffy documentation' },
     {
+      route: 'docs/3.1/',
+      status: 200,
+      headingText: 'Sniffy 3.1 documentation',
+    },
+    {
       route: 'docs/network/traffic-capture/',
       status: 200,
       headingText: 'Traffic capture and TLS inspection',
@@ -120,6 +125,7 @@ try {
       status: 200,
       headingText: 'Follow network bytes from the Java call that moved them.',
     },
+    { route: 'docs/3.0/', status: 404, headingText: 'This trail went cold.' },
     { route: 'missing-shell-route/', status: 404, headingText: 'This trail went cold.' },
   ]) {
     const url = previewRoute(route);
@@ -144,6 +150,29 @@ try {
   await page.goto(previewRoute('docs/latest/#_configuration'));
   await page.waitForURL(new URL(`${baseUrl}docs/configuration/`, previewUrl).toString());
   process.stdout.write('Verified packaged legacy documentation redirect honors the base URL.\n');
+
+  await page.goto(previewRoute('docs/3.1/'), { waitUntil: 'networkidle' });
+  if (
+    (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
+      canonicalRoute('docs/3.1/') ||
+    !(
+      await page.getByRole('complementary', { name: 'Archived documentation notice' }).textContent()
+    )?.includes('unsupported version')
+  ) {
+    throw new Error('Artifact preview did not preserve the 3.1 archive metadata or banner.');
+  }
+  await page.getByRole('button', { name: /Search docs/ }).click();
+  const archivedSearch = page.getByRole('combobox', {
+    name: 'Search archived Sniffy 3.1 documentation',
+  });
+  await archivedSearch.fill('JUnit Rule');
+  const archivedResult = page.getByRole('option').first();
+  await archivedResult.waitFor();
+  if (!(await archivedResult.getAttribute('href'))?.startsWith(`${baseUrl}docs/3.1/`)) {
+    throw new Error('Artifact preview mixed current results into archived search.');
+  }
+  await archivedSearch.press('Escape');
+  process.stdout.write('Verified packaged 3.1 metadata, banner, and isolated search.\n');
 
   await page.goto(previewRoute('use-cases/database-query-testing/'), {
     waitUntil: 'networkidle',

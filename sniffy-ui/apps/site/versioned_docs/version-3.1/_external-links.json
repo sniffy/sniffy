@@ -1,0 +1,95 @@
+{
+  "auditDate": "2026-07-27",
+  "sourceTag": "v3.1.14",
+  "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+  "links": [
+    {
+      "sourceUrl": "https://github.com/sniffy/sniffy/releases/latest",
+      "renderedUrl": "https://github.com/sniffy/sniffy/releases/tag/v3.1.14",
+      "resolvedUrl": "https://github.com/sniffy/sniffy/releases/tag/v3.1.14",
+      "httpStatus": 200,
+      "classification": "authoritative-archived-target",
+      "action": "replaced-live-latest-link"
+    },
+    {
+      "sourceUrl": "http://localhost:5559",
+      "renderedUrl": "http://localhost:5559",
+      "resolvedUrl": null,
+      "httpStatus": null,
+      "classification": "historical-local-example",
+      "action": "retained"
+    },
+    {
+      "sourceUrl": "http://projects.spring.io/spring-boot/",
+      "renderedUrl": "http://projects.spring.io/spring-boot/",
+      "resolvedUrl": "https://spring.io/projects/spring-boot/",
+      "httpStatus": 200,
+      "classification": "verified-historical-reference",
+      "action": "retained-tag-era-url"
+    },
+    {
+      "sourceUrl": "http://junit.org/",
+      "renderedUrl": "http://junit.org/",
+      "resolvedUrl": "https://junit.org/",
+      "httpStatus": 200,
+      "classification": "verified-historical-reference",
+      "action": "retained-tag-era-url"
+    },
+    {
+      "sourceUrl": "https://chrome.google.com/webstore/detail/sniffy-chrome-extension/hmiejljajpgikfbajggcolnblbhfedjp?hl=en",
+      "renderedUrl": "https://chrome.google.com/webstore/detail/sniffy-chrome-extension/hmiejljajpgikfbajggcolnblbhfedjp?hl=en",
+      "resolvedUrl": "https://chromewebstore.google.com/detail/sniffy-chrome-extension/hmiejljajpgikfbajggcolnblbhfedjp?hl=en",
+      "httpStatus": 200,
+      "classification": "verified-historical-reference",
+      "action": "retained-tag-era-url"
+    },
+    {
+      "sourceUrl": "http://projects.spring.io/spring-framework/",
+      "renderedUrl": "http://projects.spring.io/spring-framework/",
+      "resolvedUrl": "https://spring.io/projects/spring-framework/",
+      "httpStatus": 200,
+      "classification": "verified-historical-reference",
+      "action": "retained-tag-era-url"
+    },
+    {
+      "sourceUrl": "http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#testcontext-tel-config",
+      "renderedUrl": "http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#testcontext-tel-config",
+      "resolvedUrl": "https://docs.spring.io/spring-framework/docs/current/reference/html/",
+      "httpStatus": 200,
+      "classification": "verified-historical-reference",
+      "action": "retained-tag-era-url"
+    },
+    {
+      "sourceUrl": "http://testng.org/",
+      "renderedUrl": "http://testng.org/",
+      "resolvedUrl": "https://testng.org/",
+      "httpStatus": 200,
+      "classification": "verified-historical-reference",
+      "action": "retained-tag-era-url"
+    },
+    {
+      "sourceUrl": "https://github.com/spockframework/spock",
+      "renderedUrl": "https://github.com/spockframework/spock",
+      "resolvedUrl": "https://github.com/spockframework/spock",
+      "httpStatus": 200,
+      "classification": "verified-historical-reference",
+      "action": "retained"
+    },
+    {
+      "sourceUrl": "http://groovy.codehaus.org/",
+      "renderedUrl": null,
+      "resolvedUrl": null,
+      "httpStatus": 0,
+      "classification": "dead-historical-reference",
+      "action": "removed-link-preserved-text"
+    },
+    {
+      "sourceUrl": "https://kotest.io/",
+      "renderedUrl": "https://kotest.io/",
+      "resolvedUrl": "https://kotest.io/",
+      "httpStatus": 200,
+      "classification": "verified-historical-reference",
+      "action": "retained"
+    }
+  ]
+}

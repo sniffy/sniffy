@@ -1,0 +1,111 @@
+---
+sidebar_label: Capture traffic
+---
+
+import ArchiveBanner from '@site/src/components/ArchiveBanner';
+
+<ArchiveBanner />
+
+# Capture traffic
+
+Sniffy allows you to record traffic sent or received via network and exposes it via Java API.
+
+## Example
+
+<!-- archived-snippet:sniffy-core-src-test-java-io-sniffy-socket-capturetrafficoverviewtest--capturetrafficoverview -->
+
+```java
+    @Test
+    public void testCaptureTraffic() throws Exception {
+
+        try (Spy<?> spy = Sniffy.spy(
+                SpyConfiguration.builder().captureNetworkTraffic(true).build()) // <1>
+        ) {
+
+            performSocketOperation(); // <2>
+
+            Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic( // <3>
+                    Threads.ANY, // <4>
+                    AddressMatchers.anyAddressMatcher(), // <5>
+                    GroupingOptions.builder().
+                            groupByThread(false). // <6>
+                            groupByStackTrace(false). // <7>
+                            groupByConnection(false). // <8>
+                            build()
+            );
+
+            assertEquals(1, networkTraffic.size());
+
+            for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
+
+                SocketMetaData socketMetaData = entry.getKey(); // <9>
+
+                Protocol protocol = socketMetaData.getProtocol(); // say TCP
+                String hostName = socketMetaData.getAddress().getHostName(); // say "hostname.acme.com"
+                int port = socketMetaData.getAddress().getPort(); // say 443
+
+                List<NetworkPacket> networkPackets = entry.getValue(); // <10>
+
+                assertArrayEquals(REQUEST, networkPackets.get(0).getBytes());
+                assertTrue(networkPackets.get(0).isSent());
+
+                assertArrayEquals(RESPONSE, networkPackets.get(1).getBytes());
+                assertFalse(networkPackets.get(1).isSent());
+
+            }
+
+        }
+
+    }
+```
+
+1.  Use `captureNetworkTraffic(true)` when creating a `Spy` instance to enable traffic capturing
+2.  Invoke socket operation. Can be either in current or another thread. Plain socket API or NIO - doesn’t matter.
+3.  Retrieve network packets filtered and grouped as defined in parameters
+4.  Allows you to filter traffic by thread
+5.  Allows you to filter traffic by target address and/or port
+6.  Group traffic by thread
+7.  Group traffic by stack trace
+8.  Group traffic by connection id - surrogate identifier of network connection
+9.  SocketMetaData describes the target host and port and other parameters as described above for `GroupingOptions`
+10. `NetworkPacket` contains data in bytes, timestamp, direction and optional stacktrace and thread information
+
+`SpyConfiguration` supports following properties:
+
+| Property name         | Description                                                                                                                                | Default Value                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| captureStackTraces    | Capture stack traces for network communication                                                                                             | true                                                   |
+| captureNetwork        | Capture network interactions                                                                                                               | Global configuration `io.sniffy.monitorSocket`         |
+| captureNetworkTraffic | Capture network traffic                                                                                                                    | false                                                  |
+| captureJdbc           | Capture JDBC queries                                                                                                                       | Global configuration `io.sniffy.monitorJdbc`           |
+| bufferIncomingTraffic | Buffer incoming traffic - might be useful to more accurately capture traffic of conversation based protocols in multithreaded environments | Global configuration `io.sniffy.bufferIncomingTraffic` |
+
+## Configuration
+
+`packetMergeThreshold` allows you to specify threshold for combining similar network packets when capturing traffic. For example if your application calls `SocketInputStream.read()` 8 times in a row to read a 64-bit value, Sniffy will merge these calls into a single packet given that they were done within specified threshold and of course given that no write/sent operation was done between them.
+
+## SSL/TLS Traffic Decryption
+
+Sniffy can decrypt capture traffic but you need to enable this feature explicitly using -D\`io.sniffy.decryptTls\` system property or `IO_SNIFFY_DECRYPT_TLS` environment variable. It’s also possible to enable it programmatically using `io.sniffy.configuration.SniffyConfiguration.INSTANCE.setDecryptTls()` method.
+
+Decrypted traffic is available along with original traffic using dedicated `getDecryptedNetworkTraffic` method in Spy class.
+
+```java
+Map<SocketMetaData, List<NetworkPacket>> decryptedNetworkTraffic = spy.getDecryptedNetworkTraffic(
+        Threads.CURRENT,
+        AddressMatchers.exactAddressMatcher("www.google.com:443"),
+        GroupingOptions.builder().
+                groupByConnection(false).
+                groupByStackTrace(false).
+                groupByThread(false).
+                build()
+);
+```
+
+## Caveats
+
+Some libraries like Apache APR and Netty (only when native transport is enabled explicitly) use native code for network operations. Currently Sniffy doesn’t capture this kind of traffic.
+
+Sniffy provides an alternative implementation of `SSLEngine`, `SSLSocketFactory` and other classes from JSSE framework. Since some of these constructs can be cached in application code, please make sure to initialize Sniffy as early as possible. If absolutely necessary you can initialize Sniffy as a javaagent, although it’s a bit cumbersome - see [Standalone Setup](/docs/3.1/installation/) section for details.
+
+Sniffy support custom JSSE providers such as BouncyCastle. However if you’re installing **AFTER** you initialize Sniffy you _might_ need to reinitialize Sniffy. It’s possible using `Sniffy.reinitialize()` method. In general it will work out of the box without any further actions from developer given that Sniffy is initialized on an early stage.

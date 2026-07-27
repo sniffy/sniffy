@@ -1,0 +1,114 @@
+---
+sidebar_label: Installation
+---
+
+import ArchiveBanner from '@site/src/components/ArchiveBanner';
+
+<ArchiveBanner />
+
+# Installation
+
+## Standalone setup
+
+Sniffy comes with an uber-jar which doesn’t require any additional dependencies to be installed. Just grab the `sniffy-3.1.14.jar` from our [releases page](https://github.com/sniffy/sniffy/releases/tag/v3.1.14) and add it to the classpath of your application.
+
+> **Archived warning:** If you’re using an application server like Tomcat and you’re defining a datasource on application server level, `sniffy-3.1.14.jar` should be added to the common classloader classpath and should be **absent** in web application classpath.
+
+## Non-Servlet applications
+
+Standalone sniffy uber-jar also works with non-Servlet applications (Currently only fault tolerance testing and TCP delay are supported in this mode). Just add following parameter to your java application command line: `-javaagent:sniffy-<VERSION>.jar=5559`
+
+Here `5559` is the port where connectivity controls are available - just point your browser to 5559 port on your host (Say [http://localhost:5559](http://localhost:5559) ). Below is an example of connections discovered in IntelliJ Idea:
+
+![agent ui](/img/docs/3.1/agent-ui.png)
+
+Advanced syntax takes comma separated parameters: `-javaagent:sniffy-<VERSION>.jar=sniffyPort=5559,monitorNio=true`
+
+## Spring Boot Integration
+
+If you’re using Spring Boot, add the dependency below to your project in order to use Sniffy.
+
+Maven
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-web</artifactId>
+    <version>3.1.14</version>
+</dependency>
+```
+
+Gradle
+
+```groovy
+dependencies {
+    compile 'io.sniffy:sniffy-web:3.1.14'
+}
+```
+
+## Sniffy Test
+
+Sniffy artifacts for unit test frameworks are distributed via Maven Central repository and can be downloaded using your favorite package manager.
+
+### JUnit
+
+Maven
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-junit</artifactId>
+    <version>3.1.14</version>
+    <scope>test</scope>
+</dependency>
+```
+
+Gradle
+
+```groovy
+dependencies {
+    testCompile 'io.sniffy:sniffy-junit:3.1.14'
+}
+```
+
+### Spring Test
+
+Maven
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-spring-test</artifactId>
+    <version>3.1.14</version>
+    <scope>test</scope>
+</dependency>
+```
+
+Gradle
+
+```groovy
+dependencies {
+    testCompile 'io.sniffy:sniffy-spring-test:3.1.14'
+}
+```
+
+### TestNG
+
+Maven
+
+```xml
+<dependency>
+    <groupId>io.sniffy</groupId>
+    <artifactId>sniffy-testng</artifactId>
+    <version>3.1.14</version>
+    <scope>test</scope>
+</dependency>
+```
+
+Gradle
+
+```groovy
+dependencies {
+    testCompile 'io.sniffy:sniffy-testng:3.1.14'
+}
+```

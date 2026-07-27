@@ -29,6 +29,7 @@
     "build": "node scripts/build.mjs",
     "build:site": "npm run build --workspace @sniffy/site",
     "package:site-artifact": "node apps/site/scripts/package-artifact.mjs",
+    "verify:site-archive": "node apps/site/scripts/verify-archive.mjs",
     "verify:site-search-index": "node apps/site/scripts/verify-search-index.mjs",
     "verify:site-artifact": "node apps/site/scripts/verify-artifact.mjs",
     "check:generated": "node scripts/check-generated.mjs",
