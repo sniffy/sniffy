@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   loadSearchIndexes: vi.fn(),
   location: { hash: '', pathname: '/', search: '' },
   searchIndexes: vi.fn(),
+  tags: [] as string[],
 }));
 
 vi.mock('@docusaurus/router', () => ({
@@ -15,7 +16,7 @@ vi.mock('@docusaurus/router', () => ({
 }));
 
 vi.mock('@docusaurus/theme-common', () => ({
-  useContextualSearchFilters: () => ({ tags: [] }),
+  useContextualSearchFilters: () => ({ tags: mocks.tags }),
 }));
 
 vi.mock('@docusaurus/useDocusaurusContext', () => ({
@@ -80,6 +81,7 @@ describe('documentation search bar', () => {
     mocks.location.hash = '';
     mocks.location.pathname = '/';
     mocks.location.search = '';
+    mocks.tags = [];
 
     HTMLDialogElement.prototype.showModal = function showModal() {
       this.setAttribute('open', '');
@@ -134,6 +136,24 @@ describe('documentation search bar', () => {
     await waitFor(() => expect(trigger).toHaveFocus());
     expect(document.documentElement.dataset.sniffySearchOpen).toBeUndefined();
     expect(handleSearchBarToggle).toHaveBeenCalledWith(false);
+  });
+
+  it('loads and labels only the archived index in an archived documentation context', async () => {
+    mocks.tags = ['default', 'docs-default-3.1'];
+    mocks.loadSearchIndexes.mockResolvedValue([]);
+    render(<SearchBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search docs' }));
+    expect(
+      screen.getByRole('combobox', {
+        name: 'Search archived Sniffy 3.1 documentation',
+      }),
+    ).toBeVisible();
+    await waitFor(() =>
+      expect(mocks.loadSearchIndexes).toHaveBeenCalledWith('/', ['docs-default-3.1'], {
+        developmentIndex: undefined,
+      }),
+    );
   });
 
   it('fails closed when loading or querying the local index fails', async () => {
