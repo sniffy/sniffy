@@ -59,6 +59,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.revision || github.sha }}
 
+      - name: Install Git dependencies
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends --yes ca-certificates git
+          rm -rf /var/lib/apt/lists/*
+
       - name: Verify immutable reviewed revision
         id: revision
         env:
