@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "sourceTag": "v3.1.14",
+  "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+  "snippets": [
+    {
+      "id": "sniffy-core-src-test-java-io-sniffy-coreapiexampletest--testfunctionalapi",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java",
+      "region": "testFunctionalApi",
+      "sourceBlobSha": "0e8f88d7dec682979e5bf97c439b2036af6b857e",
+      "excerptPath": "_frozen-snippets/sniffy-core-src-test-java-io-sniffy-coreapiexampletest--testfunctionalapi.java",
+      "excerptSha256": "96dde52c6524ce881da8f756966cd9039cd841416ea5218a05ad37fa3ed8a6f5",
+      "language": "java",
+      "owningArchivedPages": ["testing/api.mdx"]
+    },
+    {
+      "id": "sniffy-core-src-test-java-io-sniffy-coreapiexampletest--testresourceapi",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java",
+      "region": "testResourceApi",
+      "sourceBlobSha": "0e8f88d7dec682979e5bf97c439b2036af6b857e",
+      "excerptPath": "_frozen-snippets/sniffy-core-src-test-java-io-sniffy-coreapiexampletest--testresourceapi.java",
+      "excerptSha256": "a149366c1b31b981e7297dc9a975f4512153c573e8b09e5592fa966f647ded80",
+      "language": "java",
+      "owningArchivedPages": ["testing/api.mdx"]
+    },
+    {
+      "id": "sniffy-core-src-test-java-io-sniffy-coreapiexampletest--testverifyapi",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-core/src/test/java/io/sniffy/CoreApiExampleTest.java",
+      "region": "testVerifyApi",
+      "sourceBlobSha": "0e8f88d7dec682979e5bf97c439b2036af6b857e",
+      "excerptPath": "_frozen-snippets/sniffy-core-src-test-java-io-sniffy-coreapiexampletest--testverifyapi.java",
+      "excerptSha256": "99d4b4c450c1ea0b0614a7f70775535f004f5fd91d9edaa52661820843ed9797",
+      "language": "java",
+      "owningArchivedPages": ["testing/api.mdx"]
+    },
+    {
+      "id": "sniffy-core-src-test-java-io-sniffy-socket-capturetrafficoverviewtest--capturetrafficoverview",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-core/src/test/java/io/sniffy/socket/CaptureTrafficOverviewTest.java",
+      "region": "CaptureTrafficOverview",
+      "sourceBlobSha": "a52dba680f310424e1929b3e6e545e0a30cc66f5",
+      "excerptPath": "_frozen-snippets/sniffy-core-src-test-java-io-sniffy-socket-capturetrafficoverviewtest--capturetrafficoverview.java",
+      "excerptSha256": "3d09009b2be5aa31e86160f43005e337f91c57cebbb962e76a96032e8590e991",
+      "language": "java",
+      "owningArchivedPages": ["index.mdx", "network/traffic-capture.mdx"]
+    },
+    {
+      "id": "sniffy-integration-tests-sniffy-integration-tests-spock-src-test-groovy-io-sniffy-test-spock-usage-spockusagespec--whole-file",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-integration-tests/sniffy-integration-tests-spock/src/test/groovy/io/sniffy/test/spock/usage/SpockUsageSpec.groovy",
+      "region": "whole-file",
+      "sourceBlobSha": "1cfe488d08d5838266948fbd55703a1dbb42551b",
+      "excerptPath": "_frozen-snippets/sniffy-integration-tests-sniffy-integration-tests-spock-src-test-groovy-io-sniffy-test-spock-usage-spockusagespec--whole-file.groovy",
+      "excerptSha256": "c94c589327a3bfee23833a086a88485f28e48eeaa82e6b37cc6e6ae3028c71a4",
+      "language": "groovy",
+      "owningArchivedPages": ["testing/spock.mdx"]
+    },
+    {
+      "id": "sniffy-src-jboss-module-module--whole-file",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy/src/jboss-module/module.xml",
+      "region": "whole-file",
+      "sourceBlobSha": "3522ae9cd70793767905e286d887ccd3d7c60b74",
+      "excerptPath": "_frozen-snippets/sniffy-src-jboss-module-module--whole-file.xml",
+      "excerptSha256": "987e6740c9d26d81128186c973fad3199737ec7fc43caebb4258718f4af14aee",
+      "language": "xml",
+      "owningArchivedPages": ["setup/containers.mdx"]
+    },
+    {
+      "id": "sniffy-test-sniffy-junit-src-test-java-io-sniffy-test-junit-usage-disableconnectivityoverviewtest--disablesocketsoverview",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit/usage/DisableConnectivityOverviewTest.java",
+      "region": "DisableSocketsOverview",
+      "sourceBlobSha": "69e86ebd301a567c1cd656d3218271f0c677fd8e",
+      "excerptPath": "_frozen-snippets/sniffy-test-sniffy-junit-src-test-java-io-sniffy-test-junit-usage-disableconnectivityoverviewtest--disablesocketsoverview.java",
+      "excerptSha256": "ae8040ddc235e26a893693f9c28dcea426f21a312ef06c99480ec60861392533",
+      "language": "java",
+      "owningArchivedPages": ["index.mdx"]
+    },
+    {
+      "id": "sniffy-test-sniffy-junit-src-test-java-io-sniffy-test-junit-usage-junitoverviewtest--junitoverview",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit/usage/JUnitOverviewTest.java",
+      "region": "JUnitOverview",
+      "sourceBlobSha": "2c3220041cb37ead17127165695cb869eb10ea7e",
+      "excerptPath": "_frozen-snippets/sniffy-test-sniffy-junit-src-test-java-io-sniffy-test-junit-usage-junitoverviewtest--junitoverview.java",
+      "excerptSha256": "e0dc30b8608dafb8db071c65dedf9fb73ab9dcf2366ec10fa9a28507bb82f330",
+      "language": "java",
+      "owningArchivedPages": ["index.mdx"]
+    },
+    {
+      "id": "sniffy-test-sniffy-junit-src-test-java-io-sniffy-test-junit-usage-junitusagetest--whole-file",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-test/sniffy-junit/src/test/java/io/sniffy/test/junit/usage/JUnitUsageTest.java",
+      "region": "whole-file",
+      "sourceBlobSha": "50e5f3da84fccae6e8ea0f152206de626744f669",
+      "excerptPath": "_frozen-snippets/sniffy-test-sniffy-junit-src-test-java-io-sniffy-test-junit-usage-junitusagetest--whole-file.java",
+      "excerptSha256": "cbfb5a62872c0688be2b52a13e7d57b0d20eb7744f2ef49f090e2d0675534134",
+      "language": "java",
+      "owningArchivedPages": ["testing/junit.mdx"]
+    },
+    {
+      "id": "sniffy-test-sniffy-kotest-src-test-kotlin-io-sniffy-test-kotest-usage-kotestusagetests--whole-file",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-test/sniffy-kotest/src/test/kotlin/io/sniffy/test/kotest/usage/KotestUsageTests.kt",
+      "region": "whole-file",
+      "sourceBlobSha": "de5fe36747164a194c23fda97306f5e292827c78",
+      "excerptPath": "_frozen-snippets/sniffy-test-sniffy-kotest-src-test-kotlin-io-sniffy-test-kotest-usage-kotestusagetests--whole-file.kt",
+      "excerptSha256": "893e6e2d817962af51e93a26036089b470288d7fd93e79f81b8f38c5f9cb5212",
+      "language": "kotlin",
+      "owningArchivedPages": ["testing/kotest.mdx"]
+    },
+    {
+      "id": "sniffy-test-sniffy-spring-test-src-test-java-io-sniffy-test-spring-usage-springsharedconnectionusagetest--whole-file",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-test/sniffy-spring-test/src/test/java/io/sniffy/test/spring/usage/SpringSharedConnectionUsageTest.java",
+      "region": "whole-file",
+      "sourceBlobSha": "e729be6fb8095717a52e418c57864781f2c1e666",
+      "excerptPath": "_frozen-snippets/sniffy-test-sniffy-spring-test-src-test-java-io-sniffy-test-spring-usage-springsharedconnectionusagetest--whole-file.java",
+      "excerptSha256": "33da546b6a11571fa66b97d699907d5c18beeb85d000d4c874abdc537541fef7",
+      "language": "java",
+      "owningArchivedPages": ["testing/spring.mdx"]
+    },
+    {
+      "id": "sniffy-test-sniffy-spring-test-src-test-java-io-sniffy-test-spring-usage-springusagetest--whole-file",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-test/sniffy-spring-test/src/test/java/io/sniffy/test/spring/usage/SpringUsageTest.java",
+      "region": "whole-file",
+      "sourceBlobSha": "8763d890e8669f376d37ca6972545490536979b5",
+      "excerptPath": "_frozen-snippets/sniffy-test-sniffy-spring-test-src-test-java-io-sniffy-test-spring-usage-springusagetest--whole-file.java",
+      "excerptSha256": "936fe4a444f4b78271c6e4bc860cc5749aeade34c22346a628d0ed590190d34c",
+      "language": "java",
+      "owningArchivedPages": ["testing/spring.mdx"]
+    },
+    {
+      "id": "sniffy-test-sniffy-test-common-src-test-java-io-sniffy-test-sharedconnectiondatasourcetest--sharedconnectiondatasourceusage",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-test/sniffy-test-common/src/test/java/io/sniffy/test/SharedConnectionDataSourceTest.java",
+      "region": "sharedConnectionDataSourceUsage",
+      "sourceBlobSha": "caf3bde0588047eff8a0ca72c1fa67a574e8b070",
+      "excerptPath": "_frozen-snippets/sniffy-test-sniffy-test-common-src-test-java-io-sniffy-test-sharedconnectiondatasourcetest--sharedconnectiondatasourceusage.java",
+      "excerptSha256": "846a8741299b5f542bf1db733d2811b1254dbbb16f17ffb7ee48b1ab3d3370a5",
+      "language": "java",
+      "owningArchivedPages": ["testing/shared-connection.mdx"]
+    },
+    {
+      "id": "sniffy-test-sniffy-testng-src-test-java-io-sniffy-test-testng-usage-usagetestng--whole-file",
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-test/sniffy-testng/src/test/java/io/sniffy/test/testng/usage/UsageTestNg.java",
+      "region": "whole-file",
+      "sourceBlobSha": "e900c436c7d35496bc4f56efe2c80549d4439460",
+      "excerptPath": "_frozen-snippets/sniffy-test-sniffy-testng-src-test-java-io-sniffy-test-testng-usage-usagetestng--whole-file.java",
+      "excerptSha256": "b8f5c0cff7c54cbd2296a2fbcf036909eb346b3eed2cf1ddcf1fb6631cfe0d5d",
+      "language": "java",
+      "owningArchivedPages": ["testing/testng.mdx"]
+    }
+  ],
+  "assets": [
+    {
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-documentation/src/main/asciidoc/images/agent-ui.png",
+      "sourceBlobSha": "ae119dc82e6bcf06b85f805e5fd2d88af5262d9f",
+      "committedPath": "/img/docs/3.1/agent-ui.png",
+      "committedSha256": "9003b909e568218cd4245d3e35ca597c22d0a9f6b9960a9b68f6db4541eb99c2",
+      "owningArchivedPages": ["installation/index.mdx"]
+    },
+    {
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-documentation/src/main/asciidoc/images/demo.gif",
+      "sourceBlobSha": "8b960705cc8ccf142e728c606e090a8cb6b44ccb",
+      "committedPath": "/img/docs/3.1/demo.gif",
+      "committedSha256": "bcd6a7dd67f49f01e3a4bbd516d56465be43a08caebd8658a16bbe15d2f22861",
+      "owningArchivedPages": ["index.mdx"]
+    },
+    {
+      "sourceTag": "v3.1.14",
+      "sourceCommit": "55f744f6a32dd68ee8d5d31c54796e9b5d75aad1",
+      "sourcePath": "sniffy-documentation/src/main/asciidoc/images/network-connections.png",
+      "sourceBlobSha": "8211cb221d7cd503d686ee85b6718cbee9bc455e",
+      "committedPath": "/img/docs/3.1/network-connections.png",
+      "committedSha256": "7b331eb9699a5af332399691cf2211751446ec1e401763ad0337c777bc412e98",
+      "owningArchivedPages": ["index.mdx"]
+    }
+  ]
+}

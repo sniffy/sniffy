@@ -1,0 +1,45 @@
+---
+sidebar_label: Configuration
+---
+
+import ArchiveBanner from '@site/src/components/ArchiveBanner';
+
+<ArchiveBanner />
+
+# Configuration
+
+Sniffy can be configured globally using Java system properties or environment variables. This configuration can be overriden in `web.xml` and/or `@EnableSniffy` annotation - see appropriate sections of documentation.
+
+> **Archived warning:** sniffy configuration is parsed only once and any changes made to system properties or environment variables in run-time won’t have any effect on `Sniffy`
+
+| System Property                          | Environment Variable                     | Sniffy Agent parameter | Description                                                                                                  | Default Value                                                 |
+| ---------------------------------------- | ---------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| \-Dio.sniffy.logLevel                    | IO_SNIFFY_LOG_LEVEL                      | N/A                    | Sniffy logging level; allowed values are: TRACE, DEBUG, INFO, ERROR, OFF                                     | info                                                          |
+| \-Dio.sniffy.monitorJdbc                 | IO_SNIFFY_MONITOR_JDBC                   | N/A                    | Monitor JDBC                                                                                                 | true                                                          |
+| \-Dio.sniffy.monitorSocket               | IO_SNIFFY_MONITOR_SOCKET                 | N/A                    | Monitor socket connections                                                                                   | false (enabled implicitly by Sniffy javaagent or SniffyFiler) |
+| \-Dio.sniffy.interceptProxyConnections   | IO_SNIFFY_INTERCEPT_PROXY_CONNECTIONS    | N/A                    | Analyze potential HTTP proxy requests and track connections done via proxies                                 | true                                                          |
+| \-Dio.sniffy.monitorNio                  | IO_SNIFFY_MONITOR_NIO                    | monitorNio             | Monitor NIO socket connections                                                                               | false (enabled implicitly by Sniffy javaagent or SniffyFiler) |
+| \-Dio.sniffy.topSqlCapacity              | IO_SNIFFY_TOP_SQL_CAPACITY               | N/A                    | Maximum number of top SQL queries to store                                                                   | 1024                                                          |
+| \-Dio.sniffy.packetMergeThreshold        | IO_SNIFFY_PACKET_MERGE_THRESHOLD         | N/A                    | Threshold for combining similar network packets when capturing traffic                                       | 500                                                           |
+| \-Dio.sniffy.filterEnabled               | IO_SNIFFY_FILTER_ENABLED                 | N/A                    | Enable servlet filter                                                                                        | true                                                          |
+| \-Dio.sniffy.excludePattern              | IO_SNIFFY_EXCLUDE_PATTERN                | N/A                    | Regexp for excluding sniffy completely from certain servlet requests                                         |                                                               |
+| \-Dio.sniffy.injectHtml                  | IO_SNIFFY_INJECT_HTML                    | N/A                    | Inject Sniffy HTML to result HTML                                                                            | true                                                          |
+| \-Dio.sniffy.injectHtmlExcludePattern    | IO_SNIFFY_INJECT_HTML_EXCLUDE_PATTERN    | N/A                    | Regexp for excluding sniffy widget from certain servlet requests                                             |                                                               |
+| N/A                                      | N/A                                      | sniffyPort             | HTTP port Sniffy Agent is listening on                                                                       | 5555                                                          |
+| \-Dio.sniffy.socketCaptureEnabled        | IO_SNIFFY_SOCKET_CAPTURE_ENABLED         | N/A                    | Enable collecting network stats (bytes sent/received, time spent) if monitorSocket or monitorNio are enabled | true                                                          |
+| \-Dio.sniffy.bufferIncomingTraffic       | IO_SNIFFY_BUFFER_INCOMING_TRAFFIC        | N/A                    | Buffer incoming network packets                                                                              | false                                                         |
+| \-Dio.sniffy.incomingTrafficBufferSize   | IO_SNIFFY_INCOMING_TRAFFIC_BUFFER_SIZE   | N/A                    | Size of network buffer for incoming network packets; used if bufferIncomingTraffic is set to true            | 51200                                                         |
+| \-Dio.sniffy.decryptTls                  | IO_SNIFFY_DECRYPT_TLS                    | N/A                    | Enable decrypting captured TLS traffic                                                                       | false                                                         |
+| \-Dio.sniffy.socketFaultInjectionEnabled | IO_SNIFFY_SOCKET_FAULT_INJECTION_ENABLED | N/A                    | Enable injecting network faults if monitorSocket or monitorNio are enabled                                   | true                                                          |
+| \-Dio.sniffy.useSecureCookie             | IO_SNIFFY_USE_SECURE_COOKIE              | N/A                    | Mark cookies set by Sniffy as secure                                                                         | true                                                          |
+| \-Dio.sniffy.flushResponse               | IO_SNIFFY_FLUSH_RESPONSE                 | N/A                    | Force flush servlet response if possible                                                                     | true                                                          |
+
+Sniffy filter can also be enabled or disabled using HTTP query parameters and/or HTTP headers.
+
+If Sniffy filter is currently disabled you can enable it by adding `?sniffy=true` query parameter to your request - it will enable the sniffy for current request and will also set a `sniffy` cookie which will enable sniffy on subsequent requests.
+
+For stateless clients who don’t maintain the cookie jar it might be more convenient to enable/disable Sniffy using `Sniffy-Enabled: true` / `Sniffy-Enabled: false` headers. Unlike the query parameter the HTTP header will only affect a single request.
+
+A similar header `Sniffy-Inject-Html-Enabled` can be used for hiding or showing the Sniffy Widget in the browser. Unlike `Sniffy-Enabled` It doesn’t come with a query parameter alternative.
+
+Convenient [Sniffy Chrome Extension](https://chrome.google.com/webstore/detail/sniffy-chrome-extension/hmiejljajpgikfbajggcolnblbhfedjp?hl=en) can add these headers by simply clicking on an icon in your Google Chrome browser.

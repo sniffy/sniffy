@@ -356,6 +356,24 @@ main {
   box-shadow: none;
 }
 
+.sniffy-archive-banner {
+  margin-bottom: var(--sniffy-space-6);
+  padding: var(--sniffy-space-4) var(--sniffy-space-5);
+  border: 1px solid color-mix(in srgb, var(--sniffy-warning), var(--sniffy-border) 48%);
+  border-left: 4px solid var(--sniffy-warning);
+  border-radius: var(--sniffy-radius);
+  color: var(--sniffy-foreground);
+  background: color-mix(in srgb, var(--sniffy-warning), var(--sniffy-surface) 90%);
+}
+
+.sniffy-archive-banner strong {
+  color: var(--sniffy-warning);
+}
+
+.sniffy-archive-banner a {
+  font-weight: 700;
+}
+
 .pagination-nav {
   gap: var(--sniffy-space-4);
   margin-top: 3rem;

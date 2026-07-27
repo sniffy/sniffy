@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "docusaurus start",
-    "build": "docusaurus build",
-    "serve": "docusaurus serve",
+    "build": "node scripts/verify-archive.mjs && docusaurus build",
+    "serve": "node scripts/preview.mjs --root build",
     "test": "playwright test --config playwright.config.ts"
   },
   "dependencies": {

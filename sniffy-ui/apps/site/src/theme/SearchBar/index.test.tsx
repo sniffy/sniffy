@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import SearchBar from './index';
+import SearchBar, { selectDocumentationSearchTags } from './index';
 
 const mocks = vi.hoisted(() => ({
   historyPush: vi.fn(),
@@ -63,6 +63,16 @@ const results = [
 ];
 
 describe('documentation search bar', () => {
+  it('keeps current and archived search indexes isolated', () => {
+    expect(selectDocumentationSearchTags([])).toEqual(['docs-default-current']);
+    expect(selectDocumentationSearchTags(['default', 'docs-default-current'])).toEqual([
+      'docs-default-current',
+    ]);
+    expect(selectDocumentationSearchTags(['default', 'docs-default-3.1'])).toEqual([
+      'docs-default-3.1',
+    ]);
+  });
+
   beforeEach(() => {
     mocks.historyPush.mockReset();
     mocks.loadSearchIndexes.mockReset();

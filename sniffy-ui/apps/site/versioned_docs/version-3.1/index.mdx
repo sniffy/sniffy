@@ -1,0 +1,119 @@
+---
+sidebar_label: Sniffy 3.1 documentation
+---
+
+import ArchiveBanner from '@site/src/components/ArchiveBanner';
+
+<ArchiveBanner />
+
+# Sniffy 3.1 documentation
+
+## Overview
+
+Sniffy is a Java profiler which shows the results directly in your browser. It also brings profiling to your unit (or rather component) tests and allows you to disable certain outgoing connections for fault-tolerance testing. It can even record network traffic sent via Java plain old Socket API as well as via NIO API.
+
+### In-browser profiler
+
+![demo](/img/docs/3.1/demo.gif)
+
+### Asserting number of queries in unit tests
+
+<!-- archived-snippet:sniffy-test-sniffy-junit-src-test-java-io-sniffy-test-junit-usage-junitoverviewtest--junitoverview -->
+
+```java
+    @Rule public SniffyRule sniffyRule = new SniffyRule();
+
+    @Rule public ExpectedException thrown = ExpectedException.none();
+
+    @Test
+    @SqlExpectation(count = @Count(1))
+    public void testExpectedOneQueryGotOne() throws SQLException {
+        DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa").createStatement().execute("SELECT 1 FROM DUAL"); // <4>
+    }
+
+    @Test
+    @SqlExpectation(count = @Count(max = 1), query = SqlStatement.SELECT)
+    public void testExpectedNotMoreThanOneSelectGotTwo() throws SQLException {
+        try (Statement statement = DriverManager.getConnection("sniffy:jdbc:h2:mem:", "sa", "sa").createStatement()) {
+            statement.execute("SELECT 1 FROM DUAL");
+            statement.execute("SELECT 2 FROM DUAL");
+        }
+        thrown.expect(WrongNumberOfQueriesError.class);
+    }
+```
+
+### Testing bad connectivity
+
+Discover all outgoing network connections from your server and disable them right from your browser:
+
+![network connections](/img/docs/3.1/network-connections.png)
+
+Sniffy will throw a `java.net.ConnectException` when your application tries to connect to address disallowed by Sniffy. It’s also possible to specify a fixed delay for all sent and received TCP packets.
+
+### Simulating no connectivity in unit tests
+
+<!-- archived-snippet:sniffy-test-sniffy-junit-src-test-java-io-sniffy-test-junit-usage-disableconnectivityoverviewtest--disablesocketsoverview -->
+
+```java
+    @Rule public SniffyRule sniffyRule = new SniffyRule();
+
+    @Test
+    @DisableSockets
+    public void testDisableSockets() throws IOException {
+        try {
+            new Socket("google.com", 22);
+            fail("Sniffy should have thrown ConnectException");
+        } catch (ConnectException e) {
+            assertNotNull(e);
+        }
+    }
+```
+
+### Recording network traffic
+
+<!-- archived-snippet:sniffy-core-src-test-java-io-sniffy-socket-capturetrafficoverviewtest--capturetrafficoverview -->
+
+```java
+    @Test
+    public void testCaptureTraffic() throws Exception {
+
+        try (Spy<?> spy = Sniffy.spy(
+                SpyConfiguration.builder().captureNetworkTraffic(true).build()) // <1>
+        ) {
+
+            performSocketOperation(); // <2>
+
+            Map<SocketMetaData, List<NetworkPacket>> networkTraffic = spy.getNetworkTraffic( // <3>
+                    Threads.ANY, // <4>
+                    AddressMatchers.anyAddressMatcher(), // <5>
+                    GroupingOptions.builder().
+                            groupByThread(false). // <6>
+                            groupByStackTrace(false). // <7>
+                            groupByConnection(false). // <8>
+                            build()
+            );
+
+            assertEquals(1, networkTraffic.size());
+
+            for (Map.Entry<SocketMetaData, List<NetworkPacket>> entry : networkTraffic.entrySet()) {
+
+                SocketMetaData socketMetaData = entry.getKey(); // <9>
+
+                Protocol protocol = socketMetaData.getProtocol(); // say TCP
+                String hostName = socketMetaData.getAddress().getHostName(); // say "hostname.acme.com"
+                int port = socketMetaData.getAddress().getPort(); // say 443
+
+                List<NetworkPacket> networkPackets = entry.getValue(); // <10>
+
+                assertArrayEquals(REQUEST, networkPackets.get(0).getBytes());
+                assertTrue(networkPackets.get(0).isSent());
+
+                assertArrayEquals(RESPONSE, networkPackets.get(1).getBytes());
+                assertFalse(networkPackets.get(1).isSent());
+
+            }
+
+        }
+
+    }
+```
