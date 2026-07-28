@@ -321,6 +321,15 @@ describe('website deployment workflow contract', () => {
     expect(workflow).toContain('git merge-base --is-ancestor "$revision" origin/develop');
   });
 
+  it('installs Git from an existing directory before checking out the revision', () => {
+    const install = workflow.indexOf('- name: Install Git dependencies');
+    const checkout = workflow.indexOf('- name: Check out deployment revision');
+
+    expect(install).toBeGreaterThan(-1);
+    expect(checkout).toBeGreaterThan(install);
+    expect(workflow.slice(install, checkout)).toContain('working-directory: /');
+  });
+
   it('uses the protected Pages environment, least privilege, and official actions', () => {
     expect(workflow).toContain('permissions: {}');
     expect(workflow).toMatch(
