@@ -1,78 +1,118 @@
-# Local Codex executor
+# Local Codex executors
 
-Use the app-native Local Codex worker when work benefits from a persistent local environment, existing-branch continuity,
-Docker, browsers, services, OS-specific debugging, long builds, or mobile Remote visibility. Shared engineering and
-supervision policy lives in `AGENTS.md` and `docs/ai-delivery/`; this document describes the executor topology.
+Local Codex has two supported architectural shapes:
 
-## Topology
+1. **app-native Local Codex** for app-owned conversations, worktrees, automations, and optional mobile Remote visibility;
+2. **headless Local Codex CLI** for unattended Linux scheduling, persistent caches/services, and scalable worker processes.
+
+Both follow `AGENTS.md`, the shared lifecycle, event-loop claim protocol, verification contract, and no-merge boundary.
+
+## Choose the shape
+
+Use app-native when a durable Codex conversation, interactive steering, app-managed worktree, or Remote visibility adds real
+value. Use headless CLI when the important properties are unattended reliability, systemd/cron cadence, Docker/services,
+persistent dependencies, several isolated workers, and machine-readable logs.
+
+Remote control from mobile is optional. It is not required for the generic local-worker design.
+
+## App-native topology
 
 ```text
-persistent dispatcher chat
+persistent dispatcher conversation
   -> empty queue: NO_CHANGE, no task/chat/worktree
   -> eligible issue: one one-time standalone worker task
-       -> one dedicated issue chat
+       -> one dedicated issue conversation
        -> one isolated app-managed worktree
-       -> one in-chat follow-up schedule: 15 min, 15 min, then hourly
+       -> worker publishes phase evidence and handoff
 ```
 
 The native ChatGPT/Codex app runs on the disposable Windows VM. Its coding agent, terminal, repository, GitHub CLI, Java,
-Maven, Node, Docker, and tests run in WSL2. The full Hyper-V, Windows, WSL, Docker, credential, and Remote setup remains in
+Maven, Node, Docker, and tests run in WSL2. The Hyper-V/Windows/WSL/Docker runbook remains in
 [`../../local-codex-worker.md`](../../local-codex-worker.md).
 
-## Dispatcher
+Codex automations may return to the same conversation; local automations require the computer awake and the app running.
+See [Codex automations](https://openai.com/academy/codex-automations/).
 
-The dispatcher is a coordinator, not an implementer. It:
+Before enabling app dispatch, smoke-test:
 
-- reads the Project queue and selects at most one eligible `Local Codex` issue;
-- prefers an explicitly re-queued continuation over fresh work;
-- verifies Definition of Ready, exact executor field, existing branch/PR ownership, and no active duplicate;
-- selects the routed model/reasoning;
-- records the claim and confirms one app-owned child task exists;
-- rolls back the claim when child creation fails;
-- creates no source branch, worktree, chat, or GitHub mutation for an empty queue.
+- an empty tick creates no new conversation or worktree;
+- a claimed item creates exactly one standalone worker;
+- the worker uses the expected project/worktree;
+- failed child creation releases the claim;
+- repeated automation returns to the intended persistent dispatcher.
 
-The canonical prompt remains `.codex/local/scheduled-task-prompt.md`. Its filename is intentionally preserved because an
-installed Scheduled task may reference it.
+The canonical compatibility paths remain `.codex/local/scheduled-task-prompt.md` and
+`.codex/local/worker-task-prompt.md`. Do not assume nested child-task creation survives a product update without retesting.
 
-## Worker
+## Headless Linux topology
 
-The one-issue worker:
+```text
+systemd timer or cron
+  -> flock / host-local dispatcher lock
+  -> load one or more project profiles
+  -> query Phase + Status + Executor
+  -> GitHub best-effort claim
+  -> isolated git worktree
+  -> codex exec with rendered phase prompt
+  -> tests, publication, evidence, and next-phase handoff
+```
 
-- uses one dedicated chat and isolated worktree;
-- creates a fresh branch from current `origin/develop` or continues the exact existing PR branch;
-- never resets, rebases, force-pushes, or replaces a continuation branch/PR;
-- implements, tests, inspects, commits, pushes, and verifies real GitHub publication;
-- keeps the PR draft only while implementation or locally applicable proof is incomplete;
-- creates one in-chat follow-up task and supervises the PR at the required cadence;
-- pauses follow-up when complete or blocked;
-- never merges or enables auto-merge.
+The Codex CLI can read, modify, and run local code, and `codex exec` is intended for shell workflows. See:
 
-The canonical template remains `.codex/local/worker-task-prompt.md` for compatibility with the dispatcher.
+- [OpenAI Codex CLI – Getting Started](https://help.openai.com/en/articles/11096431)
+- [Codex is now generally available](https://openai.com/index/codex-now-generally-available/)
 
-## Route to Local Codex when
+A five- or fifteen-minute timer is straightforward on Linux and avoids the hourly ChatGPT Scheduled Task limit. `flock`
+prevents overlapping dispatcher ticks on one machine; the GitHub claim protocol prevents ordinary cross-machine/provider
+duplicates.
 
-- a published PR needs precise continuation;
-- persistent Maven/npm/Docker/browser caches materially improve iteration;
-- local services, special networking, hardware, OS behavior, or privileged development tools are required;
-- browser inspection, screenshots, or interactive debugging are central;
-- Cloud task windows or repeated cold starts are causing delivery friction;
-- a first-of-kind architecture/test pattern needs sustained local inspection.
+Each worker owns:
 
-Do not route merely because a task is large in lines. Count risk and proof axes. Local execution does not authorize unresolved
-product decisions or bespoke infrastructure.
+- one claim token and lifecycle generation;
+- one isolated worktree;
+- one branch and intended PR;
+- one rendered prompt for the current phase;
+- one structured log/evidence directory;
+- a bounded process timeout and cleanup path.
 
-## Manual and CLI fallback
+A host may run several workers only when capacity, memory, disk, Maven/npm/Docker contention, and repository ownership are
+explicitly configured. Never let two workers own the same task/branch.
 
-Before enabling the recurring dispatcher, smoke-test that the installed app can create one one-time standalone child task
-from an in-chat scheduled run. Prove an empty queue creates no clutter and failed child creation rolls back the claim.
+## Dispatcher contract
 
-When nested app-owned task creation is unavailable, pause the dispatcher and create the one-time worker manually in the app.
-`.codex/local/run-issue.sh` remains an unattended CLI fallback for a disposable isolated environment. Do not launch nested
-`codex exec`, shell UI automation, Python observers, or app-server integrations from the app-native dispatcher without a
-separately approved architecture.
+Both adapters use [`../event-loop.md`](../event-loop.md). The dispatcher:
 
-## Identity and security
+- reads `Status = Ready` items routed to its executor type;
+- respects directed Assignee or empty pool ownership;
+- checks phase, project profile, access, capacity, branch/PR, and existing claims;
+- claims on a best-effort atomic basis before creating a worker;
+- records the concrete conversation/task or process/worktree reference;
+- releases to `Ready` or sets an exact `Blocked` reason when spawn fails;
+- creates no source mutation for an empty queue.
 
-Use a dedicated low-value VM and GitHub identity. The Windows VM is the security boundary; Docker-group or full agent access
-inside it is effectively privileged and acceptable only because the VM contains no host files or unrelated credentials.
-GitHub rulesets remain the final write boundary. Formal review must use an identity independent from the PR author.
+## Worker contract
+
+A Local Codex worker performs only the routed phase:
+
+- Planning is unusual and should normally remain ChatGPT/human-owned;
+- Implementation changes code, runs implementer-owned tests/browser checks, inspects the diff, commits, pushes, and verifies
+  exact publication;
+- Verification runs outcome-centric system/integration/browser proof when Local Codex is the selected Verifier;
+- Review is performed only when the configured reviewer identity is independent and the task explicitly routes it there.
+
+For fresh work, create the branch from current `origin/develop`. For continuation, use the exact existing PR branch and never
+reset, rebase, force-push, replace the PR, or discard unrelated work. Keep PRs draft only while implementation or locally
+available proof is incomplete.
+
+## Environment and security
+
+Host policy defines filesystem, network, credentials, Docker, services, browsers, and sandbox/approval mode. Treat Docker
+group or full filesystem/network access as privileged. Use a dedicated low-value VM or host account with repository-scoped
+GitHub credentials and no unrelated personal/employer data.
+
+Codex CLI execution still requires network access for model calls even when the command sandbox restricts task-process
+network. External integration tests and package downloads need separately configured host/sandbox policy. Record the actual
+capability, not an assumed product default.
+
+GitHub rulesets remain the final write boundary. Formal review must use an identity independent from the PR author. No local
+worker merges or enables auto-merge without Dmitry's explicit instruction.
