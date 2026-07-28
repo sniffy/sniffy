@@ -18,13 +18,15 @@ Do not rely on the generated chat title as the only identifier.
 
 ## Durable-state rule
 
-Before a tick ends, every meaningful result must be written to GitHub: claim token, lifecycle handoff, issue/PR comment, exact
-SHA, evidence, blocker, or `NO_CHANGE`. Never keep the only copy of a decision, diagnosis, or worker reference in a tick chat.
+Before a tick ends, every meaningful delivery result must be written to GitHub: claim token, lifecycle handoff, issue/PR
+comment, exact SHA, evidence, blocker, or external dispatch. Never keep the only copy of a decision, diagnosis, or worker
+reference in a tick chat. A `NO_CHANGE` tick records its compact run header in the disposable chat and makes no GitHub
+mutation.
 
 A chat is eligible for archive only when:
 
 - no active claim or lease points to it;
-- the next Phase/Status/Executor/Assignee is durably recorded;
+- the next Phase/Status/Executor/Assignee is durably recorded when work was claimed;
 - any PR review, evidence, blocker, or external dispatch is visible in GitHub;
 - the tick is complete rather than waiting for CI or another result inside that chat.
 
