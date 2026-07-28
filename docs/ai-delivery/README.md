@@ -75,7 +75,7 @@ why rules exist but do not override current policy.
 ## Documentation map
 
 - [`lifecycle.md`](lifecycle.md) — phases, three statuses, planned routing fields, directed/pool Ready, and corrections.
-- [`event-loop.md`](event-loop.md) — reusable clock/dispatcher/claim/spawn design, ChatGPT limits, and headless Codex CLI.
+- [`event-loop.md`](event-loop.md) — reusable clock/dispatcher/claim design, stateless ChatGPT ticks, and headless Codex CLI.
 - [`routing.md`](routing.md) — choose Implementer, Verifier, current Executor, model, and human checkpoints.
 - [`supervision.md`](supervision.md) — dispatch proof, monitoring, continuity, review convergence, and merge boundaries.
 - [`verification.md`](verification.md) — implementer, reviewer, verifier, CI, browser/system proof, and capability routing.
@@ -85,6 +85,10 @@ why rules exist but do not override current policy.
 - [`executors/ide-agent.md`](executors/ide-agent.md) — generic VS Code/IntelliJ agent-host guidance.
 - [`../chatgpt-site-preview.md`](../chatgpt-site-preview.md) — exact-head website artifact and Chromium verification.
 - [`../retrospectives/`](../retrospectives/README.md) — historical incidents and durable lessons incorporated here.
+
+The current ChatGPT event-loop adapter uses four hourly Scheduled Tasks offset by 15 minutes. Every occurrence starts a new,
+stateless chat and performs at most one phase turn directly; Scheduled Task executions cannot create child Scheduled Tasks.
+All durable context therefore lives in GitHub and repository-owned Markdown, not in ChatGPT Project memory or prior tick chats.
 
 ## Provider-specific files
 
