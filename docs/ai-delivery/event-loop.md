@@ -55,25 +55,50 @@ chat, remembers earlier runs, and returns `NO_CHANGE` without creating another c
 Do not rely on ChatGPT Project files for dispatcher configuration. Store durable task context in GitHub issues, repository
 files, and project profiles that the run can actually read.
 
-### Global ChatGPT dispatcher across projects
+### Observed ChatGPT Project scoping
 
-One logical ring may scan several GitHub repositories or Projects because the queue state is external. Project-specific
-filters live in profiles loaded by the dispatcher.
+A manual product test on 2026-07-28 attempted to create a Scheduled Task for the `Kerb4j` ChatGPT Project from a chat outside
+that Project. The available scheduler operation exposed no `project_id` or equivalent destination parameter, so it created a
+global task instead. Treat this as an observed capability of the current product surface, not as a permanent API guarantee.
+
+Consequences:
+
+- a dispatcher cannot select an arbitrary destination ChatGPT Project when creating a task;
+- all durable repository/task context must live in GitHub issues, comments, pull requests, and repository-owned Markdown;
+- ChatGPT Project descriptions, files, and implicit memory are convenience context only and must not be required by a worker;
+- every scheduled prompt must be self-contained enough to locate the repository profile and authoritative issue.
+
+Use one dedicated fileless ChatGPT Project, such as `AI Delivery Scheduler`, as an organizational folder for the four
+persistent dispatcher chats. The Project groups scheduler history; it is not the source of configuration or task context.
+Keep its Project instructions minimal, and repeat critical repository/profile locations in every scheduled dispatcher prompt.
+
+Creating a child task in the **same current Project** remains a separate capability that must be smoke-tested. From a scheduled
+run inside the scheduler Project, create one disposable one-time child task and verify that it appears as a separate chat in
+that same Project. If the child becomes global, reuses the dispatcher chat, or cannot be created, set ChatGPT worker spawning
+to `unsupported`; keep ChatGPT responsible for polling, Planning, Review, Verification from available artifacts, and
+notifications, while routing standalone Implementation to Codex Cloud, Local Codex CLI/app, or a manually created ChatGPT
+worker.
+
+### Global ChatGPT dispatcher across repositories
+
+One logical ring may scan several GitHub repositories or Projects because the queue state is external. Repository-specific
+filters live in profiles loaded by the dispatcher. This does not require or imply one ChatGPT Project per repository.
 
 Do **not** assume a Scheduled Task can create a new worker chat inside an arbitrary ChatGPT Project, select that Project, or
-inherit its files. OpenAI documentation does not guarantee that composition. Treat worker spawning as a feature-tested
-adapter capability:
+inherit its files. OpenAI documentation does not guarantee that composition, and the cross-Project test above failed. Treat
+worker spawning as a feature-tested adapter capability:
 
 ```text
-spawnWorker(task, targetProfile) -> supported | unsupported | failed
+spawnWorker(task, currentSchedulerProject) -> supported | unsupported | failed
 ```
 
 A possible implementation is to ask the dispatcher to create a one-time standalone task several minutes later, but this
-must pass a smoke test in the installed product version. The test must prove that the child does not reuse the dispatcher
-chat, receives all required repository/issue context, and leaves no claimed task without a worker. On unsupported or failed
-spawn, release the claim to `Ready` or mark an exact capability blocker; never leave `In progress` with no worker reference.
+must pass the same-Project smoke test in the installed product version. The test must prove that the child does not reuse the
+dispatcher chat, receives all required repository/issue context, and leaves no claimed task without a worker. On unsupported
+or failed spawn, release the claim to `Ready` or mark an exact capability blocker; never leave `In progress` with no worker
+reference.
 
-Until cross-Project spawning is proven, the global ChatGPT ring is safe for polling, routing, Review, notifications, and work
+Until same-Project spawning is proven, the global ChatGPT ring is safe for polling, routing, Review, notifications, and work
 that can run in the dispatcher context. Route standalone implementation to Codex Cloud, headless Local Codex, or a manually
 created ChatGPT worker rather than assuming Project-aware thread creation.
 
