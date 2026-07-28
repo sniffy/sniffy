@@ -57,16 +57,17 @@ on it indefinitely:
 
 1. Run all four shards for 24 hours.
 2. Confirm statelessness, claim safety, useful throughput, and actual chat volume.
-3. Confirm that daily manual cleanup is acceptable and that active work is distinguishable from completed/no-op ticks.
+3. Confirm that active work is distinguishable from completed/no-op ticks and that manual cleanup is tolerable.
 4. Review again after one week before considering the topology permanent.
 
 Archive completed/no-op tick chats daily while volume is high. Retain only chats linked to active claims, unresolved blockers,
 current incident diagnosis, or a handoff whose GitHub evidence is incomplete. Use GitHub timestamps and claim records, not chat
 ordering, to decide what remains active.
 
-If manual cleanup is not sustainable, do not solve it with unsupported automation. Choose deliberately among reducing the
-polling window/cadence, accepting a persistent-chat shard, or moving the clock to the headless Local Codex adapter so ChatGPT
-runs only when work actually requires a ChatGPT phase.
+Manual per-chat archive is unlikely to scale indefinitely at the maximum 96-chat/day rate. If cleanup is not sustainable, do
+not hide the problem behind unsupported automation. Choose deliberately among reducing the polling window/cadence, accepting a
+persistent-chat shard, or moving the clock to the headless Local Codex adapter so ChatGPT runs only when work actually requires
+a ChatGPT phase.
 
 ## Future automation boundary
 
