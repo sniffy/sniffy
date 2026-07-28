@@ -1,9 +1,10 @@
 # Sniffy local Codex worker-task prompt
 
-This is the canonical template rendered by the persistent dispatcher when it creates a one-time standalone Scheduled task. The dispatcher must replace all angle-bracket placeholders before creating the child task.
+The dispatcher renders this template into one app-owned worker chat and isolated worktree. It supplies task-specific inputs;
+shared engineering, routing, supervision, and verification policy remains in `AGENTS.md` and `docs/ai-delivery/`.
 
 ```text
-Work autonomously on Sniffy GitHub issue #<ISSUE_NUMBER> in this dedicated worker chat and isolated app-managed worktree.
+Work autonomously on Sniffy issue #<ISSUE_NUMBER> in this dedicated worker chat and isolated app-managed worktree.
 
 Issue title: <ISSUE_TITLE>
 Issue URL: <ISSUE_URL>
@@ -14,72 +15,61 @@ Existing pull request: <PR_URL_OR_NONE>
 Selected model: <MODEL>
 Reasoning effort: <REASONING_EFFORT>
 
-The issue and its complete comment thread are authoritative. Read AGENTS.md, docs/codex-workflow.md, the issue, project fields, linked pull requests, all review submissions and unresolved review threads, current CI, and the current remote develop branch before editing.
+Read the complete issue and comments, project fields, linked PR, all review submissions and unresolved threads, current CI,
+remote develop, AGENTS.md, docs/ai-delivery/supervision.md, and docs/ai-delivery/verification.md before editing.
 
-Confirm the Definition of Ready and apply the standard-tooling and infrastructure-approval gate in AGENTS.md. If a material product, public-API, architecture, security, permissions, or bespoke-infrastructure decision is missing, do not invent it. Set project Status to "Blocked", post the exact blocker and smallest required decision, pause any follow-up task, and stop.
+Stop and record a Blocked state when a required product, API, architecture, compatibility, security, permission, privileged
+operation, or bespoke-infrastructure decision is missing. Do not invent it.
 
-For fresh work:
-- verify that no implementation pull request or active worker branch already owns the issue;
-- create <BRANCH_NAME> from the latest origin/develop without force-pushing or rewriting shared history.
+Fresh work:
+- verify no branch/PR/worker already owns the issue;
+- create <BRANCH_NAME> from latest origin/develop without rewriting shared history.
 
-For continuation work:
-- verify that <PR_URL_OR_NONE> is open and that its head is <BRANCH_NAME>;
-- fetch and check out that exact published head branch;
-- verify local HEAD, the remote branch, and pull-request head agree before editing;
-- preserve the existing pull request and branch;
-- do not reset to develop, rebase, force-push, create a replacement branch, or open a duplicate pull request.
+Continuation work:
+- verify <PR_URL_OR_NONE> is open and its head is <BRANCH_NAME>;
+- check out the exact published head and verify local HEAD, remote branch, and PR head agree;
+- preserve the branch and PR; never reset, rebase, force-push, replace them, or open a duplicate.
 
 Then:
+1. Convert every acceptance criterion into explicit proof and implement the smallest coherent solution.
+2. Run focused checks first and broader applicable checks separately. Confirm named tests ran.
+3. Inspect the complete final diff, generated/unrelated files, dependencies, and proof; run git diff --check.
+4. Commit and push with the dedicated worker identity.
+5. Create/update the intended PR. Keep it draft only while implementation or locally applicable proof is incomplete.
+6. Verify remote branch, full SHA, PR URL, base/head refs, draft state, and matching PR head.
+7. Update issue/PR evidence with exact commands, results, limitations, and resolvable links. Move to Review only after remote
+   publication and required local proof are verified. Never close the issue automatically.
+8. Never merge, enable auto-merge, bypass protection, or rewrite shared history without Dmitry's explicit instruction.
 
-1. Convert every acceptance criterion into an explicit proof obligation before implementation.
-2. Implement the smallest coherent solution and avoid unrelated refactoring.
-3. Add or update focused tests and documentation where required.
-4. Run focused checks first. Run broader relevant checks when practical, using separate commands and explicit JDKs as required by AGENTS.md.
-5. Inspect the complete final diff, generated files, dependency changes, and test discovery/execution evidence.
-6. Run git diff --check.
-7. Commit and push the intended branch using the dedicated worker identity.
-8. Create or update the intended pull request. Keep it draft while implementation or locally applicable validation is incomplete, then mark it ready for review unless the issue explicitly requires a draft handoff.
-9. Verify the remote branch, full head SHA, pull-request URL, base/head branches, draft state, and matching pull-request head SHA. A local commit or task summary is not publication.
-10. Update the issue with exact commands and results, the full SHA, and resolvable branch and pull-request links. Move project Status to "Review" only after publication is verified and the requested local proof is complete. Never close the issue automatically.
+After publication, create or update one Scheduled task ATTACHED TO THIS WORKER CHAT named
+"Sniffy #<ISSUE_NUMBER> follow-up". Check after 15 minutes, again 15 minutes later, then hourly while incomplete. Preserve
+completed-check count and latest inspected head so the cadence is not reset.
 
-After publication, create or update one Scheduled task ATTACHED TO THIS CURRENT WORKER CHAT. Name it "Sniffy #<ISSUE_NUMBER> follow-up". Do not create a new standalone continuation chat.
+On each follow-up:
+- re-read issue/PR, new comments, review submissions, unresolved threads, complete diff, exact head, and relevant CI;
+- do not infer work from a review/dispatch alone; require acknowledgement or a new commit;
+- address all current actionable feedback together on the same branch/PR and rerun affected proof;
+- do not approve from an old head or local summary;
+- when complete, use an independent permitted identity for APPROVE; otherwise leave exact ready-for-human-review feedback;
+- when blockers remain, use an independent permitted identity for one precise REQUEST_CHANGES or leave equivalent blocking
+  feedback when self-review prevents a formal review;
+- pause the follow-up task as soon as review completes or a human decision is required.
 
-Continuation cadence and state:
-
-- Schedule the first check 15 minutes after publication or after an explicit correction dispatch.
-- If work is still incomplete, keep the same task for a second check 15 minutes after the first.
-- After the second incomplete check, update this same task to run hourly.
-- Record the completed check count and latest inspected pull-request head in this chat so the cadence is not reset by every run.
-- Pause the continuation task as soon as the review cycle is complete or a human/product decision is required.
-
-On every continuation check:
-
-1. Re-read the authoritative issue, new issue and pull-request comments, review submissions, unresolved review threads, latest complete diff, current head SHA, and every relevant CI job.
-2. Do not infer that work started from a review alone. Verify an explicit dispatch/acknowledgement or a new commit when another agent was asked to fix something.
-3. Address all actionable feedback together, preserve unrelated work, run the affected proof matrix, inspect the new complete diff, commit, push, and verify the new remote head.
-4. If required CI is pending, record that state and continue at the configured cadence. Do not approve from a local summary or an older green head.
-5. When the complete diff satisfies the issue and AGENTS.md, all actionable review threads are resolved, named tests actually ran, and required CI is green:
-   - use a configured reviewer identity that is permitted to review and is not the pull-request author to submit APPROVE;
-   - if no such identity is available, report that formal approval is impossible, leave an exact ready-for-human-approval comment, and pause the task rather than pretending approval was submitted.
-6. If blocking defects remain, use a configured independent reviewer identity to submit one precise REQUEST_CHANGES review covering all current findings. If the active identity cannot formally review its own pull request, leave the same precise blocking feedback as a pull-request comment and report the identity limitation.
-7. Never merge, enable auto-merge, close the issue, bypass branch protection, or rewrite the published branch without an explicit instruction from Dmitry.
-
-At completion, summarize the final head SHA, diff reviewed, review-thread state, CI checked, formal review action actually submitted, and any residual risk. Then pause the in-chat follow-up task.
+At completion, report final head, diff reviewed, review-thread state, CI/evidence checked, formal review action actually
+submitted, residual risk, and follow-up-task state.
 ```
 
 ## Placeholder contract
-
-The dispatcher must provide:
 
 | Placeholder | Meaning |
 | --- | --- |
 | `<ISSUE_NUMBER>` | Numeric Sniffy issue number |
 | `<ISSUE_TITLE>` | Current issue title |
-| `<ISSUE_URL>` | Resolvable GitHub issue URL |
+| `<ISSUE_URL>` | Resolvable issue URL |
 | `<WORK_MODE>` | `fresh` or `continuation` |
-| `<BRANCH_NAME>` | New `agent/issue-N` branch or the exact existing PR head |
-| `<PR_URL_OR_NONE>` | Existing continuation PR URL or `none` |
-| `<MODEL>` | Exact model selected in the app |
-| `<REASONING_EFFORT>` | Exact reasoning effort selected in the app |
+| `<BRANCH_NAME>` | Fresh branch or exact existing PR head |
+| `<PR_URL_OR_NONE>` | Existing continuation PR or `none` |
+| `<MODEL>` | Exact selected app model |
+| `<REASONING_EFFORT>` | Exact selected effort |
 
-Do not launch a worker when any placeholder cannot be resolved safely.
+Do not launch a worker with unresolved placeholders.
