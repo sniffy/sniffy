@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Complete every relevant section. Resolve product and compatibility decisions before routing implementation. Planning selects both an Implementer and a Verifier.
+        Complete every relevant section. Resolve product and compatibility decisions before routing implementation. Planning selects both an Implementer and a Verifier. Existing external pull requests such as Dependabot updates use the PR-first intake runbook instead of this issue form unless separate implementation work is required.
   - type: textarea
     id: outcome
     attributes:
