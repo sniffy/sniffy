@@ -3,44 +3,76 @@
 The current ChatGPT adapter creates a fresh chat for every scheduled tick. With four hourly shards, the `AI Delivery Event Loop`
 Project may accumulate up to 96 chats per day. Chat history is operational telemetry, not durable delivery state.
 
+## Separate permanent and disposable chats
+
+Keep these two classes distinct:
+
+- **Task-definition chats:** the four chats/configurations that own the recurring `:00`, `:15`, `:30`, and `:45` Scheduled
+  Tasks. Keep them stable and do not delete them; deleting a chat associated with a task pauses that task.
+- **Tick chats:** the fresh destination chats created by each scheduled occurrence. These are disposable after their durable
+  GitHub handoff is complete.
+
+Use stable Scheduled Task names such as `Event Loop 00`, `Event Loop 15`, `Event Loop 30`, and `Event Loop 45`. At the start of
+each tick, print a compact run header containing slot, UTC timestamp, selected repository/work item/phase, or `NO_CHANGE`.
+Do not rely on the generated chat title as the only identifier.
+
 ## Durable-state rule
 
 Before a tick ends, every meaningful result must be written to GitHub: claim token, lifecycle handoff, issue/PR comment, exact
 SHA, evidence, blocker, or `NO_CHANGE`. Never keep the only copy of a decision, diagnosis, or worker reference in a tick chat.
 
+A chat is eligible for archive only when:
+
+- no active claim or lease points to it;
+- the next Phase/Status/Executor/Assignee is durably recorded;
+- any PR review, evidence, blocker, or external dispatch is visible in GitHub;
+- the tick is complete rather than waiting for CI or another result inside that chat.
+
 ## Current supported cleanup
 
 OpenAI currently documents manual chat archive and delete operations:
 
-- [How to Delete and Archive Chats in ChatGPT](https://help.openai.com/en/articles/8809935-how-chat-retention-works-in-chatgpt)
-- [Chat and File Retention Policies in ChatGPT](https://help.openai.com/en/articles/8983778-chatgpt-data-controls-faq)
+- [How to Delete and Archive Chats in ChatGPT](https://help.openai.com/en/articles/8809935-how-to-delete-and-archive-chats-in-chatgpt)
+- [Chat and File Retention Policies in ChatGPT](https://help.openai.com/en/articles/8983778-chat-and-file-retention-policies-in-chatgpt)
 
 Archive hides a chat from the active sidebar but retains it under normal account retention. Delete is irreversible and schedules
 permanent deletion, normally within 30 days subject to documented exceptions.
 
-For event-loop chats:
+For event-loop tick chats:
 
-1. Confirm the tick has no active claim and its durable GitHub handoff exists.
-2. Keep chats for active or ambiguous work until the claim, blocker, or correction is resolved.
-3. Archive completed and `NO_CHANGE` chats from the chat menu.
+1. Confirm the durable-state rule above.
+2. Keep chats for active or ambiguous work until the claim, blocker, correction, or CI wait is resolved elsewhere.
+3. Archive completed and `NO_CHANGE` chats from each chat's `...` menu.
 4. Manage archived chats through **Settings -> Data controls -> Archived Chats**.
 5. Delete only under an explicit retention policy; archive is the default cleanup action.
 
-Do not use **Archive all chats** or **Delete all chats** for routine event-loop cleanup: OpenAI documents those controls as
-account-wide and inclusive of chats inside Projects.
+Do not use **Archive all chats** or **Delete all chats** for routine cleanup: OpenAI documents those controls as account-wide and
+inclusive of chats inside Projects. No supported Project-scoped bulk archive API or Scheduled Task action is currently
+documented.
 
-## Maintenance cadence
+## Rollout and maintenance cadence
 
-Until a supported project-scoped archive API or automation exists, cleanup is manual. A practical cadence is:
+Because 96 manual archive candidates per day is substantial, treat the new-chat topology as an operational pilot before relying
+on it indefinitely:
 
-- daily when the event-loop Project becomes hard to navigate;
-- otherwise weekly, retaining only chats linked to active claims, unresolved blockers, or current incident diagnosis.
+1. Run all four shards for 24 hours.
+2. Confirm statelessness, claim safety, useful throughput, and actual chat volume.
+3. Confirm that daily manual cleanup is acceptable and that active work is distinguishable from completed/no-op ticks.
+4. Review again after one week before considering the topology permanent.
 
-Use GitHub timestamps and claim records, not chat ordering, to decide what remains active.
+Archive completed/no-op tick chats daily while volume is high. Retain only chats linked to active claims, unresolved blockers,
+current incident diagnosis, or a handoff whose GitHub evidence is incomplete. Use GitHub timestamps and claim records, not chat
+ordering, to decide what remains active.
+
+If manual cleanup is not sustainable, do not solve it with unsupported automation. Choose deliberately among reducing the
+polling window/cadence, accepting a persistent-chat shard, or moving the clock to the headless Local Codex adapter so ChatGPT
+runs only when work actually requires a ChatGPT phase.
 
 ## Future automation boundary
 
-A future maintenance worker may archive completed tick chats only after a supported ChatGPT capability is documented and
-smoke-tested. Do not implement browser-click automation, private endpoints, or destructive bulk deletion merely to control
-sidebar clutter. Chat retention must remain independent from the delivery lifecycle: archiving a transcript must never alter
-GitHub Phase, Status, claims, issues, pull requests, or evidence.
+A future maintenance worker may archive completed tick chats only after OpenAI exposes and documents a supported selective or
+Project-scoped capability and that capability is smoke-tested. Do not implement browser-click automation, private endpoints,
+or destructive bulk deletion merely to control sidebar clutter.
+
+Chat retention remains independent from delivery lifecycle: archiving or deleting a transcript must never alter GitHub Phase,
+Status, claims, issues, pull requests, reviews, or evidence.
