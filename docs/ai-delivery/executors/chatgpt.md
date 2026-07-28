@@ -41,7 +41,7 @@ Use the strongest truthful evidence available and route missing obligations to a
 
 ## ChatGPT Scheduled Tasks
 
-Official current limitations materially affect a dispatcher design:
+Official current limitations materially affect the event-loop design:
 
 - a Scheduled Task cannot run more than once per hour;
 - Pro and Enterprise users may have up to 15 active tasks;
@@ -54,39 +54,58 @@ See:
 - [Scheduled Tasks in ChatGPT](https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt)
 - [Projects in ChatGPT](https://help.openai.com/en/articles/10169521-projects-in-chatgpt)
 
-To obtain one logical 15-minute poll cadence, use four permanent hourly dispatcher chats at `:00`, `:15`, `:30`, and `:45`.
-Each no-op tick stays in its existing chat and returns `NO_CHANGE`.
+Manual tests on 2026-07-28 established two additional current-product constraints:
 
-## Dedicated scheduler Project
+1. the available scheduling operation exposes no `project_id`, so a chat cannot target an arbitrary different ChatGPT Project;
+2. a Scheduled Task execution cannot create another Scheduled Task.
 
-A manual test on 2026-07-28 attempted to create a Scheduled Task for the `Kerb4j` ChatGPT Project from a chat outside that
-Project. The scheduler operation exposed no `project_id` or equivalent destination field and created a global task instead.
-Therefore the current ChatGPT adapter must not claim that it can target an arbitrary Project.
+Treat both as observed adapter constraints, not permanent platform guarantees.
 
-Use one dedicated fileless ChatGPT Project, such as `AI Delivery Scheduler`, to group the four persistent dispatcher chats.
-This Project is an organizational namespace only:
+## Stateless new-chat event loop
 
-- do not rely on Project files, description, instructions, memory, or chat history as required worker context;
-- keep durable context in GitHub issues/comments/PRs and repository-owned Markdown;
-- make each dispatcher and child-task prompt self-contained enough to locate the repository profile and authoritative issue;
-- keep Project instructions minimal and repeat critical repository/profile paths in every Scheduled Task prompt.
+Use one dedicated fileless ChatGPT Project, such as `AI Delivery Event Loop`, containing four permanent hourly Scheduled
+Tasks:
 
-One logical scheduler Project may poll several repositories and GitHub Projects. Repository-specific filters live in external
-profiles; a separate ChatGPT Project per repository is unnecessary.
+```text
+:00 -> destination: new chat
+:15 -> destination: new chat
+:30 -> destination: new chat
+:45 -> destination: new chat
+```
 
-Creating a child Scheduled Task in the **same current scheduler Project** has not yet been proven. Smoke-test it explicitly:
+Together they provide one logical 15-minute poll cadence. Every occurrence starts a fresh chat in the scheduler Project. The
+fresh chat is both dispatcher tick and, when it claims ChatGPT-routed work, the phase worker. It must not attempt to create a
+child task.
 
-1. run a disposable scheduled dispatcher inside `AI Delivery Scheduler`;
-2. ask it to create one one-time child task several minutes later;
-3. verify that the child is a separate chat inside the same Project;
-4. verify that it received all repository/issue context without Project files;
-5. verify that failed creation releases the GitHub claim.
+Each scheduled prompt must be fully self-contained and must point to the external project-profile inventory. Every tick:
 
-If the child becomes global, reuses the dispatcher chat, or cannot be created, mark ChatGPT spawning `unsupported`. The
-scheduler may still perform polling, Planning, Review, artifact-based Verification, and notifications; route standalone
-Implementation to Codex Cloud, Local Codex app/CLI, or a manually created ChatGPT worker.
+1. reads the profile list and authoritative GitHub/repository Markdown;
+2. inspects lifecycle fields, current claims, branches, PRs, reviews, and CI;
+3. best-effort claims at most one eligible phase turn;
+4. performs that phase directly when current ChatGPT capabilities are sufficient, or makes a supported external handoff;
+5. writes a durable next-phase handoff and clears its claim;
+6. returns `NO_CHANGE` when no work is eligible.
 
-The reusable clock/claim/spawn design lives in [`../event-loop.md`](../event-loop.md).
+Do not claim work that cannot reach a safe durable handoff within the scheduled execution. Dependency-heavy implementation,
+long builds, persistent services, and environment-specific verification normally belong to Codex Cloud, Local Codex, CI, or
+a human.
+
+The fresh-chat destination prevents a single dispatcher conversation from accumulating months of execution context, but it
+creates volume: four hourly tasks can create up to 96 chats per day, including no-op runs. Keep no-op output minimal. Chat
+archival/cleanup is a separate future maintenance workflow; do not claim it is automated until an available product action has
+been tested.
+
+The scheduler Project is an organizational folder only:
+
+- do not rely on Project files, description, instructions, memory, or previous tick chats as required context;
+- keep durable state in GitHub issues/comments/PRs and repository-owned Markdown;
+- repeat critical repository/profile locations in all four Scheduled Task prompts;
+- use the same claim protocol across the four shards because runs may overlap.
+
+One scheduler Project may service several repositories and GitHub Projects. A separate ChatGPT Project per repository is not
+needed and cannot be selected dynamically by the current scheduling tool.
+
+The reusable clock/claim design lives in [`../event-loop.md`](../event-loop.md).
 
 ## ChatGPT Project bootstrap
 
@@ -110,7 +129,8 @@ PR head under review.
 
 Project context may describe Sniffy's purpose, active initiatives, and Dmitry's communication preferences, but must not copy
 engineering policy or store credentials, downloaded artifacts, browser-policy backups, or generated screenshots. Scheduled
-Tasks must still carry their own durable repository/issue pointers because Project files are unavailable to them.
+Tasks must still carry durable repository/profile pointers because Project files and implicit Project context are not a
+supported dependency of the event loop.
 
 ## Direct execution versus delegation
 
@@ -120,6 +140,7 @@ Prefer direct ChatGPT execution when:
 - edits and publication are focused and supported;
 - required tests can run with already-present source/dependencies, or exact-head CI/artifacts provide the intended proof;
 - browser/system verification can be performed truthfully;
+- the phase can reach a durable handoff within the current fresh scheduled chat;
 - formal review remains honest about PR-author identity.
 
 Delegate to Codex Cloud for clean isolated implementation, to headless/app-native Local Codex for persistent dependencies,
