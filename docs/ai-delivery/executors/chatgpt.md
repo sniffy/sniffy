@@ -57,16 +57,40 @@ See:
 To obtain one logical 15-minute poll cadence, use four permanent hourly dispatcher chats at `:00`, `:15`, `:30`, and `:45`.
 Each no-op tick stays in its existing chat and returns `NO_CHANGE`.
 
-One logical ring may scan several external GitHub project profiles. Do not rely on files stored in a ChatGPT Project for the
-dispatcher. OpenAI documentation does not guarantee that a scheduled run can create a new standalone worker chat in an
-arbitrary target Project or inherit that Project's context. Treat nested one-time task creation as a smoke-tested adapter.
-If worker creation is unsupported or fails, release the claim to `Ready` or record an exact blocker.
+## Dedicated scheduler Project
+
+A manual test on 2026-07-28 attempted to create a Scheduled Task for the `Kerb4j` ChatGPT Project from a chat outside that
+Project. The scheduler operation exposed no `project_id` or equivalent destination field and created a global task instead.
+Therefore the current ChatGPT adapter must not claim that it can target an arbitrary Project.
+
+Use one dedicated fileless ChatGPT Project, such as `AI Delivery Scheduler`, to group the four persistent dispatcher chats.
+This Project is an organizational namespace only:
+
+- do not rely on Project files, description, instructions, memory, or chat history as required worker context;
+- keep durable context in GitHub issues/comments/PRs and repository-owned Markdown;
+- make each dispatcher and child-task prompt self-contained enough to locate the repository profile and authoritative issue;
+- keep Project instructions minimal and repeat critical repository/profile paths in every Scheduled Task prompt.
+
+One logical scheduler Project may poll several repositories and GitHub Projects. Repository-specific filters live in external
+profiles; a separate ChatGPT Project per repository is unnecessary.
+
+Creating a child Scheduled Task in the **same current scheduler Project** has not yet been proven. Smoke-test it explicitly:
+
+1. run a disposable scheduled dispatcher inside `AI Delivery Scheduler`;
+2. ask it to create one one-time child task several minutes later;
+3. verify that the child is a separate chat inside the same Project;
+4. verify that it received all repository/issue context without Project files;
+5. verify that failed creation releases the GitHub claim.
+
+If the child becomes global, reuses the dispatcher chat, or cannot be created, mark ChatGPT spawning `unsupported`. The
+scheduler may still perform polling, Planning, Review, artifact-based Verification, and notifications; route standalone
+Implementation to Codex Cloud, Local Codex app/CLI, or a manually created ChatGPT worker.
 
 The reusable clock/claim/spawn design lives in [`../event-loop.md`](../event-loop.md).
 
 ## ChatGPT Project bootstrap
 
-Keep Project instructions short and point to repository-owned policy:
+For ordinary repository Projects, keep Project instructions short and point to repository-owned policy:
 
 ```text
 For every sniffy/sniffy task, first read the current repository policy at
@@ -85,7 +109,8 @@ Re-read current-`develop` policy at the start of each repository task. Review ev
 PR head under review.
 
 Project context may describe Sniffy's purpose, active initiatives, and Dmitry's communication preferences, but must not copy
-engineering policy or store credentials, downloaded artifacts, browser-policy backups, or generated screenshots.
+engineering policy or store credentials, downloaded artifacts, browser-policy backups, or generated screenshots. Scheduled
+Tasks must still carry their own durable repository/issue pointers because Project files are unavailable to them.
 
 ## Direct execution versus delegation
 
