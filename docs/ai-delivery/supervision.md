@@ -1,99 +1,117 @@
-# Supervision and delivery state
+# Supervision and delivery control
 
-This policy applies whenever ChatGPT supervises work delegated to Codex Cloud, Local Codex, an IDE agent, another
-implementation agent, or a human contributor using the autonomous delivery workflow.
+This policy applies whenever ChatGPT supervises work performed by Codex Cloud, Local Codex, an IDE agent, ChatGPT itself,
+or a human contributor using the AI-assisted delivery workflow.
 
-## Delivery states
+## Lifecycle authority
 
-Track these states independently:
+Use [`lifecycle.md`](lifecycle.md) as the canonical Phase/Status model:
 
-1. **Ready:** the authoritative issue contains outcome, decisions, non-goals, proof matrix, routing, and required access.
-2. **Dispatched:** a concrete executor task exists and the trigger is observable.
-3. **Working:** the intended executor acknowledged or produced new remote evidence.
-4. **Locally complete:** implementation and locally available checks finished; nothing is implied about GitHub publication.
-5. **Published:** a resolvable remote branch, full SHA, and intended PR exist and the PR head matches.
-6. **Review:** the exact-head diff, comments, threads, evidence, and CI are being assessed.
-7. **Ready to merge:** acceptance criteria, review, and required checks pass. This is not merged.
-8. **Done:** Dmitry-authorized merge or deliberate closure is recorded and follow-up monitoring is stopped.
-9. **Blocked:** the exact missing decision, access, infrastructure, or proof is recorded with the smallest next action.
+```text
+Phase:  Draft -> Planning -> Implementation -> Review -> Verification? -> Approval -> Done
+Status: Ready | In progress | Blocked
+```
 
-Do not collapse these into optimistic status language. A local commit is not published; publication is not approval; approval
-is not merge.
+`Ready` applies to the next action in the current phase. It may be pool-ready for a worker or directed-ready for a specific
+assignee such as Dmitry. `Review` is a phase. `Blocked` preserves the phase where work should resume.
+
+Do not replace these fields with optimistic prose. Track supporting delivery facts independently:
+
+- concrete dispatch/claim acknowledgement;
+- local completion and local proof;
+- remote publication at an exact branch/SHA/PR;
+- code review outcome;
+- verification outcome;
+- actual merge or deliberate closure.
+
+A local commit is not publication; publication is not review; review is not verification; verification is not merge.
+
+## Phase handoff
+
+A worker completes one phase turn and writes the next route:
+
+- Planning records `Implementer` and `Verifier`; handoff to Dmitry stays `Planning / Ready / Human`.
+- Planning approval writes `Implementation / Ready / Executor := Implementer`.
+- Implementation publication writes `Review / Ready / Executor := ChatGPT` by default.
+- Successful Review either writes `Verification / Ready / Executor := Verifier` or `Approval / Ready / Human` when existing
+  evidence already satisfies the issue.
+- Successful Verification writes `Approval / Ready / Human`.
+- Approval becomes `Done` only after actual merge or deliberate closure.
+
+Every handoff clears stale worker ownership and sets the intended Assignee or leaves it empty for a pool claim.
 
 ## Dispatch proof
 
-- A Cloud implementation is dispatched only after the proven top-level trigger has a connector reaction, task link, or
-  equivalent durable acknowledgement. A review mention alone is not implementation dispatch.
-- A Local Codex item is dispatched only after the issue claim and app-owned worker task/chat are confirmed. A Project status
-  or label alone does not prove a worker exists.
-- An IDE agent is working only while the human explicitly owns the interactive session or remote commits prove activity.
-- A ChatGPT direct-execution task is working when the intended branch or exact file operation has begun; ChatGPT must not
-  claim a local checkout, command, browser session, or publication that did not actually happen.
+- A Cloud implementation is dispatched only after the proven trigger has a connector reaction, task link, or equivalent
+  durable acknowledgement. A review mention alone is not implementation dispatch.
+- An app-native Local Codex item is dispatched only after claim plus confirmed worker task/chat/worktree.
+- A headless Local Codex item is dispatched only after claim plus confirmed process/worktree/branch record.
+- An IDE agent is working only while the human explicitly owns the interactive session or remote evidence proves activity.
+- A ChatGPT direct-execution task is working only after the exact intended GitHub or sandbox operation has begun.
 
-## Required monitoring cadence
+`In progress` with no verified claim/worker reference is invalid. When worker spawning fails, release to `Ready` or record an
+exact `Blocked` reason.
 
-Every new task, retry, continuation, or Request Changes return starts a fresh supervision cycle:
+## Queue polling and worker monitoring
+
+The reusable queue event loop is described in [`event-loop.md`](event-loop.md). Queue polling and per-worker follow-up are
+different concerns:
+
+- **Queue polling** finds `Ready` work and claims it. The desired logical cadence is every 15 minutes.
+- **Worker monitoring** checks a claimed implementation or correction after 15 minutes, again 15 minutes later, then hourly
+  while incomplete.
+
+Every new task, retry, continuation, or Request Changes return starts a fresh worker-monitoring cycle:
 
 1. check after 15 minutes;
 2. if incomplete, check 15 minutes later;
 3. if still incomplete, switch to hourly monitoring.
 
-Do not postpone the first check to the hourly monitor. Each check must inspect the authoritative issue/PR, intended executor,
-expected branch and PR, acknowledgement or new head, review threads, and current CI. Notify only on meaningful progress,
-completion, or a real blocker.
+Do not postpone the first check to the hourly monitor. Each check re-reads lifecycle fields, intended executor and assignee,
+claim/worker record, expected branch and PR, acknowledgement or new head, review threads, and current CI. Notify only on
+meaningful progress, completion, or a real blocker.
 
-A review or dispatch comment does not prove work started. Verify acknowledgement or a new commit. Stop monitoring when the
-review cycle is complete or a human decision is required.
+A review or dispatch comment does not prove work started. Verify acknowledgement or new remote evidence. Stop worker
+monitoring when the phase handoff completes or a human/external blocker owns the next action.
 
 ## Branch and PR continuity
 
-- Fresh work uses one new branch from current `develop` and one intended PR unless the issue explicitly approves independent
-  slices.
+- Fresh work uses one new branch from current `develop` and one intended PR unless independently useful slices were approved.
 - Continuation work reuses the exact open branch and PR. Do not reset to `develop`, rebase, force-push, create a replacement
   branch, or open a duplicate PR.
 - When `develop` moves materially before handoff, normally merge current `origin/develop` into the feature branch and rerun
   exact-head proof. Do not use a stale green run as final evidence.
-- Preserve completed work when publication fails. Diagnose access and recover the existing commit instead of rebuilding the
-  implementation from scratch.
+- Preserve completed work when publication fails. Diagnose access and recover the existing commit rather than rebuilding.
 
-## Comprehensive review and correction
+## Review and correction
 
-The first review should audit the whole acceptance-to-proof matrix, not only the most visible delta. Inspect:
+The Review phase audits the whole acceptance-to-proof matrix, not only the visible delta. Inspect:
 
 - complete exact-head diff and scope;
-- module/API ownership and forbidden adjacent work;
-- lifecycle, failure composition, compatibility, and resource safety;
-- test quality, discovery, and execution;
+- architecture, module/API ownership, compatibility, lifecycle, and resource safety;
+- test design, discovery, and implementer proof;
 - dependencies, workflows, permissions, and standard-tooling rationale;
-- generated or unrelated files;
-- documentation, migration, rollback, and PR-body accuracy;
-- unresolved comments and review threads;
-- exact-head CI, artifacts, logs, screenshots, or functional behavior.
+- generated/unrelated files, documentation, migration, rollback, and PR-body accuracy;
+- unresolved comments and threads;
+- exact-head CI statuses and relevant logs as supporting evidence.
 
-Report independent findings together. After corrections, review the new delta and rerun the affected proof matrix. Two
-substantive review/fix rounds, or one architecture/product reversal, trigger re-baselining: update the authoritative issue,
-mark superseded guidance, and deliberately choose the next executor rather than stacking narrow prompts.
+Report independent findings together. After corrections, inspect the new delta and affected proof. Two substantive unattended
+correction rounds, or one product/architecture reversal, trigger re-baselining: update the authoritative issue, mark
+superseded guidance, and deliberately choose the next Implementer/Verifier. Infrastructure noise does not increment the
+substantive counter.
 
 ## Review identities
 
-The GitHub assignee or PR author is a technical identity, not the executor product. Formal review must use an identity that
-is allowed to review and is independent from the PR author.
+The Assignee or PR author is a technical identity, not the executor product. Formal review must use an identity independent
+from the PR author.
 
-- When independent review is available and all proof passes, submit `APPROVE`.
-- When blockers remain, submit one precise `REQUEST_CHANGES` covering all current findings, then explicitly dispatch the
-  continuation.
-- When the active identity cannot review its own PR, leave exact ready-for-human-review or blocking feedback and state the
+- When independent review is available and proof passes, submit `APPROVE`.
+- When blockers remain, submit one precise `REQUEST_CHANGES`, then explicitly return the task to `Implementation / Ready`.
+- When the active identity cannot review its own PR, leave exact ready-for-Dmitry-review or blocking feedback and state the
   identity limitation. Do not pretend a formal review occurred.
 
 ## Merge and privileged boundaries
 
 No agent or supervising ChatGPT workflow may merge, enable auto-merge, bypass protection, rewrite shared history, or perform
-privileged repository/hosting operations without Dmitry's explicit instruction. A task may prepare a decision packet and
-verification checklist; the privileged operator remains human unless the issue explicitly authorizes otherwise.
-
-## Local app integration
-
-The app-native Local Codex dispatcher and worker prompts live under `.codex/local/`. They implement this policy for one
-persistent dispatcher, one issue worker chat/worktree, and in-chat follow-up. Their filenames are preserved because
-configured Scheduled tasks may reference them. The detailed environment runbook remains in
-[`../local-codex-worker.md`](../local-codex-worker.md).
+privileged repository/hosting operations without Dmitry's explicit instruction. `Approval / Ready` is the human acceptance
+queue; there is no separate Ready-to-merge phase unless an approved-but-unmerged backlog becomes a real need.
