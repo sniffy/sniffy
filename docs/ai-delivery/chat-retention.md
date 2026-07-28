@@ -35,8 +35,9 @@ OpenAI currently documents manual chat archive and delete operations:
 - [How to Delete and Archive Chats in ChatGPT](https://help.openai.com/en/articles/8809935-how-to-delete-and-archive-chats-in-chatgpt)
 - [Chat and File Retention Policies in ChatGPT](https://help.openai.com/en/articles/8983778-chat-and-file-retention-policies-in-chatgpt)
 
-Archive hides a chat from the active sidebar but retains it under normal account retention. Delete is irreversible and schedules
-permanent deletion, normally within 30 days subject to documented exceptions.
+Archive hides a chat from the active sidebar but retains it under normal account retention. Delete is irreversible: the chat is
+removed from view immediately and normally scheduled for permanent deletion within 30 days, subject to documented legal,
+security, or de-identification exceptions.
 
 For event-loop tick chats:
 
