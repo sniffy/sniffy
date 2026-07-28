@@ -29,7 +29,7 @@ agent host; the selected Copilot, Codex, Junie, or other coding product is the e
 Phases describe the kind of work; statuses describe whether the next action can run:
 
 ```text
-Phase:  Draft -> Planning -> Implementation -> Review -> Verification? -> Approval -> Done
+Phase:  Draft -> Planning -> Implementation -> Review -> Verification (when required) -> Approval -> Done
 Status: Ready | In progress | Blocked
 ```
 
