@@ -1,185 +1,91 @@
 # Repository agent instructions
 
-These rules apply to every change in this repository. More specific `AGENTS.md` or `AGENTS.override.md` files may add
+These rules apply to every change in this repository. More specific `AGENTS.md` or `AGENTS.override.md` files add
 constraints for their subtrees.
 
-## Task ownership and autonomy
+## Authority and task ownership
 
-- Treat the linked GitHub issue and its acceptance criteria as the source of truth. Read the complete issue, relevant
-  comments, existing pull requests, and current code before editing.
-- For tasks explicitly marked ready for autonomous execution, do not stop for routine design choices or ask for
-  confirmation. Inspect the repository, choose the smallest maintainable solution consistent with the issue, and record
-  material decisions in the pull request. Stop only for a real blocker such as missing credentials, unavailable external
-  infrastructure, destructive ambiguity, or mutually incompatible acceptance criteria.
-- Complete the task end to end when permissions allow: implement, add or update tests, run applicable checks, review the
-  diff, commit, push, and update or open a pull request. Use a draft while implementation or locally applicable
-  verification is still in progress; unless the task explicitly requires a draft handoff, mark it ready for review after
-  the implementation and those checks are complete. Never merge a pull request unless the task explicitly says to do so.
-- Treat GitHub remote state as the publication source of truth. A local branch, local commit, `make_pr` metadata, or a
-  final summary does not prove delivery. Before reporting publication, verify a resolvable remote branch, full commit SHA,
-  pull-request URL, base/head branches, draft state, and matching head SHA through GitHub.
-- Preserve unrelated user changes. Do not reset, clean, force-push, rebase shared branches, or rewrite history unless the
-  issue explicitly requires it. Prefer a new `agent/<short-description>` branch from `develop` for new work.
-- Before editing a task that combines two or more high-risk axes—new public APIs or artifacts, global mutable state,
-  resource lifecycle/failure composition, multiple JDK/framework versions, or cross-reactor module placement—confirm
-  that the issue contains a short design preflight: scope boundaries, module ownership, a failure/lifecycle matrix, and
-  an acceptance-criterion-to-proof matrix. If a material product or public-API decision is unresolved or contradictory,
-  stop before implementation and report that decision instead of inventing a broad compatibility layer.
-- Before routing substantial work to Codex Cloud or unattended local Codex, apply the risk-axis and proof-matrix rules in
-  `docs/retrospectives/2026-07-18-docusaurus-cloud-vs-local.md`. Prefer local execution for first-of-kind architectural or
-  visual patterns and Cloud for isolated, fully specified tasks with deterministic Cloud-available proof. Do not estimate
-  task suitability from changed-line or lockfile size alone.
+- Follow, in order: explicit maintainer decisions; the current GitHub issue or pull request; the nearest applicable
+  `AGENTS.md`; this file; executor runbooks and task templates. A lower level must not silently override a higher one.
+- Read the complete issue, relevant comments, existing pull request, review threads, current code, and remote state before
+  editing. Product, compatibility, public-API, and privileged-operator decisions belong to the maintainer.
+- For autonomous work, implement the smallest coherent solution without routine clarification. Stop for missing authority,
+  credentials, external infrastructure, destructive ambiguity, or contradictory requirements.
+- The roles, executors, routing rules, delivery state machine, and verification ownership model live under
+  [`docs/ai-delivery/`](docs/ai-delivery/README.md). They are operational guidance, not a replacement for repository policy.
 
-## Standard tooling and infrastructure approval
+## Delivery and Git safety
 
-- For established engineering domains such as dependency scanning, vulnerability management, formatting, linting,
-  build orchestration, release automation, test reporting, coverage, packaging, and scaffolding, prefer maintained,
-  widely adopted tools, official actions, platform features, and ecosystem-standard declarative configuration. Compose
-  and configure those capabilities before writing custom code. Do not recreate capabilities already provided by npm,
-  Maven, GitHub, Dependabot, GitHub Dependency Review, OSV-Scanner, CodeQL, Renovate, established linters/build systems,
-  or equivalent maintained tooling.
-- Evaluate maintenance status, ecosystem adoption, update path, security and permissions model, portability, expected
-  failure/noise semantics, and operational burden—not only whether custom code can be made to pass tests.
-- Bespoke build, CI, release, dependency, or security infrastructure requires a maintainer-approved rationale in the
-  authoritative issue before implementation. It must state: the exact requirement and observable gap; maintained
-  alternatives evaluated; why configuration or composition is insufficient; the smallest custom surface; owner and
-  maintenance burden; security and permissions model; deterministic test strategy; upgrade and compatibility strategy;
-  operational failure/noise semantics; and the removal condition and exit or migration plan. Missing approval is a
-  blocker, not permission to invent a framework.
-- Every new CI workflow or materially new job additionally requires the issue to document why an existing workflow or
-  job cannot host the check; its trigger model; least-privilege permissions; required-check or blocking semantics;
-  expected signal and acceptable noise; the maintainer response to failure; owner and lifecycle/removal condition; and
-  overlap with existing GitHub or platform signals.
-- Review architecture and operational simplicity before accepting green CI. Ask whether common-problem custom code is
-  being introduced, which standard tools were considered, whether declarative composition can achieve the outcome,
-  whether the custom surface is proportionate, and who maintains it as upstream formats, APIs, or advisories change.
-- Resolve policy and architecture before implementation. If a task discovers a need for shared infrastructure, stop,
-  create a separate issue, and obtain the required design approval instead of expanding an unrelated pull request.
+- Complete authorized work end to end when permissions allow: implement, test, inspect the final diff, commit, push, and
+  create or update the intended pull request. Keep it draft only while implementation or locally applicable validation is
+  incomplete.
+- GitHub remote state is the publication source of truth. Before reporting delivery, verify the remote branch, full SHA,
+  pull-request URL, base/head refs, draft state, and matching pull-request head.
+- Preserve unrelated work. Do not reset, clean, rebase shared branches, force-push, rewrite history, create a replacement PR
+  for a continuation, merge, or enable auto-merge unless Dmitry explicitly authorizes that exact action.
+- Prefer a fresh `agent/<short-description>` branch from current `develop` for new work. Continue review fixes on the exact
+  existing branch and pull request.
 
-## Compatibility and scope
+## Scope, architecture, and compatibility
 
-- Preserve Java 8 source, bytecode, and runtime compatibility unless a task explicitly changes the supported baseline.
-  Do not use post-Java-8 language features or APIs in shared production or test sources. JDK-specific integrations must
-  stay behind capability probes, isolated modules, or Maven profiles.
-- Keep changes inside the requested behavior. Preserve public contracts and existing user changes; do not turn a
-  focused fix into an unrelated redesign.
-- Prefer the smallest compatible dependency update. Do not perform broad dependency modernization as part of an
-  unrelated task. Document security-motivated upgrades and compatibility trade-offs in the pull request.
+- Preserve Java 8 source, bytecode, API, and runtime compatibility unless the issue explicitly changes the supported
+  baseline. Keep JDK-specific behavior behind capability probes, isolated modules, or Maven profiles.
+- Keep changes inside the requested behavior. Preserve public contracts and user changes; do not turn a focused task into
+  an adjacent redesign or broad dependency modernization.
+- A task combining two or more high-risk axes—public APIs/artifacts, global state, concurrency or cleanup, failure
+  composition, several JDK/framework versions, cross-reactor placement, or migration compatibility—requires an issue-level
+  design/proof preflight before implementation.
+- The preflight must resolve scope boundaries, ownership, lifecycle/failure behavior, compatibility matrix, delivery
+  topology, and an acceptance-to-proof matrix. Green CI is not a substitute for unresolved design.
 
-## Codex model selection and budget
+## Standard tooling and infrastructure
 
-- Treat model cost as an engineering constraint. Do not default every task to the strongest model or highest reasoning
-  level when the task has already been decomposed and specified by a maintainer or project-management agent.
-- Explicit issue or project routing overrides the defaults. For the local dispatcher, `agent:model:luna` means GPT-5.6
-  Luna with low reasoning, `agent:model:sol` means GPT-5.6 Sol with high reasoning, and an issue without a stronger route
-  defaults to GPT-5.6 Terra with medium reasoning.
-- Use Terra with medium reasoning for well-scoped implementation work: focused bug fixes, CI fixes, review follow-ups,
-  tests, documentation, dependency updates, localized refactors, and module moves with clear acceptance criteria.
-- Use Luna with low reasoning only for mechanical edits where the exact files and required transformation are already
-  known and no material design, compatibility, failure-analysis, or proof decision remains.
-- Escalate to Sol with high reasoning only when the task materially benefits from repository-wide or architectural
-  reasoning, such as a new public API, a first-of-kind design, concurrency or lifecycle defects, cross-version Java
-  compatibility, subtle performance work, or an unresolved failure that persisted after a focused Terra attempt.
-- Prefer staged escalation over expensive retries: first give Terra a precise task, acceptance criteria, relevant files,
-  and required checks; inspect its diff and failure evidence; then route only the unresolved part to Sol. Do not restart
-  the entire task on Sol merely because one check failed or one review item remains.
-- Avoid duplicate planning. When an upstream agent or maintainer provides a concrete breakdown and design decisions,
-  execute that plan rather than spending a high-reasoning pass rediscovering it. Surface contradictions or missing proof
-  obligations, but do not redo settled analysis without evidence that it is wrong.
-- Record model escalations in the task or pull-request notes when they are non-obvious, including the specific complexity
-  or failed attempt that justified Sol. This is for cost and workflow calibration, not for judging implementation quality.
+- Prefer maintained tools, official actions, platform features, and ecosystem-standard declarative configuration for
+  build, CI, release, dependency, security, formatting, linting, coverage, packaging, reporting, and scaffolding work.
+- Bespoke infrastructure requires a maintainer-approved issue rationale covering the observable gap, alternatives,
+  smallest custom surface, owner, permissions/security, deterministic tests, compatibility/upgrade path, operational
+  failure semantics, and removal condition.
+- A new workflow or materially new job additionally requires documented triggers, least privilege, blocking semantics,
+  expected signal/noise, maintainer failure response, lifecycle, and overlap with existing platform signals.
+- If shared infrastructure is discovered inside unrelated work, stop and refine a separate issue instead of expanding the
+  current pull request. Additional workflow-specific rules live in [`.github/AGENTS.md`](.github/AGENTS.md).
 
-## Concurrency and lifecycle
+## Verification
 
-- Treat deterministic concurrency tests as executable contracts. Do not weaken assertions, add retries, retry a failed
-  test run to green, replace latches/hooks with timing sleeps, or increase timeouts to hide an ordering defect.
-- Instrumentation is secondary to application resource safety. Monitoring, proxy parsing, logging, registry, or
-  callback failure must not prevent required physical close, shutdown, cancellation, wakeup, or cleanup. Preserve the
-  first failure and suppress later cleanup failures when multiple steps fail.
-- Keep application callbacks out of private JDK/provider locks and internal construction scopes. Preserve documented
-  lock order and ownership rather than relying on a particular OS/JDK implementation.
-
-## Build and verification
-
-- The Codex Cloud environment is described in `docs/codex-workflow.md`. Use `source .codex/cloud/use-jdk.sh <version>`
-  to switch among the installed JDK 8, 11, 17, 21, and 25 toolchains.
-- Run focused tests for the changed behavior first.
-- After switching JDKs in the same worktree, run `clean` before the first Maven build under the new JDK or use an
-  isolated checkout/output directory. Never treat `target/` classes compiled by another JDK as evidence for the current
-  runtime; Maven incremental compilation can otherwise reuse bytecode linked to APIs or covariant method descriptors
-  that do not exist on Java 8.
-- For a Java 8 artifact compiled on a newer JDK, `source`/`target` bytecode levels alone are insufficient. Run the
-  configured Java 8 API-signature check during `verify` and, for compatibility-sensitive changes, execute the same
-  modern-JDK-built artifact on a real Java 8 runtime without recompiling it there.
-- Run independent validation obligations as separate commands with individually visible exit statuses. Do not combine
-  multiple JDK/module checks into one opaque long-running chain. A manual interruption is not a result; if a command is
-  intentionally time-bounded, use an explicit timeout, report that timeout, and leave the complete reactor result to CI.
-- Treat every acceptance criterion as an evidence obligation. Verify that its focused test is discovered and executed
-  in the test report; compiled tests, unused fixtures, skipped modules, and an overall green CI result are not proof.
-- For NIO changes, run `mvn -pl sniffy-module-nio -am clean test` on Java 8 and the current development JDK.
-- For TLS changes, run `mvn -pl sniffy-module-tls -am clean test` on Java 8 and the current development JDK.
+- Convert every acceptance criterion into executable or inspectable proof. Confirm named tests were discovered and ran;
+  compiled fixtures, skipped modules, and an overall green build do not prove unused coverage.
+- Run focused checks first. Run independent obligations as separate commands with visible exit statuses. Never describe an
+  interrupted, timed-out, retried, skipped, or ignored command as passing.
+- After switching JDKs in one worktree, run `clean` before the first Maven build under the new JDK or use isolated outputs.
+  Do not execute stale classes compiled against a different JDK.
+- For Java 8 compatibility-sensitive artifacts, distinguish clean Java 8 tests, modern-JDK API-signature verification, and
+  execution on real Java 8 of the same modern-JDK-built artifact when required.
+- For NIO changes, follow [`sniffy-module-nio/AGENTS.md`](sniffy-module-nio/AGENTS.md). For TLS changes, run
+  `mvn -pl sniffy-module-tls -am clean test` on Java 8 and the current development JDK.
 - For cross-module or release-facing changes, run
   `mvn -T 1C -B clean verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3`.
-- Run `git diff --check` before committing. A failing or skipped required check must be reported with its exact reason;
-  never describe a partial, retried, or ignored run as passing.
+- Run `git diff --check` before committing. Report every required check not run and its exact reason.
+- Frontend and visual proof rules live in [`sniffy-ui/AGENTS.md`](sniffy-ui/AGENTS.md); the site adds narrower rules in
+  [`sniffy-ui/apps/site/AGENTS.md`](sniffy-ui/apps/site/AGENTS.md).
 
-## Frontend work
+## Concurrency and resource safety
 
-- The private `sniffy-ui/` npm workspace is the source for both the injected profiler and `SniffyAgent` UI. Use Node 24+
-  and the root workspace scripts; do not hand-edit generated Java resources.
-- Keep profiler CSS and Base UI portals inside its open ShadowRoot. Do not add dynamic imports, runtime assets, host-page
-  mutations, global CSS, or absolute backend assumptions.
-- Run lint, typecheck, Vitest, Storybook build, production build, generated-resource comparison, bundle validation, and
-  Playwright for UI changes. GitHub Dependency Review is the causal pull-request gate for newly introduced
-  vulnerabilities. Use `npm audit` as diagnostic or remediation evidence for dependency-security work, not as a reason
-  to broaden an unrelated feature pull request; Dependabot and issue #712 own the current frontend vulnerability
-  baseline. Review `npm run dev` playground pages and visual diffs before updating baselines.
-- Storybook's MCP addon is optional for local exploration. CI and tests must never require an external AI or MCP service.
+- Deterministic concurrency tests are executable contracts. Do not add retries, timing sleeps, weakened assertions, or
+  increased timeouts to hide ordering defects.
+- Instrumentation failure must not prevent physical close, shutdown, cancellation, wakeup, or cleanup. Preserve the first
+  failure and suppress later cleanup failures.
+- Keep application callbacks outside private JDK/provider locks and internal construction scopes. Preserve documented lock
+  order and ownership.
 
-### Visual evidence contract
+## Pull requests and review
 
-- This contract applies to frontend and UI changes, not backend-only or documentation-only changes. For every intentionally
-  changed visual surface, attach before and after screenshots covering representative desktop and mobile viewports where
-  applicable, every affected light/dark theme, and important interaction states.
-- For a visual-neutral refactor, attach identical before and after screenshots or link directly to downloadable visual-test
-  artifacts that prove the baseline did not change.
-- Identify the application, route or story, viewport, browser, theme, and state in each filename or caption so reviewers
-  can map every image to the surface it proves.
-- If a screenshot test fails only in a particular environment, reproduce it against both the exact base SHA and head SHA
-  in that environment and attach or link the resulting diff. Never update a visual baseline unless the visual change is
-  intentional and explicitly approved.
-- If Codex Cloud cannot embed screenshots directly, run Playwright in the supported CI environment, upload the visual
-  outputs as downloadable artifacts, and link those artifacts from the pull request. Lack of local GUI access alone does
-  not satisfy the visual-evidence requirement.
-
-## Pull requests
-
-- Keep pull requests draft only while implementation or locally applicable verification is incomplete. Unless the task
-  explicitly requires a draft handoff, mark the pull request ready for review after both are complete and remote
-  publication has been verified.
-- When credentials and the delivery contract permit it, create the pull request using the authenticated agent account
-  rather than asking a human to create it manually. This preserves formal human review and Request Changes capability.
-- Cloud checkouts may not have an `origin` remote. Use an explicit repository URL or configure the intended remote rather
-  than treating a missing remote as successful local completion.
-- The pull request description must explain the problem, design, compatibility impact, tests executed, checks not run,
-  dependency changes, and remaining risks. Link the authoritative issue and include the exact published head SHA.
-- Do not hide limitations. If the environment cannot run a platform-, JDK-, or credential-dependent check, say exactly
-  what is missing and leave CI to perform that check.
-- A `REQUEST_CHANGES` review does not dispatch or resume Codex Cloud. Whenever a maintainer expects an agent to continue
-  after review, the maintainer must also post a separate, explicit `@codex` follow-up comment that summarizes every
-  blocking review item and tells the agent not to merge.
-- After that dispatch comment, schedule a status check for 15 minutes later and a second check 15 minutes after the first;
-  if the work is still incomplete, continue monitoring hourly. Do not mark the task as actively being fixed merely
-  because a review was submitted: verify that the explicit dispatch comment exists and that the agent has acknowledged
-  it or pushed a new commit. This dispatch and monitoring contract applies to every agent-authored pull request.
-
-## Review guidelines
-
-- Prioritize correctness, compatibility, resource safety, concurrency, public API stability, and test integrity over
-  formatting preferences.
-- Review the complete acceptance-to-proof matrix on the first pass. Avoid serially discovering independent missing
-  requirements across multiple fix cycles when they could be reported together.
-- Flag tests that were weakened, made timing-dependent, skipped, or retried to conceal a failure.
-- Flag accidental Java baseline increases, use of newer JDK APIs in Java 8 artifacts, and unintentional dependency or
-  public API changes.
-- Flag resource leaks or cleanup paths where Sniffy instrumentation can prevent application resources from closing.
+- Pull-request descriptions must explain the problem, design, compatibility impact, dependency changes, tests and checks,
+  limitations, remaining risks, and exact published head SHA.
+- Review the complete exact-head diff, issue/proof matrix, unresolved threads, generated and unrelated files, actual test
+  execution, artifacts or functional behavior when relevant, and all required CI. Prefer one comprehensive first review
+  over serial discovery of independent findings.
+- Formal approval or Request Changes must use an identity independent from the PR author. When that is impossible, state
+  the limitation and leave precise blocking or ready-for-human-review feedback without pretending a formal review occurred.
+- Returning work to an executor requires an explicit continuation dispatch and the monitoring cadence in
+  [`docs/ai-delivery/supervision.md`](docs/ai-delivery/supervision.md). A review comment alone does not prove work started.
+- Approval is not merge. Never merge or enable auto-merge without Dmitry's explicit instruction.

@@ -1,62 +1,59 @@
-# Sniffy local Codex dispatcher prompt
+# Sniffy app-native Local Codex dispatcher prompt
 
-Copy the text block below into a Scheduled task **attached to one persistent dispatcher chat** in the ChatGPT/Codex desktop app. Configure the task to run every 15 minutes against the local Sniffy project checkout, not a new worktree. The desktop app must use WSL for the Codex agent so all repository and GitHub commands run in Linux.
-
-The dispatcher is intentionally read-only with respect to source code. A no-op cycle stays in the same dispatcher chat. An eligible issue is handed to a one-time standalone Scheduled task, which creates exactly one dedicated worker chat and one isolated worktree for that issue.
+Copy the text block below into one automation attached to a persistent dispatcher conversation in the Codex app. Use the
+best supported cadence and test it after app updates. This is one Sniffy adapter for the generic lifecycle and claim protocol
+in `docs/ai-delivery/`; it is not a second policy.
 
 ```text
-Run one Sniffy dispatcher cycle in this existing dispatcher chat.
+Run one Sniffy app-native Local Codex dispatcher tick in this existing dispatcher conversation.
 
 Repository: sniffy/sniffy
 Book of work: organization project 2, https://github.com/orgs/sniffy/projects/2
 Base branch: develop
-Ready status: Ready for agent
-Executor: Local Codex
-Canonical worker template: .codex/local/worker-task-prompt.md
+Executor: Local Codex app
+Worker template: .codex/local/worker-task-prompt.md
 
-This chat is a coordinator only. Never edit source files, create an implementation branch, run tests, launch codex exec, or implement an issue in this dispatcher chat.
+This conversation coordinates only. Never edit source, create a work branch, run implementation/verification commands,
+launch nested CLI agents, review the worker's PR, merge, or enable auto-merge.
 
-1. Read AGENTS.md, docs/codex-workflow.md, this prompt, and the worker template before making queue decisions.
-2. Inspect project 2 and select at most one Issue from sniffy/sniffy whose Status is "Ready for agent" and Executor is "Local Codex".
-3. Do not dispatch a second issue while another local-worker item is still genuinely active. Inspect the issue, project state, claim comments, linked pull request, and current remote state instead of relying on a stale label alone.
-4. Prefer an explicitly re-queued continuation with an existing local-worker pull request and actionable maintainer feedback or failing required checks. Otherwise choose fresh work by project Priority and oldest issue number.
-5. Confirm that the selected issue satisfies the Definition of Ready in docs/codex-workflow.md. Read the complete issue and comments, relevant project fields, linked pull requests, review submissions and unresolved threads, and current CI. Apply the standard-tooling and infrastructure-approval gate in AGENTS.md.
-6. If no eligible issue exists, create no task, no chat, no worktree, no branch, and no GitHub mutation. Reply only NO_CHANGE.
-7. Classify the selected item as fresh work or an explicitly re-queued continuation. A continuation must have an open writable local-worker pull request and branch plus actionable feedback or required failing checks. Do not continue work owned by another executor.
-8. Select the worker model and reasoning effort from explicit issue or project routing. Use these defaults when no stronger instruction exists:
-   - agent:model:luna -> GPT-5.6 Luna with low reasoning;
-   - agent:model:sol -> GPT-5.6 Sol with high reasoning;
-   - otherwise -> GPT-5.6 Terra with medium reasoning.
-9. Claim the issue before spawning the worker:
-   - set project Status to "In progress";
-   - add the dedicated local-worker account as assignee when missing;
-   - add agent:local when missing;
-   - post a claim comment with worker name, fresh/continuation mode, intended or existing branch, existing pull request when applicable, selected model and reasoning, and an ISO-8601 timestamp.
-10. If any claim mutation fails, roll back mutations already made and stop before creating a task.
-11. Read .codex/local/worker-task-prompt.md and replace every placeholder with the selected issue, branch, pull request, model, and reasoning values. Do not leave unresolved placeholders in the child prompt.
-12. Using the desktop app's native Scheduled task capability, create one NEW ONE-TIME STANDALONE task:
-    - title: "Sniffy #<issue-number>: <issue-title>";
-    - run once as soon as possible;
-    - destination: a new standalone chat, never this dispatcher chat;
-    - project: the current local Sniffy project;
-    - environment: a new isolated Git worktree;
-    - model and reasoning: the values selected above;
-    - prompt: the fully rendered worker template.
-13. Do not use shell UI automation, Python observers, codex app-server, codex exec, or .codex/local/run-issue.sh to create the worker. The child must be an app-owned task so its chat remains visible in the desktop app and Remote.
-14. After the child task is confirmed created, post a second issue comment containing the exact child task title and timestamp. Keep Status "In progress". Report the issue number, worker task title, model, reasoning, and fresh/continuation mode in this dispatcher chat.
-15. If child-task creation fails, remove the local claim changes, restore Status "Ready for agent", post the exact failure on the issue, and report the error here. Never leave an issue silently claimed without a confirmed worker task.
+1. Read AGENTS.md and docs/ai-delivery/{README,lifecycle,event-loop,routing,supervision,verification}.md plus this prompt and
+   the worker template.
+2. Inspect project 2 and choose at most one sniffy/sniffy item where:
+   - Status = Ready;
+   - Executor = Local Codex app;
+   - Phase = Implementation or Verification;
+   - Assignee is empty or already matches the dedicated local-worker identity.
+3. Re-read the issue, routing, proof matrix, Phase/Status/Implementer/Verifier/Executor, branch/PR, existing claims, worker
+   references, review state, and CI. Prefer a valid re-queued continuation over fresh work. Never create a duplicate worker.
+4. If no eligible item exists, create no task, conversation, worktree, branch, comment, or field mutation. Reply only
+   NO_CHANGE.
+5. Select a deterministic candidate by Project priority, ready timestamp, then issue number. Classify fresh versus
+   continuation and choose model/reasoning from explicit routing.
+6. Claim using docs/ai-delivery/event-loop.md: create a unique intent for the current dispatch generation, verify the winning
+   intent, then set Status = In progress, concrete Assignee, claim token/lease, and provisional worker state. If any claim
+   mutation or later child creation fails, release to Ready or record an exact Blocked reason.
+7. Render every placeholder in .codex/local/worker-task-prompt.md, including <PHASE>, <IMPLEMENTER>, and <VERIFIER>.
+8. Create exactly one NEW one-time standalone app-owned task named "Sniffy #<issue-number> <phase>: <issue-title>" using the
+   current local project, a new isolated worktree, selected model/reasoning, and the rendered prompt. Never create it in this
+   dispatcher conversation.
+9. Do not use shell UI automation, Python observers, codex app-server, codex exec, or .codex/local/run-issue.sh for this
+   app-native adapter.
+10. After confirming the child task exists, record its exact title/reference, claim token, phase, worktree, branch, and
+    timestamp. If child creation fails, leave no In progress item without a worker reference.
 
-Never dispatch the same issue twice. Never merge or enable auto-merge.
+Never dispatch the same phase generation twice. Never merge or enable auto-merge.
 ```
 
 ## Required smoke test
 
-Before enabling the recurring dispatcher, use a disposable issue or a read-only child prompt to verify that a run of an in-chat Scheduled task can create one one-time standalone child task in the current desktop-app version. The smoke test must prove:
+Before enabling the recurring dispatcher, prove with disposable/read-only items that:
 
-- an empty queue adds no chat and no worktree;
-- one eligible issue creates exactly one worker chat;
-- the worker chat uses the expected WSL project and a separate worktree;
-- the task title contains the issue number;
-- a failed child creation rolls the claim back.
+- an empty tick stays in this conversation and creates no worktree;
+- one eligible item creates exactly one standalone worker conversation and isolated WSL worktree;
+- the worker receives the intended Phase and routing fields;
+- concurrent dispatcher attempts produce one winning claim;
+- failed child creation releases the claim;
+- a completed worker hands off to the next phase rather than creating its own reviewer conversation.
 
-Repeat this smoke test after material desktop-app Scheduled-task changes. If nested task creation is unavailable, pause the dispatcher and use the documented manual app workflow; do not silently replace it with external UI automation.
+Repeat after material Codex automation changes. If nested one-time task creation is unavailable, pause this adapter and use a
+manual app worker or the headless Linux adapter; do not substitute external UI automation.

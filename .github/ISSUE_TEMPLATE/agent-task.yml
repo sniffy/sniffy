@@ -1,0 +1,157 @@
+name: AI-assisted delivery task
+description: A task refined enough for ChatGPT, Codex Cloud, Local Codex, an IDE agent, or human-led execution
+title: ""
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Complete every relevant section. Resolve product and compatibility decisions before routing implementation. Planning selects both an Implementer and a Verifier. Existing external pull requests such as Dependabot updates use the PR-first intake runbook instead of this issue form unless separate implementation work is required.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe observable user or developer behavior after completion.
+      placeholder: What should work, for whom, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and current behavior
+      description: Include relevant modules, APIs, links, discussion decisions, prior attempts, errors, branch/PR constraints, and current evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements and decisions
+      description: State settled product, compatibility, public-API, migration, security, permission, and operator decisions.
+      placeholder: |
+        - Requirement 1
+        - Requirement 2
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals and forbidden adjacent output
+      description: Name tempting adjacent changes that must not appear.
+    validations:
+      required: true
+  - type: textarea
+    id: risk_proof
+    attributes:
+      label: Risk, architecture, and acceptance-to-proof matrix
+      description: Map every requirement and relevant lifecycle/compatibility risk to its boundary, implementer proof, reviewer check, verifier proof, exact environment, and owner. Mark non-applicable axes.
+      placeholder: |
+        | Requirement or risk | Allowed boundary | Implementer proof | Reviewer check | Verifier proof |
+        | --- | --- | --- | --- | --- |
+        | Java 8 artifact | production module; no newer APIs | Java 8 test + signature job | API/bytecode diff + matrix logs | same modern-built artifact on real Java 8 |
+        | UI behavior | named route/component only | focused test + local browser smoke | code/test/CI review | representative runtime and browser journey |
+    validations:
+      required: true
+  - type: textarea
+    id: standard_tooling
+    attributes:
+      label: Standard tooling and infrastructure rationale
+      description: Evaluate maintained tools, official actions, platform features, and declarative composition first. Write "Not applicable - no shared infrastructure change" when appropriate.
+      placeholder: |
+        For bespoke infrastructure, record the maintainer-approved:
+        1. Observable requirement and exact gap
+        2. Maintained alternatives and why composition is insufficient
+        3. Smallest custom surface and owner
+        4. Permissions/security model and deterministic tests
+        5. Compatibility/upgrade strategy and operational failure/noise semantics
+        6. Removal condition and migration plan
+
+        For a new workflow or materially new job, also record why an existing job cannot host it, triggers, least privilege, blocking semantics, maintainer response, lifecycle, and overlap.
+    validations:
+      required: true
+  - type: textarea
+    id: routing
+    attributes:
+      label: Delivery routing
+      description: Select planned roles independently and record current capability assumptions. Use docs/ai-delivery/routing.md.
+      placeholder: |
+        - Supervisor: ChatGPT
+        - Implementer: ChatGPT | Codex Cloud | Local Codex app | Local Codex CLI | IDE Agent | Human
+        - Verifier: ChatGPT | Codex Cloud | Local Codex app | Local Codex CLI | Human | Mixed
+        - Default reviewer: ChatGPT
+        - Formal reviewer: independent identity or human
+        - Privileged operator: none or named human role
+        - GitHub author identity: account
+        - Capability assumptions: source, dependencies, network, services, browser, credentials
+        - Rationale: risk axes, evidence, latency, and cost
+    validations:
+      required: true
+  - type: textarea
+    id: delivery
+    attributes:
+      label: Branch, pull request, lifecycle, and checkpoints
+      description: State base/head, fresh versus existing PR, author identity, Draft/Planning starting state, publication proof, and independently useful checkpoints.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Use verifiable checkboxes describing observable results.
+      placeholder: |
+        - [ ] Behavior is covered by named implementer proof
+        - [ ] Review scope and compatibility requirements are satisfied
+        - [ ] Representative verification is completed or explicitly unnecessary
+        - [ ] Documentation and migration impact are handled
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Required implementation, review, and verification
+      description: Separate implementer-local tests/browser checks, reviewer diff/CI evidence, and verifier system/integration/browser actions. Name exact environments and artifacts.
+    validations:
+      required: true
+  - type: dropdown
+    id: implementer
+    attributes:
+      label: Proposed Implementer
+      description: Dmitry and ChatGPT may change this during Planning.
+      options:
+        - ChatGPT
+        - Codex Cloud
+        - Local Codex app
+        - Local Codex CLI
+        - IDE Agent
+        - Human
+    validations:
+      required: true
+  - type: dropdown
+    id: verifier
+    attributes:
+      label: Proposed Verifier
+      description: The executor coordinating outcome verification; may use CI or other test executors as evidence sources.
+      options:
+        - ChatGPT
+        - Codex Cloud
+        - Local Codex app
+        - Local Codex CLI
+        - Mixed
+        - Human
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Planning readiness
+      options:
+        - label: Product, compatibility, public-API, and privileged-operator decisions are explicit.
+          required: true
+        - label: Module/API/configuration scope and lifecycle/global-state decisions are explicit.
+          required: true
+        - label: Every acceptance criterion is mapped to implementer, reviewer, and verifier evidence as applicable.
+          required: true
+        - label: Maintained alternatives were assessed; bespoke infrastructure or new CI topology has explicit approval.
+          required: true
+        - label: Branch, PR, identity, credentials, external services, and publication constraints are documented.
+          required: true
+        - label: The selected Implementer and Verifier capability assumptions are documented and realistic.
+          required: true
