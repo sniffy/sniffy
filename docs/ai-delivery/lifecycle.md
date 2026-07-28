@@ -38,7 +38,7 @@ Current routing is materialized separately:
 
 - `Executor` — product/runtime expected to perform the **next current action**.
 - `Assignee` — concrete GitHub identity or human responsible for that action.
-- `Worker reference` — concrete chat, task, process, worktree, branch, or PR ownership record after claim.
+- `Worker reference` — concrete chat, task, process, worktree, branch, PR, or tick ownership record after claim.
 
 Keeping both planned and current routing is intentional. `Implementer` and `Verifier` are decisions made during Planning or
 external-PR intake; `Executor` lets every dispatcher use the same query for the current phase without reimplementing
@@ -141,7 +141,11 @@ Worker reference: <PR URL and exact head>
 ```
 
 This skips Draft, Planning, and Implementation only when the scope is understandable and no product, compatibility, security,
-or policy decision is missing. Otherwise route the PR item to `Planning / Ready`. See
+or policy decision is missing. Otherwise route the PR item to `Planning / Ready`.
+
+An acceptable PR advances to Verification or Approval. A stale Dependabot head stays in Review while the bot rebases. A PR
+requiring repository-specific compatibility code becomes `Review / Blocked` and links to a new issue routed through Planning
+and Implementation; the source PR remains the work item for the original proposal until superseded or closed. See
 [`pull-request-intake.md`](pull-request-intake.md).
 
 ## Lifecycle
