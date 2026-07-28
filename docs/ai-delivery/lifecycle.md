@@ -1,7 +1,7 @@
 # Task lifecycle
 
 The lifecycle separates **what kind of work is next** from **whether that work can run now**. It is provider-neutral: the
-same model applies to ChatGPT, Codex Cloud, Local Codex, IDE-hosted agents, and humans.
+same model applies to ChatGPT, Codex Cloud, Local Codex, IDE-hosted agents, automation-authored pull requests, and humans.
 
 ## Fields
 
@@ -30,7 +30,8 @@ same model applies to ChatGPT, Codex Cloud, Local Codex, IDE-hosted agents, and 
 
 Planning chooses future roles before those phases begin:
 
-- `Implementer` — executor selected for the `Implementation` phase.
+- `Implementer` — executor selected for the `Implementation` phase, or the external author/automation that already supplied a
+  pull request.
 - `Verifier` — executor responsible for coordinating the `Verification` phase and its evidence.
 
 Current routing is materialized separately:
@@ -39,14 +40,16 @@ Current routing is materialized separately:
 - `Assignee` — concrete GitHub identity or human responsible for that action.
 - `Worker reference` — concrete chat, task, process, worktree, branch, or PR ownership record after claim.
 
-Keeping both planned and current routing is intentional. `Implementer` and `Verifier` are decisions made during Planning;
-`Executor` lets every dispatcher use the same query for the current phase without reimplementing transition logic.
+Keeping both planned and current routing is intentional. `Implementer` and `Verifier` are decisions made during Planning or
+external-PR intake; `Executor` lets every dispatcher use the same query for the current phase without reimplementing
+transition logic.
 
 Transition invariants include:
 
 ```text
 Planning -> Implementation: Executor := Implementer
 Implementation -> Review: Executor := ChatGPT (default reviewer)
+External PR intake -> Review: Implementer := PR author; Executor := ChatGPT
 Review -> Verification: Executor := Verifier
 Review/Verification -> Approval: Executor := Human
 ```
@@ -122,11 +125,31 @@ Dmitry may transition directly from that state to Done by actually merging/closi
 Implementation, or Verification. `Approval / In progress` is optional when he wants to signal that human review has started;
 it is not required for a direct decision.
 
+## Pull-request-first entry
+
+A work item may be an issue or a pull request. When Dependabot or another external actor already opened a reviewable PR, add the
+PR itself to the Project and normally initialize it as:
+
+```text
+Phase: Review
+Status: Ready
+Implementer: <PR author>
+Verifier: <selected verifier>
+Executor: ChatGPT
+Assignee: bedrin-gpt
+Worker reference: <PR URL and exact head>
+```
+
+This skips Draft, Planning, and Implementation only when the scope is understandable and no product, compatibility, security,
+or policy decision is missing. Otherwise route the PR item to `Planning / Ready`. See
+[`pull-request-intake.md`](pull-request-intake.md).
+
 ## Lifecycle
 
 ```mermaid
 stateDiagram-v2
     [*] --> Draft
+    ExternalPR --> ReviewReady : implementation already published
 
     Draft --> PlanningReady : Dmitry activates task
     Draft --> ImplementationReady : implementation explicitly preapproved
