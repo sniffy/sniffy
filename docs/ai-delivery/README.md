@@ -1,16 +1,17 @@
 # AI-assisted delivery in Sniffy
 
 This directory describes how Dmitry and ChatGPT plan, route, supervise, review, and verify work performed by ChatGPT, Codex
-Cloud, Local Codex, an IDE-hosted coding agent, or a human. It is the control-plane documentation for delivery. Repository
-engineering rules remain in the nearest applicable `AGENTS.md`.
+Cloud, Local Codex, an IDE-hosted coding agent, automation such as Dependabot, or a human. It is the control-plane
+documentation for delivery. Repository engineering rules remain in the nearest applicable `AGENTS.md`.
 
 ## Terminology
 
 | Term | Meaning | Sniffy example |
 | --- | --- | --- |
+| Work item | An issue or pull request represented in the delivery Project | feature issue, Dependabot PR |
 | Role | A responsibility in the delivery process | supervisor, implementer, reviewer, verifier, operator |
 | Executor | The product and environment performing a current action | ChatGPT, Codex Cloud, Local Codex, IDE agent, human |
-| Implementer | Planned executor for the Implementation phase | Local Codex |
+| Implementer | Planned executor or source author for the Implementation | Local Codex, Dependabot |
 | Verifier | Planned executor coordinating the Verification phase | ChatGPT |
 | Assignee | Concrete GitHub identity or human responsible now | `bedrin-gpt`, `bedrin-codex-local`, `bedrin` |
 | Agent profile | A selectable provider-specific role/tool configuration | a future Copilot custom agent, only when intentionally added |
@@ -37,7 +38,9 @@ Planning records both `Implementer` and `Verifier`. `Executor` materializes who 
 `Assignee` names the concrete identity or human. `Ready` may be pool-ready (unassigned worker queue) or directed-ready (for
 example, `Planning / Ready / Human / bedrin` means Dmitry may review the plan).
 
-See [`lifecycle.md`](lifecycle.md) for complete semantics and transitions.
+An external pull request may enter directly at `Review / Ready` when its implementation already exists and its scope is clear.
+See [`lifecycle.md`](lifecycle.md) for complete semantics and [`pull-request-intake.md`](pull-request-intake.md) for PR-first
+intake such as Dependabot.
 
 ## Control plane and execution plane
 
@@ -45,7 +48,7 @@ See [`lifecycle.md`](lifecycle.md) for complete semantics and transitions.
 Dmitry + ChatGPT decide outcome, risk, routing, and proof
                   |
                   v
- ChatGPT | Codex Cloud | Local Codex | IDE agent | human
+ ChatGPT | Codex Cloud | Local Codex | IDE agent | automation | human
                   |
                   v
      exact-head evidence and independent verification
@@ -55,8 +58,8 @@ Dmitry + ChatGPT decide outcome, risk, routing, and proof
 ```
 
 Dmitry owns product decisions, accepted risk, privileged repository/hosting operations, final acceptance, and merge
-authorization. ChatGPT owns issue refinement, routing proposals, supervision, code review, verification coordination, and
-clear handoff. An executor owns only the phase and proof explicitly routed to it.
+authorization. ChatGPT owns issue refinement, external-PR intake, routing proposals, supervision, code review, verification
+coordination, and clear handoff. An executor owns only the phase and proof explicitly routed to it.
 
 ## Sources of truth
 
@@ -76,6 +79,8 @@ why rules exist but do not override current policy.
 
 - [`lifecycle.md`](lifecycle.md) — phases, three statuses, planned routing fields, directed/pool Ready, and corrections.
 - [`event-loop.md`](event-loop.md) — reusable clock/dispatcher/claim design, stateless ChatGPT ticks, and headless Codex CLI.
+- [`pull-request-intake.md`](pull-request-intake.md) — external PRs, Dependabot discovery, review, rebase, and replacement flow.
+- [`chat-retention.md`](chat-retention.md) — manual archive policy and future automation boundary for high-volume tick chats.
 - [`routing.md`](routing.md) — choose Implementer, Verifier, current Executor, model, and human checkpoints.
 - [`supervision.md`](supervision.md) — dispatch proof, monitoring, continuity, review convergence, and merge boundaries.
 - [`verification.md`](verification.md) — implementer, reviewer, verifier, CI, browser/system proof, and capability routing.
