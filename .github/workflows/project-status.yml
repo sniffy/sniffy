@@ -35,7 +35,8 @@ jobs:
             const organization = 'sniffy';
             const projectNumber = 2;
             const commandPrefix = '/project-status ';
-            const requestedStatus = context.payload.comment.body
+            const commandLine = context.payload.comment.body.split(/\r?\n/, 1)[0];
+            const requestedStatus = commandLine
               .slice(commandPrefix.length)
               .trim();
 
