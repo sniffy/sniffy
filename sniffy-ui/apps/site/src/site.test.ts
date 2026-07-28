@@ -175,6 +175,9 @@ describe('@sniffy/site workspace contract', () => {
     expect(preview).not.toMatch(/from ['"][^n.]/);
     expect(verification).toContain("import { chromium } from '@playwright/test';");
     expect(verification).toContain("page.goto(url, { waitUntil: 'networkidle' })");
+    expect(verification).toContain("process.env.SNIFFY_SITE_URL?.trim() || 'https://sniffy.io'");
+    expect(verification).toContain('new URL(baseUrl, siteUrl).toString()');
+    expect(verification).toContain("new URL(route, 'https://sniffy.io/').toString()");
     expect(verification).toContain('Search current Sniffy documentation');
     expect(verification).toContain('traffic capture');
     expect(verification).toContain('use-cases/database-query-testing/');
@@ -372,6 +375,9 @@ describe('website deployment workflow contract', () => {
     expect(workflow).toContain('name: sniffy-pages-${{ steps.revision.outputs.sha }}');
     expect(workflow).toContain('> apps/site/build/.sniffy-deployment.json');
     expect(workflow).toContain('content_digest=');
+    expect(workflow).toMatch(
+      /- name: Verify GitHub Pages artifact\n\s+env:\n\s+SNIFFY_SITE_URL: \$\{\{ steps\.pages\.outputs\.origin \}\}\n\s+SNIFFY_SITE_BASE_URL:/,
+    );
     expect(workflow.indexOf('- name: Verify GitHub Pages artifact')).toBeLessThan(
       workflow.indexOf('- name: Record immutable artifact identity'),
     );

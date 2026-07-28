@@ -8,10 +8,12 @@ import { URL } from 'node:url';
 import { chromium } from '@playwright/test';
 
 const build = resolve(import.meta.dirname, '../build');
+const siteUrl = process.env.SNIFFY_SITE_URL?.trim() || 'https://sniffy.io';
 const baseUrl = process.env.SNIFFY_SITE_BASE_URL?.trim() || '/';
 if (!baseUrl.startsWith('/') || !baseUrl.endsWith('/') || baseUrl.includes('//')) {
   throw new Error(`SNIFFY_SITE_BASE_URL must have one leading and trailing slash: ${baseUrl}`);
 }
+const canonicalSiteUrl = new URL(baseUrl, siteUrl).toString();
 const packagedPreview = resolve(build, 'preview.mjs');
 const previewScript = existsSync(packagedPreview)
   ? packagedPreview
@@ -52,6 +54,7 @@ const browser = await chromium.launch();
 try {
   const previewSiteUrl = new URL(baseUrl, previewUrl).toString();
   const previewRoute = (route) => new URL(route, previewSiteUrl).toString();
+  const configuredRoute = (route) => new URL(route, canonicalSiteUrl).toString();
   const canonicalRoute = (route) => new URL(route, 'https://sniffy.io/').toString();
   const page = await browser.newPage();
   const pageErrors = [];
@@ -154,7 +157,7 @@ try {
   await page.goto(previewRoute('docs/3.1/'), { waitUntil: 'networkidle' });
   if (
     (await page.locator('link[rel="canonical"]').getAttribute('href')) !==
-      canonicalRoute('docs/3.1/') ||
+      configuredRoute('docs/3.1/') ||
     !(
       await page.getByRole('complementary', { name: 'Archived documentation notice' }).textContent()
     )?.includes('unsupported version')

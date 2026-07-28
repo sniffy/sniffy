@@ -163,6 +163,7 @@ jobs:
 
       - name: Verify GitHub Pages artifact
         env:
+          SNIFFY_SITE_URL: ${{ steps.pages.outputs.origin }}
           SNIFFY_SITE_BASE_URL: ${{ format('{0}/', steps.pages.outputs.base_path) }}
         run: npm run verify:site-artifact
 
