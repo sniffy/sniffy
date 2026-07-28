@@ -80,7 +80,7 @@ why rules exist but do not override current policy.
 - [`lifecycle.md`](lifecycle.md) — phases, three statuses, planned routing fields, directed/pool Ready, and corrections.
 - [`event-loop.md`](event-loop.md) — reusable clock/dispatcher/claim design, stateless ChatGPT ticks, and headless Codex CLI.
 - [`pull-request-intake.md`](pull-request-intake.md) — external PRs, GitHub Project auto-add/backfill, Dependabot review,
-  rebase, and replacement flow.
+  rebase, verification, and replacement flow.
 - [`chat-retention.md`](chat-retention.md) — permanent task-definition chats, disposable tick chats, manual archive policy,
   rollout pilot, and future automation boundary.
 - [`routing.md`](routing.md) — choose Implementer, Verifier, current Executor, model, and human checkpoints.
@@ -98,8 +98,8 @@ stateless chat and performs at most one phase turn directly; Scheduled Task exec
 All durable context therefore lives in GitHub and repository-owned Markdown, not in ChatGPT Project memory or prior tick chats.
 
 Dependabot PRs are first-class Project items rather than shadow issues. GitHub's built-in auto-add workflow discovers newly
-created/updated dependency PRs; the event loop backfills existing untracked PRs, initializes Review fields, and routes any
-required compatibility implementation to a linked agent-owned issue/PR.
+created or updated dependency PRs; the event loop backfills existing untracked PRs, initializes Review fields, verifies the
+author, and routes any required compatibility implementation to a linked agent-owned issue/PR.
 
 ## Provider-specific files
 
