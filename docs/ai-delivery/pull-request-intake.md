@@ -90,6 +90,19 @@ Route the reviewed exact head as follows:
 Do not normally push repository-specific fixes onto a Dependabot branch. A replacement agent-owned PR keeps branch ownership,
 review identity, and future Dependabot rebase behavior easier to reason about.
 
+## Verification examples by update class
+
+- **GitHub Action update:** inspect action ownership/release notes, changed permissions and inputs, and the exact workflow jobs
+  executing the new action version.
+- **Browser/test tooling:** run the complete affected browser matrix and inspect artifacts, screenshots, traces, and generated
+  output rather than relying only on typecheck/unit tests.
+- **Runtime framework/library:** run the affected integration or representative application path, including startup, request,
+  shutdown, compatibility, and failure behavior.
+- **Cryptography/security provider:** require the real provider/runtime path and supported-JDK compatibility evidence; a compile
+  or unrelated test suite is insufficient.
+- **Security update:** confirm the linked advisory is addressed without introducing a broader unsupported upgrade or silently
+  retaining the vulnerable path.
+
 ## Volume control
 
 If routine dependency PR volume becomes costly, refine `.github/dependabot.yml` in a separate reviewed change. Prefer grouping
