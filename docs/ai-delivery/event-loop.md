@@ -62,7 +62,7 @@ A manual product test on 2026-07-28 confirmed that a Scheduled Task execution ca
 ChatGPT child-task spawning as `unsupported` in the current adapter. The scheduled tick itself must therefore:
 
 1. read its self-contained prompt and external project profiles;
-2. run idempotent intake for eligible external pull requests when configured;
+2. run idempotent intake/reconciliation for eligible external pull requests when configured;
 3. inspect GitHub issues, pull requests, lifecycle fields, claims, and evidence;
 4. select and best-effort claim at most one eligible phase turn;
 5. perform that phase directly in the same fresh chat, or make a supported external handoff such as a Codex Cloud dispatch;
@@ -75,8 +75,8 @@ Local Codex, CI, or a human instead.
 
 This design intentionally trades chat volume for isolation. Four hourly tasks create up to 96 tick chats per day, including
 no-op ticks. Keep output minimal and machine-readable where practical. Follow [`chat-retention.md`](chat-retention.md): archive
-only after durable GitHub handoff, use manual archive as the current supported cleanup path, and never let chat cleanup alter
-delivery state.
+only after durable GitHub handoff, keep the four task-definition chats stable, run the topology as a 24-hour pilot, and never
+let chat cleanup alter delivery state.
 
 ### Dedicated scheduler Project and observed Project scoping
 
@@ -112,11 +112,21 @@ per day. Prefer a native future sub-hour schedule or an external/local clock ins
 
 ### Pull-request intake adapters
 
-A repository profile may define PR-first sources. Before claiming ordinary work, the tick scans for open PRs matching the
-source and not already represented in the GitHub Project. Repository and PR number are the idempotency key.
+A repository profile may define PR-first sources. Prefer GitHub Projects' built-in auto-add workflow for newly created or
+updated PRs. For Sniffy, select repository `sniffy/sniffy` and filter `is:pr is:open label:dependencies`. The auto-add filter
+cannot identify the author and does not backfill existing matching PRs, so the tick still reconciles Project items against the
+open source queue.
 
-For Dependabot, match the bot author and dependency label, distinguish security from routine version updates, and add the PR
-itself as `Review / Ready / Executor = ChatGPT`. Do not create a shadow issue unless review discovers independently owned
+Before claiming ordinary work, the tick:
+
+1. scans for open matching PRs not already represented in the Project;
+2. verifies the actual bot/external author and exact head;
+3. adds/backfills the PR item idempotently by repository plus PR number;
+4. classifies security/routine risk and initializes `Review / Ready / Executor = ChatGPT`;
+5. selects a capable Verifier before claiming the Review turn.
+
+For Dependabot, use the bot author plus dependency label during reconciliation, distinguish security from routine version
+updates, and set the PR itself as the work item. Do not create a shadow issue unless review discovers independently owned
 implementation work. See [`pull-request-intake.md`](pull-request-intake.md).
 
 Intake is not approval. The tick still performs exact-head Review, selects Verification, and respects the human merge boundary.
@@ -244,6 +254,8 @@ executors:
 intake:
   dependabot:
     enabled: true
+    projectAutoAddFilter: "is:pr is:open label:dependencies"
+    backfillExisting: true
     initialPhase: Review
     reviewer: ChatGPT
 branches:
