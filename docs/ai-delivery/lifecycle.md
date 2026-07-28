@@ -109,6 +109,19 @@ Planning / Ready / ChatGPT
 The apparent `In progress -> Ready` transition is a handoff to the next actor in the same collaborative phase, not a reversal
 of progress.
 
+The same directed semantics apply to final acceptance:
+
+```text
+Phase: Approval
+Status: Ready
+Executor: Human
+Assignee: bedrin
+```
+
+Dmitry may transition directly from that state to Done by actually merging/closing, or route the task back to Planning,
+Implementation, or Verification. `Approval / In progress` is optional when he wants to signal that human review has started;
+it is not required for a direct decision.
+
 ## Lifecycle
 
 ```mermaid
