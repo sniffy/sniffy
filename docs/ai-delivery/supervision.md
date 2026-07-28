@@ -60,16 +60,17 @@ The reusable queue event loop is described in [`event-loop.md`](event-loop.md). 
 different concerns:
 
 - **Queue polling** finds `Ready` work and claims it. The desired logical cadence is every 15 minutes.
-- **External PR intake** discovers untracked automation or contributor PRs and materializes them in Review without a shadow
-  issue when possible. See [`pull-request-intake.md`](pull-request-intake.md).
+- **External PR intake** uses GitHub Project Auto-add for new matching PRs and an idempotent tick reconciliation for existing or
+  missed automation/contributor PRs. It materializes the PR itself in Review without a shadow issue when possible. See
+  [`pull-request-intake.md`](pull-request-intake.md).
 - **Worker monitoring** checks a claimed implementation or correction after 15 minutes, again 15 minutes later, then hourly
   while incomplete.
 
 The current ChatGPT adapter uses four hourly Scheduled Tasks offset by 15 minutes. Every occurrence opens a fresh chat, reads
 all durable state from GitHub/repository Markdown, and performs at most one phase turn directly. It cannot create a child
 Scheduled Task and must not rely on previous tick chats. A no-op still creates a chat transcript but creates no GitHub/source
-mutation. Archive completed transcripts according to [`chat-retention.md`](chat-retention.md); chat cleanup never changes
-lifecycle state.
+mutation. Keep the four task-definition chats stable; archive completed tick transcripts according to
+[`chat-retention.md`](chat-retention.md). Chat cleanup never changes lifecycle state.
 
 Every new delegated task, retry, continuation, or Request Changes return starts a fresh worker-monitoring cycle:
 
