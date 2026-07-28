@@ -8,12 +8,14 @@ Sniffy is the first profile, not the framework itself.
 ```text
 Clock
   -> Dispatcher tick
-      -> Claim protocol
-          -> Phase worker
+      -> Intake adapters
+          -> Claim protocol
+              -> Phase worker
 ```
 
 - **Clock** starts one dispatcher tick. It knows only cadence and slot identity.
 - **Dispatcher tick** loads one or more project profiles, queries eligible work, and selects a deterministic candidate.
+- **Intake adapters** materialize external work such as Dependabot pull requests into the same lifecycle.
 - **Claim protocol** provides best-effort cross-dispatcher ownership.
 - **Phase worker** performs one phase turn, publishes evidence, and hands the task to the next phase as `Ready`.
 
@@ -60,20 +62,21 @@ A manual product test on 2026-07-28 confirmed that a Scheduled Task execution ca
 ChatGPT child-task spawning as `unsupported` in the current adapter. The scheduled tick itself must therefore:
 
 1. read its self-contained prompt and external project profiles;
-2. inspect GitHub issues, pull requests, lifecycle fields, claims, and evidence;
-3. select and best-effort claim at most one eligible phase turn;
-4. perform that phase directly in the same fresh chat, or make a supported external handoff such as a Codex Cloud dispatch;
-5. durably write the next Phase, Status, Executor, Assignee, evidence, and cleared claim;
-6. return `NO_CHANGE` when there is no eligible work.
+2. run idempotent intake for eligible external pull requests when configured;
+3. inspect GitHub issues, pull requests, lifecycle fields, claims, and evidence;
+4. select and best-effort claim at most one eligible phase turn;
+5. perform that phase directly in the same fresh chat, or make a supported external handoff such as a Codex Cloud dispatch;
+6. durably write the next Phase, Status, Executor, Assignee, evidence, and cleared claim;
+7. return `NO_CHANGE` when there is no eligible work.
 
 A tick must never claim work that cannot reasonably finish or reach a safe durable handoff within that scheduled execution.
 Route long implementation, dependency-heavy builds, persistent services, and environment-specific verification to Codex Cloud,
 Local Codex, CI, or a human instead.
 
 This design intentionally trades chat volume for isolation. Four hourly tasks create up to 96 tick chats per day, including
-no-op ticks. Keep output minimal and machine-readable where practical. Chat archival or cleanup is a separate future
-maintenance capability; do not assume a scheduled tick can archive, move, or delete chats until that behavior is explicitly
-supported and smoke-tested.
+no-op ticks. Keep output minimal and machine-readable where practical. Follow [`chat-retention.md`](chat-retention.md): archive
+only after durable GitHub handoff, use manual archive as the current supported cleanup path, and never let chat cleanup alter
+delivery state.
 
 ### Dedicated scheduler Project and observed Project scoping
 
@@ -106,6 +109,19 @@ handoff. It must not leave `In progress` without a real worker/dispatch referenc
 
 At a desired five-minute cadence, twelve hourly shards would consume most of the 15-task Pro limit and create up to 288 chats
 per day. Prefer a native future sub-hour schedule or an external/local clock instead of multiplying ChatGPT tasks indefinitely.
+
+### Pull-request intake adapters
+
+A repository profile may define PR-first sources. Before claiming ordinary work, the tick scans for open PRs matching the
+source and not already represented in the GitHub Project. Repository and PR number are the idempotency key.
+
+For Dependabot, match the bot author and dependency label, distinguish security from routine version updates, and add the PR
+itself as `Review / Ready / Executor = ChatGPT`. Do not create a shadow issue unless review discovers independently owned
+implementation work. See [`pull-request-intake.md`](pull-request-intake.md).
+
+Intake is not approval. The tick still performs exact-head Review, selects Verification, and respects the human merge boundary.
+When a compatibility fix or replacement PR is required, the source bot PR remains durably linked and blocked/superseded rather
+than silently rewritten.
 
 ### Codex app automation adapter
 
@@ -148,15 +164,16 @@ Executor = <dispatcher executor type>
 Assignee is empty OR Assignee belongs to this dispatcher pool
 ```
 
-It also checks phase compatibility, required access, worker-pool capacity, existing branch/PR ownership, and absence of a live
-claim. `Implementer` and `Verifier` are future routing decisions; phase transitions copy the relevant value into `Executor`.
+The work item may be an issue or a pull request. The dispatcher also checks phase compatibility, required access, worker-pool
+capacity, existing branch/PR ownership, and absence of a live claim. `Implementer` and `Verifier` are future routing decisions;
+phase transitions copy the relevant value into `Executor`.
 
-Use deterministic selection such as priority, then `readySince`, then issue number. A dispatcher should claim at most its
-available capacity and must not create duplicate workers for a continuation.
+Use deterministic selection such as security priority, project priority, `readySince`, then repository/item number. A
+dispatcher should claim at most its available capacity and must not create duplicate workers or Project items.
 
 ## Best-effort atomic claim
 
-GitHub issue comments and Project field updates are not one transaction. Use a claim generation and ordered intent protocol:
+GitHub comments and Project field updates are not one transaction. Use a claim generation and ordered intent protocol:
 
 1. Query an eligible `Ready` item.
 2. Re-read its Phase, Status, Executor, Assignee, dispatch generation, branch, PR, and existing claim immediately.
@@ -191,7 +208,7 @@ stale; mark `Blocked` when a human or external capability is required.
 
 One worker or stateless tick owns one phase turn. It must:
 
-- re-read the authoritative issue, current lifecycle fields, nearest `AGENTS.md`, branch/PR, and exact head;
+- re-read the authoritative issue or PR, current lifecycle fields, nearest `AGENTS.md`, branch/PR, and exact head;
 - verify its claim before mutating GitHub or source;
 - perform only the routed phase responsibility;
 - publish exact evidence and update the next Phase, Status, Executor, and Assignee atomically on a best-effort basis;
@@ -200,8 +217,8 @@ One worker or stateless tick owns one phase turn. It must:
 
 ## Generic core versus project profile
 
-The generic documents define lifecycle, claim, leases, correction limits, and adapter contracts. A project profile supplies
-repository-specific configuration, for example:
+The generic documents define lifecycle, intake, claim, leases, correction limits, and adapter contracts. A project profile
+supplies repository-specific configuration, for example:
 
 ```yaml
 schemaVersion: 1
@@ -224,6 +241,11 @@ executors:
     assignee: bedrin-codex-local
   Human:
     assignee: bedrin
+intake:
+  dependabot:
+    enabled: true
+    initialPhase: Review
+    reviewer: ChatGPT
 branches:
   newWorkPrefix: agent/
 ```
