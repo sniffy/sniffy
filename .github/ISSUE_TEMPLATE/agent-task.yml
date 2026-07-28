@@ -1,0 +1,150 @@
+name: AI-assisted implementation task
+description: A task refined enough for ChatGPT, Codex Cloud, Local Codex, an IDE agent, or human-led execution
+title: ""
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Complete every relevant section. Resolve product and compatibility decisions before routing implementation.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe observable user or developer behavior after completion.
+      placeholder: What should work, for whom, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and current behavior
+      description: Include relevant modules, APIs, links, prior attempts, errors, branch/PR constraints, and current evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements and decisions
+      description: State settled product, compatibility, public-API, migration, security, permission, and operator decisions.
+      placeholder: |
+        - Requirement 1
+        - Requirement 2
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals and forbidden adjacent output
+      description: Name tempting adjacent changes that must not appear.
+    validations:
+      required: true
+  - type: textarea
+    id: risk_proof
+    attributes:
+      label: Risk, architecture, and acceptance-to-proof matrix
+      description: Map every requirement and relevant lifecycle/compatibility risk to its allowed boundary and exact proof. Mark non-applicable axes.
+      placeholder: |
+        | Requirement or risk | Allowed module/API/configuration boundary | Exact proof and owner |
+        | --- | --- | --- |
+        | Java 8 artifact | production module only; no newer APIs | named Java 8 test + API-signature job |
+        | partial setup failure | no global/core redesign | named failure-path test proving cleanup |
+    validations:
+      required: true
+  - type: textarea
+    id: standard_tooling
+    attributes:
+      label: Standard tooling and infrastructure rationale
+      description: Evaluate maintained tools, official actions, platform features, and declarative composition first. Write "Not applicable - no shared infrastructure change" when appropriate.
+      placeholder: |
+        For bespoke infrastructure, record the maintainer-approved:
+        1. Observable requirement and exact gap
+        2. Maintained alternatives and why composition is insufficient
+        3. Smallest custom surface and owner
+        4. Permissions/security model and deterministic tests
+        5. Compatibility/upgrade strategy and operational failure/noise semantics
+        6. Removal condition and migration plan
+
+        For a new workflow or materially new job, also record why an existing job cannot host it, triggers, least privilege, blocking semantics, maintainer response, lifecycle, and overlap.
+    validations:
+      required: true
+  - type: textarea
+    id: routing
+    attributes:
+      label: Delivery routing
+      description: Select roles independently. Use docs/ai-delivery/routing.md.
+      placeholder: |
+        - Supervisor: ChatGPT
+        - Primary executor: ChatGPT | Codex Cloud | Local Codex | IDE Agent | Human
+        - Verification owner: ChatGPT | Executor | Human | Mixed
+        - Formal reviewer: independent identity or human
+        - Privileged operator: none or named human role
+        - GitHub author identity: account
+        - Rationale: environment, risk axes, evidence, and cost
+    validations:
+      required: true
+  - type: textarea
+    id: delivery
+    attributes:
+      label: Branch, pull request, and checkpoints
+      description: State base/head, fresh versus existing PR, author identity, draft/ready behavior, publication proof, and independently useful checkpoints.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Use verifiable checkboxes.
+      placeholder: |
+        - [ ] Behavior is covered by named proof
+        - [ ] Compatibility and scope are preserved
+        - [ ] Documentation and migration impact are handled
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Required validation
+      description: List focused/full commands, JDKs, platforms, CI jobs, artifacts, browser/manual checks, and proof owners.
+    validations:
+      required: true
+  - type: dropdown
+    id: execution
+    attributes:
+      label: Proposed primary executor
+      description: Dmitry and ChatGPT may change this during refinement.
+      options:
+        - ChatGPT
+        - Codex Cloud
+        - Local Codex
+        - IDE Agent
+        - Human
+    validations:
+      required: true
+  - type: dropdown
+    id: verification_owner
+    attributes:
+      label: Proposed verification owner
+      options:
+        - ChatGPT
+        - Executor
+        - Mixed
+        - Human
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness
+      options:
+        - label: Product, compatibility, public-API, and privileged-operator decisions are explicit.
+          required: true
+        - label: Module/API/configuration scope and lifecycle/global-state decisions are explicit.
+          required: true
+        - label: Every acceptance criterion is mapped to executable or inspectable proof and an owner.
+          required: true
+        - label: Maintained alternatives were assessed; bespoke infrastructure or new CI topology has explicit approval.
+          required: true
+        - label: Branch, PR, identity, credentials, external services, and publication constraints are documented.
+          required: true
+        - label: The selected executor can make ordinary implementation decisions without interactive clarification.
+          required: true
