@@ -5,26 +5,26 @@ or a human contributor using the AI-assisted delivery workflow.
 
 ## Lifecycle authority
 
-Use [`lifecycle.md`](lifecycle.md) as the canonical model:
+Use [`lifecycle.md`](lifecycle.md) as the canonical Phase/Status model:
 
 ```text
-Phase:  Draft -> Planning -> Implementation -> Review -> Verification (when required) -> Approval -> Done
+Phase:  Draft -> Planning -> Implementation -> Review -> Verification? -> Approval -> Done
 Status: Ready | In progress | Blocked
 ```
 
 `Ready` applies to the next action in the current phase. It may be pool-ready for a worker or directed-ready for a specific
 assignee such as Dmitry. `Review` is a phase. `Blocked` preserves the phase where work should resume.
 
-Do not replace these fields with optimistic prose. Track supporting facts independently:
+Do not replace these fields with optimistic prose. Track supporting delivery facts independently:
 
 - concrete dispatch/claim acknowledgement;
-- local completion and implementer proof;
+- local completion and local proof;
 - remote publication at an exact branch/SHA/PR;
-- Review outcome;
-- Verification outcome;
+- code review outcome;
+- verification outcome;
 - actual merge or deliberate closure.
 
-A local commit is not publication; publication is not Review; Review is not Verification; Verification is not merge.
+A local commit is not publication; publication is not review; review is not verification; verification is not merge.
 
 ## Phase handoff
 
@@ -42,37 +42,43 @@ Every handoff clears stale worker ownership and sets the intended Assignee or le
 
 ## Dispatch proof
 
-- A Cloud item is dispatched only after the proven trigger has a connector reaction, task link, or equivalent durable
-  acknowledgement. A review mention alone is not dispatch.
-- An app-native Local Codex item is dispatched only after claim plus confirmed worker task/conversation/worktree.
+- A Cloud implementation is dispatched only after the proven trigger has a connector reaction, task link, or equivalent
+  durable acknowledgement. A review mention alone is not implementation dispatch.
+- An app-native Local Codex item is dispatched only after claim plus confirmed worker task/chat/worktree.
 - A headless Local Codex item is dispatched only after claim plus confirmed process/worktree/branch record.
 - An IDE agent is working only while the human explicitly owns the interactive session or remote evidence proves activity.
-- A ChatGPT direct-execution item is working only after the exact intended GitHub or sandbox operation has begun.
+- A ChatGPT scheduled tick is working only after its fresh chat has won a claim and begun the exact intended phase operation.
+- A ChatGPT direct-execution task is working only after the exact intended GitHub or sandbox operation has begun.
 
-`In progress` with no verified claim/worker reference is invalid. When spawning fails, release to `Ready` or record an exact
-`Blocked` reason.
+`In progress` with no verified claim/current tick/worker reference is invalid. When execution or external dispatch cannot start,
+release to `Ready` or record an exact `Blocked` reason.
 
 ## Queue polling and worker monitoring
 
-The reusable queue event loop is described in [`event-loop.md`](event-loop.md). Queue polling and per-worker monitoring are
+The reusable queue event loop is described in [`event-loop.md`](event-loop.md). Queue polling and per-worker follow-up are
 different concerns:
 
 - **Queue polling** finds `Ready` work and claims it. The desired logical cadence is every 15 minutes.
-- **Worker monitoring** checks a claimed task or correction after 15 minutes, again 15 minutes later, then hourly while
-  incomplete.
+- **Worker monitoring** checks a claimed implementation or correction after 15 minutes, again 15 minutes later, then hourly
+  while incomplete.
 
-Every new task, retry, continuation, or Request Changes return starts a fresh monitoring cycle:
+The current ChatGPT adapter uses four hourly Scheduled Tasks offset by 15 minutes. Every occurrence opens a fresh chat, reads
+all durable state from GitHub/repository Markdown, and performs at most one phase turn directly. It cannot create a child
+Scheduled Task and must not rely on previous tick chats. A no-op still creates a chat transcript but creates no GitHub/source
+mutation.
+
+Every new delegated task, retry, continuation, or Request Changes return starts a fresh worker-monitoring cycle:
 
 1. check after 15 minutes;
 2. if incomplete, check 15 minutes later;
 3. if still incomplete, switch to hourly monitoring.
 
-Do not postpone the first check to the hourly monitor. Each check re-reads lifecycle fields, intended Executor and Assignee,
+Do not postpone the first check to the hourly monitor. Each check re-reads lifecycle fields, intended executor and assignee,
 claim/worker record, expected branch and PR, acknowledgement or new head, review threads, and current CI. Notify only on
 meaningful progress, completion, or a real blocker.
 
-A review or dispatch comment does not prove work started. Verify acknowledgement or new remote evidence. Stop monitoring when
-the phase handoff completes or a human/external blocker owns the next action.
+A review or dispatch comment does not prove work started. Verify acknowledgement or new remote evidence. Stop worker
+monitoring when the phase handoff completes or a human/external blocker owns the next action.
 
 ## Branch and PR continuity
 
