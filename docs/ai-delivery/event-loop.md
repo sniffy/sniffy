@@ -69,8 +69,13 @@ spawnWorker(task, targetProfile) -> supported | unsupported | failed
 ```
 
 A possible implementation is to ask the dispatcher to create a one-time standalone task several minutes later, but this
-must pass a smoke test in the installed product version. On unsupported or failed spawn, release the claim to `Ready` or mark
-an exact capability blocker; never leave `In progress` with no worker reference.
+must pass a smoke test in the installed product version. The test must prove that the child does not reuse the dispatcher
+chat, receives all required repository/issue context, and leaves no claimed task without a worker. On unsupported or failed
+spawn, release the claim to `Ready` or mark an exact capability blocker; never leave `In progress` with no worker reference.
+
+Until cross-Project spawning is proven, the global ChatGPT ring is safe for polling, routing, Review, notifications, and work
+that can run in the dispatcher context. Route standalone implementation to Codex Cloud, headless Local Codex, or a manually
+created ChatGPT worker rather than assuming Project-aware thread creation.
 
 At a desired five-minute cadence, twelve hourly shards would consume most of the 15-task Pro limit. Prefer a native future
 sub-hour schedule or an external/local clock instead of multiplying ChatGPT tasks indefinitely.
