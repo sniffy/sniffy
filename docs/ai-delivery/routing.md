@@ -8,21 +8,21 @@ and evidence decision, not an estimate based on changed lines or a permanent ass
 
 A task may assign these responsibilities independently:
 
-- **Supervisor/router:** refines the issue, proposes routing, tracks delivery, and coordinates corrections. ChatGPT is the
-  default.
+- **Supervisor/router:** refines the issue or external-PR intake, proposes routing, tracks delivery, and coordinates corrections.
+  ChatGPT is the default.
 - **Implementer:** changes code or documentation and proves the change in its own environment; for PR-first intake this may be
   an existing external author such as Dependabot.
 - **Reviewer:** inspects the complete exact-head code/configuration diff, scope, tests, review threads, and CI evidence.
   ChatGPT is the default unless independence or capability requires another reviewer.
-- **Verifier:** validates the observable result against the issue and discussion in a representative environment.
+- **Verifier:** validates the observable result against the issue or PR intent and discussion in a representative environment.
 - **Formal reviewer:** submits GitHub approval or Request Changes using an identity independent from the PR author.
 - **Privileged operator:** changes DNS, custom domains, repository settings, secrets, rulesets, Pages environments, or other
   protected infrastructure.
 - **Merger:** merges only after Dmitry's explicit instruction.
 
-The same executor may hold several roles when independence is not required. When ChatGPT authors a PR through
-`bedrin-gpt`, it may self-check and verify the work but cannot honestly formal-review that PR using the same identity. A
-Dependabot-authored PR is independent from `bedrin-gpt` and may receive a formal ChatGPT review.
+The same executor may hold several roles when independence is not required. When ChatGPT authors a PR through `bedrin-gpt`, it
+may self-check and verify the work but cannot honestly formal-review that PR using the same identity. A Dependabot-authored PR
+is independent from `bedrin-gpt` and may receive a formal ChatGPT review.
 
 ## Routing fields
 
@@ -35,7 +35,7 @@ The current lifecycle materializes:
 
 - `Executor` — product/runtime responsible for the next current action.
 - `Assignee` — concrete identity or human responsible now.
-- `Worker reference` — concrete chat, process, task, branch/worktree, or PR ownership after claim.
+- `Worker reference` — concrete chat, process, task, branch/worktree, PR, or tick ownership after claim.
 
 `Implementer` and `Verifier` must remain visible before their phases begin. `Executor` is intentionally denormalized so every
 dispatcher can use one query such as `Status = Ready AND Executor = Local Codex`.
@@ -94,6 +94,10 @@ Count independent decisions and proof obligations, not changed lines. Relevant a
 Several interacting axes require a read-only design/proof preflight before implementation. Cloud may still be appropriate
 when the issue resolves every axis and provides a complete proof matrix. Local execution does not fix an ambiguous issue.
 
+Dependency PR risk is not determined only by semantic-version size. Distinguish runtime from development-only dependencies,
+framework/public-API changes, browser/test infrastructure, cryptography/security providers, and GitHub Actions whose code and
+permissions execute in CI.
+
 ## Default routing heuristics
 
 1. Ask whether ChatGPT can complete the current action truthfully with its available connectors, sandbox, source, dependencies,
@@ -135,7 +139,7 @@ Recommended lifecycle and routing fields:
 - `Blocked reason`: exact external blocker and next action.
 
 GitHub assignees are technical identities, not executor products. Existing `agent:local` and `agent:cloud` labels are
-transitional metadata and must not override Project routing fields.
+transitional metadata and must not override Project routing fields. Project work items may be issues or pull requests.
 
 ## Issue routing block
 
@@ -155,4 +159,5 @@ transitional metadata and must not override Project routing fields.
 ```
 
 See [`lifecycle.md`](lifecycle.md) for transition invariants, [`event-loop.md`](event-loop.md) for dispatch fields and claim
-behavior, and [`pull-request-intake.md`](pull-request-intake.md) for PR-first sources.
+behavior, and [`pull-request-intake.md`](pull-request-intake.md) for PR-first sources. External PRs do not require a fabricated
+issue routing block unless new implementation work is created.
