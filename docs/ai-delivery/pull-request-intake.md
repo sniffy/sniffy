@@ -45,6 +45,10 @@ The current `.github/dependabot.yml` schedules weekly GitHub Actions and npm upd
 Dependabot PRs currently include browser-tooling, GitHub Action, Spring major-version, and cryptography updates, so the queue
 must not apply one blanket approval policy.
 
+Enabling this Project workflow is a manual repository-management action outside the documentation PR. Until it is enabled,
+the stateless event loop provides discovery and backfill; after it is enabled, the loop remains responsible for field
+initialization, author verification, missed-item reconciliation, and review.
+
 ## Event-loop intake adapter
 
 Before selecting ordinary `Ready` work, a tick may scan for eligible open pull requests that are not yet represented in the
