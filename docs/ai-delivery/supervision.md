@@ -1,7 +1,7 @@
 # Supervision and delivery control
 
 This policy applies whenever ChatGPT supervises work performed by Codex Cloud, Local Codex, an IDE agent, ChatGPT itself,
-or a human contributor using the AI-assisted delivery workflow.
+automation such as Dependabot, or a human contributor using the AI-assisted delivery workflow.
 
 ## Lifecycle authority
 
@@ -33,6 +33,7 @@ A worker completes one phase turn and writes the next route:
 - Planning records `Implementer` and `Verifier`; handoff to Dmitry stays `Planning / Ready / Human`.
 - Planning approval writes `Implementation / Ready / Executor := Implementer`.
 - Implementation publication writes `Review / Ready / Executor := ChatGPT` by default.
+- External PR intake may write `Review / Ready / Implementer := PR author / Executor := ChatGPT` directly.
 - Successful Review either writes `Verification / Ready / Executor := Verifier` or `Approval / Ready / Human` when existing
   evidence already satisfies the issue.
 - Successful Verification writes `Approval / Ready / Human`.
@@ -59,13 +60,16 @@ The reusable queue event loop is described in [`event-loop.md`](event-loop.md). 
 different concerns:
 
 - **Queue polling** finds `Ready` work and claims it. The desired logical cadence is every 15 minutes.
+- **External PR intake** discovers untracked automation or contributor PRs and materializes them in Review without a shadow
+  issue when possible. See [`pull-request-intake.md`](pull-request-intake.md).
 - **Worker monitoring** checks a claimed implementation or correction after 15 minutes, again 15 minutes later, then hourly
   while incomplete.
 
 The current ChatGPT adapter uses four hourly Scheduled Tasks offset by 15 minutes. Every occurrence opens a fresh chat, reads
 all durable state from GitHub/repository Markdown, and performs at most one phase turn directly. It cannot create a child
 Scheduled Task and must not rely on previous tick chats. A no-op still creates a chat transcript but creates no GitHub/source
-mutation.
+mutation. Archive completed transcripts according to [`chat-retention.md`](chat-retention.md); chat cleanup never changes
+lifecycle state.
 
 Every new delegated task, retry, continuation, or Request Changes return starts a fresh worker-monitoring cycle:
 
@@ -88,6 +92,14 @@ monitoring when the phase handoff completes or a human/external blocker owns the
 - When `develop` moves materially before handoff, normally merge current `origin/develop` into the feature branch and rerun
   exact-head proof. Do not use a stale green run as final evidence.
 - Preserve completed work when publication fails. Diagnose access and recover the existing commit rather than rebuilding.
+
+For Dependabot and other automation-owned PRs:
+
+- review the bot's exact head directly when the proposed update is self-contained;
+- request the bot's documented rebase rather than rewriting its branch for a stale base or conflict;
+- do not normally push compatibility fixes onto the bot branch because extra commits complicate automated rebasing;
+- create a linked issue and agent-owned replacement PR when implementation changes are required, and keep the source PR
+  blocked/superseded with explicit links and rationale.
 
 ## Review and correction
 
@@ -112,12 +124,17 @@ The Assignee or PR author is a technical identity, not the executor product. For
 from the PR author.
 
 - When independent review is available and proof passes, submit `APPROVE`.
-- When blockers remain, submit one precise `REQUEST_CHANGES`, then explicitly return the task to `Implementation / Ready`.
+- When blockers remain, submit one precise `REQUEST_CHANGES`, then explicitly return the task to `Implementation / Ready` or
+  create the linked replacement task required by the PR intake policy.
 - When the active identity cannot review its own PR, leave exact ready-for-Dmitry-review or blocking feedback and state the
   identity limitation. Do not pretend a formal review occurred.
+
+A Dependabot-authored PR is independent from `bedrin-gpt`, so ChatGPT may formally approve or request changes after a complete
+exact-head review.
 
 ## Merge and privileged boundaries
 
 No agent or supervising ChatGPT workflow may merge, enable auto-merge, bypass protection, rewrite shared history, or perform
 privileged repository/hosting operations without Dmitry's explicit instruction. `Approval / Ready` is the human acceptance
-queue; there is no separate Ready-to-merge phase unless an approved-but-unmerged backlog becomes a real need.
+queue; there is no separate Ready-to-merge phase unless an approved-but-unmerged backlog becomes a real need. This boundary
+also applies to Dependabot even though GitHub supports Dependabot commands and auto-merge.
