@@ -306,6 +306,58 @@ describe('website validation workflow contract', () => {
   });
 });
 
+describe('release workflow push filter contract', () => {
+  const workflow = readFileSync(resolve(repository, '.github/workflows/deploy.yml'), 'utf8');
+  const pushTrigger = workflow.match(/ {2}push:\n([\s\S]*?)(?=\n {2}release:\n)/)?.[1];
+  const ignoredPaths =
+    pushTrigger
+      ?.match(/ {4}paths-ignore:\n([\s\S]*)/)?.[1]
+      .split('\n')
+      .map((line) => line.match(/^\s+- (.+)$/)?.[1])
+      .filter((path): path is string => path !== undefined) ?? [];
+  const pathIsIgnored = (path: string) =>
+    ignoredPaths.some((pattern) =>
+      pattern.endsWith('/**') ? path.startsWith(pattern.slice(0, -2)) : path === pattern,
+    );
+  const workflowRunsForPush = (changedPaths: string[]) => !changedPaths.every(pathIsIgnored);
+
+  it('ignores only the narrow website-owned path set on develop pushes', () => {
+    expect(pushTrigger).toBeDefined();
+    expect(pushTrigger).toMatch(/branches:\n\s+- develop/);
+    expect(ignoredPaths).toEqual([
+      '.github/workflows/website-deploy.yml',
+      'docs/website-deployment.md',
+      'sniffy-ui/apps/site/**',
+      'sniffy-ui/packages/theme/**',
+    ]);
+    expect(
+      workflowRunsForPush([
+        '.github/workflows/website-deploy.yml',
+        'docs/website-deployment.md',
+        'sniffy-ui/apps/site/src/pages/index.tsx',
+        'sniffy-ui/packages/theme/src/base.css',
+      ]),
+    ).toBe(false);
+  });
+
+  it('still runs for mixed and Maven-releasable pushes', () => {
+    expect(
+      workflowRunsForPush([
+        'sniffy-ui/apps/site/src/pages/index.tsx',
+        'sniffy-core/src/main/java/io/sniffy/Sniffy.java',
+      ]),
+    ).toBe(true);
+    expect(workflowRunsForPush(['pom.xml'])).toBe(true);
+    expect(workflowRunsForPush(['sniffy-ui/package-lock.json'])).toBe(true);
+    expect(workflowRunsForPush(['sniffy-core/src/test/java/io/sniffy/SniffyTest.java'])).toBe(true);
+  });
+
+  it('preserves manual dispatch and release triggers', () => {
+    expect(workflow).toMatch(/on:\n {2}workflow_dispatch:\n {2}push:/);
+    expect(workflow).toMatch(/ {2}release:\n {4}types: \[ created \]/);
+  });
+});
+
 describe('website deployment workflow contract', () => {
   const workflow = readFileSync(
     resolve(repository, '.github/workflows/website-deploy.yml'),

@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - develop
+    paths-ignore:
+      - .github/workflows/website-deploy.yml
+      - docs/website-deployment.md
+      - sniffy-ui/apps/site/**
+      - sniffy-ui/packages/theme/**
   release:
     types: [ created ]
 env:
