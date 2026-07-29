@@ -4,9 +4,7 @@ on:
   issue_comment:
     types: [created]
 
-permissions:
-  contents: read
-  issues: write
+permissions: {}
 
 concurrency:
   group: project-field-${{ github.repository }}-${{ github.event.issue.number }}
@@ -14,10 +12,12 @@ concurrency:
 
 jobs:
   update-field:
+    permissions:
+      issues: write
     if: >-
-      github.event.issue.pull_request == null &&
       (
         github.event.comment.user.login == 'bedrin' ||
+        github.event.comment.user.login == 'bedrin-gpt' ||
         (
           vars.PRODUCT_MANAGER_LOGIN != '' &&
           github.event.comment.user.login == vars.PRODUCT_MANAGER_LOGIN
@@ -35,7 +35,8 @@ jobs:
             const organization = 'sniffy';
             const projectNumber = 2;
             const prefix = '/project-field ';
-            const command = context.payload.comment.body.slice(prefix.length).trim();
+            const commandLine = context.payload.comment.body.split(/\r?\n/, 1)[0];
+            const command = commandLine.slice(prefix.length).trim();
             const separator = command.indexOf('=');
             if (separator < 1) {
               core.setFailed('Expected /project-field Field name=Value');
@@ -49,9 +50,9 @@ jobs:
               return;
             }
 
-            const issueNodeId = context.payload.issue.node_id;
+            const workItemNodeId = context.payload.issue.node_id;
             const result = await github.graphql(
-              `query($organization: String!, $projectNumber: Int!, $issueNodeId: ID!) {
+              `query($organization: String!, $projectNumber: Int!, $workItemNodeId: ID!) {
                 organization(login: $organization) {
                   projectV2(number: $projectNumber) {
                     id
@@ -68,8 +69,16 @@ jobs:
                     }
                   }
                 }
-                node(id: $issueNodeId) {
+                node(id: $workItemNodeId) {
                   ... on Issue {
+                    projectItems(first: 50) {
+                      nodes {
+                        id
+                        project { id number }
+                      }
+                    }
+                  }
+                  ... on PullRequest {
                     projectItems(first: 50) {
                       nodes {
                         id
@@ -79,7 +88,7 @@ jobs:
                   }
                 }
               }`,
-              { organization, projectNumber, issueNodeId }
+              { organization, projectNumber, workItemNodeId }
             );
 
             const project = result.organization?.projectV2;
@@ -99,16 +108,16 @@ jobs:
             );
             if (!projectItem) {
               const addItemResult = await github.graphql(
-                `mutation($projectId: ID!, $issueNodeId: ID!) {
+                `mutation($projectId: ID!, $workItemNodeId: ID!) {
                   addProjectV2ItemById(input: {
                     projectId: $projectId,
-                    contentId: $issueNodeId
+                    contentId: $workItemNodeId
                   }) { item { id } }
                 }`,
-                { projectId: project.id, issueNodeId }
+                { projectId: project.id, workItemNodeId }
               );
               projectItem = addItemResult.addProjectV2ItemById.item;
-              core.notice('Added this issue to Sniffy Product & Delivery.');
+              core.notice('Added this issue or pull request to Sniffy Product & Delivery.');
             }
 
             if (field.__typename === 'ProjectV2SingleSelectField') {
@@ -163,18 +172,19 @@ jobs:
 
             core.notice(`Updated ${requestedField} to "${requestedValue}".`);
 
-      - name: Remove the service command comment
+      - name: Acknowledge the command and preserve the audit trail
         if: ${{ success() }}
         uses: actions/github-script@v9
         with:
           github-token: ${{ github.token }}
           script: |
             try {
-              await github.rest.issues.deleteComment({
+              await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: context.payload.comment.id
+                comment_id: context.payload.comment.id,
+                content: '+1'
               });
             } catch (error) {
-              core.warning(`Field was updated, but the command comment could not be removed: ${error.message}`);
+              core.warning(`Field was updated, but the command could not be acknowledged: ${error.message}`);
             }

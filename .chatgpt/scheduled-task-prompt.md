@@ -4,16 +4,10 @@ Create a fileless ChatGPT Project named `AI Delivery Event Loop`. Inside that Pr
 destination is **new chat**:
 
 ```text
-Event Loop 00 -> every hour at :00
-Event Loop 15 -> every hour at :15
-Event Loop 30 -> every hour at :30
-Event Loop 45 -> every hour at :45
-```
+Schedule 4 tasks to run inside "AI Delivery Event Loop" project every hour at 00, 15, 30, and 45 minutes.
+Execution must be done in a separate chat inside "AI Delivery Event Loop" project.
+Prompt follows below:
 
-Paste the following block **unchanged** into each task. The four tasks use exactly the same prompt; only their schedules and names
-differ.
-
-```text
 Run one stateless Sniffy AI Delivery Event Loop tick now.
 
 Repository: sniffy/sniffy
@@ -38,6 +32,21 @@ unpublished local state. Do not create another Scheduled Task, child ChatGPT tas
 current Scheduled Task name as the dispatcher slot; if it is unavailable, use this chat/task identifier plus the current UTC
 timestamp.
 
+GitHub Project v2 mutation workaround:
+
+- The GitHub connector may read Project 2 but cannot reliably update its fields. Do not claim a Project field or status changed
+  until the resulting GitHub state has been re-read.
+- To update one configured text or single-select field, post a comment on the exact issue or pull request with this command on
+  the first line: `/project-field Field name=Value`.
+- To update `Status`, post a comment on the exact issue or pull request with this command on the first line:
+  `/project-status Status`.
+- A command comment may contain explanatory or audit text on later lines. Both workflows ignore every line after the first,
+  preserve the command comment, and acknowledge a successful update with a `+1` reaction.
+- The allowed `Status` values are: `Draft`, `Planning`, `Implementation`, `Review`, `Verification`, `Approval`, and `Done`.
+  `Execution` is a separate field with the values `Ready`, `In progress`, and `Blocked`; update it with `/project-field`.
+- Use separate command comments when changing multiple fields. After each command, re-read the Project item and confirm the
+  field value before recording the transition or evidence.
+
 Perform the following protocol:
 
 1. Reconcile external pull-request intake before ordinary queue work. Find eligible open sniffy/sniffy dependency PRs missing
@@ -54,9 +63,10 @@ Perform the following protocol:
 4. Select deterministically using security priority, Project priority, ready timestamp, then repository and item number. Never
    create a duplicate Project item, worker, branch, or pull request.
 5. Claim using the best-effort protocol in event-loop.md: re-read Status, Execution, Executor, Assignee, generation, branch, PR,
-   worker reference, and existing claims; publish a unique claim intent; determine the winning intent; set
-   `Execution = In progress`, `Assignee = bedrin-gpt`, claim/lease metadata, and this tick's concrete reference; then re-read and
-   verify ownership before doing work. If the claim cannot be established, make no work mutation.
+   worker reference, and existing claims; publish a unique claim intent; determine the winning intent; use the Project comment
+   commands above to set `Execution = In progress`, claim/lease metadata, and this tick's concrete reference, and update the
+   GitHub `Assignee = bedrin-gpt` separately when the assignment capability is available; then re-read and verify ownership before
+   doing work. If the claim cannot be established, make no work mutation.
 6. Perform exactly one lifecycle turn according to the current issue or PR and the repository policy:
    - Planning: resolve the outcome, decisions, non-goals, risk axes, Implementer, Verifier, and proof obligations, then publish a
      precise handoff.
@@ -67,9 +77,9 @@ Perform the following protocol:
      Otherwise submit one precise REQUEST_CHANGES or record the identity limitation. Never approve bedrin-gpt's own PR.
    - Verification: validate the observable result against the authoritative issue using the exact published head or artifact in
      a representative environment. Do not relabel unit tests or green CI as system verification.
-7. Publish durable evidence in GitHub before ending the tick. Update the next `Status`, `Execution`, `Executor`, and `Assignee`,
-   clear completed claim/lease ownership, and record exact branch, PR, SHA, commands, CI, artifacts, review, verification, and
-   limitations as applicable.
+7. Publish durable evidence in GitHub before ending the tick. Use the Project comment commands to update the next `Status`,
+   `Execution`, and other configured fields, update the GitHub `Assignee` when applicable, clear completed claim/lease ownership,
+   and record exact branch, PR, SHA, commands, CI, artifacts, review, verification, and limitations as applicable.
 8. Use `Execution = Blocked` only when Dmitry must decide or act. Keep the current Status, set `Executor = Human`,
    `Assignee = bedrin`, and record the smallest exact requested action. Routine waiting for a concrete CI run, worker, or
    external operation remains `In progress` only when a durable reference and next monitoring point are recorded. Never leave
