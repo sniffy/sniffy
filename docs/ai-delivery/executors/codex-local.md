@@ -23,7 +23,7 @@ persistent dispatcher conversation
   -> eligible issue: one one-time standalone worker task
        -> one dedicated issue conversation
        -> one isolated app-managed worktree
-       -> worker publishes phase evidence and handoff
+       -> worker publishes lifecycle evidence and handoff
 ```
 
 The native ChatGPT/Codex app runs on the disposable Windows VM. Its coding agent, terminal, repository, GitHub CLI, Java,
@@ -50,11 +50,11 @@ The canonical compatibility paths remain `.codex/local/scheduled-task-prompt.md`
 systemd timer or cron
   -> flock / host-local dispatcher lock
   -> load one or more project profiles
-  -> query Phase + Status + Executor
+  -> query Status + Execution + Executor
   -> GitHub best-effort claim
   -> isolated git worktree
-  -> codex exec with rendered phase prompt
-  -> tests, publication, evidence, and next-phase handoff
+  -> codex exec with rendered lifecycle prompt
+  -> tests, publication, evidence, and next-status handoff
 ```
 
 The Codex CLI can read, modify, and run local code, and `codex exec` is intended for shell workflows. See:
@@ -71,7 +71,7 @@ Each worker owns:
 - one claim token and lifecycle generation;
 - one isolated worktree;
 - one branch and intended PR;
-- one rendered prompt for the current phase;
+- one rendered prompt for the current lifecycle status;
 - one structured log/evidence directory;
 - a bounded process timeout and cleanup path.
 
@@ -82,17 +82,18 @@ explicitly configured. Never let two workers own the same task/branch.
 
 Both adapters use [`../event-loop.md`](../event-loop.md). The dispatcher:
 
-- reads `Status = Ready` items routed to its executor type;
+- reads `Execution = Ready` items routed to its executor type;
 - respects directed Assignee or empty pool ownership;
-- checks phase, project profile, access, capacity, branch/PR, and existing claims;
+- checks lifecycle status, project profile, access, capacity, branch/PR, and existing claims;
 - claims on a best-effort atomic basis before creating a worker;
 - records the concrete conversation/task or process/worktree reference;
-- releases to `Ready` or sets an exact `Blocked` reason when spawn fails;
+- releases to `Ready` when spawn fails;
+- sets `Blocked` only when Dmitry must decide or act, with `Executor = Human`, `Assignee = bedrin`, and the exact request;
 - creates no source mutation for an empty queue.
 
 ## Worker contract
 
-A Local Codex worker performs only the routed phase:
+A Local Codex worker performs only the routed lifecycle status:
 
 - Planning is unusual and should normally remain ChatGPT/human-owned;
 - Implementation changes code, runs implementer-owned tests/browser checks, inspects the diff, commits, pushes, and verifies
