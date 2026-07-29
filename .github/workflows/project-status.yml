@@ -12,6 +12,9 @@ concurrency:
 
 jobs:
   update-status:
+    permissions:
+      issues: write
+      pull-requests: write
     if: >-
       (
         github.event.comment.user.login == 'bedrin' ||
@@ -168,7 +171,7 @@ jobs:
         if: ${{ success() }}
         uses: actions/github-script@v9
         with:
-          github-token: ${{ secrets.PROJECT_TOKEN }}
+          github-token: ${{ github.token }}
           script: |
             try {
               await github.rest.reactions.createForIssueComment({
@@ -178,5 +181,5 @@ jobs:
                 content: '+1'
               });
             } catch (error) {
-              core.warning(`Status was updated, but the command could not be acknowledged: ${error.message}`);
+              core.setFailed(`Status was updated, but the command could not be acknowledged: ${error.message}`);
             }
