@@ -12,8 +12,6 @@ concurrency:
 
 jobs:
   update-field:
-    permissions:
-      issues: write
     if: >-
       (
         github.event.comment.user.login == 'bedrin' ||
@@ -176,7 +174,7 @@ jobs:
         if: ${{ success() }}
         uses: actions/github-script@v9
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
             try {
               await github.rest.reactions.createForIssueComment({
