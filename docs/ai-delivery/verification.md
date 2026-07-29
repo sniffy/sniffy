@@ -1,6 +1,6 @@
 # Implementation, review, and verification evidence
 
-Implementation, Review, and Verification are different phases with different questions. The issue chooses both an
+Implementation, Review, and Verification are different lifecycle statuses with different questions. The issue chooses both an
 `Implementer` and a `Verifier` during Planning. Skipping duplicate work is allowed; collapsing the responsibilities into one
 unexamined summary is not.
 
@@ -19,9 +19,9 @@ The Implementer owns the code/configuration change and the proof available in it
 - run `git diff --check`;
 - publish the exact branch/SHA/PR and report commands, results, skipped obligations, and capability limitations honestly.
 
-The Implementer must not use a later Verification phase as permission to skip ordinary local tests or a directly available
-browser check. Conversely, it must not claim a source build, integration run, package download, or browser session it could
-not perform.
+The Implementer must not use a later Verification lifecycle status as permission to skip ordinary local tests or a directly
+available browser check. Conversely, it must not claim a source build, integration run, package download, or browser session it
+could not perform.
 
 ### Reviewer: decide whether the implementation is acceptable code
 
@@ -58,8 +58,8 @@ published exact head or exact artifact in the most representative available envi
 - inspect runtime logs, browser errors, failed requests, screenshots, persisted state, cleanup, and externally visible output;
 - compare actual behavior with both the issue and explicit thread decisions;
 - record exact source/artifact identity, environment, commands/actions, and result;
-- classify failure as implementation defect, verification-harness defect, requirement/architecture defect, external blocker,
-  or infrastructure noise.
+- classify failure as implementation defect, verification-harness defect, requirement/architecture defect, missing capability,
+  decision/action required from Dmitry, or infrastructure noise.
 
 Examples include:
 
@@ -76,8 +76,8 @@ a failure, but its acceptance decision is based on observable behavior against t
 ### Approval: human acceptance
 
 Dmitry performs final acceptance in `Approval / Ready`. He may rely on the Review and Verification packets, inspect the result
-subjectively, request more Planning/Implementation/Verification work, or merge/close. No automated phase may infer merge from
-technical approval.
+subjectively, request more Planning/Implementation/Verification work, or merge/close. No automated lifecycle status may infer
+merge from technical approval.
 
 ## Proof matrix
 
@@ -117,8 +117,9 @@ Examples:
   host security and credentials policy must explicitly allow them.
 - A human remains required for protected settings, secrets, subjective product acceptance, and destructive operations.
 
-When capability is absent, record the exact missing obligation and change `Verifier`/`Executor` or set `Blocked`. Do not
-reinterpret an easier check as equivalent evidence.
+When capability is absent, record the exact missing obligation and change `Verifier`/`Executor` while keeping
+`Execution = Ready`. Set `Execution = Blocked` only when Dmitry must decide or act; then set `Executor = Human`,
+`Assignee = bedrin`, and record the exact request. Do not reinterpret an easier check as equivalent evidence.
 
 ## Exact-head rule
 
@@ -176,7 +177,7 @@ Before `Approval / Ready`, record:
 - complete diff reviewed and review identity limitation, if any;
 - implementer tests actually run;
 - exact-head CI jobs/logs inspected;
-- verifier environment and observable actions/results, or rationale for safely skipping a separate Verification phase;
+- verifier environment and observable actions/results, or rationale for safely skipping a separate Verification status;
 - comments/threads resolved;
 - limitations and residual risk;
 - no pending automated worker or stale claim.
