@@ -13,8 +13,8 @@ Keep these two classes distinct:
   GitHub handoff is complete.
 
 Use stable Scheduled Task names such as `Event Loop 00`, `Event Loop 15`, `Event Loop 30`, and `Event Loop 45`. At the start of
-each tick, print a compact run header containing slot, UTC timestamp, selected repository/work item/phase, or `NO_CHANGE`.
-Do not rely on the generated chat title as the only identifier.
+each tick, print a compact run header containing slot, UTC timestamp, selected repository/work item/lifecycle status, or
+`NO_CHANGE`. Do not rely on the generated chat title as the only identifier.
 
 ## Durable-state rule
 
@@ -26,7 +26,7 @@ mutation.
 A chat is eligible for archive only when:
 
 - no active claim or lease points to it;
-- the next Phase/Status/Executor/Assignee is durably recorded when work was claimed;
+- the next Status/Execution/Executor/Assignee is durably recorded when work was claimed;
 - any PR review, evidence, blocker, or external dispatch is visible in GitHub;
 - the tick is complete rather than waiting for CI or another result inside that chat.
 
@@ -70,7 +70,7 @@ ordering, to decide what remains active.
 Manual per-chat archive is unlikely to scale indefinitely at the maximum 96-chat/day rate. If cleanup is not sustainable, do
 not hide the problem behind unsupported automation. Choose deliberately among reducing the polling window/cadence, accepting a
 persistent-chat shard, or moving the clock to the headless Local Codex adapter so ChatGPT runs only when work actually requires
-a ChatGPT phase.
+a ChatGPT lifecycle turn.
 
 ## Future automation boundary
 
@@ -78,5 +78,5 @@ A future maintenance worker may archive completed tick chats only after OpenAI e
 Project-scoped capability and that capability is smoke-tested. Do not implement browser-click automation, private endpoints,
 or destructive bulk deletion merely to control sidebar clutter.
 
-Chat retention remains independent from delivery lifecycle: archiving or deleting a transcript must never alter GitHub Phase,
-Status, claims, issues, pull requests, reviews, or evidence.
+Chat retention remains independent from delivery lifecycle: archiving or deleting a transcript must never alter GitHub Status,
+Execution, claims, issues, pull requests, reviews, or evidence.
