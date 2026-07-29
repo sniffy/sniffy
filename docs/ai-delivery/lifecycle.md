@@ -5,7 +5,7 @@ same model applies to ChatGPT, Codex Cloud, Local Codex, IDE-hosted agents, auto
 
 ## Fields
 
-### Phase
+### Status
 
 - `Draft` — captured but not activated.
 - `Planning` — refine outcome, decisions, non-goals, proof, implementation route, and verification route.
@@ -15,24 +15,29 @@ same model applies to ChatGPT, Codex Cloud, Local Codex, IDE-hosted agents, auto
 - `Approval` — Dmitry performs final human acceptance and decides whether to merge or close.
 - `Done` — the PR was actually merged or the task was deliberately closed with rationale.
 
-### Status
+### Execution
 
-- `Ready` — the next action in the current phase can start now.
+- `Ready` — the next action in the current status can start now.
 - `In progress` — a concrete actor owns and is performing the next action, including waiting for checks that actor started.
-- `Blocked` — the next action cannot continue without an external decision, permission, service, credential, or capability.
+- `Blocked` — the autonomous workflow cannot safely continue and requires Dmitry's decision or action.
 
-`Review` is a phase, not a status: it is substantive work with its own actor, inputs, outcomes, and correction transitions.
-`Blocked` is a status, not a phase: preserving the current phase records where work should resume after the blocker clears.
+`Review` is a lifecycle status, not an execution state: it is substantive work with its own actor, inputs, outcomes, and
+correction transitions. `Blocked` is an execution state, not a lifecycle status: preserving the current status records where
+work should resume after Dmitry clears the blocker.
 
-`Draft` and `Done` do not need a status. They are lifecycle endpoints outside the claim loop.
+`Draft` and `Done` do not need an execution value. They are lifecycle endpoints outside the claim loop.
+
+Routine waiting is not `Blocked`. A worker waiting for CI, an already-dispatched agent, or another observable operation it owns
+remains `In progress` and is monitored. Set `Blocked` only when the automation must stop, assign `Executor = Human` and
+`Assignee = bedrin`, record the exact decision or action required, and notify Dmitry.
 
 ## Planned routing and current ownership
 
-Planning chooses future roles before those phases begin:
+Planning chooses future roles before those lifecycle statuses begin:
 
-- `Implementer` — executor selected for the `Implementation` phase, or the external author/automation that already supplied a
-  pull request.
-- `Verifier` — executor responsible for coordinating the `Verification` phase and its evidence.
+- `Implementer` — executor selected for `Implementation`, or the external author/automation that already supplied a pull
+  request.
+- `Verifier` — executor responsible for coordinating `Verification` and its evidence.
 
 Current routing is materialized separately:
 
@@ -41,7 +46,7 @@ Current routing is materialized separately:
 - `Worker reference` — concrete chat, task, process, worktree, branch, PR, or tick ownership record after claim.
 
 Keeping both planned and current routing is intentional. `Implementer` and `Verifier` are decisions made during Planning or
-external-PR intake; `Executor` lets every dispatcher use the same query for the current phase without reimplementing
+external-PR intake; `Executor` lets every dispatcher use the same query for the current lifecycle status without reimplementing
 transition logic.
 
 Transition invariants include:
@@ -59,16 +64,16 @@ from the PR author.
 
 ## Ready semantics
 
-`Ready` means: **the next action in the current phase is ready for the current executor/assignee**. It does not mean only an
-unassigned implementation queue.
+`Ready` means: **the next action in the current lifecycle status is ready for the current executor/assignee**. It does not mean
+only an unassigned implementation queue.
 
 ### Pool Ready
 
 A worker pool must claim the task:
 
 ```text
-Phase: Implementation
-Status: Ready
+Status: Implementation
+Execution: Ready
 Implementer: Local Codex
 Verifier: ChatGPT
 Executor: Local Codex
@@ -78,8 +83,8 @@ Assignee: empty
 After claim:
 
 ```text
-Phase: Implementation
-Status: In progress
+Status: Implementation
+Execution: In progress
 Executor: Local Codex
 Assignee: bedrin-codex-local
 Worker reference: <task/process/worktree>
@@ -90,8 +95,8 @@ Worker reference: <task/process/worktree>
 A known actor has a personal next action:
 
 ```text
-Phase: Planning
-Status: Ready
+Status: Planning
+Execution: Ready
 Executor: Human
 Assignee: bedrin
 ```
@@ -99,7 +104,7 @@ Assignee: bedrin
 This means the plan is prepared and Dmitry may review it. The task remains in Planning because implementation is not yet
 authorized.
 
-A phase may therefore contain several directed turns:
+A lifecycle status may therefore contain several directed turns:
 
 ```text
 Planning / Ready / ChatGPT
@@ -109,14 +114,14 @@ Planning / Ready / ChatGPT
   -> Implementation / Ready / Implementer   (approved)
 ```
 
-The apparent `In progress -> Ready` transition is a handoff to the next actor in the same collaborative phase, not a reversal
-of progress.
+The apparent `In progress -> Ready` transition is a handoff to the next actor in the same collaborative lifecycle status, not a
+reversal of progress.
 
 The same directed semantics apply to final acceptance:
 
 ```text
-Phase: Approval
-Status: Ready
+Status: Approval
+Execution: Ready
 Executor: Human
 Assignee: bedrin
 ```
@@ -131,8 +136,8 @@ A work item may be an issue or a pull request. When Dependabot or another extern
 PR itself to the Project and normally initialize it as:
 
 ```text
-Phase: Review
-Status: Ready
+Status: Review
+Execution: Ready
 Implementer: <PR author>
 Verifier: <selected verifier>
 Executor: ChatGPT
@@ -144,9 +149,9 @@ This skips Draft, Planning, and Implementation only when the scope is understand
 or policy decision is missing. Otherwise route the PR item to `Planning / Ready`.
 
 An acceptable PR advances to Verification or Approval. A stale Dependabot head stays in Review while the bot rebases. A PR
-requiring repository-specific compatibility code becomes `Review / Blocked` and links to a new issue routed through Planning
-and Implementation; the source PR remains the work item for the original proposal until superseded or closed. See
-[`pull-request-intake.md`](pull-request-intake.md).
+requiring repository-specific compatibility code becomes `Review / Blocked`, assigns the next action to Dmitry, and links to a
+new issue routed through Planning and Implementation; the source PR remains the work item for the original proposal until
+superseded or closed. See [`pull-request-intake.md`](pull-request-intake.md).
 
 ## Lifecycle
 
@@ -185,8 +190,9 @@ stateDiagram-v2
     Done --> [*]
 ```
 
-At any active phase, `Ready` or `In progress` may become `Blocked`. Clearing the blocker returns the task to `Ready` in the
-same phase or a deliberately corrected earlier phase.
+At any active lifecycle status, `Execution` may move between `Ready` and `In progress`. `Blocked` stops autonomous processing and
+routes the next action to Dmitry. Clearing the blocker returns the task to `Ready` in the same lifecycle status or a deliberately
+corrected earlier status.
 
 ## Correction limits
 
@@ -200,6 +206,6 @@ Track substantive correction rounds separately from scheduler retries and infras
 
 ## Completion
 
-There is no separate `Ready to merge` lifecycle phase. A task remains `Approval / Ready` until Dmitry accepts it and the PR is
+There is no separate `Ready to merge` lifecycle status. A task remains `Approval / Ready` until Dmitry accepts it and the PR is
 actually merged (or the task is deliberately closed). Add a separate queue later only if approved-but-unmerged work becomes a
 real operational backlog, such as a release train.
