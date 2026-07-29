@@ -5,15 +5,16 @@ automation such as Dependabot, or a human contributor using the AI-assisted deli
 
 ## Lifecycle authority
 
-Use [`lifecycle.md`](lifecycle.md) as the canonical Phase/Status model:
+Use [`lifecycle.md`](lifecycle.md) as the canonical Status/Execution model:
 
 ```text
-Phase:  Draft -> Planning -> Implementation -> Review -> Verification? -> Approval -> Done
-Status: Ready | In progress | Blocked
+Status:    Draft -> Planning -> Implementation -> Review -> Verification? -> Approval -> Done
+Execution: Ready | In progress | Blocked
 ```
 
-`Ready` applies to the next action in the current phase. It may be pool-ready for a worker or directed-ready for a specific
-assignee such as Dmitry. `Review` is a phase. `Blocked` preserves the phase where work should resume.
+`Ready` applies to the next action in the current lifecycle status. It may be pool-ready for a worker or directed-ready for a
+specific assignee such as Dmitry. `Review` is a lifecycle status. `Blocked` preserves where work should resume, stops autonomous
+processing, and routes the next action to Dmitry.
 
 Do not replace these fields with optimistic prose. Track supporting delivery facts independently:
 
@@ -26,9 +27,9 @@ Do not replace these fields with optimistic prose. Track supporting delivery fac
 
 A local commit is not publication; publication is not review; review is not verification; verification is not merge.
 
-## Phase handoff
+## Lifecycle handoff
 
-A worker completes one phase turn and writes the next route:
+A worker completes one lifecycle turn and writes the next route:
 
 - Planning records `Implementer` and `Verifier`; handoff to Dmitry stays `Planning / Ready / Human`.
 - Planning approval writes `Implementation / Ready / Executor := Implementer`.
@@ -48,11 +49,12 @@ Every handoff clears stale worker ownership and sets the intended Assignee or le
 - An app-native Local Codex item is dispatched only after claim plus confirmed worker task/chat/worktree.
 - A headless Local Codex item is dispatched only after claim plus confirmed process/worktree/branch record.
 - An IDE agent is working only while the human explicitly owns the interactive session or remote evidence proves activity.
-- A ChatGPT scheduled tick is working only after its fresh chat has won a claim and begun the exact intended phase operation.
+- A ChatGPT scheduled tick is working only after its fresh chat has won a claim and begun the exact intended lifecycle operation.
 - A ChatGPT direct-execution task is working only after the exact intended GitHub or sandbox operation has begun.
 
 `In progress` with no verified claim/current tick/worker reference is invalid. When execution or external dispatch cannot start,
-release to `Ready` or record an exact `Blocked` reason.
+release to `Ready`. Set `Blocked` only when Dmitry must decide or act; set `Executor = Human`, `Assignee = bedrin`, and record the
+exact requested action.
 
 ## Queue polling and worker monitoring
 
@@ -67,7 +69,7 @@ different concerns:
   while incomplete.
 
 The current ChatGPT adapter uses four hourly Scheduled Tasks offset by 15 minutes. Every occurrence opens a fresh chat, reads
-all durable state from GitHub/repository Markdown, and performs at most one phase turn directly. It cannot create a child
+all durable state from GitHub/repository Markdown, and performs at most one lifecycle turn directly. It cannot create a child
 Scheduled Task and must not rely on previous tick chats. A no-op still creates a chat transcript but creates no GitHub/source
 mutation. Keep the four task-definition chats stable; archive completed tick transcripts according to
 [`chat-retention.md`](chat-retention.md). Chat cleanup never changes lifecycle state.
@@ -83,7 +85,7 @@ claim/worker record, expected branch and PR, acknowledgement or new head, review
 meaningful progress, completion, or a real blocker.
 
 A review or dispatch comment does not prove work started. Verify acknowledgement or new remote evidence. Stop worker
-monitoring when the phase handoff completes or a human/external blocker owns the next action.
+monitoring when the lifecycle handoff completes or Dmitry owns a blocked next action.
 
 ## Branch and PR continuity
 
@@ -104,7 +106,7 @@ For Dependabot and other automation-owned PRs:
 
 ## Review and correction
 
-The Review phase audits the whole acceptance-to-proof matrix, not only the visible delta. Inspect:
+The Review lifecycle status audits the whole acceptance-to-proof matrix, not only the visible delta. Inspect:
 
 - complete exact-head diff and scope;
 - architecture, module/API ownership, compatibility, lifecycle, and resource safety;
@@ -137,5 +139,5 @@ exact-head review.
 
 No agent or supervising ChatGPT workflow may merge, enable auto-merge, bypass protection, rewrite shared history, or perform
 privileged repository/hosting operations without Dmitry's explicit instruction. `Approval / Ready` is the human acceptance
-queue; there is no separate Ready-to-merge phase unless an approved-but-unmerged backlog becomes a real need. This boundary
-also applies to Dependabot even though GitHub supports Dependabot commands and auto-merge.
+queue; there is no separate Ready-to-merge lifecycle status unless an approved-but-unmerged backlog becomes a real need. This
+boundary also applies to Dependabot even though GitHub supports Dependabot commands and auto-merge.
