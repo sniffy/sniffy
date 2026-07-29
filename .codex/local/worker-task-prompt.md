@@ -1,14 +1,16 @@
-# Sniffy app-native Local Codex phase-worker template
+# Sniffy app-native Local Codex lifecycle-worker template
 
 The dispatcher renders this template into one standalone app-owned worker conversation and isolated worktree. The worker owns
-one phase turn only. Shared policy lives in `AGENTS.md` and `docs/ai-delivery/`.
+one lifecycle turn only. Shared policy lives in `AGENTS.md` and `docs/ai-delivery/`.
 
 ```text
-Work autonomously on one phase of Sniffy issue #<ISSUE_NUMBER> in this dedicated worker conversation and isolated worktree.
+Work autonomously on one lifecycle status of Sniffy issue #<ISSUE_NUMBER> in this dedicated worker conversation and isolated
+worktree.
 
 Issue title: <ISSUE_TITLE>
 Issue URL: <ISSUE_URL>
-Phase: <PHASE>
+Status: <STATUS>
+Execution: In progress
 Mode: <WORK_MODE>
 Base branch: develop
 Branch: <BRANCH_NAME>
@@ -24,9 +26,10 @@ Before any mutation, read the complete issue/comments, lifecycle and routing fie
 submissions and unresolved threads, current CI, remote develop, nearest AGENTS.md, and
 `docs/ai-delivery/{lifecycle,supervision,verification}.md`. Verify this task still owns the exact claim token/generation.
 
-Stop and set the current phase to Blocked when a required product, API, architecture, compatibility, permission, credential,
-privileged operation, external service, or bespoke-infrastructure decision is missing. Record the smallest next action. Do
-not invent a decision or create a replacement worker.
+Stop autonomous work when a required product, API, architecture, compatibility, permission, credential, privileged operation,
+external service, or bespoke-infrastructure decision is missing. Keep the current Status, set Execution = Blocked,
+Executor = Human, and Assignee = bedrin. Record the smallest decision or action Dmitry must take. Do not invent a decision or
+create a replacement worker. Routine waiting for CI or another observable operation this worker started remains In progress.
 
 Branch rules:
 - fresh Implementation: verify no branch/PR/worker already owns the issue and create <BRANCH_NAME> from current origin/develop;
@@ -35,7 +38,7 @@ Branch rules:
   replacement implementation branch;
 - never reset, rebase, force-push, replace an existing PR, discard unrelated work, or merge.
 
-If <PHASE> is Implementation:
+If <STATUS> is Implementation:
 1. Convert every acceptance criterion into implementer-owned proof and implement the smallest coherent solution.
 2. Run focused tests first, broader applicable checks separately, and directly available runtime/browser checks. Confirm named
    tests actually ran; record unsupported proof honestly.
@@ -44,35 +47,37 @@ If <PHASE> is Implementation:
    implementation or locally available proof is incomplete.
 5. Verify the remote branch, full SHA, PR URL, base/head refs, draft state, and matching PR head.
 6. Publish exact commands/results/limitations and hand off:
-   - Phase = Review;
-   - Status = Ready;
+   - Status = Review;
+   - Execution = Ready;
    - Executor = ChatGPT;
    - Assignee = bedrin-gpt;
    - clear this worker/lease after the handoff is durably recorded.
 7. Do not review or approve your own implementation and do not create a follow-up reviewer task. The shared event loop owns
-   the Review phase.
+   the Review lifecycle status.
 
-If <PHASE> is Verification:
+If <STATUS> is Verification:
 1. Re-read the authoritative issue and later discussion. Identify the observable user/developer journey, negative cases,
    exact implementation head/artifact, and representative environment.
 2. Perform outcome-centric system/integration/browser/compatibility proof. Do not merely repeat unit tests or trust the
    implementer summary. Record runtime actions, logs, browser errors/requests, screenshots, cleanup, and artifact identity as
    applicable.
 3. Classify the result:
-   - pass -> Phase = Approval, Status = Ready, Executor = Human, Assignee = bedrin;
-   - implementation defect -> Phase = Implementation, Status = Ready, Executor = <IMPLEMENTER>, Assignee empty unless directed;
-   - verification harness/evidence defect -> Phase = Verification, Status = Ready, Executor = <VERIFIER>;
-   - requirement/architecture defect -> Phase = Planning, Status = Ready, Executor = ChatGPT, Assignee = bedrin-gpt;
-   - external blocker -> keep Phase = Verification, Status = Blocked with exact reason.
+   - pass -> Status = Approval, Execution = Ready, Executor = Human, Assignee = bedrin;
+   - implementation defect -> Status = Implementation, Execution = Ready, Executor = <IMPLEMENTER>, Assignee empty unless
+     directed;
+   - verification harness/evidence defect -> Status = Verification, Execution = Ready, Executor = <VERIFIER>;
+   - requirement/architecture defect -> Status = Planning, Execution = Ready, Executor = ChatGPT, Assignee = bedrin-gpt;
+   - decision/action required from Dmitry -> keep Status = Verification, set Execution = Blocked, Executor = Human,
+     Assignee = bedrin, and record the exact request.
 4. Publish exact environment, source/artifact identity, commands/actions, results, and failure classification before handoff.
 5. Do not modify production code as an unrecorded shortcut. A required implementation correction must return to Implementation.
 
-For either phase:
+For either lifecycle status:
 - update lifecycle fields, Assignee, worker reference, and claim/lease on a best-effort atomic basis;
 - leave no In progress item with a finished or missing worker;
 - never close the issue, merge, enable auto-merge, bypass protection, or perform privileged operations without Dmitry's
   explicit instruction;
-- finish by reporting the final phase handoff and exact remote/evidence state in this worker conversation.
+- finish by reporting the final lifecycle handoff and exact remote/evidence state in this worker conversation.
 ```
 
 ## Placeholder contract
@@ -82,7 +87,7 @@ For either phase:
 | `<ISSUE_NUMBER>` | Numeric Sniffy issue number |
 | `<ISSUE_TITLE>` | Current issue title |
 | `<ISSUE_URL>` | Resolvable issue URL |
-| `<PHASE>` | `Implementation` or `Verification` |
+| `<STATUS>` | `Implementation` or `Verification` |
 | `<WORK_MODE>` | `fresh` or `continuation` for Implementation; `published-head` for Verification |
 | `<BRANCH_NAME>` | Fresh branch or exact existing PR head |
 | `<PR_URL_OR_NONE>` | Existing/published PR or `none` for fresh Implementation |

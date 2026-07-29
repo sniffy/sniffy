@@ -19,29 +19,30 @@ launch nested CLI agents, review the worker's PR, merge, or enable auto-merge.
 1. Read AGENTS.md and docs/ai-delivery/{README,lifecycle,event-loop,routing,supervision,verification}.md plus this prompt and
    the worker template.
 2. Inspect project 2 and choose at most one sniffy/sniffy item where:
-   - Status = Ready;
+   - Execution = Ready;
    - Executor = Local Codex app;
-   - Phase = Implementation or Verification;
+   - Status = Implementation or Verification;
    - Assignee is empty or already matches the dedicated local-worker identity.
-3. Re-read the issue, routing, proof matrix, Phase/Status/Implementer/Verifier/Executor, branch/PR, existing claims, worker
+3. Re-read the issue, routing, proof matrix, Status/Execution/Implementer/Verifier/Executor, branch/PR, existing claims, worker
    references, review state, and CI. Prefer a valid re-queued continuation over fresh work. Never create a duplicate worker.
 4. If no eligible item exists, create no task, conversation, worktree, branch, comment, or field mutation. Reply only
    NO_CHANGE.
 5. Select a deterministic candidate by Project priority, ready timestamp, then issue number. Classify fresh versus
    continuation and choose model/reasoning from explicit routing.
 6. Claim using docs/ai-delivery/event-loop.md: create a unique intent for the current dispatch generation, verify the winning
-   intent, then set Status = In progress, concrete Assignee, claim token/lease, and provisional worker state. If any claim
-   mutation or later child creation fails, release to Ready or record an exact Blocked reason.
-7. Render every placeholder in .codex/local/worker-task-prompt.md, including <PHASE>, <IMPLEMENTER>, and <VERIFIER>.
-8. Create exactly one NEW one-time standalone app-owned task named "Sniffy #<issue-number> <phase>: <issue-title>" using the
+   intent, then set Execution = In progress, concrete Assignee, claim token/lease, and provisional worker state. If any claim
+   mutation or later child creation fails, release to Ready. Set Blocked only when Dmitry must decide or act; then set
+   Executor = Human, Assignee = bedrin, and record the exact requested action.
+7. Render every placeholder in .codex/local/worker-task-prompt.md, including <STATUS>, <IMPLEMENTER>, and <VERIFIER>.
+8. Create exactly one NEW one-time standalone app-owned task named "Sniffy #<issue-number> <status>: <issue-title>" using the
    current local project, a new isolated worktree, selected model/reasoning, and the rendered prompt. Never create it in this
    dispatcher conversation.
 9. Do not use shell UI automation, Python observers, codex app-server, codex exec, or .codex/local/run-issue.sh for this
    app-native adapter.
-10. After confirming the child task exists, record its exact title/reference, claim token, phase, worktree, branch, and
-    timestamp. If child creation fails, leave no In progress item without a worker reference.
+10. After confirming the child task exists, record its exact title/reference, claim token, lifecycle status, worktree, branch,
+    and timestamp. If child creation fails, leave no In progress item without a worker reference.
 
-Never dispatch the same phase generation twice. Never merge or enable auto-merge.
+Never dispatch the same lifecycle generation twice. Never merge or enable auto-merge.
 ```
 
 ## Required smoke test
@@ -50,10 +51,10 @@ Before enabling the recurring dispatcher, prove with disposable/read-only items 
 
 - an empty tick stays in this conversation and creates no worktree;
 - one eligible item creates exactly one standalone worker conversation and isolated WSL worktree;
-- the worker receives the intended Phase and routing fields;
+- the worker receives the intended Status and routing fields;
 - concurrent dispatcher attempts produce one winning claim;
 - failed child creation releases the claim;
-- a completed worker hands off to the next phase rather than creating its own reviewer conversation.
+- a completed worker hands off to the next lifecycle status rather than creating its own reviewer conversation.
 
 Repeat after material Codex automation changes. If nested one-time task creation is unavailable, pause this adapter and use a
 manual app worker or the headless Linux adapter; do not substitute external UI automation.

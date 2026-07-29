@@ -10,18 +10,18 @@ Clock
   -> Dispatcher tick
       -> Intake adapters
           -> Claim protocol
-              -> Phase worker
+              -> Lifecycle worker
 ```
 
 - **Clock** starts one dispatcher tick. It knows only cadence and slot identity.
 - **Dispatcher tick** loads one or more project profiles, queries eligible work, and selects a deterministic candidate.
 - **Intake adapters** materialize external work such as Dependabot pull requests into the same lifecycle.
 - **Claim protocol** provides best-effort cross-dispatcher ownership.
-- **Phase worker** performs one phase turn, publishes evidence, and hands the task to the next phase as `Ready`.
+- **Lifecycle worker** performs one lifecycle turn, publishes evidence, and hands the task to the next status as `Ready`.
 
 Some adapters may split dispatch and work into separate processes or conversations. Others, including the current ChatGPT
-adapter, execute the claimed phase directly in the same fresh tick. Child-worker spawning is optional, not a requirement of the
-generic protocol.
+adapter, execute the claimed lifecycle turn directly in the same fresh tick. Child-worker spawning is optional, not a
+requirement of the generic protocol.
 
 A no-op tick creates no GitHub mutation, source branch, worktree, or worker claim. A provider may still create an execution
 transcript such as a fresh ChatGPT chat for that tick.
@@ -64,9 +64,9 @@ ChatGPT child-task spawning as `unsupported` in the current adapter. The schedul
 1. read its self-contained prompt and external project profiles;
 2. run idempotent intake/reconciliation for eligible external pull requests when configured;
 3. inspect GitHub issues, pull requests, lifecycle fields, claims, and evidence;
-4. select and best-effort claim at most one eligible phase turn;
-5. perform that phase directly in the same fresh chat, or make a supported external handoff such as a Codex Cloud dispatch;
-6. durably write the next Phase, Status, Executor, Assignee, evidence, and cleared claim;
+4. select and best-effort claim at most one eligible lifecycle turn;
+5. perform that turn directly in the same fresh chat, or make a supported external handoff such as a Codex Cloud dispatch;
+6. durably write the next Status, Execution, Executor, Assignee, evidence, and cleared claim;
 7. return `NO_CHANGE` when there is no eligible work.
 
 A tick must never claim work that cannot reasonably finish or reach a safe durable handoff within that scheduled execution.
@@ -169,14 +169,14 @@ several workers only when each owns a distinct claim and isolated worktree.
 A dispatcher queries the materialized current route, not planned roles alone:
 
 ```text
-Status = Ready
+Execution = Ready
 Executor = <dispatcher executor type>
 Assignee is empty OR Assignee belongs to this dispatcher pool
 ```
 
-The work item may be an issue or a pull request. The dispatcher also checks phase compatibility, required access, worker-pool
-capacity, existing branch/PR ownership, and absence of a live claim. `Implementer` and `Verifier` are future routing decisions;
-phase transitions copy the relevant value into `Executor`.
+The work item may be an issue or a pull request. The dispatcher also checks lifecycle-status compatibility, required access,
+worker-pool capacity, existing branch/PR ownership, and absence of a live claim. `Implementer` and `Verifier` are future routing
+decisions; lifecycle transitions copy the relevant value into `Executor`.
 
 Use deterministic selection such as security priority, project priority, `readySince`, then repository/item number. A
 dispatcher should claim at most its available capacity and must not create duplicate workers or Project items.
@@ -186,14 +186,15 @@ dispatcher should claim at most its available capacity and must not create dupli
 GitHub comments and Project field updates are not one transaction. Use a claim generation and ordered intent protocol:
 
 1. Query an eligible `Ready` item.
-2. Re-read its Phase, Status, Executor, Assignee, dispatch generation, branch, PR, and existing claim immediately.
+2. Re-read its Status, Execution, Executor, Assignee, dispatch generation, branch, PR, and existing claim immediately.
 3. Post a claim-intent comment containing a unique token, generation, dispatcher slot, executor, and timestamp.
 4. Re-read valid intents for the same generation. The lowest GitHub comment ID wins.
-5. Only the winner writes `Status = In progress`, the concrete Assignee, claim token, lease time, and worker/tick reference.
+5. Only the winner writes `Execution = In progress`, the concrete Assignee, claim token, lease time, and worker/tick reference.
 6. Re-read and verify that its token/generation still owns the task.
-7. Perform the phase directly or confirm a supported external dispatch.
+7. Perform the lifecycle turn directly or confirm a supported external dispatch.
 8. Record the concrete chat/task/process, branch/worktree, and expected PR or artifact.
-9. If execution/dispatch cannot start, release the claim and restore `Ready`, or set `Blocked` with the exact external reason.
+9. If execution/dispatch cannot start, release the claim and restore `Ready`. Set `Blocked` only when Dmitry must decide or act;
+   then set `Executor = Human`, `Assignee = bedrin`, and record the exact requested action.
 
 This is best-effort coordination, not a distributed database transaction, but it prevents ordinary duplicate polls from both
 starting work. A same-host `flock` complements rather than replaces the GitHub-level protocol.
@@ -212,17 +213,17 @@ lastObservableEvidence
 
 Before expiring a lease, inspect the worker record, issue, branch, PR, commits, and CI. Lack of a recent comment alone does not
 prove inactivity. Recover the existing branch/worker where possible. Release to `Ready` only when ownership is genuinely
-stale; mark `Blocked` when a human or external capability is required.
+stale. Routine external waiting remains `In progress`; use `Blocked` only when Dmitry must intervene.
 
 ## Worker contract
 
-One worker or stateless tick owns one phase turn. It must:
+One worker or stateless tick owns one lifecycle turn. It must:
 
 - re-read the authoritative issue or PR, current lifecycle fields, nearest `AGENTS.md`, branch/PR, and exact head;
 - verify its claim before mutating GitHub or source;
-- perform only the routed phase responsibility;
-- publish exact evidence and update the next Phase, Status, Executor, and Assignee atomically on a best-effort basis;
-- stop without spawning a replacement worker when blocked;
+- perform only the routed lifecycle responsibility;
+- publish exact evidence and update the next Status, Execution, Executor, and Assignee atomically on a best-effort basis;
+- stop without spawning a replacement worker when blocked and route the exact next action to Dmitry;
 - never merge or enable auto-merge without explicit authorization.
 
 ## Generic core versus project profile
@@ -237,8 +238,8 @@ project:
   baseBranch: develop
   githubProject: sniffy/2
 fields:
-  phase: Phase
   status: Status
+  execution: Execution
   implementer: Implementer
   verifier: Verifier
   executor: Executor
@@ -256,12 +257,13 @@ intake:
     enabled: true
     projectAutoAddFilter: "is:pr is:open label:dependencies"
     backfillExisting: true
-    initialPhase: Review
+    initialStatus: Review
     reviewer: ChatGPT
 branches:
   newWorkPrefix: agent/
 ```
 
 Profiles may add filters, model routing, capacity, issue templates, or required evidence, but must not redefine the shared
-meaning of Phase, Status, claims, publication, verification, or merge authority. Start with documented/declarative profiles;
-do not build a bespoke dispatcher framework until platform composition has been smoke-tested and a concrete gap remains.
+meaning of Status, Execution, claims, publication, verification, or merge authority. Start with documented/declarative
+profiles; do not build a bespoke dispatcher framework until platform composition has been smoke-tested and a concrete gap
+remains.

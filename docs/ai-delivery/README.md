@@ -27,11 +27,11 @@ agent host; the selected Copilot, Codex, Junie, or other coding product is the e
 
 ## Lifecycle summary
 
-Phases describe the kind of work; statuses describe whether the next action can run:
+`Status` describes the kind of work; `Execution` describes whether the next action can run:
 
 ```text
-Phase:  Draft -> Planning -> Implementation -> Review -> Verification (when required) -> Approval -> Done
-Status: Ready | In progress | Blocked
+Status:    Draft -> Planning -> Implementation -> Review -> Verification (when required) -> Approval -> Done
+Execution: Ready | In progress | Blocked
 ```
 
 Planning records both `Implementer` and `Verifier`. `Executor` materializes who performs the next current action, while
@@ -77,7 +77,8 @@ why rules exist but do not override current policy.
 
 ## Documentation map
 
-- [`lifecycle.md`](lifecycle.md) — phases, three statuses, planned routing fields, directed/pool Ready, and corrections.
+- [`lifecycle.md`](lifecycle.md) — lifecycle statuses, three execution states, planned routing fields, directed/pool Ready, and
+  corrections.
 - [`event-loop.md`](event-loop.md) — reusable clock/dispatcher/claim design, stateless ChatGPT ticks, and headless Codex CLI.
 - [`pull-request-intake.md`](pull-request-intake.md) — external PRs, GitHub Project auto-add/backfill, Dependabot review,
   rebase, verification, and replacement flow.

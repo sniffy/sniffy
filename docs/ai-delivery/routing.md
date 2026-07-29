@@ -37,8 +37,8 @@ The current lifecycle materializes:
 - `Assignee` — concrete identity or human responsible now.
 - `Worker reference` — concrete chat, process, task, branch/worktree, PR, or tick ownership after claim.
 
-`Implementer` and `Verifier` must remain visible before their phases begin. `Executor` is intentionally denormalized so every
-dispatcher can use one query such as `Status = Ready AND Executor = Local Codex`.
+`Implementer` and `Verifier` must remain visible before their lifecycle statuses begin. `Executor` is intentionally denormalized
+so every dispatcher can use one query such as `Execution = Ready AND Executor = Local Codex`.
 
 ## Executor matrix
 
@@ -128,15 +128,18 @@ escalations for later cost calibration.
 
 Recommended lifecycle and routing fields:
 
-- `Phase`: Draft, Planning, Implementation, Review, Verification, Approval, Done.
-- `Status`: Ready, In progress, Blocked.
+- `Status`: Draft, Planning, Implementation, Review, Verification, Approval, Done.
+- `Execution`: Ready, In progress, Blocked.
 - `Implementer`: planned implementation executor or external PR author.
 - `Verifier`: planned verification executor.
 - `Executor`: current action executor.
 - `Assignee`: use GitHub assignment as the concrete current identity/human.
 - `Origin`: optional source such as issue, Dependabot PR, contributor PR, alert, or manual request.
 - `Correction rounds`: substantive review/verification returns, excluding infrastructure noise.
-- `Blocked reason`: exact external blocker and next action.
+- `Blocked reason`: exact action or decision Dmitry must provide before autonomous processing resumes.
+
+`Blocked` always routes the next action to `Executor = Human` and `Assignee = bedrin`. Routine waits for CI, a dispatched agent,
+or another observable operation remain `In progress`.
 
 GitHub assignees are technical identities, not executor products. Existing `agent:local` and `agent:cloud` labels are
 transitional metadata and must not override Project routing fields. Project work items may be issues or pull requests.

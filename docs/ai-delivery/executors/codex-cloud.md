@@ -2,7 +2,7 @@
 
 Use Codex Cloud for clean, isolated, fully specified tasks whose required context and deterministic proof are available in
 the Cloud environment. Shared engineering policy lives in `AGENTS.md`; this document covers Cloud-specific setup,
-credentials, publication, phase handoff, and failure handling.
+credentials, publication, lifecycle handoff, and failure handling.
 
 Codex Cloud may be selected as `Implementer` or `Verifier`. It does not perform Review of its own implementation unless a
 separate independent reviewer identity and explicit route exist.
@@ -65,7 +65,7 @@ Before relying on a new or changed environment, run a small reversible validatio
 
 A dry-run push is not proof of effective write permission.
 
-## Implementation phase contract
+## Implementation lifecycle contract
 
 A Cloud implementation task reads the authoritative issue/thread, lifecycle/routing fields, current `develop`, applicable
 `AGENTS.md`, and delivery docs before editing. It must:
@@ -78,14 +78,14 @@ A Cloud implementation task reads the authoritative issue/thread, lifecycle/rout
 6. create/update the intended PR, using draft only while implementation or Cloud-available proof is incomplete;
 7. verify the remote branch, full SHA, PR URL, base/head refs, draft state, and matching PR head;
 8. reconcile the PR description with the current head, commands, limitations, artifacts, and CI;
-9. hand off to `Phase = Review`, `Status = Ready`, `Executor = ChatGPT`, and the configured ChatGPT Assignee;
+9. hand off to `Status = Review`, `Execution = Ready`, `Executor = ChatGPT`, and the configured ChatGPT Assignee;
 10. clear the Cloud worker/lease only after the handoff is durably recorded;
 11. never review/approve its own implementation, merge, or enable auto-merge.
 
 If `origin` is absent, configure an explicit repository URL. If publication access fails, stop and preserve/recover the
 existing workspace or commit instead of recreating the implementation.
 
-## Verification phase contract
+## Verification lifecycle contract
 
 When selected as `Verifier`, Cloud must use the exact published implementation head or artifact named by Review. It performs
 outcome-centric proof that the Cloud environment genuinely supports—such as same-artifact compatibility, a service/browser
@@ -97,7 +97,8 @@ It then classifies and hands off:
 - implementation defect -> `Implementation / Ready / Executor := Implementer`;
 - verification harness/evidence defect -> `Verification / Ready / Executor := Verifier`;
 - requirement/architecture defect -> `Planning / Ready / ChatGPT`;
-- missing external capability -> `Verification / Blocked` with the exact reason or an explicitly rerouted Verifier.
+- capability unavailable in Cloud but available elsewhere -> keep `Execution = Ready` and reroute `Executor`/`Verifier`;
+- decision or action required from Dmitry -> `Verification / Blocked / Human / bedrin` with the exact request.
 
 Do not modify production code inside Verification as an unrecorded shortcut.
 
