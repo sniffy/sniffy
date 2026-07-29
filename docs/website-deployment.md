@@ -8,8 +8,8 @@ call a hosting API directly.
 This is also the operator runbook for a future direct `sniffy.io` cutover. It does **not** authorize
 that cutover. DNS, Pages custom domains, HTTPS enforcement, environments, deployments, and rollback
 dispatches are privileged operations owned by
-[management issue #9](https://github.com/sniffy/management/issues/9). `preview.sniffy.io` is not a
-current step, proposal, or prerequisite.
+[management issue #9](https://github.com/sniffy/management/issues/9). This runbook does not create
+or propose `preview.sniffy.io`.
 
 The procedures below follow GitHub's primary documentation for
 [custom domains][github-custom-domain], [domain verification][github-domain-verification],
@@ -33,6 +33,15 @@ a substitute for repeating the preflight during the real cutover.
 | Current external hosting                   | Apex `A` records resolve to `162.159.140.98` and `172.66.0.96`; apex `AAAA` records resolve to `2606:4700:7::60` and `2a06:98c1:58::60`. These are the [documented DigitalOcean App Platform ingress addresses][digitalocean-app-platform-ip]. `www.sniffy.io` is a CNAME to `sniffy-static-website-kdvn2.ondigitalocean.app`. |
 | Current public site                        | `http://sniffy.io/` redirects to HTTPS. `https://sniffy.io/` and `/docs/` return 200 from the existing DigitalOcean-backed site; `/sniffy/` returns 404.                                                                                                                                                                       |
 | Preview status                             | There is **no externally reachable PR or project preview**. `preview.sniffy.io` is NXDOMAIN. Reviewable artifacts are verified inside CI or after download; they are not a public deployment.                                                                                                                                  |
+
+This preview state means #669 remains incomplete under the still-operative architecture contract:
+the [production-preparation gate](website-architecture.md#stages-and-gates) requires a
+non-canonical preview, and the
+[#669 acceptance row](website-architecture.md#acceptance-to-proof-matrix) requires its preview URL.
+Internal immutable-artifact verification does not satisfy or supersede those requirements.
+Management#9 must not begin until the sequencing owner either records the required non-canonical
+preview and URL or explicitly revises or waives both architecture requirements. This runbook
+records neither decision.
 
 Google Public DNS and Cloudflare DNS returned the same records above. Before using them as rollback
 values, export the authoritative zone and confirm the current App Platform domain configuration;
@@ -143,6 +152,12 @@ owned by management issue #9 and the architecture contract in
 [`website-architecture.md`](website-architecture.md#rollback-contract).
 
 ## Future production cutover to `sniffy.io`
+
+**Entry gate:** do not start this procedure while the architecture contract still requires a
+non-canonical preview and preview URL that #669 has not supplied. Before opening a management#9
+change window, the sequencing owner must either satisfy both requirements or explicitly revise or
+waive both occurrences in `website-architecture.md`. A green Pages workflow, downloaded immutable
+artifact, or authorized cutover window is not a substitute for that recorded decision.
 
 Run this section only in an explicitly approved management#9 change window. One operator performs
 the changes while a second operator records evidence and watches the legacy and new origins. Do not
