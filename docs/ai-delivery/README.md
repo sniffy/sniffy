@@ -59,7 +59,7 @@ Dmitry + ChatGPT decide outcome, risk, routing, and proof
 
 Dmitry owns product decisions, accepted risk, privileged repository/hosting operations, final acceptance, and merge
 authorization. ChatGPT owns issue refinement, external-PR intake, routing proposals, supervision, code review, verification
-coordination, and clear handoff. An executor owns only the phase and proof explicitly routed to it.
+coordination, and clear handoff. An executor owns only the lifecycle turn and proof explicitly routed to it.
 
 ## Sources of truth
 
@@ -80,6 +80,8 @@ why rules exist but do not override current policy.
 - [`lifecycle.md`](lifecycle.md) — lifecycle statuses, three execution states, planned routing fields, directed/pool Ready, and
   corrections.
 - [`event-loop.md`](event-loop.md) — reusable clock/dispatcher/claim design, stateless ChatGPT ticks, and headless Codex CLI.
+- [`.chatgpt/scheduled-task-prompt.md`](../../.chatgpt/scheduled-task-prompt.md) — exact copy-paste prompt and setup for the four
+  ChatGPT Scheduled Tasks.
 - [`pull-request-intake.md`](pull-request-intake.md) — external PRs, GitHub Project auto-add/backfill, Dependabot review,
   rebase, verification, and replacement flow.
 - [`chat-retention.md`](chat-retention.md) — permanent task-definition chats, disposable tick chats, manual archive policy,
@@ -95,7 +97,7 @@ why rules exist but do not override current policy.
 - [`../retrospectives/`](../retrospectives/README.md) — historical incidents and durable lessons incorporated here.
 
 The current ChatGPT event-loop adapter uses four hourly Scheduled Tasks offset by 15 minutes. Every occurrence starts a new,
-stateless chat and performs at most one phase turn directly; Scheduled Task executions cannot create child Scheduled Tasks.
+stateless chat and performs at most one lifecycle turn directly; Scheduled Task executions cannot create child Scheduled Tasks.
 All durable context therefore lives in GitHub and repository-owned Markdown, not in ChatGPT Project memory or prior tick chats.
 
 Dependabot PRs are first-class Project items rather than shadow issues. GitHub's built-in auto-add workflow discovers newly
@@ -104,6 +106,7 @@ author, and routes any required compatibility implementation to a linked agent-o
 
 ## Provider-specific files
 
+- `.chatgpt/` contains copy-paste ChatGPT Scheduled Task prompts, not durable delivery state.
 - `.codex/` contains Codex environment scripts and launch prompts, not general repository policy.
 - `.github/copilot-instructions.md` is a small Copilot adapter pointing to `AGENTS.md` and this directory.
 - `.agents/skills/` contains optional reusable procedures that an executor invokes only when applicable.
