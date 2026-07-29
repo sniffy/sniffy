@@ -326,6 +326,7 @@ describe('release workflow push filter contract', () => {
     expect(pushTrigger).toMatch(/branches:\n\s+- develop/);
     expect(ignoredPaths).toEqual([
       '.github/workflows/website-deploy.yml',
+      'docs/website-architecture.md',
       'docs/website-deployment.md',
       'sniffy-ui/apps/site/**',
       'sniffy-ui/packages/theme/**',
@@ -333,10 +334,17 @@ describe('release workflow push filter contract', () => {
     expect(
       workflowRunsForPush([
         '.github/workflows/website-deploy.yml',
+        'docs/website-architecture.md',
         'docs/website-deployment.md',
         'sniffy-ui/apps/site/src/pages/index.tsx',
         'sniffy-ui/packages/theme/src/base.css',
       ]),
+    ).toBe(false);
+  });
+
+  it('ignores the exact production-runbook docs-only merge path set', () => {
+    expect(
+      workflowRunsForPush(['docs/website-architecture.md', 'docs/website-deployment.md']),
     ).toBe(false);
   });
 
