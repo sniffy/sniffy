@@ -15,17 +15,17 @@ flowchart TD
     Host["Windows host / Hyper-V"] --> VM["Disposable Windows worker VM"]
     VM --> App["Native Codex app"]
     App --> Dispatcher["Persistent dispatcher conversation"]
-    Dispatcher -->|"eligible claimed phase"| Worker["One-time standalone phase worker"]
+    Dispatcher -->|"eligible claimed lifecycle status"| Worker["One-time standalone lifecycle worker"]
     Dispatcher -->|"no eligible work"| NoOp["NO_CHANGE"]
     Worker --> Worktree["Isolated app-managed WSL worktree"]
     Worktree --> Tools["Git, gh, Java, Maven, Node, Docker, browsers"]
-    Worker --> Handoff["Next Phase / Ready"]
+    Worker --> Handoff["Next Status / Ready"]
 ```
 
 Important boundaries:
 
 - The dispatcher polls and claims only; it never edits source or reviews the worker's PR.
-- One standalone worker owns one `Implementation` or `Verification` phase turn.
+- One standalone worker owns one `Implementation` or `Verification` lifecycle turn.
 - Implementation hands off to `Review / Ready / ChatGPT`; it does not create its own reviewer/follow-up task.
 - Verification hands off according to the outcome classification in
   [`verification.md`](ai-delivery/verification.md).
@@ -186,36 +186,37 @@ Preserve the outer controls:
 - repository-scoped credentials and server-side branch protection;
 - token rotation and rebuild after suspected compromise.
 
-## App-native dispatcher and phase worker
+## App-native dispatcher and lifecycle worker
 
 Use the compatibility paths:
 
 - [`.codex/local/scheduled-task-prompt.md`](../.codex/local/scheduled-task-prompt.md) — persistent dispatcher;
-- [`.codex/local/worker-task-prompt.md`](../.codex/local/worker-task-prompt.md) — one-phase worker template.
+- [`.codex/local/worker-task-prompt.md`](../.codex/local/worker-task-prompt.md) — one-status worker template.
 
 The dispatcher selects only items matching:
 
 ```text
-Status = Ready
+Execution = Ready
 Executor = Local Codex app
-Phase = Implementation or Verification
+Status = Implementation or Verification
 Assignee is empty or matches the local worker identity
 ```
 
 It follows the best-effort claim and lease protocol in [`event-loop.md`](ai-delivery/event-loop.md), then creates exactly one
-one-time standalone worker with an isolated worktree. Failed child creation releases the claim or records an exact blocker.
+one-time standalone worker with an isolated worktree. Failed child creation releases the claim. `Blocked` is used only when
+Dmitry must decide or act, with `Executor = Human` and `Assignee = bedrin`.
 
 Implementation workers publish exact branch/SHA/PR evidence and hand off to:
 
 ```text
-Phase: Review
-Status: Ready
+Status: Review
+Execution: Ready
 Executor: ChatGPT
 Assignee: bedrin-gpt
 ```
 
 They do not schedule a self-review continuation. The shared Review event loop owns the next action. Verification workers use
-the classification and handoffs embedded in the phase-worker template.
+the classification and handoffs embedded in the lifecycle-worker template.
 
 ## Required smoke tests
 
@@ -223,10 +224,10 @@ Before enabling recurring dispatch, prove:
 
 1. a manual read-only task runs inside WSL and sees the expected project;
 2. an empty dispatcher tick stays in its conversation and creates no worktree;
-3. one eligible item creates exactly one standalone phase worker and isolated worktree;
-4. the child receives Phase, Implementer, Verifier, claim token, and generation;
+3. one eligible item creates exactly one standalone lifecycle worker and isolated worktree;
+4. the child receives Status, Implementer, Verifier, claim token, and generation;
 5. concurrent claim attempts produce one winning worker;
-6. failed child creation restores `Ready` or records an exact blocker;
+6. failed child creation restores `Ready` or escalates a real decision/action to Dmitry as `Blocked`;
 7. Implementation hands off to `Review / Ready / ChatGPT` without self-review;
 8. Verification produces the correct classified handoff;
 9. no task can merge or enable auto-merge.
