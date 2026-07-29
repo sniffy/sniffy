@@ -7,6 +7,7 @@ on:
       - develop
     paths-ignore:
       - .github/workflows/website-deploy.yml
+      - docs/website-architecture.md
       - docs/website-deployment.md
       - sniffy-ui/apps/site/**
       - sniffy-ui/packages/theme/**
