@@ -57,7 +57,11 @@ See:
 
 Use four hourly Scheduled Tasks at `:00`, `:15`, `:30`, and `:45`, all configured with destination **new chat** inside one
 fileless `AI Delivery Event Loop` Project. Together they provide a logical 15-minute poll cadence. Every occurrence is a fresh
-stateless dispatcher/phase-worker tick and performs at most one phase turn.
+stateless dispatcher/lifecycle-worker tick and performs at most one lifecycle turn.
+
+The exact setup instructions and one prompt that can be pasted unchanged into all four tasks live in
+[`.chatgpt/scheduled-task-prompt.md`](../../../.chatgpt/scheduled-task-prompt.md). Only the task names and schedules differ; do
+not create four divergent prompt copies.
 
 Manual tests on 2026-07-28 established that the available scheduler cannot target an arbitrary different Project and a
 Scheduled Task execution cannot create another Scheduled Task. Child spawning is therefore unsupported. Each task prompt must

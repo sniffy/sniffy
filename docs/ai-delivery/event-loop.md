@@ -54,6 +54,10 @@ slot-30 -> hourly at :30 -> new chat
 slot-45 -> hourly at :45 -> new chat
 ```
 
+Copy the exact same prompt into all four tasks from
+[`.chatgpt/scheduled-task-prompt.md`](../../.chatgpt/scheduled-task-prompt.md). The file includes complete setup instructions and
+a prompt with no placeholders; only the four task names and schedules differ.
+
 Together they form one logical 15-minute clock while consuming four active tasks. Configure every task to start in a **new
 chat** inside one dedicated scheduler Project. Each occurrence is a fresh, stateless dispatcher/worker tick; it does not reuse
 or append to a long-lived dispatcher conversation.
