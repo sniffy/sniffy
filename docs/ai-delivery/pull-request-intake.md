@@ -9,8 +9,8 @@ new independently owned implementation.
 A newly discovered external pull request normally enters as:
 
 ```text
-Phase: Review
-Status: Ready
+Status: Review
+Execution: Ready
 Implementer: <PR author or automation, for example Dependabot>
 Verifier: <chosen during intake>
 Executor: ChatGPT
@@ -51,8 +51,8 @@ initialization, author verification, missed-item reconciliation, and review.
 
 ## Event-loop intake adapter
 
-Before selecting ordinary `Ready` work, a tick may scan for eligible open pull requests that are not yet represented in the
-Project. Intake should:
+Before selecting ordinary `Execution = Ready` work, a tick may scan for eligible open pull requests that are not yet represented
+in the Project. Intake should:
 
 1. verify repository, open state, bot/external author, labels, target branch, draft state, and exact head;
 2. add or locate the PR Project item idempotently;
@@ -84,9 +84,10 @@ Route the reviewed exact head as follows:
 - **Stale base or merge conflict:** use `@dependabot rebase` when appropriate, keep the item in Review, and restart exact-head
   review only after Dependabot publishes a new head. Dependabot normally stops automatic rebasing after extra commits are
   pushed to its branch.
-- **Implementation incompatibility:** create a linked issue for the compatibility change or replacement update, select a real
-  Implementer/Verifier, and route that issue through Planning and Implementation. Keep the bot PR `Review / Blocked` until
-  the replacement supersedes it, then close the bot PR with rationale.
+- **Implementation incompatibility:** set the bot PR to `Review / Blocked / Human / bedrin` and ask Dmitry to authorize a linked
+  compatibility issue or replacement update. After he chooses the path and the linked work starts, keep the source PR in Review
+  with `Execution = In progress` and a worker reference to the linked task until the replacement supersedes it; then close the
+  bot PR with rationale.
 - **Requirement, major-version, or policy ambiguity:** move the PR item to `Planning / Ready` for ChatGPT or Dmitry.
 - **Intentional rejection or ignore:** record the reason. Prefer visible repository configuration in `.github/dependabot.yml`
   over a centrally stored one-off ignore when the policy should be shared by maintainers.
