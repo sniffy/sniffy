@@ -219,6 +219,9 @@ logs and the failed artifact for diagnosis. Content freeze and retry follow inci
 or change public routes as an emergency workaround. Keep legacy source, generated pages, domain configuration knowledge,
 and rollback credentials until stabilization is formally accepted.
 
+The fill-in-the-blank operator sequence and evidence packet live in
+[`website-deployment.md`](website-deployment.md#future-production-cutover-to-sniffyio).
+
 Legacy retirement requires: the stabilization window has passed; route/anchor and version manifests are green in
 production; rollback is no longer dependent on the legacy repository; historical content required by #670/#671 is
 published; monitoring shows no unresolved material legacy traffic; and maintainers approve #672. Retirement removes
