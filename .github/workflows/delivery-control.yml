@@ -83,19 +83,25 @@ jobs:
             });
             await core.summary.write();
 
-  acknowledge-parse-failure:
+  transition:
     needs: parse
     if: >-
       always() &&
-      github.event_name == 'issue_comment' &&
-      needs.parse.result == 'failure'
+      github.event_name != 'pull_request' &&
+      needs.parse.result != 'skipped'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     permissions:
+      contents: read
       issues: write
+    concurrency:
+      group: >-
+        ai-delivery-${{ needs.parse.outputs.target_repository || 'invalid' }}-${{ needs.parse.outputs.target_number || github.event.comment.id || github.run_id }}
+      cancel-in-progress: false
 
     steps:
       - name: Reject invalid control command
+        if: github.event_name == 'issue_comment' && needs.parse.result == 'failure'
         uses: actions/github-script@v9
         with:
           github-token: ${{ github.token }}
@@ -107,23 +113,17 @@ jobs:
               content: '-1'
             });
 
-  transition:
-    needs: parse
-    if: needs.parse.result == 'success'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      issues: write
-    concurrency:
-      group: >-
-        ai-delivery-${{ needs.parse.outputs.target_repository }}-${{ needs.parse.outputs.target_number }}
-      cancel-in-progress: false
+      - name: Fail invalid control command
+        if: needs.parse.result == 'failure'
+        run: |
+          echo 'The delivery-control command failed parsing or authorization.' >&2
+          exit 1
 
-    steps:
       - uses: actions/checkout@v7
+        if: needs.parse.result == 'success'
 
       - name: Apply guarded ProjectV2 transition
+        if: needs.parse.result == 'success'
         id: transition
         uses: actions/github-script@v9
         env:
@@ -139,7 +139,10 @@ jobs:
             });
 
       - name: Acknowledge control command
-        if: always() && needs.parse.outputs.control_comment_id != ''
+        if: >-
+          always() &&
+          needs.parse.result == 'success' &&
+          needs.parse.outputs.control_comment_id != ''
         uses: actions/github-script@v9
         env:
           CONTROL_COMMENT_ID: ${{ needs.parse.outputs.control_comment_id }}
