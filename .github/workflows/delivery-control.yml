@@ -8,6 +8,7 @@ on:
       - .codex/local/worker-task-prompt.md
       - .github/scripts/delivery-control.js
       - .github/scripts/delivery-control.test.js
+      - .github/scripts/delivery-control-post-mutation.test.js
       - .github/scripts/delivery-policy.test.js
       - .github/workflows/delivery-control.yml
       - docs/ai-delivery/**
@@ -39,8 +40,9 @@ jobs:
         run: |
           node --check .github/scripts/delivery-control.js
           node --check .github/scripts/delivery-control.test.js
+          node --check .github/scripts/delivery-control-post-mutation.test.js
           node --check .github/scripts/delivery-policy.test.js
-          node --test .github/scripts/delivery-control.test.js .github/scripts/delivery-policy.test.js
+          node --test .github/scripts/delivery-control.test.js .github/scripts/delivery-control-post-mutation.test.js .github/scripts/delivery-policy.test.js
       - name: Parse workflow and profile YAML
         run: >-
           ruby -e 'require "yaml";
