@@ -41,7 +41,7 @@ test('Local Codex can adopt an explicitly routed same-repository PR without dupl
   assert.match(worker, /adopted-continuation/);
   assert.match(worker, /reuse the exact same-repository open PR branch/i);
   assert.match(worker, /never adopt a fork or Dependabot branch/i);
-  assert.match(worker, /do not create a fresh branch or duplicate PR/i);
+  assert.match(worker, /Do\s+not create a fresh branch or duplicate PR/i);
   assert.match(dispatcher, /existing same-repository PR may be an adopted continuation/i);
   assert.match(dispatcher, /Reuse the exact branch and PR/i);
   assert.match(dispatcher, /Do not adopt fork or Dependabot branches/i);
@@ -50,7 +50,7 @@ test('Local Codex can adopt an explicitly routed same-repository PR without dupl
 test('canonical intake policy treats issues and PRs as distinct linked artifacts', () => {
   const intake = read('docs/ai-delivery/pull-request-intake.md');
   const lifecycle = read('docs/ai-delivery/lifecycle.md');
-  assert.match(intake, /Every open PR targeting `develop` is therefore a discovery source/);
+  assert.match(intake, /Every open PR targeting\s+`develop` is therefore a discovery source/);
   assert.match(intake, /exactly one Project item is canonical for lifecycle routing/i);
   assert.match(intake, /## Canonical work-item selection/);
   assert.match(intake, /### Exactly one formal closing issue[\s\S]*The issue is the canonical lifecycle item/i);
