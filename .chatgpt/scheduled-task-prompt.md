@@ -58,23 +58,29 @@ Perform this protocol:
 1. Reconcile external pull-request intake before ordinary queue work. Find eligible open sniffy/sniffy dependency PRs missing
    from Project 2, verify actual author, labels, target, draft state, and exact head, and materialize them idempotently through one
    guarded command with addIfMissing=true. Intake is not approval.
-2. Before claiming new work, inspect ChatGPT-owned Execution=In progress items whose worker, CI, external dispatch, or monitoring
+2. Reconcile stale exact-head lifecycle state before continuing workers or claiming ordinary queue work. Inspect every open
+   Project PR whose current Review, Verification, Approval, or derived Blocked/Human handoff relies on completed exact-head
+   evidence. If its current head differs from the head supporting that state, use one guarded command expecting the current
+   Status, Execution, Executor, and current head to set Review / Ready / ChatGPT and clear stale Worker reference. Verify the
+   terminal reaction and resulting Project state. This supervisory reconciliation may select Approval or Blocked items that are
+   not otherwise in the ordinary ChatGPT queue and consumes at most one item in the tick.
+3. Before claiming new work, inspect ChatGPT-owned Execution=In progress items whose worker, CI, external dispatch, or monitoring
    observation is due. Worker observation belongs to this same event loop: first after 15 minutes, again 15 minutes later, then
    hourly while incomplete. Continue or recover existing ownership before starting unrelated work.
-3. If a needed control command would exceed the rotation threshold, rotate the active control issue using control-plane.md, then
+4. If a needed control command would exceed the rotation threshold, rotate the active control issue using control-plane.md, then
    continue this tick. Do not create a separate cleanup scheduler.
-4. Otherwise select at most one Project 2 item where:
+5. Otherwise select at most one Project 2 item where:
    - Execution = Ready;
    - Executor = ChatGPT;
    - Assignee is empty or bedrin-gpt;
    - Status is Planning, Implementation, Review, or Verification;
    - current ChatGPT tools and identity can truthfully complete the lifecycle turn or reach a safe durable handoff now.
-5. Select deterministically using security priority, Project priority, ready timestamp, then repository and item number. Never
+6. Select deterministically using security priority, Project priority, ready timestamp, then repository and item number. Never
    create a duplicate Project item, worker, branch, or pull request.
-6. Claim with one guarded delivery-control/v1 command. Set Execution=In progress plus the concrete tick/worker reference and
+7. Claim with one guarded delivery-control/v1 command. Set Execution=In progress plus the concrete tick/worker reference and
    lease, inspect the terminal reaction, then re-read and verify ownership before work. If execution or external dispatch cannot
    start, release to Ready. Set Blocked only when Dmitry must decide or act.
-7. Perform exactly one lifecycle turn:
+8. Perform exactly one lifecycle turn:
    - Planning: resolve outcome, decisions, non-goals, risk axes, Implementer, Verifier, and proof obligations.
    - Implementation: first ask whether ChatGPT can honestly edit, test, inspect, publish, and verify the focused change. If not,
      route bounded fresh work to Codex Cloud or complex/persistent/existing-PR work to Local Codex according to profile.yml.
@@ -84,15 +90,15 @@ Perform this protocol:
      before another implementation dispatch; do not mechanically issue another patch list.
    - Verification: validate the observable result against the authoritative issue using the exact published head/artifact in a
      representative environment. Do not rename unit tests or green CI as system verification.
-8. Publish human-useful evidence on the target issue/PR. Then use one guarded control command for the complete next Status,
+9. Publish human-useful evidence on the target issue/PR. Then use one guarded control command for the complete next Status,
    Execution, Executor, and cleared worker ownership state. Update GitHub Assignee separately when supported and verify it.
-9. Routine waiting for a concrete CI run or worker remains In progress only with a durable reference and next observation point.
-   Blocked always routes an exact action to Human/bedrin.
-10. Never merge, enable auto-merge, bypass protection, rewrite shared history, expose credentials, or perform privileged
+10. Routine waiting for a concrete CI run or worker remains In progress only with a durable reference and next observation point.
+    Blocked always routes an exact action to Human/bedrin.
+11. Never merge, enable auto-merge, bypass protection, rewrite shared history, expose credentials, or perform privileged
     repository/hosting operations without Dmitry's explicit instruction.
-11. If no eligible intake, due continuation, control-log rotation, claimable turn, or meaningful reconciliation exists, make no
-    GitHub/source mutation and reply only NO_CHANGE. Otherwise finish with a compact summary containing selected item, lifecycle
-    turn, durable evidence, and resulting Status / Execution / Executor / Assignee.
+12. If no eligible intake, stale-head reconciliation, due continuation, control-log rotation, claimable turn, or meaningful
+    reconciliation exists, make no GitHub/source mutation and reply only NO_CHANGE. Otherwise finish with a compact summary
+    containing selected item, lifecycle turn, durable evidence, and resulting Status / Execution / Executor / Assignee.
 ```
 
 After setup, smoke-test one empty tick and one disposable/read-only eligible item. Replacing a long defining task chat is manual
