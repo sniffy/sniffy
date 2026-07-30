@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const {
-  MARKER,
+  CONTROL_LABEL,
   desired,
   executeTransition,
   idempotentRepeat,
@@ -124,6 +124,10 @@ function encoded(command) {
   return Buffer.from(JSON.stringify(command)).toString('base64');
 }
 
+function labeledIssue() {
+  return {state: 'open', labels: [{name: CONTROL_LABEL}]};
+}
+
 test('parses a fully guarded claim', () => {
   assert.deepEqual(parseCommand(JSON.stringify(claim)), {...claim, clear: [], addIfMissing: false});
 });
@@ -182,7 +186,7 @@ test('rejects idempotency when an unchanged guard moved', () => {
   assert.equal(idempotentRepeat(command, [['Status', 'Review', 'Planning']], current), false);
 });
 
-test('authorizes a marked control-issue command and emits routing outputs', () => {
+test('authorizes a labeled control-issue command and emits routing outputs', () => {
   const core = coreDouble();
   parseInvocation({
     context: {
@@ -190,7 +194,7 @@ test('authorizes a marked control-issue command and emits routing outputs', () =
       eventName: 'issue_comment',
       repo: {owner: 'sniffy', repo: 'sniffy'},
       payload: {
-        issue: {state: 'open', body: MARKER},
+        issue: labeledIssue(),
         comment: {id: 123, body: JSON.stringify(claim)}
       }
     },
@@ -202,12 +206,22 @@ test('authorizes a marked control-issue command and emits routing outputs', () =
   assert.deepEqual(JSON.parse(Buffer.from(core.outputs.payload_base64, 'base64')), parseCommand(claim));
 });
 
+test('rejects an unlabeled control issue', () => {
+  const context = {
+    actor: 'bedrin-gpt',
+    eventName: 'issue_comment',
+    repo: {owner: 'sniffy', repo: 'sniffy'},
+    payload: {issue: {state: 'open', labels: []}, comment: {id: 123, body: JSON.stringify(claim)}}
+  };
+  assert.throws(() => parseInvocation({context, core: coreDouble()}), /labeled "ai-delivery-control"/);
+});
+
 test('rejects unauthorized and malformed control commands before transition', () => {
   const context = {
     actor: 'external-user',
     eventName: 'issue_comment',
     repo: {owner: 'sniffy', repo: 'sniffy'},
-    payload: {issue: {state: 'open', body: MARKER}, comment: {id: 123, body: JSON.stringify(claim)}}
+    payload: {issue: labeledIssue(), comment: {id: 123, body: JSON.stringify(claim)}}
   };
   assert.throws(() => parseInvocation({context, core: coreDouble()}), /not authorized/);
   context.actor = 'bedrin-gpt';
@@ -292,12 +306,14 @@ test('workflow has one write-bearing job and deterministic claim serialization',
   assert.equal((workflow.match(/issues:\s*write/g) || []).length, 1);
   assert.doesNotMatch(workflow, /^\s{2}acknowledge-parse-failure:/m);
   assert.match(workflow, /Reject invalid control command[\s\S]*needs\.parse\.result == 'failure'/);
+  assert.match(workflow, /contains\(github\.event\.issue\.labels\.\*\.name, 'ai-delivery-control'\)/);
   assert.match(workflow, /ai-delivery-\$\{\{ needs\.parse\.outputs\.target_repository/);
   assert.match(workflow, /cancel-in-progress:\s*false/);
 });
 
 test('rotation thresholds are explicit and legacy target-comment workflows are retired', () => {
   const profile = fs.readFileSync(path.join(__dirname, '../../docs/ai-delivery/profile.yml'), 'utf8');
+  assert.match(profile, /controlIssueLabel:\s*"ai-delivery-control"/);
   assert.match(profile, /rotateAfterCommands:\s*[1-9][0-9]*/);
   assert.match(profile, /rotateAfterDays:\s*[1-9][0-9]*/);
   assert.equal(fs.existsSync(path.join(__dirname, '../workflows/project-field.yml')), false);
