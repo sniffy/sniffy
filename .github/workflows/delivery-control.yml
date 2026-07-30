@@ -1,6 +1,12 @@
 name: AI delivery control
 
 on:
+  pull_request:
+    paths:
+      - .github/scripts/delivery-control.js
+      - .github/scripts/delivery-control.test.js
+      - .github/workflows/delivery-control.yml
+      - docs/ai-delivery/profile.yml
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -13,6 +19,29 @@ on:
 permissions: {}
 
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+      - name: Check and test delivery control
+        run: |
+          node --check .github/scripts/delivery-control.js
+          node --check .github/scripts/delivery-control.test.js
+          node --test .github/scripts/delivery-control.test.js
+      - name: Parse workflow and profile YAML
+        run: >-
+          ruby -e 'require "yaml";
+          YAML.load_file(".github/workflows/delivery-control.yml");
+          YAML.load_file("docs/ai-delivery/profile.yml")'
+
   parse:
     if: >-
       github.event_name == 'workflow_dispatch' ||
@@ -53,6 +82,30 @@ jobs:
               environment: process.env
             });
             await core.summary.write();
+
+  acknowledge-parse-failure:
+    needs: parse
+    if: >-
+      always() &&
+      github.event_name == 'issue_comment' &&
+      needs.parse.result == 'failure'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+
+    steps:
+      - name: Reject invalid control command
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: '-1'
+            });
 
   transition:
     needs: parse
