@@ -5,7 +5,9 @@ const CONTROL_LABEL = 'ai-delivery-control';
 const REPOSITORY = 'sniffy/sniffy';
 const ORGANIZATION = 'sniffy';
 const PROJECT_NUMBER = 2;
+const BASE_BRANCH = 'develop';
 const DEFAULT_ACTORS = ['bedrin', 'bedrin-gpt', 'bedrin-codex-cloud', 'bedrin-codex-local'];
+const COMMIT_ID = /^[0-9a-f]{40}([0-9a-f]{24})?$/;
 
 function object(value, name) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -25,6 +27,17 @@ function fields(value, name, allowNull) {
     else throw new Error(`${name}.${field} must be a non-empty string${allowNull ? ' or null' : ''}.`);
   }
   return result;
+}
+
+function pullRequestReference(value, name) {
+  if (value === undefined) return null;
+  const reference = object(value, name);
+  if (!Number.isInteger(reference.number) || reference.number < 1) {
+    throw new Error(`${name}.number must be a positive integer.`);
+  }
+  const head = reference.head ? String(reference.head).toLowerCase() : '';
+  if (!COMMIT_ID.test(head)) throw new Error(`${name}.head must be a 40- or 64-character hexadecimal commit ID.`);
+  return {number: reference.number, head};
 }
 
 function parseCommand(input, repository = REPOSITORY) {
@@ -49,10 +62,11 @@ function parseCommand(input, repository = REPOSITORY) {
   if (expected.type && !['Issue', 'PullRequest'].includes(expected.type)) {
     throw new Error('expected.type must be Issue or PullRequest.');
   }
-  if (expected.head && !/^[0-9a-f]{40}([0-9a-f]{24})?$/.test(expected.head)) {
+  if (expected.head && !COMMIT_ID.test(expected.head)) {
     throw new Error('expected.head must be a 40- or 64-character hexadecimal commit ID.');
   }
 
+  const reviewPullRequest = pullRequestReference(raw.reviewPullRequest, 'reviewPullRequest');
   const set = fields(raw.set, 'set', false);
   const clear = raw.clear === undefined ? [] : raw.clear;
   if (!Array.isArray(clear) || clear.some(value => typeof value !== 'string' || !value.trim())) {
@@ -79,11 +93,26 @@ function parseCommand(input, repository = REPOSITORY) {
     if (!expected.type) throw new Error('A claim must guard target type.');
     if (expected.type === 'PullRequest' && !expected.head) throw new Error('A pull-request claim must guard head.');
   }
+  if (set.Status === 'Review') {
+    if (!expected.type) throw new Error('A Review transition must guard target type.');
+    if (expected.type === 'PullRequest') {
+      if (!expected.head) throw new Error('A pull-request Review transition must guard head.');
+      if (reviewPullRequest &&
+          (reviewPullRequest.number !== target.number || reviewPullRequest.head !== expected.head)) {
+        throw new Error('reviewPullRequest must match the target pull request and expected head.');
+      }
+    } else if (!reviewPullRequest) {
+      throw new Error('An issue Review transition must identify reviewPullRequest.number and reviewPullRequest.head.');
+    }
+  } else if (reviewPullRequest) {
+    throw new Error('reviewPullRequest is allowed only when setting Status=Review.');
+  }
 
   return {
     command: VERSION,
     target: {repository: target.repository, number: target.number},
     expected,
+    ...(reviewPullRequest ? {reviewPullRequest} : {}),
     set,
     clear: normalizedClear,
     addIfMissing
@@ -206,6 +235,76 @@ async function projectItem(github, targetId, projectId) {
   return result.node?.projectItems?.nodes?.find(item => item.project?.id === projectId) || null;
 }
 
+async function readPullRequest(github, owner, name, number) {
+  const result = await github.graphql(`query($owner: String!, $name: String!, $number: Int!) {
+    repository(owner: $owner, name: $name) { pullRequest(number: $number) {
+      id
+      number
+      state
+      isDraft
+      baseRefName
+      headRefOid
+      closingIssuesReferences(first: 50) { nodes { number } }
+    } }
+  }`, {owner, name, number});
+  return result.repository?.pullRequest || null;
+}
+
+function reviewReference(command) {
+  if (command.set.Status !== 'Review') return null;
+  return command.expected.type === 'PullRequest'
+    ? {number: command.target.number, head: command.expected.head, canonicalIssue: null}
+    : {...command.reviewPullRequest, canonicalIssue: command.target.number};
+}
+
+function reviewIdentityMismatches(reference, pullRequest) {
+  if (!pullRequest) return [['reviewPullRequest', `#${reference.number}@${reference.head}`, '(not found)']];
+  const rows = [];
+  const actualHead = String(pullRequest.headRefOid || '').toLowerCase();
+  if (pullRequest.state !== 'OPEN') rows.push(['reviewPullRequest.state', 'OPEN', pullRequest.state || '(unknown)']);
+  if (pullRequest.baseRefName !== BASE_BRANCH) {
+    rows.push(['reviewPullRequest.base', BASE_BRANCH, pullRequest.baseRefName || '(unknown)']);
+  }
+  if (actualHead !== reference.head) rows.push(['reviewPullRequest.head', reference.head, actualHead]);
+  if (reference.canonicalIssue !== null) {
+    const closing = new Set((pullRequest.closingIssuesReferences?.nodes || []).map(issue => issue.number));
+    if (!closing.has(reference.canonicalIssue)) {
+      rows.push(['reviewPullRequest.closes', `#${reference.canonicalIssue}`, '(not linked)']);
+    }
+  }
+  return rows;
+}
+
+async function ensureReviewPullRequestReady({github, repositoryGithub = github, command, target, owner, name}) {
+  const reference = reviewReference(command);
+  if (!reference) return {changed: false, pullRequest: null, conflicts: []};
+  let pullRequest = await readPullRequest(github, owner, name, reference.number);
+  const conflicts = reviewIdentityMismatches(reference, pullRequest);
+  if (conflicts.length) return {changed: false, pullRequest, conflicts};
+
+  let changed = false;
+  if (pullRequest.isDraft) {
+    const result = await repositoryGithub.graphql(`mutation($id: ID!) {
+      markPullRequestReadyForReview(input: {pullRequestId: $id}) {
+        pullRequest { id number state isDraft baseRefName headRefOid }
+      }
+    }`, {id: pullRequest.id});
+    const ready = result.markPullRequestReadyForReview?.pullRequest;
+    if (!ready || ready.isDraft) throw new Error(`Pull request #${reference.number} remained draft after ready-for-review mutation.`);
+    if (String(ready.headRefOid || '').toLowerCase() !== reference.head) {
+      throw new Error(`Pull request #${reference.number} head changed while marking it ready for review.`);
+    }
+    changed = true;
+  }
+
+  pullRequest = await readPullRequest(github, owner, name, reference.number);
+  const verified = reviewIdentityMismatches(reference, pullRequest);
+  if (verified.length || pullRequest?.isDraft) {
+    throw new Error(`Pull request #${reference.number} was not verified as open, non-draft, exact-head Review input.`);
+  }
+  return {changed, pullRequest, conflicts: []};
+}
+
 async function conflict(core, rows, reason) {
   core.setOutput('outcome', 'conflict');
   core.setOutput('reason', reason);
@@ -219,7 +318,7 @@ async function conflict(core, rows, reason) {
   return {outcome: 'conflict'};
 }
 
-async function executeTransition({github, core, payloadBase64}) {
+async function executeTransition({github, repositoryGithub = github, core, payloadBase64}) {
   const command = parseCommand(Buffer.from(payloadBase64, 'base64').toString('utf8'));
   const [owner, name] = command.target.repository.split('/');
   const result = await github.graphql(`query($org: String!, $project: Int!, $owner: String!, $name: String!, $number: Int!) {
@@ -273,6 +372,9 @@ async function executeTransition({github, core, payloadBase64}) {
     return conflict(core, fieldMismatch, 'Expected field state changed.');
   }
 
+  const review = await ensureReviewPullRequestReady({github, repositoryGithub, command, target, owner, name});
+  if (review.conflicts.length) return conflict(core, review.conflicts, 'Review pull request identity changed.');
+
   for (const op of operations) {
     const current = before.has(op.field) ? before.get(op.field) : null;
     if (current === op.value) continue;
@@ -296,16 +398,34 @@ async function executeTransition({github, core, payloadBase64}) {
   const after = values(afterItem?.fieldValues?.nodes);
   if (!afterItem || !desired(command, after)) throw new Error('Post-mutation Project state did not match the command.');
 
+  const projectChanged = !desired(command, before);
   core.setOutput('outcome', 'success');
-  core.setOutput('reason', desired(command, before) ? 'Already in requested state.' : 'Transition applied and verified.');
+  core.setOutput('reason', projectChanged || review.changed
+    ? 'Transition applied and verified.'
+    : 'Already in requested state.');
   core.summary.addHeading('AI delivery control success')
-    .addRaw(`Target: \`${command.target.repository}#${command.target.number}\`\n\n`)
-    .addTable([
-      [{data: 'Field', header: true}, {data: 'Before', header: true}, {data: 'After', header: true}],
-      ...operations.map(op => [op.field, String(before.get(op.field) ?? '(clear)'), String(after.get(op.field) ?? '(clear)')])
-    ]);
+    .addRaw(`Target: \`${command.target.repository}#${command.target.number}\`\n\n`);
+  if (review.pullRequest) {
+    core.summary.addRaw(`Review pull request: \`#${review.pullRequest.number}\` at \`${String(review.pullRequest.headRefOid).toLowerCase()}\`, non-draft${review.changed ? ' (marked ready by control plane)' : ''}.\n\n`);
+  }
+  core.summary.addTable([
+    [{data: 'Field', header: true}, {data: 'Before', header: true}, {data: 'After', header: true}],
+    ...operations.map(op => [op.field, String(before.get(op.field) ?? '(clear)'), String(after.get(op.field) ?? '(clear)')])
+  ]);
   await core.summary.write();
   return {outcome: 'success'};
 }
 
-module.exports = {VERSION, CONTROL_LABEL, actorSet, desired, executeTransition, idempotentRepeat, mismatch, parseCommand, parseInvocation};
+module.exports = {
+  VERSION,
+  CONTROL_LABEL,
+  actorSet,
+  desired,
+  ensureReviewPullRequestReady,
+  executeTransition,
+  idempotentRepeat,
+  mismatch,
+  parseCommand,
+  parseInvocation,
+  reviewIdentityMismatches
+};
