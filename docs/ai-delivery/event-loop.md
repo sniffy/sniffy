@@ -54,12 +54,12 @@ Copy the exact prompt from [`.chatgpt/scheduled-task-prompt.md`](../../.chatgpt/
 separate defining chat inside one dedicated fileless `AI Delivery Event Loop` Project so four task logs remain isolated from one
 another.
 
-Product testing on 2026-07-30 showed that recurrences append to the defining task chat rather than reliably creating a new chat.
+Product testing on 2026-07-30 showed that recurrences append to the defining task chat rather than reliably starting a new chat.
 Treat each occurrence as logically stateless even though the transcript is persistent:
 
 1. ignore prior-run conclusions and mutable conversational context;
 2. read current GitHub state, repository policy, and [`profile.yml`](profile.yml) from scratch;
-3. reconcile eligible external PR intake;
+3. reconcile eligible external PR intake without inferring a Project Implementer from PR authorship;
 4. continue one due owned worker or select at most one eligible lifecycle turn;
 5. submit one guarded control command to claim it;
 6. verify the successful reaction and resulting Project state before doing work;
@@ -101,11 +101,14 @@ Before claiming ordinary work, a tick:
 1. scans for open matching PRs not already represented in the Project;
 2. verifies the actual author, labels, target, draft state, and exact head;
 3. submits a guarded control command with `addIfMissing: true`;
-4. initializes `Review / Ready / Executor = ChatGPT` plus the planned Implementer/Verifier fields;
-5. re-reads the Project item before treating intake as complete.
+4. initializes `Review / Ready / Executor = ChatGPT`, the chosen Verifier, and a concrete Worker reference;
+5. omits `Implementer` from the command, preserving any existing value but treating an absent value as valid;
+6. re-reads the Project item before treating intake as complete.
 
-For Dependabot, use the bot author plus dependency label, distinguish security from routine updates, and set the PR itself as the
-work item. Do not create a shadow issue unless review discovers independently owned implementation work. Intake is not approval.
+PR authorship is provenance used for trust, review identity, and provider-specific commands. It is not automatically a planned
+implementation route. For Dependabot, use the bot author plus dependency label to classify the update, but do not set
+`Implementer = Dependabot`. The Project currently offers that option for manual/historical use; normal intake leaves it empty.
+Do not create a shadow issue unless review discovers independently owned implementation work. Intake is not approval.
 
 ### Control-issue adapter
 
@@ -153,8 +156,13 @@ Assignee is empty OR Assignee belongs to this dispatcher pool
 ```
 
 The work item may be an issue or pull request. The dispatcher also checks lifecycle compatibility, required access, worker-pool
-capacity, existing branch/PR ownership, and absence of a valid current worker. `Implementer` and `Verifier` are future routing
-decisions; lifecycle transitions copy the relevant value into `Executor`.
+capacity, existing branch/PR ownership, and absence of a valid current worker. Eligibility must not require `Implementer` or
+`Verifier` to be populated when the current status does not use them. A blank `Implementer` means unknown/not deliberately
+selected, while `Executor` remains the authoritative current route.
+
+Lifecycle transitions copy a planned field into `Executor` only when that route has been deliberately selected. Entering
+Implementation requires a non-empty Implementer; external PR Review, rebase monitoring, Verification, Approval, and closure do
+not.
 
 Use deterministic selection such as security priority, Project priority, ready timestamp, then repository/item number. Claim at
 most available capacity and never create duplicate workers or Project items.
@@ -214,7 +222,7 @@ One worker or direct ChatGPT tick owns one lifecycle turn. It must:
 
 Generic documents define lifecycle, intake, guarded claims, leases, correction limits, publication, verification, and merge
 authority. [`profile.yml`](profile.yml) supplies current Sniffy configuration, including Project fields, identities, default
-routes, Local Codex Sol/extra-high settings, and control-log thresholds.
+routes, Local Codex Sol/extra-high settings, external-intake implementer policy, and control-log thresholds.
 
 Profiles may add filters, capacity, evidence requirements, or future executor settings, but must not redefine the shared meaning
 of Status, Execution, publication, verification, or merge authority. Update the profile when a routing preference changes; edit
