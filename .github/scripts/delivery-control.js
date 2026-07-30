@@ -1,7 +1,7 @@
 'use strict';
 
 const VERSION = 'delivery-control/v1';
-const MARKER = '<!-- sniffy-ai-delivery-control -->';
+const CONTROL_LABEL = 'ai-delivery-control';
 const REPOSITORY = 'sniffy/sniffy';
 const ORGANIZATION = 'sniffy';
 const PROJECT_NUMBER = 2;
@@ -111,8 +111,9 @@ function parseInvocation({context, core, dispatchCommand, environment = {}}) {
   else if (context.eventName === 'issue_comment') {
     const issue = context.payload?.issue;
     if (!issue || !context.payload?.comment) throw new Error('Incomplete issue_comment payload.');
-    if (issue.pull_request || issue.state !== 'open' || !String(issue.body || '').includes(MARKER)) {
-      throw new Error('Commands must be posted to the open marked control issue.');
+    const labels = (issue.labels || []).map(label => typeof label === 'string' ? label : label.name);
+    if (issue.pull_request || issue.state !== 'open' || !labels.includes(CONTROL_LABEL)) {
+      throw new Error(`Commands must be posted to an open issue labeled "${CONTROL_LABEL}".`);
     }
     input = context.payload.comment.body;
     commentId = String(context.payload.comment.id);
@@ -307,4 +308,4 @@ async function executeTransition({github, core, payloadBase64}) {
   return {outcome: 'success'};
 }
 
-module.exports = {VERSION, MARKER, actorSet, desired, executeTransition, idempotentRepeat, mismatch, parseCommand, parseInvocation};
+module.exports = {VERSION, CONTROL_LABEL, actorSet, desired, executeTransition, idempotentRepeat, mismatch, parseCommand, parseInvocation};
