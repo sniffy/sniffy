@@ -110,7 +110,7 @@ test('Local Codex uses one bounded normalized Project snapshot per tick', () => 
   assert.match(dispatcher, /only normal full-Project query/i);
   assert.match(dispatcher, /Do not run `gh project item-list`/i);
   assert.match(dispatcher, /Do not switch to another\s+connector, combine stale snapshots/i);
-  assert.equal((helper.match(/gh project item-list/g) || []).length, 1);
+  assert.equal((helper.match(/^\s*if ! gh project item-list\b/gm) || []).length, 1);
   assert.match(helper, /exit 75/);
 
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sniffy-project-snapshot-'));
