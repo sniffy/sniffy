@@ -7,8 +7,9 @@ required GitHub, sandbox, artifact, browser, identity, and file-editing capabili
 
 As supervisor, ChatGPT:
 
-- turns discussions into an authoritative issue with decisions, non-goals, Implementer, Verifier, and proof obligations;
-- ingests eligible external pull requests such as Dependabot updates into Review;
+- turns discussions into an authoritative issue with decisions, non-goals, Implementer when Implementation is needed, Verifier,
+  and proof obligations;
+- ingests eligible external pull requests such as Dependabot updates into Review without inferring Implementer from authorship;
 - tracks lifecycle fields, guarded claims, workers, branches, PRs, exact SHAs, reviews, Verification, CI, artifacts, and blockers;
 - rotates the technical control issue during normal event-loop work;
 - performs the convergence checkpoint when corrected work returns to Review with substantive blockers;
@@ -50,6 +51,9 @@ ChatGPT uses the same [`../control-plane.md`](../control-plane.md) protocol as C
 3. inspect the reaction and Actions result;
 4. re-read the resulting Project fields;
 5. only then claim ownership or report a handoff.
+
+Omit optional fields that are not part of the transition. In particular, external PR intake leaves `Implementer` untouched and
+accepts an empty value; it does not synthesize an author, bot, provider, or `Unknown` single-select value.
 
 Do not post `/project-status`, `/project-field`, claim-intent, lease arbitration, or polling comments on target issues/PRs.
 `workflow_dispatch` is the administrative fallback to the same implementation and is not required for normal ChatGPT operation.
@@ -116,6 +120,9 @@ Otherwise follow [`../routing.md`](../routing.md): bounded well-specified fresh 
 persistent, cross-version, service/browser, existing-PR, or non-converging work goes to Local Codex Sol/extra-high; privileged or
 unresolved decisions go to Dmitry.
 
+An external PR with empty Implementer may still be reviewed, monitored, verified, approved, superseded, or closed. If new code is
+required, choose a supported Implementer through Planning or a linked replacement task before entering Implementation.
+
 ## Review convergence
 
 When Review returns work to Implementation and the corrected head comes back with substantive blockers again, ChatGPT pauses
@@ -126,8 +133,9 @@ event loop, not a new timer.
 ## Review identity limitation
 
 A PR authored by `bedrin-gpt` cannot be formally approved by the same identity. ChatGPT still performs full Review and routed
-Verification, then leaves exact ready-for-Dmitry-review or blocking feedback. A Dependabot-authored PR is independent from
-`bedrin-gpt` and may receive an honest formal ChatGPT review.
+Verification, then leaves exact ready-for-Dmitry-review or blocking feedback. A Dependabot-authored or external-contributor PR is
+independent from `bedrin-gpt` and may receive an honest formal ChatGPT review. This decision uses the actual PR author, not the
+optional Project Implementer field.
 
 ## Website verification
 
