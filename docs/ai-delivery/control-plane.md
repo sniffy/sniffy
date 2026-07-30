@@ -20,11 +20,8 @@ the same parser and transition implementation, not a separate executor protocol.
 
 ## Active control issue
 
-Maintain exactly one open technical issue named like `AI Delivery Control Log — 2026-07`. Its body must contain:
-
-```html
-<!-- sniffy-ai-delivery-control -->
-```
+Maintain one open technical issue with the label `ai-delivery-control`. Use a human-readable title such as
+`AI Delivery Control Log — 2026-07`.
 
 The issue is machine-oriented:
 
@@ -33,8 +30,8 @@ The issue is machine-oriented:
 - keep meaningful reviews, verification evidence, blockers, and human handoffs on the target issue or pull request;
 - do not delete completed commands merely to reduce visual noise.
 
-Executors locate the current open issue by title plus marker. They must re-read it immediately before posting. If multiple open
-control issues are found, do not guess: use the newest explicitly linked successor or route the ambiguity to ChatGPT.
+Executors query open issues with the configured label and use the newest one by issue number. If none exists, create one with the
+label. Immediately before posting, re-read the issue and confirm that it is still open and still the newest open labeled issue.
 
 ## Command format
 
@@ -94,7 +91,7 @@ from the target repository and item number, with `cancel-in-progress: false`.
 
 For each command it:
 
-1. validates the actor, control-issue marker, JSON schema, repository, and guarded mutation;
+1. validates the actor, control-issue label, JSON schema, repository, and guarded mutation;
 2. enters the target-item concurrency group;
 3. queries the target issue/PR, exact PR head when applicable, Project 2, field definitions, Project item, and current field values;
 4. optionally adds a missing Project item only when `addIfMissing` is true;
@@ -154,10 +151,10 @@ Rotation is normal event-loop maintenance, not a separate scheduled task. ChatGP
 Rotation procedure:
 
 1. verify that every existing command has a terminal reaction or an inspected failed run;
-2. create a successor issue with the marker and the next period in its title;
+2. create a successor issue with the same label and the next period in its title;
 3. add reciprocal predecessor/successor links;
 4. close the old issue without deleting comments;
-5. re-query open control issues and verify exactly one active successor;
+5. query open issues with the label and verify that the successor is the newest one;
 6. post the next command only after that verification.
 
 A normal queue tick may perform rotation immediately before a needed command. No independent cleanup clock, browser automation,
@@ -180,7 +177,7 @@ Do not post field commands, claim tokens, lease arbitration, winner/loser messag
 
 The old `project-status.yml` and `project-field.yml` workflows are removed with this protocol. After merge:
 
-1. create and optionally lock the first active control issue;
+1. ensure the `ai-delivery-control` label exists and create the first active control issue with it;
 2. run one successful guarded multi-field transition on a disposable item;
 3. repeat the same command and confirm idempotent success;
 4. use a stale expected value and confirm a non-mutating conflict;
