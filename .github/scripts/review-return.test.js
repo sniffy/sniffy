@@ -40,6 +40,7 @@ function pullRequest({prItem = null, issues = []} = {}) {
     baseRefName: 'develop',
     isCrossRepository: false,
     reviewDecision: 'CHANGES_REQUESTED',
+    author: {login: 'bedrin-codex-cloud'},
     projectItems: {nodes: prItem ? [prItem] : []},
     closingIssuesReferences: {nodes: issues}
   };
@@ -131,6 +132,23 @@ test('prepares exactly one linked issue transition from a current request-change
   assert.equal(core.outputs.target_type, 'Issue');
   const command = JSON.parse(Buffer.from(core.outputs.payload_base64, 'base64').toString('utf8'));
   assert.equal(command.set.Executor, 'Codex Cloud');
+});
+
+test('skips a self-review even when the aggregate decision requests changes', async () => {
+  const core = coreDouble();
+  await prepareReviewReturn({
+    github: {async graphql() {
+      return {
+        organization: {projectV2: {id: 'PROJECT'}},
+        repository: {pullRequest: {...pullRequest({issues: [issue(748)]}), author: {login: 'bedrin'}}}
+      };
+    }},
+    context: context(),
+    core,
+    authorizedActors: new Set(['bedrin'])
+  });
+  assert.equal(core.outputs.should_transition, 'false');
+  assert.match(core.outputs.reason, /also the pull request author/);
 });
 
 test('skips stale aggregate decisions and rejects duplicate represented work items', async () => {
