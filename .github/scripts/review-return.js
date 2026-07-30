@@ -119,6 +119,7 @@ async function prepareReviewReturn({github, context, core, authorizedActors}) {
       baseRefName
       isCrossRepository
       reviewDecision
+      author { login }
       projectItems(first: 50) { nodes { ...ProjectItem } }
       closingIssuesReferences(first: 20) { nodes {
         id
@@ -148,6 +149,9 @@ async function prepareReviewReturn({github, context, core, authorizedActors}) {
   if (!project || !pullRequest) throw new Error('Project 2 or the reviewed pull request was not found.');
   if (pullRequest.baseRefName !== BASE_BRANCH || pullRequest.isCrossRepository) {
     return skip(core, 'The current pull request is no longer an eligible same-repository develop PR.');
+  }
+  if (pullRequest.author?.login === reviewer) {
+    return skip(core, 'The reviewer is also the pull request author; correction routing requires an independent review.');
   }
   if (pullRequest.reviewDecision !== 'CHANGES_REQUESTED') {
     return skip(core, `The current aggregate review decision is ${pullRequest.reviewDecision || '(none)'}, not CHANGES_REQUESTED.`);
