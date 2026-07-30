@@ -1,137 +1,211 @@
 # Pull-request-first intake
 
-Not every delivery item starts as an issue. Dependabot, an external contributor, or other automation may open a pull request that
-already contains an implementation. Add that pull request itself to the GitHub Project; do not create a shadow issue unless
-follow-up work needs a new independently owned implementation.
+A Sniffy implementation may arrive before the delivery system knows about it. Dmitry may push from IntelliJ, ChatGPT or Codex may
+publish a branch, Dependabot may open an update, or an external contributor may submit a fork PR. Every open PR targeting
+`develop` is therefore a discovery source. Author, label, provider, and branch origin affect trust, review independence, and
+correction strategy; they do not decide whether the PR belongs in the delivery process.
 
-## Lifecycle entry
+Issues and pull requests are both first-class Project items:
 
-A newly discovered external pull request normally enters as:
+- an **issue** is normally the authoritative outcome, decisions, acceptance criteria, and proof contract;
+- a **pull request** is the authoritative published implementation, exact head, CI, and review conversation;
+- exactly one Project item is canonical for lifecycle routing at a time; the other object remains linked requirements or evidence.
+
+Do not create a shadow issue merely because a PR exists without one. Do not create a second PR merely because the selected worker
+did not author the existing branch.
+
+## Canonical work-item selection
+
+For every open PR targeting `develop`, inspect formal closing links and current Project representation before adding anything:
+
+### Exactly one formal closing issue
+
+The issue is the canonical lifecycle item, whether or not it is already in Project 2.
+
+```text
+Canonical Project item: Issue #123
+Implementation evidence: PR #456 at exact head <sha>
+```
+
+Add or locate the issue idempotently. When the PR becomes non-draft and implementation publication is complete, initialize or
+transition the issue to:
 
 ```text
 Status: Review
 Execution: Ready
-Implementer: empty
-Verifier: <chosen during intake>
+Implementer: preserve existing value; empty is valid
+Verifier: <chosen from actual risk>
 Executor: ChatGPT
 Assignee: bedrin-gpt
-Worker reference: <PR URL and exact head>
+Worker reference: PR #456; branch; exact head; author; CI/evidence summary
 ```
 
-The PR is the authoritative source for its author and implementation provenance. Intake must not copy the author login, bot name,
-or a newly observed provider into `Implementer`. Empty means that Sniffy has not deliberately selected an executor for a future
-Implementation turn; Review and later lifecycle statuses do not require one.
+Do not add the PR as a second active lifecycle item. If both objects were already materialized, prefer the issue, suppress the PR
+item from ordinary claims through one guarded reconciliation, and record the canonical issue link. Never perform the same Review
+twice merely because both GitHub objects appear in the Project.
 
-This skips Draft, Planning, and Implementation only when the proposed scope is understandable and no product, compatibility,
-security, or policy decision is missing. Ambiguous, breaking, or policy-sensitive changes move to `Planning / Ready` before
-review continues.
+### No formal closing issue
 
-The exact head, body, commits, CI, labels, and linked alerts replace the branch/PR publication proof normally produced by a
-Sniffy-routed Implementer.
+The PR itself is the canonical lifecycle item. A non-draft PR normally enters:
 
-## GitHub Project intake for Sniffy
+```text
+Status: Review
+Execution: Ready
+Implementer: empty or preserved existing deliberate value
+Verifier: <chosen from actual risk>
+Executor: ChatGPT
+Assignee: bedrin-gpt
+Worker reference: exact branch/head, author, fork/same-repo, labels, linked context
+```
 
-Use GitHub Projects' built-in **Auto-add to project** workflow rather than a new repository workflow:
+The PR body is the requirement source unless Planning determines that a durable issue is needed for independently owned follow-up
+work or unresolved product decisions.
 
-1. Open organization Project 2 and choose **Workflows -> Auto-add to project**.
-2. Select repository `sniffy/sniffy`.
-3. Use filter `is:pr is:open label:dependencies`.
-4. Save and enable the workflow.
+### Multiple formal closing issues
 
-GitHub's auto-add workflow supports `is` and `label` filters but not an author filter. The `dependencies` label is therefore the
-discovery signal; intake must still verify the actual PR author for trust, review independence, Dependabot commands, and policy
-classification. Authorship is not a Project routing decision and must not be mirrored automatically into `Implementer`.
+The PR is the canonical coordination item and enters `Planning / Ready / ChatGPT`, not Review. Record every closing issue and
+resolve:
 
-Project 2 currently contains a `Dependabot` option in the `Implementer` single-select. It is retained for manual or historical
-classification, but automated external-PR intake deliberately leaves `Implementer` empty. The same rule applies to human external
-contributors, bots, and future automation providers that are not part of Sniffy's configured implementation executor pool.
+- whether the combined scope is intentional;
+- which issue decisions and acceptance criteria govern the PR;
+- one combined review and verification proof matrix;
+- how merge/closure evidence propagates to each linked issue;
+- whether any issue should be removed from the combined PR and continue independently.
 
-Auto-add is not retroactive. Existing matching PRs must be added manually or backfilled by an idempotent event-loop scan. The
-backfill key is repository plus PR number, and an existing Project item or intake marker prevents duplication.
+While the canonical multi-issue PR is open, the event loop must not independently claim a linked issue for duplicate Review or
+Implementation of the same published change. Planning may split the work, but it must do so explicitly and preserve existing
+branches/PRs where possible.
 
-The current `.github/dependabot.yml` schedules weekly GitHub Actions and npm updates and applies `dependencies` to both. Open
-Dependabot PRs may include browser tooling, GitHub Actions, framework major versions, cryptography, and other update classes, so
-the queue must not apply one blanket approval policy.
+## Draft and publication semantics
 
-Enabling the Project workflow is a manual repository-management action outside documentation/code changes. Until it is enabled,
-the stateless event loop provides discovery and backfill; after it is enabled, the loop remains responsible for field
-initialization, author verification, missed-item reconciliation, and review.
+A draft PR is visible implementation telemetry, not automatically `Review / Ready`:
 
-## Event-loop intake adapter
+- a new standalone draft PR is ignored by Review intake until it becomes ready for review;
+- a draft linked to an already-owned canonical issue may remain `Implementation / In progress` and be monitored through its exact
+  worker reference;
+- `ready_for_review` does not need a separate event workflow because the next stateless tick re-scans all open PRs;
+- an implementation worker must mark its PR ready when implementation and all locally available proof are complete, then perform
+  the guarded canonical-item handoff to Review.
 
-Before selecting ordinary `Execution = Ready` work, a tick may scan for eligible open pull requests that are not yet represented
-in the Project. Intake should:
+A green CI run on a draft PR does not substitute for the missing publication handoff.
 
-1. verify repository, open state, bot/external author, labels, target branch, draft state, and exact head;
-2. add or locate the PR Project item idempotently;
-3. classify security versus routine update and assign priority;
-4. choose a Verifier from the actual compatibility and environment risk;
-5. initialize `Review / Ready / Executor = ChatGPT / Assignee = bedrin-gpt` without setting `Implementer`;
-6. preserve an existing `Implementer` value if one was deliberately set, but never require it for intake or Review;
-7. record the PR URL, exact head, dependency ecosystem, old/new version, author, and linked security alert when available.
+## Authorship, provenance, and optional Implementer
 
-A guarded command should omit `Implementer` from both `set` and `clear`; omitted fields remain unchanged. Do not use a synthetic
-`Unknown` option and do not infer a select value from the author.
+The PR itself is authoritative for author and repository ownership. Intake records that provenance in Worker reference and uses it
+for formal-review independence and correction policy. It does not copy the author login, bot name, IDE product, or newly observed
+provider into the Project `Implementer` field.
 
-Security updates receive higher priority, but trusted automation is not approval. A tick claims and reviews at most the amount
-of work it can finish or safely hand off.
+`Implementer` is optional outside a deliberately routed future Implementation turn:
 
-## Dependabot review paths
+- empty means unknown, not applicable to the already-published implementation, or not yet selected;
+- intake, Review, rebase monitoring, Verification, Approval, supersession, and closure must work with it empty;
+- before new code work begins, Planning or Review deliberately selects a supported internal Implementer and copies it into
+  `Executor` through one guarded transition.
 
-GitHub documents Dependabot pull requests, management commands, and Actions integration here:
+Project 2 currently contains a `Dependabot` option for manual or historical classification. Universal intake deliberately leaves
+it unchanged/empty, just as it does for Dmitry, external contributors, IDE agents, and future bots.
 
-- [Dependabot pull requests](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-pull-requests)
-- [Managing pull requests for dependency updates](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/managing-pull-requests-for-dependency-updates)
-- [Dependabot pull request comment commands](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-pull-request-comment-commands)
-- [Automating Dependabot with GitHub Actions](https://docs.github.com/en/code-security/tutorials/secure-your-dependencies/automate-dependabot-with-actions)
-- [GitHub Projects auto-add](https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/adding-items-automatically)
+## GitHub Project automation
 
-Route the reviewed exact head as follows:
+Use GitHub Projects' built-in auto-add for issues created by the delivery system or maintainers. This prevents newly planned tasks
+from being orphaned before Implementation.
 
-- **Acceptable low-risk update:** inspect dependency/lockfile scope, release or security information, compatibility, tests,
-  generated output, and exact-head CI. Submit an honest formal `APPROVE`, then advance to Verification when representative
-  outcome proof is still needed or directly to `Approval / Ready / Human` when existing evidence is sufficient.
-- **Risky runtime, framework, build-tool, browser, action, or security update:** choose a capable Verifier and exercise the
-  affected integration rather than treating green generic CI as complete proof.
-- **Stale base or merge conflict:** use `@dependabot rebase` when appropriate, keep the item in Review, and let ChatGPT own the
-  wait through `Execution = In progress`, `Executor = ChatGPT`, and a concrete Worker reference. Dependabot authorship does not
-  need to be represented in `Implementer` for this monitoring flow. Restart exact-head review only after a new head appears.
-- **Implementation incompatibility:** set the source PR to `Review / Blocked / Human / bedrin` and ask Dmitry to authorize a
-  linked compatibility issue or replacement update. The linked task goes through Planning, deliberately chooses an Implementer,
-  and produces an agent-owned replacement PR. Keep the source PR in Review with a Worker reference to that task until the
-  replacement supersedes it; then close the source PR with rationale.
-- **Requirement, major-version, or policy ambiguity:** move the PR item to `Planning / Ready` for ChatGPT or Dmitry. If the outcome
-  requires new code, Planning must choose a concrete Implementer before entering Implementation.
-- **Intentional rejection or ignore:** record the reason. Prefer visible repository configuration in `.github/dependabot.yml`
-  over a centrally stored one-off ignore when the policy should be shared by maintainers.
+Do not rely on blind `is:pr is:open` auto-add as the only PR intake mechanism. A simple Project workflow cannot decide whether a
+linked issue or the PR should be canonical and can create duplicate active lifecycle items. It is acceptable to retain the
+existing dependency PR auto-add filter:
 
-Do not normally push repository-specific fixes onto a Dependabot branch. A replacement agent-owned PR keeps branch ownership,
-review identity, and future Dependabot rebase behavior easier to reason about.
+```text
+is:pr is:open label:dependencies
+```
 
-## Verification examples by update class
+because the event loop still canonicalizes every PR before work. Auto-add is discovery assistance, not lifecycle initialization,
+review, or approval, and it is not retroactive.
 
-- **GitHub Action update:** inspect action ownership/release notes, changed permissions and inputs, and the exact workflow jobs
-  executing the new action version.
-- **Browser/test tooling:** run the complete affected browser matrix and inspect artifacts, screenshots, traces, and generated
-  output rather than relying only on typecheck/unit tests.
-- **Runtime framework/library:** run the affected integration or representative application path, including startup, request,
-  shutdown, compatibility, and failure behavior.
-- **Cryptography/security provider:** require the real provider/runtime path and supported-JDK compatibility evidence; a compile
-  or unrelated test suite is insufficient.
-- **Security update:** confirm the linked advisory is addressed without introducing a broader unsupported upgrade or silently
-  retaining the vulnerable path.
+## Universal event-loop intake adapter
 
-## Volume control
+Before ordinary queue selection, every ChatGPT tick scans all open PRs targeting `develop`, including same-repository PRs,
+maintainer PRs, configured-agent PRs, Dependabot, future bots, and forks.
 
-If routine dependency PR volume becomes costly, refine `.github/dependabot.yml` in a separate reviewed change. Prefer grouping
-compatible minor/patch development-tool updates while keeping major, runtime, cryptography, security, and GitHub Action updates
-separately reviewable. Do not add blind auto-approval or auto-merge as a volume-control mechanism.
+For each candidate it verifies:
 
-## Review identity and merge boundary
+1. repository, base branch, open/draft state, exact head, and mergeability/conflict state;
+2. author and same-repository versus fork ownership;
+3. labels, security/dependency metadata, and provider-specific controls;
+4. formal closing issues and their Project representation;
+5. whether the PR itself is already represented;
+6. current lifecycle fields, assignees, worker reference, review decision, unresolved threads, and exact-head CI;
+7. whether another canonical item or worker already owns the same implementation.
 
-A Dependabot-authored PR is independent from `bedrin-gpt`, so ChatGPT may submit an honest formal `APPROVE` or
-`REQUEST_CHANGES` after complete review. Verification remains outcome- and compatibility-oriented; green CI alone is not
-sufficient for a risky update.
+It then applies the canonicalization rules above with at most the guarded reconciliation it can verify now:
 
-GitHub supports auto-merge after required reviews and checks, but this workflow does not enable it. Dependabot PRs, like every
-other PR, move to `Approval / Ready` and are merged only after Dmitry's explicit instruction.
+- exactly one closing issue -> add/locate and hand off that issue;
+- no closing issue -> add/locate the PR;
+- several closing issues -> add/locate the PR in Planning;
+- draft -> monitor existing ownership or take no Review mutation;
+- duplicate representation -> preserve one canonical active item and make the duplicate non-claimable;
+- already correct -> no mutation.
+
+A guarded intake command omits `Implementer` from both `set` and `clear`, chooses a Verifier from actual compatibility and
+observable-risk obligations, and records the PR URL, exact head, branch, author, repository ownership, linked issues, and relevant
+metadata. Intake is not approval.
+
+## Review paths by PR ownership
+
+### Same-repository PR
+
+A PR from Dmitry, ChatGPT, Local/Cloud Codex, an IDE agent, or another trusted same-repository workflow can be reviewed normally.
+If Review finds defects:
+
+- submit one complete `REQUEST_CHANGES` when the reviewer identity is independent;
+- deliberately select ChatGPT or Local Codex for correction;
+- preserve and continue the exact branch and PR;
+- use Local Codex by default for complex, persistent, or existing-PR continuation;
+- never restart from `develop`, open a duplicate PR, rebase shared history, or force-push merely because a different executor now
+  owns the correction.
+
+A Project route may explicitly adopt an existing PR for Local Codex continuation even when the branch was created outside the
+delivery system. Branch authorship alone neither grants nor prevents adoption; verified repository ownership, permissions, and the
+guarded route do.
+
+### Fork PR
+
+Do not run privileged code from an untrusted head or silently take ownership of a contributor branch. Review the exact head and:
+
+- submit contributor-facing `REQUEST_CHANGES` and wait for a new head;
+- keep the canonical item in Review with ChatGPT owning the monitored wait when appropriate;
+- create a linked replacement task only when Dmitry deliberately chooses to internalize the work;
+- never push to the fork as an autonomous shortcut, even when GitHub exposes maintainer-edit capability.
+
+### Dependabot or other managed automation
+
+Dependabot is a specialization of the same intake:
+
+- inspect the exact dependency/lockfile/workflow scope and update risk;
+- for a stale base or conflict, use the documented bot rebase command and keep ChatGPT owning the observable wait;
+- do not normally push repository-specific fixes onto the bot branch;
+- when compatibility code is required, create and route a linked internal replacement task/PR;
+- do not auto-approve or auto-merge merely because the author is trusted automation.
+
+Future bots use their documented control surface when available; unknown automation is treated as provenance, not invented as a
+new Project executor.
+
+## Review and verification
+
+Review always inspects the complete exact-head diff, authoritative issue(s), PR body/commits, tests, unresolved threads, matching
+CI, generated output, permissions, dependencies, and compatibility. Formal APPROVE or REQUEST_CHANGES requires an identity
+independent from the PR author. When `bedrin-gpt` authored the PR, ChatGPT may still complete technical Review but must record the
+identity limitation and route final acceptance to Dmitry.
+
+An acceptable PR advances to Verification when representative outcome proof remains or directly to `Approval / Ready / Human`
+when existing evidence is sufficient. Risky browser, runtime, framework, cryptography, security, workflow, packaging, or
+cross-version changes require the representative proof described in [`verification.md`](verification.md); green generic CI is not
+system verification.
+
+## Completion and linked issues
+
+The canonical Project item remains `Approval / Ready` until Dmitry explicitly merges or closes. After an actual merge or deliberate
+closure, the event loop reconciles the canonical item to Done and records the merge/closure SHA and outcome. For a canonical PR
+with several linked issues, the same observed merge may then complete or reopen each issue according to the Planning decision; do
+not mark them Done merely because they were mentioned.
+
+No intake, review, correction, verification, or Project automation enables auto-merge. Merge authority remains with Dmitry.
