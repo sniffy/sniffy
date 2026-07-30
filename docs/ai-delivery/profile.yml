@@ -45,6 +45,7 @@ routing:
     directChatGPTWhenCapable: true
     firstExternalExecutorForBoundedFreshWork: Codex Cloud
     complexOrPersistentExecutor: Local Codex
+    existingPullRequestContinuationExecutor: Local Codex
   convergence:
     checkpointTrigger: corrected-work-returns-to-review-with-substantive-blockers
     doNotAutoDispatchAnotherPatchRound: true
@@ -52,14 +53,24 @@ routing:
   mergeExecutor: Human
 
 intake:
-  externalPullRequests:
+  pullRequests:
+    enabled: true
+    repository: sniffy/sniffy
+    baseBranch: develop
+    includeDraftsInReview: false
     # PR authorship is provenance, not a routing decision. Leave Implementer empty during intake.
     setImplementerFromAuthor: false
+    initialReviewer: ChatGPT
+    defaultVerifier: ChatGPT
+    canonicalization:
+      exactlyOneClosingIssue: issue
+      noClosingIssue: pullRequest
+      multipleClosingIssues: pullRequestPlanning
   dependabot:
     enabled: true
     projectAutoAddFilter: "is:pr is:open label:dependencies"
     backfillExisting: true
-    initialStatus: Review
+    # Dependabot is a specialization of universal PR intake, not a separate lifecycle entry.
     reviewer: ChatGPT
     # Project 2 currently contains a Dependabot Implementer option for manual/backward-compatible classification,
     # but automated intake deliberately does not select it.
