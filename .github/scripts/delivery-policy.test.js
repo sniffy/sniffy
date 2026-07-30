@@ -52,9 +52,10 @@ test('canonical intake policy treats issues and PRs as distinct linked artifacts
   const lifecycle = read('docs/ai-delivery/lifecycle.md');
   assert.match(intake, /Every open PR targeting `develop` is therefore a discovery source/);
   assert.match(intake, /exactly one Project item is canonical for lifecycle routing/i);
-  assert.match(intake, /one formal closing issue -> that issue is canonical/i);
-  assert.match(intake, /no closing issue -> the PR itself is canonical/i);
-  assert.match(intake, /several closing issues -> the PR is canonical in Planning/i);
+  assert.match(intake, /## Canonical work-item selection/);
+  assert.match(intake, /### Exactly one formal closing issue[\s\S]*The issue is the canonical lifecycle item/i);
+  assert.match(intake, /### No formal closing issue[\s\S]*The PR itself is the canonical lifecycle item/i);
+  assert.match(intake, /### Multiple formal closing issues[\s\S]*The PR is the canonical coordination item/i);
   assert.match(lifecycle, /The canonical item owns Status, Execution, Executor, Assignee, and Worker reference/);
 });
 
