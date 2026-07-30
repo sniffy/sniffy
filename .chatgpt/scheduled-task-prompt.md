@@ -50,6 +50,8 @@ ProjectV2 control protocol:
   been re-read.
 - Use one guarded command for the complete multi-field claim or lifecycle transition. Include current Status, Execution,
   Executor, and exact PR head when applicable in expected state.
+- Omitted fields are left unchanged. A missing Implementer is valid and means unknown or not deliberately selected; never invent
+  an Unknown, PR-author, bot, or provider value merely to fill the field.
 - An expected-state conflict means another dispatcher won or state changed. Make no work mutation and continue only if current
   state still gives this tick valid ownership.
 - workflow_dispatch is an administrative/debug fallback to the same implementation, not the autonomous ChatGPT path.
@@ -57,7 +59,9 @@ ProjectV2 control protocol:
 Perform this protocol:
 1. Reconcile external pull-request intake before ordinary queue work. Find eligible open sniffy/sniffy dependency PRs missing
    from Project 2, verify actual author, labels, target, draft state, and exact head, and materialize them idempotently through one
-   guarded command with addIfMissing=true. Intake is not approval.
+   guarded command with addIfMissing=true. Set Review, Execution, Verifier, Executor, and Worker reference as applicable, but do
+   not infer or set Implementer from the PR author or automation. Preserve an existing Implementer value without requiring it.
+   Intake is not approval.
 2. Before claiming new work, inspect ChatGPT-owned Execution=In progress items whose worker, CI, external dispatch, or monitoring
    observation is due. Worker observation belongs to this same event loop: first after 15 minutes, again 15 minutes later, then
    hourly while incomplete. Continue or recover existing ownership before starting unrelated work.
@@ -69,19 +73,24 @@ Perform this protocol:
    - Assignee is empty or bedrin-gpt;
    - Status is Planning, Implementation, Review, or Verification;
    - current ChatGPT tools and identity can truthfully complete the lifecycle turn or reach a safe durable handoff now.
+   Eligibility must not require Implementer to be populated.
 5. Select deterministically using security priority, Project priority, ready timestamp, then repository and item number. Never
    create a duplicate Project item, worker, branch, or pull request.
 6. Claim with one guarded delivery-control/v1 command. Set Execution=In progress plus the concrete tick/worker reference and
    lease, inspect the terminal reaction, then re-read and verify ownership before work. If execution or external dispatch cannot
    start, release to Ready. Set Blocked only when Dmitry must decide or act.
 7. Perform exactly one lifecycle turn:
-   - Planning: resolve outcome, decisions, non-goals, risk axes, Implementer, Verifier, and proof obligations.
+   - Planning: resolve outcome, decisions, non-goals, risk axes, Implementer when a future Implementation turn is actually needed,
+     Verifier, and proof obligations. Do not use an external PR author as a substitute for a deliberate implementation route.
    - Implementation: first ask whether ChatGPT can honestly edit, test, inspect, publish, and verify the focused change. If not,
      route bounded fresh work to Codex Cloud or complex/persistent/existing-PR work to Local Codex according to profile.yml.
+     Implementation may start only after a concrete Implementer/Executor route has been selected.
    - Review: inspect the complete exact-head diff, issue decisions, tests, prior review threads, and matching-head CI. Submit
      APPROVE only with independent identity. Otherwise submit one comprehensive REQUEST_CHANGES or record the identity limit.
-     When a corrected head returns to Review and still has substantive blockers, perform the routing.md convergence checkpoint
-     before another implementation dispatch; do not mechanically issue another patch list.
+     When corrected work requires another Implementation turn and Implementer is empty, deliberately choose an internal route or
+     create a linked replacement task before transitioning; never copy the external PR author into Implementer. When a corrected
+     head returns to Review and still has substantive blockers, perform the routing.md convergence checkpoint before another
+     implementation dispatch; do not mechanically issue another patch list.
    - Verification: validate the observable result against the authoritative issue using the exact published head/artifact in a
      representative environment. Do not rename unit tests or green CI as system verification.
 8. Publish human-useful evidence on the target issue/PR. Then use one guarded control command for the complete next Status,
