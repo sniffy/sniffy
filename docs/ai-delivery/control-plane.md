@@ -149,7 +149,8 @@ non-draft. When the canonical target is an issue, the PR must formally close tha
 
 GitHub assignment, review submission, source publication, CI, and issue/PR comments remain separate explicit operations. The one
 repository-side mutation deliberately coupled to `Status = Review` is ready-for-review state: after all target and Project guards
-pass, the control plane marks a draft PR ready and re-reads it before writing the Project status. Executors should already have
+pass, the control plane marks a draft PR ready and re-reads it before writing the Project status. After Project fields are written
+and verified, it re-reads the review PR again after the Project mutation before returning success. Executors should already have
 done this themselves; the automation is the final invariant and recovery path.
 
 ## Claim and transition semantics
@@ -169,7 +170,8 @@ For each command it:
    ready when draft, and re-reads it as non-draft at the same exact head;
 8. applies the pre-validated Project set/clear operations inside the same serialized Actions job;
 9. re-reads the Project item and verifies every requested final value;
-10. records the PR readiness result and Project transition in the Actions summary.
+10. re-reads the review PR again after the Project mutation and verifies open/non-draft/exact-head/formal-closing state;
+11. records the PR readiness result and Project transition in the Actions summary.
 
 Two concurrent claim commands may both parse, but only one can observe the guarded `Ready` state after entering the target-item
 concurrency group. The other returns a non-mutating conflict. No claim-intent, winner, loser, or withdrawal comment is needed on
@@ -178,7 +180,8 @@ the target item.
 GitHub Project field updates are not a database transaction. The protocol is best-effort atomic: it validates every expected state
 before changing the PR or Project. If marking a PR ready succeeds but a later Project write unexpectedly fails, the safe one-way
 publication change remains and the workflow receives `-1`; inspect the run and retry the same guarded transition after re-reading
-state. A draft PR is never hidden behind a successful `Review` Project status.
+state. If the final PR re-read detects a head or state race after the Project write, the workflow also receives `-1` so a later
+reconciliation can restore consistent exact-head Review state. A draft PR is never hidden behind a successful `+1` Review result.
 
 ## Outcomes and audit
 
