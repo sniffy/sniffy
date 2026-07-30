@@ -50,49 +50,75 @@ ProjectV2 control protocol:
   been re-read.
 - Use one guarded command for the complete multi-field claim or lifecycle transition. Include current Status, Execution,
   Executor, and exact PR head when applicable in expected state.
+- Omitted fields are left unchanged. A missing Implementer is valid and means unknown or not deliberately selected; never invent
+  an Unknown, PR-author, bot, or provider value merely to fill the field.
 - An expected-state conflict means another dispatcher won or state changed. Make no work mutation and continue only if current
   state still gives this tick valid ownership.
 - workflow_dispatch is an administrative/debug fallback to the same implementation, not the autonomous ChatGPT path.
 
 Perform this protocol:
-1. Reconcile external pull-request intake before ordinary queue work. Find eligible open sniffy/sniffy dependency PRs missing
-   from Project 2, verify actual author, labels, target, draft state, and exact head, and materialize them idempotently through one
-   guarded command with addIfMissing=true. Intake is not approval.
-2. Before claiming new work, inspect ChatGPT-owned Execution=In progress items whose worker, CI, external dispatch, or monitoring
-   observation is due. Worker observation belongs to this same event loop: first after 15 minutes, again 15 minutes later, then
-   hourly while incomplete. Continue or recover existing ownership before starting unrelated work.
+1. Reconcile pull-request intake before ordinary queue work. Scan every open pull request in sniffy/sniffy targeting develop,
+   regardless of author, label, bot/provider, branch creator, or whether it originated from a Project issue. Verify author,
+   same-repository versus fork, labels, draft state, exact head, formal closing issues, existing Project representation, review
+   state, and current CI.
+   - Draft PR: do not start Review. Continue monitoring only when an existing canonical Project item already owns that draft PR.
+   - Exactly one formal closing issue: that issue is the canonical lifecycle item. Add or locate the issue idempotently and, when
+     the PR is non-draft and implementation publication is complete, initialize or hand it off to Review / Ready / ChatGPT with
+     the PR URL and exact head in Worker reference. Do not add the PR as a second active lifecycle item.
+   - No formal closing issue: the non-draft PR itself is the canonical lifecycle item. Add or locate it idempotently through one
+     guarded command with addIfMissing=true and initialize Review / Ready / ChatGPT.
+   - Multiple formal closing issues: the non-draft PR is the canonical coordination item and enters Planning / Ready / ChatGPT.
+     Record every linked issue and resolve scope, proof, completion propagation, and duplicate eligibility before Review.
+   - If an issue and its PR were both accidentally materialized, do not perform duplicate Review. Prefer the canonical item above,
+     make the duplicate non-claimable through a guarded reconciliation, and record the canonical link.
+   Intake leaves Implementer unchanged/empty, chooses a Verifier from actual risk, assigns bedrin-gpt separately, and records PR
+   URL, author, fork/same-repo status, branch, exact head, labels, linked issues, and security/dependency metadata. Intake is not
+   approval. Dependabot is one specialization of this universal intake, not the only PR source.
+2. Before claiming new work, inspect ChatGPT-owned Execution=In progress items whose worker, CI, external dispatch, rebase, draft
+   publication, or monitoring observation is due. Worker observation belongs to this same event loop: first after 15 minutes,
+   again 15 minutes later, then hourly while incomplete. Continue or recover existing ownership before starting unrelated work.
 3. If a needed control command would exceed the rotation threshold, rotate the active control issue using control-plane.md, then
    continue this tick. Do not create a separate cleanup scheduler.
-4. Otherwise select at most one Project 2 item where:
+4. Otherwise select at most one canonical Project 2 item where:
    - Execution = Ready;
    - Executor = ChatGPT;
    - Assignee is empty or bedrin-gpt;
    - Status is Planning, Implementation, Review, or Verification;
+   - the item is not a duplicate representation or a linked issue suppressed by an open canonical multi-issue PR;
    - current ChatGPT tools and identity can truthfully complete the lifecycle turn or reach a safe durable handoff now.
+   Eligibility must not require Implementer to be populated.
 5. Select deterministically using security priority, Project priority, ready timestamp, then repository and item number. Never
    create a duplicate Project item, worker, branch, or pull request.
 6. Claim with one guarded delivery-control/v1 command. Set Execution=In progress plus the concrete tick/worker reference and
    lease, inspect the terminal reaction, then re-read and verify ownership before work. If execution or external dispatch cannot
    start, release to Ready. Set Blocked only when Dmitry must decide or act.
 7. Perform exactly one lifecycle turn:
-   - Planning: resolve outcome, decisions, non-goals, risk axes, Implementer, Verifier, and proof obligations.
-   - Implementation: first ask whether ChatGPT can honestly edit, test, inspect, publish, and verify the focused change. If not,
-     route bounded fresh work to Codex Cloud or complex/persistent/existing-PR work to Local Codex according to profile.yml.
-   - Review: inspect the complete exact-head diff, issue decisions, tests, prior review threads, and matching-head CI. Submit
-     APPROVE only with independent identity. Otherwise submit one comprehensive REQUEST_CHANGES or record the identity limit.
-     When a corrected head returns to Review and still has substantive blockers, perform the routing.md convergence checkpoint
+   - Planning: resolve outcome, canonical item, linked issues, decisions, non-goals, risk axes, Implementer when a future
+     Implementation turn is actually needed, Verifier, and proof obligations. Do not use a PR author as a substitute for a
+     deliberate implementation route.
+   - Implementation: first ask whether ChatGPT can honestly edit, test, inspect, publish, and verify the focused change. For a
+     same-repository existing PR, preserve the exact branch and PR; do not create a replacement or restart from develop. Route
+     complex/persistent/existing-PR continuation to Local Codex by default. Route bounded fresh work to Codex Cloud. Fork and
+     Dependabot branches are not adopted for direct agent correction unless policy explicitly allows it; use contributor feedback,
+     bot commands, or a linked replacement task instead. Implementation may start only after a concrete Implementer/Executor route
+     has been selected.
+   - Review: inspect the complete exact-head diff, authoritative issue(s), tests, prior review threads, and matching-head CI.
+     Submit APPROVE only with independent identity. Otherwise submit one comprehensive REQUEST_CHANGES or record the identity
+     limit. A same-repository PR may be returned to a deliberately selected ChatGPT or Local Codex continuation on the same branch.
+     When corrected work returns to Review and still has substantive blockers, perform the routing.md convergence checkpoint
      before another implementation dispatch; do not mechanically issue another patch list.
-   - Verification: validate the observable result against the authoritative issue using the exact published head/artifact in a
-     representative environment. Do not rename unit tests or green CI as system verification.
-8. Publish human-useful evidence on the target issue/PR. Then use one guarded control command for the complete next Status,
-   Execution, Executor, and cleared worker ownership state. Update GitHub Assignee separately when supported and verify it.
-9. Routine waiting for a concrete CI run or worker remains In progress only with a durable reference and next observation point.
-   Blocked always routes an exact action to Human/bedrin.
+   - Verification: validate the observable result against the authoritative issue or PR using the exact published head/artifact in
+     a representative environment. Do not rename unit tests or green CI as system verification.
+8. Publish human-useful evidence on the canonical target issue/PR. Then use one guarded control command for the complete next
+   Status, Execution, Executor, and cleared worker ownership state. Update GitHub Assignee separately when supported and verify it.
+   When a canonical issue owns a PR, keep its Worker reference pinned to the PR URL and exact head through Review/Verification.
+9. Routine waiting for a concrete CI run, worker, contributor update, bot rebase, or draft publication remains In progress only
+   with a durable reference and next observation point. Blocked always routes an exact action to Human/bedrin.
 10. Never merge, enable auto-merge, bypass protection, rewrite shared history, expose credentials, or perform privileged
     repository/hosting operations without Dmitry's explicit instruction.
 11. If no eligible intake, due continuation, control-log rotation, claimable turn, or meaningful reconciliation exists, make no
-    GitHub/source mutation and reply only NO_CHANGE. Otherwise finish with a compact summary containing selected item, lifecycle
-    turn, durable evidence, and resulting Status / Execution / Executor / Assignee.
+    GitHub/source mutation and reply only NO_CHANGE. Otherwise finish with a compact summary containing selected canonical item,
+    PR and exact head when applicable, lifecycle turn, durable evidence, and resulting Status / Execution / Executor / Assignee.
 ```
 
 After setup, smoke-test one empty tick and one disposable/read-only eligible item. Replacing a long defining task chat is manual
