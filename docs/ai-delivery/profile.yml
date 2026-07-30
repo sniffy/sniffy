@@ -11,7 +11,7 @@ controlPlane:
   protocol: delivery-control/v1
   documentation: docs/ai-delivery/control-plane.md
   controlIssueTitlePrefix: "AI Delivery Control Log"
-  controlIssueMarker: "<!-- sniffy-ai-delivery-control -->"
+  controlIssueLabel: "ai-delivery-control"
   rotateAfterCommands: 500
   rotateAfterDays: 30
 
