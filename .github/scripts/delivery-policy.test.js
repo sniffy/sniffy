@@ -94,7 +94,8 @@ test('every implementation executor publishes a non-draft exact-head PR before R
   assert.match(worker, /reviewPullRequest\.number.*reviewPullRequest\.head/is);
   assert.match(control, /reviewPullRequest/);
   assert.match(control, /marks? (?:a )?draft PR ready/i);
-  assert.match(control, /before (?:writing Project Review|Project Review is written)/i);
+  assert.match(control, /re-reads it before writing (?:the )?Project (?:status|Review)/i);
+  assert.match(control, /re-reads the (?:review )?PR again after the Project mutation/i);
   assert.match(workflow, /pull-requests:\s*write/);
   assert.match(workflow, /REPOSITORY_TOKEN:\s*\$\{\{ github\.token \}\}/);
 });
