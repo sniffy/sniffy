@@ -78,6 +78,9 @@ unique `Worker reference` containing token, owner, and lease.
 - `set` maps text or single-select field names to complete values.
 - `clear` lists fields to clear.
 - A field cannot appear in both collections.
+- A field omitted from both `set` and `clear` is not read as a required routing value and is left unchanged.
+- A missing Project field value is valid lifecycle state. In particular, an empty `Implementer` means unknown or not deliberately
+  selected; commands must omit it rather than inventing an `Unknown`, PR-author, bot, or provider value.
 - `addIfMissing` permits external-PR intake to add the target to Project 2 before applying the guarded initial fields.
 - Only supported ProjectV2 text and single-select fields may be changed.
 
@@ -96,7 +99,7 @@ For each command it:
 3. queries the target issue/PR, exact PR head when applicable, Project 2, field definitions, Project item, and current field values;
 4. optionally adds a missing Project item only when `addIfMissing` is true;
 5. compares every `expected` guard to the current state;
-6. pre-validates every field, type, and single-select option before mutation;
+6. pre-validates every requested field, type, and single-select option before mutation; omitted fields need no option lookup;
 7. applies the pre-validated set/clear operations inside the same serialized Actions job;
 8. re-reads the Project item and verifies every requested final value;
 9. records a structured Actions job summary.
