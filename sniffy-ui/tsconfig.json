@@ -1,15 +1,15 @@
 {
   "files": [],
   "references": [
-    { "path": "scripts" },
-    { "path": ".storybook" },
-    { "path": "packages/theme" },
-    { "path": "packages/ui" },
-    { "path": "packages/api" },
-    { "path": "packages/fixtures" },
-    { "path": "apps/profiler" },
-    { "path": "apps/agent" },
-    { "path": "apps/playground" },
-    { "path": "apps/site" }
+    { "path": "./scripts/tsconfig.json" },
+    { "path": "./.storybook/tsconfig.json" },
+    { "path": "./packages/theme/tsconfig.json" },
+    { "path": "./packages/ui/tsconfig.json" },
+    { "path": "./packages/api/tsconfig.json" },
+    { "path": "./packages/fixtures/tsconfig.json" },
+    { "path": "./apps/profiler/tsconfig.json" },
+    { "path": "./apps/agent/tsconfig.json" },
+    { "path": "./apps/playground/tsconfig.json" },
+    { "path": "./apps/site/tsconfig.json" }
   ]
 }
