@@ -1,8 +1,8 @@
 # Task routing
 
-Dmitry and ChatGPT choose planned roles during Planning or external-PR intake. Routing is a risk, capability, evidence, latency,
-and cost decision. Current Sniffy defaults are editable in [`profile.yml`](profile.yml); this document defines the semantics and
-decision process.
+Dmitry and ChatGPT choose planned roles during Planning or when external-PR review discovers new implementation work. Routing is a
+risk, capability, evidence, latency, and cost decision. Current Sniffy defaults are editable in [`profile.yml`](profile.yml); this
+document defines the semantics and decision process.
 
 ## Separate axes: role, executor, model, identity
 
@@ -23,8 +23,8 @@ A task may assign responsibilities independently:
 
 - **Supervisor/router:** refines the issue or external-PR intake, proposes routing, tracks delivery, rotates the control log, and
   coordinates corrections. ChatGPT is the default.
-- **Implementer:** changes code/docs and proves the change in its own environment; for PR-first intake this may be Dependabot or
-  another existing author.
+- **Implementer:** changes code/docs and proves the change in its own environment after Sniffy deliberately routes an
+  `Implementation` turn.
 - **Reviewer:** inspects the complete exact-head diff, scope, tests, review threads, and CI evidence. ChatGPT is the default.
 - **Verifier:** validates the observable result against the issue in a representative environment.
 - **Formal reviewer:** submits APPROVE or REQUEST_CHANGES using an identity independent from the PR author.
@@ -32,13 +32,15 @@ A task may assign responsibilities independently:
 - **Merger:** merges only after Dmitry's explicit instruction.
 
 The same executor may hold several roles when independence is unnecessary. ChatGPT may implement through `bedrin-gpt`, but that
-identity cannot formally approve its own PR. A Dependabot-authored PR is independent from `bedrin-gpt`.
+identity cannot formally approve its own PR. A Dependabot-authored or external-contributor PR is independent from `bedrin-gpt`;
+that authorship remains PR provenance and is not automatically copied into the Project Implementer field.
 
 ## Routing fields
 
-Planning or external-PR intake records future routes:
+Planning records future routes when they are actually needed:
 
-- `Implementer` — planned implementation executor or existing external author;
+- `Implementer` — optional planned implementation executor. Empty means unknown, not applicable to the already-published change,
+  or not yet deliberately selected;
 - `Verifier` — planned verification executor.
 
 The current lifecycle materializes:
@@ -46,6 +48,10 @@ The current lifecycle materializes:
 - `Executor` — product/runtime responsible for the next action;
 - `Assignee` — concrete GitHub identity or human responsible now;
 - `Worker reference` — concrete chat, task, process, worktree, branch, PR, or direct tick ownership.
+
+External-PR intake does not infer `Implementer` from author, bot, or provider identity. All flows must tolerate an empty value and
+route from current `Status`, `Execution`, and `Executor`. Before entering Implementation, Planning or a linked replacement task
+must deliberately select a supported Implementer and copy that route into `Executor`.
 
 All executors mutate Project fields through [`control-plane.md`](control-plane.md). Assignment and source/review operations remain
 separate verified GitHub actions.
@@ -60,8 +66,9 @@ separate verified GitHub actions.
 | IDE agent | Dmitry intentionally wants interactive pair programming in VS Code/IntelliJ | unattended ownership, independent review, or reproducible publication is required but not configured |
 | Human | product/risk decisions, privileged operations, subjective acceptance, credentials/secrets, destructive migration, merge | routine bounded implementation or proof another executor can perform safely |
 
-Dependabot is normally an Implementer/source author rather than current Executor: the bot already published the implementation,
-while ChatGPT owns Review and the chosen Verifier owns outcome proof.
+Dependabot normally supplies an already-published external implementation rather than serving as the current Executor. The PR
+itself records that fact. ChatGPT owns Review and rebase monitoring, while the chosen Verifier owns outcome proof. Project 2
+currently contains a `Dependabot` Implementer option for manual/historical classification, but normal intake leaves it empty.
 
 ## Capability preflight
 
@@ -103,14 +110,16 @@ invent unresolved decisions.
 
 Use this order for a new Implementation turn:
 
-1. **ChatGPT direct capability check.** Can the current ChatGPT execution truthfully edit, test, inspect, publish, and verify the
+1. **Require a deliberate route.** If `Implementer` is empty, first choose a supported implementation executor through Planning
+   or a linked replacement task. Never derive it from the current PR author.
+2. **ChatGPT direct capability check.** Can the current ChatGPT execution truthfully edit, test, inspect, publish, and verify the
    requested focused change with available source, dependencies, connectors, and identity? If yes, it may implement directly.
-2. **Codex Cloud first for suitable bounded work.** Prefer Cloud for well-specified fresh-branch fixes, tests, documentation,
+3. **Codex Cloud first for suitable bounded work.** Prefer Cloud for well-specified fresh-branch fixes, tests, documentation,
    dependency updates, CI follow-ups, and localized refactors whose proof fits the Cloud environment.
-3. **Local Codex for complexity or persistence.** Route directly to Local Codex for concurrency/lifecycle, complex cross-version
+4. **Local Codex for complexity or persistence.** Route directly to Local Codex for concurrency/lifecycle, complex cross-version
    Java, architecture-heavy work, Docker/services/browser state, existing PR continuation, unusual history constraints, or
    representative local verification.
-4. **Human for authority or privilege.** Route unresolved product/risk decisions and privileged operations to Dmitry.
+5. **Human for authority or privilege.** Route unresolved product/risk decisions and privileged operations to Dmitry.
 
 “Cloud first” is an executor/environment decision, not a claim about the Cloud model. “Local Sol/extra-high” is explicit current
 Sniffy configuration, not a generic rule for all repositories.
@@ -154,7 +163,8 @@ Changing executor does not mean discarding published work:
 - continue the exact existing branch and PR when safe;
 - preserve useful commits and evidence;
 - explicitly mark superseded guidance;
-- update `Implementer`, `Executor`, worker reference, and correction metadata through one guarded control command;
+- update `Implementer` only when a new implementation route is deliberately selected, update `Executor`, worker reference, and
+  correction metadata through one guarded control command;
 - start the normal worker-monitoring cadence only after the new dispatch is concretely acknowledged.
 
 Do not reset, rebase, force-push, open a duplicate PR, or restart from `develop` merely because Cloud work moved to Local Codex.
@@ -168,6 +178,7 @@ Use [`profile.yml`](profile.yml) for operational choices Dmitry may tune without
 - first external implementation executor;
 - complex/persistent executor;
 - Local Codex model and reasoning effort;
+- external-PR implementer inference policy;
 - convergence trigger and preferred escalation executor;
 - control-log rotation thresholds.
 
@@ -192,3 +203,6 @@ the profile.
 - Base/head and existing PR constraints: <details>
 - Rationale: <risk axes, evidence, latency, and cost>
 ```
+
+This block is for issue Planning and therefore selects an Implementer before Implementation. External PR intake may omit the
+field because no new implementation turn has been routed.
