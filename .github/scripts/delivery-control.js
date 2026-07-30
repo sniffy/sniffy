@@ -275,12 +275,12 @@ function reviewIdentityMismatches(reference, pullRequest) {
   return rows;
 }
 
-async function ensureReviewPullRequestReady({github, repositoryGithub = github, command, target, owner, name}) {
+async function ensureReviewPullRequestReady({github, repositoryGithub = github, command, owner, name}) {
   const reference = reviewReference(command);
-  if (!reference) return {changed: false, pullRequest: null, conflicts: []};
+  if (!reference) return {changed: false, reference: null, pullRequest: null, conflicts: []};
   let pullRequest = await readPullRequest(github, owner, name, reference.number);
   const conflicts = reviewIdentityMismatches(reference, pullRequest);
-  if (conflicts.length) return {changed: false, pullRequest, conflicts};
+  if (conflicts.length) return {changed: false, reference, pullRequest, conflicts};
 
   let changed = false;
   if (pullRequest.isDraft) {
@@ -302,7 +302,7 @@ async function ensureReviewPullRequestReady({github, repositoryGithub = github, 
   if (verified.length || pullRequest?.isDraft) {
     throw new Error(`Pull request #${reference.number} was not verified as open, non-draft, exact-head Review input.`);
   }
-  return {changed, pullRequest, conflicts: []};
+  return {changed, reference, pullRequest, conflicts: []};
 }
 
 async function conflict(core, rows, reason) {
@@ -372,7 +372,7 @@ async function executeTransition({github, repositoryGithub = github, core, paylo
     return conflict(core, fieldMismatch, 'Expected field state changed.');
   }
 
-  const review = await ensureReviewPullRequestReady({github, repositoryGithub, command, target, owner, name});
+  const review = await ensureReviewPullRequestReady({github, repositoryGithub, command, owner, name});
   if (review.conflicts.length) return conflict(core, review.conflicts, 'Review pull request identity changed.');
 
   for (const op of operations) {
@@ -398,6 +398,15 @@ async function executeTransition({github, repositoryGithub = github, core, paylo
   const after = values(afterItem?.fieldValues?.nodes);
   if (!afterItem || !desired(command, after)) throw new Error('Post-mutation Project state did not match the command.');
 
+  let finalReviewPullRequest = review.pullRequest;
+  if (review.reference) {
+    finalReviewPullRequest = await readPullRequest(github, owner, name, review.reference.number);
+    const finalReviewMismatch = reviewIdentityMismatches(review.reference, finalReviewPullRequest);
+    if (finalReviewMismatch.length || finalReviewPullRequest?.isDraft) {
+      throw new Error(`Post-mutation pull request #${review.reference.number} was not open, non-draft, and at the guarded Review head.`);
+    }
+  }
+
   const projectChanged = !desired(command, before);
   core.setOutput('outcome', 'success');
   core.setOutput('reason', projectChanged || review.changed
@@ -405,8 +414,8 @@ async function executeTransition({github, repositoryGithub = github, core, paylo
     : 'Already in requested state.');
   core.summary.addHeading('AI delivery control success')
     .addRaw(`Target: \`${command.target.repository}#${command.target.number}\`\n\n`);
-  if (review.pullRequest) {
-    core.summary.addRaw(`Review pull request: \`#${review.pullRequest.number}\` at \`${String(review.pullRequest.headRefOid).toLowerCase()}\`, non-draft${review.changed ? ' (marked ready by control plane)' : ''}.\n\n`);
+  if (finalReviewPullRequest) {
+    core.summary.addRaw(`Review pull request: \`#${finalReviewPullRequest.number}\` at \`${String(finalReviewPullRequest.headRefOid).toLowerCase()}\`, non-draft${review.changed ? ' (marked ready by control plane)' : ''}.\n\n`);
   }
   core.summary.addTable([
     [{data: 'Field', header: true}, {data: 'Before', header: true}, {data: 'After', header: true}],
