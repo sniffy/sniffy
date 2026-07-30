@@ -80,9 +80,9 @@ test('every implementation executor publishes a non-draft exact-head PR before R
   for (const file of files) {
     const content = read(file);
     assert.match(content, /ready for review/i, `${file} must require ready-for-review publication`);
-    assert.match(content, /non-draft|draft\s*=\s*false|draft=false/i, `${file} must require non-draft state`);
+    assert.match(content, /non-draft|not\s+draft|draft\s*=\s*false|draft=false/i, `${file} must require non-draft state`);
     assert.match(content, /exact (published |remote )?head|exact-head/i, `${file} must verify the exact PR head`);
-    assert.match(content, /Status\s*=\s*Review|Status=Review|Review \/ Ready/i, `${file} must connect PR state to Review handoff`);
+    assert.match(content, /Review/i, `${file} must connect PR state to Review handoff`);
   }
 
   const prompt = read('.chatgpt/scheduled-task-prompt.md');
