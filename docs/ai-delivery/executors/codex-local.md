@@ -54,6 +54,7 @@ Before enabling app dispatch, smoke-test:
 - a claimed issue item creates exactly one standalone worker;
 - an explicitly routed same-repository PR continuation reuses the exact branch/PR without a duplicate;
 - fork and Dependabot PRs cannot be adopted for direct correction;
+- a completed Implementation marks its PR ready and verifies non-draft exact-head state before Project Review;
 - the worker uses the expected project/worktree and Sol / extra-high profile;
 - failed child creation releases the guarded claim;
 - repeated automation returns to the intended persistent dispatcher;
@@ -136,13 +137,18 @@ A Local Codex worker performs only the routed lifecycle status:
 - Verification runs outcome-centric system/integration/browser proof when selected;
 - Review is performed only with an independent configured identity and explicit route.
 
-For fresh work, create one branch and intended PR. For continuation, use the exact existing same-repository PR branch. Mark the PR
-ready for review when implementation and locally available proof are complete. Publish human-useful evidence on the canonical
-item and synchronize the PR description.
+For fresh work, create one branch and intended PR. For continuation, use the exact existing same-repository PR branch. Keep the PR
+draft only while implementation or locally available proof is incomplete. When complete, mark it ready for review and re-read it
+as open, targeting `develop`, `draft = false`, and at the exact remote head. A successful push or green CI alone is not a Review
+handoff.
 
-Implementation completion is not just a push: the worker must verify the exact remote head and use one guarded command to hand the
-canonical item to `Review / Ready / ChatGPT`, recording the PR URL/head and clearing worker ownership. It then assigns
-`bedrin-gpt` separately and verifies both state and assignment.
+Publish human-useful evidence on the canonical item and synchronize the PR description. Then use one guarded command to hand the
+canonical item to `Review / Ready / ChatGPT`, recording the PR URL/head and clearing worker ownership. For a canonical issue the
+command must include `reviewPullRequest.number/head`; for a canonical PR it guards target plus `expected.head`. The control plane
+may repair a remaining draft, but the worker must not depend on that repair.
+
+After the command receives its terminal reaction, re-read both the PR as non-draft at the same exact head and the canonical Project
+state. Assign `bedrin-gpt` separately and verify assignment. Do not report completion until all three surfaces agree.
 
 Never merge or enable auto-merge without Dmitry's explicit instruction.
 
