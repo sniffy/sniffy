@@ -13,6 +13,8 @@ constraints for their subtrees.
   credentials, external infrastructure, destructive ambiguity, or contradictory requirements.
 - The roles, executors, routing rules, delivery state machine, and verification ownership model live under
   [`docs/ai-delivery/`](docs/ai-delivery/README.md). They are operational guidance, not a replacement for repository policy.
+- Before executor-specific work, read the applicable runbook under `docs/ai-delivery/executors/`. Codex Cloud work must read
+  [`docs/ai-delivery/executors/codex-cloud.md`](docs/ai-delivery/executors/codex-cloud.md) before editing or publication.
 
 ## Delivery and Git safety
 
@@ -21,6 +23,9 @@ constraints for their subtrees.
   incomplete.
 - GitHub remote state is the publication source of truth. Before reporting delivery, verify the remote branch, full SHA,
   pull-request URL, base/head refs, draft state, and matching pull-request head.
+- An absent `origin` in an isolated Sniffy checkout is recoverable configuration, not by itself a publication blocker.
+  Configure its push URL as `https://github.com/sniffy/sniffy.git` without embedded credentials, verify authentication, and
+  attempt the authorized push before reporting an access blocker.
 - Preserve unrelated work. Do not reset, clean, rebase shared branches, force-push, rewrite history, create a replacement PR
   for a continuation, merge, or enable auto-merge unless Dmitry explicitly authorizes that exact action.
 - Prefer a fresh `agent/<short-description>` branch from current `develop` for new work. Continue review fixes on the exact

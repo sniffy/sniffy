@@ -29,8 +29,9 @@ Planning, or block for Dmitry.
 
 The supported environment uses:
 
-- `.codex/cloud/setup.sh` for initial setup and GitHub CLI authentication;
-- `.codex/cloud/maintenance.sh` when a cached environment resumes on another branch;
+- `.codex/cloud/setup.sh` for initial setup, GitHub CLI authentication, and canonical `origin` push configuration;
+- `.codex/cloud/maintenance.sh` to restore the toolchain and canonical `origin` push URL when a cached environment resumes on
+  another branch;
 - `.codex/cloud/use-jdk.sh <8|11|17|21|25>` for toolchain selection;
 - platform-provided Maven and JDK 11/17/21/25;
 - repository-installed Temurin JDK 8;
@@ -61,6 +62,7 @@ Before relying on a new or changed environment, run a small reversible validatio
 - reads `AGENTS.md`, [`../profile.yml`](../profile.yml), and this runbook;
 - reports Java, Maven, Node when relevant, and `gh` versions;
 - checks `gh auth status`;
+- confirms `origin` has `https://github.com/sniffy/sniffy.git` as its push URL;
 - performs and removes a reversible remote-ref write;
 - switches between JDK 8 and JDK 25;
 - runs one focused test and `git diff --check`;
@@ -95,8 +97,22 @@ A Cloud implementation task reads the authoritative issue/thread, lifecycle/rout
     worker ownership; update the ChatGPT Assignee separately and verify both operations;
 11. never review/approve its own implementation, merge, or enable auto-merge.
 
-If `origin` is absent, configure an explicit repository URL. If publication access fails, preserve/recover the existing workspace
-or commit instead of recreating implementation.
+A missing `origin` is recoverable checkout configuration, not evidence that setup authentication failed. Setup persists `gh`
+authentication for the agent phase, while the repository URL contains no credential. Before reporting a publication blocker,
+restore the canonical remote, verify auth, and attempt the authorized push:
+
+```bash
+if git remote get-url origin >/dev/null 2>&1; then
+  git remote set-url --push origin https://github.com/sniffy/sniffy.git
+else
+  git remote add origin https://github.com/sniffy/sniffy.git
+fi
+gh auth status --hostname github.com
+git push --set-upstream origin HEAD
+```
+
+Only an actual authentication, network-policy, permission, or branch-protection failure after that attempt is a publication
+blocker. Preserve/recover the existing workspace or commit instead of recreating implementation.
 
 ## Verification lifecycle contract
 
