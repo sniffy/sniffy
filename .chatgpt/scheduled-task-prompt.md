@@ -43,8 +43,9 @@ the current UTC timestamp as the dispatcher reference.
 ProjectV2 control protocol:
 - Every executor uses the same rotating technical control issue and delivery-control/v1 JSON commands documented in
   control-plane.md.
-- Locate the one active open control issue by its title prefix and required marker. Do not post /project-status, /project-field,
-  claim-intent, winner, loser, withdrawal, lease, or polling comments on the target issue or pull request.
+- Locate the newest open issue with the configured ai-delivery-control label; create it with that label if none exists. Do not
+  post /project-status, /project-field, claim-intent, winner, loser, withdrawal, lease, or polling comments on the target issue or
+  pull request.
 - A claim or handoff is valid only after the command has the documented terminal reaction and the resulting Project fields have
   been re-read.
 - Use one guarded command for the complete multi-field claim or lifecycle transition. Include current Status, Execution,
