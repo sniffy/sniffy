@@ -18,6 +18,7 @@ controlPlane:
 fields:
   status: Status
   execution: Execution
+  # Optional. An empty value means no implementation executor has been deliberately selected.
   implementer: Implementer
   verifier: Verifier
   executor: Executor
@@ -51,12 +52,17 @@ routing:
   mergeExecutor: Human
 
 intake:
+  externalPullRequests:
+    # PR authorship is provenance, not a routing decision. Leave Implementer empty during intake.
+    setImplementerFromAuthor: false
   dependabot:
     enabled: true
     projectAutoAddFilter: "is:pr is:open label:dependencies"
     backfillExisting: true
     initialStatus: Review
     reviewer: ChatGPT
+    # Project 2 currently contains a Dependabot Implementer option for manual/backward-compatible classification,
+    # but automated intake deliberately does not select it.
 
 branches:
   newWorkPrefix: agent/
