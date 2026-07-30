@@ -1,82 +1,84 @@
 # Chat retention for the ChatGPT event loop
 
-The current ChatGPT adapter creates a fresh chat for every scheduled tick. With four hourly shards, the `AI Delivery Event Loop`
-Project may accumulate up to 96 chats per day. Chat history is operational telemetry, not durable delivery state.
+The ChatGPT adapter uses four defining Scheduled Task chats for the `:00`, `:15`, `:30`, and `:45` shards. Product testing on
+2026-07-30 showed that each recurrence appends to its task's defining chat rather than reliably creating a fresh destination
+chat. The four conversations are persistent execution logs, not durable delivery state.
 
-## Separate permanent and disposable chats
+## Four isolated task chats
 
-Keep these two classes distinct:
+Create each Scheduled Task from a separate empty chat inside the fileless `AI Delivery Event Loop` Project:
 
-- **Task-definition chats:** the four chats/configurations that own the recurring `:00`, `:15`, `:30`, and `:45` Scheduled
-  Tasks. Keep them stable and do not delete them; deleting a chat associated with a task pauses that task.
-- **Tick chats:** the fresh destination chats created by each scheduled occurrence. These are disposable after their durable
-  GitHub handoff is complete.
+- `Event Loop 00`;
+- `Event Loop 15`;
+- `Event Loop 30`;
+- `Event Loop 45`.
 
-Use stable Scheduled Task names such as `Event Loop 00`, `Event Loop 15`, `Event Loop 30`, and `Event Loop 45`. At the start of
-each tick, print a compact run header containing slot, UTC timestamp, selected repository/work item/lifecycle status, or
-`NO_CHANGE`. Do not rely on the generated chat title as the only identifier.
+Do not create all four from one shared chat. Keeping one chat per shard limits transcript growth and makes a bad occurrence easier
+to locate.
+
+Every recurrence must behave statelessly despite the persistent transcript:
+
+- ignore prior-run conclusions and remembered queue state;
+- re-read current GitHub state, repository policy, and `docs/ai-delivery/profile.yml`;
+- never use a previous turn as the only copy of a decision, worker reference, or evidence;
+- output only `NO_CHANGE` for a no-op;
+- for productive ticks, use a compact header and result summary after durable GitHub publication.
 
 ## Durable-state rule
 
-Before a tick ends, every meaningful delivery result must be written to GitHub: claim token, lifecycle handoff, issue/PR
-comment, exact SHA, evidence, blocker, or external dispatch. Never keep the only copy of a decision, diagnosis, or worker
-reference in a tick chat. A `NO_CHANGE` tick records its compact run header in the disposable chat and makes no GitHub
-mutation.
+Before an occurrence ends, every meaningful result must be visible in GitHub:
 
-A chat is eligible for archive only when:
+- guarded control command and verified Project transition;
+- worker/task/process, branch, PR, and exact SHA;
+- review or verification result;
+- CI/artifact evidence;
+- blocker or next human action.
 
-- no active claim or lease points to it;
-- the next Status/Execution/Executor/Assignee is durably recorded when work was claimed;
-- any PR review, evidence, blocker, or external dispatch is visible in GitHub;
-- the tick is complete rather than waiting for CI or another result inside that chat.
+A chat may explain what happened, but GitHub remains sufficient to resume from another chat, executor, or machine.
+
+## Defining-chat lifecycle
+
+Deleting a defining chat pauses its Scheduled Task. Do not archive or delete an active defining chat as ordinary cleanup.
+
+Instead, replace a shard deliberately when its conversation becomes unwieldy or after a routine retention interval such as one
+to two weeks:
+
+1. confirm the shard has no unfinished occurrence whose only evidence remains in the chat;
+2. create a replacement chat in the same fileless Project;
+3. create the equivalent Scheduled Task with the same slot and current canonical prompt;
+4. smoke-test one no-op or read-only occurrence;
+5. pause the old task;
+6. archive the old defining chat;
+7. verify the other three shards and the new shard still form one logical 15-minute clock.
+
+This is maintenance of the existing clock, not a fifth scheduler. Do not rotate all four simultaneously.
 
 ## Current supported cleanup
 
-OpenAI currently documents manual chat archive and delete operations:
+OpenAI documents manual chat archive and delete operations. Archive hides a chat from the active sidebar while retaining it under
+normal account retention. Delete is irreversible and normally schedules permanent removal subject to platform policy.
 
-- [How to Delete and Archive Chats in ChatGPT](https://help.openai.com/en/articles/8809935-how-to-delete-and-archive-chats-in-chatgpt)
-- [Chat and File Retention Policies in ChatGPT](https://help.openai.com/en/articles/8983778-chat-and-file-retention-policies-in-chatgpt)
+For event-loop chats:
 
-Archive hides a chat from the active sidebar but retains it under normal account retention. Delete is irreversible: the chat is
-removed from view immediately and normally scheduled for permanent deletion within 30 days, subject to documented legal,
-security, or de-identification exceptions.
+- archive replaced defining chats after durable handoff is confirmed;
+- retain chats associated with an unresolved incident until the diagnosis and recovery are durable in GitHub;
+- delete only under an explicit retention decision;
+- do not use account-wide **Archive all chats** or **Delete all chats** for routine event-loop maintenance;
+- do not use browser-click automation, private endpoints, or destructive bulk cleanup.
 
-For event-loop tick chats:
+No supported Project-scoped bulk archive API or Scheduled Task cleanup operation is assumed.
 
-1. Confirm the durable-state rule above.
-2. Keep chats for active or ambiguous work until the claim, blocker, correction, or CI wait is resolved elsewhere.
-3. Archive completed and `NO_CHANGE` chats from each chat's `...` menu.
-4. Manage archived chats through **Settings -> Data controls -> Archived Chats**.
-5. Delete only under an explicit retention policy; archive is the default cleanup action.
+## Context and performance expectations
 
-Do not use **Archive all chats** or **Delete all chats** for routine cleanup: OpenAI documents those controls as account-wide and
-inclusive of chats inside Projects. No supported Project-scoped bulk archive API or Scheduled Task action is currently
-documented.
+Do not assume an indefinitely long chat preserves every historical detail in active model context. The product may compact old
+turns, and the UI may become inconvenient before any documented hard limit is reached. Stateless instructions and periodic
+replacement prevent correctness from depending on either behavior.
 
-## Rollout and maintenance cadence
+The event loop should remain correct even if all four historical transcripts are unavailable, because Project fields, the
+central control log, issues, PRs, reviews, branches, exact SHAs, CI, and repository-owned Markdown contain the durable state.
 
-Because 96 manual archive candidates per day is substantial, treat the new-chat topology as an operational pilot before relying
-on it indefinitely:
+## Independent control-log rotation
 
-1. Run all four shards for 24 hours.
-2. Confirm statelessness, claim safety, useful throughput, and actual chat volume.
-3. Confirm that active work is distinguishable from completed/no-op ticks and that manual cleanup is tolerable.
-4. Review again after one week before considering the topology permanent.
-
-Archive completed/no-op tick chats daily while volume is high. Retain only chats linked to active claims, unresolved blockers,
-current incident diagnosis, or a handoff whose GitHub evidence is incomplete. Use GitHub timestamps and claim records, not chat
-ordering, to decide what remains active.
-
-Manual per-chat archive is unlikely to scale indefinitely at the maximum 96-chat/day rate. If cleanup is not sustainable, do
-not hide the problem behind unsupported automation. Choose deliberately among reducing the polling window/cadence, accepting a
-persistent-chat shard, or moving the clock to the headless Local Codex adapter so ChatGPT runs only when work actually requires
-a ChatGPT lifecycle turn.
-
-## Future automation boundary
-
-A future maintenance worker may archive completed tick chats only after OpenAI exposes and documents a supported selective or
-Project-scoped capability and that capability is smoke-tested. Do not implement browser-click automation, private endpoints,
-or destructive bulk deletion merely to control sidebar clutter.
-
-Chat retention remains independent from delivery lifecycle: archiving or deleting a transcript must never alter GitHub Status,
-Execution, claims, issues, pull requests, reviews, or evidence.
+Chat retention and the GitHub control issue are separate concerns. The active control issue is rotated by the normal event loop
+according to [`control-plane.md`](control-plane.md); replacing a ChatGPT task chat must not create, clear, or modify any Project
+claim. Likewise, closing an old control-log issue does not pause a Scheduled Task.

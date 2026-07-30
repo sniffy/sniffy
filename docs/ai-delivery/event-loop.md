@@ -1,7 +1,7 @@
 # Reusable event loop and claim protocol
 
 This design separates a provider-neutral queue engine from ChatGPT, Codex, GitHub Project, and repository-specific adapters.
-Sniffy is the first profile, not the framework itself.
+Sniffy is the first profile, not the framework itself. Current Sniffy configuration lives in [`profile.yml`](profile.yml).
 
 ## Components
 
@@ -9,164 +9,138 @@ Sniffy is the first profile, not the framework itself.
 Clock
   -> Dispatcher tick
       -> Intake adapters
-          -> Claim protocol
+          -> Guarded claim/transition protocol
               -> Lifecycle worker
 ```
 
 - **Clock** starts one dispatcher tick. It knows only cadence and slot identity.
 - **Dispatcher tick** loads one or more project profiles, queries eligible work, and selects a deterministic candidate.
 - **Intake adapters** materialize external work such as Dependabot pull requests into the same lifecycle.
-- **Claim protocol** provides best-effort cross-dispatcher ownership.
+- **Control protocol** serializes guarded ProjectV2 claims and transitions through one technical control issue.
 - **Lifecycle worker** performs one lifecycle turn, publishes evidence, and hands the task to the next status as `Ready`.
 
-Some adapters may split dispatch and work into separate processes or conversations. Others, including the current ChatGPT
-adapter, execute the claimed lifecycle turn directly in the same fresh tick. Child-worker spawning is optional, not a
+Some adapters split dispatch and work into separate processes or conversations. Others, including the current ChatGPT adapter,
+execute the claimed lifecycle turn directly in the same scheduled occurrence. Child-worker spawning is optional, not a
 requirement of the generic protocol.
 
-A no-op tick creates no GitHub mutation, source branch, worktree, or worker claim. A provider may still create an execution
-transcript such as a fresh ChatGPT chat for that tick.
+A no-op tick creates no GitHub mutation, source branch, worktree, control command, or worker claim. A provider may still append a
+compact execution transcript to its own scheduler conversation.
 
 ## Desired cadence
 
-The logical queue should be checked every 15 minutes. The core design accepts a configurable cadence so a future deployment
-may use five-minute ticks without changing lifecycle or claim semantics.
+The logical queue should be checked every 15 minutes. Worker follow-up is part of the same event-loop responsibility; it is not a
+second independent scheduler. When an existing worker is due for observation, a tick continues or recovers that ownership before
+claiming unrelated work.
 
 ### ChatGPT Scheduled Tasks adapter
 
-Current official ChatGPT limits require sharding the logical clock:
+Current documented ChatGPT limits require sharding the logical clock:
 
-- Scheduled Tasks cannot run more than once per hour.
-- Pro and Enterprise accounts may have up to 15 active tasks.
-- Deleting the chat associated with a task pauses that task.
-- A task created in a ChatGPT Project that has files cannot access those project files.
-
-See the official OpenAI documentation:
-
-- [Scheduled Tasks in ChatGPT](https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt)
-- [Projects in ChatGPT](https://help.openai.com/en/articles/10169521-projects-in-chatgpt)
+- Scheduled Tasks cannot run more than once per hour;
+- Pro and Enterprise accounts may have up to 15 active tasks;
+- deleting a task's associated chat pauses the task;
+- a task created in a ChatGPT Project that has files cannot access those files.
 
 Use four permanent hourly Scheduled Tasks:
 
 ```text
-slot-00 -> hourly at :00 -> new chat
-slot-15 -> hourly at :15 -> new chat
-slot-30 -> hourly at :30 -> new chat
-slot-45 -> hourly at :45 -> new chat
+slot-00 -> hourly at :00
+slot-15 -> hourly at :15
+slot-30 -> hourly at :30
+slot-45 -> hourly at :45
 ```
 
-Copy the exact same prompt into all four tasks from
-[`.chatgpt/scheduled-task-prompt.md`](../../.chatgpt/scheduled-task-prompt.md). The file includes complete setup instructions and
-a prompt with no placeholders; only the four task names and schedules differ.
+Copy the exact prompt from [`.chatgpt/scheduled-task-prompt.md`](../../.chatgpt/scheduled-task-prompt.md). Create each task from a
+separate defining chat inside one dedicated fileless `AI Delivery Event Loop` Project so four task logs remain isolated from one
+another.
 
-Together they form one logical 15-minute clock while consuming four active tasks. Configure every task to start in a **new
-chat** inside one dedicated scheduler Project. Each occurrence is a fresh, stateless dispatcher/worker tick; it does not reuse
-or append to a long-lived dispatcher conversation.
+Product testing on 2026-07-30 showed that recurrences append to the defining task chat rather than reliably creating a new chat.
+Treat each occurrence as logically stateless even though the transcript is persistent:
 
-A manual product test on 2026-07-28 confirmed that a Scheduled Task execution cannot create another Scheduled Task. Treat
-ChatGPT child-task spawning as `unsupported` in the current adapter. The scheduled tick itself must therefore:
+1. ignore prior-run conclusions and mutable conversational context;
+2. read current GitHub state, repository policy, and [`profile.yml`](profile.yml) from scratch;
+3. reconcile eligible external PR intake;
+4. continue one due owned worker or select at most one eligible lifecycle turn;
+5. submit one guarded control command to claim it;
+6. verify the successful reaction and resulting Project state before doing work;
+7. perform the lifecycle turn directly or make one supported external dispatch;
+8. publish human-useful evidence on the target item;
+9. submit one guarded control command for the lifecycle handoff and verify the result;
+10. return `NO_CHANGE` when no intake, continuation, rotation, or eligible work exists.
 
-1. read its self-contained prompt and external project profiles;
-2. run idempotent intake/reconciliation for eligible external pull requests when configured;
-3. inspect GitHub issues, pull requests, lifecycle fields, claims, and evidence;
-4. select and best-effort claim at most one eligible lifecycle turn;
-5. perform that turn directly in the same fresh chat, or make a supported external handoff such as a Codex Cloud dispatch;
-6. durably write the next Status, Execution, Executor, Assignee, evidence, and cleared claim;
-7. return `NO_CHANGE` when there is no eligible work.
+A tick must never claim work it cannot reasonably complete or hand off durably during that occurrence. Route long
+implementation, dependency-heavy builds, persistent services, and environment-specific verification to Codex Cloud, Local
+Codex, CI, or a human.
 
-A tick must never claim work that cannot reasonably finish or reach a safe durable handoff within that scheduled execution.
-Route long implementation, dependency-heavy builds, persistent services, and environment-specific verification to Codex Cloud,
-Local Codex, CI, or a human instead.
+Scheduled Task executions cannot create child Scheduled Tasks. They may dispatch a supported external worker, but `In progress`
+is valid only after a concrete worker/task/branch/process reference exists.
 
-This design intentionally trades chat volume for isolation. Four hourly tasks create up to 96 tick chats per day, including
-no-op ticks. Keep output minimal and machine-readable where practical. Follow [`chat-retention.md`](chat-retention.md): archive
-only after durable GitHub handoff, keep the four task-definition chats stable, run the topology as a 24-hour pilot, and never
-let chat cleanup alter delivery state.
+The four chats are operational telemetry, not durable state. Keep output compact and follow [`chat-retention.md`](chat-retention.md)
+for bounded replacement of long task chats. Chat rotation must never alter GitHub lifecycle state.
 
-### Dedicated scheduler Project and observed Project scoping
+### Dedicated scheduler Project
 
-A manual product test on 2026-07-28 attempted to create a Scheduled Task for the `Kerb4j` ChatGPT Project from a chat outside
-that Project. The available scheduler operation exposed no `project_id` or equivalent destination parameter, so it created a
-global task instead. Treat this as an observed capability of the current product surface, not as a permanent API guarantee.
+Use one dedicated fileless ChatGPT Project, such as `AI Delivery Event Loop`, as a UI namespace for the four task definitions and
+their persistent transcripts. The Project is not configuration or task memory. Critical repository/profile locations must be
+present in every task prompt.
 
-Consequences:
+The available scheduler operation cannot reliably target an arbitrary different ChatGPT Project, and a Scheduled Task cannot
+create another Scheduled Task. All durable context therefore lives in GitHub and repository-owned files.
 
-- a scheduled or ordinary chat cannot select an arbitrary destination ChatGPT Project through the available scheduling tool;
-- a Scheduled Task execution cannot create a child Scheduled Task at all;
-- all durable repository/task context must live in GitHub issues, comments, pull requests, and repository-owned Markdown;
-- ChatGPT Project descriptions, files, instructions, and implicit memory are convenience context only;
-- every scheduled prompt must be self-contained enough to locate the project profiles and authoritative GitHub state.
-
-Use one dedicated fileless ChatGPT Project, such as `AI Delivery Event Loop`, as an organizational folder for the four
-Scheduled Tasks and the fresh chats produced by their runs. The Project is a UI namespace only; it is not the source of
-configuration or task context. Keep its Project instructions minimal and repeat critical repository/profile locations in every
-Scheduled Task prompt.
-
-### Global ChatGPT loop across repositories
-
-The four tasks may scan several GitHub repositories or Projects because queue state is external. Repository-specific filters
-live in profiles referenced explicitly by each scheduled prompt. A separate ChatGPT Project per repository is unnecessary and
-cannot be targeted dynamically by the current scheduling surface.
-
-For `Executor = ChatGPT`, the fresh tick may own Planning, Review, artifact-based Verification, focused direct implementation,
-or supervision when its current capabilities are sufficient. For other executors it may prepare or perform only a supported
-handoff. It must not leave `In progress` without a real worker/dispatch reference.
-
-At a desired five-minute cadence, twelve hourly shards would consume most of the 15-task Pro limit and create up to 288 chats
-per day. Prefer a native future sub-hour schedule or an external/local clock instead of multiplying ChatGPT tasks indefinitely.
+The four tasks may scan several repositories because queue state is external. Repository-specific filters and executor settings
+belong in explicit profiles, not in prior chat history.
 
 ### Pull-request intake adapters
 
-A repository profile may define PR-first sources. Prefer GitHub Projects' built-in auto-add workflow for newly created or
-updated PRs. For Sniffy, select repository `sniffy/sniffy` and filter `is:pr is:open label:dependencies`. The auto-add filter
-cannot identify the author and does not backfill existing matching PRs, so the tick still reconciles Project items against the
-open source queue.
+A repository profile may define PR-first sources. Prefer GitHub Projects' built-in auto-add workflow for newly created or updated
+PRs. For Sniffy, select repository `sniffy/sniffy` and filter `is:pr is:open label:dependencies`. The auto-add filter cannot
+identify the author and does not backfill existing matching PRs, so ticks still reconcile the source queue.
 
-Before claiming ordinary work, the tick:
+Before claiming ordinary work, a tick:
 
 1. scans for open matching PRs not already represented in the Project;
-2. verifies the actual bot/external author and exact head;
-3. adds/backfills the PR item idempotently by repository plus PR number;
-4. classifies security/routine risk and initializes `Review / Ready / Executor = ChatGPT`;
-5. selects a capable Verifier before claiming the Review turn.
+2. verifies the actual author, labels, target, draft state, and exact head;
+3. submits a guarded control command with `addIfMissing: true`;
+4. initializes `Review / Ready / Executor = ChatGPT` plus the planned Implementer/Verifier fields;
+5. re-reads the Project item before treating intake as complete.
 
-For Dependabot, use the bot author plus dependency label during reconciliation, distinguish security from routine version
-updates, and set the PR itself as the work item. Do not create a shadow issue unless review discovers independently owned
-implementation work. See [`pull-request-intake.md`](pull-request-intake.md).
+For Dependabot, use the bot author plus dependency label, distinguish security from routine updates, and set the PR itself as the
+work item. Do not create a shadow issue unless review discovers independently owned implementation work. Intake is not approval.
 
-Intake is not approval. The tick still performs exact-head Review, selects Verification, and respects the human merge boundary.
-When a compatibility fix or replacement PR is required, the source bot PR remains durably linked and blocked/superseded rather
-than silently rewritten.
+### Control-issue adapter
+
+All executors use [`control-plane.md`](control-plane.md). They find the one active control issue, post one guarded
+`delivery-control/v1` command, inspect its terminal reaction, and re-read Project state. No target-item field command or claim
+arbitration comment is permitted.
+
+Control-log rotation is ordinary event-loop maintenance. A tick needing to post a command may rotate an old/full log first, then
+continue. Rotation does not require an additional Scheduled Task.
 
 ### Codex app automation adapter
 
-Codex automations can run on schedules, and some can return to the same conversation. Local automations require the computer
-to be awake and the Codex app running. See [Codex automations](https://openai.com/academy/codex-automations/).
+Codex automations can run on schedules, and some can return to the same conversation. Local automations require the computer to
+be awake and the Codex app running.
 
-Use one persistent dispatcher conversation when native cadence and child-task composition are proven; otherwise use a
-provider-appropriate stateless tick or the headless Linux adapter. App-native Remote visibility is optional, not a requirement
-of the generic protocol.
+Use one persistent dispatcher conversation when app-owned one-time worker creation is proven. The current Sniffy Local Codex
+profile is fixed to Sol with extra-high reasoning. The dispatcher selects work and routing; it does not pretend Cloud or Local
+model choice is the same axis as executor choice.
 
 ### Headless Local Codex adapter
 
 For unattended local execution, prefer a normal Linux service when app-owned chats are not needed:
 
 ```text
-systemd timer or cron (for example every 5 minutes)
+systemd timer or cron
   -> flock prevents overlapping ticks on one host
   -> dispatcher loads project profiles
-  -> GitHub claim protocol
+  -> central guarded claim
   -> isolated git worktree
   -> codex exec with rendered worker prompt
-  -> commit, push, PR, and evidence
+  -> commit, push, PR, evidence, and guarded handoff
 ```
 
-The Codex CLI can read, modify, and run code locally, and `codex exec` is intended for shell workflows. See:
-
-- [OpenAI Codex CLI – Getting Started](https://help.openai.com/en/articles/11096431)
-- [Codex is now generally available](https://openai.com/index/codex-now-generally-available/)
-
-Host policy controls filesystem, network, credentials, services, Docker, browsers, and worker capacity. The dispatcher may run
-several workers only when each owns a distinct claim and isolated worktree.
+A five- or fifteen-minute timer is straightforward locally. Host-local `flock` complements the GitHub target-item concurrency
+group; neither replaces the other.
 
 ## Eligible work
 
@@ -178,34 +152,35 @@ Executor = <dispatcher executor type>
 Assignee is empty OR Assignee belongs to this dispatcher pool
 ```
 
-The work item may be an issue or a pull request. The dispatcher also checks lifecycle-status compatibility, required access,
-worker-pool capacity, existing branch/PR ownership, and absence of a live claim. `Implementer` and `Verifier` are future routing
+The work item may be an issue or pull request. The dispatcher also checks lifecycle compatibility, required access, worker-pool
+capacity, existing branch/PR ownership, and absence of a valid current worker. `Implementer` and `Verifier` are future routing
 decisions; lifecycle transitions copy the relevant value into `Executor`.
 
-Use deterministic selection such as security priority, project priority, `readySince`, then repository/item number. A
-dispatcher should claim at most its available capacity and must not create duplicate workers or Project items.
+Use deterministic selection such as security priority, Project priority, ready timestamp, then repository/item number. Claim at
+most available capacity and never create duplicate workers or Project items.
 
-## Best-effort atomic claim
+## Guarded claim
 
-GitHub comments and Project field updates are not one transaction. Use a claim generation and ordered intent protocol:
+A claim is one ordinary `delivery-control/v1` transition, not a public comment-election protocol:
 
-1. Query an eligible `Ready` item.
-2. Re-read its Status, Execution, Executor, Assignee, dispatch generation, branch, PR, and existing claim immediately.
-3. Post a claim-intent comment containing a unique token, generation, dispatcher slot, executor, and timestamp.
-4. Re-read valid intents for the same generation. The lowest GitHub comment ID wins.
-5. Only the winner writes `Execution = In progress`, the concrete Assignee, claim token, lease time, and worker/tick reference.
-6. Re-read and verify that its token/generation still owns the task.
-7. Perform the lifecycle turn directly or confirm a supported external dispatch.
-8. Record the concrete chat/task/process, branch/worktree, and expected PR or artifact.
-9. If execution/dispatch cannot start, release the claim and restore `Ready`. Set `Blocked` only when Dmitry must decide or act;
-   then set `Executor = Human`, `Assignee = bedrin`, and record the exact requested action.
+1. query an eligible `Ready` item;
+2. re-read its Status, Execution, Executor, Assignee, exact PR head, branch/PR, worker reference, and lease;
+3. construct a unique token and worker/tick reference;
+4. post one command guarding at least the current Status, `Execution = Ready`, current Executor, and exact PR head when applicable;
+5. set `Execution = In progress`, one Worker reference containing claim token, lease time, concrete owner, and any configured routing fields in that same command;
+6. inspect the command reaction and re-read Project state;
+7. only the verified winner performs work or confirms an external dispatch.
 
-This is best-effort coordination, not a distributed database transaction, but it prevents ordinary duplicate polls from both
-starting work. A same-host `flock` complements rather than replaces the GitHub-level protocol.
+The transition workflow serializes commands by target work item. Concurrent contenders may both submit commands, but after the
+first succeeds the second sees a guarded-state conflict and performs no mutation. A conflict is normal coordination, not a
+blocker and not a reason to post on the target item.
+
+If execution or dispatch cannot start, submit a guarded release back to `Ready`. Set `Blocked` only when Dmitry must decide or
+act; then set `Executor = Human`, route the Assignee separately to `bedrin`, and record the exact requested action.
 
 ## Lease and stale recovery
 
-A claim records:
+A live ownership record includes:
 
 ```text
 claimToken
@@ -215,59 +190,32 @@ workerReference
 lastObservableEvidence
 ```
 
-Before expiring a lease, inspect the worker record, issue, branch, PR, commits, and CI. Lack of a recent comment alone does not
-prove inactivity. Recover the existing branch/worker where possible. Release to `Ready` only when ownership is genuinely
-stale. Routine external waiting remains `In progress`; use `Blocked` only when Dmitry must intervene.
+Before expiring a lease, inspect the worker record, issue, branch, PR, commits, review state, and CI. Lack of a recent target
+comment does not prove inactivity. Recover the existing branch/worker where possible. Release to `Ready` only when ownership is
+genuinely stale. Routine waiting remains `In progress`; use `Blocked` only when Dmitry must intervene.
+
+Worker monitoring follows [`supervision.md`](supervision.md): first observation after 15 minutes, a second 15 minutes later, then
+hourly while incomplete. Those due observations are selected by the same dispatcher ticks; no extra monitoring scheduler is
+required.
 
 ## Worker contract
 
-One worker or stateless tick owns one lifecycle turn. It must:
+One worker or direct ChatGPT tick owns one lifecycle turn. It must:
 
-- re-read the authoritative issue or PR, current lifecycle fields, nearest `AGENTS.md`, branch/PR, and exact head;
-- verify its claim before mutating GitHub or source;
+- re-read the authoritative issue/PR, current lifecycle fields, nearest `AGENTS.md`, branch/PR, and exact head;
+- verify its Project ownership before mutating source or GitHub;
 - perform only the routed lifecycle responsibility;
-- publish exact evidence and update the next Status, Execution, Executor, and Assignee atomically on a best-effort basis;
+- publish exact human-useful evidence;
+- use the common guarded control protocol for the next lifecycle state;
 - stop without spawning a replacement worker when blocked and route the exact next action to Dmitry;
 - never merge or enable auto-merge without explicit authorization.
 
 ## Generic core versus project profile
 
-The generic documents define lifecycle, intake, claim, leases, correction limits, and adapter contracts. A project profile
-supplies repository-specific configuration, for example:
+Generic documents define lifecycle, intake, guarded claims, leases, correction limits, publication, verification, and merge
+authority. [`profile.yml`](profile.yml) supplies current Sniffy configuration, including Project fields, identities, default
+routes, Local Codex Sol/extra-high settings, and control-log thresholds.
 
-```yaml
-schemaVersion: 1
-project:
-  repository: sniffy/sniffy
-  baseBranch: develop
-  githubProject: sniffy/2
-fields:
-  status: Status
-  execution: Execution
-  implementer: Implementer
-  verifier: Verifier
-  executor: Executor
-executors:
-  ChatGPT:
-    assignee: bedrin-gpt
-  Codex Cloud:
-    assignee: bedrin-codex-cloud
-  Local Codex:
-    assignee: bedrin-codex-local
-  Human:
-    assignee: bedrin
-intake:
-  dependabot:
-    enabled: true
-    projectAutoAddFilter: "is:pr is:open label:dependencies"
-    backfillExisting: true
-    initialStatus: Review
-    reviewer: ChatGPT
-branches:
-  newWorkPrefix: agent/
-```
-
-Profiles may add filters, model routing, capacity, issue templates, or required evidence, but must not redefine the shared
-meaning of Status, Execution, claims, publication, verification, or merge authority. Start with documented/declarative
-profiles; do not build a bespoke dispatcher framework until platform composition has been smoke-tested and a concrete gap
-remains.
+Profiles may add filters, capacity, evidence requirements, or future executor settings, but must not redefine the shared meaning
+of Status, Execution, publication, verification, or merge authority. Update the profile when a routing preference changes; edit
+shared policy only when the semantics themselves change.
