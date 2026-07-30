@@ -1,80 +1,84 @@
 # Task routing
 
-Dmitry and ChatGPT choose the planned `Implementer` and `Verifier` during Planning. For an external pull request, intake may
-record the existing author or automation as Implementer and start directly at Review. Routing is a risk, capability, cost,
-and evidence decision, not an estimate based on changed lines or a permanent assignment of roles to products.
+Dmitry and ChatGPT choose planned roles during Planning or external-PR intake. Routing is a risk, capability, evidence, latency,
+and cost decision. Current Sniffy defaults are editable in [`profile.yml`](profile.yml); this document defines the semantics and
+decision process.
+
+## Separate axes: role, executor, model, identity
+
+Do not collapse these independent choices:
+
+- **Role** — supervisor, implementer, reviewer, verifier, privileged operator, or merger.
+- **Executor** — ChatGPT, Codex Cloud, Local Codex, IDE agent, automation, or human.
+- **Model/profile** — provider-managed, Sol, reasoning effort, or another executor-specific setting.
+- **GitHub identity** — the account that publishes, comments, or formally reviews.
+
+Codex Cloud is not assumed to be Terra, Sol, or any other model. Its current model is recorded as `provider-managed` unless the
+product exposes and the task explicitly selects a verified model. The current Local Codex profile is intentionally fixed to Sol
+with extra-high reasoning; the dispatcher does not pretend to choose a cheaper model dynamically for that automation.
 
 ## Roles
 
-A task may assign these responsibilities independently:
+A task may assign responsibilities independently:
 
-- **Supervisor/router:** refines the issue or external-PR intake, proposes routing, tracks delivery, and coordinates corrections.
-  ChatGPT is the default.
-- **Implementer:** changes code or documentation and proves the change in its own environment; for PR-first intake this may be
-  an existing external author such as Dependabot.
-- **Reviewer:** inspects the complete exact-head code/configuration diff, scope, tests, review threads, and CI evidence.
-  ChatGPT is the default unless independence or capability requires another reviewer.
-- **Verifier:** validates the observable result against the issue or PR intent and discussion in a representative environment.
-- **Formal reviewer:** submits GitHub approval or Request Changes using an identity independent from the PR author.
-- **Privileged operator:** changes DNS, custom domains, repository settings, secrets, rulesets, Pages environments, or other
-  protected infrastructure.
+- **Supervisor/router:** refines the issue or external-PR intake, proposes routing, tracks delivery, rotates the control log, and
+  coordinates corrections. ChatGPT is the default.
+- **Implementer:** changes code/docs and proves the change in its own environment; for PR-first intake this may be Dependabot or
+  another existing author.
+- **Reviewer:** inspects the complete exact-head diff, scope, tests, review threads, and CI evidence. ChatGPT is the default.
+- **Verifier:** validates the observable result against the issue in a representative environment.
+- **Formal reviewer:** submits APPROVE or REQUEST_CHANGES using an identity independent from the PR author.
+- **Privileged operator:** changes DNS, domains, repository settings, secrets, rulesets, Pages, or protected infrastructure.
 - **Merger:** merges only after Dmitry's explicit instruction.
 
-The same executor may hold several roles when independence is not required. When ChatGPT authors a PR through `bedrin-gpt`, it
-may self-check and verify the work but cannot honestly formal-review that PR using the same identity. A Dependabot-authored PR
-is independent from `bedrin-gpt` and may receive a formal ChatGPT review.
+The same executor may hold several roles when independence is unnecessary. ChatGPT may implement through `bedrin-gpt`, but that
+identity cannot formally approve its own PR. A Dependabot-authored PR is independent from `bedrin-gpt`.
 
 ## Routing fields
 
 Planning or external-PR intake records future routes:
 
-- `Implementer` — executor or existing author selected for Implementation.
-- `Verifier` — executor coordinating Verification.
+- `Implementer` — planned implementation executor or existing external author;
+- `Verifier` — planned verification executor.
 
 The current lifecycle materializes:
 
-- `Executor` — product/runtime responsible for the next current action.
-- `Assignee` — concrete identity or human responsible now.
-- `Worker reference` — concrete chat, process, task, branch/worktree, PR, or tick ownership after claim.
+- `Executor` — product/runtime responsible for the next action;
+- `Assignee` — concrete GitHub identity or human responsible now;
+- `Worker reference` — concrete chat, task, process, worktree, branch, PR, or direct tick ownership.
 
-`Implementer` and `Verifier` must remain visible before their lifecycle statuses begin. `Executor` is intentionally denormalized
-so every dispatcher can use one query such as `Execution = Ready AND Executor = Local Codex`.
+All executors mutate Project fields through [`control-plane.md`](control-plane.md). Assignment and source/review operations remain
+separate verified GitHub actions.
 
 ## Executor matrix
 
 | Executor | Prefer when | Avoid or escalate when |
 | --- | --- | --- |
-| ChatGPT | issue refinement, PR intake, GitHub state, focused repository edits, CI diagnosis, exact-head artifacts, code review, browser verification from existing source/artifacts | a long writable checkout, unavailable dependencies, package downloads, private/local services, hardware, or sustained implementation is required |
-| Codex Cloud | clean isolated branch, fully specified task, dependencies available through setup/cache, deterministic Cloud proof, useful parallelism | existing-branch surgery, persistent artifacts, privileged/local services, unresolved risk axes, or repeated cold-start loops |
-| Local Codex app | persistent environment plus app-owned worktrees/conversations, interactive browser/service debugging, Remote visibility | app lifecycle or nested task creation is not proven, or headless execution is simpler |
-| Local Codex CLI | unattended Linux worker, systemd/cron, persistent caches, Docker/services/browsers, existing PR continuation, several isolated worktrees | host credentials or network are unsafe, sandbox policy is unclear, or app conversation visibility is required |
-| IDE agent | a human actively steers code in VS Code or IntelliJ and wants local context or interactive edits | unattended ownership, independent review, or reproducible publication is required but not configured |
-| Human | unresolved product/architecture decisions, privileged operations, subjective acceptance, credentials/secrets, destructive migration, merge | routine bounded implementation another executor can prove safely |
+| ChatGPT | issue refinement, PR intake, GitHub state, focused connector-backed edits, CI diagnosis, exact-head artifacts, review, browser verification from available artifacts | required source/dependencies cannot be obtained, long writable checkout or service state is needed, or formal self-review would be dishonest |
+| Codex Cloud | bounded, well-specified fresh-branch implementation; public dependencies; deterministic Cloud-available proof; useful parallelism | existing-branch surgery, persistent services/artifacts, private/local access, unresolved architecture, or repeated non-convergence |
+| Local Codex app/CLI | complex architecture, lifecycle/concurrency, cross-version Java, persistent caches/services/Docker/browser, existing PR continuation, representative local verification, or Cloud escalation | host credentials/network are unsafe, sandbox policy is unclear, or a simpler executor can finish truthfully |
+| IDE agent | Dmitry intentionally wants interactive pair programming in VS Code/IntelliJ | unattended ownership, independent review, or reproducible publication is required but not configured |
+| Human | product/risk decisions, privileged operations, subjective acceptance, credentials/secrets, destructive migration, merge | routine bounded implementation or proof another executor can perform safely |
 
-Dependabot is normally recorded as an Implementer/source author rather than a current Executor: the bot already published the
-implementation, while ChatGPT owns Review and the chosen Verifier owns outcome proof. See
-[`pull-request-intake.md`](pull-request-intake.md).
+Dependabot is normally an Implementer/source author rather than current Executor: the bot already published the implementation,
+while ChatGPT owns Review and the chosen Verifier owns outcome proof.
 
 ## Capability preflight
 
-Do not infer capabilities from a product name. Before routing a proof obligation, confirm the exact current environment can:
+Before routing, confirm the exact environment can:
 
 - obtain the required source and exact revision;
-- use already-installed or downloadable dependencies;
+- use installed or downloadable dependencies;
 - reach required network endpoints;
 - start required runtimes, containers, browsers, or services;
 - access credentials without exposing them;
-- publish the expected branch/PR/evidence;
+- preserve or continue the required branch/PR;
+- publish expected commits, PRs, artifacts, and evidence;
 - provide independent review identity when required.
 
-For the current Sniffy ChatGPT executor, GitHub connector access and sandbox execution are separate capabilities. ChatGPT may
-be able to inspect GitHub, run Java or serve an existing artifact, yet still be unable to use sandbox outbound internet or
-download Maven/npm dependencies. Route a source build or integration environment elsewhere rather than describing an
-artifact inspection as a build.
-
-Record important capability assumptions in the issue or PR intake record. Smoke-test platform composition such as app-owned
-child automations before relying on it. Scheduled ChatGPT ticks cannot create Scheduled Tasks and use the stateless adapter in
-[`event-loop.md`](event-loop.md).
+Do not infer capability from a product name. ChatGPT's GitHub connector, web access, command sandbox, browser, and local runtimes
+are separate capabilities. Codex Cloud's clean environment does not make an ambiguous task well specified. Local persistence
+does not repair a missing product decision.
 
 ## Risk-axis routing
 
@@ -91,58 +95,85 @@ Count independent decisions and proof obligations, not changed lines. Relevant a
 - Git history or existing PR constraints;
 - publication and review identity.
 
-Several interacting axes require a read-only design/proof preflight before implementation. Cloud may still be appropriate
-when the issue resolves every axis and provides a complete proof matrix. Local execution does not fix an ambiguous issue.
+Several interacting axes require a read-only design/proof preflight. Local Codex is the current strong execution route after the
+preflight because it is configured for Sol/extra-high and a persistent environment, but executor strength is not permission to
+invent unresolved decisions.
 
-Dependency PR risk is not determined only by semantic-version size. Distinguish runtime from development-only dependencies,
-framework/public-API changes, browser/test infrastructure, cryptography/security providers, and GitHub Actions whose code and
-permissions execute in CI.
+## Default implementation routing
 
-## Default routing heuristics
+Use this order for a new Implementation turn:
 
-1. Ask whether ChatGPT can complete the current action truthfully with its available connectors, sandbox, source, dependencies,
-   artifacts, browser, and identity. Use it directly only when the required evidence is actually available.
-2. Intake understandable external PRs directly into Review; route ambiguous or breaking updates to Planning.
-3. Use Codex Cloud for a clean, isolated, fully specified implementation with deterministic Cloud-available proof.
-4. Use headless Local Codex for unattended persistent builds, services, browsers, Docker, existing PRs, or worker-pool scaling.
-5. Use app-native Local Codex when app-owned conversation/worktree lifecycle or interactive Remote visibility adds real value.
-6. Use an IDE agent when a human intentionally wants pair programming; do not infer unattended ownership from the IDE alone.
-7. Keep privileged operations and unresolved product/risk decisions human-owned.
-8. After two substantive review/fix rounds, or immediately after an architecture reversal, re-baseline and deliberately
-   reroute instead of stacking another narrow prompt.
+1. **ChatGPT direct capability check.** Can the current ChatGPT execution truthfully edit, test, inspect, publish, and verify the
+   requested focused change with available source, dependencies, connectors, and identity? If yes, it may implement directly.
+2. **Codex Cloud first for suitable bounded work.** Prefer Cloud for well-specified fresh-branch fixes, tests, documentation,
+   dependency updates, CI follow-ups, and localized refactors whose proof fits the Cloud environment.
+3. **Local Codex for complexity or persistence.** Route directly to Local Codex for concurrency/lifecycle, complex cross-version
+   Java, architecture-heavy work, Docker/services/browser state, existing PR continuation, unusual history constraints, or
+   representative local verification.
+4. **Human for authority or privilege.** Route unresolved product/risk decisions and privileged operations to Dmitry.
 
-## Codex model selection
+“Cloud first” is an executor/environment decision, not a claim about the Cloud model. “Local Sol/extra-high” is explicit current
+Sniffy configuration, not a generic rule for all repositories.
 
-Model cost is an engineering constraint. Explicit issue/project routing overrides defaults.
+## Review convergence checkpoint
 
-- **Luna / low reasoning:** mechanical transformations with exact files and edits and no remaining design/proof decision.
-- **Terra / medium reasoning:** ordinary well-scoped fixes, tests, documentation, CI follow-ups, dependency updates, and
-  localized refactors. This is the default Local Codex route.
-- **Sol / high reasoning:** architecture, lifecycle/concurrency, cross-version Java, subtle performance, first-of-kind
-  patterns, or an unresolved part remaining after a focused Terra attempt.
+Worker activity monitoring and review convergence are different mechanisms. The 15-minute/15-minute/hourly cadence observes an
+already dispatched worker. It does not decide whether repeated code changes are conceptually converging.
 
-Prefer staged escalation. Do not restart an entire task on the strongest model because one check failed. Record non-obvious
-escalations for later cost calibration.
+Trigger a **convergence checkpoint** when all are true:
 
-## GitHub Project fields
+1. Review returned the task to Implementation with substantive Request Changes;
+2. the implementer published a corrected head and handed it back to Review;
+3. the next complete Review still finds substantive blockers.
 
-Recommended lifecycle and routing fields:
+Before sending another implementation request, ChatGPT must critically re-evaluate:
 
-- `Status`: Draft, Planning, Implementation, Review, Verification, Approval, Done.
-- `Execution`: Ready, In progress, Blocked.
-- `Implementer`: planned implementation executor or external PR author.
-- `Verifier`: planned verification executor.
-- `Executor`: current action executor.
-- `Assignee`: use GitHub assignment as the concrete current identity/human.
-- `Origin`: optional source such as issue, Dependabot PR, contributor PR, alert, or manual request.
-- `Correction rounds`: substantive review/verification returns, excluding infrastructure noise.
-- `Blocked reason`: exact action or decision Dmitry must provide before autonomous processing resumes.
+- Is the authoritative issue still correct and sufficiently precise?
+- Did the implementation follow the intended architecture, or is the direction itself wrong?
+- Are the remaining findings local mistakes, misunderstood acceptance criteria, or an executor capability/context gap?
+- Would another narrow patch preserve a flawed design or accumulate contradictory instructions?
+- Does the proof matrix require a different environment?
+- Should the task return to Planning, remain with the same implementer under rewritten guidance, or change executor?
 
-`Blocked` always routes the next action to `Executor = Human` and `Assignee = bedrin`. Routine waits for CI, a dispatched agent,
-or another observable operation remain `In progress`.
+The checkpoint produces one explicit result:
 
-GitHub assignees are technical identities, not executor products. Existing `agent:local` and `agent:cloud` labels are
-transitional metadata and must not override Project routing fields. Project work items may be issues or pull requests.
+- **Continue same executor:** direction is sound; supersede ambiguous guidance and issue one coherent correction request.
+- **Escalate executor:** preserve the existing branch/PR and route continuation to Local Codex, normally when Cloud lacks context,
+  persistence, environment, or has failed to converge.
+- **Return to Planning:** architecture, requirements, scope, or proof strategy must be re-baselined before more code changes.
+- **Block for Dmitry:** a product, risk, or privileged decision is required.
+
+Do not count infrastructure-only noise as a substantive correction cycle. Do not mechanically escalate merely because a test
+failed; the checkpoint is about repeated substantive Review blockers.
+
+## Executor change and continuity
+
+Changing executor does not mean discarding published work:
+
+- keep the same authoritative issue;
+- continue the exact existing branch and PR when safe;
+- preserve useful commits and evidence;
+- explicitly mark superseded guidance;
+- update `Implementer`, `Executor`, worker reference, and correction metadata through one guarded control command;
+- start the normal worker-monitoring cadence only after the new dispatch is concretely acknowledged.
+
+Do not reset, rebase, force-push, open a duplicate PR, or restart from `develop` merely because Cloud work moved to Local Codex.
+
+## Editable Sniffy defaults
+
+Use [`profile.yml`](profile.yml) for operational choices Dmitry may tune without redefining shared policy, including:
+
+- executor identities;
+- direct-ChatGPT preference;
+- first external implementation executor;
+- complex/persistent executor;
+- Local Codex model and reasoning effort;
+- convergence trigger and preferred escalation executor;
+- control-log rotation thresholds.
+
+If a profile value conflicts with an explicit current issue or Dmitry's instruction, the issue/instruction wins. If a desired
+change alters lifecycle meaning, claim safety, review independence, or merge authority, update the policy rather than hiding it in
+the profile.
 
 ## Issue routing block
 
@@ -150,17 +181,14 @@ transitional metadata and must not override Project routing fields. Project work
 ## Delivery routing
 
 - Supervisor: ChatGPT
-- Implementer: <ChatGPT | Codex Cloud | Local Codex app | Local Codex CLI | IDE Agent | Human>
-- Verifier: <ChatGPT | Codex Cloud | Local Codex app | Local Codex CLI | Human | Mixed>
+- Implementer: <ChatGPT | Codex Cloud | Local Codex | IDE Agent | Human>
+- Verifier: <ChatGPT | Codex Cloud | Local Codex | Human | Mixed>
 - Default reviewer: ChatGPT
 - Formal reviewer: <independent identity or human>
 - Privileged operator: <none or named human>
 - GitHub author identity: <account>
+- Executor model/profile: <provider-managed | Sol / extra-high | other verified value>
 - Capability assumptions: <source, dependencies, network, services, browser, credentials>
 - Base/head and existing PR constraints: <details>
 - Rationale: <risk axes, evidence, latency, and cost>
 ```
-
-See [`lifecycle.md`](lifecycle.md) for transition invariants, [`event-loop.md`](event-loop.md) for dispatch fields and claim
-behavior, and [`pull-request-intake.md`](pull-request-intake.md) for PR-first sources. External PRs do not require a fabricated
-issue routing block unless new implementation work is created.

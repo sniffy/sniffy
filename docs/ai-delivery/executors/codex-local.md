@@ -1,74 +1,80 @@
 # Local Codex executors
 
-Local Codex has two supported architectural shapes:
+Local Codex has two supported shapes:
 
 1. **app-native Local Codex** for app-owned conversations, worktrees, automations, and optional mobile Remote visibility;
 2. **headless Local Codex CLI** for unattended Linux scheduling, persistent caches/services, and scalable worker processes.
 
-Both follow `AGENTS.md`, the shared lifecycle, event-loop claim protocol, verification contract, and no-merge boundary.
+Both follow `AGENTS.md`, the shared lifecycle, guarded control protocol, verification contract, and no-merge boundary. Current
+Sniffy configuration in [`../profile.yml`](../profile.yml) uses **Sol** with **extra-high** reasoning for Local Codex.
 
-## Choose the shape
+## Route to Local Codex when
 
-Use app-native when a durable Codex conversation, interactive steering, app-managed worktree, or Remote visibility adds real
-value. Use headless CLI when the important properties are unattended reliability, systemd/cron cadence, Docker/services,
-persistent dependencies, several isolated workers, and machine-readable logs.
+Prefer Local Codex for:
 
-Remote control from mobile is optional. It is not required for the generic local-worker design.
+- complex architecture, concurrency, lifecycle, cleanup, or failure composition;
+- cross-version Java and same-artifact compatibility;
+- persistent dependencies, Docker, services, browsers, or representative local environments;
+- existing branch/PR continuation and recovery;
+- verification requiring local state or long-lived artifacts;
+- a convergence checkpoint that identifies Cloud context/environment/capability limits.
+
+Do not route an unresolved product or architecture decision merely because the local model/profile is strong. Planning and
+maintainer authority still precede implementation.
+
+## Fixed model/profile
+
+The local scheduled automation selects its model and reasoning for the automation as a whole. The current Sniffy dispatcher and
+workers therefore use Sol / extra-high consistently. Do not label Codex Cloud as Terra and do not pretend the local dispatcher can
+switch models per issue unless a future product capability is explicitly smoke-tested and the profile is changed.
 
 ## App-native topology
 
 ```text
-persistent dispatcher conversation
+persistent dispatcher conversation (Sol / extra-high)
   -> empty queue: NO_CHANGE, no task/chat/worktree
-  -> eligible issue: one one-time standalone worker task
+  -> eligible issue: guarded claim through central control issue
+       -> one one-time standalone worker task
        -> one dedicated issue conversation
        -> one isolated app-managed worktree
-       -> worker publishes lifecycle evidence and handoff
+       -> worker publishes evidence and guarded lifecycle handoff
 ```
 
-The native ChatGPT/Codex app runs on the disposable Windows VM. Its coding agent, terminal, repository, GitHub CLI, Java,
-Maven, Node, Docker, and tests run in WSL2. The Hyper-V/Windows/WSL/Docker runbook remains in
-[`../../local-codex-worker.md`](../../local-codex-worker.md).
-
-Codex automations may return to the same conversation; local automations require the computer awake and the app running.
-See [Codex automations](https://openai.com/academy/codex-automations/).
+Use app-native when durable Codex conversation, interactive steering, app-managed worktree, or Remote visibility adds real value.
+The Windows app runs on the disposable VM; code, terminal, GitHub CLI, Java, Maven, Node, Docker, and tests run in WSL2.
 
 Before enabling app dispatch, smoke-test:
 
-- an empty tick creates no new conversation or worktree;
+- an empty tick creates no worker conversation or worktree;
 - a claimed item creates exactly one standalone worker;
-- the worker uses the expected project/worktree;
-- failed child creation releases the claim;
-- repeated automation returns to the intended persistent dispatcher.
+- the worker uses the expected project/worktree and Sol / extra-high profile;
+- failed child creation releases the guarded claim;
+- repeated automation returns to the intended persistent dispatcher;
+- concurrent dispatchers produce one successful claim and one conflict without target-item claim comments.
 
-The canonical compatibility paths remain `.codex/local/scheduled-task-prompt.md` and
-`.codex/local/worker-task-prompt.md`. Do not assume nested child-task creation survives a product update without retesting.
+Canonical prompts are `.codex/local/scheduled-task-prompt.md` and `.codex/local/worker-task-prompt.md`. Do not assume nested
+one-time task creation survives a product update without retesting.
 
 ## Headless Linux topology
 
 ```text
 systemd timer or cron
   -> flock / host-local dispatcher lock
-  -> load one or more project profiles
+  -> load docs/ai-delivery/profile.yml
   -> query Status + Execution + Executor
-  -> GitHub best-effort claim
+  -> central guarded claim
   -> isolated git worktree
   -> codex exec with rendered lifecycle prompt
-  -> tests, publication, evidence, and next-status handoff
+  -> tests, publication, evidence, guarded handoff
 ```
 
-The Codex CLI can read, modify, and run local code, and `codex exec` is intended for shell workflows. See:
-
-- [OpenAI Codex CLI – Getting Started](https://help.openai.com/en/articles/11096431)
-- [Codex is now generally available](https://openai.com/index/codex-now-generally-available/)
-
-A five- or fifteen-minute timer is straightforward on Linux and avoids the hourly ChatGPT Scheduled Task limit. `flock`
-prevents overlapping dispatcher ticks on one machine; the GitHub claim protocol prevents ordinary cross-machine/provider
-duplicates.
+Use headless CLI when unattended reliability, Docker/services, persistent caches, several isolated workers, and machine-readable
+logs matter more than app conversation visibility. A five- or fifteen-minute local timer avoids ChatGPT's hourly task limit.
+Host-local `flock` prevents same-host overlap; the GitHub transition workflow serializes cross-provider claims by target item.
 
 Each worker owns:
 
-- one claim token and lifecycle generation;
+- one verified claim token and lifecycle generation;
 - one isolated worktree;
 - one branch and intended PR;
 - one rendered prompt for the current lifecycle status;
@@ -80,40 +86,42 @@ explicitly configured. Never let two workers own the same task/branch.
 
 ## Dispatcher contract
 
-Both adapters use [`../event-loop.md`](../event-loop.md). The dispatcher:
+Both adapters:
 
-- reads `Execution = Ready` items routed to its executor type;
-- respects directed Assignee or empty pool ownership;
-- checks lifecycle status, project profile, access, capacity, branch/PR, and existing claims;
-- claims on a best-effort atomic basis before creating a worker;
-- records the concrete conversation/task or process/worktree reference;
-- releases to `Ready` when spawn fails;
-- sets `Blocked` only when Dmitry must decide or act, with `Executor = Human`, `Assignee = bedrin`, and the exact request;
-- creates no source mutation for an empty queue.
+- read `Execution = Ready` items routed to Local Codex;
+- respect directed Assignee or empty pool ownership;
+- inspect lifecycle, profile, access, capacity, branch/PR, current worker, and due monitoring;
+- use the one active technical control issue and one guarded `delivery-control/v1` command per claim/transition;
+- inspect the reaction and re-read Project state before spawning;
+- record concrete conversation/task or process/worktree references;
+- release to `Ready` when spawn fails;
+- set `Blocked` only when Dmitry must decide or act;
+- create no source or GitHub mutation for an empty queue.
+
+Worker observation after 15 minutes, another 15 minutes, then hourly is part of this same dispatcher loop. Do not add a separate
+monitoring scheduler.
 
 ## Worker contract
 
 A Local Codex worker performs only the routed lifecycle status:
 
-- Planning is unusual and should normally remain ChatGPT/human-owned;
-- Implementation changes code, runs implementer-owned tests/browser checks, inspects the diff, commits, pushes, and verifies
-  exact publication;
-- Verification runs outcome-centric system/integration/browser proof when Local Codex is the selected Verifier;
-- Review is performed only when the configured reviewer identity is independent and the task explicitly routes it there.
+- Planning is unusual and normally remains ChatGPT/human-owned;
+- Implementation changes code, runs implementer-owned checks, inspects the diff, commits, pushes, and verifies publication;
+- Verification runs outcome-centric system/integration/browser proof when selected;
+- Review is performed only with an independent configured identity and explicit route.
 
-For fresh work, create the branch from current `origin/develop`. For continuation, use the exact existing PR branch and never
-reset, rebase, force-push, replace the PR, or discard unrelated work. Keep PRs draft only while implementation or locally
-available proof is incomplete.
+For fresh work, branch from current `origin/develop`. For continuation, use the exact existing PR branch and never reset, rebase,
+force-push, replace the PR, or discard useful work. Keep PRs draft only while implementation or locally available proof is
+incomplete.
 
-## Environment and security
+Publish human-useful evidence on the target item. Use the central technical issue for Project transitions and claim/lease state.
+Never merge or enable auto-merge without Dmitry's explicit instruction.
 
-Host policy defines filesystem, network, credentials, Docker, services, browsers, and sandbox/approval mode. Treat Docker
-group or full filesystem/network access as privileged. Use a dedicated low-value VM or host account with repository-scoped
-GitHub credentials and no unrelated personal/employer data.
+## Security
 
-Codex CLI execution still requires network access for model calls even when the command sandbox restricts task-process
-network. External integration tests and package downloads need separately configured host/sandbox policy. Record the actual
-capability, not an assumed product default.
+Host policy defines filesystem, network, credentials, Docker, services, browsers, and sandbox/approval mode. Treat Docker group
+or full filesystem/network access as privileged. Use a dedicated low-value VM or host account with repository-scoped GitHub
+credentials and no unrelated personal/employer data.
 
-GitHub rulesets remain the final write boundary. Formal review must use an identity independent from the PR author. No local
-worker merges or enables auto-merge without Dmitry's explicit instruction.
+Codex CLI still needs network access for model calls even when task-process network is restricted. External integration tests and
+package downloads need separately configured policy. GitHub rulesets remain the final write boundary.

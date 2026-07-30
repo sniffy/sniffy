@@ -1,0 +1,62 @@
+schemaVersion: 1
+
+project:
+  repository: sniffy/sniffy
+  baseBranch: develop
+  githubProject:
+    organization: sniffy
+    number: 2
+
+controlPlane:
+  protocol: delivery-control/v1
+  documentation: docs/ai-delivery/control-plane.md
+  controlIssueTitlePrefix: "AI Delivery Control Log"
+  controlIssueMarker: "<!-- sniffy-ai-delivery-control -->"
+  rotateAfterCommands: 500
+  rotateAfterDays: 30
+
+fields:
+  status: Status
+  execution: Execution
+  implementer: Implementer
+  verifier: Verifier
+  executor: Executor
+  workerReference: Worker reference
+
+executors:
+  ChatGPT:
+    assignee: bedrin-gpt
+    model: provider-managed
+  Codex Cloud:
+    assignee: bedrin-codex-cloud
+    model: provider-managed
+  Local Codex:
+    assignee: bedrin-codex-local
+    model: Sol
+    reasoning: extra-high
+  Human:
+    assignee: bedrin
+
+routing:
+  supervisor: ChatGPT
+  defaultReviewer: ChatGPT
+  implementation:
+    directChatGPTWhenCapable: true
+    firstExternalExecutorForBoundedFreshWork: Codex Cloud
+    complexOrPersistentExecutor: Local Codex
+  convergence:
+    checkpointTrigger: corrected-work-returns-to-review-with-substantive-blockers
+    doNotAutoDispatchAnotherPatchRound: true
+    preferredEscalationExecutor: Local Codex
+  mergeExecutor: Human
+
+intake:
+  dependabot:
+    enabled: true
+    projectAutoAddFilter: "is:pr is:open label:dependencies"
+    backfillExisting: true
+    initialStatus: Review
+    reviewer: ChatGPT
+
+branches:
+  newWorkPrefix: agent/
