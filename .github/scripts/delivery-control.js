@@ -174,6 +174,12 @@ function desired(command, current) {
   return true;
 }
 
+function idempotentRepeat(command, mismatches, current) {
+  if (!desired(command, current)) return false;
+  const changedFields = new Set([...Object.keys(command.set), ...command.clear]);
+  return mismatches.every(([field]) => changedFields.has(field));
+}
+
 async function projectItem(github, targetId, projectId) {
   const result = await github.graphql(`query($id: ID!) {
     node(id: $id) {
@@ -262,7 +268,7 @@ async function executeTransition({github, core, payloadBase64}) {
 
   const before = values(item.fieldValues.nodes);
   const fieldMismatch = mismatch(command, target, before).filter(([key]) => key !== 'type' && key !== 'head');
-  if (fieldMismatch.length && !desired(command, before)) {
+  if (fieldMismatch.length && !idempotentRepeat(command, fieldMismatch, before)) {
     return conflict(core, fieldMismatch, 'Expected field state changed.');
   }
 
@@ -301,4 +307,4 @@ async function executeTransition({github, core, payloadBase64}) {
   return {outcome: 'success'};
 }
 
-module.exports = {VERSION, MARKER, actorSet, desired, executeTransition, mismatch, parseCommand, parseInvocation};
+module.exports = {VERSION, MARKER, actorSet, desired, executeTransition, idempotentRepeat, mismatch, parseCommand, parseInvocation};
