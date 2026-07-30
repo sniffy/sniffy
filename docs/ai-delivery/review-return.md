@@ -8,16 +8,17 @@ When an authorized independent reviewer submits a formal `REQUEST_CHANGES` revie
 
 The `Return requested changes to implementer` workflow listens to submitted `pull_request_review` events. It runs only for same-repository pull requests targeting `develop`; it never checks out or executes the reviewed head.
 
-The workflow queries the current aggregate `reviewDecision` and continues only while it is `CHANGES_REQUESTED`. It then requires exactly one represented Project 2 work item:
+The workflow queries the current aggregate `reviewDecision` and continues only while it is `CHANGES_REQUESTED`. It derives the canonical item from formal closing links before considering current Project representation:
 
-- the pull request itself, for PR-first intake such as an agent-owned standalone PR; or
-- one formally linked closing issue, for issue-first implementation work.
+- exactly one closing issue makes that issue canonical, even when the pull request was also auto-added;
+- no closing issue makes the pull request canonical;
+- several closing issues keep the pull request in Planning and are not returned automatically.
 
-Zero represented items are a no-op. More than one represented item is an error because dispatching duplicate correction work would violate single-work-item ownership. Plain issue mentions are intentionally insufficient; use GitHub's formal PR-to-issue link or a closing keyword.
+The canonical item must already be represented in Project 2. A missing canonical issue is a no-op until universal intake materializes it; a represented pull request is never substituted for that issue. Duplicate issue/PR representation does not redefine canonical identity or dispatch duplicate correction work. Plain issue mentions are intentionally insufficient; use GitHub's formal PR-to-issue link or a closing keyword.
 
 ## Transition
 
-The adapter uses the existing `delivery-control/v1` command shape and `executeTransition` implementation. It guards the current target type, exact head when the target is the PR, and the current `Status`, `Execution`, `Implementer`, `Executor`, and `Worker reference` values.
+The adapter uses the existing `delivery-control/v1` command shape and `executeTransition` implementation. It guards the current target type, exact head when the target is the PR, and the current `Status`, `Execution`, `Implementer`, `Executor`, and `Worker reference` values. For an issue-canonical continuation, the serialized transition re-reads the pull-request head immediately before and after Project mutation so a head change cannot silently publish a stale continuation reference.
 
 Eligible agent implementers are `ChatGPT`, `Codex Cloud`, and `Local Codex`. A successful formal Request Changes review applies:
 
@@ -25,23 +26,24 @@ Eligible agent implementers are `ChatGPT`, `Codex Cloud`, and `Local Codex`. A s
 Status: Implementation
 Execution: Ready
 Executor: <current Implementer>
-Worker reference: clear
-GitHub assignees: clear
+Worker reference for a canonical issue: existing PR URL/number + branch + exact head
+Worker reference for a canonical PR: clear
+GitHub assignees: cleared and re-read as empty
 ```
 
-Clearing assignees makes the item pool-ready for the selected executor. The normal 15-minute event loop claims it, continues the same branch and PR, and begins the standard 15-minute, 15-minute, then hourly supervision cycle after concrete dispatch.
+Replacing an issue's stale review claim with the durable PR/branch/head reference preserves adoption context while making the item pool-ready. A standalone PR carries its own identity and exact-head guard, so its stale Worker reference is cleared. Assignee release is complete only after a separate GitHub read confirms no assignee remains. An idempotent rerun still performs and verifies assignment release, including when Project mutation succeeded in an earlier attempt. The normal 15-minute event loop claims the item, continues the same branch and PR, and begins the standard 15-minute, 15-minute, then hourly supervision cycle after concrete dispatch.
 
 `Blocked` work, human or automation implementers, fork pull requests, stale/superseded review decisions, and ambiguous Project representation are not automatically dispatched.
 
 ## Permissions and security
 
-The workflow starts with `permissions: {}`. Validation receives `contents: read`. Runtime preparation checks out trusted `develop` and uses the existing `PROJECT_TOKEN` only to read Project and PR state. The serialized transition job receives `contents: read` and `issues: write`; Project mutation uses `PROJECT_TOKEN`, while the repository `GITHUB_TOKEN` only clears assignees on the selected issue or PR.
+The workflow starts with `permissions: {}`. Validation receives `contents: read` and runs when the adapter, workflow, documentation, or imported `delivery-control.js` implementation changes. Runtime preparation checks out trusted `develop` and uses the existing `PROJECT_TOKEN` only to read Project and PR state. The serialized transition job receives `contents: read` and `issues: write`; Project mutation and pull-request head verification use `PROJECT_TOKEN`, while the repository `GITHUB_TOKEN` only clears and verifies assignees on the selected issue or PR.
 
 The runtime path never checks out the reviewed head, never executes contributor code, does not merge, does not enable auto-merge, and does not run for forks. External contributors and Dependabot remain governed by pull-request intake policy rather than automatic correction dispatch.
 
 ## Blocking and failure semantics
 
-This is a non-required lifecycle automation, not a source-validation check. A skipped event writes a job summary and makes no mutation. An unexpected error, Project guard conflict, ambiguous target, failed Project verification, or failed assignee update fails the workflow for maintainer inspection. The shared per-item concurrency key serializes this transition with ordinary delivery-control commands.
+This is a non-required lifecycle automation, not a source-validation check. A skipped event writes a job summary and makes no mutation. An unexpected error, Project guard conflict, pull-request head change, failed Project verification, or failed assignment update/verification fails the workflow for maintainer inspection. The shared per-item concurrency key serializes this transition with ordinary delivery-control commands.
 
 The maintainer response is to inspect the Actions summary, current formal review decision, Project representation, and fields; correct the relationship or state; then re-run the failed job or perform one guarded manual transition. Do not create a duplicate work item or replacement PR merely to recover this automation.
 
