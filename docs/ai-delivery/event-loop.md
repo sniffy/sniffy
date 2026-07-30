@@ -60,13 +60,14 @@ Treat each occurrence as logically stateless even though the transcript is persi
 1. ignore prior-run conclusions and mutable conversational context;
 2. read current GitHub state, repository policy, and [`profile.yml`](profile.yml) from scratch;
 3. reconcile eligible external PR intake;
-4. continue one due owned worker or select at most one eligible lifecycle turn;
-5. submit one guarded control command to claim it;
-6. verify the successful reaction and resulting Project state before doing work;
-7. perform the lifecycle turn directly or make one supported external dispatch;
-8. publish human-useful evidence on the target item;
-9. submit one guarded control command for the lifecycle handoff and verify the result;
-10. return `NO_CHANGE` when no intake, continuation, rotation, or eligible work exists.
+4. reconcile an open PR whose current head no longer matches the exact head supporting its downstream lifecycle state;
+5. continue one due owned worker or select at most one eligible lifecycle turn;
+6. submit one guarded control command to claim it;
+7. verify the successful reaction and resulting Project state before doing work;
+8. perform the lifecycle turn directly or make one supported external dispatch;
+9. publish human-useful evidence on the target item;
+10. submit one guarded control command for the lifecycle handoff and verify the result;
+11. return `NO_CHANGE` when no intake, head reconciliation, continuation, rotation, or eligible work exists.
 
 A tick must never claim work it cannot reasonably complete or hand off durably during that occurrence. Route long
 implementation, dependency-heavy builds, persistent services, and environment-specific verification to Codex Cloud, Local
@@ -115,6 +116,25 @@ arbitration comment is permitted.
 
 Control-log rotation is ordinary event-loop maintenance. A tick needing to post a command may rotate an old/full log first, then
 continue. Rotation does not require an additional Scheduled Task.
+
+### Exact-head reconciliation
+
+A lifecycle result is valid only for the exact pull-request head named by its evidence. Before continuing owned work or selecting
+ordinary queue work, a supervising tick inspects every open Project pull request whose current state depends on completed Review,
+Verification, Approval, or a human handoff derived from one of those statuses.
+
+If the current PR head differs from the exact head supporting that state, the tick must:
+
+1. stop relying on the stale review, verification packet, approval handoff, blocked decision, or worker reference;
+2. submit one guarded `delivery-control/v1` command that expects the current Status, Execution, Executor, and current PR head;
+3. set `Status = Review`, `Execution = Ready`, and `Executor = ChatGPT`, and clear stale worker ownership in the same command;
+4. inspect the terminal reaction and re-read Project state before treating the PR as re-queued;
+5. leave technical reconciliation details on the control issue rather than posting legacy field or claim comments on the PR.
+
+This reconciliation is supervisory work and may select an item even when its current Status is not otherwise eligible for the
+ChatGPT queue, including `Approval` or `Blocked / Human`. It consumes at most one item in a tick and precedes a new claim. A
+conflict means state changed concurrently; re-read and do not overwrite the newer route. A later Review must inspect the complete
+diff and matching-head CI again; an approval or verification result for an older head is never inherited automatically.
 
 ### Codex app automation adapter
 
