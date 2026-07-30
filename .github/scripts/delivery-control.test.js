@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const {desired, mismatch, parseCommand} = require('./delivery-control');
+const {desired, idempotentRepeat, mismatch, parseCommand} = require('./delivery-control');
 
 const claim = {
   command: 'delivery-control/v1',
@@ -56,4 +56,23 @@ test('recognizes an idempotent repeated command', () => {
   const command = parseCommand(claim);
   const current = new Map(Object.entries(command.set));
   assert.equal(desired(command, current), true);
+});
+
+test('accepts an exact idempotent repeat when only changed guards moved', () => {
+  const command = parseCommand(claim);
+  const current = new Map(Object.entries(command.set));
+  const mismatches = [
+    ['Execution', 'Ready', 'In progress'],
+    ['Worker reference', null, command.set['Worker reference']]
+  ];
+  assert.equal(idempotentRepeat(command, mismatches, current), true);
+});
+
+test('rejects idempotency when an unchanged guard moved', () => {
+  const command = parseCommand(claim);
+  const current = new Map([
+    ...Object.entries(command.set),
+    ['Status', 'Planning']
+  ]);
+  assert.equal(idempotentRepeat(command, [['Status', 'Review', 'Planning']], current), false);
 });
