@@ -35,9 +35,12 @@ remains `In progress` and is monitored. Set `Blocked` only when the automation m
 
 Planning chooses future roles before those lifecycle statuses begin:
 
-- `Implementer` — executor selected for `Implementation`, or the external author/automation that already supplied a pull
-  request.
+- `Implementer` — executor deliberately selected for a future `Implementation` turn. This field is optional; empty means unknown,
+  not applicable to the already-published change, or not yet deliberately routed.
 - `Verifier` — executor responsible for coordinating `Verification` and its evidence.
+
+PR authorship and automation identity are provenance in the pull request itself, not implicit routing values. External-PR intake
+must not copy an author, bot name, or previously unseen provider into `Implementer` merely to populate the field.
 
 Current routing is materialized separately:
 
@@ -45,16 +48,17 @@ Current routing is materialized separately:
 - `Assignee` — concrete GitHub identity or human responsible for that action.
 - `Worker reference` — concrete chat, task, process, worktree, branch, PR, or tick ownership record after claim.
 
-Keeping both planned and current routing is intentional. `Implementer` and `Verifier` are decisions made during Planning or
-external-PR intake; `Executor` lets every dispatcher use the same query for the current lifecycle status without reimplementing
-transition logic.
+Keeping planned and current routing separate is intentional. Planning records `Implementer` only when an Implementation route is
+needed, and records `Verifier` when Verification may be needed. `Executor` lets every dispatcher use the same query for the
+current lifecycle status without requiring either planned field to be populated during unrelated statuses.
 
 Transition invariants include:
 
 ```text
-Planning -> Implementation: Executor := Implementer
+Planning -> Implementation: require non-empty Implementer; Executor := Implementer
 Implementation -> Review: Executor := ChatGPT (default reviewer)
-External PR intake -> Review: Implementer := PR author; Executor := ChatGPT
+External PR intake -> Review: leave Implementer unchanged/empty; Executor := ChatGPT
+Review -> Implementation: deliberately choose/set Implementer first when it is empty
 Review -> Verification: Executor := Verifier
 Review/Verification -> Approval: Executor := Human
 ```
@@ -111,7 +115,7 @@ Planning / Ready / ChatGPT
   -> Planning / In progress / ChatGPT
   -> Planning / Ready / Human
   -> Planning / Ready / ChatGPT   (changes requested)
-  -> Implementation / Ready / Implementer   (approved)
+  -> Implementation / Ready / Implementer   (approved after Implementer is selected)
 ```
 
 The apparent `In progress -> Ready` transition is a handoff to the next actor in the same collaborative lifecycle status, not a
@@ -138,19 +142,24 @@ PR itself to the Project and normally initialize it as:
 ```text
 Status: Review
 Execution: Ready
-Implementer: <PR author>
+Implementer: empty
 Verifier: <selected verifier>
 Executor: ChatGPT
 Assignee: bedrin-gpt
 Worker reference: <PR URL and exact head>
 ```
 
+The pull request records its actual author. Leaving `Implementer` empty means the delivery system has not selected an executor to
+perform new implementation work; it does not lose provenance and does not prevent Review, Verification, Approval, rebase
+monitoring, or closure.
+
 This skips Draft, Planning, and Implementation only when the scope is understandable and no product, compatibility, security,
 or policy decision is missing. Otherwise route the PR item to `Planning / Ready`.
 
-An acceptable PR advances to Verification or Approval. A stale Dependabot head stays in Review while the bot rebases. A PR
-requiring repository-specific compatibility code becomes `Review / Blocked`, assigns the next action to Dmitry, and links to a
-new issue routed through Planning and Implementation; the source PR remains the work item for the original proposal until
+An acceptable PR advances to Verification or Approval. A stale Dependabot head stays in Review while ChatGPT owns monitoring of
+the bot rebase through `Executor` and `Worker reference`. A PR requiring repository-specific compatibility code becomes
+`Review / Blocked`, assigns the next action to Dmitry, and links to a new issue routed through Planning and Implementation; that
+linked work deliberately selects its own Implementer. The source PR remains the work item for the original proposal until
 superseded or closed. See [`pull-request-intake.md`](pull-request-intake.md).
 
 ## Lifecycle
@@ -172,18 +181,18 @@ stateDiagram-v2
     ImplementationProgress --> ReviewReady : PR head and implementer proof published
 
     ReviewReady --> ReviewProgress : reviewer claims exact-head review
-    ReviewProgress --> ImplementationReady : implementation changes requested
+    ReviewProgress --> ImplementationReady : implementation changes requested after route selected
     ReviewProgress --> VerificationReady : independent outcome verification required
     ReviewProgress --> ApprovalReady : review and existing proof are sufficient
 
     VerificationReady --> VerificationProgress : verifier claims task
-    VerificationProgress --> ImplementationReady : implementation defect
+    VerificationProgress --> ImplementationReady : implementation defect after route selected
     VerificationProgress --> VerificationReady : verification harness or evidence defect
     VerificationProgress --> PlanningReady : requirement or architecture defect
     VerificationProgress --> ApprovalReady : verification passed
 
     ApprovalReady --> PlanningReady : plan or scope issue
-    ApprovalReady --> ImplementationReady : implementation issue
+    ApprovalReady --> ImplementationReady : implementation issue after route selected
     ApprovalReady --> VerificationReady : more evidence required
     ApprovalReady --> Done : PR actually merged or task deliberately closed
 
@@ -202,7 +211,7 @@ Track substantive correction rounds separately from scheduler retries and infras
 - Increment the verification correction count when outcome verification finds a real implementation defect.
 - Do not increment for runner outages, transient network failures, or a retry of unchanged evidence.
 - After two substantive unattended correction rounds, or immediately after a product/architecture reversal, re-baseline the
-  authoritative issue and deliberately choose the next executor. Do not allow ten blind autonomous loops.
+authoritative issue and deliberately choose the next executor. Do not allow ten blind autonomous loops.
 
 ## Completion
 
