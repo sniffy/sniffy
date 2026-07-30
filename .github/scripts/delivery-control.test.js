@@ -52,6 +52,8 @@ function projectDouble({initial, freezeWrites = false}) {
   const fields = [
     selectField('STATUS', 'Status', ['Planning', 'Implementation', 'Review', 'Verification', 'Approval']),
     selectField('EXECUTION', 'Execution', ['Ready', 'In progress', 'Blocked']),
+    selectField('IMPLEMENTER', 'Implementer', ['ChatGPT', 'Codex Cloud', 'Local Codex', 'Human', 'Dependabot']),
+    selectField('VERIFIER', 'Verifier', ['ChatGPT', 'Codex Cloud', 'Local Codex', 'Human', 'Mixed']),
     selectField('EXECUTOR', 'Executor', ['ChatGPT', 'Codex Cloud', 'Local Codex', 'Human']),
     textField('WORKER', 'Worker reference'),
     textField('CLAIM', 'Claim token')
@@ -152,6 +154,24 @@ test('rejects set and clear overlap', () => {
   assert.throws(() => parseCommand(command), /both set and clear/);
 });
 
+test('accepts external PR intake without inferring an Implementer', () => {
+  const intake = parseCommand({
+    command: 'delivery-control/v1',
+    target: {repository: 'sniffy/sniffy', number: 757},
+    expected: {type: 'PullRequest', head},
+    set: {
+      Status: 'Review',
+      Execution: 'Ready',
+      Verifier: 'ChatGPT',
+      Executor: 'ChatGPT',
+      'Worker reference': 'external PR intake; author dependabot[bot]; exact head'
+    },
+    addIfMissing: true
+  });
+  assert.equal(Object.hasOwn(intake.set, 'Implementer'), false);
+  assert.equal(intake.addIfMissing, true);
+});
+
 test('detects stale fields and changed head', () => {
   const command = parseCommand(claim);
   const current = new Map([['Status', 'Review'], ['Execution', 'In progress'], ['Executor', 'ChatGPT']]);
@@ -227,6 +247,33 @@ test('rejects unauthorized and malformed control commands before transition', ()
   context.actor = 'bedrin-gpt';
   context.payload.comment.body = '{';
   assert.throws(() => parseInvocation({context, core: coreDouble()}), /valid JSON/);
+});
+
+test('applies external PR intake while leaving Implementer empty', async () => {
+  const intake = {
+    command: 'delivery-control/v1',
+    target: {repository: 'sniffy/sniffy', number: 757},
+    expected: {type: 'PullRequest', head},
+    set: {
+      Status: 'Review',
+      Execution: 'Ready',
+      Verifier: 'ChatGPT',
+      Executor: 'ChatGPT',
+      'Worker reference': 'external PR intake; author dependabot[bot]; exact head'
+    },
+    addIfMissing: true
+  };
+  const fixture = projectDouble({initial: {}});
+  const result = await executeTransition({github: fixture.github, core: coreDouble(), payloadBase64: encoded(intake)});
+  assert.equal(result.outcome, 'success');
+  assert.equal(fixture.current.has('Implementer'), false);
+  assert.deepEqual(fixture.mutations, [
+    ['set', 'Status', 'Review'],
+    ['set', 'Execution', 'Ready'],
+    ['set', 'Verifier', 'ChatGPT'],
+    ['set', 'Executor', 'ChatGPT'],
+    ['set', 'Worker reference', 'external PR intake; author dependabot[bot]; exact head']
+  ]);
 });
 
 test('applies and verifies one complete multi-field transition', async () => {
@@ -316,6 +363,7 @@ test('rotation thresholds are explicit and legacy target-comment workflows are r
   assert.match(profile, /controlIssueLabel:\s*"ai-delivery-control"/);
   assert.match(profile, /rotateAfterCommands:\s*[1-9][0-9]*/);
   assert.match(profile, /rotateAfterDays:\s*[1-9][0-9]*/);
+  assert.match(profile, /setImplementerFromAuthor:\s*false/);
   assert.equal(fs.existsSync(path.join(__dirname, '../workflows/project-field.yml')), false);
   assert.equal(fs.existsSync(path.join(__dirname, '../workflows/project-status.yml')), false);
 });

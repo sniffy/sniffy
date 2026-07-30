@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      id-token: write
     env:
       HOME: /root
       PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
@@ -60,10 +61,10 @@ jobs:
       - name: Upload frontend coverage
         uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./sniffy-ui/coverage/lcov.info
           flags: frontend
           disable_search: true
+          use_oidc: true
           fail_ci_if_error: true
           version: v11.3.1
           name: frontend
@@ -172,6 +173,9 @@ jobs:
           retention-days: 14
   smoke-test:
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -241,8 +245,9 @@ jobs:
             **/target/*jstack*.txt
       - uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           flags: backend
+          use_oidc: true
+          fail_ci_if_error: true
   arch-matrix:
     runs-on: ubuntu-26.04
     timeout-minutes: 90
@@ -305,6 +310,9 @@ jobs:
       - smoke-test
     runs-on: ubuntu-26.04
     name: Test JDK IBM J9 1.8, ubuntu-26.04
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
       - name: Pull IBM JDK J9 1.8 Docker Image
@@ -342,12 +350,16 @@ jobs:
           MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showThreadName=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.showThreadName=true -Xmx1024m -Didea.home.path=${{ env.RUNNER_TEMP }} -Didea.ignore.disabled.plugins=true"
       - uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           flags: backend
+          use_oidc: true
+          fail_ci_if_error: true
   test-matrix:
     needs:
       - smoke-test
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     timeout-minutes: 30
     strategy:
       matrix:
@@ -420,8 +432,9 @@ jobs:
             **/target/*jstack*.txt
       - uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           flags: backend
+          use_oidc: true
+          fail_ci_if_error: true
   analyze:
     needs:
       - smoke-test
