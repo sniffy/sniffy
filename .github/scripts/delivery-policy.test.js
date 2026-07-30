@@ -65,3 +65,36 @@ test('Cloud does not turn arbitrary existing PRs into duplicate fresh work', () 
   assert.match(cloud, /Cloud must not open a duplicate branch\/PR/i);
   assert.match(cloud, /existing-PR continuation normally goes to Local Codex/i);
 });
+
+test('every implementation executor publishes a non-draft exact-head PR before Review', () => {
+  const files = [
+    'AGENTS.md',
+    '.chatgpt/scheduled-task-prompt.md',
+    '.codex/local/worker-task-prompt.md',
+    'docs/ai-delivery/executors/chatgpt.md',
+    'docs/ai-delivery/executors/codex-cloud.md',
+    'docs/ai-delivery/executors/codex-local.md',
+    'docs/ai-delivery/executors/ide-agent.md'
+  ];
+
+  for (const file of files) {
+    const content = read(file);
+    assert.match(content, /ready for review/i, `${file} must require ready-for-review publication`);
+    assert.match(content, /non-draft|draft\s*=\s*false|draft=false/i, `${file} must require non-draft state`);
+    assert.match(content, /exact (published |remote )?head|exact-head/i, `${file} must verify the exact PR head`);
+    assert.match(content, /Status\s*=\s*Review|Status=Review|Review \/ Ready/i, `${file} must connect PR state to Review handoff`);
+  }
+
+  const prompt = read('.chatgpt/scheduled-task-prompt.md');
+  const worker = read('.codex/local/worker-task-prompt.md');
+  const control = read('docs/ai-delivery/control-plane.md');
+  const workflow = read('.github/workflows/delivery-control.yml');
+
+  assert.match(prompt, /reviewPullRequest\.number.*reviewPullRequest\.head/is);
+  assert.match(worker, /reviewPullRequest\.number.*reviewPullRequest\.head/is);
+  assert.match(control, /reviewPullRequest/);
+  assert.match(control, /marks? (?:a )?draft PR ready/i);
+  assert.match(control, /before writing Project Review/i);
+  assert.match(workflow, /pull-requests:\s*write/);
+  assert.match(workflow, /REPOSITORY_TOKEN:\s*\$\{\{ github\.token \}\}/);
+});
