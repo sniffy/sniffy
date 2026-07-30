@@ -99,6 +99,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      pull-requests: write
     concurrency:
       group: >-
         ai-delivery-${{ needs.parse.outputs.target_repository || 'invalid' }}-${{ needs.parse.outputs.target_number || github.event.comment.id || github.run_id }}
@@ -133,12 +134,16 @@ jobs:
         uses: actions/github-script@v9
         env:
           PAYLOAD_BASE64: ${{ needs.parse.outputs.payload_base64 }}
+          REPOSITORY_TOKEN: ${{ github.token }}
         with:
           github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
+            const actionsGithub = require('@actions/github');
             const control = require('./.github/scripts/delivery-control.js');
+            const repositoryGithub = actionsGithub.getOctokit(process.env.REPOSITORY_TOKEN);
             await control.executeTransition({
               github,
+              repositoryGithub,
               core,
               payloadBase64: process.env.PAYLOAD_BASE64
             });
