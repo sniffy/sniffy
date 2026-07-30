@@ -33,7 +33,9 @@ owns the exact claim token/generation and worker reference.
 
 Use the common rotating technical control issue for every ProjectV2 transition. Never post /project-status, /project-field,
 claim arbitration, lease, or polling comments on the target item. A handoff is complete only after the guarded
-`delivery-control/v1` command has a terminal reaction and the canonical Project state has been re-read.
+`delivery-control/v1` command has a terminal reaction and the canonical Project state has been re-read. A command setting
+Status=Review must identify the exact PR: target+expected.head for a canonical PR, or reviewPullRequest.number/head for a
+canonical issue. Re-read PR draft/head state after the command as well as Project fields.
 
 Stop autonomous work when a required product, API, architecture, compatibility, permission, credential, privileged operation,
 external service, or bespoke-infrastructure decision is missing. Keep current Status, set Execution=Blocked and Executor=Human
@@ -69,13 +71,17 @@ If <STATUS> is Implementation:
 4. Inspect complete final diff, generated/unrelated files, dependencies, documentation, and proof. Run git diff --check.
 5. Commit and push with the dedicated worker identity. Create the intended PR only for fresh work; continuation must update the
    existing PR. Keep it draft only while implementation or locally available proof is incomplete.
-6. Verify remote branch, full SHA, PR URL, base/head refs, draft state, and matching PR head. Mark the PR ready for review when
-   implementation and locally available proof are complete.
+6. When implementation and locally available proof are complete, mark the PR ready for review. Then re-read and verify the remote
+   PR is open, targets develop, has draft=false, and points to the exact published head. A successful push or green CI does not
+   substitute for this publication-state proof.
 7. Publish exact human-useful commands/results/limitations on the canonical issue/PR and keep the PR description synchronized.
 8. Hand off the canonical item with one guarded command setting Status=Review, Execution=Ready, Executor=ChatGPT, clearing worker
-   ownership, and recording the PR URL plus exact new head in Worker reference; assign bedrin-gpt separately and verify both state
-   and assignment.
-9. Do not review or approve your own implementation and do not create a reviewer task. The shared event loop owns Review.
+   ownership, and recording the PR URL plus exact new head in Worker reference. If the canonical target is an issue, include
+   reviewPullRequest.number and reviewPullRequest.head. The control plane may repair a remaining draft as a final invariant, but
+   this worker must not rely on that repair instead of completing step 6.
+9. Inspect the terminal reaction, then re-read both the PR as non-draft at the same exact head and the canonical Project fields.
+   Assign bedrin-gpt separately and verify assignment. Do not report Review handoff before every check succeeds.
+10. Do not review or approve your own implementation and do not create a reviewer task. The shared event loop owns Review.
 
 If <STATUS> is Verification:
 1. Re-read the canonical item and later discussion. Identify observable journey, negative cases, exact implementation head/artifact,
