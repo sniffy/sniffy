@@ -32,6 +32,8 @@ jobs:
           node --test .github/scripts/review-return.test.js
       - name: Parse workflow YAML
         run: ruby -e 'require "yaml"; YAML.load_file(".github/workflows/review-return.yml")'
+      - name: Lint GitHub Actions workflow
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 .github/workflows/review-return.yml
 
   prepare:
     if: >-
@@ -39,7 +41,8 @@ jobs:
       github.event.action == 'submitted' &&
       github.event.review.state == 'changes_requested' &&
       github.event.pull_request.base.ref == 'develop' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
