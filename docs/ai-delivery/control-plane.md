@@ -61,6 +61,66 @@ A command comment is one valid JSON object. Pretty-printed JSON is allowed.
 }
 ```
 
+### Review handoff and pull-request identity
+
+A command that sets `Status = Review` must identify the exact pull request that is becoming review input.
+
+When the pull request itself is the canonical Project item, `target`, `expected.type = PullRequest`, and `expected.head` already
+provide that identity:
+
+```json
+{
+  "command": "delivery-control/v1",
+  "target": {"repository": "sniffy/sniffy", "number": 765},
+  "expected": {
+    "type": "PullRequest",
+    "head": "8f1be923b6c38e7afb20b7678914c65a8ca8a6c8",
+    "fields": {
+      "Status": "Implementation",
+      "Execution": "In progress",
+      "Executor": "ChatGPT"
+    }
+  },
+  "set": {
+    "Status": "Review",
+    "Execution": "Ready",
+    "Executor": "ChatGPT",
+    "Worker reference": "PR #765; exact head 8f1be923b6c38e7afb20b7678914c65a8ca8a6c8"
+  }
+}
+```
+
+When an issue is canonical, the command additionally supplies a structured `reviewPullRequest` guard. The PR must formally close
+that issue:
+
+```json
+{
+  "command": "delivery-control/v1",
+  "target": {"repository": "sniffy/sniffy", "number": 762},
+  "expected": {
+    "type": "Issue",
+    "fields": {
+      "Status": "Implementation",
+      "Execution": "In progress",
+      "Executor": "Local Codex"
+    }
+  },
+  "reviewPullRequest": {
+    "number": 763,
+    "head": "6d45aff9902b8da1701300388be77e96c9b16a25"
+  },
+  "set": {
+    "Status": "Review",
+    "Execution": "Ready",
+    "Executor": "ChatGPT",
+    "Worker reference": "PR #763; exact head 6d45aff9902b8da1701300388be77e96c9b16a25"
+  }
+}
+```
+
+`reviewPullRequest` is not free-form evidence. It is accepted only on a transition that sets `Status = Review`. For a PR target,
+any supplied value must exactly match the target number and `expected.head`. For an issue target it is mandatory.
+
 ### Required guards
 
 Every command must include at least one guard under `expected`:
@@ -73,6 +133,9 @@ Unguarded mutations are rejected. A command setting `Execution = In progress` is
 `Execution = Ready`, current `Status`, current `Executor`, target type, and the exact head for a pull request. It must also set a
 unique `Worker reference` containing token, owner, and lease.
 
+A Review transition has stronger publication guards. Its PR must be open, target `develop`, have the exact guarded head, and be
+non-draft. When the canonical target is an issue, the PR must formally close that issue.
+
 ### Mutations
 
 - `set` maps text or single-select field names to complete values.
@@ -84,8 +147,10 @@ unique `Worker reference` containing token, owner, and lease.
 - `addIfMissing` permits external-PR intake to add the target to Project 2 before applying the guarded initial fields.
 - Only supported ProjectV2 text and single-select fields may be changed.
 
-The command updates Project fields only. GitHub assignment, review submission, source publication, CI, and issue/PR comments remain
-separate explicit operations whose success must be verified before the lifecycle transition claims them as evidence.
+GitHub assignment, review submission, source publication, CI, and issue/PR comments remain separate explicit operations. The one
+repository-side mutation deliberately coupled to `Status = Review` is ready-for-review state: after all target and Project guards
+pass, the control plane marks a draft PR ready and re-reads it before writing the Project status. Executors should already have
+done this themselves; the automation is the final invariant and recovery path.
 
 ## Claim and transition semantics
 
@@ -96,32 +161,35 @@ For each command it:
 
 1. validates the actor, control-issue label, JSON schema, repository, and guarded mutation;
 2. enters the target-item concurrency group;
-3. queries the target issue/PR, exact PR head when applicable, Project 2, field definitions, Project item, and current field values;
+3. queries the target issue/PR, exact target head when applicable, Project 2, field definitions, Project item, and current values;
 4. optionally adds a missing Project item only when `addIfMissing` is true;
 5. compares every `expected` guard to the current state;
 6. pre-validates every requested field, type, and single-select option before mutation; omitted fields need no option lookup;
-7. applies the pre-validated set/clear operations inside the same serialized Actions job;
-8. re-reads the Project item and verifies every requested final value;
-9. records a structured Actions job summary.
+7. for a Review transition, queries the structured review PR, verifies repository/base/open/head/formal-closing identity, marks it
+   ready when draft, and re-reads it as non-draft at the same exact head;
+8. applies the pre-validated Project set/clear operations inside the same serialized Actions job;
+9. re-reads the Project item and verifies every requested final value;
+10. records the PR readiness result and Project transition in the Actions summary.
 
 Two concurrent claim commands may both parse, but only one can observe the guarded `Ready` state after entering the target-item
 concurrency group. The other returns a non-mutating conflict. No claim-intent, winner, loser, or withdrawal comment is needed on
 the target item.
 
-GitHub Project field updates are not a database transaction. The protocol is best-effort atomic: it pre-validates all requested
-changes, applies them only inside one serialized job, then verifies the complete post-state. An unexpected partial or unverifiable result
-fails the workflow and must be inspected before retrying.
+GitHub Project field updates are not a database transaction. The protocol is best-effort atomic: it validates every expected state
+before changing the PR or Project. If marking a PR ready succeeds but a later Project write unexpectedly fails, the safe one-way
+publication change remains and the workflow receives `-1`; inspect the run and retry the same guarded transition after re-reading
+state. A draft PR is never hidden behind a successful `Review` Project status.
 
 ## Outcomes and audit
 
 For commands posted to the control issue:
 
-- `+1` reaction: transition applied and verified, or the guarded target was already in the requested final state;
-- `confused` reaction: expected-state conflict, with no requested field mutation;
+- `+1` reaction: PR readiness and Project transition were applied and verified, or both were already in the requested final state;
+- `confused` reaction: expected-state or review-PR identity conflict, with no requested mutation;
 - `-1` reaction: unexpected execution failure; inspect the Actions run.
 
-The command comment, reaction, Actions run, and current Project state form the technical audit trail. The target conversation
-contains only human-useful evidence or decisions.
+The command comment, reaction, Actions run, PR state, and current Project state form the technical audit trail. The target
+conversation contains only human-useful evidence or decisions.
 
 `workflow_dispatch` accepts the same JSON object in its `command` input and invokes the same implementation. Use it only for
 maintainer-authorized debugging or recovery when posting through the control issue is unavailable. Autonomous executors must
@@ -140,9 +208,10 @@ Additional logins may be supplied through the comma-separated repository variabl
 `PRODUCT_MANAGER_LOGIN` variable is also honored.
 
 The workflow starts with `permissions: {}`. The parse job receives only `contents: read` for checkout. The transition job receives
-`contents: read` and `issues: write` for the command reaction. ProjectV2 GraphQL uses the existing repository secret
-`PROJECT_TOKEN`. No merge, auto-merge, branch write, ruleset bypass, deployment, environment, secret, or hosting permission is
-added.
+`contents: read`, `issues: write` for the command reaction, and narrowly scoped `pull-requests: write` solely to mark the guarded
+review PR ready. ProjectV2 GraphQL continues to use the existing `PROJECT_TOKEN`; the repository `GITHUB_TOKEN` is a separate
+client and is not used for Project mutation. No contents write, branch write, merge, auto-merge, ruleset bypass, deployment,
+environment, secret, or hosting permission is added.
 
 ## Control-log rotation
 
@@ -177,14 +246,13 @@ Do not post field commands, claim tokens, lease arbitration, winner/loser messag
 
 ## Rollout and smoke test
 
-The old `project-status.yml` and `project-field.yml` workflows are removed with this protocol. After merge:
+After merge, extend the existing disposable control-plane smoke test:
 
-1. ensure the `ai-delivery-control` label exists and create the first active control issue with it;
-2. run one successful guarded multi-field transition on a disposable item;
-3. repeat the same command and confirm idempotent success;
-4. use a stale expected value and confirm a non-mutating conflict;
-5. submit two concurrent guarded claims and confirm one success plus one conflict;
-6. verify the target issue/PR conversation received no technical command comment;
-7. inspect the Actions summaries and final Project fields.
+1. transition a draft standalone PR target to Review and confirm it becomes non-draft before Project `Status = Review`;
+2. transition a canonical issue using a formally closing draft PR and confirm the same invariant;
+3. use a wrong head, wrong base, closed PR, and non-closing issue/PR pair and confirm non-mutating conflicts;
+4. repeat a successful command and confirm idempotent `+1`;
+5. verify the target issue/PR conversation received no technical command comment;
+6. inspect the Actions summary, final PR state, and final Project fields.
 
-Do not rely on the new path for autonomous claims until these checks pass on the merged default-branch workflow.
+Do not rely on the extended path for autonomous Review handoffs until these checks pass on the merged `develop` workflow.
