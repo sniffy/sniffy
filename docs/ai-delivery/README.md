@@ -1,12 +1,12 @@
 # AI-assisted delivery in Sniffy
 
 This directory describes how Dmitry and ChatGPT plan, route, supervise, review, and verify work performed by ChatGPT, Codex
-Cloud, Local Codex, an IDE-hosted coding agent, automation such as Dependabot, or a human. It is the control-plane
-documentation for delivery. Repository engineering rules remain in the nearest applicable `AGENTS.md`.
+Cloud, Local Codex, an IDE-hosted coding agent, automation such as Dependabot, an external contributor, or a human. It is the
+control-plane documentation for delivery. Repository engineering rules remain in the nearest applicable `AGENTS.md`.
 
 The current Sniffy routing knobs live in [`profile.yml`](profile.yml). Shared semantics belong in Markdown; the profile selects
-current executors, identities, Local Codex model/effort, control-log rotation thresholds, and default routes without redefining
-the lifecycle.
+current executors, identities, Local Codex model/effort, control-log rotation thresholds, default routes, and external-PR intake
+behavior without redefining the lifecycle.
 
 ## Terminology
 
@@ -15,7 +15,7 @@ the lifecycle.
 | Work item | An issue or pull request represented in the delivery Project | feature issue, Dependabot PR |
 | Role | A responsibility in the delivery process | supervisor, implementer, reviewer, verifier, operator |
 | Executor | The product and environment performing a current action | ChatGPT, Codex Cloud, Local Codex, human |
-| Implementer | Planned executor or source author for Implementation | Local Codex, Dependabot |
+| Implementer | Optional planned executor for a future Implementation turn | Local Codex; empty for an already-published external PR |
 | Verifier | Planned executor coordinating Verification | ChatGPT |
 | Assignee | Concrete GitHub identity or human responsible now | `bedrin-gpt`, `bedrin-codex-local`, `bedrin` |
 | Agent instance | One concrete running chat, task, process, or worker | one Codex task and worktree |
@@ -28,6 +28,10 @@ Roles and executors are independent. ChatGPT is the default supervisor, but it m
 Codex Cloud and Local Codex may perform the same implementer role in different environments. Model selection is a separate
 configuration axis: Cloud is provider-managed, while the current Local Codex profile uses Sol with extra-high reasoning.
 
+PR authorship is separate provenance. An external author, Dependabot, or a future bot is not automatically a Sniffy routing
+executor, so external intake leaves `Implementer` empty unless a later Planning decision deliberately selects an implementation
+route.
+
 ## Lifecycle summary
 
 `Status` describes the kind of work; `Execution` describes whether the next action can run:
@@ -37,9 +41,10 @@ Status:    Draft -> Planning -> Implementation -> Review -> Verification (when r
 Execution: Ready | In progress | Blocked
 ```
 
-Planning records both `Implementer` and `Verifier`. `Executor` materializes who performs the next current action, while
-`Assignee` names the concrete identity or human. An external pull request may enter directly at `Review / Ready` when its
-implementation already exists and its scope is clear.
+Planning records `Implementer` when a future Implementation turn is needed and records `Verifier` when Verification may be
+needed. `Executor` materializes who performs the next current action, while `Assignee` names the concrete identity or human. An
+external pull request may enter directly at `Review / Ready` with an empty Implementer when its implementation already exists and
+its scope is clear.
 
 A worker owns one lifecycle turn. A corrected implementation that returns to Review with substantive blockers does not
 immediately receive another narrow patch request: ChatGPT first performs the convergence checkpoint in [`routing.md`](routing.md)
@@ -64,7 +69,8 @@ Dmitry + ChatGPT decide outcome, risk, routing, and proof
 ```
 
 All configured executors use the same central control-issue protocol for ProjectV2 transitions. The target issue/PR conversation
-is reserved for human-useful plans, reviews, evidence, blockers, and handoffs. See [`control-plane.md`](control-plane.md).
+is reserved for human-useful plans, reviews, evidence, blockers, and handoffs. Omitted Project fields remain unchanged, and an
+empty optional field is valid state rather than a reason to invent a new select option. See [`control-plane.md`](control-plane.md).
 
 Dmitry owns product decisions, accepted risk, privileged repository/hosting operations, final acceptance, and merge
 authorization. ChatGPT owns issue refinement, external-PR intake, routing proposals, supervision, code review, verification
@@ -87,12 +93,14 @@ state.
 
 ## Documentation map
 
-- [`profile.yml`](profile.yml) — current Sniffy Project, field, identity, routing, Local Codex, and rotation configuration.
-- [`lifecycle.md`](lifecycle.md) — lifecycle statuses, execution states, planned routing fields, and corrections.
-- [`control-plane.md`](control-plane.md) — one guarded mutation protocol, control issue, concurrency, reactions, and rotation.
+- [`profile.yml`](profile.yml) — current Sniffy Project, field, identity, routing, Local Codex, intake, and rotation configuration.
+- [`lifecycle.md`](lifecycle.md) — lifecycle statuses, execution states, optional planned routing fields, and corrections.
+- [`control-plane.md`](control-plane.md) — one guarded mutation protocol, optional/omitted fields, control issue, concurrency,
+  reactions, and rotation.
 - [`event-loop.md`](event-loop.md) — reusable clock/dispatcher/intake/claim design and provider adapters.
 - [`.chatgpt/scheduled-task-prompt.md`](../../.chatgpt/scheduled-task-prompt.md) — exact prompt for four ChatGPT Scheduled Tasks.
-- [`pull-request-intake.md`](pull-request-intake.md) — external PRs, Dependabot review, rebase, verification, and replacement flow.
+- [`pull-request-intake.md`](pull-request-intake.md) — external PRs, provenance, optional Implementer, Dependabot review, rebase,
+  verification, and replacement flow.
 - [`chat-retention.md`](chat-retention.md) — persistent Scheduled Task chats, compact outputs, and bounded manual rotation.
 - [`routing.md`](routing.md) — role/executor/model separation, routing heuristics, and convergence checkpoint.
 - [`supervision.md`](supervision.md) — dispatch proof, worker monitoring, review convergence, and merge boundaries.
@@ -116,7 +124,9 @@ external dispatch. Scheduled ChatGPT ticks cannot create child Scheduled Tasks.
 
 Dependabot PRs are first-class Project items rather than shadow issues. GitHub's built-in auto-add workflow discovers newly
 created or updated dependency PRs; the event loop backfills existing untracked PRs, initializes Review fields through the central
-control protocol, verifies the author, and routes any required compatibility implementation to a linked agent-owned issue/PR.
+control protocol, verifies the author, leaves Implementer empty, and routes any required compatibility implementation to a linked
+agent-owned issue/PR with a deliberately selected Implementer. Project 2 currently retains a `Dependabot` Implementer option for
+manual/historical classification, but normal intake does not select it.
 
 ## Provider-specific files
 
