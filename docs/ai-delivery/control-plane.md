@@ -152,10 +152,9 @@ Rotation procedure:
 
 1. verify that every existing command has a terminal reaction or an inspected failed run;
 2. create a successor issue with the same label and the next period in its title;
-3. add reciprocal predecessor/successor links;
-4. close the old issue without deleting comments;
-5. query open issues with the label and verify that the successor is the newest one;
-6. post the next command only after that verification.
+3. close the old issue without deleting comments;
+4. query open issues with the label and verify that the successor is the newest one;
+5. post the next command only after that verification.
 
 A normal queue tick may perform rotation immediately before a needed command. No independent cleanup clock, browser automation,
 private API, or bulk deletion is permitted.
