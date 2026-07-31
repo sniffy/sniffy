@@ -59,7 +59,7 @@ jobs:
           TARGET_REPOSITORY: ${{ inputs.repository }}
           TARGET_NUMBER: ${{ inputs.number }}
         with:
-          github-token: ${{ secrets[format('PROJECT{0}TOKEN', '_')] }}
+          github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
             const fs = require('node:fs');
             const reader = require('./.github/scripts/project-snapshot.js');
