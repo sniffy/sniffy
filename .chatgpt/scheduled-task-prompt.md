@@ -77,12 +77,19 @@ Perform this protocol:
    Intake leaves Implementer unchanged/empty, chooses a Verifier from actual risk, assigns bedrin-gpt separately, and records PR
    URL, author, fork/same-repo status, branch, exact head, labels, linked issues, and security/dependency metadata. Intake is not
    approval. Dependabot is one specialization of this universal intake, not the only PR source.
-2. Before claiming new work, inspect ChatGPT-owned Execution=In progress items whose worker, CI, external dispatch, rebase, draft
+2. Reconcile stale exact-head lifecycle state after intake and before continuing workers or claiming ordinary queue work. Inspect
+   every open PR whose canonical issue or PR has completed Review, Verification, Approval, or a derived Blocked/Human handoff
+   supported by a different head. Use one guarded command expecting current Status, Execution, Executor, and the PR's new exact
+   head to set Review / Ready / ChatGPT, clear stale ownership, and retain the PR URL plus new head as evidence. Identify the PR
+   structurally with target + expected.head when the PR is canonical, or reviewPullRequest.number/head when a canonical issue owns
+   it. Verify the terminal reaction, PR draft/head, and canonical Project state. This supervisory reconciliation may select
+   Approval or Blocked items outside the ordinary queue, consumes at most one item, and precedes due-worker continuation.
+3. Before claiming new work, inspect ChatGPT-owned Execution=In progress items whose worker, CI, external dispatch, rebase, draft
    publication, or monitoring observation is due. Worker observation belongs to this same event loop: first after 15 minutes,
    again 15 minutes later, then hourly while incomplete. Continue or recover existing ownership before starting unrelated work.
-3. If a needed control command would exceed the rotation threshold, rotate the active control issue using control-plane.md, then
+4. If a needed control command would exceed the rotation threshold, rotate the active control issue using control-plane.md, then
    continue this tick. Do not create a separate cleanup scheduler.
-4. Otherwise select at most one canonical Project 2 item where:
+5. Otherwise select at most one canonical Project 2 item where:
    - Execution = Ready;
    - Executor = ChatGPT;
    - Assignee is empty or bedrin-gpt;
@@ -90,12 +97,12 @@ Perform this protocol:
    - the item is not a duplicate representation or a linked issue suppressed by an open canonical multi-issue PR;
    - current ChatGPT tools and identity can truthfully complete the lifecycle turn or reach a safe durable handoff now.
    Eligibility must not require Implementer to be populated.
-5. Select deterministically using security priority, Project priority, ready timestamp, then repository and item number. Never
+6. Select deterministically using security priority, Project priority, ready timestamp, then repository and item number. Never
    create a duplicate Project item, worker, branch, or pull request.
-6. Claim with one guarded delivery-control/v1 command. Set Execution=In progress plus the concrete tick/worker reference and
+7. Claim with one guarded delivery-control/v1 command. Set Execution=In progress plus the concrete tick/worker reference and
    lease, inspect the terminal reaction, then re-read and verify ownership before work. If execution or external dispatch cannot
    start, release to Ready. Set Blocked only when Dmitry must decide or act.
-7. Perform exactly one lifecycle turn:
+8. Perform exactly one lifecycle turn:
    - Planning: resolve outcome, canonical item, linked issues, decisions, non-goals, risk axes, Implementer when a future
      Implementation turn is actually needed, Verifier, and proof obligations. Do not use a PR author as a substitute for a
      deliberate implementation route.
@@ -113,17 +120,18 @@ Perform this protocol:
      before another implementation dispatch; do not mechanically issue another patch list.
    - Verification: validate the observable result against the authoritative issue or PR using the exact published head/artifact in
      a representative environment. Do not rename unit tests or green CI as system verification.
-8. Publish human-useful evidence on the canonical target issue/PR. Then use one guarded control command for the complete next
+9. Publish human-useful evidence on the canonical target issue/PR. Then use one guarded control command for the complete next
    Status, Execution, Executor, and cleared worker ownership state. For Status=Review, include the structured review PR identity;
    when the canonical item is an issue use reviewPullRequest.number/head. Inspect the terminal reaction and re-read both PR
    draft/head state and Project fields before reporting the handoff. Update GitHub Assignee separately when supported and verify it.
    When a canonical issue owns a PR, keep its Worker reference pinned to the PR URL and exact head through Review/Verification.
-9. Routine waiting for a concrete CI run, worker, contributor update, bot rebase, or draft publication remains In progress only
+10. Routine waiting for a concrete CI run, worker, contributor update, bot rebase, or draft publication remains In progress only
    with a durable reference and next observation point. Blocked always routes an exact action to Human/bedrin.
-10. Never merge, enable auto-merge, bypass protection, rewrite shared history, expose credentials, or perform privileged
+11. Never merge, enable auto-merge, bypass protection, rewrite shared history, expose credentials, or perform privileged
     repository/hosting operations without Dmitry's explicit instruction.
-11. If no eligible intake, due continuation, control-log rotation, claimable turn, or meaningful reconciliation exists, make no
-    GitHub/source mutation and reply only NO_CHANGE. Otherwise finish with a compact summary containing selected canonical item,
+12. If no eligible intake, head reconciliation, due continuation, control-log rotation, claimable turn, or meaningful
+    reconciliation exists, make no GitHub/source mutation and reply only NO_CHANGE. Otherwise finish with a compact summary
+    containing selected canonical item,
     PR and exact head when applicable, lifecycle turn, durable evidence, and resulting Status / Execution / Executor / Assignee.
 ```
 

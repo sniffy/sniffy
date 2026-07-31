@@ -62,13 +62,14 @@ Treat each occurrence as logically stateless even though the transcript is persi
 1. ignore prior-run conclusions and mutable conversational context;
 2. read current GitHub state, repository policy, and [`profile.yml`](profile.yml) from scratch;
 3. reconcile every open PR targeting the configured base branch and choose one canonical issue/PR item;
-4. continue one due owned worker/PR operation or select at most one eligible lifecycle turn;
-5. submit one guarded control command to claim it;
-6. verify the successful reaction and resulting Project state before doing work;
-7. perform the lifecycle turn directly or make one supported external dispatch;
-8. publish human-useful evidence on the canonical target item;
-9. submit one guarded control command for the lifecycle handoff and verify the result;
-10. return `NO_CHANGE` when no intake, continuation, rotation, reconciliation, or eligible work exists.
+4. reconcile a canonical issue/PR whose current head no longer matches the exact head supporting its downstream lifecycle state;
+5. continue one due owned worker/PR operation or select at most one eligible lifecycle turn;
+6. submit one guarded control command to claim it;
+7. verify the successful reaction and resulting Project state before doing work;
+8. perform the lifecycle turn directly or make one supported external dispatch;
+9. publish human-useful evidence on the canonical target item;
+10. submit one guarded control command for the lifecycle handoff and verify the result;
+11. return `NO_CHANGE` when no intake, head reconciliation, continuation, rotation, or eligible work exists.
 
 A tick must never claim work it cannot reasonably complete or hand off durably during that occurrence. Route long
 implementation, dependency-heavy builds, persistent services, existing-PR continuation, and environment-specific verification to
@@ -141,6 +142,33 @@ See [`pull-request-intake.md`](pull-request-intake.md).
 
 GitHub Projects auto-add may assist discovery, especially for issues created by agents and dependency PRs, but it cannot perform
 canonicalization. Do not rely on blind PR auto-add as the only intake path.
+
+## Exact-head reconciliation
+
+A lifecycle result is valid only for the exact pull-request head named by its evidence. After universal PR intake and
+canonicalization, but before continuing owned work or selecting ordinary queue work, a supervising tick inspects every open PR
+whose canonical issue or PR state depends on completed Review, Verification, Approval, or a human handoff derived from one of
+those statuses.
+
+If the current PR head differs from the exact head supporting that state, the tick must:
+
+1. stop relying on the stale review, verification packet, approval handoff, blocked decision, or worker reference;
+2. submit one guarded `delivery-control/v1` command targeting the canonical item and expecting its current Status, Execution,
+   Executor, and the PR's exact current head;
+3. set `Status = Review`, `Execution = Ready`, and `Executor = ChatGPT`, clear stale worker ownership, and record the PR URL plus
+   new exact head as evidence in the same command;
+4. identify the review PR structurally: use target plus `expected.head` when the PR is canonical, or
+   `reviewPullRequest.number/head` when a canonical issue owns the PR;
+5. inspect the terminal reaction, then re-read both PR draft/head state and the canonical Project item before treating it as
+   re-queued;
+6. leave technical reconciliation details on the control issue rather than posting legacy field or claim comments on the PR.
+
+This reconciliation is supervisory work and may select a canonical item even when its current Status is not otherwise eligible
+for the ChatGPT queue, including `Approval` or `Blocked / Human`. It consumes at most one item in a tick and precedes due-worker
+continuation or a new claim. A conflict means state changed concurrently; re-read and do not overwrite the newer route. A later
+Review must inspect the complete diff and matching-head CI again; an approval or verification result for an older head is never
+inherited automatically. When a canonical issue owns the PR, keep the PR URL and new exact head in its Worker reference through
+Review and Verification.
 
 ## Control-issue adapter
 
