@@ -19,10 +19,18 @@ Every Codex task must follow:
 ## Local app adapter
 
 - `local/scheduled-task-prompt.md` — persistent app-native dispatcher prompt.
-- `local/worker-task-prompt.md` — rendered one-issue app worker template.
+- `local/project-queue-snapshot.sh` — one bounded full-Project read that normalizes Local Codex ownership and ready candidates.
+- `local/worker-task-prompt.md` — rendered canonical-item app worker template.
 - [`docs/local-codex-worker.md`](../docs/local-codex-worker.md) — detailed Windows/WSL/VM setup.
 
-The prompt filenames remain stable because configured automations may reference them.
+The dispatcher must use the snapshot helper exactly once per tick and perform all candidate filtering against its retained JSON.
+Do not repeatedly invoke `gh project item-list`, probe the raw schema through successive `jq` commands, or combine a rate-limited
+snapshot with another or stale data source. A guarded claim performs the authoritative current-state recheck after one candidate
+has been selected.
+
+The prompt filenames remain stable because configured automations may reference them. A repository merge does **not** replace the
+prompt text embedded in an existing Codex automation; copy the updated canonical prompt into the automation and smoke-test it after
+every material dispatcher change.
 
 ## Headless local adapter
 

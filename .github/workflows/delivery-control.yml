@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - .chatgpt/scheduled-task-prompt.md
+      - .codex/local/project-queue-snapshot.sh
       - .codex/local/scheduled-task-prompt.md
       - .codex/local/worker-task-prompt.md
       - .github/scripts/delivery-control.js
@@ -37,6 +38,7 @@ jobs:
           node-version: 24.18.0
       - name: Check and test delivery control
         run: |
+          bash -n .codex/local/project-queue-snapshot.sh
           node --check .github/scripts/delivery-control.js
           node --check .github/scripts/delivery-control.test.js
           node --check .github/scripts/delivery-policy.test.js
