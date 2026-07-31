@@ -13,7 +13,8 @@ As supervisor, ChatGPT:
 - treats exactly one closing issue as canonical, standalone PRs as canonical, and multi-issue PRs as Planning items;
 - ingests ready implementations into Review without inferring Implementer from authorship;
 - suppresses duplicate issue/PR lifecycle representations and never reviews the same implementation twice;
-- tracks lifecycle fields, guarded claims, workers, branches, PRs, exact SHAs, reviews, Verification, CI, artifacts, and blockers;
+- tracks lifecycle fields, guarded claims, workers, branches, PRs, exact SHAs, draft state, reviews, Verification, CI, artifacts,
+  and blockers;
 - routes same-repository existing-PR corrections to ChatGPT or Local Codex continuation without opening a duplicate;
 - rotates the technical control issue during normal event-loop work;
 - performs the convergence checkpoint when corrected work returns to Review with substantive blockers;
@@ -56,12 +57,16 @@ ChatGPT uses the same [`../control-plane.md`](../control-plane.md) protocol as C
 2. choose and re-read the canonical issue or PR;
 3. post one guarded `delivery-control/v1` JSON command;
 4. inspect the reaction and Actions result;
-5. re-read the resulting Project fields;
+5. re-read the resulting Project fields and any PR state coupled to the transition;
 6. only then claim ownership or report a handoff.
 
 When the canonical item is a PR, guard its exact head. When an issue is canonical, keep its Worker reference pinned to the linked
 PR URL and exact head. Omit optional fields that are not part of the transition. Universal PR intake leaves `Implementer`
 untouched and accepts an empty value; it does not synthesize an author, bot, provider, IDE, or `Unknown` option.
+
+For a command setting `Status = Review`, identify the review PR structurally. A canonical PR uses target plus `expected.head`; a
+canonical issue includes `reviewPullRequest.number/head`. The control plane validates open/develop/exact-head identity, marks a
+draft PR ready if necessary, and verifies non-draft state before writing Project Review.
 
 Do not post `/project-status`, `/project-field`, claim-intent, lease arbitration, or polling comments on target issues/PRs.
 `workflow_dispatch` is the administrative fallback to the same implementation and is not required for normal ChatGPT operation.
@@ -82,6 +87,24 @@ It does not invent a shadow issue for a standalone PR and does not create a repl
 the existing branch.
 
 See [`../pull-request-intake.md`](../pull-request-intake.md).
+
+## Implementation publication and Review handoff
+
+When ChatGPT performs Implementation directly, publication is complete only after all of the following are true:
+
+1. the intended PR is open and targets `develop`;
+2. its remote head equals the exact published commit inspected by ChatGPT;
+3. implementation and all locally available proof are complete;
+4. the PR has been marked ready for review and re-read with `draft = false`;
+5. the PR description and evidence match that exact head.
+
+Only then may ChatGPT submit the guarded `Status = Review` transition. For a canonical issue it includes
+`reviewPullRequest.number/head`; for a canonical PR it guards target plus `expected.head`. The control plane may repair a remaining
+draft as a final invariant, but ChatGPT must not rely on that repair instead of completing publication deliberately.
+
+After the command's terminal reaction, ChatGPT re-reads both the PR as non-draft at the same exact head and the canonical Project
+fields. It updates and verifies assignment separately. A green workflow, successful push, or `+1` reaction without matching PR
+state is not a complete Review handoff.
 
 ## ChatGPT Scheduled Tasks
 
@@ -123,10 +146,10 @@ For every sniffy/sniffy task, first read the current repository policy at
 https://github.com/sniffy/sniffy/blob/develop/AGENTS.md and the AI delivery map at
 https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/README.md .
 
-Treat the canonical GitHub issue or pull request, linked PR exact head, Project fields, reviews, CI, artifacts, and central control
-protocol as the source of truth. Never claim that a checkout, command, build, browser session, publication, deployment, or settings
-change occurred unless it completed and its output was inspected. Never merge or enable auto-merge without Dmitry's explicit
-command.
+Treat the canonical GitHub issue or pull request, linked PR exact head and draft state, Project fields, reviews, CI, artifacts, and
+central control protocol as the source of truth. Never claim that a checkout, command, build, browser session, publication,
+deployment, or settings change occurred unless it completed and its output was inspected. Never merge or enable auto-merge
+without Dmitry's explicit command.
 ```
 
 Re-read current-`develop` policy at the start of each repository task. Review evidence remains pinned to the immutable PR head.

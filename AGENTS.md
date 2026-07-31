@@ -21,6 +21,10 @@ constraints for their subtrees.
 - Complete authorized work end to end when permissions allow: implement, test, inspect the final diff, commit, push, and
   create or update the intended pull request. Keep it draft only while implementation or locally applicable validation is
   incomplete.
+- Before handing implementation to `Review`, ensure the intended pull request is open, targets `develop`, points at the exact
+  published head, and is **not draft**. Mark it ready for review and re-read that state before submitting the guarded Project
+  transition. When an issue is the canonical Project item, include the linked PR number and exact head required by
+  `delivery-control/v1`; do not rely on prose in `Worker reference` to identify the PR.
 - GitHub remote state is the publication source of truth. Before reporting delivery, verify the remote branch, full SHA,
   pull-request URL, base/head refs, draft state, and matching pull-request head.
 - An absent `origin` in an isolated Sniffy checkout is recoverable configuration, not by itself a publication blocker.

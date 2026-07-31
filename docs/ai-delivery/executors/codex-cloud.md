@@ -82,9 +82,12 @@ state. It must not update Project fields through a private Cloud-only GraphQL pa
 item.
 
 The canonical target may be an issue or PR. For fresh work it is normally an issue; for an explicitly recoverable Cloud-owned PR
-continuation the worker reference must name the exact branch/head and no duplicate PR may be created.
+continuation the worker reference must name the exact branch/head and no duplicate PR may be created. A command setting
+`Status = Review` must identify the exact PR: target plus `expected.head` when the PR is canonical, or structured
+`reviewPullRequest.number/head` when an issue is canonical.
 
-GitHub assignment, source publication, PR creation, reviews, and CI remain separately verified operations.
+GitHub assignment, source publication, PR creation, reviews, and CI remain separately verified operations. The control plane's
+draft-to-ready repair is a final invariant, not a substitute for Cloud completing publication itself.
 
 ## Implementation lifecycle contract
 
@@ -100,12 +103,15 @@ applicable `AGENTS.md`, and delivery docs before editing. It must:
 7. create the intended PR for fresh work or update the explicitly recoverable Cloud-owned PR; use draft only while implementation
    or Cloud-available proof is incomplete;
 8. verify remote branch, full SHA, PR URL, base/head refs, draft state, and matching PR head;
-9. mark the PR ready for review when implementation and locally available proof are complete;
+9. when implementation and Cloud-available proof are complete, mark the PR ready for review, then re-read and verify it is open,
+   targets `develop`, has `draft = false`, and still points at the exact published head;
 10. reconcile the PR description with current head, commands, limitations, artifacts, and CI;
 11. publish human-useful implementation evidence on the canonical target;
 12. hand off the canonical item with one guarded command to `Status = Review`, `Execution = Ready`, `Executor = ChatGPT`, recording
-    PR URL/exact head and clearing Cloud worker ownership; update the ChatGPT Assignee separately and verify both operations;
-13. never review/approve its own implementation, merge, or enable auto-merge.
+    PR URL/exact head and clearing Cloud worker ownership. If an issue is canonical, include `reviewPullRequest.number/head`;
+13. inspect the terminal reaction, then re-read the PR as non-draft at the same exact head and the canonical Project fields. Update
+    the ChatGPT Assignee separately and verify assignment before reporting handoff;
+14. never review/approve its own implementation, merge, or enable auto-merge.
 
 A missing `origin` is recoverable checkout configuration, not evidence that setup authentication failed. Setup persists `gh`
 authentication for the agent phase, while the repository URL contains no credential. Before reporting a publication blocker,
@@ -151,5 +157,5 @@ Verify a connector acknowledgement or new commit before saying work resumed. If 
 substantive blockers, stop automatic serial correction and wait for the convergence checkpoint route. Arbitrary existing-PR
 continuation should be preserved and routed to Local Codex rather than recreated in Cloud.
 
-The exact canonical item, GitHub branch, PR, SHA, reviews, checks, control-command result, and Project state are authoritative.
-Codex UI associations are useful metadata but do not prove publication or completion.
+The exact canonical item, GitHub branch, PR, SHA, draft state, reviews, checks, control-command result, and Project state are
+authoritative. Codex UI associations are useful metadata but do not prove publication or completion.

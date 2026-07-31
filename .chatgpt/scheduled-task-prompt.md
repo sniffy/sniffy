@@ -50,6 +50,9 @@ ProjectV2 control protocol:
   been re-read.
 - Use one guarded command for the complete multi-field claim or lifecycle transition. Include current Status, Execution,
   Executor, and exact PR head when applicable in expected state.
+- A command setting Status=Review must identify the exact review PR. For a canonical PR this is target + expected.head; for a
+  canonical issue include reviewPullRequest.number and reviewPullRequest.head. The control plane verifies open/develop/exact-head,
+  marks a draft PR ready when necessary, and re-reads non-draft state before writing Project Review.
 - Omitted fields are left unchanged. A missing Implementer is valid and means unknown or not deliberately selected; never invent
   an Unknown, PR-author, bot, or provider value merely to fill the field.
 - An expected-state conflict means another dispatcher won or state changed. Make no work mutation and continue only if current
@@ -101,7 +104,8 @@ Perform this protocol:
      complex/persistent/existing-PR continuation to Local Codex by default. Route bounded fresh work to Codex Cloud. Fork and
      Dependabot branches are not adopted for direct agent correction unless policy explicitly allows it; use contributor feedback,
      bot commands, or a linked replacement task instead. Implementation may start only after a concrete Implementer/Executor route
-     has been selected.
+     has been selected. Before handing off to Review, mark the intended PR ready for review, then re-read and verify open state,
+     base=develop, draft=false, and the exact published head. Do not claim Review publication while the PR remains draft.
    - Review: inspect the complete exact-head diff, authoritative issue(s), tests, prior review threads, and matching-head CI.
      Submit APPROVE only with independent identity. Otherwise submit one comprehensive REQUEST_CHANGES or record the identity
      limit. A same-repository PR may be returned to a deliberately selected ChatGPT or Local Codex continuation on the same branch.
@@ -110,7 +114,9 @@ Perform this protocol:
    - Verification: validate the observable result against the authoritative issue or PR using the exact published head/artifact in
      a representative environment. Do not rename unit tests or green CI as system verification.
 8. Publish human-useful evidence on the canonical target issue/PR. Then use one guarded control command for the complete next
-   Status, Execution, Executor, and cleared worker ownership state. Update GitHub Assignee separately when supported and verify it.
+   Status, Execution, Executor, and cleared worker ownership state. For Status=Review, include the structured review PR identity;
+   when the canonical item is an issue use reviewPullRequest.number/head. Inspect the terminal reaction and re-read both PR
+   draft/head state and Project fields before reporting the handoff. Update GitHub Assignee separately when supported and verify it.
    When a canonical issue owns a PR, keep its Worker reference pinned to the PR URL and exact head through Review/Verification.
 9. Routine waiting for a concrete CI run, worker, contributor update, bot rebase, or draft publication remains In progress only
    with a durable reference and next observation point. Blocked always routes an exact action to Human/bedrin.

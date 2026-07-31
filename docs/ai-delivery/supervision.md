@@ -22,6 +22,7 @@ Do not replace lifecycle fields with optimistic prose. Track supporting facts in
 - concrete dispatch acknowledgement;
 - local completion and local proof;
 - remote publication at an exact branch/SHA/PR;
+- PR open/base/draft state at handoff;
 - code review outcome;
 - verification outcome;
 - actual merge or deliberate closure.
@@ -50,9 +51,11 @@ A worker completes one lifecycle turn and writes the next route through the comm
   `Planning / Ready / Human`.
 - Planning approval may write `Implementation / Ready / Executor := Implementer` only when Implementer is non-empty and
   deliberately selected.
-- Implementation publication marks the PR ready when local proof is complete, then writes the canonical item to
-  `Review / Ready / Executor = ChatGPT` with PR URL and exact head in Worker reference.
-- Universal PR intake performs the same Review handoff for a non-draft PR that appeared outside the delivery system, leaving
+- Implementation publication marks the PR ready when local proof is complete, re-reads open/develop/non-draft/exact-head state,
+  then writes the canonical item to `Review / Ready / Executor = ChatGPT` with PR URL and exact head in Worker reference.
+- The guarded Review command identifies that PR structurally: target plus `expected.head` for a canonical PR, or
+  `reviewPullRequest.number/head` for a canonical issue.
+- Universal PR intake performs the same Review handoff only for a non-draft PR that appeared outside the delivery system, leaving
   Implementer unchanged/empty.
 - A multi-issue PR enters `Planning / Ready / ChatGPT` before Review.
 - Successful Review writes `Verification / Ready / Executor := Verifier` or `Approval / Ready / Human` when evidence is already
@@ -60,12 +63,17 @@ A worker completes one lifecycle turn and writes the next route through the comm
 - Successful Verification writes `Approval / Ready / Human`.
 - Approval becomes `Done` only after actual merge or deliberate closure.
 
+The control plane re-checks the review PR after all expected-state guards pass and marks it ready if an executor left it draft. That
+is a final invariant and recovery mechanism, not permission for executors to skip publication. It verifies the same exact head
+before Project Review is written.
+
 A blank Implementer is valid outside a routed Implementation turn. It must not prevent canonicalization, intake, Review, rebase or
 contributor monitoring, Verification, Approval, blocking, supersession, or closure. When Review or Verification discovers that new
 code is needed and Implementer is empty, deliberately choose a supported executor before entering Implementation.
 
 Every handoff clears stale worker ownership and lease data. GitHub assignment is updated separately and verified; a Project field
-transition does not prove assignment succeeded.
+transition does not prove assignment succeeded. A Review handoff additionally re-reads PR draft/head state after the terminal
+control reaction.
 
 ## Dispatch proof
 
@@ -123,8 +131,8 @@ monitoring when lifecycle handoff completes or Dmitry owns a blocked next action
 - When `develop` moves materially before handoff, normally merge current `origin/develop` into the feature branch and rerun
   exact-head proof. Do not use a stale green run as final evidence.
 - Preserve completed work when publication fails. Recover the existing commit/workspace rather than rebuilding by default.
-- Implementation publication is incomplete until the PR is ready for review and the canonical item has a verified guarded
-  `Review / Ready / ChatGPT` handoff.
+- Implementation publication is incomplete until the PR is open, targets `develop`, is ready for review (`draft = false`) at the
+  exact published head, and the canonical item has a verified guarded `Review / Ready / ChatGPT` handoff.
 
 For fork PRs:
 
@@ -167,8 +175,8 @@ A Request Changes result does not justify assigning the PR author as Implementer
 - linked internal replacement task when direct branch correction is unsafe or inappropriate;
 - return to Planning when scope, canonicalization, architecture, or proof is unresolved.
 
-After correction, the implementation worker publishes a new exact head and hands the same canonical item back to Review. Do not
-create a second issue or PR solely because ownership changed.
+After correction, the implementation worker publishes a new exact head, marks the PR ready, verifies non-draft exact-head state,
+and hands the same canonical item back to Review. Do not create a second issue or PR solely because ownership changed.
 
 ### Convergence checkpoint
 

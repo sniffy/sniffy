@@ -45,9 +45,16 @@ is configured. Before handoff:
 - run the issue's proof matrix and repository checks;
 - inspect generated/unrelated changes;
 - publish with the configured technical identity;
+- keep the PR draft only while implementation or locally available proof is incomplete;
+- when implementation is complete, mark the PR ready for review and re-read it as open, targeting `develop`, non-draft, and at
+  the exact published head;
 - record exact-head CI and limitations;
+- if the canonical Project item is an issue, include `reviewPullRequest.number` and `reviewPullRequest.head` in the guarded
+  `Status = Review` command; for a canonical PR, guard the target and `expected.head`;
+- inspect the terminal reaction and re-read both PR draft/head state and Project fields before claiming Review handoff;
 - use an independent reviewer identity;
 - never merge or enable auto-merge without Dmitry's instruction.
 
-Do not infer remote publication, independent review, or unattended supervision merely because the IDE displays an agent
-conversation.
+The control plane may mark a remaining draft ready as a final invariant, but an IDE executor must not rely on that repair instead
+of completing publication deliberately. Do not infer remote publication, independent review, or unattended supervision merely
+because the IDE displays an agent conversation.
