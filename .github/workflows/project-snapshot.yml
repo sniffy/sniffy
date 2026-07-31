@@ -1,0 +1,95 @@
+name: AI delivery Project snapshot
+
+on:
+  pull_request:
+    paths:
+      - .github/scripts/project-snapshot.js
+      - .github/scripts/project-snapshot.test.js
+      - .github/workflows/project-snapshot.yml
+      - docs/ai-delivery/project-snapshot.md
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Canonical issue or pull-request repository in owner/name form
+        required: true
+        default: sniffy/sniffy
+        type: string
+      number:
+        description: Canonical issue or pull-request number
+        required: true
+        type: number
+
+permissions: {}
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+      - name: Check and test Project snapshot reader
+        run: |
+          node --check .github/scripts/project-snapshot.js
+          node --check .github/scripts/project-snapshot.test.js
+          node --test .github/scripts/project-snapshot.test.js
+      - name: Parse workflow YAML
+        run: ruby -e 'require "yaml"; YAML.load_file(".github/workflows/project-snapshot.yml")'
+
+  snapshot:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read ProjectV2 item
+        id: snapshot
+        uses: actions/github-script@v9
+        env:
+          TARGET_REPOSITORY: ${{ inputs.repository }}
+          TARGET_NUMBER: ${{ inputs.number }}
+        with:
+          github-token: ${{ secrets[format('PROJECT{0}TOKEN', '_')] }}
+          script: |
+            const fs = require('node:fs');
+            const reader = require('./.github/scripts/project-snapshot.js');
+            const snapshot = await reader.readProjectSnapshot({
+              github,
+              repository: process.env.TARGET_REPOSITORY,
+              number: process.env.TARGET_NUMBER
+            });
+            const json = `${JSON.stringify(snapshot, null, 2)}\n`;
+            fs.writeFileSync('ai-delivery-project-snapshot.json', json, {encoding: 'utf8', mode: 0o600});
+            core.setOutput('artifact_name', `ai-delivery-project-snapshot-${snapshot.target.repository.replace('/', '-')}-${snapshot.target.number}-${context.runId}`);
+            core.setOutput('revision', snapshot.revision);
+            core.summary
+              .addHeading('AI delivery ProjectV2 snapshot')
+              .addTable([
+                [{data: 'Observed', header: true}, snapshot.observedAt],
+                [{data: 'Project', header: true}, `${snapshot.project.owner}/${snapshot.project.number}`],
+                [{data: 'Target', header: true}, `${snapshot.target.repository}#${snapshot.target.number}`],
+                [{data: 'Type', header: true}, snapshot.target.type],
+                [{data: 'Project item', header: true}, snapshot.projectItem.id],
+                [{data: 'Revision', header: true}, snapshot.revision]
+              ])
+              .addCodeBlock(json, 'json');
+            await core.summary.write();
+
+      - name: Upload immutable snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.snapshot.outputs.artifact_name }}
+          path: ai-delivery-project-snapshot.json
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
