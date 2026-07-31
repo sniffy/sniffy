@@ -142,9 +142,8 @@ jobs:
         with:
           github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
-            const actionsGithub = require('@actions/github');
             const control = require('./.github/scripts/delivery-control.js');
-            const repositoryGithub = actionsGithub.getOctokit(process.env.REPOSITORY_TOKEN);
+            const repositoryGithub = getOctokit(process.env.REPOSITORY_TOKEN);
             await control.executeTransition({
               github,
               repositoryGithub,
