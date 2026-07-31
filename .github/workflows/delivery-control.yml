@@ -3,10 +3,16 @@ name: AI delivery control
 on:
   pull_request:
     paths:
+      - .chatgpt/scheduled-task-prompt.md
+      - .codex/local/project-queue-snapshot.sh
+      - .codex/local/scheduled-task-prompt.md
+      - .codex/local/worker-task-prompt.md
       - .github/scripts/delivery-control.js
       - .github/scripts/delivery-control.test.js
+      - .github/scripts/delivery-control-post-mutation.test.js
+      - .github/scripts/delivery-policy.test.js
       - .github/workflows/delivery-control.yml
-      - docs/ai-delivery/profile.yml
+      - docs/ai-delivery/**
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -28,14 +34,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.18.0
       - name: Check and test delivery control
         run: |
+          bash -n .codex/local/project-queue-snapshot.sh
           node --check .github/scripts/delivery-control.js
           node --check .github/scripts/delivery-control.test.js
-          node --test .github/scripts/delivery-control.test.js
+          node --check .github/scripts/delivery-control-post-mutation.test.js
+          node --check .github/scripts/delivery-policy.test.js
+          node --test .github/scripts/delivery-control.test.js .github/scripts/delivery-control-post-mutation.test.js .github/scripts/delivery-policy.test.js
       - name: Parse workflow and profile YAML
         run: >-
           ruby -e 'require "yaml";
@@ -94,6 +103,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      pull-requests: write
     concurrency:
       group: >-
         ai-delivery-${{ needs.parse.outputs.target_repository || 'invalid' }}-${{ needs.parse.outputs.target_number || github.event.comment.id || github.run_id }}
@@ -128,12 +138,15 @@ jobs:
         uses: actions/github-script@v9
         env:
           PAYLOAD_BASE64: ${{ needs.parse.outputs.payload_base64 }}
+          REPOSITORY_TOKEN: ${{ github.token }}
         with:
           github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
             const control = require('./.github/scripts/delivery-control.js');
+            const repositoryGithub = getOctokit(process.env.REPOSITORY_TOKEN);
             await control.executeTransition({
               github,
+              repositoryGithub,
               core,
               payloadBase64: process.env.PAYLOAD_BASE64
             });

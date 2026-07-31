@@ -5,8 +5,9 @@ Local Codex has two supported shapes:
 1. **app-native Local Codex** for app-owned conversations, worktrees, automations, and optional mobile Remote visibility;
 2. **headless Local Codex CLI** for unattended Linux scheduling, persistent caches/services, and scalable worker processes.
 
-Both follow `AGENTS.md`, the shared lifecycle, guarded control protocol, verification contract, and no-merge boundary. Current
-Sniffy configuration in [`../profile.yml`](../profile.yml) uses **Sol** with **extra-high** reasoning for Local Codex.
+Both follow `AGENTS.md`, universal issue/PR canonicalization, the shared lifecycle, guarded control protocol, verification contract,
+and no-merge boundary. Current Sniffy configuration in [`../profile.yml`](../profile.yml) uses **Sol** with **extra-high** reasoning
+for Local Codex.
 
 ## Route to Local Codex when
 
@@ -15,28 +16,32 @@ Prefer Local Codex for:
 - complex architecture, concurrency, lifecycle, cleanup, or failure composition;
 - cross-version Java and same-artifact compatibility;
 - persistent dependencies, Docker, services, browsers, or representative local environments;
-- existing branch/PR continuation and recovery;
+- existing same-repository branch/PR continuation, adoption, and recovery;
 - verification requiring local state or long-lived artifacts;
 - a convergence checkpoint that identifies Cloud context/environment/capability limits.
 
-Do not route an unresolved product or architecture decision merely because the local model/profile is strong. Planning and
-maintainer authority still precede implementation.
+Do not route an unresolved product, canonicalization, or architecture decision merely because the local model/profile is strong.
+Planning and maintainer authority still precede implementation.
+
+Do not adopt a fork or Dependabot branch for direct autonomous correction. Those remain contributor/bot-owned or are superseded by
+a deliberately routed internal task.
 
 ## Fixed model/profile
 
 The local scheduled automation selects its model and reasoning for the automation as a whole. The current Sniffy dispatcher and
 workers therefore use Sol / extra-high consistently. Do not label Codex Cloud as Terra and do not pretend the local dispatcher can
-switch models per issue unless a future product capability is explicitly smoke-tested and the profile is changed.
+switch models per item unless a future product capability is explicitly smoke-tested and the profile is changed.
 
 ## App-native topology
 
 ```text
 persistent dispatcher conversation (Sol / extra-high)
   -> empty queue: NO_CHANGE, no task/chat/worktree
-  -> eligible issue: guarded claim through central control issue
+  -> eligible canonical issue or PR: guarded claim through central control issue
        -> one one-time standalone worker task
-       -> one dedicated issue conversation
+       -> one dedicated canonical-item conversation
        -> one isolated app-managed worktree
+       -> fresh branch or exact adopted existing PR branch
        -> worker publishes evidence and guarded lifecycle handoff
 ```
 
@@ -46,7 +51,10 @@ The Windows app runs on the disposable VM; code, terminal, GitHub CLI, Java, Mav
 Before enabling app dispatch, smoke-test:
 
 - an empty tick creates no worker conversation or worktree;
-- a claimed item creates exactly one standalone worker;
+- a claimed issue item creates exactly one standalone worker;
+- an explicitly routed same-repository PR continuation reuses the exact branch/PR without a duplicate;
+- fork and Dependabot PRs cannot be adopted for direct correction;
+- a completed Implementation marks its PR ready and verifies non-draft exact-head state before Project Review;
 - the worker uses the expected project/worktree and Sol / extra-high profile;
 - failed child creation releases the guarded claim;
 - repeated automation returns to the intended persistent dispatcher;
@@ -61,11 +69,11 @@ one-time task creation survives a product update without retesting.
 systemd timer or cron
   -> flock / host-local dispatcher lock
   -> load docs/ai-delivery/profile.yml
-  -> query Status + Execution + Executor
+  -> query canonical Status + Execution + Executor
   -> central guarded claim
   -> isolated git worktree
   -> codex exec with rendered lifecycle prompt
-  -> tests, publication, evidence, guarded handoff
+  -> update exact branch/PR, tests, evidence, guarded handoff
 ```
 
 Use headless CLI when unattended reliability, Docker/services, persistent caches, several isolated workers, and machine-readable
@@ -74,26 +82,29 @@ Host-local `flock` prevents same-host overlap; the GitHub transition workflow se
 
 Each worker owns:
 
+- one canonical issue or PR and every linked requirement/evidence object;
 - one verified claim token and lifecycle generation;
 - one isolated worktree;
-- one branch and intended PR;
+- one fresh branch/intended PR or exact adopted existing branch/PR;
 - one rendered prompt for the current lifecycle status;
 - one structured log/evidence directory;
 - a bounded process timeout and cleanup path.
 
 A host may run several workers only when capacity, memory, disk, Maven/npm/Docker contention, and repository ownership are
-explicitly configured. Never let two workers own the same task/branch.
+explicitly configured. Never let two workers own the same canonical item or branch.
 
 ## Dispatcher contract
 
 Both adapters:
 
-- read `Execution = Ready` items routed to Local Codex;
+- read canonical `Execution = Ready` items routed to Local Codex;
+- accept issue and PR Project items;
 - respect directed Assignee or empty pool ownership;
-- inspect lifecycle, profile, access, capacity, branch/PR, current worker, and due monitoring;
+- inspect canonicalization, lifecycle, profile, access, capacity, exact branch/PR/head, current worker, and due monitoring;
+- exclude duplicate representations and linked issues suppressed by an open canonical multi-issue PR;
 - use the one active technical control issue and one guarded `delivery-control/v1` command per claim/transition;
 - inspect the reaction and re-read Project state before spawning;
-- record concrete conversation/task or process/worktree references;
+- record concrete conversation/task or process/worktree and exact PR references;
 - release to `Ready` when spawn fails;
 - set `Blocked` only when Dmitry must decide or act;
 - create no source or GitHub mutation for an empty queue.
@@ -101,20 +112,44 @@ Both adapters:
 Worker observation after 15 minutes, another 15 minutes, then hourly is part of this same dispatcher loop. Do not add a separate
 monitoring scheduler.
 
+## Fresh versus adopted continuation
+
+Fresh Implementation starts from current `origin/develop` only when no existing branch/PR owns the canonical item.
+
+An adopted continuation is valid when all are true:
+
+- an open same-repository PR already contains the intended implementation;
+- the canonical Project item explicitly routes `Implementer = Local Codex`, `Executor = Local Codex`;
+- the worker reference names the exact PR, branch, and head;
+- effective push permission and absence of competing ownership are verified;
+- the correction request is complete enough for one implementation turn.
+
+The worker then fetches and updates the exact existing branch. It does not reset, rebase, force-push, discard useful commits,
+open a replacement PR, or silently narrow the PR to only its latest review comments. Branch authorship by Dmitry, ChatGPT, or an
+IDE agent is neither a blocker nor sufficient authorization; the guarded Project route is authoritative.
+
 ## Worker contract
 
 A Local Codex worker performs only the routed lifecycle status:
 
 - Planning is unusual and normally remains ChatGPT/human-owned;
-- Implementation changes code, runs implementer-owned checks, inspects the diff, commits, pushes, and verifies publication;
+- Implementation changes code, runs implementer-owned checks, inspects the full diff, commits, pushes, and verifies publication;
 - Verification runs outcome-centric system/integration/browser proof when selected;
 - Review is performed only with an independent configured identity and explicit route.
 
-For fresh work, branch from current `origin/develop`. For continuation, use the exact existing PR branch and never reset, rebase,
-force-push, replace the PR, or discard useful work. Keep PRs draft only while implementation or locally available proof is
-incomplete.
+For fresh work, create one branch and intended PR. For continuation, use the exact existing same-repository PR branch. Keep the PR
+draft only while implementation or locally available proof is incomplete. When complete, mark it ready for review and re-read it
+as open, targeting `develop`, `draft = false`, and at the exact remote head. A successful push or green CI alone is not a Review
+handoff.
 
-Publish human-useful evidence on the target item. Use the central technical issue for Project transitions and claim/lease state.
+Publish human-useful evidence on the canonical item and synchronize the PR description. Then use one guarded command to hand the
+canonical item to `Review / Ready / ChatGPT`, recording the PR URL/head and clearing worker ownership. For a canonical issue the
+command must include `reviewPullRequest.number/head`; for a canonical PR it guards target plus `expected.head`. The control plane
+may repair a remaining draft, but the worker must not depend on that repair.
+
+After the command receives its terminal reaction, re-read both the PR as non-draft at the same exact head and the canonical Project
+state. Assign `bedrin-gpt` separately and verify assignment. Do not report completion until all three surfaces agree.
+
 Never merge or enable auto-merge without Dmitry's explicit instruction.
 
 ## Security

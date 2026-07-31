@@ -14,6 +14,7 @@ GH_VERSION="2.96.0"
 NODE_VERSION="24.15.0"
 GH_BIN_DIR="${HOME}/.local/bin"
 GH_INSTALL_DIR="${HOME}/.local/share/gh/${GH_VERSION}"
+GITHUB_REPOSITORY_URL="https://github.com/sniffy/sniffy.git"
 
 case "$(uname -m)" in
   x86_64)
@@ -74,7 +75,30 @@ install_github_cli() {
   gh --version
 }
 
+configure_github_remote() {
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Codex Cloud setup must run inside the Sniffy Git worktree." >&2
+    exit 1
+  fi
+
+  if git remote get-url origin >/dev/null 2>&1; then
+    git remote set-url --push origin "${GITHUB_REPOSITORY_URL}"
+  else
+    git remote add origin "${GITHUB_REPOSITORY_URL}"
+  fi
+
+  local push_url
+  push_url="$(git remote get-url --push origin)"
+  if [[ "${push_url}" != "${GITHUB_REPOSITORY_URL}" ]]; then
+    echo "Could not configure the canonical origin push URL: ${push_url}" >&2
+    exit 1
+  fi
+
+  echo "Configured origin push URL: ${push_url}"
+}
+
 install_github_cli
+configure_github_remote
 
 configure_github_auth() {
   if [[ -z "${GH_TOKEN:-}" ]]; then
@@ -101,7 +125,7 @@ configure_github_auth() {
   auth_login="$(gh api user --jq '.login')"
   probe_branch="agent/codex-auth-check-$(git rev-parse --short=12 HEAD)"
 
-  if ! push_error="$(git push --dry-run --porcelain https://github.com/sniffy/sniffy.git "HEAD:refs/heads/${probe_branch}" 2>&1)"; then
+  if ! push_error="$(git push --dry-run --porcelain origin "HEAD:refs/heads/${probe_branch}" 2>&1)"; then
     echo "GH_TOKEN authenticates as ${auth_login}, but setup could not negotiate a dry-run push to sniffy/sniffy:" >&2
     printf '%s\n' "${push_error}" >&2
     echo "The repository .permissions.push flag only describes the account role; token permissions can be narrower." >&2

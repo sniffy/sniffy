@@ -55,13 +55,12 @@ describe('connection registry controls', () => {
   });
 
   it('reloads authoritative row state and surfaces an error after a rejected mutation', async () => {
+    const write = deferred<void>();
     const getRegistry = vi
       .fn<SniffyClient['getRegistry']>()
       .mockResolvedValueOnce(registry(0))
       .mockResolvedValueOnce(registry(0));
-    const setSocket = vi
-      .fn<SniffyClient['setSocket']>()
-      .mockRejectedValue(new Error('write failed'));
+    const setSocket = vi.fn<SniffyClient['setSocket']>().mockReturnValue(write.promise);
     render(<ConnectionRegistryPanel client={client({ getRegistry, setSocket })} />);
     const socketSwitch = await screen.findByRole('switch', {
       name: 'Enable example.test:443 socket',
@@ -69,6 +68,7 @@ describe('connection registry controls', () => {
 
     fireEvent.click(socketSwitch);
     expect(socketSwitch).not.toBeChecked();
+    write.reject(new Error('write failed'));
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'write failed. Server state was reloaded.',
     );

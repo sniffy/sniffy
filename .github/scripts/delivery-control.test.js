@@ -46,12 +46,29 @@ function coreDouble() {
   };
 }
 
-function projectDouble({initial, freezeWrites = false}) {
+function projectDouble({
+  initial,
+  freezeWrites = false,
+  targetType = 'PullRequest',
+  targetNumber = 651,
+  reviewNumber = null,
+  reviewHead = head,
+  reviewDraft = false,
+  reviewState = 'OPEN',
+  reviewBase = 'develop',
+  closingIssues = []
+}) {
   const current = new Map(Object.entries(initial));
   const mutations = [];
+  const repositoryMutations = [];
+  const events = [];
+  let draft = reviewDraft;
+  let lastReviewNumber = reviewNumber;
   const fields = [
     selectField('STATUS', 'Status', ['Planning', 'Implementation', 'Review', 'Verification', 'Approval']),
     selectField('EXECUTION', 'Execution', ['Ready', 'In progress', 'Blocked']),
+    selectField('IMPLEMENTER', 'Implementer', ['ChatGPT', 'Codex Cloud', 'Local Codex', 'Human', 'Dependabot']),
+    selectField('VERIFIER', 'Verifier', ['ChatGPT', 'Codex Cloud', 'Local Codex', 'Human', 'Mixed']),
     selectField('EXECUTOR', 'Executor', ['ChatGPT', 'Codex Cloud', 'Local Codex', 'Human']),
     textField('WORKER', 'Worker reference'),
     textField('CLAIM', 'Claim token')
@@ -77,34 +94,76 @@ function projectDouble({initial, freezeWrites = false}) {
     };
   }
 
+  function target() {
+    return targetType === 'PullRequest'
+      ? {__typename: 'PullRequest', id: 'TARGET', headRefOid: head}
+      : {__typename: 'Issue', id: 'TARGET'};
+  }
+
+  function reviewPullRequest(number) {
+    if (reviewNumber !== null && number !== reviewNumber) return null;
+    lastReviewNumber = number;
+    return {
+      id: 'REVIEW',
+      number,
+      state: reviewState,
+      isDraft: draft,
+      baseRefName: reviewBase,
+      headRefOid: reviewHead,
+      closingIssuesReferences: {nodes: closingIssues.map(number => ({number}))}
+    };
+  }
+
   const github = {
     async graphql(query, variables) {
       if (query.includes('organization(login:')) {
         return {
           organization: {projectV2: {id: 'PROJECT', fields: {nodes: fields}}},
-          repository: {issueOrPullRequest: {__typename: 'PullRequest', id: 'TARGET', headRefOid: head}}
+          repository: {issueOrPullRequest: target()}
         };
+      }
+      if (query.includes('repository(owner:') && query.includes('pullRequest(number:')) {
+        return {repository: {pullRequest: reviewPullRequest(variables.number)}};
       }
       if (query.includes('projectItems(first: 50)')) {
         return {node: {projectItems: {nodes: [item()]}}};
+      }
+      if (query.includes('markPullRequestReadyForReview')) {
+        repositoryMutations.push(['ready', lastReviewNumber]);
+        events.push(['ready', lastReviewNumber]);
+        draft = false;
+        return {
+          markPullRequestReadyForReview: {
+            pullRequest: {
+              id: 'REVIEW',
+              number: lastReviewNumber,
+              state: reviewState,
+              isDraft: false,
+              baseRefName: reviewBase,
+              headRefOid: reviewHead
+            }
+          }
+        };
       }
       if (query.includes('updateProjectV2ItemFieldValue')) {
         const field = definitions.get(variables.field);
         const value = variables.value.text ?? optionValues.get(variables.value.singleSelectOptionId);
         mutations.push(['set', field.name, value]);
+        events.push(['set', field.name, value]);
         if (!freezeWrites) current.set(field.name, value);
         return {updateProjectV2ItemFieldValue: {projectV2Item: {id: 'ITEM'}}};
       }
       if (query.includes('clearProjectV2ItemFieldValue')) {
         const field = definitions.get(variables.field);
         mutations.push(['clear', field.name, null]);
+        events.push(['clear', field.name, null]);
         if (!freezeWrites) current.delete(field.name);
         return {clearProjectV2ItemFieldValue: {projectV2Item: {id: 'ITEM'}}};
       }
       throw new Error(`Unexpected GraphQL operation: ${query.slice(0, 80)}`);
     }
   };
-  return {current, github, mutations};
+  return {current, events, github, mutations, repositoryMutations};
 }
 
 function selectField(id, name, names) {
@@ -150,6 +209,43 @@ test('rejects set and clear overlap', () => {
   const command = structuredClone(claim);
   command.clear = ['Executor'];
   assert.throws(() => parseCommand(command), /both set and clear/);
+});
+
+test('requires exact PR identity when an issue enters Review', () => {
+  assert.throws(() => parseCommand({
+    command: 'delivery-control/v1',
+    target: {repository: 'sniffy/sniffy', number: 762},
+    expected: {type: 'Issue', fields: {Status: 'Implementation'}},
+    set: {Status: 'Review'}
+  }), /must identify reviewPullRequest/);
+});
+
+test('rejects reviewPullRequest on a non-Review transition', () => {
+  assert.throws(() => parseCommand({
+    command: 'delivery-control/v1',
+    target: {repository: 'sniffy/sniffy', number: 762},
+    expected: {type: 'Issue', fields: {Status: 'Review'}},
+    reviewPullRequest: {number: 763, head},
+    set: {Status: 'Verification'}
+  }), /allowed only when setting Status=Review/);
+});
+
+test('accepts external PR intake without inferring an Implementer', () => {
+  const intake = parseCommand({
+    command: 'delivery-control/v1',
+    target: {repository: 'sniffy/sniffy', number: 757},
+    expected: {type: 'PullRequest', head},
+    set: {
+      Status: 'Review',
+      Execution: 'Ready',
+      Verifier: 'ChatGPT',
+      Executor: 'ChatGPT',
+      'Worker reference': 'external PR intake; author dependabot[bot]; exact head'
+    },
+    addIfMissing: true
+  });
+  assert.equal(Object.hasOwn(intake.set, 'Implementer'), false);
+  assert.equal(intake.addIfMissing, true);
 });
 
 test('detects stale fields and changed head', () => {
@@ -229,6 +325,102 @@ test('rejects unauthorized and malformed control commands before transition', ()
   assert.throws(() => parseInvocation({context, core: coreDouble()}), /valid JSON/);
 });
 
+test('applies external PR intake while leaving Implementer empty', async () => {
+  const intake = {
+    command: 'delivery-control/v1',
+    target: {repository: 'sniffy/sniffy', number: 757},
+    expected: {type: 'PullRequest', head},
+    set: {
+      Status: 'Review',
+      Execution: 'Ready',
+      Verifier: 'ChatGPT',
+      Executor: 'ChatGPT',
+      'Worker reference': 'external PR intake; author dependabot[bot]; exact head'
+    },
+    addIfMissing: true
+  };
+  const fixture = projectDouble({initial: {}});
+  const result = await executeTransition({github: fixture.github, core: coreDouble(), payloadBase64: encoded(intake)});
+  assert.equal(result.outcome, 'success');
+  assert.equal(fixture.current.has('Implementer'), false);
+  assert.deepEqual(fixture.repositoryMutations, []);
+  assert.deepEqual(fixture.mutations, [
+    ['set', 'Status', 'Review'],
+    ['set', 'Execution', 'Ready'],
+    ['set', 'Verifier', 'ChatGPT'],
+    ['set', 'Executor', 'ChatGPT'],
+    ['set', 'Worker reference', 'external PR intake; author dependabot[bot]; exact head']
+  ]);
+});
+
+test('marks a canonical PR ready before applying Review fields', async () => {
+  const transition = {
+    command: 'delivery-control/v1',
+    target: {repository: 'sniffy/sniffy', number: 748},
+    expected: {
+      type: 'PullRequest',
+      head,
+      fields: {Status: 'Implementation', Execution: 'In progress', Executor: 'ChatGPT'}
+    },
+    set: {Status: 'Review', Execution: 'Ready', Executor: 'ChatGPT'}
+  };
+  const fixture = projectDouble({initial: transition.expected.fields, reviewDraft: true});
+  const result = await executeTransition({github: fixture.github, core: coreDouble(), payloadBase64: encoded(transition)});
+  assert.equal(result.outcome, 'success');
+  assert.deepEqual(fixture.repositoryMutations, [['ready', 748]]);
+  assert.deepEqual(fixture.events.slice(0, 2), [
+    ['ready', 748],
+    ['set', 'Status', 'Review']
+  ]);
+});
+
+test('marks the formally linked PR ready when the canonical item is an issue', async () => {
+  const transition = {
+    command: 'delivery-control/v1',
+    target: {repository: 'sniffy/sniffy', number: 762},
+    expected: {
+      type: 'Issue',
+      fields: {Status: 'Implementation', Execution: 'In progress', Executor: 'Local Codex'}
+    },
+    reviewPullRequest: {number: 763, head},
+    set: {Status: 'Review', Execution: 'Ready', Executor: 'ChatGPT'}
+  };
+  const fixture = projectDouble({
+    initial: transition.expected.fields,
+    targetType: 'Issue',
+    targetNumber: 762,
+    reviewNumber: 763,
+    reviewDraft: true,
+    closingIssues: [762]
+  });
+  const result = await executeTransition({github: fixture.github, core: coreDouble(), payloadBase64: encoded(transition)});
+  assert.equal(result.outcome, 'success');
+  assert.deepEqual(fixture.repositoryMutations, [['ready', 763]]);
+  assert.equal(fixture.current.get('Status'), 'Review');
+});
+
+test('does not mutate a mismatched linked PR or Project state', async () => {
+  const transition = {
+    command: 'delivery-control/v1',
+    target: {repository: 'sniffy/sniffy', number: 762},
+    expected: {type: 'Issue', fields: {Status: 'Implementation', Execution: 'In progress', Executor: 'ChatGPT'}},
+    reviewPullRequest: {number: 763, head},
+    set: {Status: 'Review', Execution: 'Ready', Executor: 'ChatGPT'}
+  };
+  const fixture = projectDouble({
+    initial: transition.expected.fields,
+    targetType: 'Issue',
+    targetNumber: 762,
+    reviewNumber: 763,
+    reviewDraft: true,
+    closingIssues: []
+  });
+  const result = await executeTransition({github: fixture.github, core: coreDouble(), payloadBase64: encoded(transition)});
+  assert.equal(result.outcome, 'conflict');
+  assert.deepEqual(fixture.repositoryMutations, []);
+  assert.deepEqual(fixture.mutations, []);
+});
+
 test('applies and verifies one complete multi-field transition', async () => {
   const transition = {
     command: 'delivery-control/v1',
@@ -301,14 +493,17 @@ test('fails when the post-write Project state cannot be verified', async () => {
   assert.deepEqual(fixture.mutations, [['set', 'Status', 'Review']]);
 });
 
-test('workflow has one write-bearing job and deterministic claim serialization', () => {
+test('workflow has one guarded write job and deterministic serialization', () => {
   const workflow = fs.readFileSync(path.join(__dirname, '../workflows/delivery-control.yml'), 'utf8');
   assert.equal((workflow.match(/issues:\s*write/g) || []).length, 1);
+  assert.equal((workflow.match(/pull-requests:\s*write/g) || []).length, 1);
   assert.doesNotMatch(workflow, /^\s{2}acknowledge-parse-failure:/m);
   assert.match(workflow, /Reject invalid control command[\s\S]*needs\.parse\.result == 'failure'/);
   assert.match(workflow, /contains\(github\.event\.issue\.labels\.\*\.name, 'ai-delivery-control'\)/);
   assert.match(workflow, /ai-delivery-\$\{\{ needs\.parse\.outputs\.target_repository/);
   assert.match(workflow, /cancel-in-progress:\s*false/);
+  assert.match(workflow, /REPOSITORY_TOKEN:\s*\$\{\{ github\.token \}\}/);
+  assert.match(workflow, /getOctokit\(process\.env\.REPOSITORY_TOKEN\)/);
 });
 
 test('rotation thresholds are explicit and legacy target-comment workflows are retired', () => {
@@ -316,6 +511,7 @@ test('rotation thresholds are explicit and legacy target-comment workflows are r
   assert.match(profile, /controlIssueLabel:\s*"ai-delivery-control"/);
   assert.match(profile, /rotateAfterCommands:\s*[1-9][0-9]*/);
   assert.match(profile, /rotateAfterDays:\s*[1-9][0-9]*/);
+  assert.match(profile, /setImplementerFromAuthor:\s*false/);
   assert.equal(fs.existsSync(path.join(__dirname, '../workflows/project-field.yml')), false);
   assert.equal(fs.existsSync(path.join(__dirname, '../workflows/project-status.yml')), false);
 });

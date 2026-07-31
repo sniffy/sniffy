@@ -23,8 +23,61 @@ updates:
       day: "sunday"
       time: "05:00"
     open-pull-requests-limit: 5
+    groups:
+      playwright-toolchain:
+        applies-to: "version-updates"
+        patterns:
+          - "@playwright/test"
+          - "playwright"
+      playwright-toolchain-security:
+        applies-to: "security-updates"
+        patterns:
+          - "@playwright/test"
+          - "playwright"
     labels:
       - "dependencies"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # The core module intentionally remains on Spring Framework 5.3 for Java 8.
+  # Keep security alerts visible, allow patched 5.3 releases, and suppress only
+  # incompatible Spring 6+ proposals. Version-update PRs remain disabled here.
+  - package-ecosystem: "maven"
+    directory: "/sniffy"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "06:00"
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "org.springframework:spring-web"
+        versions:
+          - "[6,)"
+    labels:
+      - "dependencies"
+      - "java"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # sniffy-web-javax is the Java 8 / javax.servlet compatibility lane.
+  # Spring 6+ requires Java 17 and Jakarta APIs; the separate modern module owns
+  # that coverage. Continue accepting patched Spring 5.3 security releases only.
+  - package-ecosystem: "maven"
+    directory: "/sniffy-web-javax"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "07:00"
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "org.springframework:spring-webmvc"
+        versions:
+          - "[6,)"
+    labels:
+      - "dependencies"
+      - "java"
     commit-message:
       prefix: "deps"
       include: "scope"
