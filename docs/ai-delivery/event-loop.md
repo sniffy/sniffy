@@ -223,6 +223,13 @@ The canonical work item may be an issue or pull request. The dispatcher also che
 worker-pool capacity, existing branch/PR ownership, and absence of a valid current worker. It excludes duplicate representations
 and linked issues suppressed by an open canonical multi-issue PR.
 
+When a profile defines a worker limit, the normal dispatcher derives used capacity from owned `In progress` items in the same
+retained authoritative queue snapshot used for selection. Provider project/task/conversation inventory is not a normal pre-claim
+capacity or duplicate-worker check: it is slower, can be stale, and cannot make `inventory -> claim` atomic. Use provider inventory
+only for targeted recovery of an already claimed `In progress` generation when provisional worker evidence leaves child creation
+uncertain. Per-target duplicate-generation exclusion comes from the guarded claim. A strict cross-target global pool limit across
+several concurrent dispatchers requires a separately serialized semaphore; provider inventory is not that semaphore.
+
 Eligibility must not require `Implementer` or `Verifier` to be populated when the current status does not use them. A blank
 `Implementer` means unknown/not deliberately selected, while `Executor` remains the authoritative current route. Entering
 Implementation requires a non-empty deliberately selected Implementer; Review, PR monitoring, Verification, Approval, and closure
