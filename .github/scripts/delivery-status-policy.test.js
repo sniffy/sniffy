@@ -18,6 +18,9 @@ test('ChatGPT scheduled ticks require the labeled status artifact fallback', () 
   assert.match(prompt, /download the artifact by\s+numeric artifact ID/is);
   assert.match(prompt, /read project-2-status\.json/i);
   assert.match(prompt, /missing, expired, inaccessible, malformed, mismatched, or stale snapshot/i);
+  assert.match(prompt, /\/ai-delivery-status refresh/);
+  assert.match(prompt, /terminal \+1 reaction/i);
+  assert.match(prompt, /refreshRequest\.commentId/i);
 });
 
 test('snapshot-backed commands retain live compare-and-set semantics', () => {
@@ -36,6 +39,9 @@ test('profile fixes the status protocol, label, artifact and freshness contract'
   assert.match(profile, /artifactName:\s*"ai-delivery-status-project-2"/);
   assert.match(profile, /snapshotFile:\s*"project-2-status\.json"/);
   assert.match(profile, /maxAgeMinutes:\s*30/);
+  assert.match(profile, /refreshCommand:\s*"\/ai-delivery-status refresh"/);
+  assert.match(profile, /refreshTimeoutSeconds:\s*120/);
+  assert.match(profile, /refreshActors:\s*\[bedrin, bedrin-gpt\]/);
 });
 
 test('status documentation preserves the read-only mutation boundary', () => {
@@ -49,8 +55,15 @@ test('status documentation preserves the read-only mutation boundary', () => {
 test('workflow isolates validation and trusted status publication', () => {
   const workflow = read('.github/workflows/delivery-status.yml');
   assert.match(workflow, /permissions:\s*\{\}/);
-  assert.match(workflow, /cron:\s*'5,20,35,50 \* \* \* \*'/);
+  assert.match(workflow, /cron:\s*'5 \* \* \* \*'/);
   assert.match(workflow, /workflows:\s*\[AI delivery control\]/);
+  assert.match(workflow, /issue_comment:\s*\n\s+types:\s*\[created\]/);
+  assert.match(workflow, /github\.event\.comment\.body == '\/ai-delivery-status refresh'/);
+  assert.match(workflow, /contains\(github\.event\.issue\.labels\.\*\.name, 'ai-delivery-status'\)/);
+  assert.match(workflow, /fromJSON\('\["bedrin","bedrin-gpt"\]'\)/);
+  assert.match(workflow, /content:\s*'\+1'/);
+  assert.match(workflow, /content:\s*'-1'/);
+  assert.match(workflow, /refreshRequest:/);
   assert.match(workflow, /ref:\s*develop/);
   assert.match(workflow, /issues:\s*write/);
   assert.match(workflow, /pull-requests:\s*read/);

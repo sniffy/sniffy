@@ -30,7 +30,10 @@ statusSnapshot:
   rawPullRequestsFile: "repository-pull-requests.raw.json"
   maxAgeMinutes: 30
   retentionDays: 2
-  scheduleMinutes: [5, 20, 35, 50]
+  scheduleMinutes: [5]
+  refreshCommand: "/ai-delivery-status refresh"
+  refreshActors: [bedrin, bedrin-gpt]
+  refreshTimeoutSeconds: 120
 
 fields:
   status: Status

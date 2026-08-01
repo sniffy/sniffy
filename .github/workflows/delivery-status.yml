@@ -20,8 +20,10 @@ on:
   workflow_run:
     workflows: [AI delivery control]
     types: [completed]
+  issue_comment:
+    types: [created]
   schedule:
-    - cron: '5,20,35,50 * * * *'
+    - cron: '5 * * * *'
   workflow_dispatch:
 
 permissions: {}
@@ -66,6 +68,15 @@ jobs:
       (
         github.event_name != 'workflow_run' ||
         github.event.workflow_run.event != 'pull_request'
+      ) &&
+      (
+        github.event_name != 'issue_comment' ||
+        (
+          github.event.issue.pull_request == null &&
+          contains(github.event.issue.labels.*.name, 'ai-delivery-status') &&
+          github.event.comment.body == '/ai-delivery-status refresh' &&
+          contains(fromJSON('["bedrin","bedrin-gpt"]'), github.actor)
+        )
       )
     runs-on: ubuntu-slim
     timeout-minutes: 10
@@ -91,6 +102,9 @@ jobs:
           PROJECT_NUMBER: '2'
           STATUS_REPOSITORY: sniffy/sniffy
           UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+          REFRESH_REQUEST_COMMENT_ID: ${{ github.event.comment.id || '' }}
+          REFRESH_REQUEST_ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
+          REFRESH_REQUEST_ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
           mkdir -p status-artifact
@@ -158,7 +172,10 @@ jobs:
             --workflow-run-attempt "$GITHUB_RUN_ATTEMPT" \
             --event "$GITHUB_EVENT_NAME" \
             --upstream-run-id "$UPSTREAM_RUN_ID" \
-            --head-sha "$source_sha"
+            --head-sha "$source_sha" \
+            --request-comment-id "$REFRESH_REQUEST_COMMENT_ID" \
+            --request-issue-number "$REFRESH_REQUEST_ISSUE_NUMBER" \
+            --request-actor "$REFRESH_REQUEST_ACTOR"
 
           node .github/scripts/delivery-status-mergeability.js \
             status-artifact/project-2-status.json \
@@ -190,6 +207,9 @@ jobs:
           ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
           UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id || '' }}
           SOURCE_SHA: ${{ steps.export.outputs.source_sha }}
+          REFRESH_REQUEST_COMMENT_ID: ${{ github.event.comment.id || '' }}
+          REFRESH_REQUEST_ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
+          REFRESH_REQUEST_ACTOR: ${{ github.actor }}
         with:
           github-token: ${{ github.token }}
           script: |
@@ -199,7 +219,12 @@ jobs:
               attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
               event: process.env.GITHUB_EVENT_NAME,
               upstreamRunId: process.env.UPSTREAM_RUN_ID ? Number(process.env.UPSTREAM_RUN_ID) : null,
-              headSha: process.env.SOURCE_SHA
+              headSha: process.env.SOURCE_SHA,
+              refreshRequest: process.env.REFRESH_REQUEST_COMMENT_ID ? {
+                commentId: Number(process.env.REFRESH_REQUEST_COMMENT_ID),
+                issueNumber: Number(process.env.REFRESH_REQUEST_ISSUE_NUMBER),
+                actor: process.env.REFRESH_REQUEST_ACTOR
+              } : null
             };
             const payload = status.pointerPayload({
               generatedAt: process.env.GENERATED_AT,
@@ -222,3 +247,34 @@ jobs:
               counts: JSON.parse(process.env.COUNTS_JSON)
             });
             await status.publishStatusPointer({github, context, core, payload});
+
+      - name: Acknowledge successful refresh request
+        if: success() && github.event_name == 'issue_comment'
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              ...context.repo,
+              comment_id: context.payload.comment.id,
+              content: '+1'
+            });
+
+      - name: Reject failed refresh request
+        if: failure() && github.event_name == 'issue_comment'
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const reactions = await github.paginate(github.rest.reactions.listForIssueComment, {
+              ...context.repo,
+              comment_id: context.payload.comment.id,
+              per_page: 100
+            });
+            if (!reactions.some(reaction => reaction.content === '+1')) {
+              await github.rest.reactions.createForIssueComment({
+                ...context.repo,
+                comment_id: context.payload.comment.id,
+                content: '-1'
+              });
+            }
