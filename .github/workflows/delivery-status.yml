@@ -60,7 +60,11 @@ jobs:
           YAML.load_file(".github/workflows/delivery-status.yml");
           YAML.load_file("docs/ai-delivery/profile.yml")'
       - name: Lint GitHub Actions workflow
-        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 .github/workflows/delivery-status.yml
+        # actionlint 1.7.12 predates GitHub's queue concurrency key. Keep every other diagnostic active.
+        run: >-
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12
+          -ignore 'unexpected key "queue" for "concurrency" section'
+          .github/workflows/delivery-status.yml
 
   publish:
     if: >-
@@ -86,6 +90,7 @@ jobs:
       pull-requests: read
     concurrency:
       group: ai-delivery-status-${{ github.repository }}
+      queue: max
       cancel-in-progress: false
 
     steps:
