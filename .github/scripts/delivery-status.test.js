@@ -97,7 +97,7 @@ test('uses live repository metadata for pull-request state and exact head', () =
   assert.equal(result.items[0].content.baseRefName, 'develop');
 });
 
-test('keeps source and lifecycle drift while dropping terminal closed items', () => {
+test('keeps source and lifecycle drift while dropping only Done closed items', () => {
   const result = snapshot([
     item(1, {state: 'OPEN', status: 'Done'}),
     item(2, {state: 'CLOSED', status: 'Review'}),
@@ -105,7 +105,8 @@ test('keeps source and lifecycle drift while dropping terminal closed items', ()
     item(4, {state: 'CLOSED', status: 'Draft'}),
     item(5, {state: '', status: null, type: 'DraftIssue'})
   ]);
-  assert.deepEqual(result.items.map(value => value.content.number), [1, 2, 5]);
+  assert.deepEqual(result.items.map(value => value.content.number), [1, 2, 4, 5]);
+  assert.deepEqual(result.semantics.terminalProjectStatuses, ['Done']);
 });
 
 test('excludes control and status issues from active work', () => {
@@ -174,6 +175,19 @@ test('builds a machine-readable artifact pointer', () => {
   assert.equal(payload.artifact.snapshotFile, 'project-2-status.json');
   assert.equal(payload.artifact.rawIssuesFile, 'repository-issues.raw.json');
   assert.equal(payload.artifact.rawPullRequestsFile, 'repository-pull-requests.raw.json');
+});
+
+test('rejects a missing or nonnumeric artifact id before publishing a pointer', () => {
+  const common = {
+    generatedAt: '2026-08-01T00:00:00Z',
+    repository: 'sniffy/sniffy',
+    projectOwner: 'sniffy',
+    projectNumber: 2,
+    workflowRun: {id: 101},
+    counts: {}
+  };
+  assert.throws(() => pointerPayload({...common, artifact: {id: ''}}), /Invalid artifact id/);
+  assert.throws(() => pointerPayload({...common, artifact: {id: 'not-a-number'}}), /Invalid artifact id/);
 });
 
 function githubDouble({issues = [], labelExists = true} = {}) {
