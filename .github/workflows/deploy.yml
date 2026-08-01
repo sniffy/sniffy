@@ -313,7 +313,7 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.SIGNING_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
