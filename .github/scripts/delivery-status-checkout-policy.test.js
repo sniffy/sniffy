@@ -8,8 +8,8 @@ const test = require('node:test');
 const root = path.join(__dirname, '../..');
 const workflow = fs.readFileSync(path.join(root, '.github/workflows/delivery-status.yml'), 'utf8');
 
-test('validation checkout is partial, sparse and credential-free', () => {
-  assert.match(workflow, /filter:\s*blob:none/);
+test('validation checkout is sparse and credential-free', () => {
+  assert.doesNotMatch(workflow, /filter:\s*blob:none/);
   assert.match(workflow, /sparse-checkout-cone-mode:\s*false/);
   assert.match(workflow, /persist-credentials:\s*false/);
   assert.match(workflow, /\.github\/scripts\/delivery-status\.test\.js/);
