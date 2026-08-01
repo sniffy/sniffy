@@ -5,8 +5,8 @@ Codex Cloud, Local Codex, an IDE-hosted coding agent, automation such as Dependa
 control-plane documentation for delivery. Repository engineering rules remain in the nearest applicable `AGENTS.md`.
 
 The current Sniffy routing knobs live in [`profile.yml`](profile.yml). Shared semantics belong in Markdown; the profile selects
-current executors, identities, Local Codex model/effort, control-log rotation thresholds, default routes, and universal PR intake
-behavior without redefining the lifecycle.
+current executors, identities, Local Codex model/effort, control-log rotation thresholds, default routes, universal PR intake
+behavior, and the repository-owned Project status read model without redefining the lifecycle.
 
 ## Terminology
 
@@ -25,6 +25,7 @@ behavior without redefining the lifecycle.
 | Runbook | Environment- or procedure-specific operating instructions | Codex Cloud setup, local worker |
 | Task prompt | One launch or continuation request | a rendered worker prompt for an issue or PR |
 | Control command | Guarded provider-neutral ProjectV2 transition | one `delivery-control/v1` JSON comment |
+| Status snapshot | Eventually consistent read-only ProjectV2 materialization | artifact pointer in an `ai-delivery-status` issue |
 
 Roles, executors, identities, and PR provenance are independent. ChatGPT is the default supervisor, but it may also implement,
 review, or verify a task. Codex Cloud and Local Codex may perform the same implementer role in different environments. Model
@@ -88,6 +89,12 @@ All configured executors use the same central control-issue protocol for Project
 is reserved for human-useful plans, reviews, evidence, blockers, and handoffs. Omitted Project fields remain unchanged, and an empty
 optional field is valid state rather than a reason to invent a new select option. See [`control-plane.md`](control-plane.md).
 
+Clients without reliable direct organization ProjectV2 reads use the repository-owned status snapshot in
+[`status-snapshot.md`](status-snapshot.md). The snapshot is a read-only, eventually consistent selection aid. It never authorizes a
+mutation: every claim and handoff still goes through `delivery-control/v1`, whose workflow re-reads and verifies live ProjectV2
+state. A stale or unavailable snapshot blocks snapshot-dependent autonomous selection rather than permitting remembered or guessed
+field values.
+
 Dmitry owns product decisions, accepted risk, privileged repository/hosting operations, final acceptance, and merge authorization.
 ChatGPT owns issue refinement, universal PR intake/canonicalization, routing proposals, supervision, code review, verification
 coordination, control-log rotation, and clear handoff. An executor owns only the lifecycle turn and proof explicitly routed to it.
@@ -105,17 +112,26 @@ Use this precedence when instructions differ:
 7. The selected executor runbook or skill.
 8. The concrete task prompt.
 
+The status snapshot is not inserted into this authority order as a new ledger. It is a materialized view of current Project fields
+for readers that cannot query ProjectV2 directly. Live GitHub source state and guarded control verification remain authoritative
+for the operations they cover.
+
 Historical tick chats, Codex conversations, and Actions logs are telemetry and evidence, not the only copy of durable delivery
 state.
 
 ## Documentation map
 
-- [`profile.yml`](profile.yml) — current Sniffy Project, field, identity, routing, Local Codex, intake, and rotation configuration.
+- [`profile.yml`](profile.yml) — current Sniffy Project, field, identity, routing, Local Codex, intake, control, status-snapshot, and
+  rotation configuration.
 - [`lifecycle.md`](lifecycle.md) — statuses, execution states, canonical issue/PR rules, optional planned routing, and corrections.
 - [`control-plane.md`](control-plane.md) — one guarded mutation protocol, optional/omitted fields, control issue, concurrency,
   reactions, and rotation.
+- [`status-snapshot.md`](status-snapshot.md) — read-only Project materialization, labeled pointer issue, artifact format, freshness,
+  active-item semantics, permissions, and ChatGPT read procedure.
 - [`event-loop.md`](event-loop.md) — reusable clock, universal PR intake/canonicalization, dispatcher, claims, and provider adapters.
 - [`.chatgpt/scheduled-task-prompt.md`](../../.chatgpt/scheduled-task-prompt.md) — exact prompt for four ChatGPT Scheduled Tasks.
+- [`.chatgpt/status-snapshot-instructions.md`](../../.chatgpt/status-snapshot-instructions.md) — mandatory Project read supplement
+  for ChatGPT ticks when direct ProjectV2 access is unavailable.
 - [`pull-request-intake.md`](pull-request-intake.md) — arbitrary PR discovery, canonical issue/PR selection, drafts, forks,
   Dependabot, review, correction, and completion.
 - [`chat-retention.md`](chat-retention.md) — persistent Scheduled Task chats, compact outputs, and bounded manual rotation.
@@ -139,6 +155,11 @@ maintenance action. No Scheduled Task may rely on previous chat turns as state.
 A no-op tick creates no GitHub mutation. A productive tick performs at most one canonicalization/reconciliation or lifecycle turn
 directly, or makes one supported external dispatch. Scheduled ChatGPT ticks cannot create child Scheduled Tasks.
 
+When direct ProjectV2 reads are unavailable, each tick must apply the configured status-snapshot supplement before queue selection:
+find the newest open issue labeled `ai-delivery-status`, validate its JSON pointer and freshness, download the artifact by numeric
+ID through the default GitHub connector, and read the explicit normalized fields. Technical `ai-delivery-control` and
+`ai-delivery-status` issues are never canonical work. See [`status-snapshot.md`](status-snapshot.md).
+
 Every open PR targeting `develop` is scanned. A single linked issue remains canonical; a standalone PR becomes the Project item;
 a multi-issue PR enters Planning. Same-repository corrections can be adopted by ChatGPT or Local Codex on the exact existing
 branch/PR. Forks and managed-bot branches use contributor/bot operations or a linked replacement task.
@@ -149,9 +170,10 @@ intake does not select it.
 
 ## Provider-specific files
 
-- `.chatgpt/` contains copy-paste Scheduled Task prompts, not durable delivery state.
+- `.chatgpt/` contains copy-paste Scheduled Task prompts and connector-read supplements, not durable delivery state.
 - `.codex/` contains Codex environment scripts and launch prompts, not general repository policy.
 - `.github/workflows/delivery-control.yml` and `.github/scripts/delivery-control.js` implement the provider-neutral mutation bridge.
+- `.github/workflows/delivery-status.yml` and `.github/scripts/delivery-status.js` implement the read-only Project status bridge.
 - `.github/scripts/delivery-policy.test.js` protects the canonical universal-intake and adopted-continuation prompt contract.
 - `.github/copilot-instructions.md` is a small Copilot adapter pointing to `AGENTS.md` and this directory.
 - `.agents/skills/` contains optional reusable procedures that an executor invokes only when applicable.
