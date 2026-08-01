@@ -15,6 +15,23 @@ controlPlane:
   rotateAfterCommands: 500
   rotateAfterDays: 30
 
+statusSnapshot:
+  protocol: ai-delivery-status/v1
+  documentation: docs/ai-delivery/status-snapshot.md
+  chatgptInstructions: .chatgpt/status-snapshot-instructions.md
+  workflow: .github/workflows/delivery-status.yml
+  issueTitle: "AI Delivery Status — Project 2"
+  issueLabel: "ai-delivery-status"
+  artifactName: "ai-delivery-status-project-2"
+  snapshotFile: "project-2-status.json"
+  rawFieldsFile: "project-fields.raw.json"
+  rawItemsFile: "project-items.raw.json"
+  rawIssuesFile: "repository-issues.raw.json"
+  rawPullRequestsFile: "repository-pull-requests.raw.json"
+  maxAgeMinutes: 30
+  retentionDays: 2
+  scheduleMinutes: [5, 20, 35, 50]
+
 fields:
   status: Status
   execution: Execution
