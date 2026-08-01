@@ -1,0 +1,60 @@
+name: Ubuntu slim capability probe
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/ubuntu-slim-capabilities.yml
+      - .github/workflows/delivery-status.yml
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  probe:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Inspect preinstalled tools
+        shell: bash
+        run: |
+          set -u
+          for command in bash git gh jq node npm ruby docker tar curl unzip; do
+            if path="$(command -v "$command" 2>/dev/null)"; then
+              printf '%-8s present %s\n' "$command" "$path"
+              case "$command" in
+                gh) gh --version | head -n 1 ;;
+                jq) jq --version ;;
+                node) node --version ;;
+                npm) npm --version ;;
+                git) git --version ;;
+                ruby) ruby --version ;;
+                docker) docker --version ;;
+                tar) tar --version | head -n 1 ;;
+                curl) curl --version | head -n 1 ;;
+                unzip) unzip -v | head -n 1 ;;
+              esac
+            else
+              printf '%-8s missing\n' "$command"
+            fi
+          done
+
+      - name: Record migration decision inputs
+        shell: bash
+        run: |
+          {
+            echo '## ubuntu-slim capability probe'
+            echo
+            echo '| Tool | Available |'
+            echo '| --- | --- |'
+            for command in git gh jq node ruby docker tar curl; do
+              if command -v "$command" >/dev/null 2>&1; then
+                echo "| $command | yes |"
+              else
+                echo "| $command | no |"
+              fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
