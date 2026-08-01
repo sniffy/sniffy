@@ -19,12 +19,14 @@ ProjectV2 reads are unavailable or fail.
 4. Use only the snapshot's explicit `fields`/`fieldValues` as ProjectV2 read state. An absent field value is represented as `null`;
    do not infer it from prose, authorship, prior chat state, or defaults. The file contains active Sniffy items only. The raw files
    are diagnostic and are not the ordinary queue.
-5. Before ordinary queue selection, inspect snapshot PR items for `content.mergeable = CONFLICTING` or
-   `content.mergeStateStatus = DIRTY`. Treat each same-repository, non-Dependabot agent PR as a priority continuation/reconciliation
-   obligation. Re-read the live PR first and require it still to be open, target `develop`, have the same exact head, and remain
-   conflicted. Preserve the existing branch and PR; deliberately route conflict resolution to an eligible implementation executor,
-   then start the normal 15-minute, second-15-minute, and hourly observation cycle. Fork PRs wait for their contributor, and
-   Dependabot PRs use `@dependabot rebase`; never adopt or rewrite those branches through this rule.
+5. Before ordinary queue selection, inspect the snapshot's top-level `pullRequests` observations for `mergeable = CONFLICTING` or
+   `mergeStateStatus = DIRTY`. This collection is independent of Project item type; use `closingIssueNumbers` to resolve the
+   canonical issue-versus-PR identity before routing, without activating a duplicate PR lifecycle item. Treat each same-repository,
+   non-Dependabot agent PR as a priority continuation/reconciliation obligation. Re-read the live PR first and require it still to
+   be open, target `develop`, have the same exact head, and remain conflicted. Preserve the existing branch and PR; deliberately
+   route conflict resolution to an eligible implementation executor, then start the normal 15-minute, second-15-minute, and hourly
+   observation cycle. Fork PRs wait for their contributor, and Dependabot PRs use `@dependabot rebase`; never adopt or rewrite those
+   branches through this rule.
 6. Re-read current issue/PR open/draft state, exact branch/head, formal closing links, assignment, reviews, threads, matching CI,
    and mergeability through live GitHub operations before acting. Snapshot source metadata and mergeability are discovery hints,
    not mutation authority.

@@ -123,6 +123,27 @@ jobs:
             --json number,state,isDraft,mergedAt,closedAt,createdAt,updatedAt,title,url,author,labels,headRefName,headRefOid,baseRefName,isCrossRepository,mergeable,mergeStateStatus \
             > status-artifact/repository-pull-requests.raw.json
 
+          status_owner="${STATUS_REPOSITORY%%/*}"
+          status_name="${STATUS_REPOSITORY#*/}"
+          # GraphQL pagination requires the literal $endCursor variable.
+          # shellcheck disable=SC2016
+          GH_TOKEN="$REPOSITORY_TOKEN" gh api graphql --paginate \
+            -f owner="$status_owner" \
+            -f name="$status_name" \
+            -f query='query($owner: String!, $name: String!, $endCursor: String) {
+              repository(owner: $owner, name: $name) {
+                pullRequests(first: 100, after: $endCursor, states: OPEN) {
+                  nodes {
+                    number
+                    closingIssuesReferences(first: 100) { totalCount nodes { number } }
+                  }
+                  pageInfo { hasNextPage endCursor }
+                }
+              }
+            }' \
+            | jq -sc '[.[].data.repository.pullRequests.nodes[] | {number, closingIssuesReferences}]' \
+            > "$RUNNER_TEMP/repository-pull-request-closing-issues.raw.json"
+
           node .github/scripts/delivery-status.js normalize \
             --fields status-artifact/project-fields.raw.json \
             --items status-artifact/project-items.raw.json \
@@ -141,7 +162,8 @@ jobs:
 
           node .github/scripts/delivery-status-mergeability.js \
             status-artifact/project-2-status.json \
-            status-artifact/repository-pull-requests.raw.json
+            status-artifact/repository-pull-requests.raw.json \
+            "$RUNNER_TEMP/repository-pull-request-closing-issues.raw.json"
 
           {
             echo "generated_at=$generated_at"

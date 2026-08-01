@@ -8,16 +8,25 @@ PR #780 is the motivating incident: it was open, non-draft, same-repository, age
 
 ## Status signal
 
-The status workflow exports GitHub's `mergeable` and `mergeStateStatus` values for repository PRs and attaches them to matching active Project PR items:
+The status workflow exports a normalized top-level `pullRequests` collection for every open repository PR, independently of which
+issue or PR is the canonical Project item. Each observation includes the PR number and URL, author, same-repository/fork ownership,
+base branch, head branch and exact SHA, `mergeable`, `mergeStateStatus`, and formal closing issue numbers:
 
 ```json
 {
+  "number": 783,
+  "repositoryOwnership": "same-repository",
+  "headRefOid": "42594d311f6077d5557653c95f1942b5b224a5ae",
   "mergeable": "CONFLICTING",
-  "mergeStateStatus": "DIRTY"
+  "mergeStateStatus": "DIRTY",
+  "closingIssueNumbers": [782]
 }
 ```
 
-These values are discovery hints. GitHub may temporarily report unknown mergeability while recomputing, and a snapshot can become stale. Before dispatch or Project mutation, the tick must re-read the live PR and verify that it remains open, targets `develop`, has the same exact head, and remains conflicted.
+This keeps issue-canonical implementations visible without reactivating their duplicate PR Project items. The values remain
+discovery hints: GitHub may temporarily report unknown mergeability while recomputing, and a snapshot can become stale. Before
+dispatch or Project mutation, the tick must resolve canonical identity from the formal closing links, then re-read the live PR and
+verify that it remains open, targets `develop`, has the same exact head, and remains conflicted.
 
 ## Routing
 
