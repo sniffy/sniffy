@@ -12,6 +12,7 @@ on:
       - docs/ai-delivery/README.md
       - docs/ai-delivery/profile.yml
       - docs/ai-delivery/status-snapshot.md
+      - docs/ai-delivery/status-workflow-optimization.md
   workflow_run:
     workflows: [AI delivery control]
     types: [completed]
@@ -31,6 +32,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            .chatgpt/scheduled-task-prompt.md
+            .chatgpt/status-snapshot-instructions.md
+            .github/scripts/delivery-status.js
+            .github/scripts/delivery-status.test.js
+            .github/scripts/delivery-status-policy.test.js
+            .github/workflows/delivery-status.yml
+            docs/ai-delivery/README.md
+            docs/ai-delivery/profile.yml
+            docs/ai-delivery/status-snapshot.md
+            docs/ai-delivery/status-workflow-optimization.md
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24.18.0
@@ -69,6 +86,11 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: develop
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: .github/scripts/delivery-status.js
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
 
       - name: Export Project fields and items
         id: export
