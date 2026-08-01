@@ -65,10 +65,11 @@ Treat each occurrence as logically stateless even though the transcript is persi
 3. request and validate the on-demand status snapshot barrier;
 4. reconcile every open PR targeting the configured base branch and choose one canonical issue/PR item;
 5. reconcile a canonical issue/PR whose current head no longer matches the exact head supporting its downstream lifecycle state;
-6. continue one due owned worker/PR operation or select at most one eligible lifecycle turn;
+6. reconcile one invalid Ready route/assignee, continue one due owned worker/PR operation, dispatch one configured non-polling
+   executor, or select at most one eligible lifecycle turn;
 7. submit one guarded control command to claim it;
 8. verify the successful reaction and resulting Project state before doing work;
-9. perform the lifecycle turn directly or make one supported external dispatch;
+9. perform the lifecycle turn directly or make one supported external dispatch with durable acknowledgement;
 10. publish human-useful evidence on the canonical target item;
 11. submit one guarded control command for the lifecycle handoff and verify the result;
 12. return `NO_CHANGE` when no intake, head reconciliation, continuation, rotation, or eligible work exists.
@@ -94,6 +95,24 @@ create another Scheduled Task. All durable context therefore lives in GitHub and
 
 The four tasks may scan several repositories because queue state is external. Repository-specific filters and executor settings
 belong in explicit profiles, not in prior chat history.
+
+### Supervisor-dispatched executors
+
+Not every executor polls Project state. The current Sniffy profile marks Codex Cloud as `dispatchMode: supervised` with ChatGPT as
+its dispatch owner. A `Ready / Codex Cloud` route is therefore eligible work for a ChatGPT tick even though ChatGPT is not the
+implementation executor. The tick claims the routed turn without changing Executor, starts exactly one supported Cloud task,
+requires durable acknowledgement, records the task/trigger and first observation point, and then stops.
+
+If the external trigger was never submitted or was definitively rejected, the tick releases the provisional claim back to Ready.
+If submission succeeded but acknowledgement is uncertain, the exact trigger comment or task-generation reference remains
+provisional `In progress` recovery evidence; the next observation performs targeted recovery and must not submit a duplicate
+generation. The tick must not invent a worker or wait for Cloud to discover Project 2 on its own. Arbitrary existing-PR
+continuation is routed to Local Codex rather than converted into duplicate fresh Cloud work; only an explicitly recoverable
+existing Cloud branch may be continued through Cloud.
+
+A configured non-Human Ready route whose Assignee belongs to another executor pool is a supervisory reconciliation obligation,
+not an invisible queue item. Re-read the authoritative route, correct the assignment when the route remains valid, or route the
+item deliberately to the correct lifecycle/executor. Do not infer a human blocker solely from stale assignment.
 
 ## Universal pull-request intake adapter
 
@@ -213,13 +232,21 @@ group; neither replaces the other.
 
 ## Eligible work
 
-A dispatcher queries the materialized current route, not planned roles alone:
+A polling dispatcher normally queries the materialized current route, not planned roles alone:
 
 ```text
 Execution = Ready
 Executor = <dispatcher executor type>
 Assignee is empty OR Assignee belongs to this dispatcher pool
 ```
+
+A supervisor may also select `Execution = Ready` work for a configured `dispatchMode: supervised` executor whose
+`dispatchOwner` is that supervisor. This is dispatch ownership, not implementation ownership: the claim preserves the routed
+Executor and becomes durable only after the external worker acknowledgement is recorded. Sniffy's current instance is ChatGPT
+dispatching Codex Cloud. Local Codex remains a polling pool and Human remains a directed route.
+
+Before applying either selector, reconcile a configured non-Human Ready item whose Assignee belongs to a different executor pool.
+Silently excluding it would create a permanently unclaimable state even though its lifecycle fields say Ready.
 
 The canonical work item may be an issue or pull request. The dispatcher also checks lifecycle compatibility, required access,
 worker-pool capacity, existing branch/PR ownership, and absence of a valid current worker. It excludes duplicate representations

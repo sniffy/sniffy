@@ -37,6 +37,33 @@ test('profile makes universal intake and existing-PR routing explicit', () => {
   assert.match(profile, /Local Codex:[\s\S]*maxConcurrentWorkers:\s*1/);
 });
 
+test('ChatGPT supervises Ready Codex Cloud dispatch instead of stranding it', () => {
+  const prompt = read('.chatgpt/scheduled-task-prompt.md');
+  const profile = read('docs/ai-delivery/profile.yml');
+  const eventLoop = read('docs/ai-delivery/event-loop.md');
+  const supervision = read('docs/ai-delivery/supervision.md');
+
+  assert.match(profile, /Codex Cloud:[\s\S]*dispatchMode:\s*supervised[\s\S]*dispatchOwner:\s*ChatGPT/);
+  assert.match(prompt, /supervised Codex Cloud dispatch:[\s\S]*Status = Implementation[\s\S]*Execution = Ready[\s\S]*Executor = Codex Cloud/i);
+  assert.match(prompt, /Codex Cloud does not poll Project 2/i);
+  assert.match(prompt, /post one\s+exact implementation trigger[\s\S]*durable acknowledgement/i);
+  assert.match(prompt, /If the trigger was\s+not submitted or was definitively rejected, release to Ready/i);
+  assert.match(prompt, /submission succeeded but acknowledgement is uncertain[\s\S]*never redispatch that generation/i);
+  assert.match(prompt, /first 15-minute observation point/i);
+  assert.match(prompt, /ChatGPT-supervised Codex Cloud `Execution = In progress` items/i);
+  assert.match(eventLoop, /dispatchMode: supervised[\s\S]*ChatGPT as\s+its dispatch owner/i);
+  assert.match(supervision, /claim while\s+preserving Executor[\s\S]*release the provisional claim to Ready/i);
+});
+
+test('configured Ready routes with the wrong assignee require reconciliation', () => {
+  const prompt = read('.chatgpt/scheduled-task-prompt.md');
+  const eventLoop = read('docs/ai-delivery/event-loop.md');
+
+  assert.match(prompt, /unclaimable `Execution = Ready` route[\s\S]*Assignee belongs to a different executor pool/i);
+  assert.match(prompt, /Never silently filter out that mismatch/i);
+  assert.match(eventLoop, /Ready route whose Assignee belongs to another executor pool is a supervisory reconciliation obligation/i);
+});
+
 test('Local Codex can adopt an explicitly routed same-repository PR without duplication', () => {
   const worker = read('.codex/local/worker-task-prompt.md');
   const dispatcher = read('.codex/local/scheduled-task-prompt.md');

@@ -79,6 +79,10 @@ control reaction.
 
 - A Cloud implementation is dispatched only after the proven trigger has a connector reaction, task link, or equivalent durable
   acknowledgement. A review mention alone is not implementation dispatch.
+- Codex Cloud does not poll Project 2. ChatGPT owns dispatch for a valid `Implementation / Ready / Codex Cloud` route: claim while
+  preserving Executor, issue exactly one supported trigger, record durable acknowledgement and the first observation point, or
+  release the provisional claim to Ready when the trigger was not submitted or was definitively rejected. A submitted trigger
+  with uncertain acknowledgement remains one provisional generation for targeted recovery; never redispatch it blindly.
 - An app-native Local Codex item is dispatched only after a verified claim plus a concrete worker task/chat/worktree.
 - A headless Local Codex item is dispatched only after a verified claim plus process/worktree/branch record.
 - An adopted existing PR is dispatched only after the canonical Project item explicitly routes the exact same-repository PR,
@@ -98,8 +102,13 @@ Queue polling and worker follow-up are responsibilities of the same event loop:
 - **Universal PR intake** scans every open PR targeting `develop`, canonicalizes issue versus PR, and materializes reviewable work
   before ordinary queue selection.
 - **Queue polling** finds canonical `Ready` work and claims it. Desired logical cadence is every 15 minutes.
+- **Supervised external dispatch** lets the ChatGPT loop select configured `Ready / Codex Cloud` work even though ChatGPT is not
+  the Implementer. The acknowledged dispatch, not the Ready route alone, starts worker monitoring.
+- **Ready-route reconciliation** repairs a non-Human Ready item whose Assignee belongs to a different executor pool; such an item
+  must not disappear from every dispatcher's eligibility filter.
 - **Worker/operation monitoring** observes an existing implementation, correction, CI wait, contributor update, bot rebase, or
-  draft publication after 15 minutes, again 15 minutes later, then hourly while incomplete.
+  draft publication after 15 minutes, again 15 minutes later, then hourly while incomplete. It includes ChatGPT-supervised Codex
+  Cloud `In progress` routes even though their Executor field remains Codex Cloud.
 - **Control-log maintenance** rotates the active technical issue when a needed command would exceed the documented threshold.
 
 Do not create an additional monitoring Scheduled Task. A normal dispatcher tick first checks whether an existing owned worker or

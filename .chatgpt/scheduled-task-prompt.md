@@ -114,26 +114,39 @@ Perform this protocol:
    it. Verify the terminal reaction, PR draft/head, and canonical Project state directly or through the required post-command
    status snapshot. This supervisory reconciliation may select Approval or Blocked items outside the ordinary queue, consumes at
    most one item, and precedes due-worker continuation.
-3. Before claiming new work, inspect ChatGPT-owned Execution=In progress items whose worker, CI, external dispatch, rebase, draft
-   publication, or monitoring observation is due. Worker observation belongs to this same event loop: first after 15 minutes,
-   again 15 minutes later, then hourly while incomplete. Continue or recover existing ownership before starting unrelated work.
+3. Before claiming new work, reconcile one unclaimable `Execution = Ready` route when its non-Human `Executor` is configured but
+   its Assignee belongs to a different executor pool. Never silently filter out that mismatch. Re-read the authoritative route and
+   either assign the configured executor identity when the route is still valid, or use one guarded transition to the correct
+   lifecycle/executor; use `Blocked / Human / bedrin` only when Dmitry actually must decide or act. This reconciliation consumes
+   the tick. Otherwise inspect both ChatGPT-owned and ChatGPT-supervised Codex Cloud `Execution = In progress` items whose worker,
+   CI, external dispatch, rebase, draft publication, or monitoring observation is due. Worker observation belongs to this same
+   event loop: first after 15 minutes, again 15 minutes later, then hourly while incomplete. Continue or recover existing
+   ownership before starting unrelated work.
 4. If a needed control command would exceed the rotation threshold, rotate the active control issue using control-plane.md, then
    continue this tick. Do not create a separate cleanup scheduler.
-5. Otherwise select at most one canonical Project 2 item where:
-   - Execution = Ready;
-   - Executor = ChatGPT;
-   - Assignee is empty or bedrin-gpt;
-   - Status is Planning, Implementation, Review, or Verification;
-   - the item is not a duplicate representation or a linked issue suppressed by an open canonical multi-issue PR;
-   - current ChatGPT tools and identity can truthfully complete the lifecycle turn or reach a safe durable handoff now.
-   Eligibility must not require Implementer to be populated.
+5. Otherwise select at most one canonical Project 2 item from either eligible class:
+   - **supervised Codex Cloud dispatch:** `Status = Implementation`, `Execution = Ready`, `Executor = Codex Cloud`, and Assignee
+     is empty or `bedrin-codex-cloud`. Codex Cloud does not poll Project 2, so ChatGPT is the configured dispatch owner and must not
+     leave this route waiting for a nonexistent Cloud dispatcher. Require bounded fresh work or an explicitly recoverable existing
+     Cloud branch. Route an arbitrary same-repository existing-PR continuation to Local Codex instead of dispatching Cloud;
+   - **ChatGPT lifecycle turn:** `Execution = Ready`, `Executor = ChatGPT`, Assignee is empty or `bedrin-gpt`, and Status is
+     Planning, Implementation, Review, or Verification.
+   In either class the item must not be a duplicate representation or a linked issue suppressed by an open canonical multi-issue
+   PR, and current ChatGPT tools and identity must be able to reach a safe durable handoff now. Eligibility must not require
+   Implementer to be populated outside a routed Implementation turn.
 6. Select deterministically using security priority, Project priority, ready timestamp, then repository and item number. Never
    create a duplicate Project item, worker, branch, or pull request.
-7. Claim with one guarded delivery-control/v1 command. Set Execution=In progress plus the concrete tick/worker reference and
-   lease, inspect the terminal reaction, and verify ownership through direct ProjectV2 or the control workflow's internal +1
-   verification before work. If execution or external dispatch cannot start, release to Ready. Set Blocked only when Dmitry must
-   decide or act. Require a post-command status snapshot before a later dependent Project handoff.
-8. Perform exactly one lifecycle turn:
+7. Claim with one guarded delivery-control/v1 command. Preserve the selected Executor and set `Execution = In progress` plus the
+   concrete tick/provisional worker reference and lease, inspect the terminal reaction, and verify ownership through direct
+   ProjectV2 or the control workflow's internal +1 verification before work. For a supervised Codex Cloud route, then post one
+   exact implementation trigger, require its connector reaction, task link, or equivalent durable acknowledgement, and replace
+   the provisional reference with that concrete dispatch evidence and the first 15-minute observation point. If the trigger was
+   not submitted or was definitively rejected, release to Ready. If submission succeeded but acknowledgement is uncertain, retain
+   the exact trigger comment/task-generation reference as provisional `In progress` recovery evidence, schedule the first
+   15-minute observation, and never redispatch that generation until recovery resolves it. Set Blocked only when Dmitry must decide
+   or act. Require a post-command status snapshot before a later dependent Project handoff.
+8. A supervised Codex Cloud dispatch is the one productive outcome for that tick: after durable acknowledgement, stop and let the
+   normal 15-minute, second-15-minute, then hourly supervision cadence observe it. Otherwise perform exactly one lifecycle turn:
    - Planning: resolve outcome, canonical item, linked issues, decisions, non-goals, risk axes, Implementer when a future
      Implementation turn is actually needed, Verifier, and proof obligations. Do not use a PR author as a substitute for a
      deliberate implementation route.

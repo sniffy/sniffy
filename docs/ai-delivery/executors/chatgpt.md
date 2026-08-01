@@ -129,7 +129,9 @@ occurrence must therefore be stateless by procedure:
 - read current GitHub and repository-owned policy from scratch;
 - request and validate the configured status-snapshot read barrier;
 - canonicalize arbitrary PRs before queue selection;
-- perform at most one reconciliation, lifecycle turn, or supported dispatch;
+- reconcile configured Ready routes that are unclaimable because their Assignee belongs to another executor pool;
+- perform at most one reconciliation, lifecycle turn, or supported dispatch, including a Ready Codex Cloud route for which
+  ChatGPT is the configured dispatch owner;
 - make no work-item, Project, source, or worker mutation for `NO_CHANGE`; the status-refresh request is read telemetry;
 - keep durable state outside the chat.
 
@@ -138,6 +140,15 @@ The four persistent transcripts are telemetry. Replace a long defining chat deli
 
 Worker and PR-operation monitoring is not another Scheduled Task. Due 15-minute, second-15-minute, and hourly observations are
 selected by these same event-loop ticks before new work.
+
+Codex Cloud has no Project polling loop. When the current profile routes bounded fresh Implementation to
+`Implementation / Ready / Codex Cloud`, a ChatGPT tick must claim that route without changing Executor, post exactly one supported
+Cloud trigger, require durable acknowledgement, and record the first 15-minute observation point. If acknowledgement is absent,
+release the provisional claim to Ready only when the trigger was not submitted or was definitively rejected. A submitted trigger
+with uncertain acknowledgement remains one provisional generation for targeted recovery and must not be dispatched again. The
+same ChatGPT loop monitors acknowledged or provisional Cloud `In progress` routes after 15 minutes, again after 15 minutes, then
+hourly. Do not wait for Cloud to discover the Project item. Do not use this bridge for arbitrary existing-PR adoption; route that
+continuation to Local Codex unless the existing Cloud branch is explicitly recoverable.
 
 ## ChatGPT Project bootstrap
 

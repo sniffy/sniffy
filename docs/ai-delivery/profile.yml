@@ -48,18 +48,24 @@ executors:
   ChatGPT:
     assignee: bedrin-gpt
     model: provider-managed
+    dispatchMode: direct
   Codex Cloud:
     assignee: bedrin-codex-cloud
     model: provider-managed
+    # Cloud has no Project polling loop. ChatGPT must claim and trigger each routed Cloud turn.
+    dispatchMode: supervised
+    dispatchOwner: ChatGPT
   Local Codex:
     assignee: bedrin-codex-local
     model: Sol
     reasoning: extra-high
+    dispatchMode: polling
     # App-native dispatch derives this scheduling limit from the retained Project snapshot.
     # Provider-wide Codex project/task inventory is recovery evidence, not a normal capacity source.
     maxConcurrentWorkers: 1
   Human:
     assignee: bedrin
+    dispatchMode: directed
 
 routing:
   supervisor: ChatGPT
