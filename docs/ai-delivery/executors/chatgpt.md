@@ -55,7 +55,8 @@ ChatGPT uses the same [`../control-plane.md`](../control-plane.md) protocol as C
 
 1. locate the one active technical control issue;
 2. choose and re-read the canonical issue or PR;
-3. post one guarded `delivery-control/v1` JSON command;
+3. post one guarded `delivery-control/v1` command using the human-readable Markdown wrapper from the control-plane document,
+   preserving its exact markers and lowercase `json` fence, deriving the display-only prose from the authoritative marked JSON;
 4. inspect the reaction and Actions result;
 5. re-read the resulting Project fields and any PR state coupled to the transition;
 6. only then claim ownership or report a handoff.

@@ -68,6 +68,37 @@ test('Cloud does not turn arbitrary existing PRs into duplicate fresh work', () 
   assert.match(cloud, /existing-PR continuation normally goes to Local Codex/i);
 });
 
+test('delivery executors require readable control comments with authoritative marked JSON', () => {
+  const commandPrompts = [
+    '.chatgpt/scheduled-task-prompt.md',
+    '.codex/local/scheduled-task-prompt.md',
+    '.codex/local/worker-task-prompt.md'
+  ];
+  const executorDocs = [
+    'docs/ai-delivery/executors/chatgpt.md',
+    'docs/ai-delivery/executors/codex-cloud.md',
+    'docs/ai-delivery/executors/codex-local.md'
+  ];
+
+  for (const file of [...commandPrompts, ...executorDocs]) {
+    const content = read(file);
+    assert.match(content, /human-readable Markdown wrapper/i, `${file} must require the readable wrapper`);
+    assert.match(content, /exact (?:start\/end )?markers|exact markers/i, `${file} must preserve protocol markers`);
+    assert.match(content, /lowercase\s+`json` fence/i, `${file} must preserve the lowercase JSON fence`);
+    assert.match(content, /marked JSON.*authoritative|authoritative marked JSON/is, `${file} must make JSON authoritative`);
+  }
+  for (const file of commandPrompts) {
+    assert.match(read(file), /never\s+emit bare JSON/i, `${file} must reject bare autonomous output`);
+  }
+
+  const control = read('docs/ai-delivery/control-plane.md');
+  assert.equal((control.match(/<!-- delivery-control-command:start -->/g) || []).length, 1);
+  assert.equal((control.match(/<!-- delivery-control-command:end -->/g) || []).length, 1);
+  assert.match(control, /display-only[\s\S]*sole authoritative `delivery-control\/v1` command/i);
+  assert.match(control, /Legacy comments containing only a valid JSON object remain accepted/i);
+  assert.match(control, /workflow_dispatch` continues to accept the raw JSON object/i);
+});
+
 test('every implementation executor publishes a non-draft exact-head PR before Review', () => {
   const files = [
     'AGENTS.md',

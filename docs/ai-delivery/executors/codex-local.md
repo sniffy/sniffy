@@ -102,7 +102,9 @@ Both adapters:
 - respect directed Assignee or empty pool ownership;
 - inspect canonicalization, lifecycle, profile, access, capacity, exact branch/PR/head, current worker, and due monitoring;
 - exclude duplicate representations and linked issues suppressed by an open canonical multi-issue PR;
-- use the one active technical control issue and one guarded `delivery-control/v1` command per claim/transition;
+- use the one active technical control issue and one guarded `delivery-control/v1` command per claim/transition, posting every new
+  command with the control-plane document's human-readable Markdown wrapper, exact markers, and lowercase `json` fence while
+  treating its marked JSON—not its derived display prose—as authoritative and never emitting bare JSON autonomously;
 - inspect the reaction and re-read Project state before spawning;
 - record concrete conversation/task or process/worktree and exact PR references;
 - release to `Ready` when spawn fails;

@@ -60,8 +60,10 @@ ProjectV2 read protocol:
 - Never select issues labeled ai-delivery-control or ai-delivery-status as delivery work.
 
 ProjectV2 control protocol:
-- Every executor uses the same rotating technical control issue and delivery-control/v1 JSON commands documented in
-  control-plane.md.
+- Every executor uses the same rotating technical control issue and delivery-control/v1 commands documented in control-plane.md.
+  For every new control-issue comment, emit its concise human-readable Markdown wrapper with the exact start/end markers and
+  lowercase `json` fence. Derive the display-only prose from the JSON, but always treat the marked JSON as authoritative; never
+  emit bare JSON for an autonomous command.
 - Locate the newest open issue with the configured ai-delivery-control label; create it with that label if none exists. Do not
   post /project-status, /project-field, claim-intent, winner, loser, withdrawal, lease, or polling comments on the target issue or
   pull request.
