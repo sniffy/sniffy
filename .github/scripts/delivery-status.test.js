@@ -6,7 +6,8 @@ const {
   buildSnapshot,
   findOrCreateStatusIssue,
   pointerPayload,
-  publishStatusPointer
+  publishStatusPointer,
+  refreshRequest
 } = require('./delivery-status');
 
 const fieldsRaw = {
@@ -188,6 +189,47 @@ test('builds a machine-readable artifact pointer', () => {
   assert.equal(payload.artifact.snapshotFile, 'project-2-status.json');
   assert.equal(payload.artifact.rawIssuesFile, 'repository-issues.raw.json');
   assert.equal(payload.artifact.rawPullRequestsFile, 'repository-pull-requests.raw.json');
+});
+
+test('preserves the refresh request that produced a snapshot pointer', () => {
+  const request = refreshRequest({
+    'request-comment-id': '5152000000',
+    'request-issue-number': '778',
+    'request-actor': 'bedrin-gpt'
+  });
+  const payload = pointerPayload({
+    generatedAt: '2026-08-01T18:00:00Z',
+    repository: 'sniffy/sniffy',
+    projectOwner: 'sniffy',
+    projectNumber: 2,
+    workflowRun: {id: 102, event: 'issue_comment', refreshRequest: request},
+    artifact: {id: '56', retentionDays: '2'},
+    counts: {}
+  });
+  assert.deepEqual(payload.source.workflowRun.refreshRequest, {
+    commentId: 5152000000,
+    issueNumber: 778,
+    actor: 'bedrin-gpt'
+  });
+});
+
+test('rejects incomplete refresh request provenance', () => {
+  assert.equal(refreshRequest({'request-comment-id': ''}), null);
+  assert.throws(() => refreshRequest({
+    'request-comment-id': 'not-a-number',
+    'request-issue-number': '778',
+    'request-actor': 'bedrin-gpt'
+  }), /Invalid refresh request comment id/);
+  assert.throws(() => refreshRequest({
+    'request-comment-id': '5152000000',
+    'request-issue-number': '',
+    'request-actor': 'bedrin-gpt'
+  }), /Invalid refresh request issue number/);
+  assert.throws(() => refreshRequest({
+    'request-comment-id': '5152000000',
+    'request-issue-number': '778',
+    'request-actor': ''
+  }), /Missing refresh request actor/);
 });
 
 test('rejects a missing or nonnumeric artifact id before publishing a pointer', () => {
