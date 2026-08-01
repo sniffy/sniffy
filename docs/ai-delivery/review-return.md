@@ -4,6 +4,12 @@
 
 When an authorized independent reviewer submits a formal `REQUEST_CHANGES` review on an agent-implemented pull request, the next action is implementation correction. This adapter returns the existing Project 2 work item to the original agent pool so the normal event loop can claim and continue the same branch and pull request.
 
+This event-driven adapter is a recovery path for independently submitted formal reviews, not the primary or only correction
+route. A ChatGPT Review turn explicitly performs its guarded lifecycle handoff in the same tick after publishing blocking
+feedback. When ChatGPT is also the PR author, it publishes an ordinary blocker comment and routes directly because no
+`pull_request_review` event can honestly be created. An independently submitted formal review may race with or recover a missed
+direct handoff; the adapter's guards and idempotence preserve the resulting state.
+
 ## Trigger and target selection
 
 The `Return requested changes to implementer` workflow listens to submitted `pull_request_review` events. It runs only for same-repository pull requests targeting `develop`; it never checks out or executes the reviewed head.

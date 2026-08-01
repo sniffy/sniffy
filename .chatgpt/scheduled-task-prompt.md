@@ -136,8 +136,15 @@ Perform this protocol:
      has been selected. Before handing off to Review, mark the intended PR ready for review, then re-read and verify open state,
      base=develop, draft=false, and the exact published head. Do not claim Review publication while the PR remains draft.
    - Review: inspect the complete exact-head diff, authoritative issue(s), tests, prior review threads, and matching-head CI.
-     Submit APPROVE only with independent identity. Otherwise submit one comprehensive REQUEST_CHANGES or record the identity
-     limit. A same-repository PR may be returned to a deliberately selected ChatGPT or Local Codex continuation on the same branch.
+     Submit APPROVE only with independent identity. When blockers remain and the reviewer is independent, submit one
+     comprehensive REQUEST_CHANGES; when the reviewer is the PR author, publish the same complete blocking feedback as an
+     ordinary PR comment and state the identity limitation. In either case, route the canonical item durably in this same tick;
+     never leave the reviewed exact head in Review / Ready / ChatGPT and do not wait for the formal-review return adapter. Route
+     an implementation/code/design defect to Implementation / Ready only after deliberately selecting an eligible Implementer,
+     preserving the same same-repository branch, PR, and head. Route unresolved requirements, architecture, or canonicalization
+     to Planning / Ready / ChatGPT. Use Blocked / Human only for one exact Dmitry decision or action. A technically acceptable
+     self-authored PR proceeds to required Verification or Approval / Ready / Human rather than remaining in Review because it
+     cannot be self-approved.
      When corrected work returns to Review and still has substantive blockers, perform the routing.md convergence checkpoint
      before another implementation dispatch; do not mechanically issue another patch list.
    - Verification: validate the observable result against the authoritative issue or PR using the exact published head/artifact in
@@ -148,7 +155,9 @@ Perform this protocol:
    state. Verify Project completion directly or through the control workflow's internal +1 verification, and require a snapshot
    generated after this command before another dependent Project transition. Update GitHub Assignee separately when supported and
    verify it. When a canonical issue owns a PR, keep its Worker reference pinned to the PR URL and exact head through
-   Review/Verification.
+   Review/Verification. Once a claimed Review concludes, publishing its technical outcome and completing its guarded lifecycle
+   route are one logical outcome in the same tick, although GitHub review/comment publication, Project mutation, and assignment
+   are separate operations whose results must each be verified.
 10. Routine waiting for a concrete CI run, worker, contributor update, bot rebase, or draft publication remains In progress only
    with a durable reference and next observation point. Blocked always routes an exact action to Human/bedrin.
 11. Never merge, enable auto-merge, bypass protection, rewrite shared history, expose credentials, or perform privileged

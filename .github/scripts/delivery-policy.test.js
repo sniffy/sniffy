@@ -102,6 +102,36 @@ test('every implementation executor publishes a non-draft exact-head PR before R
   assert.match(workflow, /REPOSITORY_TOKEN:\s*\$\{\{ github\.token \}\}/);
 });
 
+test('blocking Review always publishes feedback and completes a same-tick durable route', () => {
+  const prompt = read('.chatgpt/scheduled-task-prompt.md');
+  const supervision = read('docs/ai-delivery/supervision.md');
+  const chatgpt = read('docs/ai-delivery/executors/chatgpt.md');
+  const reviewReturn = read('docs/ai-delivery/review-return.md');
+
+  assert.match(prompt, /reviewer is independent[\s\S]*comprehensive REQUEST_CHANGES/i);
+  assert.match(prompt, /reviewer is the PR author[\s\S]*ordinary\s+PR\s+comment[\s\S]*identity limitation/i);
+  assert.match(prompt, /In either case, route the canonical item durably in this same tick/i);
+  assert.match(prompt, /never leave the reviewed exact head in Review \/ Ready \/ ChatGPT/i);
+  assert.match(prompt, /do not wait for the formal-review return adapter/i);
+  assert.match(prompt, /technically acceptable[\s\S]*Verification or Approval \/ Ready \/ Human/i);
+
+  for (const [file, content] of [
+    ['docs/ai-delivery/supervision.md', supervision],
+    ['docs/ai-delivery/executors/chatgpt.md', chatgpt]
+  ]) {
+    assert.match(content, /technical Review outcome|technical outcome/i, `${file} must separate technical outcome from identity`);
+    assert.match(content, /same tick/i, `${file} must require immediate durable routing`);
+    assert.match(content, /ordinary\s+PR\s+comment/i, `${file} must define the self-review blocker path`);
+    assert.match(content, /Implementation \/ Ready/i, `${file} must define implementation-defect routing`);
+    assert.match(content, /Planning \/ Ready \/ ChatGPT/i, `${file} must define planning-defect routing`);
+    assert.match(content, /Blocked \/ Human/i, `${file} must preserve human-blocker semantics`);
+  }
+
+  assert.match(reviewReturn, /recovery path for independently submitted formal reviews/i);
+  assert.match(reviewReturn, /not the primary or only correction\s+route/i);
+  assert.match(reviewReturn, /ordinary blocker comment[\s\S]*no\s+`pull_request_review` event/i);
+});
+
 test('Local Codex uses one bounded normalized Project snapshot per tick', () => {
   const dispatcher = read('.codex/local/scheduled-task-prompt.md');
   const helper = read('.codex/local/project-queue-snapshot.sh');

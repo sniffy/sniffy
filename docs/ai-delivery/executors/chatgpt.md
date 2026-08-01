@@ -185,10 +185,18 @@ to Local Codex, return to Planning, or block for Dmitry. This is a Review decisi
 
 ## Review identity limitation
 
-A PR authored by `bedrin-gpt` cannot be formally approved by the same identity. ChatGPT still performs full Review and routed
-Verification, then leaves exact ready-for-Dmitry-review or blocking feedback. A Dmitry-, Dependabot-, external-contributor-, IDE-,
-or independently-agent-authored PR may receive an honest formal ChatGPT review. This decision uses the actual PR author, not the
-optional Project Implementer field.
+A PR authored by `bedrin-gpt` cannot be formally approved or receive formal `REQUEST_CHANGES` from the same identity. This limits
+the GitHub review submission, not the technical Review outcome or ChatGPT's lifecycle authority. For an independent author,
+ChatGPT publishes one complete formal `REQUEST_CHANGES` when blockers remain. For its own PR, it publishes the same complete
+blocking feedback as an ordinary PR comment and states the identity limitation. Both paths perform the guarded durable route in
+the same tick; they never leave that exact head in `Review / Ready / ChatGPT` or wait for the formal-review return adapter.
+
+Implementation, code, or design defects return to `Implementation / Ready` only after ChatGPT deliberately selects an eligible
+Implementer and preserves the same same-repository branch, PR, and head. Requirements, architecture, or canonicalization defects
+return to `Planning / Ready / ChatGPT`; `Blocked / Human` requires one exact Dmitry decision or action. If the self-authored PR is
+technically acceptable, ChatGPT routes it to required Verification or `Approval / Ready / Human` rather than parking it in
+Review. A Dmitry-, Dependabot-, external-contributor-, IDE-, or independently-agent-authored PR may receive an honest formal
+ChatGPT review. Identity is determined from the actual PR author, not the optional Project Implementer field.
 
 ## Website verification
 

@@ -63,6 +63,10 @@ A worker completes one lifecycle turn and writes the next route through the comm
 - Successful Verification writes `Approval / Ready / Human`.
 - Approval becomes `Done` only after actual merge or deliberate closure.
 
+Once a claimed Review concludes, its technical outcome and durable lifecycle route are one logical outcome in the same tick.
+GitHub review or comment publication, the guarded Project mutation, and assignment remain separate operations and each must be
+verified, but failure or inability to submit a formal review does not permit the exact head to remain `Review / Ready / ChatGPT`.
+
 The control plane re-checks the review PR after all expected-state guards pass and marks it ready if an executor left it draft. That
 is a final invariant and recovery mechanism, not permission for executors to skip publication. It verifies the same exact head
 before Project Review is written.
@@ -205,10 +209,17 @@ acknowledged. The convergence checkpoint itself needs no schedule.
 Formal review must use an identity independent from the PR author.
 
 - When independent review is available and proof passes, submit `APPROVE`.
-- When blockers remain, submit one precise `REQUEST_CHANGES`, then explicitly route the canonical item to an implementation or
-  external-author correction path.
-- When the active identity cannot review its own PR, leave exact ready-for-Dmitry-review or blocking feedback and state the
-  identity limitation.
+- When blockers remain and the identity is independent, submit one precise `REQUEST_CHANGES`, then explicitly route the canonical
+  item in the same Review tick.
+- When blockers remain and the active identity is the PR author, publish the same complete blocking feedback as an ordinary PR
+  comment, state the identity limitation, and explicitly route the canonical item in the same Review tick. Do not wait for the
+  formal-review return adapter.
+- Route an implementation, code, or design defect to `Implementation / Ready` only after deliberately selecting an eligible
+  Implementer and preserving the same same-repository branch, PR, and exact head. Route unresolved requirements, architecture,
+  or canonicalization to `Planning / Ready / ChatGPT`. Use `Blocked / Human` only when one exact Dmitry decision or action is
+  required.
+- When proof passes but the identity is the PR author, continue to required Verification or `Approval / Ready / Human`; inability
+  to self-approve must not park the exact head in Review.
 
 A Dmitry-, Dependabot-, external-contributor-, or other independently authored PR may receive a formal `bedrin-gpt` review.
 A `bedrin-gpt`-authored PR cannot. That identity rule comes from the PR author, not the optional Project Implementer field.
