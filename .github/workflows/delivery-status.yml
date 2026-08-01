@@ -1,0 +1,182 @@
+name: AI delivery status
+
+on:
+  pull_request:
+    paths:
+      - .chatgpt/scheduled-task-prompt.md
+      - .chatgpt/status-snapshot-instructions.md
+      - .github/scripts/delivery-status.js
+      - .github/scripts/delivery-status.test.js
+      - .github/workflows/delivery-status.yml
+      - docs/ai-delivery/README.md
+      - docs/ai-delivery/profile.yml
+      - docs/ai-delivery/status-snapshot.md
+  workflow_run:
+    workflows: [AI delivery control]
+    types: [completed]
+  schedule:
+    - cron: '5,20,35,50 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+      - name: Check and test delivery status
+        run: |
+          node --check .github/scripts/delivery-status.js
+          node --check .github/scripts/delivery-status.test.js
+          node --test .github/scripts/delivery-status.test.js
+      - name: Parse workflow and profile YAML
+        run: >-
+          ruby -e 'require "yaml";
+          YAML.load_file(".github/workflows/delivery-status.yml");
+          YAML.load_file("docs/ai-delivery/profile.yml")'
+      - name: Lint GitHub Actions workflow
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 .github/workflows/delivery-status.yml
+
+  publish:
+    if: >-
+      github.event_name != 'pull_request' &&
+      (
+        github.event_name != 'workflow_run' ||
+        github.event.workflow_run.event != 'pull_request'
+      )
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    concurrency:
+      group: ai-delivery-status-${{ github.repository }}
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: develop
+
+      - name: Export Project fields and items
+        id: export
+        env:
+          PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          REPOSITORY_TOKEN: ${{ github.token }}
+          PROJECT_OWNER: sniffy
+          PROJECT_NUMBER: '2'
+          STATUS_REPOSITORY: sniffy/sniffy
+          UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          mkdir -p status-artifact
+          generated_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          source_sha="$(git rev-parse HEAD)"
+
+          GH_TOKEN="$PROJECT_TOKEN" gh project field-list "$PROJECT_NUMBER" \
+            --owner "$PROJECT_OWNER" \
+            --limit 1000 \
+            --format json \
+            > status-artifact/project-fields.raw.json
+
+          GH_TOKEN="$PROJECT_TOKEN" gh project item-list "$PROJECT_NUMBER" \
+            --owner "$PROJECT_OWNER" \
+            --limit 1000 \
+            --format json \
+            > status-artifact/project-items.raw.json
+
+          GH_TOKEN="$REPOSITORY_TOKEN" gh issue list \
+            --repo "$STATUS_REPOSITORY" \
+            --state all \
+            --limit 1000 \
+            --json number,state,stateReason,title,url,author,labels,createdAt,updatedAt,closedAt \
+            > status-artifact/repository-issues.raw.json
+
+          GH_TOKEN="$REPOSITORY_TOKEN" gh pr list \
+            --repo "$STATUS_REPOSITORY" \
+            --state all \
+            --limit 1000 \
+            --json number,state,isDraft,mergedAt,closedAt,createdAt,updatedAt,title,url,author,labels,headRefName,headRefOid,baseRefName,isCrossRepository \
+            > status-artifact/repository-pull-requests.raw.json
+
+          node .github/scripts/delivery-status.js normalize \
+            --fields status-artifact/project-fields.raw.json \
+            --items status-artifact/project-items.raw.json \
+            --issues status-artifact/repository-issues.raw.json \
+            --pull-requests status-artifact/repository-pull-requests.raw.json \
+            --output status-artifact/project-2-status.json \
+            --generated-at "$generated_at" \
+            --repository "$STATUS_REPOSITORY" \
+            --project-owner "$PROJECT_OWNER" \
+            --project-number "$PROJECT_NUMBER" \
+            --workflow-run-id "$GITHUB_RUN_ID" \
+            --workflow-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --event "$GITHUB_EVENT_NAME" \
+            --upstream-run-id "$UPSTREAM_RUN_ID" \
+            --head-sha "$source_sha"
+
+          echo "generated_at=$generated_at" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+          echo "counts_json=$(jq -c '.counts' status-artifact/project-2-status.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Project status artifact
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: ai-delivery-status-project-2
+          path: status-artifact/
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Publish latest artifact pointer
+        uses: actions/github-script@v9
+        env:
+          GENERATED_AT: ${{ steps.export.outputs.generated_at }}
+          COUNTS_JSON: ${{ steps.export.outputs.counts_json }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+          UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+          SOURCE_SHA: ${{ steps.export.outputs.source_sha }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const status = require('./.github/scripts/delivery-status.js');
+            const workflowRun = {
+              id: Number(process.env.GITHUB_RUN_ID),
+              attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+              event: process.env.GITHUB_EVENT_NAME,
+              upstreamRunId: process.env.UPSTREAM_RUN_ID ? Number(process.env.UPSTREAM_RUN_ID) : null,
+              headSha: process.env.SOURCE_SHA
+            };
+            const payload = status.pointerPayload({
+              generatedAt: process.env.GENERATED_AT,
+              repository: 'sniffy/sniffy',
+              projectOwner: 'sniffy',
+              projectNumber: 2,
+              workflowRun,
+              artifact: {
+                id: process.env.ARTIFACT_ID,
+                name: 'ai-delivery-status-project-2',
+                url: process.env.ARTIFACT_URL,
+                digest: process.env.ARTIFACT_DIGEST,
+                snapshotFile: 'project-2-status.json',
+                rawFieldsFile: 'project-fields.raw.json',
+                rawItemsFile: 'project-items.raw.json',
+                rawIssuesFile: 'repository-issues.raw.json',
+                rawPullRequestsFile: 'repository-pull-requests.raw.json',
+                retentionDays: 2
+              },
+              counts: JSON.parse(process.env.COUNTS_JSON)
+            });
+            await status.publishStatusPointer({github, context, core, payload});
