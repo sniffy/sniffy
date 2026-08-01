@@ -125,9 +125,11 @@ jobs:
             --upstream-run-id "$UPSTREAM_RUN_ID" \
             --head-sha "$source_sha"
 
-          echo "generated_at=$generated_at" >> "$GITHUB_OUTPUT"
-          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
-          echo "counts_json=$(jq -c '.counts' status-artifact/project-2-status.json)" >> "$GITHUB_OUTPUT"
+          {
+            echo "generated_at=$generated_at"
+            echo "source_sha=$source_sha"
+            echo "counts_json=$(jq -c '.counts' status-artifact/project-2-status.json)"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Upload Project status artifact
         id: upload
