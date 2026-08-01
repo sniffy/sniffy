@@ -19,7 +19,10 @@ const fieldsRaw = {
   ]
 };
 
-function item(number, {state = 'OPEN', status = 'Planning', type = 'Issue', labels = [], execution, worker} = {}) {
+function item(number, {state = 'OPEN', status = 'Planning', type = 'Issue', labels = [], execution, worker, repository} = {}) {
+  const itemRepository = repository === undefined
+    ? (String(type).toLowerCase() === 'draftissue' ? null : 'sniffy/sniffy')
+    : repository;
   return {
     id: `ITEM-${number}`,
     title: `Item ${number}`,
@@ -31,7 +34,7 @@ function item(number, {state = 'OPEN', status = 'Planning', type = 'Issue', labe
       type,
       number,
       state,
-      repository: 'sniffy/sniffy',
+      repository: itemRepository,
       url: `https://github.com/sniffy/sniffy/issues/${number}`,
       title: `Item ${number}`
     }
@@ -105,8 +108,18 @@ test('keeps source and lifecycle drift while dropping only Done closed items', (
     item(4, {state: 'CLOSED', status: 'Draft'}),
     item(5, {state: '', status: null, type: 'DraftIssue'})
   ]);
-  assert.deepEqual(result.items.map(value => value.content.number), [1, 2, 4, 5]);
+  assert.deepEqual(result.items.map(value => value.content.number), [5, 1, 2, 4]);
   assert.deepEqual(result.semantics.terminalProjectStatuses, ['Done']);
+});
+
+test('keeps repository-less Project drafts and excludes other repositories', () => {
+  const result = snapshot([
+    item(6, {state: '', type: 'DraftIssue'}),
+    item(7, {repository: 'other/example'})
+  ]);
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].content.type, 'DraftIssue');
+  assert.equal(result.items[0].content.repository, null);
 });
 
 test('excludes control and status issues from active work', () => {
