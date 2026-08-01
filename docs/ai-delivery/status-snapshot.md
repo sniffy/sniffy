@@ -68,8 +68,11 @@ The normalized file includes:
 - open issues;
 - open pull requests, including drafts as source telemetry;
 - Project draft issues;
-- closed or merged source items whose Project `Status` is neither `Draft` nor `Done`, so lifecycle/source drift remains visible;
+- closed or merged source items whose Project `Status` is not `Done`, so lifecycle/source drift remains visible;
 - open source items even when their Project status is terminal, so inverse drift remains visible.
+
+`Done` is the only terminal Project lifecycle status for this filter. In particular, a closed source issue that remains in Project
+`Draft`, `Planning`, `Implementation`, `Review`, `Verification`, or `Approval` stays visible for reconciliation.
 
 It excludes technical items labeled `ai-delivery-control` or `ai-delivery-status`. The complete raw export remains available for
 incident investigation.
