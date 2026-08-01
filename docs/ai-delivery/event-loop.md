@@ -25,8 +25,9 @@ Some adapters split dispatch and work into separate processes or conversations. 
 execute the claimed lifecycle turn directly in the same scheduled occurrence. Child-worker spawning is optional, not a
 requirement of the generic protocol.
 
-A no-op tick creates no GitHub mutation, source branch, worktree, control command, or worker claim. A provider may still append a
-compact execution transcript to its own scheduler conversation.
+A no-op tick creates no work-item, Project, source branch, worktree, control command, or worker claim. A read adapter may still
+emit its configured refresh request/reaction, and a provider may append a compact execution transcript to its scheduler
+conversation.
 
 ## Desired cadence
 
@@ -61,15 +62,16 @@ Treat each occurrence as logically stateless even though the transcript is persi
 
 1. ignore prior-run conclusions and mutable conversational context;
 2. read current GitHub state, repository policy, and [`profile.yml`](profile.yml) from scratch;
-3. reconcile every open PR targeting the configured base branch and choose one canonical issue/PR item;
-4. reconcile a canonical issue/PR whose current head no longer matches the exact head supporting its downstream lifecycle state;
-5. continue one due owned worker/PR operation or select at most one eligible lifecycle turn;
-6. submit one guarded control command to claim it;
-7. verify the successful reaction and resulting Project state before doing work;
-8. perform the lifecycle turn directly or make one supported external dispatch;
-9. publish human-useful evidence on the canonical target item;
-10. submit one guarded control command for the lifecycle handoff and verify the result;
-11. return `NO_CHANGE` when no intake, head reconciliation, continuation, rotation, or eligible work exists.
+3. request and validate the on-demand status snapshot barrier;
+4. reconcile every open PR targeting the configured base branch and choose one canonical issue/PR item;
+5. reconcile a canonical issue/PR whose current head no longer matches the exact head supporting its downstream lifecycle state;
+6. continue one due owned worker/PR operation or select at most one eligible lifecycle turn;
+7. submit one guarded control command to claim it;
+8. verify the successful reaction and resulting Project state before doing work;
+9. perform the lifecycle turn directly or make one supported external dispatch;
+10. publish human-useful evidence on the canonical target item;
+11. submit one guarded control command for the lifecycle handoff and verify the result;
+12. return `NO_CHANGE` when no intake, head reconciliation, continuation, rotation, or eligible work exists.
 
 A tick must never claim work it cannot reasonably complete or hand off durably during that occurrence. Route long
 implementation, dependency-heavy builds, persistent services, existing-PR continuation, and environment-specific verification to
@@ -222,6 +224,13 @@ Assignee is empty OR Assignee belongs to this dispatcher pool
 The canonical work item may be an issue or pull request. The dispatcher also checks lifecycle compatibility, required access,
 worker-pool capacity, existing branch/PR ownership, and absence of a valid current worker. It excludes duplicate representations
 and linked issues suppressed by an open canonical multi-issue PR.
+
+When a profile defines a worker limit, the normal dispatcher derives used capacity from owned `In progress` items in the same
+retained authoritative queue snapshot used for selection. Provider project/task/conversation inventory is not a normal pre-claim
+capacity or duplicate-worker check: it is slower, can be stale, and cannot make `inventory -> claim` atomic. Use provider inventory
+only for targeted recovery of an already claimed `In progress` generation when provisional worker evidence leaves child creation
+uncertain. Per-target duplicate-generation exclusion comes from the guarded claim. A strict cross-target global pool limit across
+several concurrent dispatchers requires a separately serialized semaphore; provider inventory is not that semaphore.
 
 Eligibility must not require `Implementer` or `Verifier` to be populated when the current status does not use them. A blank
 `Implementer` means unknown/not deliberately selected, while `Executor` remains the authoritative current route. Entering

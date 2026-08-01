@@ -10,6 +10,10 @@ feedback. When ChatGPT is also the PR author, it publishes an ordinary blocker c
 `pull_request_review` event can honestly be created. An independently submitted formal review may race with or recover a missed
 direct handoff; the adapter's guards and idempotence preserve the resulting state.
 
+The formal review is also a maintainer feedback control after technical Review has already advanced the canonical item. A Request
+Changes submission therefore returns eligible work from `Review`, `Verification`, or `Approval`; Dmitry does not need to post a
+second dispatch comment merely because representative verification or human approval had already started.
+
 ## Trigger and target selection
 
 The `Return requested changes to implementer` workflow listens to submitted `pull_request_review` events. It runs only for same-repository pull requests targeting `develop`; it never checks out or executes the reviewed head.
@@ -26,7 +30,7 @@ The canonical item must already be represented in Project 2. A missing canonical
 
 The adapter uses the existing `delivery-control/v1` command shape and `executeTransition` implementation. It guards the current target type, exact head when the target is the PR, and the current `Status`, `Execution`, `Implementer`, `Executor`, and `Worker reference` values. For an issue-canonical continuation, the serialized transition re-reads the pull-request head immediately before and after Project mutation so a head change cannot silently publish a stale continuation reference.
 
-Eligible agent implementers are `ChatGPT`, `Codex Cloud`, and `Local Codex`. A successful formal Request Changes review applies:
+Eligible agent implementers are `ChatGPT`, `Codex Cloud`, and `Local Codex`. A successful formal Request Changes review from `Review`, `Verification`, or `Approval` applies:
 
 ```text
 Status: Implementation
@@ -37,7 +41,7 @@ Worker reference for a canonical PR: clear
 GitHub assignees: cleared and re-read as empty
 ```
 
-Replacing an issue's stale review claim with the durable PR/branch/head reference preserves adoption context while making the item pool-ready. A standalone PR carries its own identity and exact-head guard, so its stale Worker reference is cleared. Assignee release is complete only after a separate GitHub read confirms no assignee remains. An idempotent rerun still performs and verifies assignment release, including when Project mutation succeeded in an earlier attempt. The normal 15-minute event loop claims the item, continues the same branch and PR, and begins the standard 15-minute, 15-minute, then hourly supervision cycle after concrete dispatch.
+Replacing an issue's stale review or verification claim with the durable PR/branch/head reference preserves adoption context while making the item pool-ready. A standalone PR carries its own identity and exact-head guard, so its stale Worker reference is cleared. Assignee release is complete only after a separate GitHub read confirms no assignee remains. An idempotent rerun still performs and verifies assignment release, including when Project mutation succeeded in an earlier attempt. The normal 15-minute event loop claims the item, continues the same branch and PR, and begins the standard 15-minute, 15-minute, then hourly supervision cycle after concrete dispatch.
 
 `Blocked` work, human or automation implementers, fork pull requests, stale/superseded review decisions, and ambiguous Project representation are not automatically dispatched.
 

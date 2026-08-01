@@ -78,8 +78,10 @@ A dry-run push is not proof of effective write permission.
 
 Cloud uses the same [`../control-plane.md`](../control-plane.md) protocol as every executor. It locates the active technical
 control issue, posts one guarded `delivery-control/v1` command for a claim or handoff, inspects the reaction, and re-reads Project
-state. It must not update Project fields through a private Cloud-only GraphQL path or post field/claim comments on the target
-item.
+state. Every new command comment uses the control-plane document's human-readable Markdown wrapper with exact markers and a
+lowercase `json` fence; its prose is derived display text and the marked JSON remains authoritative. Cloud must not emit bare JSON
+for autonomous issue comments, update Project fields through a private Cloud-only GraphQL path, or post field/claim comments on
+the target item.
 
 The canonical target may be an issue or PR. For fresh work it is normally an issue; for an explicitly recoverable Cloud-owned PR
 continuation the worker reference must name the exact branch/head and no duplicate PR may be created. A command setting

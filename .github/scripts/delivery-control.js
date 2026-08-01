@@ -8,6 +8,30 @@ const PROJECT_NUMBER = 2;
 const BASE_BRANCH = 'develop';
 const DEFAULT_ACTORS = ['bedrin', 'bedrin-gpt', 'bedrin-codex-cloud', 'bedrin-codex-local'];
 const COMMIT_ID = /^[0-9a-f]{40}([0-9a-f]{24})?$/;
+const COMMAND_START_MARKER = '<!-- delivery-control-command:start -->';
+const COMMAND_END_MARKER = '<!-- delivery-control-command:end -->';
+
+function markedCommand(input) {
+  if (typeof input !== 'string') return input;
+  const startPositions = [...input.matchAll(/<!-- delivery-control-command:start -->/g)].map(match => match.index);
+  const endPositions = [...input.matchAll(/<!-- delivery-control-command:end -->/g)].map(match => match.index);
+  if (!startPositions.length && !endPositions.length) return input;
+  if (startPositions.length !== 1 || endPositions.length !== 1) {
+    throw new Error('Wrapped command must contain exactly one start marker and one end marker.');
+  }
+  const start = startPositions[0] + COMMAND_START_MARKER.length;
+  const end = endPositions[0];
+  if (start > end) throw new Error('Wrapped command markers must appear in start-then-end order.');
+
+  const marked = input.slice(start, end);
+  const fence = marked.match(/^\s*```json[ \t]*\r?\n([\s\S]*?)\r?\n```\s*$/);
+  if (!fence) throw new Error('Wrapped command must contain exactly one fenced `json` payload between the markers.');
+  if (!fence[1].trim()) throw new Error('Wrapped command JSON payload must not be empty.');
+  if (fence[1].includes('```')) {
+    throw new Error('Wrapped command must contain exactly one fenced `json` payload between the markers.');
+  }
+  return fence[1];
+}
 
 function object(value, name) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -41,9 +65,10 @@ function pullRequestReference(value, name) {
 }
 
 function parseCommand(input, repository = REPOSITORY) {
+  const extracted = markedCommand(input);
   let raw;
   try {
-    raw = typeof input === 'string' ? JSON.parse(input) : input;
+    raw = typeof extracted === 'string' ? JSON.parse(extracted) : extracted;
   } catch (error) {
     throw new Error(`Command must be valid JSON: ${error.message}`);
   }
@@ -433,6 +458,7 @@ module.exports = {
   ensureReviewPullRequestReady,
   executeTransition,
   idempotentRepeat,
+  markedCommand,
   mismatch,
   parseCommand,
   parseInvocation,

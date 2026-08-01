@@ -9,6 +9,7 @@ const {
   desired,
   executeTransition,
   idempotentRepeat,
+  markedCommand,
   mismatch,
   parseCommand,
   parseInvocation
@@ -29,6 +30,23 @@ const claim = {
     'Worker reference': 'tick-00; token x; lease 2026-07-30T10:00:00Z'
   }
 };
+
+function wrapped(command = claim, prose = 'Move the requested item to its guarded destination.') {
+  return `### AI delivery control
+
+${prose}
+
+<details>
+<summary>Machine-readable command</summary>
+
+<!-- delivery-control-command:start -->
+\`\`\`json
+${JSON.stringify(command, null, 2)}
+\`\`\`
+<!-- delivery-control-command:end -->
+
+</details>`;
+}
 
 function coreDouble() {
   const outputs = {};
@@ -191,6 +209,29 @@ test('parses a fully guarded claim', () => {
   assert.deepEqual(parseCommand(JSON.stringify(claim)), {...claim, clear: [], addIfMissing: false});
 });
 
+test('parses canonical marked Markdown identically and ignores surrounding prose', () => {
+  const legacy = parseCommand(JSON.stringify(claim));
+  assert.deepEqual(parseCommand(wrapped()), legacy);
+  assert.deepEqual(parseCommand(wrapped(claim, '{"command":"display-only"} and ```json display only ```')), legacy);
+});
+
+test('requires an unambiguous marked JSON fence', () => {
+  const valid = wrapped();
+  const start = '<!-- delivery-control-command:start -->';
+  const end = '<!-- delivery-control-command:end -->';
+  assert.throws(() => markedCommand(valid.replace(start, '')), /exactly one start marker and one end marker/);
+  assert.throws(() => markedCommand(valid.replace(end, '')), /exactly one start marker and one end marker/);
+  assert.throws(() => markedCommand(valid.replace(start, `${start}\n${start}`)), /exactly one start marker/);
+  assert.throws(() => markedCommand(valid.replace(end, `${end}\n${end}`)), /exactly one start marker/);
+  assert.throws(() => markedCommand(`${end}\n\`\`\`json\n{}\n\`\`\`\n${start}`), /start-then-end order/);
+  assert.throws(() => markedCommand(`${start}\n\`\`\`json\n\n\`\`\`\n${end}`), /must not be empty/);
+  assert.throws(() => markedCommand(`${start}\n\`\`\`javascript\n{}\n\`\`\`\n${end}`), /fenced `json` payload/);
+  assert.throws(() => markedCommand(`${start}\n{}\n${end}`), /fenced `json` payload/);
+  assert.throws(() => markedCommand(`${start}\n\`\`\`json\n{}\n\`\`\`\n\`\`\`json\n{}\n\`\`\`\n${end}`), /fenced `json` payload/);
+  assert.throws(() => parseCommand(`${start}\n\`\`\`json\n{\n\`\`\`\n${end}`), /valid JSON/);
+  assert.throws(() => parseCommand('prose\n```json\n{}\n```'), /valid JSON/);
+});
+
 test('rejects unguarded transitions', () => {
   assert.throws(() => parseCommand({
     command: 'delivery-control/v1',
@@ -302,6 +343,23 @@ test('authorizes a labeled control-issue command and emits routing outputs', () 
   assert.deepEqual(JSON.parse(Buffer.from(core.outputs.payload_base64, 'base64')), parseCommand(claim));
 });
 
+test('emits identical payload and routing outputs for legacy and wrapped invocations', () => {
+  function invoke(body) {
+    const core = coreDouble();
+    parseInvocation({
+      context: {
+        actor: 'bedrin-gpt',
+        eventName: 'issue_comment',
+        repo: {owner: 'sniffy', repo: 'sniffy'},
+        payload: {issue: labeledIssue(), comment: {id: 123, body}}
+      },
+      core
+    });
+    return core.outputs;
+  }
+  assert.deepEqual(invoke(wrapped()), invoke(JSON.stringify(claim)));
+});
+
 test('rejects an unlabeled control issue', () => {
   const context = {
     actor: 'bedrin-gpt',
@@ -323,6 +381,10 @@ test('rejects unauthorized and malformed control commands before transition', ()
   context.actor = 'bedrin-gpt';
   context.payload.comment.body = '{';
   assert.throws(() => parseInvocation({context, core: coreDouble()}), /valid JSON/);
+  context.payload.comment.body = wrapped().replace('<!-- delivery-control-command:end -->', '');
+  const core = coreDouble();
+  assert.throws(() => parseInvocation({context, core}), /exactly one start marker and one end marker/);
+  assert.deepEqual(core.outputs, {});
 });
 
 test('applies external PR intake while leaving Implementer empty', async () => {

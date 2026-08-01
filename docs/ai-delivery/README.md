@@ -89,11 +89,11 @@ All configured executors use the same central control-issue protocol for Project
 is reserved for human-useful plans, reviews, evidence, blockers, and handoffs. Omitted Project fields remain unchanged, and an empty
 optional field is valid state rather than a reason to invent a new select option. See [`control-plane.md`](control-plane.md).
 
-Clients without reliable direct organization ProjectV2 reads use the repository-owned status snapshot in
-[`status-snapshot.md`](status-snapshot.md). The snapshot is a read-only, eventually consistent selection aid. It never authorizes a
-mutation: every claim and handoff still goes through `delivery-control/v1`, whose workflow re-reads and verifies live ProjectV2
-state. A stale or unavailable snapshot blocks snapshot-dependent autonomous selection rather than permitting remembered or guessed
-field values.
+Scheduled ChatGPT ticks request the repository-owned status snapshot in [`status-snapshot.md`](status-snapshot.md) before queue
+selection and use it when a complete direct organization ProjectV2 read is unavailable. The snapshot is a read-only selection aid.
+It never authorizes a mutation: every claim and handoff still goes through `delivery-control/v1`, whose workflow re-reads and
+verifies live ProjectV2 state. A failed refresh, stale, or unavailable snapshot blocks snapshot-dependent autonomous selection
+rather than permitting remembered or guessed field values.
 
 Dmitry owns product decisions, accepted risk, privileged repository/hosting operations, final acceptance, and merge authorization.
 ChatGPT owns issue refinement, universal PR intake/canonicalization, routing proposals, supervision, code review, verification
@@ -152,13 +152,14 @@ append to each task's defining chat rather than reliably creating a new chat. Ev
 instruction and re-read GitHub/repository state, while the four defining chats are retained and periodically replaced as a
 maintenance action. No Scheduled Task may rely on previous chat turns as state.
 
-A no-op tick creates no GitHub mutation. A productive tick performs at most one canonicalization/reconciliation or lifecycle turn
-directly, or makes one supported external dispatch. Scheduled ChatGPT ticks cannot create child Scheduled Tasks.
+A no-op tick creates no work-item, Project, source, or worker mutation; the required status-refresh request and its reaction are
+read-path telemetry. A productive tick performs at most one canonicalization/reconciliation or lifecycle turn directly, or makes
+one supported external dispatch. Scheduled ChatGPT ticks cannot create child Scheduled Tasks.
 
-When direct ProjectV2 reads are unavailable, each tick must apply the configured status-snapshot supplement before queue selection:
-find the newest open issue labeled `ai-delivery-status`, validate its JSON pointer and freshness, download the artifact by numeric
-ID through the default GitHub connector, and read the explicit normalized fields. Technical `ai-delivery-control` and
-`ai-delivery-status` issues are never canonical work. See [`status-snapshot.md`](status-snapshot.md).
+At the start of each tick, the configured status-snapshot supplement creates an on-demand read barrier: find the newest open issue
+labeled `ai-delivery-status`, post the exact refresh command, wait for its terminal reaction, then validate the newer JSON pointer
+and artifact. When direct ProjectV2 reads are unavailable, the tick uses those explicit normalized fields. Technical
+`ai-delivery-control` and `ai-delivery-status` issues are never canonical work. See [`status-snapshot.md`](status-snapshot.md).
 
 Every open PR targeting `develop` is scanned. A single linked issue remains canonical; a standalone PR becomes the Project item;
 a multi-issue PR enters Planning. Same-repository corrections can be adopted by ChatGPT or Local Codex on the exact existing
