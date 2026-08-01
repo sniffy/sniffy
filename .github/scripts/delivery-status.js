@@ -7,7 +7,7 @@ const STATUS_KIND = 'ai-delivery-status/v1';
 const STATUS_LABEL = 'ai-delivery-status';
 const STATUS_TITLE = 'AI Delivery Status — Project 2';
 const TECHNICAL_LABELS = new Set(['ai-delivery-control', STATUS_LABEL]);
-const TERMINAL_PROJECT_STATUSES = new Set(['Draft', 'Done']);
+const TERMINAL_PROJECT_STATUSES = new Set(['Done']);
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -200,6 +200,10 @@ function buildSnapshot({fieldsRaw, itemsRaw, issuesRaw = [], pullRequestsRaw = [
 }
 
 function pointerPayload({generatedAt, repository, projectOwner, projectNumber, artifact, workflowRun, counts}) {
+  const artifactId = Number(artifact.id);
+  if (!Number.isSafeInteger(artifactId) || artifactId <= 0) {
+    throw new Error(`Invalid artifact id: ${artifact.id ?? '<missing>'}`);
+  }
   return {
     schemaVersion: SCHEMA_VERSION,
     kind: STATUS_KIND,
@@ -210,7 +214,7 @@ function pointerPayload({generatedAt, repository, projectOwner, projectNumber, a
       workflowRun
     },
     artifact: {
-      id: Number(artifact.id),
+      id: artifactId,
       name: artifact.name,
       url: artifact.url,
       digest: artifact.digest,
