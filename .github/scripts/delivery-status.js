@@ -43,6 +43,11 @@ function contentType(item) {
   return String(item?.content?.type ?? item?.type ?? '').toUpperCase();
 }
 
+function isDraftIssueType(type) {
+  const normalized = String(type ?? '').toUpperCase();
+  return normalized === 'DRAFT_ISSUE' || normalized === 'DRAFTISSUE';
+}
+
 function contentState(item) {
   return String(item?.source?.state ?? item?.content?.state ?? item?.state ?? '').toUpperCase();
 }
@@ -58,7 +63,7 @@ function isActiveItem(item) {
   const state = contentState(item);
   const status = fieldValue(item, 'Status');
 
-  if (type === 'DRAFT_ISSUE' || type === 'DRAFTISSUE') return true;
+  if (isDraftIssueType(type)) return true;
   if (state === 'OPEN') return true;
   if (!state) return true;
   return !TERMINAL_PROJECT_STATUSES.has(status);
@@ -153,7 +158,7 @@ function attachSource(item, repository, issuesByNumber, pullRequestsByNumber) {
   if (repositoryName(item) !== repository) return item;
   const type = contentType(item);
   const number = Number(item?.content?.number ?? item?.number);
-  if (type === 'DRAFT_ISSUE' || type === 'DRAFTISSUE') return item;
+  if (isDraftIssueType(type)) return item;
   const source = type === 'PULLREQUEST' || type === 'PULL_REQUEST'
     ? pullRequestsByNumber.get(number)
     : issuesByNumber.get(number);
@@ -172,7 +177,7 @@ function buildSnapshot({fieldsRaw, itemsRaw, issuesRaw = [], pullRequestsRaw = [
   const activeItems = enrichedItems
     .filter(isActiveItem)
     .map(item => normalizeItem(item, fields))
-    .filter(item => !repository || item.content.repository === repository)
+    .filter(item => !repository || item.content.repository === repository || isDraftIssueType(item.content.type))
     .sort(compareKeys);
 
   return {
