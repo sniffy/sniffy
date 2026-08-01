@@ -108,7 +108,9 @@ Both adapters:
   provider-wide Codex project/task inventory before claiming `Ready` work;
 - use provider inventory only for targeted recovery of one provisional `In progress` claim after ambiguous child creation;
 - exclude duplicate representations and linked issues suppressed by an open canonical multi-issue PR;
-- use the one active technical control issue and one guarded `delivery-control/v1` command per claim/transition;
+- use the one active technical control issue and one guarded `delivery-control/v1` command per claim/transition, posting every new
+  command with the control-plane document's human-readable Markdown wrapper, exact markers, and lowercase `json` fence while
+  treating its marked JSON—not its derived display prose—as authoritative and never emitting bare JSON autonomously;
 - inspect the reaction and re-read Project state before spawning;
 - record concrete conversation/task or process/worktree and exact PR references;
 - release to `Ready` when spawn fails;

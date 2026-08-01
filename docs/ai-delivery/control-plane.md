@@ -23,9 +23,9 @@ the same parser and transition implementation, not a separate executor protocol.
 Maintain one open technical issue with the label `ai-delivery-control`. Use a human-readable title such as
 `AI Delivery Control Log — 2026-07`.
 
-The issue is machine-oriented:
+The issue is a technical ledger:
 
-- post only complete JSON commands;
+- post concise human-readable command summaries with the authoritative JSON command in the wrapper below;
 - do not discuss product or review decisions there;
 - keep meaningful reviews, verification evidence, blockers, and human handoffs on the target issue or pull request;
 - do not delete completed commands merely to reduce visual noise.
@@ -35,18 +35,29 @@ label. Immediately before posting, re-read the issue and confirm that it is stil
 
 ## Command format
 
-A command comment is one valid JSON object. Pretty-printed JSON is allowed.
+For new control-issue comments, autonomous executors use this canonical Markdown format. The prose is a short, display-only
+summary derived from the JSON so a maintainer can scan the target, expected state, requested state, and purpose. Automation and
+executors must never parse or trust the prose: the marked JSON is the sole authoritative `delivery-control/v1` command. Preserve
+the exact markers and lowercase `json` fence.
 
+````markdown
+### AI delivery control
+
+Move `sniffy/sniffy#123` from **Review / Ready / ChatGPT** to **Implementation / In progress / Local Codex**.
+
+<details>
+<summary>Machine-readable command</summary>
+
+<!-- delivery-control-command:start -->
 ```json
 {
   "command": "delivery-control/v1",
   "target": {
     "repository": "sniffy/sniffy",
-    "number": 651
+    "number": 123
   },
   "expected": {
-    "type": "PullRequest",
-    "head": "46c47e02e8a5236cf1e7348fc6202da11ea1bbd3",
+    "type": "Issue",
     "fields": {
       "Status": "Review",
       "Execution": "Ready",
@@ -54,12 +65,22 @@ A command comment is one valid JSON object. Pretty-printed JSON is allowed.
     }
   },
   "set": {
+    "Status": "Implementation",
     "Execution": "In progress",
-    "Worker reference": "Sniffy Tick :00; token review-651-46c47e0; lease 2026-07-30T10:15:00Z"
-  },
-  "addIfMissing": false
+    "Executor": "Local Codex",
+    "Worker reference": "example claim"
+  }
 }
 ```
+<!-- delivery-control-command:end -->
+
+</details>
+````
+
+Legacy comments containing only a valid JSON object remain accepted for existing ledger entries, rollback compatibility, and
+maintainer-authorized debugging. They are not the preferred output for new autonomous issue comments. Pretty-printed JSON is
+allowed in either form. The JSON payload examples below omit the display wrapper only to focus on their additional fields; an
+executor posting them as new comments must use the canonical wrapper above.
 
 ### Review handoff and pull-request identity
 
@@ -194,7 +215,8 @@ For commands posted to the control issue:
 The command comment, reaction, Actions run, PR state, and current Project state form the technical audit trail. The target
 conversation contains only human-useful evidence or decisions.
 
-`workflow_dispatch` accepts the same JSON object in its `command` input and invokes the same implementation. Use it only for
+`workflow_dispatch` continues to accept the raw JSON object in its `command` input and invokes the same implementation. It does
+not use the issue-comment Markdown wrapper. Use it only for
 maintainer-authorized debugging or recovery when posting through the control issue is unavailable. Autonomous executors must
 not silently choose a different path.
 

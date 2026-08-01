@@ -57,7 +57,10 @@ the worker's PR, merge, or enable auto-merge.
    Implementer/Executor=Local Codex. Reuse the exact branch and PR. Do not adopt fork or Dependabot branches for direct correction.
 9. Select deterministically by Project priority, ready timestamp, repository, item type, then item number. The helper has already
    normalized and sorted candidates; do not create an alternative ordering from raw Project data.
-10. Claim through the one active technical control issue using one guarded delivery-control/v1 command. Guard current Status,
+10. Claim through the one active technical control issue using one guarded delivery-control/v1 command. Post every new command
+    with the concise human-readable Markdown wrapper from control-plane.md, including its exact start/end markers and lowercase
+    `json` fence. Derive the display-only prose from the JSON, treat the marked JSON as authoritative, and never emit bare JSON.
+    Guard current Status,
     Execution=Ready, Executor=Local Codex, and exact PR head when the canonical item is a PR; set Execution=In progress plus
     claim token/lease inside the provisional Worker reference. The guarded transition is the authoritative current-state recheck.
     Inspect the reaction and re-read the resulting target Project state before spawning.
