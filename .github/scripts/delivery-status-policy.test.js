@@ -15,7 +15,7 @@ test('ChatGPT scheduled ticks require the labeled status artifact fallback', () 
   const prompt = read('.chatgpt/scheduled-task-prompt.md');
   assert.match(prompt, /\.chatgpt\/status-snapshot-instructions\.md/);
   assert.match(prompt, /newest open non-PR issue labeled ai-delivery-status/i);
-  assert.match(prompt, /download the artifact by numeric artifact ID/i);
+  assert.match(prompt, /download the artifact by\s+numeric artifact ID/is);
   assert.match(prompt, /read project-2-status\.json/i);
   assert.match(prompt, /missing, expired, inaccessible, malformed, mismatched, or stale snapshot/i);
 });
@@ -43,7 +43,7 @@ test('status documentation preserves the read-only mutation boundary', () => {
   assert.match(documentation, /read-only materialized view/i);
   assert.match(documentation, /never\s+replaces.*guarded mutation protocol/is);
   assert.match(documentation, /No client may mutate Project fields directly from the snapshot/i);
-  assert.match(documentation, /newest open issue labeled `ai-delivery-status`/i);
+  assert.match(documentation, /newest open issue labeled ai-delivery-status/i);
 });
 
 test('workflow isolates validation and trusted status publication', () => {
