@@ -69,3 +69,9 @@ test('workflow isolates validation and trusted status publication', () => {
   assert.match(workflow, /pull-requests:\s*read/);
   assert.doesNotMatch(workflow, /contents:\s*write/);
 });
+
+test('status publication preserves every pending refresh request', () => {
+  const workflow = read('.github/workflows/delivery-status.yml');
+  assert.match(workflow, /concurrency:\s*\n\s+group:\s*ai-delivery-status-\$\{\{ github\.repository \}\}\s*\n\s+queue:\s*max\s*\n\s+cancel-in-progress:\s*false/);
+  assert.match(workflow, /-ignore 'unexpected key "queue" for "concurrency" section'/);
+});

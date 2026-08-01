@@ -37,10 +37,12 @@ delivery-control commands and ordinary work discussion do not belong there.
 - through `workflow_dispatch` for maintainer-authorized diagnosis or recovery;
 - in validation-only mode for pull requests changing this adapter.
 
-The publish job is serialized with `cancel-in-progress: false`. It always checks out trusted `develop`, including for
-`workflow_run` and `issue_comment`, so neither a completed pull-request validation run nor comment content can inject untrusted
-code into the secret-bearing publication job. The comment trigger accepts only the exact configured command, status label, and
-actors `bedrin` or `bedrin-gpt`; all other issue comments produce a skipped publication job.
+The publish job is serialized with `queue: max` and `cancel-in-progress: false`. GitHub may keep up to 100 pending publications in
+FIFO order instead of replacing an older pending request when another trigger arrives. This preserves each on-demand request until
+it can reach a terminal reaction while still keeping pointer updates sequential. The job always checks out trusted `develop`,
+including for `workflow_run` and `issue_comment`, so neither a completed pull-request validation run nor comment content can inject
+untrusted code into the secret-bearing publication job. The comment trigger accepts only the exact configured command, status
+label, and actors `bedrin` or `bedrin-gpt`; all other issue comments produce a skipped publication job.
 
 After the artifact and latest pointer are published, the workflow adds `+1` to the exact request comment. A publication failure
 adds `-1` when the runner can still execute the failure step. The reaction is deliberately last: `+1` is a read barrier proving
