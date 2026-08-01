@@ -30,15 +30,34 @@ Before any claim or mutation, read the current versions of:
 - https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/profile.yml
 - https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/lifecycle.md
 - https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/control-plane.md
+- https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/status-snapshot.md
 - https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/event-loop.md
 - https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/pull-request-intake.md
 - https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/routing.md
 - https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/supervision.md
 - https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/verification.md
 - https://github.com/sniffy/sniffy/blob/develop/docs/ai-delivery/executors/chatgpt.md
+- https://github.com/sniffy/sniffy/blob/develop/.chatgpt/status-snapshot-instructions.md
 
 Do not create another Scheduled Task, child ChatGPT task, or promise future/background work. Use this task/chat identifier plus
 the current UTC timestamp as the dispatcher reference.
+
+ProjectV2 read protocol:
+- Prefer a complete direct organization ProjectV2 read when the connected tool actually succeeds. If direct ProjectV2 access is
+  unavailable, incomplete, or fails, apply .chatgpt/status-snapshot-instructions.md before intake, reconciliation, continuation,
+  or ordinary queue selection.
+- Discover the newest open non-PR issue labeled ai-delivery-status; never hardcode its issue number. Parse and validate its pure
+  JSON pointer, require the configured protocol/repository/Project/artifact identity and freshness, then download the artifact by
+  numeric artifact ID through the default GitHub connector and read project-2-status.json.
+- Use only explicit snapshot field values, including null for absent values. Never infer Project state from prior chat turns,
+  issue prose, PR authorship, or defaults. Reject a missing, expired, inaccessible, malformed, mismatched, or stale snapshot and
+  make no snapshot-dependent claim or transition.
+- The snapshot is an eventually consistent selection aid, not a mutation ledger or lease. Re-read live issue/PR state, assignment,
+  formal closing links, branch/head, reviews, threads, and matching CI through GitHub before acting.
+- Every Project mutation still goes through delivery-control/v1, whose serialized workflow re-reads live ProjectV2 and verifies
+  expected and final values. A confused reaction means the snapshot lost a race; make no work mutation and do not retry from the
+  same snapshot. Before a later dependent Project transition, obtain a snapshot generated after the preceding successful command.
+- Never select issues labeled ai-delivery-control or ai-delivery-status as delivery work.
 
 ProjectV2 control protocol:
 - Every executor uses the same rotating technical control issue and delivery-control/v1 JSON commands documented in
@@ -46,8 +65,9 @@ ProjectV2 control protocol:
 - Locate the newest open issue with the configured ai-delivery-control label; create it with that label if none exists. Do not
   post /project-status, /project-field, claim-intent, winner, loser, withdrawal, lease, or polling comments on the target issue or
   pull request.
-- A claim or handoff is valid only after the command has the documented terminal reaction and the resulting Project fields have
-  been re-read.
+- A claim or handoff is valid only after the command has the documented terminal reaction. A +1 reaction means the control
+  workflow applied or observed the requested final state and verified it internally. When direct ProjectV2 reads are unavailable,
+  require a status snapshot generated after that command before any later dependent Project transition.
 - Use one guarded command for the complete multi-field claim or lifecycle transition. Include current Status, Execution,
   Executor, and exact PR head when applicable in expected state.
 - A command setting Status=Review must identify the exact review PR. For a canonical PR this is target + expected.head; for a
@@ -82,8 +102,9 @@ Perform this protocol:
    supported by a different head. Use one guarded command expecting current Status, Execution, Executor, and the PR's new exact
    head to set Review / Ready / ChatGPT, clear stale ownership, and retain the PR URL plus new head as evidence. Identify the PR
    structurally with target + expected.head when the PR is canonical, or reviewPullRequest.number/head when a canonical issue owns
-   it. Verify the terminal reaction, PR draft/head, and canonical Project state. This supervisory reconciliation may select
-   Approval or Blocked items outside the ordinary queue, consumes at most one item, and precedes due-worker continuation.
+   it. Verify the terminal reaction, PR draft/head, and canonical Project state directly or through the required post-command
+   status snapshot. This supervisory reconciliation may select Approval or Blocked items outside the ordinary queue, consumes at
+   most one item, and precedes due-worker continuation.
 3. Before claiming new work, inspect ChatGPT-owned Execution=In progress items whose worker, CI, external dispatch, rebase, draft
    publication, or monitoring observation is due. Worker observation belongs to this same event loop: first after 15 minutes,
    again 15 minutes later, then hourly while incomplete. Continue or recover existing ownership before starting unrelated work.
@@ -100,8 +121,9 @@ Perform this protocol:
 6. Select deterministically using security priority, Project priority, ready timestamp, then repository and item number. Never
    create a duplicate Project item, worker, branch, or pull request.
 7. Claim with one guarded delivery-control/v1 command. Set Execution=In progress plus the concrete tick/worker reference and
-   lease, inspect the terminal reaction, then re-read and verify ownership before work. If execution or external dispatch cannot
-   start, release to Ready. Set Blocked only when Dmitry must decide or act.
+   lease, inspect the terminal reaction, and verify ownership through direct ProjectV2 or the control workflow's internal +1
+   verification before work. If execution or external dispatch cannot start, release to Ready. Set Blocked only when Dmitry must
+   decide or act. Require a post-command status snapshot before a later dependent Project handoff.
 8. Perform exactly one lifecycle turn:
    - Planning: resolve outcome, canonical item, linked issues, decisions, non-goals, risk axes, Implementer when a future
      Implementation turn is actually needed, Verifier, and proof obligations. Do not use a PR author as a substitute for a
@@ -122,9 +144,11 @@ Perform this protocol:
      a representative environment. Do not rename unit tests or green CI as system verification.
 9. Publish human-useful evidence on the canonical target issue/PR. Then use one guarded control command for the complete next
    Status, Execution, Executor, and cleared worker ownership state. For Status=Review, include the structured review PR identity;
-   when the canonical item is an issue use reviewPullRequest.number/head. Inspect the terminal reaction and re-read both PR
-   draft/head state and Project fields before reporting the handoff. Update GitHub Assignee separately when supported and verify it.
-   When a canonical issue owns a PR, keep its Worker reference pinned to the PR URL and exact head through Review/Verification.
+   when the canonical item is an issue use reviewPullRequest.number/head. Inspect the terminal reaction and re-read PR draft/head
+   state. Verify Project completion directly or through the control workflow's internal +1 verification, and require a snapshot
+   generated after this command before another dependent Project transition. Update GitHub Assignee separately when supported and
+   verify it. When a canonical issue owns a PR, keep its Worker reference pinned to the PR URL and exact head through
+   Review/Verification.
 10. Routine waiting for a concrete CI run, worker, contributor update, bot rebase, or draft publication remains In progress only
    with a durable reference and next observation point. Blocked always routes an exact action to Human/bedrin.
 11. Never merge, enable auto-merge, bypass protection, rewrite shared history, expose credentials, or perform privileged
