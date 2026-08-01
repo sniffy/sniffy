@@ -52,6 +52,9 @@ executors:
     assignee: bedrin-codex-local
     model: Sol
     reasoning: extra-high
+    # App-native dispatch derives this scheduling limit from the retained Project snapshot.
+    # Provider-wide Codex project/task inventory is recovery evidence, not a normal capacity source.
+    maxConcurrentWorkers: 1
   Human:
     assignee: bedrin
 
