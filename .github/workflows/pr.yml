@@ -363,22 +363,16 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        # Keep every supported JDK in PR CI; deploy.yml retains the exhaustive release matrix.
-        java: [8, 11, 17, 21, 25]
-        # Intel macOS remains covered post-merge and for releases.
-        os: [ubuntu-26.04, windows-2025, macos-26]
-        exclude:
+        # smoke-test covers JDK 8/11/17/25 across Linux, Windows, and macOS.
+        # Keep a representative complement here; deploy.yml retains the exhaustive release matrix.
+        include:
           - java: 8
-            os: ubuntu-26.04
-          - java: 11
             os: windows-2025
-          - java: 17
-            os: macos-26
-          - java: 25
+          - java: 21
             os: ubuntu-26.04
-          - java: 8
-            os: macos-26
-          - java: 11
+          - java: 25
+            os: windows-2025
+          - java: 25
             os: macos-26
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
     steps:
