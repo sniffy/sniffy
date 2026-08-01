@@ -311,6 +311,21 @@ function parseArguments(argv) {
   return result;
 }
 
+function refreshRequest(options) {
+  if (!options['request-comment-id']) return null;
+  const commentId = Number(options['request-comment-id']);
+  const issueNumber = Number(options['request-issue-number']);
+  const actor = options['request-actor'];
+  if (!Number.isSafeInteger(commentId) || commentId <= 0) {
+    throw new Error(`Invalid refresh request comment id: ${options['request-comment-id']}`);
+  }
+  if (!Number.isSafeInteger(issueNumber) || issueNumber <= 0) {
+    throw new Error(`Invalid refresh request issue number: ${options['request-issue-number'] ?? '<missing>'}`);
+  }
+  if (!actor) throw new Error('Missing refresh request actor.');
+  return {commentId, issueNumber, actor};
+}
+
 function normalizeCommand(argv) {
   const options = parseArguments(argv);
   for (const required of ['fields', 'items', 'issues', 'pull-requests', 'output', 'generated-at', 'repository', 'project-owner', 'project-number', 'workflow-run-id']) {
@@ -334,7 +349,8 @@ function normalizeCommand(argv) {
       attempt: Number(options['workflow-run-attempt'] ?? 1),
       event: options.event ?? null,
       upstreamRunId: options['upstream-run-id'] ? Number(options['upstream-run-id']) : null,
-      headSha: options['head-sha'] ?? null
+      headSha: options['head-sha'] ?? null,
+      refreshRequest: refreshRequest(options)
     }
   });
   fs.writeFileSync(options.output, `${JSON.stringify(snapshot, null, 2)}\n`);
@@ -364,5 +380,6 @@ module.exports = {
   isActiveItem,
   normalizeItem,
   pointerPayload,
-  publishStatusPointer
+  publishStatusPointer,
+  refreshRequest
 };

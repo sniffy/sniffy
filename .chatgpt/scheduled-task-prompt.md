@@ -43,9 +43,16 @@ Do not create another Scheduled Task, child ChatGPT task, or promise future/back
 the current UTC timestamp as the dispatcher reference.
 
 ProjectV2 read protocol:
-- Prefer a complete direct organization ProjectV2 read when the connected tool actually succeeds. If direct ProjectV2 access is
-  unavailable, incomplete, or fails, apply .chatgpt/status-snapshot-instructions.md before intake, reconciliation, continuation,
-  or ordinary queue selection.
+- At the start of every tick, apply .chatgpt/status-snapshot-instructions.md as an on-demand refresh barrier. Discover the newest
+  open non-PR issue labeled ai-delivery-status, add exactly one `/ai-delivery-status refresh` comment, and wait up to the configured
+  120 seconds for the terminal +1 reaction on that exact comment. A -1 or missing terminal reaction blocks snapshot-dependent work;
+  do not retry in the same tick or fall back to the pointer that existed before the request.
+- After +1, rediscover and validate the pointer. Require `generatedAt` to be strictly later than the request comment's `createdAt`.
+  Normally require `source.workflowRun.refreshRequest.commentId` to equal the request comment ID; a pointer replaced by a later
+  serialized successful trigger is acceptable only when it is demonstrably newer than the request.
+- A complete direct organization ProjectV2 read may remain the selected read path when the connected tool actually succeeds, but
+  it does not skip the refresh barrier. If direct ProjectV2 access is unavailable, incomplete, or fails, use the acknowledged
+  snapshot for intake, reconciliation, continuation, or ordinary queue selection.
 - Discover the newest open non-PR issue labeled ai-delivery-status; never hardcode its issue number. Parse and validate its pure
   JSON pointer, require the configured protocol/repository/Project/artifact identity and freshness, then download the artifact by
   numeric artifact ID through the default GitHub connector and read project-2-status.json.
@@ -60,8 +67,10 @@ ProjectV2 read protocol:
 - Never select issues labeled ai-delivery-control or ai-delivery-status as delivery work.
 
 ProjectV2 control protocol:
-- Every executor uses the same rotating technical control issue and delivery-control/v1 JSON commands documented in
-  control-plane.md.
+- Every executor uses the same rotating technical control issue and delivery-control/v1 commands documented in control-plane.md.
+  For every new control-issue comment, emit its concise human-readable Markdown wrapper with the exact start/end markers and
+  lowercase `json` fence. Derive the display-only prose from the JSON, but always treat the marked JSON as authoritative; never
+  emit bare JSON for an autonomous command.
 - Locate the newest open issue with the configured ai-delivery-control label; create it with that label if none exists. Do not
   post /project-status, /project-field, claim-intent, winner, loser, withdrawal, lease, or polling comments on the target issue or
   pull request.
@@ -154,7 +163,8 @@ Perform this protocol:
 11. Never merge, enable auto-merge, bypass protection, rewrite shared history, expose credentials, or perform privileged
     repository/hosting operations without Dmitry's explicit instruction.
 12. If no eligible intake, head reconciliation, due continuation, control-log rotation, claimable turn, or meaningful
-    reconciliation exists, make no GitHub/source mutation and reply only NO_CHANGE. Otherwise finish with a compact summary
+    reconciliation exists, make no further GitHub or source mutation beyond the required status-refresh request and reply only
+    NO_CHANGE. Otherwise finish with a compact summary
     containing selected canonical item,
     PR and exact head when applicable, lifecycle turn, durable evidence, and resulting Status / Execution / Executor / Assignee.
 ```

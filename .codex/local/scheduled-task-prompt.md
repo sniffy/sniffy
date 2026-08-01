@@ -35,21 +35,32 @@ the worker's PR, merge, or enable auto-merge.
    connector, combine stale snapshots, or infer eligibility from issue/PR state alone. Report `RATE_LIMITED: no claim made` in this
    dispatcher conversation and stop.
 4. Inspect `ownedInProgress` from the retained snapshot first. Continue only an item whose worker or monitoring observation is due
-   under the 15-minute, second-15-minute, then hourly cadence. Do not create another monitor.
+   under the 15-minute, second-15-minute, then hourly cadence. Do not create another monitor. A provider-wide Codex project/task
+   inventory is allowed only to recover one selected `In progress` item whose provisional Worker reference leaves child creation
+   uncertain; scope the result to that claim token and generation.
 5. Otherwise use the already sorted `readyCandidates` array and choose at most its first candidate, subject to canonical duplicate
-   suppression and current capacity. Eligible work has Execution=Ready, Executor=Local Codex, Status=Implementation or
-   Verification, and an empty or local-worker Assignee.
+   suppression and available capacity. Compute available capacity from `executors.Local Codex.maxConcurrentWorkers` in the loaded
+   profile minus the length of `ownedInProgress` in the retained snapshot. Treat this as the single-dispatcher scheduling limit,
+   not a distributed semaphore. Do not call `List projects`, list tasks/conversations, or use any other provider-wide inventory on
+   the normal `Ready` claim path. Eligible work has Execution=Ready, Executor=Local Codex, Status=Implementation or Verification,
+   and an empty or local-worker Assignee.
 6. If neither a due owned item nor a ready candidate exists, create no task, worktree, branch, target comment, control command, or
    Project mutation. Reply only NO_CHANGE.
-7. Only after one candidate is selected, perform targeted deep reads for that canonical issue or PR: formal closing links, routing,
-   proof matrix, exact branch/PR/head, worker reference, review state, CI, and duplicate-worker evidence. Use targeted `gh issue
-   view`, `gh pr view`, Actions, and control-issue reads; never refetch the full Project snapshot for this inspection.
+7. Only after one candidate is selected, perform the minimum targeted live reads needed to construct the guarded claim and render
+   its worker: canonical item type/open state, formal closing links, exact existing PR branch/head and repository ownership when
+   applicable, plus the newest active control issue. Do not read the complete discussion, proof matrix, review submissions,
+   review threads, or CI before claim; the lifecycle worker owns those reads. Never refetch the full Project snapshot or query
+   provider-wide Codex inventory for duplicate-worker evidence. Per-target guarded claim serialization is the duplicate-generation
+   authority.
 8. An existing same-repository PR may be an adopted continuation even when Dmitry, ChatGPT, an IDE agent, or another configured
    worker created it. Adoption is valid only when the retained snapshot and targeted reads show the canonical Project route sets
    Implementer/Executor=Local Codex. Reuse the exact branch and PR. Do not adopt fork or Dependabot branches for direct correction.
 9. Select deterministically by Project priority, ready timestamp, repository, item type, then item number. The helper has already
    normalized and sorted candidates; do not create an alternative ordering from raw Project data.
-10. Claim through the one active technical control issue using one guarded delivery-control/v1 command. Guard current Status,
+10. Claim through the one active technical control issue using one guarded delivery-control/v1 command. Post every new command
+    with the concise human-readable Markdown wrapper from control-plane.md, including its exact start/end markers and lowercase
+    `json` fence. Derive the display-only prose from the JSON, treat the marked JSON as authoritative, and never emit bare JSON.
+    Guard current Status,
     Execution=Ready, Executor=Local Codex, and exact PR head when the canonical item is a PR; set Execution=In progress plus
     claim token/lease inside the provisional Worker reference. The guarded transition is the authoritative current-state recheck.
     Inspect the reaction and re-read the resulting target Project state before spawning.
@@ -61,7 +72,9 @@ the worker's PR, merge, or enable auto-merge.
 13. Do not use shell UI automation, Python observers, codex app-server, codex exec, or .codex/local/run-issue.sh for this
     app-native adapter.
 14. After confirming the child task exists, publish one guarded control command updating the final worker reference, then verify
-    it. If child creation fails, release to Ready through the same protocol. Set Blocked only when Dmitry must decide or act.
+    it. If child creation definitively fails, release to Ready through the same protocol. If the creation result is ambiguous, keep
+    the provisional `In progress` ownership for targeted recovery under step 4; never release and redispatch speculatively. Set
+    Blocked only when Dmitry must decide or act.
 
 Never dispatch the same lifecycle generation twice. Never merge or enable auto-merge.
 ```
@@ -71,6 +84,10 @@ Never dispatch the same lifecycle generation twice. Never merge or enable auto-m
 Before enabling or replacing the recurring dispatcher, prove with disposable/read-only items that:
 
 - one tick invokes `project-queue-snapshot.sh` once and never invokes `gh project item-list` directly;
+- a normal `Ready` claim derives capacity from `ownedInProgress` plus `maxConcurrentWorkers` and performs no provider-wide Codex
+  project/task inventory;
+- recovery may inspect provider inventory only for one provisional `In progress` claim token/generation after ambiguous child
+  creation;
 - an empty snapshot stays in this conversation and creates no worktree;
 - a rate-limited snapshot creates no claim and does not switch data sources;
 - one eligible issue item creates exactly one standalone worker conversation and isolated WSL worktree;

@@ -6,6 +6,7 @@ on:
       - .github/scripts/delivery-control.js
       - .github/scripts/review-return.js
       - .github/scripts/review-return.test.js
+      - .github/scripts/review-return-verification.test.js
       - .github/workflows/review-return.yml
       - docs/ai-delivery/review-return.md
   pull_request_review:
@@ -30,7 +31,10 @@ jobs:
         run: |
           node --check .github/scripts/review-return.js
           node --check .github/scripts/review-return.test.js
-          node --test .github/scripts/review-return.test.js
+          node --check .github/scripts/review-return-verification.test.js
+          node --test \
+            .github/scripts/review-return.test.js \
+            .github/scripts/review-return-verification.test.js
       - name: Parse workflow YAML
         run: ruby -e 'require "yaml"; YAML.load_file(".github/workflows/review-return.yml")'
       - name: Lint GitHub Actions workflow

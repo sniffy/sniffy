@@ -31,8 +31,10 @@ and unresolved threads, current CI, Project fields, worker record, remote develo
 `docs/ai-delivery/{profile,lifecycle,control-plane,pull-request-intake,routing,supervision,verification}.md`. Verify this task still
 owns the exact claim token/generation and worker reference.
 
-Use the common rotating technical control issue for every ProjectV2 transition. Never post /project-status, /project-field,
-claim arbitration, lease, or polling comments on the target item. A handoff is complete only after the guarded
+Use the common rotating technical control issue for every ProjectV2 transition. Post every new command with the concise
+human-readable Markdown wrapper from control-plane.md, including its exact start/end markers and lowercase `json` fence. Derive
+the display-only prose from the JSON, treat the marked JSON as authoritative, and never emit bare JSON. Never post /project-status,
+/project-field, claim arbitration, lease, or polling comments on the target item. A handoff is complete only after the guarded
 `delivery-control/v1` command has a terminal reaction and the canonical Project state has been re-read. A command setting
 Status=Review must identify the exact PR: target+expected.head for a canonical PR, or reviewPullRequest.number/head for a
 canonical issue. Re-read PR draft/head state after the command as well as Project fields.

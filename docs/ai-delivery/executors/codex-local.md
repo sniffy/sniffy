@@ -32,6 +32,9 @@ The local scheduled automation selects its model and reasoning for the automatio
 workers therefore use Sol / extra-high consistently. Do not label Codex Cloud as Terra and do not pretend the local dispatcher can
 switch models per item unless a future product capability is explicitly smoke-tested and the profile is changed.
 
+The app-native dispatcher currently permits one concurrent Local Codex worker. It derives used capacity from `ownedInProgress` in
+the one retained Project snapshot. This is a scheduling policy for the single persistent dispatcher, not a distributed semaphore.
+
 ## App-native topology
 
 ```text
@@ -101,8 +104,13 @@ Both adapters:
 - accept issue and PR Project items;
 - respect directed Assignee or empty pool ownership;
 - inspect canonicalization, lifecycle, profile, access, capacity, exact branch/PR/head, current worker, and due monitoring;
+- derive normal capacity and duplicate-generation decisions from the retained Project snapshot plus the guarded claim, without a
+  provider-wide Codex project/task inventory before claiming `Ready` work;
+- use provider inventory only for targeted recovery of one provisional `In progress` claim after ambiguous child creation;
 - exclude duplicate representations and linked issues suppressed by an open canonical multi-issue PR;
-- use the one active technical control issue and one guarded `delivery-control/v1` command per claim/transition;
+- use the one active technical control issue and one guarded `delivery-control/v1` command per claim/transition, posting every new
+  command with the control-plane document's human-readable Markdown wrapper, exact markers, and lowercase `json` fence while
+  treating its marked JSON—not its derived display prose—as authoritative and never emitting bare JSON autonomously;
 - inspect the reaction and re-read Project state before spawning;
 - record concrete conversation/task or process/worktree and exact PR references;
 - release to `Ready` when spawn fails;

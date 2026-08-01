@@ -34,6 +34,7 @@ test('profile makes universal intake and existing-PR routing explicit', () => {
   assert.match(profile, /noClosingIssue:\s*pullRequest/);
   assert.match(profile, /multipleClosingIssues:\s*pullRequestPlanning/);
   assert.match(profile, /existingPullRequestContinuationExecutor:\s*Local Codex/);
+  assert.match(profile, /Local Codex:[\s\S]*maxConcurrentWorkers:\s*1/);
 });
 
 test('Local Codex can adopt an explicitly routed same-repository PR without duplication', () => {
@@ -66,6 +67,37 @@ test('Cloud does not turn arbitrary existing PRs into duplicate fresh work', () 
   assert.match(cloud, /Do not route an arbitrary existing PR/i);
   assert.match(cloud, /Cloud must not open a duplicate branch\/PR/i);
   assert.match(cloud, /existing-PR continuation normally goes to Local Codex/i);
+});
+
+test('delivery executors require readable control comments with authoritative marked JSON', () => {
+  const commandPrompts = [
+    '.chatgpt/scheduled-task-prompt.md',
+    '.codex/local/scheduled-task-prompt.md',
+    '.codex/local/worker-task-prompt.md'
+  ];
+  const executorDocs = [
+    'docs/ai-delivery/executors/chatgpt.md',
+    'docs/ai-delivery/executors/codex-cloud.md',
+    'docs/ai-delivery/executors/codex-local.md'
+  ];
+
+  for (const file of [...commandPrompts, ...executorDocs]) {
+    const content = read(file);
+    assert.match(content, /human-readable Markdown wrapper/i, `${file} must require the readable wrapper`);
+    assert.match(content, /exact (?:start\/end )?markers|exact markers/i, `${file} must preserve protocol markers`);
+    assert.match(content, /lowercase\s+`json` fence/i, `${file} must preserve the lowercase JSON fence`);
+    assert.match(content, /marked JSON.*authoritative|authoritative marked JSON/is, `${file} must make JSON authoritative`);
+  }
+  for (const file of commandPrompts) {
+    assert.match(read(file), /never\s+emit bare JSON/i, `${file} must reject bare autonomous output`);
+  }
+
+  const control = read('docs/ai-delivery/control-plane.md');
+  assert.equal((control.match(/<!-- delivery-control-command:start -->/g) || []).length, 1);
+  assert.equal((control.match(/<!-- delivery-control-command:end -->/g) || []).length, 1);
+  assert.match(control, /display-only[\s\S]*sole authoritative `delivery-control\/v1` command/i);
+  assert.match(control, /Legacy comments containing only a valid JSON object remain accepted/i);
+  assert.match(control, /workflow_dispatch` continues to accept the raw JSON object/i);
 });
 
 test('every implementation executor publishes a non-draft exact-head PR before Review', () => {
@@ -110,6 +142,10 @@ test('Local Codex uses one bounded normalized Project snapshot per tick', () => 
   assert.match(dispatcher, /only normal full-Project query/i);
   assert.match(dispatcher, /Do not run `gh project item-list`/i);
   assert.match(dispatcher, /Do not switch to another\s+connector, combine stale snapshots/i);
+  assert.match(dispatcher, /Compute available capacity from `executors\.Local Codex\.maxConcurrentWorkers`[\s\S]*`ownedInProgress`/i);
+  assert.match(dispatcher, /Do not call `List projects`[\s\S]*provider-wide inventory on\s+the normal `Ready` claim path/i);
+  assert.match(dispatcher, /inventory is allowed only to recover one selected `In progress` item[\s\S]*claim token and generation/i);
+  assert.match(dispatcher, /Do not read the complete discussion, proof matrix, review submissions,[\s\S]*the lifecycle worker owns those reads/i);
   assert.equal((helper.match(/^\s*if ! gh project item-list\b/gm) || []).length, 1);
   assert.match(helper, /exit 75/);
 

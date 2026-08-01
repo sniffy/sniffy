@@ -5,7 +5,7 @@ const ORGANIZATION = 'sniffy';
 const PROJECT_NUMBER = 2;
 const BASE_BRANCH = 'develop';
 const AGENT_EXECUTORS = new Set(['ChatGPT', 'Codex Cloud', 'Local Codex']);
-const RETURNABLE_STATUSES = new Set(['Review', 'Approval']);
+const RETURNABLE_STATUSES = new Set(['Review', 'Verification', 'Approval']);
 const GUARDED_FIELDS = ['Status', 'Execution', 'Implementer', 'Executor', 'Worker reference'];
 
 function values(nodes) {
@@ -107,7 +107,7 @@ function commandFor(target) {
   const alreadyRouted = status === 'Implementation' && execution === 'Ready' && executor === implementer;
   const alreadyReturned = alreadyRouted && workerReference === desiredWorkerReference;
   if (!alreadyRouted && !RETURNABLE_STATUSES.has(status)) {
-    throw new Error(`Project item is ${status || '(clear)'}, not Review or Approval.`);
+    throw new Error(`Project item is ${status || '(clear)'}, not Review, Verification, or Approval.`);
   }
 
   const expectedFields = {};
