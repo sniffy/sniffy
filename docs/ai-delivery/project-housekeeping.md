@@ -21,7 +21,7 @@ source events and removes old completed items from ordinary views.
 Configure these GitHub Project built-in workflows in organization Project 2:
 
 ```text
-Item closed          -> Status = Done
+Issue closed         -> Status = Done
 Pull request merged  -> Status = Done
 ```
 
@@ -39,24 +39,27 @@ A closed unmerged pull request is not always equivalent to delivered work:
 - a PR that is implementation evidence for a still-open canonical issue must not complete that issue;
 - a superseded PR may need its Project representation suppressed while a replacement issue remains active.
 
-Therefore, use the built-in close workflow only where its filter can target the intended canonical Project item. Leave ambiguous
-closed-unmerged PR reconciliation to the anomaly layer below.
+Do not configure a broad closed-PR-to-Done rule. Use the unambiguous merged-PR rule and leave closed-unmerged PR reconciliation to
+the anomaly layer below.
 
 ## Layer 2: delayed auto-archive
 
-Configure automatic archival for completed items after a cooling-off period:
+GitHub Project auto-archive filters support source qualifiers such as `is`, `reason`, and `updated`; they do not support arbitrary
+custom fields such as `Status`. After the terminal workflows have been smoke-tested, configure the supported source-state filter:
 
 ```text
-Status:Done updated:<@today-14d
+is:closed updated:<@today-14d
 ```
 
-Fourteen days is the initial Sniffy retention window. It keeps recent completion evidence visible to the event loop and maintainers
-while preventing permanent growth of ordinary Project views.
+Fourteen days is the initial cooling-off window. It gives the status snapshot and event loop time to detect a missed terminal
+transition before the source item leaves ordinary active views.
 
 Archival is not deletion. Archived items retain their Project field values and may be restored for investigation. The complete
 GitHub issue/PR and Actions history also remain authoritative evidence.
 
-Do not auto-delete Project items. Deletion would remove useful lifecycle metadata and make incident reconstruction harder.
+Archive also does not remove an item from the Project's total item limit. It is active-view housekeeping, not infinite storage. If
+Project 2 approaches the platform item limit, define a separate, reviewed export-and-delete retention policy; do not silently delete
+items as part of routine archival.
 
 ## Layer 3: daily anomaly reconciliation
 
@@ -131,8 +134,8 @@ After enabling the built-in workflows:
 
 1. close a disposable issue represented in Project 2 and verify `Status = Done`;
 2. merge a disposable PR represented as canonical and verify `Status = Done`;
-3. confirm an implementation-evidence PR does not incorrectly complete its still-open canonical issue;
-4. wait for or temporarily shorten the archive filter and verify the item moves to the Project archive without losing fields;
+3. confirm a closed-unmerged implementation-evidence PR does not incorrectly complete its still-open canonical issue;
+4. wait for or temporarily shorten the supported archive filter and verify the item moves to the Project archive without losing fields;
 5. reopen the disposable item and verify no unsafe automatic lifecycle reset occurs.
 
 ## Ownership and response
