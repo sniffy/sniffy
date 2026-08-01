@@ -9,11 +9,14 @@ on:
       - .github/scripts/delivery-status.test.js
       - .github/scripts/delivery-status-policy.test.js
       - .github/scripts/delivery-status-runner-policy.test.js
+      - .github/scripts/delivery-status-mergeability.js
+      - .github/scripts/delivery-status-mergeability.test.js
       - .github/workflows/delivery-status.yml
       - docs/ai-delivery/README.md
       - docs/ai-delivery/profile.yml
       - docs/ai-delivery/status-snapshot.md
       - docs/ai-delivery/ubuntu-slim-capability-experiment.md
+      - docs/ai-delivery/merge-conflict-reconciliation.md
   workflow_run:
     workflows: [AI delivery control]
     types: [completed]
@@ -42,10 +45,13 @@ jobs:
           node --check .github/scripts/delivery-status.test.js
           node --check .github/scripts/delivery-status-policy.test.js
           node --check .github/scripts/delivery-status-runner-policy.test.js
+          node --check .github/scripts/delivery-status-mergeability.js
+          node --check .github/scripts/delivery-status-mergeability.test.js
           node --test \
             .github/scripts/delivery-status.test.js \
             .github/scripts/delivery-status-policy.test.js \
-            .github/scripts/delivery-status-runner-policy.test.js
+            .github/scripts/delivery-status-runner-policy.test.js \
+            .github/scripts/delivery-status-mergeability.test.js
       - name: Parse workflow and profile YAML
         run: >-
           ruby -e 'require "yaml";
@@ -114,8 +120,29 @@ jobs:
             --repo "$STATUS_REPOSITORY" \
             --state all \
             --limit 1000 \
-            --json number,state,isDraft,mergedAt,closedAt,createdAt,updatedAt,title,url,author,labels,headRefName,headRefOid,baseRefName,isCrossRepository \
+            --json number,state,isDraft,mergedAt,closedAt,createdAt,updatedAt,title,url,author,labels,headRefName,headRefOid,baseRefName,isCrossRepository,mergeable,mergeStateStatus \
             > status-artifact/repository-pull-requests.raw.json
+
+          status_owner="${STATUS_REPOSITORY%%/*}"
+          status_name="${STATUS_REPOSITORY#*/}"
+          # GraphQL pagination requires the literal $endCursor variable.
+          # shellcheck disable=SC2016
+          GH_TOKEN="$REPOSITORY_TOKEN" gh api graphql --paginate \
+            -f owner="$status_owner" \
+            -f name="$status_name" \
+            -f query='query($owner: String!, $name: String!, $endCursor: String) {
+              repository(owner: $owner, name: $name) {
+                pullRequests(first: 100, after: $endCursor, states: OPEN) {
+                  nodes {
+                    number
+                    closingIssuesReferences(first: 100) { totalCount nodes { number } }
+                  }
+                  pageInfo { hasNextPage endCursor }
+                }
+              }
+            }' \
+            | jq -sc '[.[].data.repository.pullRequests.nodes[] | {number, closingIssuesReferences}]' \
+            > "$RUNNER_TEMP/repository-pull-request-closing-issues.raw.json"
 
           node .github/scripts/delivery-status.js normalize \
             --fields status-artifact/project-fields.raw.json \
@@ -132,6 +159,11 @@ jobs:
             --event "$GITHUB_EVENT_NAME" \
             --upstream-run-id "$UPSTREAM_RUN_ID" \
             --head-sha "$source_sha"
+
+          node .github/scripts/delivery-status-mergeability.js \
+            status-artifact/project-2-status.json \
+            status-artifact/repository-pull-requests.raw.json \
+            "$RUNNER_TEMP/repository-pull-request-closing-issues.raw.json"
 
           {
             echo "generated_at=$generated_at"

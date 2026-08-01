@@ -50,6 +50,11 @@ Every successful run uploads one artifact named `ai-delivery-status-project-2` w
 - `repository-issues.raw.json` — live issue state and metadata from `gh issue list --state all`;
 - `repository-pull-requests.raw.json` — live pull-request state, draft/head/base/ownership metadata, and labels from `gh pr list --state all`.
 
+The normalized snapshot also contains a top-level `pullRequests` collection for every open repository PR, whether the PR or one
+of its formal closing issues is the canonical Project item. Each observation records number, URL, author, same-repository/fork
+ownership, draft/base/branch/exact-head identity, mergeability, merge-state status, and formal closing issue numbers. This is the
+pre-queue discovery surface for merge-conflict reconciliation; it does not make the PR a second lifecycle item.
+
 The normalizer fails when GitHub reports more fields or items than were returned, rather than publishing a silently truncated view.
 Each normalized item contains:
 
