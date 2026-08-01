@@ -1,4 +1,5 @@
 {
+  // Playwright 1.62 cannot resolve this package-style extends while loading the site config.
   "extends": "../../node_modules/@docusaurus/tsconfig/tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",

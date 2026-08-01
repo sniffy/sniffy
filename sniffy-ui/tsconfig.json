@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    // Playwright 1.62 validates references as files and cannot resolve the usual directory form.
     { "path": "./scripts/tsconfig.json" },
     { "path": "./.storybook/tsconfig.json" },
     { "path": "./packages/theme/tsconfig.json" },
