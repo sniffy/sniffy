@@ -53,21 +53,6 @@ jobs:
         run: npm run typecheck
       - name: Unit and Storybook interaction tests with coverage
         run: npm run test:coverage
-      - name: Install Codecov uploader dependencies
-        run: |
-          apt-get update
-          apt-get install --no-install-recommends --yes ca-certificates curl git gnupg
-          rm -rf /var/lib/apt/lists/*
-      - name: Upload frontend coverage
-        uses: codecov/codecov-action@v7
-        with:
-          files: ./sniffy-ui/coverage/lcov.info
-          flags: frontend
-          disable_search: true
-          use_oidc: true
-          fail_ci_if_error: true
-          version: v11.3.1
-          name: frontend
       - name: Build Storybook
         run: npm run storybook:build
       - name: Build production assets
@@ -85,6 +70,21 @@ jobs:
           path: |
             sniffy-ui/playwright-report/
             sniffy-ui/test-results/
+      - name: Install Codecov uploader dependencies
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends --yes ca-certificates curl git gnupg
+          rm -rf /var/lib/apt/lists/*
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./sniffy-ui/coverage/lcov.info
+          flags: frontend
+          disable_search: true
+          use_oidc: true
+          fail_ci_if_error: true
+          version: v11.3.1
+          name: frontend
   website:
     name: Website
     runs-on: ubuntu-24.04
@@ -247,7 +247,6 @@ jobs:
         with:
           flags: backend
           use_oidc: true
-          fail_ci_if_error: true
   arch-matrix:
     runs-on: ubuntu-26.04
     timeout-minutes: 90
@@ -352,7 +351,6 @@ jobs:
         with:
           flags: backend
           use_oidc: true
-          fail_ci_if_error: true
   test-matrix:
     needs:
       - smoke-test
@@ -428,7 +426,6 @@ jobs:
         with:
           flags: backend
           use_oidc: true
-          fail_ci_if_error: true
   analyze:
     needs:
       - smoke-test
