@@ -47,8 +47,9 @@ this on-demand refresh barrier: the refreshed artifact is the deterministic fall
 9. On `confused`, perform no work mutation and do not retry from the same snapshot. On `-1`, inspect the failed control run. On
    `+1`, the control workflow's internal final-state verification is authoritative for that command.
 10. Before a later dependent Project transition, obtain a snapshot generated after the preceding successful command. The status
-    workflow is triggered after delivery-control completion; request another on-demand refresh only when that event did not yield
-    a sufficiently new pointer. Do not chain dependent Project writes from an older materialized view.
+    workflow deliberately does not run after every delivery-control completion because that fan-out exhausts the shared Project
+    GraphQL rate limit during active reconciliation. Request exactly one on-demand refresh before the dependent transition. Do not
+    chain dependent Project writes from an older materialized view or add speculative refreshes between transitions.
 11. If the status issue, refresh acknowledgement, pointer, artifact, or snapshot is missing, expired, inaccessible, malformed,
     mismatched, or stale, make no snapshot-dependent Project claim or transition. Report the exact status-read blocker; do not
     guess.

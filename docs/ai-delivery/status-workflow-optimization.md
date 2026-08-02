@@ -9,7 +9,7 @@ runners, Project queries, artifact schema, permissions, or scheduling semantics.
 - use non-cone sparse checkout for the exact files consumed by each job;
 - keep `fetch-depth: 1`;
 - set `persist-credentials: false` because later steps authenticate explicitly through `GH_TOKEN` or action inputs;
-- preserve trusted `ref: develop` for secret-bearing publication triggered by `workflow_run`;
+- preserve trusted `ref: develop` for secret-bearing scheduled, on-demand, and manual publication;
 - preserve the current runner split: validation on `ubuntu-24.04` and publication on `ubuntu-slim`.
 
 Do not combine `filter` with `sparse-checkout`: `actions/checkout` documents that the partial-clone filter overrides sparse checkout.
@@ -34,7 +34,7 @@ future test reads another file, add that path in the same change that introduces
 
 - PR validation runs the existing focused tests, YAML parse, actionlint, and embedded shellcheck;
 - inspect checkout logs for the expected sparse-checkout configuration;
-- after merge, inspect one scheduled and one `workflow_run` publication;
+- after merge, inspect one scheduled and one on-demand publication;
 - verify pointer digest, artifact contents, source SHA, and counts remain unchanged in meaning.
 
 ## Removal condition

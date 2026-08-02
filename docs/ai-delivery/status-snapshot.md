@@ -31,17 +31,20 @@ delivery-control commands and ordinary work discussion do not belong there.
 [`.github/workflows/delivery-status.yml`](../../.github/workflows/delivery-status.yml) runs:
 
 - at minute `5` of every hour as a best-effort dashboard and recovery fallback;
-- after non-PR completions of the `AI delivery control` workflow, so guarded mutations are materialized promptly;
 - on an exact `/ai-delivery-status refresh` issue comment on an `ai-delivery-status` issue from an actor allowlisted in
   [`profile.yml`](profile.yml);
 - through `workflow_dispatch` for maintainer-authorized diagnosis or recovery;
 - in validation-only mode for pull requests changing this adapter.
 
+The workflow deliberately does not publish after every delivery-control completion. A busy lifecycle turn may use several guarded
+commands, and exporting the complete Project after each one amplifies GraphQL cost until the shared token is rate-limited. A later
+dependent transition requests one explicit on-demand barrier instead. The hourly run remains a dashboard and recovery fallback.
+
 The publish job is serialized with `queue: max` and `cancel-in-progress: false`. GitHub may keep up to 100 pending publications in
 FIFO order instead of replacing an older pending request when another trigger arrives. This preserves each on-demand request until
 it can reach a terminal reaction while still keeping pointer updates sequential. The job always checks out trusted `develop`,
-including for `workflow_run` and `issue_comment`, so neither a completed pull-request validation run nor comment content can inject
-untrusted code into the secret-bearing publication job. The comment trigger accepts only the exact configured command, status
+including for `issue_comment`, so comment content cannot inject untrusted code into the secret-bearing publication job. The
+comment trigger accepts only the exact configured command, status
 label, and actors `bedrin` or `bedrin-gpt`; all other issue comments produce a skipped publication job.
 
 After the artifact and latest pointer are published, the workflow adds `+1` to the exact request comment. A publication failure
@@ -187,9 +190,9 @@ For a snapshot-backed client:
 
 After a control-command `+1`, a later dependent Project transition must use a status snapshot generated after that command. Work
 that does not require another immediate Project write may proceed from the verified claim reaction plus live source state. The
-`workflow_run` trigger normally refreshes the pointer promptly after control completion; if it does not, the tick uses the same
-on-demand comment barrier rather than waiting for best-effort cron. Scheduled runs remain a non-deterministic dashboard/recovery
-signal and are not the freshness guarantee for a tick.
+tick requests one on-demand comment barrier before the dependent transition rather than exporting after every control completion
+or waiting for best-effort cron. Scheduled runs remain a non-deterministic dashboard/recovery signal and are not the freshness
+guarantee for a tick.
 
 No client may mutate Project fields directly from the snapshot, treat the status issue as a delivery-control/Project-mutation
 channel, or bypass exact-head and expected-field guards. Its only accepted command is the configured read-only refresh request.
