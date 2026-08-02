@@ -19,9 +19,6 @@ on:
       - docs/ai-delivery/status-workflow-optimization.md
       - docs/ai-delivery/ubuntu-slim-capability-experiment.md
       - docs/ai-delivery/merge-conflict-reconciliation.md
-  workflow_run:
-    workflows: [AI delivery control]
-    types: [completed]
   issue_comment:
     types: [created]
   schedule:
@@ -93,10 +90,6 @@ jobs:
     if: >-
       github.event_name != 'pull_request' &&
       (
-        github.event_name != 'workflow_run' ||
-        github.event.workflow_run.event != 'pull_request'
-      ) &&
-      (
         github.event_name != 'issue_comment' ||
         (
           github.event.issue.pull_request == null &&
@@ -135,7 +128,6 @@ jobs:
           PROJECT_OWNER: sniffy
           PROJECT_NUMBER: '2'
           STATUS_REPOSITORY: sniffy/sniffy
-          UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id || '' }}
           REFRESH_REQUEST_COMMENT_ID: ${{ github.event.comment.id || '' }}
           REFRESH_REQUEST_ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
           REFRESH_REQUEST_ACTOR: ${{ github.actor }}
@@ -205,7 +197,6 @@ jobs:
             --workflow-run-id "$GITHUB_RUN_ID" \
             --workflow-run-attempt "$GITHUB_RUN_ATTEMPT" \
             --event "$GITHUB_EVENT_NAME" \
-            --upstream-run-id "$UPSTREAM_RUN_ID" \
             --head-sha "$source_sha" \
             --request-comment-id "$REFRESH_REQUEST_COMMENT_ID" \
             --request-issue-number "$REFRESH_REQUEST_ISSUE_NUMBER" \
@@ -239,7 +230,6 @@ jobs:
           ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
           ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
           ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
-          UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id || '' }}
           SOURCE_SHA: ${{ steps.export.outputs.source_sha }}
           REFRESH_REQUEST_COMMENT_ID: ${{ github.event.comment.id || '' }}
           REFRESH_REQUEST_ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
@@ -252,7 +242,7 @@ jobs:
               id: Number(process.env.GITHUB_RUN_ID),
               attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
               event: process.env.GITHUB_EVENT_NAME,
-              upstreamRunId: process.env.UPSTREAM_RUN_ID ? Number(process.env.UPSTREAM_RUN_ID) : null,
+              upstreamRunId: null,
               headSha: process.env.SOURCE_SHA,
               refreshRequest: process.env.REFRESH_REQUEST_COMMENT_ID ? {
                 commentId: Number(process.env.REFRESH_REQUEST_COMMENT_ID),

@@ -56,7 +56,8 @@ test('workflow isolates validation and trusted status publication', () => {
   const workflow = read('.github/workflows/delivery-status.yml');
   assert.match(workflow, /permissions:\s*\{\}/);
   assert.match(workflow, /cron:\s*'5 \* \* \* \*'/);
-  assert.match(workflow, /workflows:\s*\[AI delivery control\]/);
+  assert.doesNotMatch(workflow, /workflow_run:/);
+  assert.doesNotMatch(workflow, /github\.event\.workflow_run/);
   assert.match(workflow, /issue_comment:\s*\n\s+types:\s*\[created\]/);
   assert.match(workflow, /github\.event\.comment\.body == '\/ai-delivery-status refresh'/);
   assert.match(workflow, /contains\(github\.event\.issue\.labels\.\*\.name, 'ai-delivery-status'\)/);
