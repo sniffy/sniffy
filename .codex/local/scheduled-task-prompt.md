@@ -40,8 +40,7 @@ subagent, `client-new-thread:*` reference, or claimed app-owned worktree. Perfor
    mutation. Return NO_CHANGE plus telemetry.
 6. Only after selection, perform the minimum targeted live reads needed to validate canonical identity, source state, formal links,
    exact existing PR branch/head/draft/ownership, current route/assignment/worker reference, and newest active control issue.
-   Do not read the complete discussion, proof matrix, review submissions, review threads, or CI before claim; the lifecycle worker
-   owns those reads after claim in this same conversation. For fresh work, read the complete authoritative issue before choosing a
+   Do not read the complete discussion, proof matrix, review submissions, review threads, or CI before claim; the lifecycle worker owns those reads after claim in this same conversation. For fresh work, read the complete authoritative issue before choosing a
    branch.
 7. Branch authority is deterministic:
    - an existing same-repository PR may be an adopted continuation only when the verified canonical Project route selects Local
