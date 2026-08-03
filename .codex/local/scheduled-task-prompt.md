@@ -35,8 +35,8 @@ worker PR, merge, or enable auto-merge.
 5. If no candidate is due or ready, create no target comment, control command, task, worktree, branch, or Project mutation. Return
    NO_CHANGE plus telemetry.
 6. Only after selection, perform minimum targeted live reads: canonical item type/open state, formal closing links, exact existing
-   PR branch/head/draft/ownership, current route/assignment/worker reference, and newest active control issue. Do not read the
-   complete discussion, proof matrix, review submissions, review threads, or CI before claim; the lifecycle worker owns those reads.
+   PR branch/head/draft/ownership, current route/assignment/worker reference, and newest active control issue.
+   Do not read the complete discussion, proof matrix, review submissions, review threads, or CI before claim; the lifecycle worker owns those reads.
 7. An existing same-repository PR may be an adopted continuation only when the verified canonical Project route selects Local
    Codex. Reuse the exact branch and PR. Do not adopt fork or Dependabot branches for direct correction.
 8. Claim with one guarded `delivery-control/v1` command. Use the human-readable Markdown wrapper, exact start/end markers, and
