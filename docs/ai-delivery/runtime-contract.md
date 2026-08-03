@@ -33,8 +33,9 @@ A tick is selection and coordination, not lifecycle work. It must:
 7. publish human-useful evidence and one guarded handoff when work finishes;
 8. emit compact telemetry and stop.
 
-Do not read complete issue discussions, full diffs, review threads, CI logs, proof matrices, or executor runbooks before a candidate
-is selected. The selected worker owns those reads. Do not re-read the full snapshot during selection.
+Live-read only the selected candidate. Do not read complete issue discussions, full diffs, review threads, CI logs, proof matrices,
+or executor runbooks before a candidate is selected. The selected worker owns those reads. Do not re-read the full snapshot during
+selection.
 
 When no candidate needs action, perform no Project, source, worker, target-comment, or control-command mutation and return
 `NO_CHANGE` plus telemetry.
@@ -112,6 +113,6 @@ Every non-interactive tick and worker emits one final JSON object or one compact
 - outcome: `NO_CHANGE`, `CLAIMED`, `DISPATCHED`, `HANDOFF`, `BLOCKED`, `RATE_LIMITED`, `CONFLICT`, or `FAILED`;
 - exact provider token counters when the runtime exposes them.
 
-Use `null` and `usageSource: "unavailable"` when token counters are not exposed. Do not invent an exact token count. A separately
+Use `null` and `usageSource: "unavailable"` when token counters are not exposed. Never invent an exact token count. A separately
 labelled estimate may be emitted only from measured prompt/context bytes using a documented formula; it must never be presented as
 provider billing data.
