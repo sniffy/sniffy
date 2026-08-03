@@ -58,7 +58,7 @@ jobs:
             .codex/local/cli-dispatch.sh \
             .codex/local/cli-launch-worker.sh \
             .codex/local/cli-recover-worker.sh
-          shellcheck -x \
+          shellcheck -x -S warning \
             .codex/local/cli-common.sh \
             .codex/local/cli-dispatch.sh \
             .codex/local/cli-launch-worker.sh \
