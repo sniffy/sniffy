@@ -179,6 +179,18 @@ test('keeps fork and Dependabot conflicts visible without direct branch adoption
   assert.deepEqual(result.orderedCandidates.map(value => value.kind), ['managed-pr-conflict', 'managed-pr-conflict']);
 });
 
+test('recognizes GitHub App Dependabot login', () => {
+  const dependabot = pullRequest(12, [], {author: 'app/dependabot', mergeable: 'CONFLICTING'});
+  const result = buildDispatch(
+    snapshot([], [dependabot]),
+    {items: []},
+    [{number: 12, labels: [{name: 'dependencies'}]}],
+    {}
+  );
+  assert.equal(result.pullRequests.managedConflicts[0].isDependabot, true);
+  assert.equal(result.pullRequests.managedConflicts[0].conflictMode, 'dependabot-operation');
+});
+
 test('does not treat a human dependency PR as Dependabot', () => {
   const human = pullRequest(13, [], {author: 'human', mergeable: 'CONFLICTING'});
   const result = buildDispatch(
@@ -205,6 +217,45 @@ test('does not steal an explicit Local Codex correction route as intake or confl
   assert.equal(result.pullRequests.intake.length, 0);
   assert.equal(result.pullRequests.conflicting.length, 0);
   assert.equal(result.pullRequests.managedConflicts.length, 0);
+  assert.equal(result.orderedCandidates.length, 0);
+});
+
+test('does not requeue an explicitly suppressed PR item', () => {
+  const suppressedPr = projectItem(761, {
+    Status: 'Draft',
+    'Worker reference': 'Suppressed duplicate lifecycle item; canonical replacement issue https://github.com/sniffy/sniffy/issues/772 owns the lifecycle'
+  }, 'PullRequest');
+  const pr = pullRequest(761, [], {
+    author: 'app/dependabot',
+    mergeable: 'CONFLICTING',
+    mergeStateStatus: 'DIRTY'
+  });
+  const result = buildDispatch(
+    snapshot([suppressedPr], [pr]),
+    {items: [rawItem(suppressedPr, ['bedrin-gpt'])]},
+    [{number: 761, labels: [{name: 'dependencies'}]}],
+    {}
+  );
+  assert.equal(result.pullRequests.intake.length, 0);
+  assert.equal(result.pullRequests.conflicting.length, 0);
+  assert.equal(result.pullRequests.managedConflicts.length, 0);
+  assert.equal(result.orderedCandidates.length, 0);
+});
+
+test('does not requeue an already suppressed duplicate representation', () => {
+  const issue = projectItem(9, {Status: 'Review', Execution: 'Ready', Executor: 'Human'}, 'Issue');
+  const duplicatePr = projectItem(10, {
+    Status: 'Draft',
+    'Worker reference': 'Suppressed duplicate lifecycle item; canonical issue https://github.com/sniffy/sniffy/issues/9'
+  }, 'PullRequest');
+  const pr = pullRequest(10, [9]);
+  const result = buildDispatch(
+    snapshot([issue, duplicatePr], [pr]),
+    {items: [rawItem(issue), rawItem(duplicatePr)]},
+    [{number: 10, labels: []}],
+    {}
+  );
+  assert.equal(result.pullRequests.intake.length, 0);
   assert.equal(result.orderedCandidates.length, 0);
 });
 
