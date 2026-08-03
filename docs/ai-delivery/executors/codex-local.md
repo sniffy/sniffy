@@ -1,170 +1,111 @@
 # Local Codex executors
 
-Local Codex has two supported shapes:
+Local Codex supports an app-native dispatcher/worker topology and a headless CLI topology. Both follow root/nested `AGENTS.md`, the
+compact runtime contract, the shared lifecycle/control protocol, exact PR continuity, truthful proof, and the no-merge boundary.
 
-1. **app-native Local Codex** for app-owned conversations, worktrees, automations, and optional mobile Remote visibility;
-2. **headless Local Codex CLI** for unattended Linux scheduling, persistent caches/services, and scalable worker processes.
+## Model profiles
 
-Both follow `AGENTS.md`, universal issue/PR canonicalization, the shared lifecycle, guarded control protocol, verification contract,
-and no-merge boundary. Current Sniffy configuration in [`../profile.yml`](../profile.yml) uses **Sol** with **extra-high** reasoning
-for Local Codex.
+- persistent dispatcher/heartbeat: `gpt-5.6-luna` / low;
+- normal implementation or verification worker: `gpt-5.6-terra` / medium;
+- explicit difficult-task escalation: `gpt-5.6-sol` / high;
+- xhigh only for an exceptional recorded need.
 
-## Route to Local Codex when
+The dispatcher is intentionally cheap because it performs deterministic queue selection, not code reasoning. Changing model does
+not change authority, claim ownership, branch continuity, review independence, or proof obligations.
 
-Prefer Local Codex for:
+## Route to Local Codex
 
-- complex architecture, concurrency, lifecycle, cleanup, or failure composition;
-- cross-version Java and same-artifact compatibility;
-- persistent dependencies, Docker, services, browsers, or representative local environments;
-- existing same-repository branch/PR continuation, adoption, and recovery;
-- verification requiring local state or long-lived artifacts;
-- a convergence checkpoint that identifies Cloud context/environment/capability limits.
+Prefer Local Codex for complex architecture/concurrency/lifecycle/failure composition, cross-version Java, persistent dependencies
+or services, Docker/browser/local environments, exact same-repository existing-PR continuation, representative Verification, and
+non-convergence caused by environment/context limitations.
 
-Do not route an unresolved product, canonicalization, or architecture decision merely because the local model/profile is strong.
-Planning and maintainer authority still precede implementation.
-
-Do not adopt a fork or Dependabot branch for direct autonomous correction. Those remain contributor/bot-owned or are superseded by
-a deliberately routed internal task.
-
-## Fixed model/profile
-
-The local scheduled automation selects its model and reasoning for the automation as a whole. The current Sniffy dispatcher and
-workers therefore use Sol / extra-high consistently. Do not label Codex Cloud as Terra and do not pretend the local dispatcher can
-switch models per item unless a future product capability is explicitly smoke-tested and the profile is changed.
-
-The app-native dispatcher currently permits one concurrent Local Codex worker. It derives used capacity from `ownedInProgress` in
-the one retained Project snapshot. This is a scheduling policy for the single persistent dispatcher, not a distributed semaphore.
+Do not send unresolved product, architecture, canonicalization, credential, or privilege decisions to a stronger model. Do not
+adopt fork or Dependabot branches for direct autonomous correction.
 
 ## App-native topology
 
 ```text
-persistent dispatcher conversation (Sol / extra-high)
-  -> empty queue: NO_CHANGE, no task/chat/worktree
-  -> eligible canonical issue or PR: guarded claim through central control issue
-       -> one one-time standalone worker task
-       -> one dedicated canonical-item conversation
-       -> one isolated app-managed worktree
-       -> fresh branch or exact adopted existing PR branch
-       -> worker publishes evidence and guarded lifecycle handoff
+persistent Luna/low dispatcher
+  -> one normalized Project snapshot
+  -> empty: NO_CHANGE + telemetry
+  -> selected canonical candidate + guarded claim
+      -> one standalone Terra/medium worker and isolated worktree
+      -> optional explicit Sol/high escalation
+      -> exact branch/PR evidence and guarded handoff
 ```
 
-Use app-native when durable Codex conversation, interactive steering, app-managed worktree, or Remote visibility adds real value.
-The Windows app runs on the disposable VM; code, terminal, GitHub CLI, Java, Maven, Node, Docker, and tests run in WSL2.
+The dispatcher reads its compact prompt, `runtime-contract.md`, profile, worker template, and one queue snapshot. It does not read
+complete discussions/diffs/reviews/CI or detailed policy before selection. Normal capacity comes from `ownedInProgress` plus
+`maxConcurrentWorkers`; provider-wide task inventory is only targeted recovery for one ambiguous already-claimed generation.
 
-Before enabling app dispatch, smoke-test:
+Canonical prompts are `.codex/local/scheduled-task-prompt.md` and `.codex/local/worker-task-prompt.md`. Repository merges do not
+rewrite embedded Codex automations; replace and smoke-test them manually.
 
-- an empty tick creates no worker conversation or worktree;
-- a claimed issue item creates exactly one standalone worker;
-- an explicitly routed same-repository PR continuation reuses the exact branch/PR without a duplicate;
-- fork and Dependabot PRs cannot be adopted for direct correction;
-- a completed Implementation marks its PR ready and verifies non-draft exact-head state before Project Review;
-- the worker uses the expected project/worktree and Sol / extra-high profile;
-- failed child creation releases the guarded claim;
-- repeated automation returns to the intended persistent dispatcher;
-- concurrent dispatchers produce one successful claim and one conflict without target-item claim comments.
-
-Canonical prompts are `.codex/local/scheduled-task-prompt.md` and `.codex/local/worker-task-prompt.md`. Do not assume nested
-one-time task creation survives a product update without retesting.
-
-## Headless Linux topology
+## Headless topology
 
 ```text
 systemd timer or cron
-  -> flock / host-local dispatcher lock
-  -> load docs/ai-delivery/profile.yml
-  -> query canonical Status + Execution + Executor
-  -> central guarded claim
-  -> isolated git worktree
-  -> codex exec with rendered lifecycle prompt
-  -> update exact branch/PR, tests, evidence, guarded handoff
+  -> flock prevents host overlap
+  -> one normalized queue snapshot and guarded claim
+  -> isolated worktree
+  -> codex exec with rendered Terra/medium lifecycle prompt
+  -> exact branch/PR publication and guarded handoff
 ```
 
-Use headless CLI when unattended reliability, Docker/services, persistent caches, several isolated workers, and machine-readable
-logs matter more than app conversation visibility. A five- or fifteen-minute local timer avoids ChatGPT's hourly task limit.
-Host-local `flock` prevents same-host overlap; the GitHub transition workflow serializes cross-provider claims by target item.
-
-Each worker owns:
-
-- one canonical issue or PR and every linked requirement/evidence object;
-- one verified claim token and lifecycle generation;
-- one isolated worktree;
-- one fresh branch/intended PR or exact adopted existing branch/PR;
-- one rendered prompt for the current lifecycle status;
-- one structured log/evidence directory;
-- a bounded process timeout and cleanup path.
-
-A host may run several workers only when capacity, memory, disk, Maven/npm/Docker contention, and repository ownership are
-explicitly configured. Never let two workers own the same canonical item or branch.
+`.codex/local/run-issue.sh` defaults to Terra/medium. Override explicitly for an exceptional task, for example
+`CODEX_MODEL=gpt-5.6-sol CODEX_REASONING_EFFORT=high`; record why normal worker capability was insufficient.
 
 ## Dispatcher contract
 
-Both adapters:
+The Local Codex dispatcher:
 
-- read canonical `Execution = Ready` items routed to Local Codex;
-- accept issue and PR Project items;
-- respect directed Assignee or empty pool ownership;
-- inspect canonicalization, lifecycle, profile, access, capacity, exact branch/PR/head, current worker, and due monitoring;
-- derive normal capacity and duplicate-generation decisions from the retained Project snapshot plus the guarded claim, without a
-  provider-wide Codex project/task inventory before claiming `Ready` work;
-- use provider inventory only for targeted recovery of one provisional `In progress` claim after ambiguous child creation;
-- exclude duplicate representations and linked issues suppressed by an open canonical multi-issue PR;
-- use the one active technical control issue and one guarded `delivery-control/v1` command per claim/transition, posting every new
-  command with the control-plane document's human-readable Markdown wrapper, exact markers, and lowercase `json` fence while
-  treating its marked JSON—not its derived display prose—as authoritative and never emitting bare JSON autonomously;
-- inspect the reaction and re-read Project state before spawning;
-- record concrete conversation/task or process/worktree and exact PR references;
-- release to `Ready` when spawn fails;
-- set `Blocked` only when Dmitry must decide or act;
-- create no source or GitHub mutation for an empty queue.
+- selects issue or PR canonical items routed `Execution = Ready`, `Executor = Local Codex`, and empty/local assignee;
+- checks due owned work before Ready work;
+- uses the retained normalized snapshot once and deterministic ordering;
+- derives capacity from current owned items;
+- live-reads only the selected target's type/open state, formal links, exact PR branch/head/draft/ownership, route, worker reference,
+  and active control issue;
+- suppresses duplicate representations and multi-issue linked work;
+- claims through one guarded command before spawning;
+- creates exactly one worker/generation;
+- releases a definitely failed spawn, preserves an ambiguous generation for targeted recovery, and blocks only for Dmitry;
+- creates no source/Project/worker mutation for an empty queue.
 
-Worker observation after 15 minutes, another 15 minutes, then hourly is part of this same dispatcher loop. Do not add a separate
-monitoring scheduler.
+Every new command uses the control-plane human-readable Markdown wrapper, exact markers, and lowercase `json` fence; the marked JSON
+is authoritative. Never emit bare JSON. Inspect reaction and re-read current Project state before worker creation or handoff.
 
-## Fresh versus adopted continuation
+## Existing PR continuation
 
-Fresh Implementation starts from current `origin/develop` only when no existing branch/PR owns the canonical item.
+An adopted continuation is valid only when an open same-repository PR exists and the canonical Project route deliberately selects
+Local Codex. Worker evidence names the exact PR/branch/head; push permission and competing ownership are checked. Reuse the exact
+branch and PR even if Dmitry, ChatGPT, an IDE agent, or another configured worker created it.
 
-An adopted continuation is valid when all are true:
-
-- an open same-repository PR already contains the intended implementation;
-- the canonical Project item explicitly routes `Implementer = Local Codex`, `Executor = Local Codex`;
-- the worker reference names the exact PR, branch, and head;
-- effective push permission and absence of competing ownership are verified;
-- the correction request is complete enough for one implementation turn.
-
-The worker then fetches and updates the exact existing branch. It does not reset, rebase, force-push, discard useful commits,
-open a replacement PR, or silently narrow the PR to only its latest review comments. Branch authorship by Dmitry, ChatGPT, or an
-IDE agent is neither a blocker nor sufficient authorization; the guarded Project route is authoritative.
+Never reset, rebase, force-push, discard useful commits, open a replacement PR, or silently narrow scope. Fork and Dependabot PRs
+receive contributor/bot operations or a deliberate internal replacement task.
 
 ## Worker contract
 
-A Local Codex worker performs only the routed lifecycle status:
+A worker performs one routed lifecycle status:
 
-- Planning is unusual and normally remains ChatGPT/human-owned;
-- Implementation changes code, runs implementer-owned checks, inspects the full diff, commits, pushes, and verifies publication;
-- Verification runs outcome-centric system/integration/browser proof when selected;
-- Review is performed only with an independent configured identity and explicit route.
+- Implementation converts acceptance criteria to proof, changes the repository, tests, inspects the complete diff, commits/pushes,
+  and publishes one intended PR;
+- Verification proves observable behavior in a representative environment;
+- Review requires an independent configured identity and explicit route;
+- Planning normally remains ChatGPT/human-owned.
 
-For fresh work, create one branch and intended PR. For continuation, use the exact existing same-repository PR branch. Keep the PR
-draft only while implementation or locally available proof is incomplete. When complete, mark it ready for review and re-read it
-as open, targeting `develop`, `draft = false`, and at the exact remote head. A successful push or green CI alone is not a Review
-handoff.
+For fresh work create one branch/PR. For continuation update the exact existing branch/PR. When Implementation is complete, mark the
+PR ready for review and re-read it as open, targeting develop, non-draft, and at the exact published head. Then publish evidence and
+use one guarded handoff to `Review / Ready / ChatGPT`; a canonical issue includes `reviewPullRequest.number/head`, while a canonical
+PR guards `expected.head`. Verify reaction, Project state, bedrin-gpt assignment, and exact-head PR state.
 
-Publish human-useful evidence on the canonical item and synchronize the PR description. Then use one guarded command to hand the
-canonical item to `Review / Ready / ChatGPT`, recording the PR URL/head and clearing worker ownership. For a canonical issue the
-command must include `reviewPullRequest.number/head`; for a canonical PR it guards target plus `expected.head`. The control plane
-may repair a remaining draft, but the worker must not depend on that repair.
+Routine waiting remains In progress. Observe after 15 minutes, again 15 minutes later, then hourly. Store the next observation in
+Worker reference. Leave no finished/missing worker In progress.
 
-After the command receives its terminal reaction, re-read both the PR as non-draft at the same exact head and the canonical Project
-state. Assign `bedrin-gpt` separately and verify assignment. Do not report completion until all three surfaces agree.
+## Telemetry and security
 
-Never merge or enable auto-merge without Dmitry's explicit instruction.
+Every dispatcher/worker records start/end/duration, model/reasoning, snapshot/candidate, outcome, and exact provider token counters
+when exposed. Otherwise counters are null with `usageSource: unavailable`; never fabricate exact usage.
 
-## Security
-
-Host policy defines filesystem, network, credentials, Docker, services, browsers, and sandbox/approval mode. Treat Docker group
-or full filesystem/network access as privileged. Use a dedicated low-value VM or host account with repository-scoped GitHub
-credentials and no unrelated personal/employer data.
-
-Codex CLI still needs network access for model calls even when task-process network is restricted. External integration tests and
-package downloads need separately configured policy. GitHub rulesets remain the final write boundary.
+Use a dedicated low-value VM/account with repository-scoped credentials. Docker/full filesystem/network access is privileged host
+policy. Never merge, enable auto-merge, bypass protection, rewrite shared history, or perform privileged operations without
+Dmitry's explicit instruction.
