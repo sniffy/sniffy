@@ -26,8 +26,9 @@ the whole Project or inspect every open PR.
 7. `dispatch.activeInProgressByExecutor` is capacity/diagnostic state. A valid future `leaseUntil` is not actionable and must not
    cause a worker/task lookup. Only `stale-owned-recovery` may inspect an existing worker, scoped to the exact claim/generation.
 8. Treat deterministic reconciliation candidates as narrow, targeted work:
-   - `completion-drift`: verify the selected item is still `Approval / Ready / Human` and its selected PR is merged, then apply one
-     guarded Done transition and clear assignment; normal completion belongs to the event adapter;
+   - `completion-drift`: verify the selected item is still `Approval / Ready / Human`, or `Done` with lingering active
+     routing/assignment, and its selected PR is merged, then apply one guarded Done transition and clear assignment; normal
+     completion belongs to the event adapter;
    - `uninitialized-item`: verify one open non-technical issue, then initialize only the suggested `Planning / Ready` route;
    - `default-planning-route`: verify `Planning / Ready` still has no Executor, then apply the suggested unique-assignee route or
      ChatGPT default;
