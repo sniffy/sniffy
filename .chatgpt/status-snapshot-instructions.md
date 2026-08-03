@@ -15,8 +15,9 @@ the whole Project or inspect every open PR.
    `ai-delivery-status/v1`, repository `sniffy/sniffy`, Project `sniffy/2`, artifact name `ai-delivery-status-project-2`, numeric
    artifact ID, snapshot file `project-2-status.json`, acceptable age, and `generatedAt` strictly later than the request. Normally
    require matching refresh comment provenance; a later serialized successful publication is acceptable when demonstrably newer.
-4. Download that artifact by numeric ID and validate matching identity, generation, provenance, complete counts, top-level
-   `pullRequests` observations, and `dispatch` projections. Reject malformed, inconsistent, incomplete, stale, or inaccessible data.
+4. Download that artifact by numeric ID and validate matching identity, generation, provenance, complete counts,
+   top-level `pullRequests` observations, and `dispatch` projections. Reject malformed, inconsistent, incomplete, stale, or
+   inaccessible data.
 5. Use `dispatch.orderedCandidates` as the normal attention queue and select at most its first entry. Do not ask the model to rebuild
    executor queues, canonical PR identity, completion drift, route initialization/defaults, route mismatches, conflicts, stale
    exact-head state, or lease classification from raw arrays. Raw files are diagnostics only.
