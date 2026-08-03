@@ -23,12 +23,14 @@ A tick is selection and coordination, not lifecycle work. It must:
    - conflicting same-repository PR requiring deliberate continuation routing;
    - fork or Dependabot conflict requiring contributor feedback or a documented bot operation, never branch adoption;
    - PR intake/canonicalization or duplicate representation;
-   - exact-head drift or invalid current route/assignee;
+   - merged completion drift missed by the event adapter;
+   - exact-head drift, uninitialized/default Planning routing, or invalid current route/assignee;
    - stale owned `In progress` recovery caused by a missing, invalid, or expired lease;
    - `Ready` work for an executor this supervisor dispatches;
    - `Ready` work for this dispatcher;
 5. only after selection, perform the minimum live reads needed for that candidate: current target, formal closing links, exact
-   branch/head/draft/ownership, current Project route, worker reference, and the newest active control issue;
+   branch/head/draft/ownership or merged state, current Project route, worker reference, assignment, and the newest active control
+   issue;
 6. claim or reconcile through one guarded control command, verify the terminal reaction, and then either perform one bounded
    lifecycle turn or create one durably acknowledged external worker;
 7. publish human-useful evidence and one guarded handoff when work finishes;
@@ -40,6 +42,25 @@ selection.
 
 When no candidate needs action, perform no Project, source, worker, target-comment, or control-command mutation and return
 `NO_CHANGE` plus telemetry.
+
+## Event-driven completion and routing backstops
+
+Objective merge completion belongs to `.github/workflows/delivery-completion.yml`, not to a recurring LLM heartbeat. The trusted
+base adapter resolves the canonical issue/PR, verifies the merged PR head and merge commit, sets `Status = Done`, clears active
+routing, and verifies assignment cleanup through the common guarded control implementation.
+
+The dispatcher is only the repair path:
+
+- `completion-drift` is emitted only when a canonical item remains in the normal pre-merge state
+  `Approval / Ready / Human` and its single linked PR, or the canonical PR itself, is already merged. This narrow predicate avoids
+  flooding the queue with historical closed items.
+- `uninitialized-item` initializes an open non-technical issue with missing Status as `Planning / Ready`; a unique configured
+  assignee determines Executor, otherwise ChatGPT is the default.
+- `default-planning-route` assigns `Planning / Ready` with no Executor using the same assignee rule and ChatGPT default.
+- `route-ambiguity` represents unknown or multiple assignees. Never guess a route.
+
+For these candidates, use the suggested route only as snapshot evidence. Re-read the selected item live and guard every current
+field before mutation. Process one candidate per tick. Detailed semantics are in [`completion.md`](completion.md).
 
 ## Canonical PR invariants
 
@@ -69,8 +90,8 @@ when it is still legitimately running. A conflict means another actor won or sta
 view.
 
 A configured unclaimable `Execution = Ready` route whose Assignee belongs to a different executor pool is a reconciliation
-candidate. Never silently filter out that mismatch. `Blocked / Human` is reserved for an exact Dmitry decision or action; routine
-waiting remains `In progress`.
+candidate. Multiple assignees are also a mismatch even when one login matches the expected pool. Never silently filter out that
+state. `Blocked / Human` is reserved for an exact Dmitry decision or action; routine waiting remains `In progress`.
 
 ## Lease-based stale recovery
 
