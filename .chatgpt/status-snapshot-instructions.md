@@ -21,12 +21,12 @@ query the whole Project or inspect every open PR.
    rebuild `readyByExecutor`, `inProgressByExecutor`, canonical PR identity, route mismatches, conflicts, or stale exact-head
    candidates from raw arrays. Raw files are diagnostics only.
 6. The top-level `pullRequests` observations and `dispatch.pullRequests` projections cover every open base-branch PR independently
-   of Project item type. Use `closingIssueNumbers` to resolve the canonical issue-versus-PR identity. Fork PRs wait for their
+   of Project item type. Always use `closingIssueNumbers` to resolve the canonical issue-versus-PR identity. Fork PRs wait for their
    contributor. Dependabot PRs use `@dependabot rebase` or another documented provider bot operation; never adopt or rewrite those
    branches through this rule.
-7. Only after selecting a candidate, re-read its current live issue/PR open/draft state, exact branch/head, formal closing links,
-   repository ownership, assignment, Project route, worker reference, reviews/threads/CI/mergeability when relevant, and active
-   control issue. Snapshot mergeability and lifecycle values are selection hints, not mutation authority.
+7. Live-read only the selected candidate. Re-read its current live issue/PR open/draft state, exact branch/head, formal closing
+   links, repository ownership, assignment, Project route, worker reference, reviews/threads/CI/mergeability when relevant, and
+   active control issue. Snapshot mergeability and lifecycle values are selection hints, not mutation authority.
 8. Construct guarded `delivery-control/v1` expected state from the snapshot, but act only after the targeted live re-read. On a
    `confused` reaction, perform no work mutation and do not retry from the same snapshot. On `-1`, inspect the failed control run.
    On `+1`, the control workflow's final-state verification is authoritative for that command.
