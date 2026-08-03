@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the Sniffy Local Codex dispatcher
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+RandomizedDelaySec=0
+Unit=sniffy-local-dispatch.service
+
+[Install]
+WantedBy=timers.target
