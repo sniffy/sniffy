@@ -84,6 +84,7 @@ else
   outcome="FAILED"
 fi
 
+# Exact provider token counters are unavailable in this wrapper; never fabricate them.
 printf '%s\n' "{\"startedAt\":\"${started_at}\",\"finishedAt\":\"${finished_at}\",\"durationSeconds\":${duration_seconds},\"adapter\":\"codex-cli-worker\",\"model\":\"${model}\",\"reasoning\":\"${reasoning}\",\"repository\":\"${repo}\",\"issue\":${issue_number},\"branch\":\"${branch_name}\",\"outcome\":\"${outcome}\",\"usageSource\":\"unavailable\",\"inputTokens\":null,\"cachedInputTokens\":null,\"outputTokens\":null,\"reasoningTokens\":null}"
 
 if ((codex_status != 0)); then
