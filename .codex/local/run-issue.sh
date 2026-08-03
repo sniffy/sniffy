@@ -46,9 +46,14 @@ fi
 
 issue_markdown="$(gh issue view "${issue_number}" --repo "${repo}" --json title,body,url --template '{{.title}}\n\n{{.body}}\n\nIssue: {{.url}}')"
 
-model="${CODEX_MODEL:-gpt-5.6-sol}"
-reasoning="${CODEX_REASONING_EFFORT:-xhigh}"
+# Normal workers use the balanced profile. Override explicitly for an exceptional task, e.g.:
+# CODEX_MODEL=gpt-5.6-sol CODEX_REASONING_EFFORT=high bash .codex/local/run-issue.sh 123
+model="${CODEX_MODEL:-gpt-5.6-terra}"
+reasoning="${CODEX_REASONING_EFFORT:-medium}"
+started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+started_epoch="$(date +%s)"
 
+set +e
 codex \
   --model "${model}" \
   --config "model_reasoning_effort=\"${reasoning}\"" \
@@ -58,9 +63,31 @@ codex \
   exec - <<PROMPT
 Work autonomously on the GitHub issue below in repository ${repo}.
 
-Read AGENTS.md and inspect the repository before editing. The issue is authoritative. Implement the task end to end, add or update tests and documentation, run all locally applicable checks, review the final diff, commit, push ${branch_name} without force-pushing, and create or update a draft pull request linked to the issue. Do not ask for routine decisions or approval. Make conservative maintainable implementation decisions yourself. Do not merge the pull request. Stop only for a genuine blocker and report it precisely.
+Read AGENTS.md, the nearest nested AGENTS.md files, and docs/ai-delivery/runtime-contract.md before editing. The canonical issue is
+authoritative. Implement the smallest coherent solution end to end, add or update tests and documentation, run all locally
+applicable checks, inspect the complete final diff, commit, push ${branch_name} without force-pushing, and create or update the
+intended draft pull request linked to the issue. Mark it ready for review only after implementation and locally available proof are
+complete, then verify open/non-draft/exact-head publication. Never merge or enable auto-merge. Stop only for a genuine blocker and
+report it precisely.
 
 ${issue_markdown}
 PROMPT
+codex_status=$?
+set -e
+
+finished_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+finished_epoch="$(date +%s)"
+duration_seconds=$((finished_epoch - started_epoch))
+if ((codex_status == 0)); then
+  outcome="HANDOFF"
+else
+  outcome="FAILED"
+fi
+
+printf '%s\n' "{\"startedAt\":\"${started_at}\",\"finishedAt\":\"${finished_at}\",\"durationSeconds\":${duration_seconds},\"adapter\":\"codex-cli-worker\",\"model\":\"${model}\",\"reasoning\":\"${reasoning}\",\"repository\":\"${repo}\",\"issue\":${issue_number},\"branch\":\"${branch_name}\",\"outcome\":\"${outcome}\",\"usageSource\":\"unavailable\",\"inputTokens\":null,\"cachedInputTokens\":null,\"outputTokens\":null,\"reasoningTokens\":null}"
+
+if ((codex_status != 0)); then
+  exit "${codex_status}"
+fi
 
 printf 'Codex run finished for %s on branch %s.\n' "${issue_url}" "${branch_name}"
