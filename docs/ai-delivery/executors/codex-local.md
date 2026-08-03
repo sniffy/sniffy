@@ -86,9 +86,9 @@ Branch authority is ordered:
 An explicit branch always wins. A conflict returns to Planning or a precise maintainer decision; it never authorizes an invented
 replacement branch.
 
-Every autonomous command uses the control-plane human-readable Markdown wrapper, exact start/end markers, and lowercase `json`
-fence; the marked JSON is authoritative. Never emit bare JSON. Inspect the terminal reaction and re-read Project state before
-source mutation, recovery, or handoff.
+Every autonomous command uses the control-plane human-readable Markdown wrapper, exact start/end markers, and lowercase `json` fence;
+the marked JSON is authoritative. Never emit bare JSON. Inspect the terminal reaction and re-read Project state before source
+mutation, recovery, or handoff.
 
 ## Existing PR continuation
 
