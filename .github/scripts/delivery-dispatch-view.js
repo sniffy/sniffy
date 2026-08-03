@@ -7,6 +7,7 @@ const PRIORITY_RANK = new Map([['Urgent', 0], ['High', 1], ['Medium', 2], ['Low'
 const SHA_PATTERN = /\b[0-9a-f]{40}\b/gi;
 const LEASE_UNTIL_PATTERN = /\b"?leaseUntil"?\s*[=:]\s*"?([^"\s;,}]+)/i;
 const SUPPRESSED_DUPLICATE_PATTERN = /^Suppressed duplicate lifecycle item\b/i;
+const TECHNICAL_LABELS = new Set(['ai-delivery-control', 'ai-delivery-status']);
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -84,10 +85,15 @@ function compactItem(item, rawById) {
     title: item.content?.title ?? null,
     url: item.content?.url ?? null,
     state: item.content?.state ?? null,
+    stateReason: item.content?.stateReason ?? null,
     isDraft: item.content?.isDraft ?? false,
+    mergedAt: item.content?.mergedAt ?? null,
+    closedAt: item.content?.closedAt ?? null,
     baseRefName: item.content?.baseRefName ?? null,
     headRefName: item.content?.headRefName ?? null,
     headRefOid: item.content?.headRefOid ?? null,
+    labels: asArray(item.content?.labels),
+    linkedPullRequests: asArray(field(item, 'Linked pull requests')),
     status: field(item, 'Status'),
     execution: field(item, 'Execution'),
     executor: field(item, 'Executor'),
@@ -222,6 +228,82 @@ function staleOwnershipReason(item, generatedAt) {
   return leaseUntil <= generatedAt ? 'lease-expired' : null;
 }
 
+function pullRequestNumberFromUrl(url) {
+  const match = String(url ?? '').match(/\/pull\/(\d+)(?:$|[/?#])/);
+  return match ? Number(match[1]) : null;
+}
+
+function mergedPullRequestSummary(raw) {
+  if (!raw?.mergedAt) return null;
+  return {
+    number: Number(raw.number),
+    url: raw.url ?? null,
+    baseRefName: raw.baseRefName ?? null,
+    headRefName: raw.headRefName ?? null,
+    headRefOid: raw.headRefOid ?? null,
+    mergedAt: raw.mergedAt
+  };
+}
+
+function completionDriftCandidate(item, rawPullRequestsByNumber, baseBranch) {
+  const awaitingMerge = item.status === 'Approval' && item.execution === 'Ready' && item.executor === 'Human';
+  if (!awaitingMerge || isSuppressedDuplicateItem(item)) return null;
+
+  if (item.type === 'PullRequest') {
+    const pullRequest = mergedPullRequestSummary(rawPullRequestsByNumber.get(Number(item.number)));
+    if (!pullRequest || pullRequest.baseRefName !== baseBranch) return null;
+    return {kind: 'completion-drift', canonical: {type: 'PullRequest', number: item.number}, item, pullRequest};
+  }
+
+  if (item.type !== 'Issue' || item.state !== 'CLOSED' || item.stateReason !== 'COMPLETED') return null;
+  const linkedNumbers = [...new Set(item.linkedPullRequests.map(pullRequestNumberFromUrl).filter(Number.isInteger))];
+  if (linkedNumbers.length !== 1) return null;
+  const pullRequest = mergedPullRequestSummary(rawPullRequestsByNumber.get(linkedNumbers[0]));
+  if (!pullRequest || pullRequest.baseRefName !== baseBranch) return null;
+  return {kind: 'completion-drift', canonical: {type: 'Issue', number: item.number}, item, pullRequest};
+}
+
+function executorByAssignee(executorAssignees) {
+  return new Map(Object.entries(executorAssignees).map(([executor, assignee]) => [assignee, executor]));
+}
+
+function routeSuggestion(item, executorAssignees, defaultExecutor = 'ChatGPT') {
+  if (item.executor) return {executor: item.executor, reason: 'existing-executor'};
+  if (item.assignees.length === 0) return {executor: defaultExecutor, reason: 'default-unassigned'};
+  if (item.assignees.length !== 1) return {executor: null, reason: 'multiple-assignees'};
+  const executor = executorByAssignee(executorAssignees).get(item.assignees[0]) ?? null;
+  return executor
+    ? {executor, reason: 'assignee-route'}
+    : {executor: null, reason: 'unknown-assignee'};
+}
+
+function isTechnicalItem(item) {
+  return item.labels.some(label => TECHNICAL_LABELS.has(label));
+}
+
+function routingReconciliationCandidates(compactItems, executorAssignees) {
+  const candidates = [];
+  for (const item of compactItems) {
+    if (item.type !== 'Issue' || item.state !== 'OPEN' || isTechnicalItem(item)) continue;
+
+    if (item.status === null) {
+      const suggestion = routeSuggestion(item, executorAssignees);
+      candidates.push(suggestion.executor
+        ? {kind: 'uninitialized-item', item, suggestedStatus: 'Planning', suggestedExecution: 'Ready', suggestedExecutor: suggestion.executor, routeReason: suggestion.reason}
+        : {kind: 'route-ambiguity', item, routeReason: suggestion.reason});
+      continue;
+    }
+
+    if (item.status === 'Planning' && item.execution === 'Ready' && item.executor === null) {
+      const suggestion = routeSuggestion(item, executorAssignees);
+      candidates.push(suggestion.executor
+        ? {kind: 'default-planning-route', item, suggestedExecutor: suggestion.executor, routeReason: suggestion.reason}
+        : {kind: 'route-ambiguity', item, routeReason: suggestion.reason});
+    }
+  }
+  return candidates.sort((left, right) => compareCandidates(left.item, right.item));
+}
+
 function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
   const baseBranch = options.baseBranch ?? 'develop';
   const executorAssignees = options.executorAssignees || {};
@@ -246,8 +328,15 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
 
   const routeMismatches = ready.filter(item => {
     const expected = executorAssignees[item.executor];
-    return expected && item.assignees.length > 0 && !item.assignees.includes(expected);
+    return expected && item.assignees.length > 0 &&
+      (item.assignees.length !== 1 || item.assignees[0] !== expected);
   }).sort(compareCandidates);
+
+  const completionDrift = compactItems
+    .map(item => completionDriftCandidate(item, rawPullRequestsByNumber, baseBranch))
+    .filter(Boolean)
+    .sort((left, right) => compareCandidates(left.item, right.item));
+  const routingReconciliations = routingReconciliationCandidates(compactItems, executorAssignees);
 
   const pullRequests = asArray(snapshot.pullRequests)
     .filter(value => value.baseRefName === baseBranch)
@@ -263,7 +352,9 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
     ...conflicting.map(value => ({kind: 'conflicting-pr', canonical: value.canonical, pullRequest: value})),
     ...managedConflicts.map(value => ({kind: 'managed-pr-conflict', canonical: value.canonical, pullRequest: value})),
     ...intake.map(value => ({kind: 'pr-intake', canonical: value.canonical, pullRequest: value})),
+    ...completionDrift,
     ...staleExactHead,
+    ...routingReconciliations,
     ...routeMismatches.map(value => ({kind: 'route-mismatch', item: value})),
     ...staleInProgress
       .filter(value => value.executor === 'ChatGPT' || value.executor === 'Codex Cloud')
@@ -286,6 +377,8 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
     inProgressByExecutor: groupByExecutor(inProgress),
     activeInProgressByExecutor: groupByExecutor(activeInProgress),
     staleInProgressByExecutor: groupByExecutor(staleInProgress),
+    completionDrift,
+    routingReconciliations,
     routeMismatches,
     pullRequests: {conflicting, managedConflicts, intake, drafts},
     staleExactHead,
@@ -295,6 +388,8 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
       inProgress: inProgress.length,
       activeInProgress: activeInProgress.length,
       staleInProgress: staleInProgress.length,
+      completionDrift: completionDrift.length,
+      routingReconciliations: routingReconciliations.length,
       routeMismatches: routeMismatches.length,
       conflictingPullRequests: conflicting.length,
       managedConflictPullRequests: managedConflicts.length,
@@ -350,7 +445,11 @@ module.exports = {
   buildDispatch,
   canonicalIdentity,
   compareCandidates,
+  completionDriftCandidate,
   exactHeads,
   leaseUntilFrom,
+  pullRequestNumberFromUrl,
+  routeSuggestion,
+  routingReconciliationCandidates,
   staleOwnershipReason
 };
