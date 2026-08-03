@@ -12,9 +12,14 @@ on:
       - .github/scripts/delivery-status-runner-policy.test.js
       - .github/scripts/delivery-status-mergeability.js
       - .github/scripts/delivery-status-mergeability.test.js
+      - .github/scripts/delivery-dispatch-view.js
+      - .github/scripts/delivery-dispatch-view.test.js
+      - .github/scripts/delivery-runtime-budget.test.js
       - .github/workflows/delivery-status.yml
       - docs/ai-delivery/README.md
       - docs/ai-delivery/profile.yml
+      - docs/ai-delivery/runtime-contract.md
+      - docs/ai-delivery/instruction-audit.md
       - docs/ai-delivery/status-snapshot.md
       - docs/ai-delivery/status-workflow-optimization.md
       - docs/ai-delivery/ubuntu-slim-capability-experiment.md
@@ -42,6 +47,9 @@ jobs:
           sparse-checkout: |
             .chatgpt/scheduled-task-prompt.md
             .chatgpt/status-snapshot-instructions.md
+            .codex/local/scheduled-task-prompt.md
+            .codex/local/worker-task-prompt.md
+            .codex/local/run-issue.sh
             .github/scripts/delivery-status.js
             .github/scripts/delivery-status.test.js
             .github/scripts/delivery-status-policy.test.js
@@ -49,9 +57,14 @@ jobs:
             .github/scripts/delivery-status-runner-policy.test.js
             .github/scripts/delivery-status-mergeability.js
             .github/scripts/delivery-status-mergeability.test.js
+            .github/scripts/delivery-dispatch-view.js
+            .github/scripts/delivery-dispatch-view.test.js
+            .github/scripts/delivery-runtime-budget.test.js
             .github/workflows/delivery-status.yml
             docs/ai-delivery/README.md
             docs/ai-delivery/profile.yml
+            docs/ai-delivery/runtime-contract.md
+            docs/ai-delivery/instruction-audit.md
             docs/ai-delivery/status-snapshot.md
             docs/ai-delivery/status-workflow-optimization.md
           sparse-checkout-cone-mode: false
@@ -68,12 +81,17 @@ jobs:
           node --check .github/scripts/delivery-status-runner-policy.test.js
           node --check .github/scripts/delivery-status-mergeability.js
           node --check .github/scripts/delivery-status-mergeability.test.js
+          node --check .github/scripts/delivery-dispatch-view.js
+          node --check .github/scripts/delivery-dispatch-view.test.js
+          node --check .github/scripts/delivery-runtime-budget.test.js
           node --test \
             .github/scripts/delivery-status.test.js \
             .github/scripts/delivery-status-policy.test.js \
             .github/scripts/delivery-status-checkout-policy.test.js \
             .github/scripts/delivery-status-runner-policy.test.js \
-            .github/scripts/delivery-status-mergeability.test.js
+            .github/scripts/delivery-status-mergeability.test.js \
+            .github/scripts/delivery-dispatch-view.test.js \
+            .github/scripts/delivery-runtime-budget.test.js
       - name: Parse workflow and profile YAML
         run: >-
           ruby -e 'require "yaml";
@@ -117,6 +135,7 @@ jobs:
           sparse-checkout: |
             .github/scripts/delivery-status.js
             .github/scripts/delivery-status-mergeability.js
+            .github/scripts/delivery-dispatch-view.js
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
@@ -206,6 +225,13 @@ jobs:
             status-artifact/project-2-status.json \
             status-artifact/repository-pull-requests.raw.json \
             "$RUNNER_TEMP/repository-pull-request-closing-issues.raw.json"
+
+          node .github/scripts/delivery-dispatch-view.js \
+            status-artifact/project-2-status.json \
+            status-artifact/project-items.raw.json \
+            status-artifact/repository-pull-requests.raw.json \
+            --base-branch develop \
+            --executor-assignees '{"ChatGPT":"bedrin-gpt","Codex Cloud":"bedrin-codex-cloud","Local Codex":"bedrin-codex-local","Human":"bedrin"}'
 
           {
             echo "generated_at=$generated_at"
