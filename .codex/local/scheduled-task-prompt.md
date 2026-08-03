@@ -1,102 +1,65 @@
-# Sniffy app-native Local Codex dispatcher prompt
+# Token-efficient Local Codex dispatcher
 
-Configure the Codex automation and its worker tasks with the current Sniffy Local Codex profile: **Sol** model and
-**extra-high** reasoning. The scheduler-level model is fixed; the dispatcher does not dynamically substitute Terra or another
-model for individual items.
+Configure the persistent app automation with **`gpt-5.6-luna` / low reasoning**. The dispatcher coordinates only. A selected
+normal worker uses **`gpt-5.6-terra` / medium reasoning**. Use `gpt-5.6-sol` / high only for an explicitly recorded difficult-task
+escalation; xhigh is exceptional, not the default.
 
-Copy the text block below into one automation attached to a persistent dispatcher conversation in the Codex app. Repository
-merges do not update the text embedded in an existing automation: replace that text manually whenever this canonical prompt
-changes, then repeat the smoke test below.
-
-This is one adapter for the generic lifecycle and control protocol in `docs/ai-delivery/`; it is not a second policy.
+Repository merges do not rewrite an existing Codex automation. Replace the embedded prompt manually and smoke-test it.
 
 ```text
-Run one Sniffy app-native Local Codex dispatcher tick in this existing dispatcher conversation.
+Run one logically stateless Sniffy Local Codex dispatcher tick in this persistent dispatcher conversation.
 
 Repository: sniffy/sniffy
-Book of work: organization project 2, https://github.com/orgs/sniffy/projects/2
 Base branch: develop
+Project: organization sniffy, number 2
 Executor: Local Codex
-Queue snapshot helper: .codex/local/project-queue-snapshot.sh
+Queue helper: .codex/local/project-queue-snapshot.sh
+Runtime contract: docs/ai-delivery/runtime-contract.md
 Worker template: .codex/local/worker-task-prompt.md
-Model/profile: Sol / extra-high reasoning
+Dispatcher model/profile: gpt-5.6-luna / low
+Default worker model/profile: gpt-5.6-terra / medium
 
-This conversation coordinates only. Never edit source, create a work branch, run implementation/verification commands, review
-the worker's PR, merge, or enable auto-merge.
+Record startedAt. This conversation coordinates only: never edit source, create a work branch, perform lifecycle proof, review a
+worker PR, merge, or enable auto-merge.
 
-1. Fetch current origin/develop. Read AGENTS.md,
-   docs/ai-delivery/{README,profile,lifecycle,control-plane,event-loop,pull-request-intake,routing,supervision,verification}.md,
-   this prompt, and the worker template exactly once from that revision. Use one batched local command. Do not probe file lengths,
-   search for a nonexistent profile.md, or re-read whole documents unless one named section is genuinely missing.
-2. Run `.codex/local/project-queue-snapshot.sh` exactly once and retain its normalized JSON for the entire selection phase. This
-   helper is the only normal full-Project query. Do not run `gh project item-list`, raw Project GraphQL, schema-discovery jq probes,
-   or the helper again in the same tick.
-3. If the helper exits 75 because GitHub GraphQL is rate-limited, make no claim or Project/source mutation. Do not switch to another
-   connector, combine stale snapshots, or infer eligibility from issue/PR state alone. Report `RATE_LIMITED: no claim made` in this
-   dispatcher conversation and stop.
-4. Inspect `ownedInProgress` from the retained snapshot first. Continue only an item whose worker or monitoring observation is due
-   under the 15-minute, second-15-minute, then hourly cadence. Do not create another monitor. A provider-wide Codex project/task
-   inventory is allowed only to recover one selected `In progress` item whose provisional Worker reference leaves child creation
-   uncertain; scope the result to that claim token and generation.
-5. Otherwise use the already sorted `readyCandidates` array and choose at most its first candidate, subject to canonical duplicate
-   suppression and available capacity. Compute available capacity from `executors.Local Codex.maxConcurrentWorkers` in the loaded
-   profile minus the length of `ownedInProgress` in the retained snapshot. Treat this as the single-dispatcher scheduling limit,
-   not a distributed semaphore. Do not call `List projects`, list tasks/conversations, or use any other provider-wide inventory on
-   the normal `Ready` claim path. Eligible work has Execution=Ready, Executor=Local Codex, Status=Implementation or Verification,
-   and an empty or local-worker Assignee.
-6. If neither a due owned item nor a ready candidate exists, create no task, worktree, branch, target comment, control command, or
-   Project mutation. Reply only NO_CHANGE.
-7. Only after one candidate is selected, perform the minimum targeted live reads needed to construct the guarded claim and render
-   its worker: canonical item type/open state, formal closing links, exact existing PR branch/head and repository ownership when
-   applicable, plus the newest active control issue. Do not read the complete discussion, proof matrix, review submissions,
-   review threads, or CI before claim; the lifecycle worker owns those reads. Never refetch the full Project snapshot or query
-   provider-wide Codex inventory for duplicate-worker evidence. Per-target guarded claim serialization is the duplicate-generation
-   authority.
-8. An existing same-repository PR may be an adopted continuation even when Dmitry, ChatGPT, an IDE agent, or another configured
-   worker created it. Adoption is valid only when the retained snapshot and targeted reads show the canonical Project route sets
-   Implementer/Executor=Local Codex. Reuse the exact branch and PR. Do not adopt fork or Dependabot branches for direct correction.
-9. Select deterministically by Project priority, ready timestamp, repository, item type, then item number. The helper has already
-   normalized and sorted candidates; do not create an alternative ordering from raw Project data.
-10. Claim through the one active technical control issue using one guarded delivery-control/v1 command. Post every new command
-    with the concise human-readable Markdown wrapper from control-plane.md, including its exact start/end markers and lowercase
-    `json` fence. Derive the display-only prose from the JSON, treat the marked JSON as authoritative, and never emit bare JSON.
-    Guard current Status,
-    Execution=Ready, Executor=Local Codex, and exact PR head when the canonical item is a PR; set Execution=In progress plus
-    claim token/lease inside the provisional Worker reference. The guarded transition is the authoritative current-state recheck.
-    Inspect the reaction and re-read the resulting target Project state before spawning.
-11. Render every placeholder in .codex/local/worker-task-prompt.md, including canonical work-item type/URL, authoritative linked
-    issue, exact existing PR branch/head, repository ownership, author, and fresh/continuation/adopted-continuation mode.
-12. Create exactly one NEW one-time standalone app-owned task named "Sniffy <work-item-type> #<number> <status>: <title>" using
-    the current local project, a new isolated worktree, Sol, extra-high reasoning, and the rendered prompt. Never create it in this
-    dispatcher conversation.
-13. Do not use shell UI automation, Python observers, codex app-server, codex exec, or .codex/local/run-issue.sh for this
-    app-native adapter.
-14. After confirming the child task exists, publish one guarded control command updating the final worker reference, then verify
-    it. If child creation definitively fails, release to Ready through the same protocol. If the creation result is ambiguous, keep
-    the provisional `In progress` ownership for targeted recovery under step 4; never release and redispatch speculatively. Set
-    Blocked only when Dmitry must decide or act.
+1. Fetch current origin/develop. In one batched local command read this prompt, runtime-contract.md, profile.yml, and the worker
+   template exactly once. Do not load the detailed lifecycle/control/routing/supervision/verification documents before selection.
+2. Run `.codex/local/project-queue-snapshot.sh` exactly once. It is the only normal full-Project query. Retain that JSON for the
+   whole selection phase. Do not run `gh project item-list`, raw Project GraphQL, schema probes, or the helper again. If it exits 75,
+   do not switch to another connector, combine stale snapshots, or claim work; return RATE_LIMITED plus telemetry.
+3. Inspect `ownedInProgress` first. Continue only an item whose durable next observation is due after 15 minutes, another 15
+   minutes, then hourly. Provider inventory is allowed only to recover one selected `In progress` item whose provisional reference
+   leaves child creation uncertain, scoped to its claim token and generation.
+4. Otherwise use the already sorted `readyCandidates` and select at most the first canonical candidate. Compute available capacity
+   from `executors.Local Codex.maxConcurrentWorkers` in profile.yml minus `ownedInProgress`. Do not call `List projects`, list all
+   tasks/conversations, or use provider-wide inventory on the normal `Ready` claim path.
+5. If no candidate is due or ready, create no target comment, control command, task, worktree, branch, or Project mutation. Return
+   NO_CHANGE plus telemetry.
+6. Only after selection, perform minimum targeted live reads: canonical item type/open state, formal closing links, exact existing
+   PR branch/head/draft/ownership, current route/assignment/worker reference, and newest active control issue. Do not read the
+   complete discussion, proof matrix, review submissions, review threads, or CI before claim; the lifecycle worker owns those reads.
+7. An existing same-repository PR may be an adopted continuation only when the verified canonical Project route selects Local
+   Codex. Reuse the exact branch and PR. Do not adopt fork or Dependabot branches for direct correction.
+8. Claim with one guarded `delivery-control/v1` command. Use the human-readable Markdown wrapper, exact start/end markers, and
+   lowercase `json` fence; the marked JSON is authoritative. Never emit bare JSON. Guard current type, Status, Execution=Ready,
+   Executor=Local Codex, and exact PR head when applicable; set In progress with token, owner, lease, provisional worker reference,
+   and first observation point. Verify the terminal reaction and resulting Project state before spawning.
+9. Render every worker placeholder. Create exactly one standalone one-time app-owned worker task and isolated worktree with the
+   default worker model/profile. Select Sol/high only when the canonical issue or routing decision explicitly records an escalation
+   reason. Never create the worker inside this dispatcher conversation.
+10. After confirmed child creation, publish one guarded update with the concrete worker reference and verify it. If creation
+    definitively fails, release to Ready. If ambiguous, preserve the one provisional generation for targeted recovery; never
+    redispatch speculatively. Block only for an exact Dmitry decision/action.
+11. Finish with one telemetry JSON object containing startedAt, finishedAt, durationSeconds, adapter, scheduler, model, reasoning,
+    snapshot identity/counts, selected candidate, outcome, and provider token counters when exposed. Otherwise use null token fields
+    and usageSource=unavailable; never fabricate exact usage.
 
 Never dispatch the same lifecycle generation twice. Never merge or enable auto-merge.
 ```
 
-## Required smoke test
+## Smoke test
 
-Before enabling or replacing the recurring dispatcher, prove with disposable/read-only items that:
-
-- one tick invokes `project-queue-snapshot.sh` once and never invokes `gh project item-list` directly;
-- a normal `Ready` claim derives capacity from `ownedInProgress` plus `maxConcurrentWorkers` and performs no provider-wide Codex
-  project/task inventory;
-- recovery may inspect provider inventory only for one provisional `In progress` claim token/generation after ambiguous child
-  creation;
-- an empty snapshot stays in this conversation and creates no worktree;
-- a rate-limited snapshot creates no claim and does not switch data sources;
-- one eligible issue item creates exactly one standalone worker conversation and isolated WSL worktree;
-- one explicitly routed same-repository PR continuation reuses its exact branch and PR without creating a duplicate;
-- fork and Dependabot PRs are rejected for adopted direct correction;
-- the worker uses Sol / extra-high and receives intended canonical item, Status, routing, and exact-head fields;
-- concurrent guarded claims produce one success and one conflict without target-item claim comments;
-- failed child creation releases the claim;
-- a completed worker hands off the canonical item to the next lifecycle status rather than creating its own reviewer conversation.
-
-Repeat after material Codex automation changes. If nested one-time task creation is unavailable, pause this adapter and use a
-manual app worker or the headless Linux adapter; do not substitute external UI automation.
+Before enabling recurrence, prove that the snapshot helper runs once; an empty tick creates no worker/worktree; a rate-limited tick
+claims nothing; normal Ready selection performs no provider-wide inventory; one issue creates one worker; a routed same-repository
+PR reuses its exact branch/PR; fork and Dependabot PRs are rejected for adoption; concurrent guarded claims have one winner; failed
+creation releases; and a completed worker performs a guarded lifecycle handoff rather than spawning a reviewer.
