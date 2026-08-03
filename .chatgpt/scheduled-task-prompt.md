@@ -44,8 +44,7 @@ Do not read the full policy set before a candidate is selected.
    extend the same lease only after proving the same worker is active, finish a lost handoff when evidence is complete, and release
    to Ready only when no active or recoverable work remains. Never create a duplicate worker or monitoring task.
 6. For a supervised Codex Cloud dispatch require Status = Implementation, Execution = Ready, Executor = Codex Cloud.
-   Codex Cloud does not poll Project 2. Claim while preserving Executor, post one exact implementation trigger, require durable
-   acknowledgement, and record the concrete generation plus lease. If the trigger was not submitted or was definitively rejected,
+   Codex Cloud does not poll Project 2. Claim while preserving Executor, post one exact implementation trigger, require durable acknowledgement, and record the concrete generation plus lease. If the trigger was not submitted or was definitively rejected,
    release to Ready. If submission succeeded but acknowledgement is uncertain, preserve one provisional generation and never
    redispatch it before targeted stale recovery.
 7. Every claim or handoff uses delivery-control/v1 on the active control issue. Emit the human-readable Markdown wrapper with the
