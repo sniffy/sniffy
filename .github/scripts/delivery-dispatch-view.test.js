@@ -131,6 +131,33 @@ test('keeps fork and Dependabot PRs out of direct conflict continuation', () => 
   assert.deepEqual(result.pullRequests.intake.map(value => value.number), [11, 12]);
 });
 
+test('does not treat a human dependency PR as Dependabot', () => {
+  const human = pullRequest(13, [], {author: 'human', mergeable: 'CONFLICTING'});
+  const result = buildDispatch(
+    snapshot([], [human]),
+    {items: []},
+    [{number: 13, labels: [{name: 'dependencies'}]}],
+    {}
+  );
+  assert.equal(result.pullRequests.conflicting.length, 1);
+  assert.equal(result.pullRequests.conflicting[0].isDependabot, false);
+});
+
+test('does not steal an explicit Local Codex correction route as PR intake', () => {
+  const canonicalPr = projectItem(14, {
+    Status: 'Implementation', Execution: 'Ready', Executor: 'Local Codex', Implementer: 'Local Codex'
+  }, 'PullRequest');
+  const pr = pullRequest(14);
+  const result = buildDispatch(
+    snapshot([canonicalPr], [pr]),
+    {items: [rawItem(canonicalPr)]},
+    [{number: 14, labels: []}],
+    {}
+  );
+  assert.equal(result.pullRequests.intake.length, 0);
+  assert.equal(result.orderedCandidates.length, 0);
+});
+
 test('detects downstream lifecycle evidence pinned to an older exact head', () => {
   const oldHead = '1'.repeat(40);
   const issue = projectItem(9, {
