@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 
-const DOWNSTREAM_HEAD_STATUSES = new Set(['Review', 'Verification', 'Approval', 'Blocked']);
+const DOWNSTREAM_HEAD_STATUSES = new Set(['Review', 'Verification', 'Approval']);
 const PRIORITY_RANK = new Map([['Urgent', 0], ['High', 1], ['Medium', 2], ['Low', 3]]);
 const SHA_PATTERN = /\b[0-9a-f]{40}\b/gi;
 const NEXT_OBSERVATION_PATTERN = /nextObservationAt\s*[=:]\s*([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?)/i;
@@ -137,11 +137,10 @@ function pullRequestProjection(pullRequest, rawPullRequestsByNumber, itemsByIden
   const canonicalItem = canonicalItems[0] ?? null;
   const raw = rawPullRequestsByNumber.get(Number(pullRequest.number)) || {};
   const labels = labelNames(raw);
-  const dependabot = String(pullRequest.author ?? '').toLowerCase().startsWith('dependabot') || labels.includes('dependencies');
+  const dependabot = String(pullRequest.author ?? '').toLowerCase().startsWith('dependabot');
   const onBase = pullRequest.baseRefName === baseBranch;
   const reviewable = onBase && pullRequest.isDraft === false;
   const statusNeedsIntake = canonicalItem === null || canonicalItem.status === null || canonicalItem.status === 'Draft';
-  const implementationPublication = canonicalItem?.status === 'Implementation' && canonicalItem?.execution !== 'In progress';
   return {
     number: pullRequest.number,
     url: pullRequest.url,
@@ -159,7 +158,7 @@ function pullRequestProjection(pullRequest, rawPullRequestsByNumber, itemsByIden
     canonicalProjectItem: canonicalItem,
     duplicateProjectItems: duplicateItems,
     isDependabot: dependabot,
-    needsIntake: reviewable && (statusNeedsIntake || duplicateItems.length > 0 || implementationPublication),
+    needsIntake: reviewable && (statusNeedsIntake || duplicateItems.length > 0),
     conflictCandidate: reviewable && pullRequest.repositoryOwnership === 'same-repository' && !dependabot &&
       (pullRequest.mergeable === 'CONFLICTING' || pullRequest.mergeStateStatus === 'DIRTY')
   };
@@ -188,7 +187,8 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
   const itemsByIdentity = new Map();
   for (const item of compactItems) {
     const key = projectIdentity(item);
-    (itemsByIdentity.get(key) || itemsByIdentity.set(key, []).get(key)).push(item);
+    if (!itemsByIdentity.has(key)) itemsByIdentity.set(key, []);
+    itemsByIdentity.get(key).push(item);
   }
 
   const ready = compactItems.filter(item => item.execution === 'Ready');
