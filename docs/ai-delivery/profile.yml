@@ -65,6 +65,15 @@ schedulers:
     prompt: .codex/local/scheduled-task-prompt.md
     lifecycleTemplate: .codex/local/worker-task-prompt.md
     snapshotHelper: .codex/local/project-queue-snapshot.sh
+  Local Codex CLI:
+    adapter: codex-cli-v1
+    surface: systemd user services
+    dispatcher: .codex/local/cli-dispatch.sh
+    launcher: .codex/local/cli-launch-worker.sh
+    recovery: .codex/local/cli-recover-worker.sh
+    lifecycleTemplate: .codex/local/worker-task-prompt.md
+    snapshotHelper: .codex/local/project-queue-snapshot.sh
+    timer: .codex/local/systemd/sniffy-local-dispatch.timer
 
 executors:
   ChatGPT:
@@ -83,14 +92,18 @@ executors:
     appNativeAdapter: codex-app-same-thread-v1
     appNativeModel: gpt-5.6-terra
     appNativeReasoning: medium
+    appNativeSameThread: true
+    cliAdapter: codex-cli-v1
+    cliDispatcherModel: none
+    cliWorkerModel: gpt-5.6-terra
+    cliWorkerReasoning: medium
+    cliSpawnAcknowledgement: [thread.started, turn.started]
     workerModel: gpt-5.6-terra
     workerReasoning: medium
     escalationModel: gpt-5.6-sol
     escalationReasoning: high
     dispatchMode: polling
-    # The app-native automation performs the lifecycle turn in its own persistent conversation.
-    # No nested child thread/task/worktree is part of this adapter.
-    appNativeSameThread: true
+    # The two adapters share the Local Codex executor pool but never adopt one another's active generation.
     maxConcurrentWorkers: 1
   Human:
     assignee: bedrin
@@ -119,7 +132,7 @@ supervision:
     Codex Cloud: 120
     Local Codex: 240
     externalOperation: 60
-    provisionalDispatch: 30
+    provisionalDispatch: 5
 
 telemetry:
   required: true
