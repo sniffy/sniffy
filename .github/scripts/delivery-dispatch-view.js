@@ -129,6 +129,18 @@ function projectItemsForPullRequest(pullRequest, itemsByIdentity) {
   return identities.flatMap(identity => itemsByIdentity.get(itemKey(identity.type, identity.number)) || []);
 }
 
+function conflictModeFor({pullRequest, canonicalItem, dependabot, reviewable}) {
+  const hasConflict = reviewable &&
+    (pullRequest.mergeable === 'CONFLICTING' || pullRequest.mergeStateStatus === 'DIRTY');
+  const routedImplementation = canonicalItem?.status === 'Implementation' &&
+    ['Ready', 'In progress'].includes(canonicalItem.execution) && canonicalItem.executor !== null;
+  if (!hasConflict || routedImplementation) return null;
+  if (dependabot) return 'dependabot-operation';
+  if (pullRequest.repositoryOwnership === 'fork') return 'contributor-feedback';
+  if (pullRequest.repositoryOwnership === 'same-repository') return 'same-repository-continuation';
+  return 'inspect-ownership';
+}
+
 function pullRequestProjection(pullRequest, rawPullRequestsByNumber, itemsByIdentity, baseBranch) {
   const canonical = canonicalIdentity(pullRequest);
   const canonicalItems = itemsByIdentity.get(itemKey(canonical.type, canonical.number)) || [];
@@ -141,6 +153,7 @@ function pullRequestProjection(pullRequest, rawPullRequestsByNumber, itemsByIden
   const onBase = pullRequest.baseRefName === baseBranch;
   const reviewable = onBase && pullRequest.isDraft === false;
   const statusNeedsIntake = canonicalItem === null || canonicalItem.status === null || canonicalItem.status === 'Draft';
+  const conflictMode = conflictModeFor({pullRequest, canonicalItem, dependabot, reviewable});
   return {
     number: pullRequest.number,
     url: pullRequest.url,
@@ -159,8 +172,8 @@ function pullRequestProjection(pullRequest, rawPullRequestsByNumber, itemsByIden
     duplicateProjectItems: duplicateItems,
     isDependabot: dependabot,
     needsIntake: reviewable && (statusNeedsIntake || duplicateItems.length > 0),
-    conflictCandidate: reviewable && pullRequest.repositoryOwnership === 'same-repository' && !dependabot &&
-      (pullRequest.mergeable === 'CONFLICTING' || pullRequest.mergeStateStatus === 'DIRTY')
+    conflictMode,
+    conflictCandidate: conflictMode !== null
   };
 }
 
@@ -208,13 +221,16 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
   const pullRequests = asArray(snapshot.pullRequests)
     .filter(value => value.baseRefName === baseBranch)
     .map(value => pullRequestProjection(value, rawPullRequestsByNumber, itemsByIdentity, baseBranch));
-  const conflicting = pullRequests.filter(value => value.conflictCandidate);
-  const intake = pullRequests.filter(value => value.needsIntake && !value.conflictCandidate);
+  const conflicting = pullRequests.filter(value => value.conflictMode === 'same-repository-continuation');
+  const managedConflicts = pullRequests.filter(value =>
+    value.conflictMode !== null && value.conflictMode !== 'same-repository-continuation');
+  const intake = pullRequests.filter(value => value.needsIntake && value.conflictMode === null);
   const drafts = pullRequests.filter(value => value.isDraft);
   const staleExactHead = pullRequests.map(staleExactHeadCandidate).filter(Boolean);
 
   const orderedCandidates = [
     ...conflicting.map(value => ({kind: 'conflicting-pr', canonical: value.canonical, pullRequest: value})),
+    ...managedConflicts.map(value => ({kind: 'managed-pr-conflict', canonical: value.canonical, pullRequest: value})),
     ...intake.map(value => ({kind: 'pr-intake', canonical: value.canonical, pullRequest: value})),
     ...staleExactHead,
     ...routeMismatches.map(value => ({kind: 'route-mismatch', item: value})),
@@ -239,7 +255,7 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
     inProgressByExecutor: groupByExecutor(inProgress),
     dueInProgressByExecutor: groupByExecutor(dueInProgress),
     routeMismatches,
-    pullRequests: {conflicting, intake, drafts},
+    pullRequests: {conflicting, managedConflicts, intake, drafts},
     staleExactHead,
     orderedCandidates,
     counts: {
@@ -248,6 +264,7 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
       dueInProgress: dueInProgress.length,
       routeMismatches: routeMismatches.length,
       conflictingPullRequests: conflicting.length,
+      managedConflictPullRequests: managedConflicts.length,
       intakePullRequests: intake.length,
       staleExactHead: staleExactHead.length,
       orderedCandidates: orderedCandidates.length
