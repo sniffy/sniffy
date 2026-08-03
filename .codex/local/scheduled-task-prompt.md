@@ -30,9 +30,8 @@ worker PR, merge, or enable auto-merge.
 3. Inspect `ownedInProgress` first. Continue only an item whose durable next observation is due after 15 minutes, another 15
    minutes, then hourly. Provider inventory is allowed only to recover one selected `In progress` item whose provisional reference
    leaves child creation uncertain, scoped to its claim token and generation.
-4. Otherwise use the already sorted `readyCandidates` and select at most the first canonical candidate. Compute available capacity
-   from `executors.Local Codex.maxConcurrentWorkers` in profile.yml minus `ownedInProgress`. Do not call `List projects`, list all
-   tasks/conversations, or use provider-wide inventory on the normal `Ready` claim path.
+4. Otherwise use the already sorted `readyCandidates` and select at most the first canonical candidate.
+   Compute available capacity from `executors.Local Codex.maxConcurrentWorkers` in profile.yml minus `ownedInProgress`. Do not call `List projects`, list all tasks/conversations, or use provider-wide inventory on the normal `Ready` claim path.
 5. If no candidate is due or ready, create no target comment, control command, task, worktree, branch, or Project mutation. Return
    NO_CHANGE plus telemetry.
 6. Only after selection, perform minimum targeted live reads: canonical item type/open state, formal closing links, exact existing
