@@ -283,10 +283,11 @@ function isTechnicalItem(item) {
   return item.labels.some(label => TECHNICAL_LABELS.has(label));
 }
 
-function routingReconciliationCandidates(compactItems, executorAssignees) {
+function routingReconciliationCandidates(compactItems, executorAssignees, excludedIdentities = new Set()) {
   const candidates = [];
   for (const item of compactItems) {
-    if (item.type !== 'Issue' || item.state !== 'OPEN' || isTechnicalItem(item)) continue;
+    if (item.type !== 'Issue' || item.state !== 'OPEN' || isTechnicalItem(item) ||
+        excludedIdentities.has(projectIdentity(item))) continue;
 
     if (item.status === null) {
       const suggestion = routeSuggestion(item, executorAssignees);
@@ -338,11 +339,18 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
     .map(item => completionDriftCandidate(item, rawPullRequestsByNumber, baseBranch))
     .filter(Boolean)
     .sort((left, right) => compareCandidates(left.item, right.item));
-  const routingReconciliations = routingReconciliationCandidates(compactItems, executorAssignees);
 
   const pullRequests = asArray(snapshot.pullRequests)
     .filter(value => value.baseRefName === baseBranch)
     .map(value => pullRequestProjection(value, rawPullRequestsByNumber, itemsByIdentity, baseBranch));
+  const prAttentionCanonicals = new Set(pullRequests
+    .filter(value => value.needsIntake || value.conflictMode !== null)
+    .map(value => itemKey(value.canonical.type, value.canonical.number)));
+  const routingReconciliations = routingReconciliationCandidates(
+    compactItems,
+    executorAssignees,
+    prAttentionCanonicals
+  );
   const conflicting = pullRequests.filter(value => value.conflictMode === 'same-repository-continuation');
   const managedConflicts = pullRequests.filter(value =>
     value.conflictMode !== null && value.conflictMode !== 'same-repository-continuation');
