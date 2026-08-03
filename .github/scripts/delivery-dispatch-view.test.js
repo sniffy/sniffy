@@ -7,10 +7,12 @@ const {
   canonicalIdentity,
   exactHeads,
   leaseUntilFrom,
+  pullRequestNumberFromUrl,
+  routeSuggestion,
   staleOwnershipReason
 } = require('./delivery-dispatch-view');
 
-function projectItem(number, fields = {}, type = 'Issue') {
+function projectItem(number, fields = {}, type = 'Issue', content = {}) {
   return {
     projectItemId: `${type}-${number}`,
     content: {
@@ -18,7 +20,14 @@ function projectItem(number, fields = {}, type = 'Issue') {
       number,
       repository: 'sniffy/sniffy',
       title: `${type} ${number}`,
-      url: `https://github.com/sniffy/sniffy/${type === 'Issue' ? 'issues' : 'pull'}/${number}`
+      url: `https://github.com/sniffy/sniffy/${type === 'Issue' ? 'issues' : 'pull'}/${number}`,
+      state: 'OPEN',
+      stateReason: '',
+      isDraft: false,
+      mergedAt: null,
+      closedAt: null,
+      labels: [],
+      ...content
     },
     fields: {
       Status: null,
@@ -28,6 +37,7 @@ function projectItem(number, fields = {}, type = 'Issue') {
       Verifier: null,
       Priority: null,
       'Ready timestamp': null,
+      'Linked pull requests': null,
       'Worker reference': null,
       ...fields
     }
@@ -47,6 +57,19 @@ function pullRequest(number, closingIssueNumbers = [], overrides = {}) {
     mergeable: 'MERGEABLE',
     mergeStateStatus: 'CLEAN',
     closingIssueNumbers,
+    ...overrides
+  };
+}
+
+function rawPullRequest(number, overrides = {}) {
+  return {
+    number,
+    url: `https://github.com/sniffy/sniffy/pull/${number}`,
+    baseRefName: 'develop',
+    headRefName: `agent/pr-${number}`,
+    headRefOid: String(number).padStart(40, 'b').slice(-40),
+    mergedAt: null,
+    labels: [],
     ...overrides
   };
 }
@@ -101,6 +124,17 @@ test('groups active and stale in-progress work and detects route mismatch', () =
   assert.deepEqual(result.routeMismatches.map(item => item.number), [2]);
   assert.equal(result.orderedCandidates[0].kind, 'route-mismatch');
   assert.equal(result.orderedCandidates[1].kind, 'stale-owned-recovery');
+});
+
+test('treats multiple assignees as a route mismatch even when one is correct', () => {
+  const ready = projectItem(2, {Status: 'Review', Execution: 'Ready', Executor: 'ChatGPT'});
+  const result = buildDispatch(
+    snapshot([ready]),
+    {items: [rawItem(ready, ['bedrin-gpt', 'bedrin'])]},
+    [],
+    {executorAssignees: {ChatGPT: 'bedrin-gpt', Human: 'bedrin'}}
+  );
+  assert.deepEqual(result.routeMismatches.map(item => item.number), [2]);
 });
 
 test('ignores normal in-progress ownership until its lease expires', () => {
@@ -297,4 +331,74 @@ test('sorts ready work by priority and ready timestamp', () => {
     {}
   );
   assert.deepEqual(result.readyByExecutor.ChatGPT.map(item => item.number), [2, 3, 1]);
+});
+
+test('projects merged completion drift for a canonical issue and standalone PR', () => {
+  const issue = projectItem(755, {
+    Status: 'Approval', Execution: 'Ready', Executor: 'Human',
+    'Linked pull requests': ['https://github.com/sniffy/sniffy/pull/764']
+  }, 'Issue', {state: 'CLOSED', stateReason: 'COMPLETED', closedAt: '2026-07-30T19:09:52Z'});
+  const standalone = projectItem(900, {
+    Status: 'Approval', Execution: 'Ready', Executor: 'Human'
+  }, 'PullRequest', {state: 'CLOSED'});
+  const result = buildDispatch(
+    snapshot([issue, standalone]),
+    {items: [rawItem(issue, ['bedrin']), rawItem(standalone, ['bedrin'])]},
+    [
+      rawPullRequest(764, {mergedAt: '2026-07-30T19:09:51Z'}),
+      rawPullRequest(900, {mergedAt: '2026-08-03T10:00:00Z'})
+    ],
+    {executorAssignees: {Human: 'bedrin'}}
+  );
+  assert.deepEqual(result.completionDrift.map(value => value.canonical), [
+    {type: 'Issue', number: 755},
+    {type: 'PullRequest', number: 900}
+  ]);
+  assert.deepEqual(result.orderedCandidates.map(value => value.kind), ['completion-drift', 'completion-drift']);
+});
+
+test('does not complete a closed unmerged or explicitly suppressed pull request', () => {
+  const closed = projectItem(757, {Status: 'Draft'}, 'PullRequest', {state: 'CLOSED'});
+  const suppressed = projectItem(761, {
+    Status: 'Draft',
+    'Worker reference': 'Suppressed duplicate lifecycle item; canonical replacement issue #772'
+  }, 'PullRequest', {state: 'CLOSED'});
+  const result = buildDispatch(
+    snapshot([closed, suppressed]),
+    {items: [rawItem(closed), rawItem(suppressed)]},
+    [rawPullRequest(757), rawPullRequest(761, {mergedAt: '2026-08-03T10:00:00Z'})],
+    {}
+  );
+  assert.equal(result.completionDrift.length, 0);
+  assert.equal(result.orderedCandidates.length, 0);
+});
+
+test('routes uninitialized and unassigned Planning issues without whole-Project live reads', () => {
+  const planning = projectItem(727, {Status: 'Planning', Execution: 'Ready'});
+  const uninitialized = projectItem(803);
+  const result = buildDispatch(
+    snapshot([planning, uninitialized]),
+    {items: [rawItem(planning), rawItem(uninitialized, ['bedrin-gpt'])]},
+    [],
+    {executorAssignees: {ChatGPT: 'bedrin-gpt', Human: 'bedrin'}}
+  );
+  assert.deepEqual(result.routingReconciliations.map(value => ({kind: value.kind, number: value.item.number, executor: value.suggestedExecutor})), [
+    {kind: 'default-planning-route', number: 727, executor: 'ChatGPT'},
+    {kind: 'uninitialized-item', number: 803, executor: 'ChatGPT'}
+  ]);
+  assert.deepEqual(result.orderedCandidates.map(value => value.kind), ['default-planning-route', 'uninitialized-item']);
+});
+
+test('does not guess a route from unknown or conflicting assignees', () => {
+  const unknown = projectItem(803);
+  const multiple = projectItem(804);
+  const result = buildDispatch(
+    snapshot([unknown, multiple]),
+    {items: [rawItem(unknown, ['someone']), rawItem(multiple, ['bedrin-gpt', 'bedrin'])]},
+    [],
+    {executorAssignees: {ChatGPT: 'bedrin-gpt', Human: 'bedrin'}}
+  );
+  assert.deepEqual(result.routingReconciliations.map(value => value.kind), ['route-ambiguity', 'route-ambiguity']);
+  assert.equal(routeSuggestion({executor: null, assignees: []}, {ChatGPT: 'bedrin-gpt'}).executor, 'ChatGPT');
+  assert.equal(pullRequestNumberFromUrl('https://github.com/sniffy/sniffy/pull/764'), 764);
 });
