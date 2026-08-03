@@ -19,8 +19,7 @@ the whole Project or inspect every open PR.
 5. Use `dispatch.orderedCandidates` as the normal attention queue and select at most its first entry. Do not ask the model to rebuild
    executor queues, canonical PR identity, route mismatches, conflicts, stale exact-head state, or lease classification from raw
    arrays. Raw files are diagnostics only.
-6. Top-level PR observations cover every open base-branch PR independently of Project item type. Always use closing issues to resolve
-   canonical identity. Fork PRs wait for their contributor. Dependabot uses documented bot operations; never adopt those branches.
+6. Top-level PR observations cover every open base-branch PR independently of Project item type. Always use `closingIssueNumbers` to resolve the canonical issue-versus-PR identity. Fork PRs wait for their contributor. Dependabot uses documented bot operations; never adopt those branches.
 7. `dispatch.activeInProgressByExecutor` is capacity/diagnostic state. A valid future `leaseUntil` is not actionable and must not
    cause a worker/task lookup. Only `stale-owned-recovery` may inspect an existing worker, scoped to the exact claim/generation.
 8. Live-read only the selected candidate: current issue/PR state, exact branch/head, formal links, ownership, assignment, Project
