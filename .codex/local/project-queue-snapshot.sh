@@ -8,13 +8,13 @@ LOCAL_ASSIGNEE="${AI_DELIVERY_LOCAL_ASSIGNEE:-bedrin-codex-local}"
 INPUT_FILE=""
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 Usage: project-queue-snapshot.sh [--input FILE]
 
 Without --input, fetches the GitHub Project exactly once through
 `gh project item-list`, then emits one normalized JSON snapshot for Local Codex
 dispatch. --input normalizes an existing raw snapshot for tests or inspection.
-EOF
+USAGE
 }
 
 while (($#)); do
@@ -56,9 +56,14 @@ fi
 
 command -v jq >/dev/null || { echo "jq is required" >&2; exit 2; }
 
+generated_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+generated_epoch="$(date -u +%s)"
+
 jq -ce \
   --arg repository "$REPOSITORY" \
-  --arg localAssignee "$LOCAL_ASSIGNEE" '
+  --arg localAssignee "$LOCAL_ASSIGNEE" \
+  --arg generatedAt "$generated_at" \
+  --argjson generatedEpoch "$generated_epoch" '
   def repository_name:
     if (.content.repository | type) == "string" then .content.repository
     elif (.content.repository | type) == "object" then
@@ -73,38 +78,65 @@ jq -ce \
       else empty
       end];
 
+  def lease_until($reference):
+    if ($reference | type) != "string" then null
+    else ((try (
+      $reference
+      | capture("(?i)(^|[^A-Za-z0-9_])\\\"?leaseUntil\\\"?\\s*[=:]\\s*\\\"?(?<lease>[^\\\"\\s;,}]+)")
+      | .lease
+    ) catch null) // null)
+    end;
+
   def normalized:
-    {
-      id,
-      type: (.content.type // .type // null),
-      number: (.content.number // .number // null),
-      title: (.title // .content.title // null),
-      url: (.content.url // .url // null),
-      repository: repository_name,
-      status: (.status // null),
-      execution: (.execution // null),
-      executor: (.executor // null),
-      implementer: (.implementer // null),
-      verifier: (.verifier // null),
-      priority: (.priority // null),
-      readyTimestamp: (."ready timestamp" // .readyAt // null),
-      assignees: assignee_logins,
-      workerReference: (."worker reference" // null),
-      linkedPullRequests: (."linked pull requests" // [])
-    };
+    (."worker reference" // null) as $workerReference
+    | {
+        id,
+        type: (.content.type // .type // null),
+        number: (.content.number // .number // null),
+        title: (.title // .content.title // null),
+        url: (.content.url // .url // null),
+        repository: repository_name,
+        status: (.status // null),
+        execution: (.execution // null),
+        executor: (.executor // null),
+        implementer: (.implementer // null),
+        verifier: (.verifier // null),
+        priority: (.priority // null),
+        readyTimestamp: (."ready timestamp" // .readyAt // null),
+        assignees: assignee_logins,
+        workerReference: $workerReference,
+        leaseUntil: lease_until($workerReference),
+        linkedPullRequests: (."linked pull requests" // [])
+      };
 
   def pool_eligible:
     (.assignees | length == 0) or (.assignees | index($localAssignee) != null);
 
+  def with_stale_reason:
+    . as $item
+    | if (($item.workerReference | type) != "string" or ($item.workerReference | length) == 0) then
+        $item + {staleReason: "missing-worker-reference"}
+      elif $item.leaseUntil == null then
+        $item + {staleReason: "missing-lease"}
+      else
+        (try ($item.leaseUntil | fromdateiso8601) catch null) as $leaseEpoch
+        | if $leaseEpoch == null then $item + {staleReason: "invalid-lease"}
+          elif $leaseEpoch <= $generatedEpoch then $item + {staleReason: "lease-expired"}
+          else $item + {staleReason: null}
+          end
+      end;
+
   if (.items | type) != "array" then error("Project snapshot has no items array") else . end
   | ([.items[] | normalized | select(.repository == $repository)]) as $items
+  | ([$items[] | select(.execution == "In progress" and .executor == "Local Codex") | with_stale_reason]
+      | sort_by(.number, .type)) as $owned
   | {
+      generatedAt: $generatedAt,
       totalCount: (.totalCount // (.items | length)),
       repositoryItemCount: ($items | length),
-      ownedInProgress: [
-        $items[]
-        | select(.execution == "In progress" and .executor == "Local Codex")
-      ] | sort_by(.number, .type),
+      ownedInProgress: $owned,
+      activeOwnedInProgress: [$owned[] | select(.staleReason == null)],
+      staleOwnedInProgress: [$owned[] | select(.staleReason != null)],
       readyCandidates: [
         $items[]
         | select(

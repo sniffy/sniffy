@@ -1,4 +1,4 @@
-schemaVersion: 1
+schemaVersion: 2
 
 project:
   repository: sniffy/sniffy
@@ -6,6 +6,13 @@ project:
   githubProject:
     organization: sniffy
     number: 2
+
+runtime:
+  contract: docs/ai-delivery/runtime-contract.md
+  instructionAudit: docs/ai-delivery/instruction-audit.md
+  # Detailed policy is loaded after selection, not as a recurring dispatcher prefix.
+  dispatcherLoadsDetailedPolicy: false
+  oneCandidatePerTick: true
 
 controlPlane:
   protocol: delivery-control/v1
@@ -34,6 +41,7 @@ statusSnapshot:
   refreshCommand: "/ai-delivery-status refresh"
   refreshActors: [bedrin, bedrin-gpt]
   refreshTimeoutSeconds: 120
+  dispatchProjection: true
 
 fields:
   status: Status
@@ -44,10 +52,22 @@ fields:
   executor: Executor
   workerReference: Worker reference
 
+schedulers:
+  ChatGPT:
+    surface: Chat
+    forbiddenSurface: Work
+    budgetSlots: [0]
+    fullCadenceSlots: [0, 15, 30, 45]
+    prompt: .chatgpt/scheduled-task-prompt.md
+  Local Codex:
+    prompt: .codex/local/scheduled-task-prompt.md
+    snapshotHelper: .codex/local/project-queue-snapshot.sh
+
 executors:
   ChatGPT:
     assignee: bedrin-gpt
     model: provider-managed
+    reasoning: provider-managed
     dispatchMode: direct
   Codex Cloud:
     assignee: bedrin-codex-cloud
@@ -57,8 +77,12 @@ executors:
     dispatchOwner: ChatGPT
   Local Codex:
     assignee: bedrin-codex-local
-    model: Sol
-    reasoning: extra-high
+    dispatcherModel: gpt-5.6-luna
+    dispatcherReasoning: low
+    workerModel: gpt-5.6-terra
+    workerReasoning: medium
+    escalationModel: gpt-5.6-sol
+    escalationReasoning: high
     dispatchMode: polling
     # App-native dispatch derives this scheduling limit from the retained Project snapshot.
     # Provider-wide Codex project/task inventory is recovery evidence, not a normal capacity source.
@@ -80,6 +104,38 @@ routing:
     doNotAutoDispatchAnotherPatchRound: true
     preferredEscalationExecutor: Local Codex
   mergeExecutor: Human
+
+supervision:
+  mode: lease-based-stale-recovery
+  schedulerChecksOnlyExpiredOrInvalidLease: true
+  workerMayRenewBeforeExpiry: true
+  leaseMinutes:
+    ChatGPT: 60
+    Codex Cloud: 120
+    Local Codex: 240
+    externalOperation: 60
+    provisionalDispatch: 30
+
+telemetry:
+  required: true
+  fields:
+    - startedAt
+    - finishedAt
+    - durationSeconds
+    - adapter
+    - scheduler
+    - model
+    - reasoning
+    - snapshotRunId
+    - selectedCandidate
+    - outcome
+    - usageSource
+    - inputTokens
+    - cachedInputTokens
+    - outputTokens
+    - reasoningTokens
+  unavailableTokenValue: null
+  forbidFabricatedExactUsage: true
 
 intake:
   pullRequests:

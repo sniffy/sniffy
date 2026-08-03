@@ -11,24 +11,33 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
+function chatRuntime() {
+  return [
+    read('.chatgpt/scheduled-task-prompt.md'),
+    read('.chatgpt/status-snapshot-instructions.md'),
+    read('docs/ai-delivery/runtime-contract.md')
+  ].join('\n');
+}
+
 test('ChatGPT scheduled ticks require the labeled status artifact fallback', () => {
-  const prompt = read('.chatgpt/scheduled-task-prompt.md');
-  assert.match(prompt, /\.chatgpt\/status-snapshot-instructions\.md/);
-  assert.match(prompt, /newest open non-PR issue labeled ai-delivery-status/i);
-  assert.match(prompt, /download the artifact by\s+numeric artifact ID/is);
-  assert.match(prompt, /read project-2-status\.json/i);
-  assert.match(prompt, /missing, expired, inaccessible, malformed, mismatched, or stale snapshot/i);
-  assert.match(prompt, /\/ai-delivery-status refresh/);
-  assert.match(prompt, /terminal \+1 reaction/i);
-  assert.match(prompt, /refreshRequest\.commentId/i);
+  const policy = chatRuntime();
+  assert.match(policy, /\.chatgpt\/status-snapshot-instructions\.md/);
+  assert.match(policy, /newest open non-PR issue.*labelled `ai-delivery-status`/is);
+  assert.match(policy, /download that artifact by numeric ID/is);
+  assert.match(policy, /project-2-status\.json/i);
+  assert.match(policy, /malformed, inconsistent, incomplete, stale, or inaccessible/i);
+  assert.match(policy, /\/ai-delivery-status refresh/);
+  assert.match(policy, /terminal reaction/i);
+  assert.match(policy, /refresh comment provenance/i);
 });
 
 test('snapshot-backed commands retain live compare-and-set semantics', () => {
-  const prompt = read('.chatgpt/scheduled-task-prompt.md');
-  assert.match(prompt, /snapshot is an eventually consistent selection aid, not a mutation ledger or lease/i);
-  assert.match(prompt, /Every Project mutation still goes through delivery-control\/v1/i);
-  assert.match(prompt, /confused reaction means the snapshot lost a race/i);
-  assert.match(prompt, /snapshot generated after the preceding successful command/i);
+  const policy = chatRuntime();
+  assert.match(policy, /materialized selection view/i);
+  assert.match(policy, /Every Project claim and\s+handoff uses the guarded `delivery-control\/v1` protocol/i);
+  assert.match(policy, /A conflict means another actor\s+won or state changed/i);
+  assert.match(policy, /snapshot generated after the preceding successful command/i);
+  assert.match(policy, /live-read only the selected candidate/i);
 });
 
 test('profile fixes the status protocol, label, artifact and freshness contract', () => {
@@ -42,6 +51,7 @@ test('profile fixes the status protocol, label, artifact and freshness contract'
   assert.match(profile, /refreshCommand:\s*"\/ai-delivery-status refresh"/);
   assert.match(profile, /refreshTimeoutSeconds:\s*120/);
   assert.match(profile, /refreshActors:\s*\[bedrin, bedrin-gpt\]/);
+  assert.match(profile, /dispatchProjection:\s*true/);
 });
 
 test('status documentation preserves the read-only mutation boundary', () => {

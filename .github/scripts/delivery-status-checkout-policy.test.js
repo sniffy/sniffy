@@ -28,6 +28,9 @@ test('validation checkout materializes the exact focused inputs without credenti
   assert.deepEqual(sparsePaths('validate'), [
     '.chatgpt/scheduled-task-prompt.md',
     '.chatgpt/status-snapshot-instructions.md',
+    '.codex/local/scheduled-task-prompt.md',
+    '.codex/local/worker-task-prompt.md',
+    '.codex/local/run-issue.sh',
     '.github/scripts/delivery-status.js',
     '.github/scripts/delivery-status.test.js',
     '.github/scripts/delivery-status-policy.test.js',
@@ -35,15 +38,20 @@ test('validation checkout materializes the exact focused inputs without credenti
     '.github/scripts/delivery-status-runner-policy.test.js',
     '.github/scripts/delivery-status-mergeability.js',
     '.github/scripts/delivery-status-mergeability.test.js',
+    '.github/scripts/delivery-dispatch-view.js',
+    '.github/scripts/delivery-dispatch-view.test.js',
+    '.github/scripts/delivery-runtime-budget.test.js',
     '.github/workflows/delivery-status.yml',
     'docs/ai-delivery/README.md',
     'docs/ai-delivery/profile.yml',
+    'docs/ai-delivery/runtime-contract.md',
+    'docs/ai-delivery/instruction-audit.md',
     'docs/ai-delivery/status-snapshot.md',
     'docs/ai-delivery/status-workflow-optimization.md'
   ]);
 });
 
-test('trusted publication checks out only its two scripts from develop without credentials', () => {
+test('trusted publication checks out only its three scripts from develop without credentials', () => {
   const publish = jobBlock('publish');
   assert.match(publish, /ref:\s*develop/);
   assert.doesNotMatch(publish, /filter:/);
@@ -51,6 +59,7 @@ test('trusted publication checks out only its two scripts from develop without c
   assert.match(publish, /persist-credentials:\s*false/);
   assert.deepEqual(sparsePaths('publish'), [
     '.github/scripts/delivery-status.js',
-    '.github/scripts/delivery-status-mergeability.js'
+    '.github/scripts/delivery-status-mergeability.js',
+    '.github/scripts/delivery-dispatch-view.js'
   ]);
 });

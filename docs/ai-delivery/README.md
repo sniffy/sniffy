@@ -1,181 +1,128 @@
 # AI-assisted delivery in Sniffy
 
-This directory describes how Dmitry and ChatGPT plan, canonicalize, route, supervise, review, and verify work performed by ChatGPT,
-Codex Cloud, Local Codex, an IDE-hosted coding agent, automation such as Dependabot, an external contributor, or a human. It is the
-control-plane documentation for delivery. Repository engineering rules remain in the nearest applicable `AGENTS.md`.
+This directory defines the provider-neutral lifecycle, control plane, routing, supervision, review, and verification model used by
+ChatGPT, Codex Cloud, Local Codex, IDE agents, automation, contributors, and humans. Repository engineering rules remain in the
+nearest applicable `AGENTS.md`.
 
-The current Sniffy routing knobs live in [`profile.yml`](profile.yml). Shared semantics belong in Markdown; the profile selects
-current executors, identities, Local Codex model/effort, control-log rotation thresholds, default routes, universal PR intake
-behavior, and the repository-owned Project status read model without redefining the lifecycle.
+## Runtime versus reference policy
 
-## Terminology
+Dispatchers must not load this whole directory on every heartbeat.
 
-| Term | Meaning | Sniffy example |
-| --- | --- | --- |
-| Work item | An issue or pull request represented in the delivery Project | feature issue, standalone PR |
-| Canonical item | The one Project item that owns lifecycle state for one published change | linked issue or standalone PR |
-| Implementation evidence | Exact PR branch/head, diff, CI, and review conversation linked to the canonical item | PR #763 at `6d45aff...` |
-| Role | A responsibility in the delivery process | supervisor, implementer, reviewer, verifier, operator |
-| Executor | The product and environment performing a current action | ChatGPT, Codex Cloud, Local Codex, human |
-| Implementer | Optional planned executor for a future Implementation turn | Local Codex; empty for an already-published PR |
-| Verifier | Planned executor coordinating Verification | ChatGPT |
-| Assignee | Concrete GitHub identity or human responsible now | `bedrin-gpt`, `bedrin-codex-local`, `bedrin` |
-| Agent instance | One concrete running chat, task, process, or worker | one Codex task and worktree |
-| Repository instructions | Engineering policy applied by path | root or nested `AGENTS.md` |
-| Runbook | Environment- or procedure-specific operating instructions | Codex Cloud setup, local worker |
-| Task prompt | One launch or continuation request | a rendered worker prompt for an issue or PR |
-| Control command | Guarded provider-neutral ProjectV2 transition | one `delivery-control/v1` JSON comment |
-| Status snapshot | Eventually consistent read-only ProjectV2 materialization | artifact pointer in an `ai-delivery-status` issue |
+- [`runtime-contract.md`](runtime-contract.md) is the compact policy loaded by every dispatcher tick.
+- [`profile.yml`](profile.yml) is the Sniffy-specific declarative configuration.
+- the GitHub status workflow and local snapshot helper perform deterministic queue filtering.
+- detailed documents are loaded after candidate selection, only by the lifecycle worker that needs them.
+- [`instruction-audit.md`](instruction-audit.md) records entry points, token-cost findings, model choices, and migration to generated
+  dispatch projections.
 
-Roles, executors, identities, and PR provenance are independent. ChatGPT is the default supervisor, but it may also implement,
-review, or verify a task. Codex Cloud and Local Codex may perform the same implementer role in different environments. Model
-selection is a separate configuration axis: Cloud is provider-managed, while the current Local Codex profile uses Sol with
-extra-high reasoning.
+The status artifact is a read-only materialized selection view. It never replaces live GitHub state or the guarded
+`delivery-control/v1` mutation protocol.
 
-PR authorship is provenance, not a routing decision. A PR created by Dmitry, ChatGPT, an IDE agent, Dependabot, an external
-contributor, or a future bot is eligible for intake. Its author controls formal-review independence and branch-correction policy,
-but intake does not copy that identity into `Implementer`.
-
-## Issue and PR relationship
-
-Issues and pull requests are both first-class Project items, but one item owns lifecycle state for one published change:
-
-```text
-one formal closing issue -> issue is canonical; PR is implementation evidence
-no formal closing issue  -> PR is canonical
-several closing issues   -> PR is canonical in Planning
-```
-
-This lets Dmitry push a ready PR from IntelliJ without first creating an issue, while preserving an existing issue as the durable
-requirements item when one already exists. The event loop must not review both an issue and its PR as duplicate work.
-
-## Lifecycle summary
-
-`Status` describes the kind of work; `Execution` describes whether the next action can run:
+## Core model
 
 ```text
 Status:    Draft -> Planning -> Implementation -> Review -> Verification (when required) -> Approval -> Done
 Execution: Ready | In progress | Blocked
 ```
 
-Planning records `Implementer` when a future Implementation turn is needed and records `Verifier` when Verification may be needed.
-`Executor` materializes who performs the next current action, while `Assignee` names the concrete identity or human. A non-draft
-PR may enter directly at `Review / Ready` with an empty Implementer when its implementation already exists and its scope is clear.
-A multi-issue PR enters Planning first.
+`Implementer` and `Verifier` are planned future roles. `Executor` is the current product/runtime route. `Assignee` is the concrete
+GitHub identity or human. `Worker reference` records the active claim, generation, worker/task/process, branch/PR/head,
+`claimedAt`, and `leaseUntil`.
 
-A worker owns one lifecycle turn. A corrected implementation that returns to Review with substantive blockers does not immediately
-receive another narrow patch request: ChatGPT first performs the convergence checkpoint in [`routing.md`](routing.md) and
-[`supervision.md`](supervision.md).
-
-## Control plane and execution plane
+Issues and PRs are both first-class, but one item owns lifecycle state:
 
 ```text
-Dmitry + ChatGPT decide canonical item, outcome, risk, routing, and proof
-                              |
-                              v
-             guarded control command + exact worker dispatch
-                              |
-                              v
-        ChatGPT | Codex Cloud | Local Codex | automation | human
-                              |
-                              v
-          exact PR-head evidence and independent verification
-                              |
-                              v
-               Dmitry authorizes privileged actions or merge
+one formal closing issue -> issue canonical; PR is implementation evidence
+no formal closing issue  -> PR canonical
+two or more issues       -> PR canonical in Planning
 ```
 
-All configured executors use the same central control-issue protocol for ProjectV2 transitions. The canonical issue/PR conversation
-is reserved for human-useful plans, reviews, evidence, blockers, and handoffs. Omitted Project fields remain unchanged, and an empty
-optional field is valid state rather than a reason to invent a new select option. See [`control-plane.md`](control-plane.md).
+PR authorship is provenance, not an automatic Implementer. Draft PRs do not enter Review. A Review handoff requires an open,
+ready-for-review/non-draft PR at the exact published head. Merge remains Dmitry's explicit decision.
 
-Scheduled ChatGPT ticks request the repository-owned status snapshot in [`status-snapshot.md`](status-snapshot.md) before queue
-selection and use it when a complete direct organization ProjectV2 read is unavailable. The snapshot is a read-only selection aid.
-It never authorizes a mutation: every claim and handoff still goes through `delivery-control/v1`, whose workflow re-reads and
-verifies live ProjectV2 state. A failed refresh, stale, or unavailable snapshot blocks snapshot-dependent autonomous selection
-rather than permitting remembered or guessed field values.
+## Control and execution planes
 
-Dmitry owns product decisions, accepted risk, privileged repository/hosting operations, final acceptance, and merge authorization.
-ChatGPT owns issue refinement, universal PR intake/canonicalization, routing proposals, supervision, code review, verification
-coordination, control-log rotation, and clear handoff. An executor owns only the lifecycle turn and proof explicitly routed to it.
+```text
+programmatic snapshot/queue projection
+            |
+            v
+compact dispatcher -> one selected canonical candidate
+            |
+            v
+guarded delivery-control/v1 claim or reconciliation
+            |
+            v
+selected lifecycle worker -> exact evidence -> guarded handoff
+            |
+            v
+Dmitry accepts privileged actions and merge
+```
 
-## Sources of truth
-
-Use this precedence when instructions differ:
-
-1. Dmitry's explicit current decision, especially for product, risk, privileged operations, and merge.
-2. The authoritative canonical GitHub issue or pull request, including later comments that explicitly supersede older guidance.
-3. The linked implementation PR exact branch/head, reviews, CI, and artifacts.
-4. The nearest applicable `AGENTS.md` for files being changed.
-5. Root `AGENTS.md`.
-6. This directory and [`profile.yml`](profile.yml).
-7. The selected executor runbook or skill.
-8. The concrete task prompt.
-
-The status snapshot is not inserted into this authority order as a new ledger. It is a materialized view of current Project fields
-for readers that cannot query ProjectV2 directly. Live GitHub source state and guarded control verification remain authoritative
-for the operations they cover.
-
-Historical tick chats, Codex conversations, and Actions logs are telemetry and evidence, not the only copy of durable delivery
-state.
-
-## Documentation map
-
-- [`profile.yml`](profile.yml) — current Sniffy Project, field, identity, routing, Local Codex, intake, control, status-snapshot, and
-  rotation configuration.
-- [`lifecycle.md`](lifecycle.md) — statuses, execution states, canonical issue/PR rules, optional planned routing, and corrections.
-- [`control-plane.md`](control-plane.md) — one guarded mutation protocol, optional/omitted fields, control issue, concurrency,
-  reactions, and rotation.
-- [`status-snapshot.md`](status-snapshot.md) — read-only Project materialization, labeled pointer issue, artifact format, freshness,
-  active-item semantics, permissions, and ChatGPT read procedure.
-- [`event-loop.md`](event-loop.md) — reusable clock, universal PR intake/canonicalization, dispatcher, claims, and provider adapters.
-- [`.chatgpt/scheduled-task-prompt.md`](../../.chatgpt/scheduled-task-prompt.md) — exact prompt for four ChatGPT Scheduled Tasks.
-- [`.chatgpt/status-snapshot-instructions.md`](../../.chatgpt/status-snapshot-instructions.md) — mandatory Project read supplement
-  for ChatGPT ticks when direct ProjectV2 access is unavailable.
-- [`pull-request-intake.md`](pull-request-intake.md) — arbitrary PR discovery, canonical issue/PR selection, drafts, forks,
-  Dependabot, review, correction, and completion.
-- [`chat-retention.md`](chat-retention.md) — persistent Scheduled Task chats, compact outputs, and bounded manual rotation.
-- [`routing.md`](routing.md) — role/executor/model/provenance separation, fresh versus existing-PR routing, and convergence.
-- [`supervision.md`](supervision.md) — canonical handoff, dispatch proof, worker/PR monitoring, review convergence, and merge boundaries.
-- [`verification.md`](verification.md) — implementer, reviewer, verifier, CI, browser/system proof, and capability routing.
-- [`executors/chatgpt.md`](executors/chatgpt.md) — ChatGPT direct execution, scheduling, and limitations.
-- [`executors/codex-cloud.md`](executors/codex-cloud.md) — Cloud fresh-work routing, setup, credentials, publication, and troubleshooting.
-- [`executors/codex-local.md`](executors/codex-local.md) — app-native/headless workers and adopted existing-PR continuation.
-- [`executors/ide-agent.md`](executors/ide-agent.md) — generic VS Code/IntelliJ agent-host guidance.
-- [`../chatgpt-site-preview.md`](../chatgpt-site-preview.md) — exact-head website artifact and Chromium verification.
-- [`../retrospectives/`](../retrospectives/README.md) — historical incidents and durable lessons incorporated here.
+All executors use the same rotating technical control issue. Autonomous commands use the human-readable Markdown wrapper, exact
+markers, lowercase `json` fence, and authoritative marked JSON specified in [`control-plane.md`](control-plane.md). Target
+issues/PRs contain human-useful plans, reviews, proof, blockers, and handoffs—not field commands, polling, or lease noise.
 
 ## Current adapters
 
-The ChatGPT clock uses four hourly Scheduled Tasks offset by 15 minutes. Product testing on 2026-07-30 showed that recurrences
-append to each task's defining chat rather than reliably creating a new chat. Every occurrence must therefore behave statelessly by
-instruction and re-read GitHub/repository state, while the four defining chats are retained and periodically replaced as a
-maintenance action. No Scheduled Task may rely on previous chat turns as state.
+### ChatGPT
 
-A no-op tick creates no work-item, Project, source, or worker mutation; the required status-refresh request and its reaction are
-read-path telemetry. A productive tick performs at most one canonicalization/reconciliation or lifecycle turn directly, or makes
-one supported external dispatch. Scheduled ChatGPT ticks cannot create child Scheduled Tasks.
+Create recurring dispatcher tasks in **Chat**, not **Work**. Use one hourly budget task or four compact hourly tasks at `:00`,
+`:15`, `:30`, and `:45` when 15-minute queue latency is worth the usage. The exact prompt is
+[`.chatgpt/scheduled-task-prompt.md`](../../.chatgpt/scheduled-task-prompt.md).
 
-At the start of each tick, the configured status-snapshot supplement creates an on-demand read barrier: find the newest open issue
-labeled `ai-delivery-status`, post the exact refresh command, wait for its terminal reaction, then validate the newer JSON pointer
-and artifact. When direct ProjectV2 reads are unavailable, the tick uses those explicit normalized fields. Technical
-`ai-delivery-control` and `ai-delivery-status` issues are never canonical work. See [`status-snapshot.md`](status-snapshot.md).
+Each tick reads the compact runtime contract and one fresh generated status artifact, selects at most one
+`dispatch.orderedCandidates` entry, and live-reads only that target. Codex Cloud is supervised because it does not poll Project 2.
 
-Every open PR targeting `develop` is scanned. A single linked issue remains canonical; a standalone PR becomes the Project item;
-a multi-issue PR enters Planning. Same-repository corrections can be adopted by ChatGPT or Local Codex on the exact existing
-branch/PR. Forks and managed-bot branches use contributor/bot operations or a linked replacement task.
+### Local Codex
 
-GitHub Project auto-add remains useful for issues created by agents and dependency PR discovery, but it does not replace
-canonicalization. Project 2 currently retains a `Dependabot` Implementer option for manual/historical classification; normal
-intake does not select it.
+The persistent dispatcher uses `gpt-5.6-luna` / low. Normal implementation/verification workers use `gpt-5.6-terra` / medium.
+`gpt-5.6-sol` / high is an explicit difficult-task escalation; xhigh requires an exceptional recorded reason. The app prompt and
+worker template live under `.codex/local/`; the headless helper defaults to Terra/medium.
 
-## Provider-specific files
+Local Codex is preferred for complex/persistent work and exact same-repository existing-PR continuation. It never adopts a fork or
+Dependabot branch for direct correction.
 
-- `.chatgpt/` contains copy-paste Scheduled Task prompts and connector-read supplements, not durable delivery state.
-- `.codex/` contains Codex environment scripts and launch prompts, not general repository policy.
-- `.github/workflows/delivery-control.yml` and `.github/scripts/delivery-control.js` implement the provider-neutral mutation bridge.
-- `.github/workflows/delivery-status.yml` and `.github/scripts/delivery-status.js` implement the read-only Project status bridge.
-- `.github/scripts/delivery-policy.test.js` protects the canonical universal-intake and adopted-continuation prompt contract.
-- `.github/copilot-instructions.md` is a small Copilot adapter pointing to `AGENTS.md` and this directory.
-- `.agents/skills/` contains optional reusable procedures that an executor invokes only when applicable.
-- IDE-specific rule directories should not duplicate `AGENTS.md`; add them only for a proven client-specific gap.
+### Status and control workflows
+
+- `.github/workflows/delivery-status.yml` publishes Project, issue, PR, formal-link, mergeability, and deterministic dispatch views.
+- `.github/workflows/delivery-control.yml` validates and serializes guarded Project transitions.
+- raw exports are diagnostic; normal dispatchers consume the normalized `dispatch` view.
+
+## Lease-based supervision
+
+A worker owns completion signalling. When its lifecycle turn finishes, it publishes evidence and performs the guarded handoff.
+Normal scheduler ticks ignore `In progress` ownership while `leaseUntil` is valid; they do not poll the worker.
+
+The worker may renew the same claim/generation before expiry. A stale-recovery candidate exists only when the worker reference is
+missing, the lease is missing/invalid, or the lease has expired. Targeted recovery preserves the exact generation/branch/task,
+finishes a lost handoff when possible, and releases to Ready only when no active or recoverable work remains. No duplicate worker or
+separate monitoring scheduler is created.
+
+CI waits, contributor updates, bot commands, rebases, and draft publication use bounded operation leases under the same rule.
+
+## Telemetry
+
+Every non-interactive tick/worker records start/end, duration, adapter, model/reasoning, snapshot identity, selected candidate,
+outcome, and provider token counters when available. Missing counters are `null` with `usageSource: unavailable`; exact billing
+usage is never fabricated.
+
+## Documentation map
+
+- [`runtime-contract.md`](runtime-contract.md) — compact recurring contract.
+- [`instruction-audit.md`](instruction-audit.md) — entry-point/token/model/profile audit and baseline tag command.
+- [`profile.yml`](profile.yml) — repository/Project, identities, routes, model profiles, leases, telemetry, and snapshot settings.
+- [`lifecycle.md`](lifecycle.md) — statuses, execution states, canonical item, routes, and corrections.
+- [`control-plane.md`](control-plane.md) — guarded mutation schema, readable wrapper, concurrency, reactions, and rotation.
+- [`status-snapshot.md`](status-snapshot.md) — materialization, freshness, dispatch projections, and permissions.
+- [`event-loop.md`](event-loop.md) — clock, generated selection, claims, leases, and stale recovery.
+- [`pull-request-intake.md`](pull-request-intake.md) — universal PR discovery/canonicalization and fork/bot boundaries.
+- [`routing.md`](routing.md) — executor/model/provenance separation, continuity, and convergence.
+- [`supervision.md`](supervision.md) — dispatch proof, lease recovery, review convergence, and merge boundary.
+- [`verification.md`](verification.md) — implementer, reviewer, verifier, CI, runtime/browser/system proof.
+- executor runbooks under [`executors/`](executors/) — environment-specific adapters.
+
+## Authority
+
+Use, in order: Dmitry's explicit current decision; canonical issue/PR and superseding comments; exact implementation PR/head and
+evidence; nearest `AGENTS.md`; root `AGENTS.md`; runtime contract/profile; detailed shared policy; executor runbook; concrete prompt.
+Historical chats and Actions logs are evidence, not durable delivery state.
