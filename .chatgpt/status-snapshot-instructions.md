@@ -1,57 +1,35 @@
-# Sniffy status-snapshot instructions for ChatGPT ticks
+# ChatGPT status-snapshot read barrier
 
-Apply this supplement at the start of every scheduled ChatGPT tick, before Project intake, reconciliation, continuation, or
-ordinary queue selection. A complete direct organization ProjectV2 read may remain the selected read path, but it does not skip
-this on-demand refresh barrier: the refreshed artifact is the deterministic fallback and durable read evidence for the tick.
+Use this once at the start of each scheduled Chat tick. It supplies a deterministic queue projection so the model does not need to
+query the whole Project or inspect every open PR.
 
-1. Search `sniffy/sniffy` for open issues labeled `ai-delivery-status`. Select the newest non-pull-request issue by issue number.
-   Never hardcode its number. Do not claim, assign, close, discuss work in, or add delivery-control commands to this technical
-   issue.
-2. Add exactly one comment whose entire body is `/ai-delivery-status refresh`. Record its comment ID and `createdAt`; do not add
-   prose, Markdown wrappers, or another request for the same tick. Wait no more than `statusSnapshot.refreshTimeoutSeconds` from
-   `docs/ai-delivery/profile.yml` for a terminal reaction on that exact comment:
-   - `+1` means the workflow published a new artifact and pointer, then acknowledged this request;
-   - `-1` means publication failed; report the refresh blocker and perform no snapshot-dependent claim or transition;
-   - no terminal reaction before the deadline is an unavailable refresh, not permission to use the pre-request pointer. Do not
-     retry in the same tick.
-3. After `+1`, rediscover the newest open status issue and parse its entire body as JSON. Require:
-   - `schemaVersion = 1`;
-   - `kind = ai-delivery-status/v1`;
-   - `source.repository = sniffy/sniffy`;
-   - `source.project.owner = sniffy` and `source.project.number = 2`;
-   - `artifact.name = ai-delivery-status-project-2`;
-   - a numeric `artifact.id` and file name `project-2-status.json`;
-   - `generatedAt` strictly later than the refresh request's `createdAt` and no older than `statusSnapshot.maxAgeMinutes`;
-   - normally, `source.workflowRun.event = issue_comment` and `source.workflowRun.refreshRequest.commentId` equals the exact
-     request comment ID. Because publication is serialized, a pointer subsequently replaced by another successful trigger is also
-     acceptable when its `generatedAt` is strictly later than the request; it is necessarily at least as fresh.
-4. Download that artifact by numeric ID with the default GitHub connector. Read `project-2-status.json` from the ZIP. Validate the
-   same schema/kind/repository/Project identity, require its `generatedAt` and workflow-run provenance to match the pointer, and
-   reject inconsistent counts or an incomplete/malformed file.
-5. Use only the snapshot's explicit `fields`/`fieldValues` as ProjectV2 read state. An absent field value is represented as `null`;
-   do not infer it from prose, authorship, prior chat state, or defaults. The file contains active Sniffy items only. The raw files
-   are diagnostic and are not the ordinary queue.
-6. Before ordinary queue selection, inspect the snapshot's top-level `pullRequests` observations for `mergeable = CONFLICTING` or
-   `mergeStateStatus = DIRTY`. This collection is independent of Project item type; use `closingIssueNumbers` to resolve the
-   canonical issue-versus-PR identity before routing, without activating a duplicate PR lifecycle item. Treat each same-repository,
-   non-Dependabot agent PR as a priority continuation/reconciliation obligation. Re-read the live PR first and require it still to
-   be open, target `develop`, have the same exact head, and remain conflicted. Preserve the existing branch and PR; deliberately
-   route conflict resolution to an eligible implementation executor, then start the normal 15-minute, second-15-minute, and hourly
-   observation cycle. Fork PRs wait for their contributor, and Dependabot PRs use `@dependabot rebase`; never adopt or rewrite those
-   branches through this rule.
-7. Re-read current issue/PR open/draft state, exact branch/head, formal closing links, assignment, reviews, threads, matching CI,
-   and mergeability through live GitHub operations before acting. Snapshot source metadata and mergeability are discovery hints,
-   not mutation authority.
-8. Use snapshot values to construct guarded `delivery-control/v1` expected fields. A successful mutation still depends on the
-   control workflow's live serialized ProjectV2 comparison and verification.
-9. On `confused`, perform no work mutation and do not retry from the same snapshot. On `-1`, inspect the failed control run. On
-   `+1`, the control workflow's internal final-state verification is authoritative for that command.
-10. Before a later dependent Project transition, obtain a snapshot generated after the preceding successful command. The status
-    workflow deliberately does not run after every delivery-control completion because that fan-out exhausts the shared Project
-    GraphQL rate limit during active reconciliation. Request exactly one on-demand refresh before the dependent transition. Do not
-    chain dependent Project writes from an older materialized view or add speculative refreshes between transitions.
-11. If the status issue, refresh acknowledgement, pointer, artifact, or snapshot is missing, expired, inaccessible, malformed,
-    mismatched, or stale, make no snapshot-dependent Project claim or transition. Report the exact status-read blocker; do not
-    guess.
-12. Exclude issues labeled `ai-delivery-control` or `ai-delivery-status` from canonical work selection even if Project automation
-    materialized them.
+1. Find the newest open non-PR issue in `sniffy/sniffy` labelled `ai-delivery-status`. Never hardcode its number. Exclude technical
+   `ai-delivery-control` and `ai-delivery-status` issues from work selection.
+2. Add exactly one comment whose entire body is `/ai-delivery-status refresh`. Record its comment ID and `createdAt`. Wait at most
+   `statusSnapshot.refreshTimeoutSeconds` from `docs/ai-delivery/profile.yml` for a terminal reaction on that exact comment:
+   - `+1`: a newer pointer/artifact was published;
+   - `-1`: publication failed;
+   - timeout: refresh unavailable.
+   On `-1` or timeout, make no snapshot-dependent claim or transition. Do not retry or use the pre-request pointer.
+3. After `+1`, rediscover the newest open status issue and parse its body as JSON. Require schema 1, kind
+   `ai-delivery-status/v1`, repository `sniffy/sniffy`, Project `sniffy/2`, artifact name `ai-delivery-status-project-2`, numeric
+   artifact ID, snapshot file `project-2-status.json`, acceptable age, and `generatedAt` strictly later than the request. Normally
+   require matching refresh comment provenance; a later serialized successful publication is acceptable when demonstrably newer.
+4. Download that artifact by numeric ID and validate the snapshot has matching identity, generation, provenance, complete counts,
+   top-level `pullRequests`, and `dispatch` projections. Reject malformed, inconsistent, incomplete, stale, or inaccessible data.
+5. Use `dispatch.orderedCandidates` as the normal attention queue and select at most its first entry. Do not ask the model to
+   rebuild `readyByExecutor`, `inProgressByExecutor`, canonical PR identity, route mismatches, conflicts, or stale exact-head
+   candidates from raw arrays. Raw files are diagnostics only.
+6. The top-level `pullRequests` observations and `dispatch.pullRequests` projections cover every open base-branch PR independently
+   of Project item type. Use `closingIssueNumbers` to resolve the canonical issue-versus-PR identity. Fork PRs wait for their
+   contributor. Dependabot PRs use provider bot operations such as `@dependabot rebase`; never adopt or rewrite those branches.
+7. Only after selecting a candidate, re-read its current live issue/PR open/draft state, exact branch/head, formal closing links,
+   repository ownership, assignment, Project route, worker reference, reviews/threads/CI/mergeability when relevant, and active
+   control issue. Snapshot mergeability and lifecycle values are selection hints, not mutation authority.
+8. Construct guarded `delivery-control/v1` expected state from the snapshot, but act only after the targeted live re-read. On a
+   `confused` reaction, perform no work mutation and do not retry from the same snapshot. On `-1`, inspect the failed control run.
+   On `+1`, the control workflow's final-state verification is authoritative for that command.
+9. Before a later dependent Project transition, request one snapshot generated after the preceding successful command. Do not add
+   speculative refreshes between independent reads or chain Project writes from an older materialized view.
+10. If no candidate remains actionable after the live re-read, return `NO_CHANGE` plus telemetry without a target, source, worker,
+    or control mutation.
