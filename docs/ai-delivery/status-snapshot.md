@@ -70,10 +70,14 @@ Project and PR list:
 - `readyByExecutor`;
 - `inProgressByExecutor` and due observations when `nextObservationAt` is available;
 - Ready route/assignee mismatches;
-- conflicting same-repository PRs;
+- conflicting same-repository PRs requiring deliberate continuation routing;
+- managed fork/Dependabot conflicts requiring contributor feedback or a documented bot operation, never branch adoption;
 - PR intake/canonicalization and duplicate-representation candidates;
 - downstream lifecycle state pinned to an older exact PR head;
 - `orderedCandidates`, the normal one-candidate attention queue.
+
+An already routed `Implementation / Ready|In progress` correction is left to its selected executor instead of being reclassified as
+PR intake or generic conflict handling.
 
 The projection contains compact target evidence only. It is not a substitute for complete issue/PR discussion, diff, review, CI,
 or artifacts; those are loaded after selection by the worker that needs them.
