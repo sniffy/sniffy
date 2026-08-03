@@ -1,0 +1,76 @@
+name: Check Codex CLI local executor
+
+on:
+  pull_request:
+    paths:
+      - .codex/local/cli-common.sh
+      - .codex/local/cli-dispatch.sh
+      - .codex/local/cli-launch-worker.sh
+      - .codex/local/cli-recover-worker.sh
+      - .codex/local/cli-worker-state.js
+      - .codex/local/cli-worker-state.test.js
+      - .codex/local/systemd/**
+      - .github/workflows/codex-cli-local.yml
+      - docs/ai-delivery/executors/codex-cli.md
+      - docs/ai-delivery/executors/codex-local.md
+      - docs/ai-delivery/profile.yml
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: codex-cli-local-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            .codex/local/cli-common.sh
+            .codex/local/cli-dispatch.sh
+            .codex/local/cli-launch-worker.sh
+            .codex/local/cli-recover-worker.sh
+            .codex/local/cli-worker-state.js
+            .codex/local/cli-worker-state.test.js
+            .codex/local/systemd
+            .github/workflows/codex-cli-local.yml
+            docs/ai-delivery/executors/codex-cli.md
+            docs/ai-delivery/executors/codex-local.md
+            docs/ai-delivery/profile.yml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+      - name: Check scripts and focused contracts
+        run: |
+          set -euo pipefail
+          bash -n \
+            .codex/local/cli-common.sh \
+            .codex/local/cli-dispatch.sh \
+            .codex/local/cli-launch-worker.sh \
+            .codex/local/cli-recover-worker.sh
+          shellcheck -x -S warning \
+            .codex/local/cli-common.sh \
+            .codex/local/cli-dispatch.sh \
+            .codex/local/cli-launch-worker.sh \
+            .codex/local/cli-recover-worker.sh
+          node --check .codex/local/cli-worker-state.js
+          node --check .codex/local/cli-worker-state.test.js
+          node --test .codex/local/cli-worker-state.test.js
+          systemd-analyze verify \
+            .codex/local/systemd/sniffy-local-dispatch.service \
+            .codex/local/systemd/sniffy-local-dispatch.timer \
+            .codex/local/systemd/sniffy-local-worker@.service
+      - name: Parse and lint workflow
+        run: |
+          ruby -e 'require "yaml"; YAML.load_file(".github/workflows/codex-cli-local.yml"); YAML.load_file("docs/ai-delivery/profile.yml")'
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 .github/workflows/codex-cli-local.yml

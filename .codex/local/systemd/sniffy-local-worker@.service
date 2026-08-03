@@ -1,0 +1,16 @@
+[Unit]
+Description=Sniffy Local Codex worker %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-%h/.config/sniffy-local-executor.env
+WorkingDirectory=%h/src/sniffy/sniffy
+ExecStart=/usr/bin/env bash .codex/local/cli-launch-worker.sh %i
+Restart=no
+TimeoutStartSec=0
+KillMode=mixed
+
+[Install]
+WantedBy=default.target
