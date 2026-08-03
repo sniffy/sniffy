@@ -95,9 +95,9 @@ An explicit branch always wins. A conflict returns to Planning or a precise main
 replacement branch. The CLI adapter also checks the authoritative branch for an existing open PR or remote ref and resumes it
 instead of creating a duplicate.
 
-Every autonomous command uses the control-plane human-readable Markdown wrapper, exact start/end markers, and lowercase `json`
-fence; the marked JSON is authoritative. Never emit bare JSON. Inspect the terminal reaction and re-read Project state before
-source mutation, recovery, or handoff.
+Every autonomous command uses the control-plane human-readable Markdown wrapper, exact start/end markers, and lowercase `json` fence;
+the marked JSON is authoritative. Never emit bare JSON. Inspect the terminal reaction and re-read Project state before source
+mutation, recovery, or handoff.
 
 ## Existing PR continuation
 
