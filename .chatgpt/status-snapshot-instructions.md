@@ -21,9 +21,9 @@ query the whole Project or inspect every open PR.
    rebuild `readyByExecutor`, `inProgressByExecutor`, canonical PR identity, route mismatches, conflicts, or stale exact-head
    candidates from raw arrays. Raw files are diagnostics only.
 6. The top-level `pullRequests` observations and `dispatch.pullRequests` projections cover every open base-branch PR independently
-   of Project item type. Always use `closingIssueNumbers` to resolve the canonical issue-versus-PR identity. Fork PRs wait for their
-   contributor. Dependabot PRs use `@dependabot rebase` or another documented provider bot operation; never adopt or rewrite those
-   branches through this rule.
+   of Project item type. Always use `closingIssueNumbers` to resolve the canonical issue-versus-PR identity.
+   Fork PRs wait for their contributor. Dependabot PRs use `@dependabot rebase` or another documented provider bot operation;
+   never adopt or rewrite those branches through this rule.
 7. Live-read only the selected candidate. Re-read its current live issue/PR open/draft state, exact branch/head, formal closing
    links, repository ownership, assignment, Project route, worker reference, reviews/threads/CI/mergeability when relevant, and
    active control issue. Snapshot mergeability and lifecycle values are selection hints, not mutation authority.
