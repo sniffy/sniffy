@@ -21,6 +21,7 @@ A tick is selection and coordination, not lifecycle work. It must:
 3. use the snapshot's `dispatch` projections instead of asking the model to rescan or re-sort the whole Project and every PR;
 4. choose at most one candidate in this order:
    - conflicting same-repository PR requiring deliberate continuation routing;
+   - fork or Dependabot conflict requiring contributor feedback or a documented bot operation, never branch adoption;
    - PR intake/canonicalization or duplicate representation;
    - exact-head drift or invalid current route/assignee;
    - due owned `In progress` observation;
