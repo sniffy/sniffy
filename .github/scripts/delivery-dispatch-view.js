@@ -247,7 +247,9 @@ function mergedPullRequestSummary(raw) {
 
 function completionDriftCandidate(item, rawPullRequestsByNumber, baseBranch) {
   const awaitingMerge = item.status === 'Approval' && item.execution === 'Ready' && item.executor === 'Human';
-  if (!awaitingMerge || isSuppressedDuplicateItem(item)) return null;
+  const terminalRoutingDrift = item.status === 'Done' &&
+    (item.execution !== null || item.executor !== null || item.assignees.length > 0);
+  if ((!awaitingMerge && !terminalRoutingDrift) || isSuppressedDuplicateItem(item)) return null;
 
   if (item.type === 'PullRequest') {
     const pullRequest = mergedPullRequestSummary(rawPullRequestsByNumber.get(Number(item.number)));
