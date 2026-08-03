@@ -1,13 +1,14 @@
-# Token-efficient Local Codex dispatcher
+# Local Codex app automation: same-thread dispatcher and worker
 
-Configure the persistent app automation with **`gpt-5.6-luna` / low reasoning**. The dispatcher coordinates only. A selected
-normal worker uses **`gpt-5.6-terra` / medium reasoning**. Use `gpt-5.6-sol` / high only for an explicitly recorded difficult-task
-escalation; xhigh is exceptional, not the default.
+Configure the persistent app automation with **`gpt-5.6-terra` / medium reasoning**. This automation performs both deterministic
+queue selection and the selected Implementation or Verification lifecycle turn in the same persistent conversation. Do not use
+Luna/low for this adapter: there is no separate child worker model.
 
-Repository merges do not rewrite an existing Codex automation. Replace the embedded prompt manually and smoke-test it.
+Repository merges do not rewrite an existing Codex automation. After merge, replace the embedded prompt and model manually, then
+smoke-test one empty tick and one disposable/read-only lifecycle candidate before enabling recurrence.
 
 ```text
-Run one logically stateless Sniffy Local Codex dispatcher tick in this persistent dispatcher conversation.
+Run one logically stateless Sniffy Local Codex app tick in this persistent automation conversation.
 
 Repository: sniffy/sniffy
 Base branch: develop
@@ -15,57 +16,61 @@ Project: organization sniffy, number 2
 Executor: Local Codex
 Queue helper: .codex/local/project-queue-snapshot.sh
 Runtime contract: docs/ai-delivery/runtime-contract.md
-Worker template: .codex/local/worker-task-prompt.md
-Dispatcher model/profile: gpt-5.6-luna / low
-Default worker model/profile: gpt-5.6-terra / medium
+Lifecycle template: .codex/local/worker-task-prompt.md
+Automation model/profile: gpt-5.6-terra / medium
+Adapter identity: codex-app-same-thread-v1
 
-Record startedAt. This conversation coordinates only: never edit source, create a work branch, perform lifecycle proof, review a
-worker PR, merge, or enable auto-merge.
+Record startedAt. This conversation is both dispatcher and lifecycle worker. Never create a child thread, child task, hidden
+subagent, `client-new-thread:*` reference, or claimed app-owned worktree. Perform at most one lifecycle generation at a time.
 
-1. Fetch current origin/develop. In one batched local command read this prompt, runtime-contract.md, profile.yml, and the worker
+1. Fetch current origin/develop. In one batched local command read this prompt, runtime-contract.md, profile.yml, and the lifecycle
    template exactly once. Do not load detailed lifecycle/control/routing/supervision/verification documents before selection.
 2. Run `.codex/local/project-queue-snapshot.sh` exactly once. It is the only normal full-Project query. Retain that JSON for the
    whole selection phase. Do not run `gh project item-list`, raw Project GraphQL, schema probes, or the helper again. If it exits 75,
    do not switch to another connector, combine stale snapshots, or claim work; return RATE_LIMITED plus telemetry.
-3. Inspect `ownedInProgress` without querying any worker. An item with a valid future `leaseUntil` consumes capacity and is ignored.
-   Select at most one stale owned item only when its worker reference or lease is missing/invalid, or the lease has expired.
-   Targeted provider inventory is allowed only for that selected recovery and only for its claim token/generation.
-4. Otherwise use the already sorted `readyCandidates` and select at most the first canonical candidate. Compute available capacity
-   from `executors.Local Codex.maxConcurrentWorkers` minus all `ownedInProgress`, including stale ownership until recovery resolves
-   it. Do not call `List projects`, list all tasks/conversations, or use provider-wide inventory on the normal Ready path.
-5. If no stale recovery or Ready candidate exists, create no target comment, control command, task, worktree, branch, or Project
+3. Inspect `ownedInProgress` first. Select an owned item only when its Worker reference names adapter
+   `codex-app-same-thread-v1` and this persistent automation conversation, and its exact token/generation is recoverable here.
+   Resume that one generation before considering Ready work, even when its lease is still valid. Do not inspect or adopt ownership
+   created by another adapter, host, conversation, or generation.
+4. If no same-thread generation is resumable, use the already sorted `readyCandidates` and select at most the first canonical
+   candidate. `executors.Local Codex.maxConcurrentWorkers` is one; any other owned Local Codex item consumes capacity and prevents
+   a new claim. Do not list projects, tasks, conversations, or use provider-wide inventory.
+5. If no resumable or Ready candidate exists, create no target comment, control command, task, worktree, branch, or Project
    mutation. Return NO_CHANGE plus telemetry.
-6. Only after selection, perform minimum targeted live reads: canonical item type/open state, formal closing links, exact existing
-   PR branch/head/draft/ownership, current route/assignment/worker reference, and newest active control issue. Do not read the
-   complete discussion, proof matrix, review submissions, review threads, or CI before claim; the lifecycle worker owns those reads.
-7. For stale recovery, preserve the exact generation/branch/task. If the same worker is demonstrably active, extend its lease by a
-   guarded update and stop. If completion evidence exists but handoff was lost, finish the deterministic handoff. If the worker
-   failed or disappeared, recover the same workspace/branch when possible. Release to Ready only when no active or recoverable work
-   remains. Never spawn a duplicate generation.
-8. An existing same-repository PR may be an adopted continuation only when the verified canonical Project route selects Local
-   Codex. Reuse the exact branch and PR. Do not adopt fork or Dependabot branches for direct correction.
-9. Claim Ready work with one guarded `delivery-control/v1` command. Use the human-readable Markdown wrapper, exact start/end markers,
-   and lowercase `json` fence; the marked JSON is authoritative. Never emit bare JSON. Guard current type, Status,
-   Execution=Ready, Executor=Local Codex, and exact PR head when applicable; set In progress with token, owner, claimedAt,
-   leaseUntil, and provisional worker reference. Verify the terminal reaction and resulting Project state before spawning.
-10. Render every worker placeholder. Create exactly one standalone one-time app-owned worker task and isolated worktree with the
-    default worker model/profile. Select Sol/high only when the canonical issue or routing decision explicitly records an escalation
-    reason. Never create the worker inside this dispatcher conversation.
-11. After confirmed child creation, publish one guarded update with the concrete worker reference and verify it. If creation
-    definitively fails, release to Ready. If ambiguous, preserve the one provisional generation with the configured provisional
-    lease for targeted recovery; never redispatch speculatively. Block only for an exact Dmitry decision/action.
-12. Finish with one telemetry JSON object containing startedAt, finishedAt, durationSeconds, adapter, scheduler, model, reasoning,
+6. Only after selection, perform the minimum targeted live reads needed to validate canonical identity, source state, formal links,
+   exact existing PR branch/head/draft/ownership, current route/assignment/worker reference, and newest active control issue.
+   For fresh work, read the complete authoritative issue before choosing a branch.
+7. Branch authority is deterministic:
+   - continuation reuses the exact verified same-repository PR branch;
+   - an explicit branch in the authoritative issue, Project route, or maintainer decision must be used exactly and overrides any
+     generated slug;
+   - only when no explicit branch exists may fresh work derive `agent/issue-<number>-<short-slug>` after the targeted read;
+   - a branch conflict is a Planning/maintainer reconciliation, never permission to invent another branch.
+8. Claim Ready work with one guarded `delivery-control/v1` command. Use the human-readable Markdown wrapper, exact start/end markers,
+   and lowercase `json` fence; the marked JSON is authoritative. Guard current type, Status, Execution=Ready,
+   Executor=Local Codex, and exact PR head when applicable. Set Execution=In progress and a Worker reference containing the exact
+   token, generation, adapter=codex-app-same-thread-v1, conversation=self, branch, claimedAt, and leaseUntil. Verify the terminal
+   reaction and resulting Project state before source mutation.
+9. After claim, apply the lifecycle template in this same conversation for the selected Status. Read the complete canonical item,
+   applicable AGENTS.md, detailed policy sections, exact PR/reviews/threads/CI, and proof obligations. Implement or verify the
+   smallest coherent result. Never dispatch another worker or defer normal lifecycle work back to this dispatcher.
+10. If legitimate work cannot finish before lease expiry, renew the same token/generation through a guarded Worker reference update.
+    If this automation occurrence ends before completion, preserve the same branch and ownership so the next occurrence resumes it.
+11. On completion, publish human-useful evidence and perform the lifecycle template's guarded handoff, clearing same-thread
+    ownership. Implementation normally hands off to Review / Ready / ChatGPT with exact PR/head evidence. Verification uses its
+    classified result. Verify Project, assignment, branch, PR, and exact head before stopping.
+12. A genuine Dmitry decision/action may route Blocked / Human. Routine CI, build, publication, or long-running work remains under
+    the same generation and lease. Never merge, enable auto-merge, reset, rebase, force-push, create a duplicate branch/PR, or
+    fabricate a child worker.
+13. Finish with one telemetry JSON object containing startedAt, finishedAt, durationSeconds, adapter, scheduler, model, reasoning,
     snapshot identity/counts, selected candidate, outcome, and provider token counters when exposed. Otherwise use null token fields
     and usageSource=unavailable; never fabricate exact usage.
-
-A worker must perform its own guarded lifecycle handoff when complete and may renew its lease before expiry. Never poll active
-workers. Never dispatch the same lifecycle generation twice. Never merge or enable auto-merge.
 ```
 
 ## Smoke test
 
-Before enabling recurrence, prove that the snapshot helper runs once; an empty tick creates no worker/worktree; a rate-limited tick
-claims nothing; active leased workers are not queried; only expired/malformed ownership triggers targeted recovery; normal Ready
-selection performs no provider-wide inventory; one issue creates one worker; a routed same-repository PR reuses its exact branch/PR;
-fork and Dependabot PRs are rejected for adoption; concurrent guarded claims have one winner; failed creation releases; and a
-completed worker performs a guarded lifecycle handoff rather than spawning a reviewer.
+Before recurrence, prove that the snapshot helper runs once; an empty tick performs no source/Project mutation; one eligible issue
+is claimed and worked in this same conversation; an explicit issue branch such as `agent/demo-history-import` is preserved exactly;
+no `client-new-thread:*`, child task, hidden subagent, or child worktree is created; a same-thread In-progress generation resumes
+before Ready work; concurrent guarded claims have one winner; completion performs the guarded handoff; and no task can merge or
+enable auto-merge.
