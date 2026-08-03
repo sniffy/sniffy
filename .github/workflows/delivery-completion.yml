@@ -5,6 +5,7 @@ on:
     paths:
       - .github/scripts/delivery-completion.js
       - .github/scripts/delivery-completion.test.js
+      - .github/scripts/delivery-completion.edge.test.js
       - .github/workflows/delivery-completion.yml
       - docs/ai-delivery/completion.md
   pull_request_target:
@@ -29,7 +30,10 @@ jobs:
         run: |
           node --check .github/scripts/delivery-completion.js
           node --check .github/scripts/delivery-completion.test.js
-          node --test .github/scripts/delivery-completion.test.js
+          node --check .github/scripts/delivery-completion.edge.test.js
+          node --test \
+            .github/scripts/delivery-completion.test.js \
+            .github/scripts/delivery-completion.edge.test.js
       - name: Parse workflow YAML
         run: ruby -e 'require "yaml"; YAML.load_file(".github/workflows/delivery-completion.yml")'
       - name: Lint GitHub Actions workflow
