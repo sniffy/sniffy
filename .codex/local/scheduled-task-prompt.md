@@ -31,8 +31,7 @@ subagent, `client-new-thread:*` reference, or claimed app-owned worktree. Perfor
 3. Inspect `ownedInProgress` first. A valid future `leaseUntil` consumes capacity and is ignored when it belongs to another adapter,
    host, conversation, or generation. Select an owned item only when its Worker reference names adapter
    `codex-app-same-thread-v1` and this persistent automation conversation, and its exact token/generation is recoverable here.
-   Resume that one generation before considering Ready work, even when its lease is still valid. Targeted provider inventory is
-   allowed only for that selected recovery and only for its exact claim token/generation; this same-thread adapter has no child
+   Resume that one generation before considering Ready work, even when its lease is still valid. Targeted provider inventory is allowed only for that selected recovery and only for its exact claim token/generation; this same-thread adapter has no child
    inventory, so use only this conversation state and targeted GitHub evidence. Never adopt another adapter's ownership.
 4. If no same-thread generation is resumable, use the already sorted `readyCandidates` and select at most the first canonical
    candidate. Compute available capacity from `executors.Local Codex.maxConcurrentWorkers` minus every item in `ownedInProgress`.
