@@ -6,6 +6,7 @@ const DOWNSTREAM_HEAD_STATUSES = new Set(['Review', 'Verification', 'Approval'])
 const PRIORITY_RANK = new Map([['Urgent', 0], ['High', 1], ['Medium', 2], ['Low', 3]]);
 const SHA_PATTERN = /\b[0-9a-f]{40}\b/gi;
 const LEASE_UNTIL_PATTERN = /\b"?leaseUntil"?\s*[=:]\s*"?([^"\s;,}]+)/i;
+const SUPPRESSED_DUPLICATE_PATTERN = /^Suppressed duplicate lifecycle item\b/i;
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -31,6 +32,11 @@ function labelNames(rawPullRequest) {
     if (value && typeof value === 'object') return [value.name].filter(Boolean);
     return [];
   }).sort();
+}
+
+function isDependabotAuthor(author) {
+  const login = String(author ?? '').trim().toLowerCase();
+  return login === 'dependabot' || login === 'dependabot[bot]' || login === 'app/dependabot';
 }
 
 function normalizedType(value) {
@@ -124,6 +130,12 @@ function exactHeads(workerReference) {
   return [...new Set(workerReference.match(SHA_PATTERN) || [])].map(value => value.toLowerCase());
 }
 
+function isSuppressedDuplicateItem(item) {
+  return item?.status === 'Draft' &&
+    typeof item.workerReference === 'string' &&
+    SUPPRESSED_DUPLICATE_PATTERN.test(item.workerReference.trim());
+}
+
 function projectItemsForPullRequest(pullRequest, itemsByIdentity) {
   const identities = [{type: 'PullRequest', number: pullRequest.number}];
   for (const issueNumber of asArray(pullRequest.closingIssueNumbers)) {
@@ -132,12 +144,12 @@ function projectItemsForPullRequest(pullRequest, itemsByIdentity) {
   return identities.flatMap(identity => itemsByIdentity.get(itemKey(identity.type, identity.number)) || []);
 }
 
-function conflictModeFor({pullRequest, canonicalItem, dependabot, reviewable}) {
+function conflictModeFor({pullRequest, canonicalItem, dependabot, reviewable, suppressed}) {
   const hasConflict = reviewable &&
     (pullRequest.mergeable === 'CONFLICTING' || pullRequest.mergeStateStatus === 'DIRTY');
   const routedImplementation = canonicalItem?.status === 'Implementation' &&
     ['Ready', 'In progress'].includes(canonicalItem.execution) && canonicalItem.executor !== null;
-  if (!hasConflict || routedImplementation) return null;
+  if (suppressed || !hasConflict || routedImplementation) return null;
   if (dependabot) return 'dependabot-operation';
   if (pullRequest.repositoryOwnership === 'fork') return 'contributor-feedback';
   if (pullRequest.repositoryOwnership === 'same-repository') return 'same-repository-continuation';
@@ -149,14 +161,17 @@ function pullRequestProjection(pullRequest, rawPullRequestsByNumber, itemsByIden
   const canonicalItems = itemsByIdentity.get(itemKey(canonical.type, canonical.number)) || [];
   const relatedItems = projectItemsForPullRequest(pullRequest, itemsByIdentity);
   const duplicateItems = relatedItems.filter(item => projectIdentity(item) !== itemKey(canonical.type, canonical.number));
+  const suppressedDuplicateItems = duplicateItems.filter(isSuppressedDuplicateItem);
+  const actionableDuplicateItems = duplicateItems.filter(item => !isSuppressedDuplicateItem(item));
   const canonicalItem = canonicalItems[0] ?? null;
+  const suppressed = isSuppressedDuplicateItem(canonicalItem);
   const raw = rawPullRequestsByNumber.get(Number(pullRequest.number)) || {};
   const labels = labelNames(raw);
-  const dependabot = String(pullRequest.author ?? '').toLowerCase().startsWith('dependabot');
+  const dependabot = isDependabotAuthor(pullRequest.author);
   const onBase = pullRequest.baseRefName === baseBranch;
   const reviewable = onBase && pullRequest.isDraft === false;
   const statusNeedsIntake = canonicalItem === null || canonicalItem.status === null || canonicalItem.status === 'Draft';
-  const conflictMode = conflictModeFor({pullRequest, canonicalItem, dependabot, reviewable});
+  const conflictMode = conflictModeFor({pullRequest, canonicalItem, dependabot, reviewable, suppressed});
   return {
     number: pullRequest.number,
     url: pullRequest.url,
@@ -173,8 +188,10 @@ function pullRequestProjection(pullRequest, rawPullRequestsByNumber, itemsByIden
     canonical,
     canonicalProjectItem: canonicalItem,
     duplicateProjectItems: duplicateItems,
+    suppressedDuplicateProjectItems: suppressedDuplicateItems,
+    suppressed,
     isDependabot: dependabot,
-    needsIntake: reviewable && (statusNeedsIntake || duplicateItems.length > 0),
+    needsIntake: reviewable && !suppressed && (statusNeedsIntake || actionableDuplicateItems.length > 0),
     conflictMode,
     conflictCandidate: conflictMode !== null
   };
