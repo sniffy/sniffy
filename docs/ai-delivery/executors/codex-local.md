@@ -18,7 +18,7 @@ proof, and the no-merge boundary. They must not impersonate one another in Worke
 
 The app-native adapter cannot cheaply use Luna for empty ticks while switching to Terra for the claimed lifecycle turn: the
 automation occurrence has one effective model/profile. Correctness therefore requires Terra/medium for the complete app-native
-automation. The separate CLI adapter is the path for restoring a model-free dispatcher.
+automation. The CLI adapter restores a model-free dispatcher without relying on nested app behavior.
 
 ## Route to Local Codex
 
@@ -51,19 +51,27 @@ Canonical prompts are `.codex/local/scheduled-task-prompt.md` and `.codex/local/
 worker template after claim and applies it in the same conversation. Repository merges do not rewrite an embedded automation;
 replace its prompt and model manually and smoke-test it.
 
-## Headless topology
+## Repository-owned CLI topology
 
 ```text
-systemd timer or cron
-  -> flock prevents host overlap
-  -> one normalized queue snapshot and guarded claim
-  -> isolated worktree
-  -> codex exec with Terra/medium lifecycle prompt
-  -> exact branch/PR publication and guarded handoff
+systemd timer
+  -> deterministic shell dispatcher, one normalized Project snapshot
+  -> empty: no Codex invocation
+  -> guarded state=spawning claim with short lease
+  -> one generation manifest + isolated worktree
+  -> codex exec --json with Terra/medium
+  -> thread.started + turn.started strong acknowledgement
+  -> guarded state=running reference
+  -> worker-owned exact branch/PR publication and lifecycle handoff
 ```
 
-`.codex/local/run-issue.sh` remains the legacy one-shot headless entry point. The durable CLI dispatcher/supervisor is delivered
-separately under issue #814.
+The complete install, manifest, acknowledgement, recovery, and security contract is
+[`codex-cli.md`](codex-cli.md). `.codex/local/run-issue.sh` remains a legacy manually invoked one-shot helper; the systemd adapter is
+the recurring production path.
+
+The CLI dispatcher checks only the exact locally owned generation on later ticks. It never invokes a model for an empty queue and
+never performs provider-wide task discovery. An inactive acknowledged process is recovered immediately even when its nominal
+Project lease is still in the future, so process death cannot create a four-hour phantom worker.
 
 ## Shared selection and branch authority
 
@@ -81,10 +89,11 @@ Branch authority is ordered:
 
 1. exact branch of a verified same-repository continuation PR;
 2. explicit branch in the authoritative issue, Project route, or maintainer decision;
-3. only if neither exists, deterministic fresh `agent/issue-<number>-<short-slug>` derivation after the targeted read.
+3. only if neither exists, deterministic fresh `agent/issue-<number>` derivation after the targeted read.
 
 An explicit branch always wins. A conflict returns to Planning or a precise maintainer decision; it never authorizes an invented
-replacement branch.
+replacement branch. The CLI adapter also checks the authoritative branch for an existing open PR or remote ref and resumes it
+instead of creating a duplicate.
 
 Every autonomous command uses the control-plane human-readable Markdown wrapper, exact start/end markers, and lowercase `json`
 fence; the marked JSON is authoritative. Never emit bare JSON. Inspect the terminal reaction and re-read Project state before
@@ -110,15 +119,18 @@ and use one guarded handoff to `Review / Ready / ChatGPT`; a canonical issue inc
 assignment, and exact-head PR state.
 
 The lifecycle owner may renew the same claim/generation before lease expiry. It must perform its own completion signalling and must
-not leave finished work in In progress.
+not leave finished work in In progress. A local `turn.completed` event is useful supervisor evidence but is not a substitute for the
+verified GitHub handoff.
 
-## Recovery
+## Recovery boundaries
 
 App-native same-thread recovery is conversation-scoped: only the same persistent automation may resume a reference naming
 `codex-app-same-thread-v1` and `conversation=self`. It never lists or invents child tasks.
 
-Headless recovery is generation/process/worktree scoped and is specified by issue #814. Neither adapter may adopt ownership from the
-other merely because the Executor field says Local Codex.
+CLI recovery is generation/process/worktree scoped: only `codex-cli-v1` references with an exact local manifest may be inspected.
+Active units are preserved; a strong acknowledgement may repair a lost running-reference update; inactive or failed generations
+are guardedly released to Ready unless a worker already completed the handoff. Neither adapter may adopt ownership from the other
+merely because the Executor field says Local Codex.
 
 ## Telemetry and security
 
