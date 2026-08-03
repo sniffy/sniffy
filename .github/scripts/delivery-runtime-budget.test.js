@@ -32,20 +32,33 @@ test('ChatGPT recurring scheduler is Chat, not Work, and reads compact policy', 
   assert.match(profile, /ChatGPT:[\s\S]*surface:\s*Chat[\s\S]*forbiddenSurface:\s*Work/);
 });
 
-test('Local Codex uses Luna dispatcher, Terra worker, and explicit Sol escalation', () => {
+test('app-native Local Codex uses Terra medium in one thread and forbids nested spawn', () => {
   const profile = read('docs/ai-delivery/profile.yml');
-  const dispatcher = read('.codex/local/scheduled-task-prompt.md');
+  const automation = read('.codex/local/scheduled-task-prompt.md');
   const worker = read('.codex/local/worker-task-prompt.md');
   const runIssue = read('.codex/local/run-issue.sh');
 
-  assert.match(profile, /dispatcherModel:\s*gpt-5\.6-luna/);
-  assert.match(profile, /dispatcherReasoning:\s*low/);
+  assert.match(profile, /appNativeAdapter:\s*codex-app-same-thread-v1/);
+  assert.match(profile, /appNativeModel:\s*gpt-5\.6-terra/);
+  assert.match(profile, /appNativeReasoning:\s*medium/);
+  assert.match(profile, /appNativeSameThread:\s*true/);
+  assert.doesNotMatch(profile, /dispatcherModel:\s*gpt-5\.6-luna/);
+  assert.doesNotMatch(profile, /dispatcherReasoning:\s*low/);
   assert.match(profile, /workerModel:\s*gpt-5\.6-terra/);
   assert.match(profile, /workerReasoning:\s*medium/);
   assert.match(profile, /escalationModel:\s*gpt-5\.6-sol/);
   assert.match(profile, /escalationReasoning:\s*high/);
-  assert.match(dispatcher, /gpt-5\.6-luna.*low/i);
-  assert.match(dispatcher, /gpt-5\.6-terra.*medium/is);
+
+  assert.match(automation, /gpt-5\.6-terra.*medium/is);
+  assert.match(automation, /adapter=codex-app-same-thread-v1/);
+  assert.match(automation, /conversation=self/);
+  assert.match(automation, /same conversation/i);
+  assert.match(automation, /explicit branch.*overrides/is);
+  assert.match(automation, /resume that one generation before considering Ready work/is);
+  assert.match(automation, /Never create a child thread, child task, hidden\s+subagent, `client-new-thread:\*` reference/is);
+  assert.doesNotMatch(automation, /Create exactly one standalone one-time app-owned worker task/i);
+  assert.doesNotMatch(automation, /After confirmed child creation/i);
+
   assert.match(worker, /gpt-5\.6-terra.*medium/is);
   assert.match(runIssue, /CODEX_MODEL:-gpt-5\.6-terra/);
   assert.match(runIssue, /CODEX_REASONING_EFFORT:-medium/);
@@ -94,7 +107,7 @@ test('worker supervision is lease-based stale recovery rather than periodic poll
   assert.match(runtime, /Normal `In progress` ownership is not polled/i);
   assert.match(runtime, /missing, invalid, or expired lease/i);
   assert.match(chat, /valid future `leaseUntil` is invisible to this tick/i);
-  assert.match(dispatcher, /valid future `leaseUntil` consumes capacity and is ignored/i);
+  assert.match(dispatcher, /same-thread generation.*resume/is);
   assert.match(worker, /renew the same\s+claim\/generation before expiry/i);
   assert.match(projection, /stale-owned-recovery/);
   assert.match(projection, /activeInProgressByExecutor/);
