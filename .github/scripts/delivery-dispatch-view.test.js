@@ -357,6 +357,23 @@ test('projects merged completion drift for a canonical issue and standalone PR',
   assert.deepEqual(result.orderedCandidates.map(value => value.kind), ['completion-drift', 'completion-drift']);
 });
 
+test('repairs Done items only when active routing or assignment still lingers', () => {
+  const clean = projectItem(754, {Status: 'Done'}, 'PullRequest', {state: 'CLOSED'});
+  const routed = projectItem(755, {Status: 'Done', Execution: 'Ready', Executor: 'Human'}, 'PullRequest', {state: 'CLOSED'});
+  const assigned = projectItem(756, {Status: 'Done'}, 'PullRequest', {state: 'CLOSED'});
+  const result = buildDispatch(
+    snapshot([clean, routed, assigned]),
+    {items: [rawItem(clean), rawItem(routed), rawItem(assigned, ['bedrin'])]},
+    [
+      rawPullRequest(754, {mergedAt: '2026-08-03T10:00:00Z'}),
+      rawPullRequest(755, {mergedAt: '2026-08-03T10:00:00Z'}),
+      rawPullRequest(756, {mergedAt: '2026-08-03T10:00:00Z'})
+    ],
+    {}
+  );
+  assert.deepEqual(result.completionDrift.map(value => value.item.number), [755, 756]);
+});
+
 test('does not complete a closed unmerged or explicitly suppressed pull request', () => {
   const closed = projectItem(757, {Status: 'Draft'}, 'PullRequest', {state: 'CLOSED'});
   const suppressed = projectItem(761, {
