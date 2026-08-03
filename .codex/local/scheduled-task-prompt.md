@@ -36,8 +36,7 @@ subagent, `client-new-thread:*` reference, or claimed app-owned worktree. Perfor
    inventory, so use only this conversation state and targeted GitHub evidence. Never adopt another adapter's ownership.
 4. If no same-thread generation is resumable, use the already sorted `readyCandidates` and select at most the first canonical
    candidate. Compute available capacity from `executors.Local Codex.maxConcurrentWorkers` minus every item in `ownedInProgress`.
-   The configured maximum is one. Do not call `List projects`, list all tasks/conversations, or use provider-wide inventory on the
-   normal Ready path.
+   The configured maximum is one. Do not call `List projects`, list all tasks/conversations, or use provider-wide inventory on the normal Ready path.
 5. If no resumable or Ready candidate exists, create no target comment, control command, task, worktree, branch, or Project
    mutation. Return NO_CHANGE plus telemetry.
 6. Only after selection, perform the minimum targeted live reads needed to validate canonical identity, source state, formal links,
