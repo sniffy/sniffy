@@ -51,18 +51,19 @@ calls and adds no recurring polling pass.
 
 ### `completion-drift`
 
-A narrow backstop for the normal pre-merge state only:
+A narrow backstop for the normal pre-merge state, plus the small built-in-workflow race:
 
 ```text
-Status = Approval
-Execution = Ready
-Executor = Human
 source PR is already merged
+and either:
+  Status = Approval, Execution = Ready, Executor = Human
+or:
+  Status = Done with lingering Execution, Executor, or Assignee
 ```
 
 For an issue, exactly one linked PR must be present and merged. For a PR item, the item itself must be merged. Historical items in
-Implementation, Draft, or an uninitialized state are deliberately excluded so the hourly ChatGPT loop does not spend many ticks
-cleaning old Project archaeology.
+Implementation, Draft, an uninitialized state, or clean terminal Done are deliberately excluded so the hourly ChatGPT loop does
+not spend many ticks cleaning old Project archaeology.
 
 ### `uninitialized-item`
 
