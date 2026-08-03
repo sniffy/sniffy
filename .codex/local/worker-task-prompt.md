@@ -22,6 +22,8 @@ Implementer: <IMPLEMENTER>
 Verifier: <VERIFIER>
 Claim token: <CLAIM_TOKEN>
 Generation: <DISPATCH_GENERATION>
+Claimed at: <CLAIMED_AT>
+Lease until: <LEASE_UNTIL>
 Model/reasoning: <MODEL> / <REASONING>
 Escalation reason: <ESCALATION_REASON_OR_NONE>
 
@@ -32,6 +34,10 @@ lifecycle/runbook sections needed for <STATUS>. Verify the claim token/generatio
 Use the active control issue for every Project transition. Emit the human-readable Markdown wrapper with exact start/end markers
 and lowercase `json` fence; the marked JSON is authoritative. Never emit bare JSON. A handoff is complete only after the terminal
 reaction and current Project/assignment/PR state are re-read.
+
+This worker owns completion signalling. When its lifecycle turn finishes, it must publish evidence and perform the guarded handoff
+itself; do not rely on the dispatcher to discover normal completion. If legitimate work will exceed <LEASE_UNTIL>, renew the same
+claim/generation before expiry through a guarded Worker reference update. Never let the lease expire silently while still working.
 
 Canonical/branch rules:
 - one closing issue -> issue canonical; no closing issue -> PR canonical; several -> PR Planning;
@@ -51,16 +57,16 @@ If <STATUS> is Implementation:
    while implementation or locally available proof is incomplete.
 5. When complete, mark the PR ready for review and re-read it as open, targeting develop, non-draft, and at the exact published
    head. Synchronize its description and publish exact human-useful evidence.
-6. Hand off through one guarded command to Review / Ready / ChatGPT with PR URL and exact head. For a canonical issue include
-   reviewPullRequest.number and reviewPullRequest.head; for a canonical PR guard expected.head. Verify reaction, Project state,
-   assignment to bedrin-gpt, and non-draft exact-head PR state.
+6. Hand off through one guarded command to Review / Ready / ChatGPT with PR URL and exact head, clearing claim/lease ownership. For
+   a canonical issue include reviewPullRequest.number and reviewPullRequest.head; for a canonical PR guard expected.head. Verify
+   reaction, Project state, assignment to bedrin-gpt, and non-draft exact-head PR state.
 7. Do not review your own implementation or create a reviewer task.
 
 If <STATUS> is Verification:
 1. Identify the observable journey, negative cases, exact implementation head/artifact, and representative environment.
 2. Perform outcome-centric integration/system/browser/compatibility proof rather than repeating unit tests. Record environment,
    actions, logs, requests/errors, screenshots, cleanup, and artifact identity as applicable.
-3. Publish the result and route with one guarded command:
+3. Publish the result and route with one guarded command, clearing claim/lease ownership:
    - pass -> Approval / Ready / Human;
    - implementation defect -> Implementation / Ready / <IMPLEMENTER>, only after deliberate supported routing;
    - evidence/harness defect -> Verification / Ready / <VERIFIER>;
@@ -68,9 +74,9 @@ If <STATUS> is Verification:
    - exact Dmitry action required -> Verification / Blocked / Human.
 4. Do not change production code as an unrecorded verification shortcut.
 
-For either status, routine CI/operation waiting remains In progress with `nextObservationAt`: first after 15 minutes, again after 15
-minutes, then hourly. Leave no finished or missing worker in In progress. Block only for an exact Dmitry decision/action. Never
-perform privileged operations or merge without Dmitry's explicit instruction.
+For either status, a genuine Dmitry decision/action may use Blocked / Human. Routine CI or publication waiting remains In progress
+under the same claim and lease; either finish the handoff in this worker or renew before expiry. Leave no finished worker in
+In progress. Never perform privileged operations or merge without Dmitry's explicit instruction.
 
 Finish with final lifecycle/evidence state and one telemetry JSON object containing startedAt, finishedAt, durationSeconds, model,
 reasoning, canonical target, outcome, exact provider token counters when exposed, or null counters with usageSource=unavailable.
@@ -81,5 +87,6 @@ Never invent exact token usage.
 
 `<WORK_ITEM_TYPE>` is `Issue` or `PullRequest`; `<WORK_MODE>` is `fresh`, `continuation`, `adopted-continuation`, or
 `published-head`; branch/PR/head/ownership/author fields describe the exact live implementation; Implementer/Verifier are deliberate
-routes; claim/generation identify ownership; model/reasoning come from the profile; escalation reason is `none` unless Sol/high was
-deliberately selected. Do not launch with unresolved placeholders or an unverified claim.
+routes; claim/generation identify ownership; claimed/lease timestamps come from the verified guarded claim; model/reasoning come
+from the profile; escalation reason is `none` unless Sol/high was deliberately selected. Do not launch with unresolved placeholders
+or an unverified claim.

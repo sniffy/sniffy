@@ -12,238 +12,127 @@ Status:    Draft -> Planning -> Implementation -> Review -> Verification? -> App
 Execution: Ready | In progress | Blocked
 ```
 
-`Ready` applies to the next action in the current lifecycle status. `Review` is a lifecycle status. `Blocked` preserves where
-work should resume, stops autonomous processing, and routes the next action to Dmitry.
+A local commit is not publication; publication is not lifecycle handoff; handoff is not Review; Review is not Verification;
+Verification is not merge. `Blocked / Human` is reserved for one exact Dmitry decision or action.
 
-Do not replace lifecycle fields with optimistic prose. Track supporting facts independently:
+## Canonical issue and PR
 
-- canonical issue/PR decision;
-- guarded claim/transition result;
-- concrete dispatch acknowledgement;
-- local completion and local proof;
-- remote publication at an exact branch/SHA/PR;
-- PR open/base/draft state at handoff;
-- code review outcome;
-- verification outcome;
-- actual merge or deliberate closure.
+Apply [`pull-request-intake.md`](pull-request-intake.md) before supervising a PR:
 
-A local commit is not publication; publication is not lifecycle handoff; handoff is not review; review is not verification;
-verification is not merge.
+- one formal closing issue -> the issue is canonical and the PR is exact-head implementation evidence;
+- no closing issue -> the PR is canonical;
+- several closing issues -> the PR is canonical in Planning;
+- draft PR -> do not start Review;
+- issue and PR both in Project -> keep one canonical active item and make the duplicate non-claimable.
 
-## Canonical issue and PR supervision
-
-Before supervising a PR, apply [`pull-request-intake.md`](pull-request-intake.md):
-
-- one formal closing issue -> supervise lifecycle on that issue and keep the PR exact head in Worker reference;
-- no closing issue -> supervise lifecycle on the PR itself;
-- several closing issues -> supervise Planning on the PR and suppress duplicate linked-issue work until scope is resolved.
-
-If both an issue and its PR appear in Project 2, do not start two workers or Reviews. Preserve one canonical active item and make
-the duplicate non-claimable through a guarded reconciliation. Every status report names both the canonical item and exact PR head
-when implementation exists.
+Every report names the canonical item and the exact implementation PR head when one exists.
 
 ## Lifecycle handoff
 
-A worker completes one lifecycle turn and writes the next route through the common guarded protocol in
-[`control-plane.md`](control-plane.md):
+A worker owns one lifecycle turn and must publish its own completion signal through the common guarded protocol:
 
-- Planning records `Implementer` when a future Implementation turn is needed and records `Verifier`; handoff to Dmitry stays
-  `Planning / Ready / Human`.
-- Planning approval may write `Implementation / Ready / Executor := Implementer` only when Implementer is non-empty and
-  deliberately selected.
-- Implementation publication marks the PR ready when local proof is complete, re-reads open/develop/non-draft/exact-head state,
-  then writes the canonical item to `Review / Ready / Executor = ChatGPT` with PR URL and exact head in Worker reference.
-- The guarded Review command identifies that PR structurally: target plus `expected.head` for a canonical PR, or
-  `reviewPullRequest.number/head` for a canonical issue.
-- Universal PR intake performs the same Review handoff only for a non-draft PR that appeared outside the delivery system, leaving
-  Implementer unchanged/empty.
-- A multi-issue PR enters `Planning / Ready / ChatGPT` before Review.
-- Successful Review writes `Verification / Ready / Executor := Verifier` or `Approval / Ready / Human` when evidence is already
-  sufficient.
-- Successful Verification writes `Approval / Ready / Human`.
-- Approval becomes `Done` only after actual merge or deliberate closure.
+- Planning records deliberate future Implementer/Verifier routes;
+- Implementation publishes one intended PR, marks it ready for review, verifies open/develop/non-draft/exact-head state, and hands
+  the canonical item to `Review / Ready / ChatGPT`;
+- Review routes to Verification, Approval, a deliberate correction route, Planning, or Human;
+- Verification routes to Approval or a precisely classified correction;
+- Approval becomes Done only after actual merge or deliberate closure.
 
-Once a claimed Review concludes, its technical outcome and durable lifecycle route are one logical outcome in the same tick.
-GitHub review or comment publication, the guarded Project mutation, and assignment remain separate operations and each must be
-verified, but failure or inability to submit a formal review does not permit the exact head to remain `Review / Ready / ChatGPT`.
+A command setting Review identifies the exact PR structurally: target plus `expected.head` for a canonical PR, or
+`reviewPullRequest.number/head` for a canonical issue. Every handoff clears stale claim/lease ownership. Assignment and PR state are
+updated and verified separately.
 
-The control plane re-checks the review PR after all expected-state guards pass and marks it ready if an executor left it draft. That
-is a final invariant and recovery mechanism, not permission for executors to skip publication. It verifies the same exact head
-before Project Review is written.
-
-A blank Implementer is valid outside a routed Implementation turn. It must not prevent canonicalization, intake, Review, rebase or
-contributor monitoring, Verification, Approval, blocking, supersession, or closure. When Review or Verification discovers that new
-code is needed and Implementer is empty, deliberately choose a supported executor before entering Implementation.
-
-Every handoff clears stale worker ownership and lease data. GitHub assignment is updated separately and verified; a Project field
-transition does not prove assignment succeeded. A Review handoff additionally re-reads PR draft/head state after the terminal
-control reaction.
+Every autonomous control command uses the human-readable Markdown wrapper from [`control-plane.md`](control-plane.md), its exact
+start/end markers, and a lowercase `json` fence. The marked JSON is authoritative. Never use target-item polling or lease comments
+as a substitute for the central control protocol.
 
 ## Dispatch proof
 
-- A Cloud implementation is dispatched only after the proven trigger has a connector reaction, task link, or equivalent durable
-  acknowledgement. A review mention alone is not implementation dispatch.
-- Codex Cloud does not poll Project 2. ChatGPT owns dispatch for a valid `Implementation / Ready / Codex Cloud` route: claim while
-  preserving Executor, issue exactly one supported trigger, record durable acknowledgement and the first observation point, or
-  release the provisional claim to Ready when the trigger was not submitted or was definitively rejected. A submitted trigger
-  with uncertain acknowledgement remains one provisional generation for targeted recovery; never redispatch it blindly.
-- An app-native Local Codex item is dispatched only after a verified claim plus a concrete worker task/chat/worktree.
-- A headless Local Codex item is dispatched only after a verified claim plus process/worktree/branch record.
-- An adopted existing PR is dispatched only after the canonical Project item explicitly routes the exact same-repository PR,
-  branch, and head to the selected executor.
-- An IDE agent is working only while the human explicitly owns the interactive session or remote evidence proves activity.
-- A ChatGPT scheduled tick is working only after its guarded claim succeeded and it began the exact lifecycle operation.
-- A ChatGPT direct-execution task is working only after the exact GitHub or sandbox operation began.
+`In progress` is valid only with a successful guarded claim and a concrete worker or external-operation reference:
 
-`In progress` with no verified claim/current worker or observable external-operation reference is invalid. When execution or
-external dispatch cannot start, release to `Ready`. Set `Blocked` only when Dmitry must decide or act; set `Executor = Human`,
-assign `bedrin`, and record the exact requested action.
+- Codex Cloud: exact trigger plus durable acknowledgement or one preserved provisional generation;
+- Local Codex app: concrete task/chat/worktree;
+- Local Codex CLI: concrete process/worktree/branch;
+- adopted continuation: exact same-repository PR/branch/head selected by the canonical route;
+- contributor/bot operation: exact PR/head plus the concrete requested operation.
 
-## Queue polling, PR intake, and worker monitoring
+For supervised Cloud dispatch, claim while preserving Executor and record the exact trigger generation plus lease.
+When a trigger was not submitted or was definitively rejected, release the provisional claim to Ready. When submission succeeded
+but acknowledgement is uncertain, preserve one provisional generation under a short lease; never redispatch it blindly.
 
-Queue polling and worker follow-up are responsibilities of the same event loop:
+## Lease-based stale recovery
 
-- **Universal PR intake** scans every open PR targeting `develop`, canonicalizes issue versus PR, and materializes reviewable work
-  before ordinary queue selection.
-- **Queue polling** finds canonical `Ready` work and claims it. Desired logical cadence is every 15 minutes.
-- **Supervised external dispatch** lets the ChatGPT loop select configured `Ready / Codex Cloud` work even though ChatGPT is not
-  the Implementer. The acknowledged dispatch, not the Ready route alone, starts worker monitoring.
-- **Ready-route reconciliation** repairs a non-Human Ready item whose Assignee belongs to a different executor pool; such an item
-  must not disappear from every dispatcher's eligibility filter.
-- **Worker/operation monitoring** observes an existing implementation, correction, CI wait, contributor update, bot rebase, or
-  draft publication after 15 minutes, again 15 minutes later, then hourly while incomplete. It includes ChatGPT-supervised Codex
-  Cloud `In progress` routes even though their Executor field remains Codex Cloud.
-- **Control-log maintenance** rotates the active technical issue when a needed command would exceed the documented threshold.
+The scheduler checks the queue every 15 minutes, but it does **not** poll healthy workers every 15 minutes. A worker is responsible
+for updating the canonical issue/PR and performing the guarded lifecycle handoff when it finishes.
 
-Do not create an additional monitoring Scheduled Task. A normal dispatcher tick first checks whether an existing owned worker or
-PR operation is due for observation; only then may it claim unrelated work.
+Every claim records at least:
 
-Every new delegated task, retry, continuation, adopted PR, executor change, or Request Changes return starts the normal
-observation cycle:
+```text
+claimToken
+generation
+claimedAt
+leaseUntil
+worker/task/process/branch/PR reference
+```
 
-1. observe after 15 minutes;
-2. if incomplete, observe 15 minutes later;
-3. if still incomplete, observe hourly.
+A valid future `leaseUntil` means ownership is active. Normal dispatcher ticks:
 
-Each observation re-reads canonical fields, linked issues/PR, intended executor and assignee, worker record, exact branch/head,
-acknowledgement or new head, draft state, review threads, and current CI. `Implementer` may be empty; current ownership comes from
-`Executor`, `Assignee`, and Worker reference. Notify the target conversation only on meaningful progress, completion, or a real
-blocker. Routine “still running” telemetry remains in the scheduler/worker transcript.
+- count it against executor capacity;
+- do not open the worker conversation/task;
+- do not query provider-wide inventory;
+- do not post “still running” comments;
+- do not schedule a second monitor.
 
-A dispatch comment does not prove work started. Verify acknowledgement, process/task reference, or new remote evidence. Stop
-monitoring when lifecycle handoff completes or Dmitry owns a blocked next action.
+A worker that legitimately needs more time renews the same claim/generation before expiry through a guarded update. Completion is
+signalled by its normal evidence plus guarded handoff, which clears claim and lease data.
+
+An item becomes a stale-recovery candidate only when the Worker reference is missing, the lease is missing/invalid, or
+`leaseUntil` has expired. The next ordinary scheduler tick performs one targeted recovery:
+
+1. re-read the canonical item, exact worker reference, branch/PR/head, and relevant GitHub evidence;
+2. if the lifecycle handoff already completed, do nothing;
+3. if the same worker is demonstrably active, preserve its generation and extend the lease;
+4. if completion evidence exists but the handoff was lost, finish the deterministic handoff;
+5. if the worker failed or disappeared, recover the same workspace/branch/generation where possible;
+6. release to Ready only when no active work or recoverable publication remains;
+7. never create a duplicate generation, branch, or PR.
+
+CI waits, contributor updates, Dependabot operations, rebases, and draft publication use bounded operation leases too. They are
+revisited after lease expiry, or earlier only when a GitHub event has already produced a new actionable lifecycle state. There is no
+staged periodic per-worker observation cycle and no separate monitoring scheduler.
 
 ## Branch and PR continuity
 
-- Fresh work uses one new branch from current `develop` and one intended PR unless independently useful slices were approved.
-- Continuation/adopted-continuation work reuses the exact open same-repository branch and PR, regardless of whether Dmitry,
-  ChatGPT, Codex, or an IDE agent originally created it.
-- The canonical route, effective push permission, and absence of competing ownership authorize adoption; author identity alone does
-  not.
-- Changing executor preserves useful published work; do not reset to `develop`, rebase, force-push, or create a duplicate PR.
-- When `develop` moves materially before handoff, normally merge current `origin/develop` into the feature branch and rerun
-  exact-head proof. Do not use a stale green run as final evidence.
-- Preserve completed work when publication fails. Recover the existing commit/workspace rather than rebuilding by default.
-- Implementation publication is incomplete until the PR is open, targets `develop`, is ready for review (`draft = false`) at the
-  exact published head, and the canonical item has a verified guarded `Review / Ready / ChatGPT` handoff.
+Fresh work uses one branch and one intended PR. Continuation reuses the exact open same-repository branch and PR regardless of who
+created it. Changing executor preserves useful commits and evidence; never reset to develop, rebase, force-push, or open a duplicate
+PR merely because ownership changed.
 
-For fork PRs:
-
-- review the contributor's exact head without privileged execution of untrusted code;
-- submit contributor-facing Request Changes and monitor for a new head;
-- do not autonomously push to the fork or adopt the branch;
-- create a linked internal replacement task only after an explicit routing decision.
-
-For Dependabot and other managed automation PRs:
-
-- review the bot's exact head directly when the update is self-contained;
-- request the documented rebase rather than rewriting its branch for a stale base or conflict;
-- keep `Executor = ChatGPT` while waiting and record old head plus next observation point;
-- do not require or set Implementer merely to monitor the external operation;
-- do not normally push compatibility fixes onto the bot branch;
-- create a linked issue and agent-owned replacement PR when implementation changes are required;
-- keep the source PR blocked/superseded with explicit links and rationale.
+Fork PRs remain contributor-owned. Dependabot and other managed automation branches remain bot-owned. Use contributor feedback,
+documented bot operations, or a deliberate internal replacement task instead of autonomous branch adoption.
 
 ## Review and correction
 
-Review audits the whole acceptance-to-proof matrix, not only the visible delta. Inspect:
+Review inspects the complete exact-head diff, authoritative requirements, tests actually run, generated/unrelated files, unresolved
+threads, and matching-head CI/artifacts. Publish one comprehensive result.
 
-- complete exact-head diff and scope;
-- every authoritative/closing issue and later decision;
-- architecture, module/API ownership, compatibility, lifecycle, and resource safety;
-- test design, discovery, and implementer proof;
-- dependencies, workflows, permissions, and standard-tooling rationale;
-- generated/unrelated files, documentation, migration, rollback, and PR-body accuracy;
-- unresolved comments and threads;
-- exact-head CI statuses and relevant logs.
+Formal review requires an identity independent from the PR author. When blockers remain:
 
-Report independent findings together. One comprehensive Request Changes is better than serial discovery of unrelated blockers.
+- independent reviewer -> comprehensive `REQUEST_CHANGES`;
+- PR author identity -> the same complete findings as an ordinary PR comment, explicitly stating the identity limitation.
 
-A Request Changes result does not justify assigning the PR author as Implementer. Choose among:
+The technical Review outcome and durable route complete in the same tick. Route code/design defects to `Implementation / Ready`
+after choosing an eligible Implementer; requirements/architecture/canonicalization defects to `Planning / Ready / ChatGPT`; and
+one exact maintainer action to `Blocked / Human`. A technically acceptable self-authored PR proceeds to Verification or
+`Approval / Ready / Human` rather than remaining in Review.
 
-- same-repository focused correction by ChatGPT on the exact branch;
-- same-repository complex/persistent correction by Local Codex adopted continuation;
-- contributor-owned correction for a fork PR;
-- documented bot operation for Dependabot/managed automation;
-- linked internal replacement task when direct branch correction is unsafe or inappropriate;
-- return to Planning when scope, canonicalization, architecture, or proof is unresolved.
+If corrected work returns to Review and still has substantive blockers, perform the convergence checkpoint in [`routing.md`](routing.md)
+before another implementation dispatch. Continue coherently, preserve and escalate the existing PR, return to Planning, or request
+one exact Dmitry decision. Infrastructure noise is not a substantive correction round.
 
-After correction, the implementation worker publishes a new exact head, marks the PR ready, verifies non-draft exact-head state,
-and hands the same canonical item back to Review. Do not create a second issue or PR solely because ownership changed.
+## Target-comment noise and merge boundary
 
-### Convergence checkpoint
+The canonical issue/PR contains human-useful plans, reviews, proof, blockers, and handoffs. Technical commands, claims, leases, and
+recovery details stay in the rotating control log and scheduler telemetry.
 
-The checkpoint is not a timer and does not create another process. It is a required Review decision inside the normal lifecycle.
-
-Trigger it when a substantive Request Changes returned work to Implementation, the corrected head came back to Review, and the
-next complete Review still finds substantive blockers. Before another correction dispatch, ChatGPT performs the critical analysis
-in [`routing.md`](routing.md): verify the canonical item, architecture, acceptance criteria, proof strategy, executor capability,
-branch continuity, and whether another narrow patch would converge.
-
-The checkpoint must explicitly choose one route:
-
-- continue the same executor with coherent superseding guidance;
-- preserve/adopt the branch and PR and escalate continuation to Local Codex;
-- return to Planning and re-baseline architecture/requirements/canonicalization/proof;
-- block for one exact Dmitry decision or action.
-
-Do not automatically send a third list of local edits. Do not automatically escalate for infrastructure noise or an ordinary
-failing check. Record substantive correction rounds separately from CI/provider noise.
-
-After an executor change, start the normal 15-minute observation cycle only when the replacement dispatch is concretely
-acknowledged. The convergence checkpoint itself needs no schedule.
-
-## Review identities
-
-Formal review must use an identity independent from the PR author.
-
-- When independent review is available and proof passes, submit `APPROVE`.
-- When blockers remain and the identity is independent, submit one precise `REQUEST_CHANGES`, then explicitly route the canonical
-  item in the same Review tick.
-- When blockers remain and the active identity is the PR author, publish the same complete blocking feedback as an ordinary PR
-  comment, state the identity limitation, and explicitly route the canonical item in the same Review tick. Do not wait for the
-  formal-review return adapter.
-- Route an implementation, code, or design defect to `Implementation / Ready` only after deliberately selecting an eligible
-  Implementer and preserving the same same-repository branch, PR, and exact head. Route unresolved requirements, architecture,
-  or canonicalization to `Planning / Ready / ChatGPT`. Use `Blocked / Human` only when one exact Dmitry decision or action is
-  required.
-- When proof passes but the identity is the PR author, continue to required Verification or `Approval / Ready / Human`; inability
-  to self-approve must not park the exact head in Review.
-
-A Dmitry-, Dependabot-, external-contributor-, or other independently authored PR may receive a formal `bedrin-gpt` review.
-A `bedrin-gpt`-authored PR cannot. That identity rule comes from the PR author, not the optional Project Implementer field.
-
-## Target-comment noise policy
-
-The central control issue stores technical Project transition commands. Do not post claim intents, field commands, lease
-arbitration, polling notices, or winner/loser messages on the target item.
-
-The canonical issue/PR should contain only human-useful plans, review decisions, publication/verification evidence, real blockers,
-and meaningful handoffs. Linked PR review conversations remain the right place for formal reviews and inline findings. Preserve
-technical control commands for troubleshooting in the rotating log rather than deleting them.
-
-## Merge and privileged boundaries
-
-No agent or supervising workflow may merge, enable auto-merge, bypass protection, rewrite shared history, or perform privileged
-repository/hosting operations without Dmitry's explicit instruction. `Approval / Ready` is the human acceptance queue. This
-boundary applies to all PR sources.
+No agent may merge, enable auto-merge, bypass protection, rewrite shared history, or perform privileged repository/hosting
+operations without Dmitry's explicit instruction.

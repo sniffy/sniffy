@@ -77,3 +77,35 @@ test('generated status artifact includes deterministic dispatch projection', () 
   assert.match(workflow, /--executor-assignees/);
   assert.match(workflow, /project-2-status\.json/);
 });
+
+test('worker supervision is lease-based stale recovery rather than periodic polling', () => {
+  const profile = read('docs/ai-delivery/profile.yml');
+  const runtime = read('docs/ai-delivery/runtime-contract.md');
+  const chat = read('.chatgpt/scheduled-task-prompt.md');
+  const dispatcher = read('.codex/local/scheduled-task-prompt.md');
+  const worker = read('.codex/local/worker-task-prompt.md');
+  const projection = read('.github/scripts/delivery-dispatch-view.js');
+  const combined = [profile, runtime, chat, dispatcher, worker, projection].join('\n');
+
+  assert.match(profile, /mode:\s*lease-based-stale-recovery/);
+  assert.match(profile, /schedulerChecksOnlyExpiredOrInvalidLease:\s*true/);
+  assert.match(profile, /workerMayRenewBeforeExpiry:\s*true/);
+  assert.match(profile, /leaseMinutes:[\s\S]*Codex Cloud:\s*120[\s\S]*Local Codex:\s*240/);
+  assert.match(runtime, /Normal `In progress` ownership is not polled/i);
+  assert.match(runtime, /missing, invalid, or expired lease/i);
+  assert.match(chat, /valid future `leaseUntil` is invisible to this tick/i);
+  assert.match(dispatcher, /valid future `leaseUntil` consumes capacity and is ignored/i);
+  assert.match(worker, /renew the same\s+claim\/generation before expiry/i);
+  assert.match(projection, /stale-owned-recovery/);
+  assert.match(projection, /activeInProgressByExecutor/);
+  assert.match(projection, /staleInProgressByExecutor/);
+
+  assert.doesNotMatch(combined, /nextObservationAt/);
+  assert.doesNotMatch(combined, /dueInProgress/);
+  assert.doesNotMatch(combined, /due-owned-observation/);
+  assert.doesNotMatch(combined, /initialObservationMinutes/);
+  assert.doesNotMatch(combined, /secondObservationMinutes/);
+  assert.doesNotMatch(combined, /incompleteObservationMinutes/);
+  assert.doesNotMatch(combined, /15\/15\/hourly/i);
+  assert.doesNotMatch(combined, /second-15-minute/i);
+});

@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const DOWNSTREAM_HEAD_STATUSES = new Set(['Review', 'Verification', 'Approval']);
 const PRIORITY_RANK = new Map([['Urgent', 0], ['High', 1], ['Medium', 2], ['Low', 3]]);
 const SHA_PATTERN = /\b[0-9a-f]{40}\b/gi;
-const NEXT_OBSERVATION_PATTERN = /nextObservationAt\s*[=:]\s*([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?)/i;
+const LEASE_UNTIL_PATTERN = /\b"?leaseUntil"?\s*[=:]\s*"?([^"\s;,}]+)/i;
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -62,11 +62,14 @@ function compareCandidates(left, right) {
   return 0;
 }
 
+function leaseUntilFrom(workerReference) {
+  if (typeof workerReference !== 'string') return null;
+  return workerReference.match(LEASE_UNTIL_PATTERN)?.[1] ?? null;
+}
+
 function compactItem(item, rawById) {
   const raw = rawById.get(item.projectItemId) || {};
   const workerReference = field(item, 'Worker reference');
-  const nextMatch = typeof workerReference === 'string' ? workerReference.match(NEXT_OBSERVATION_PATTERN) : null;
-  const nextObservationAt = nextMatch?.[1] ?? null;
   return {
     projectItemId: item.projectItemId,
     repository: item.content?.repository ?? null,
@@ -87,7 +90,7 @@ function compactItem(item, rawById) {
     priority: field(item, 'Priority'),
     readyTimestamp: field(item, 'Ready timestamp'),
     workerReference,
-    nextObservationAt,
+    leaseUntil: leaseUntilFrom(workerReference),
     assignees: assigneeLogins(raw)
   };
 }
@@ -191,6 +194,17 @@ function staleExactHeadCandidate(projection) {
   };
 }
 
+function staleOwnershipReason(item, generatedAt) {
+  if (typeof item.workerReference !== 'string' || item.workerReference.trim() === '') {
+    return 'missing-worker-reference';
+  }
+  if (!item.leaseUntil) return 'missing-lease';
+  const leaseUntil = Date.parse(item.leaseUntil);
+  if (!Number.isFinite(leaseUntil)) return 'invalid-lease';
+  if (!Number.isFinite(generatedAt)) return 'invalid-snapshot-time';
+  return leaseUntil <= generatedAt ? 'lease-expired' : null;
+}
+
 function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
   const baseBranch = options.baseBranch ?? 'develop';
   const executorAssignees = options.executorAssignees || {};
@@ -207,11 +221,11 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
   const ready = compactItems.filter(item => item.execution === 'Ready');
   const inProgress = compactItems.filter(item => item.execution === 'In progress');
   const generatedAt = Date.parse(snapshot.generatedAt);
-  const dueInProgress = inProgress.filter(item => {
-    if (!item.nextObservationAt) return true;
-    const dueAt = Date.parse(item.nextObservationAt);
-    return !Number.isFinite(dueAt) || !Number.isFinite(generatedAt) || dueAt <= generatedAt;
-  });
+  const staleInProgress = inProgress
+    .map(item => ({...item, staleReason: staleOwnershipReason(item, generatedAt)}))
+    .filter(item => item.staleReason !== null);
+  const staleIds = new Set(staleInProgress.map(item => item.projectItemId));
+  const activeInProgress = inProgress.filter(item => !staleIds.has(item.projectItemId));
 
   const routeMismatches = ready.filter(item => {
     const expected = executorAssignees[item.executor];
@@ -234,10 +248,10 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
     ...intake.map(value => ({kind: 'pr-intake', canonical: value.canonical, pullRequest: value})),
     ...staleExactHead,
     ...routeMismatches.map(value => ({kind: 'route-mismatch', item: value})),
-    ...dueInProgress
+    ...staleInProgress
       .filter(value => value.executor === 'ChatGPT' || value.executor === 'Codex Cloud')
       .sort(compareCandidates)
-      .map(value => ({kind: 'due-owned-observation', item: value})),
+      .map(value => ({kind: 'stale-owned-recovery', item: value})),
     ...ready
       .filter(value => value.executor === 'Codex Cloud')
       .sort(compareCandidates)
@@ -253,7 +267,8 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
     baseBranch,
     readyByExecutor: groupByExecutor(ready),
     inProgressByExecutor: groupByExecutor(inProgress),
-    dueInProgressByExecutor: groupByExecutor(dueInProgress),
+    activeInProgressByExecutor: groupByExecutor(activeInProgress),
+    staleInProgressByExecutor: groupByExecutor(staleInProgress),
     routeMismatches,
     pullRequests: {conflicting, managedConflicts, intake, drafts},
     staleExactHead,
@@ -261,7 +276,8 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
     counts: {
       ready: ready.length,
       inProgress: inProgress.length,
-      dueInProgress: dueInProgress.length,
+      activeInProgress: activeInProgress.length,
+      staleInProgress: staleInProgress.length,
       routeMismatches: routeMismatches.length,
       conflictingPullRequests: conflicting.length,
       managedConflictPullRequests: managedConflicts.length,
@@ -298,7 +314,8 @@ function main(argv) {
   });
   snapshot.semantics = {
     ...(snapshot.semantics || {}),
-    dispatch: 'deterministic selection projection; live-read only the selected candidate before a guarded mutation'
+    dispatch: 'deterministic selection projection; live-read only the selected candidate before a guarded mutation',
+    inProgress: 'active ownership is ignored until lease expiry; only missing, invalid, or expired leases enter stale recovery'
   };
   fs.writeFileSync(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`);
 }
@@ -312,4 +329,11 @@ if (require.main === module) {
   }
 }
 
-module.exports = {buildDispatch, canonicalIdentity, compareCandidates, exactHeads};
+module.exports = {
+  buildDispatch,
+  canonicalIdentity,
+  compareCandidates,
+  exactHeads,
+  leaseUntilFrom,
+  staleOwnershipReason
+};

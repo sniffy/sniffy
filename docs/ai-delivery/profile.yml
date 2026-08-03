@@ -106,9 +106,15 @@ routing:
   mergeExecutor: Human
 
 supervision:
-  initialObservationMinutes: 15
-  secondObservationMinutes: 15
-  incompleteObservationMinutes: 60
+  mode: lease-based-stale-recovery
+  schedulerChecksOnlyExpiredOrInvalidLease: true
+  workerMayRenewBeforeExpiry: true
+  leaseMinutes:
+    ChatGPT: 60
+    Codex Cloud: 120
+    Local Codex: 240
+    externalOperation: 60
+    provisionalDispatch: 30
 
 telemetry:
   required: true

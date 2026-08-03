@@ -20,7 +20,7 @@ test('ChatGPT dispatcher scans and canonicalizes every develop pull request', ()
   assert.match(prompt, /No formal closing issue: the non-draft PR itself is the canonical lifecycle item/i);
   assert.match(prompt, /Multiple formal closing issues: the non-draft PR is the canonical coordination item/i);
   assert.match(prompt, /Draft PR: do not start Review/i);
-  assert.match(prompt, /regardless of author, label, bot\/provider, branch creator/i);
+  assert.match(prompt, /regardless of author,\s*label, bot\/provider, or branch creator/i);
   assert.doesNotMatch(prompt, /Find eligible open sniffy\/sniffy dependency PRs missing/i);
 });
 
@@ -37,28 +37,51 @@ test('profile makes universal intake and existing-PR routing explicit', () => {
   assert.match(profile, /Local Codex:[\s\S]*maxConcurrentWorkers:\s*1/);
 });
 
-test('ChatGPT supervises Ready Codex Cloud dispatch instead of stranding it', () => {
+test('ChatGPT supervises Ready Codex Cloud dispatch without polling healthy workers', () => {
   const prompt = read('.chatgpt/scheduled-task-prompt.md');
   const profile = read('docs/ai-delivery/profile.yml');
   const eventLoop = read('docs/ai-delivery/event-loop.md');
   const supervision = read('docs/ai-delivery/supervision.md');
 
   assert.match(profile, /Codex Cloud:[\s\S]*dispatchMode:\s*supervised[\s\S]*dispatchOwner:\s*ChatGPT/);
-  assert.match(prompt, /supervised Codex Cloud dispatch:[\s\S]*Status = Implementation[\s\S]*Execution = Ready[\s\S]*Executor = Codex Cloud/i);
-  assert.match(prompt, /Codex Cloud does not poll Project 2/i);
-  assert.match(prompt, /post one\s+exact implementation trigger[\s\S]*durable acknowledgement/i);
-  assert.match(prompt, /If the trigger was\s+not submitted or was definitively rejected, release to Ready/i);
-  assert.match(prompt, /submission succeeded but acknowledgement is uncertain[\s\S]*never redispatch that generation/i);
-  assert.match(prompt, /first 15-minute observation point/i);
-  assert.match(prompt, /ChatGPT-supervised Codex Cloud `Execution = In progress` items/i);
-  assert.match(eventLoop, /dispatchMode: supervised[\s\S]*ChatGPT as\s+its dispatch owner/i);
-  assert.match(supervision, /claim while\s+preserving Executor[\s\S]*release the provisional claim to Ready/i);
+  assert.match(prompt, /supervised Codex Cloud dispatch[\s\S]*Status = Implementation[\s\S]*Execution = Ready[\s\S]*Executor = Codex Cloud/i);
+  assert.match(prompt, /Codex Cloud\s+does not poll Project 2/i);
+  assert.match(prompt, /post one exact implementation trigger[\s\S]*durable acknowledgement/i);
+  assert.match(prompt, /trigger was not submitted or was definitively rejected, release to Ready/i);
+  assert.match(prompt, /submission succeeded but acknowledgement is uncertain[\s\S]*never redispatch it/i);
+  assert.match(prompt, /concrete generation plus lease/i);
+  assert.match(eventLoop, /dispatchMode: supervised[\s\S]*ChatGPT as its dispatch owner/i);
+  assert.match(supervision, /claim while preserving Executor/i);
+  assert.match(supervision, /release the provisional claim to Ready/i);
+  assert.match(supervision, /does \*\*not\*\* poll healthy workers every 15 minutes/i);
+});
+
+test('lease-based stale recovery replaces periodic worker observation', () => {
+  const profile = read('docs/ai-delivery/profile.yml');
+  const runtime = read('docs/ai-delivery/runtime-contract.md');
+  const prompt = read('.chatgpt/scheduled-task-prompt.md');
+  const localDispatcher = read('.codex/local/scheduled-task-prompt.md');
+  const localWorker = read('.codex/local/worker-task-prompt.md');
+  const projection = read('.github/scripts/delivery-dispatch-view.js');
+  const combined = [profile, runtime, prompt, localDispatcher, localWorker, projection].join('\n');
+
+  assert.match(profile, /mode:\s*lease-based-stale-recovery/);
+  assert.match(profile, /schedulerChecksOnlyExpiredOrInvalidLease:\s*true/);
+  assert.match(profile, /workerMayRenewBeforeExpiry:\s*true/);
+  assert.match(runtime, /Normal `In progress` ownership is not polled/i);
+  assert.match(prompt, /valid future `leaseUntil` is invisible to this tick/i);
+  assert.match(localDispatcher, /valid future `leaseUntil` consumes capacity and is ignored/i);
+  assert.match(localWorker, /perform the guarded handoff\s+itself/i);
+  assert.match(localWorker, /renew the same\s+claim\/generation before expiry/i);
+  assert.match(projection, /stale-owned-recovery/);
+  assert.match(projection, /activeInProgressByExecutor/);
+  assert.match(projection, /staleInProgressByExecutor/);
+  assert.doesNotMatch(combined, /nextObservationAt|dueInProgress|due-owned-observation|second-15-minute|15\/15\/hourly/i);
 });
 
 test('configured Ready routes with the wrong assignee require reconciliation', () => {
   const prompt = read('.chatgpt/scheduled-task-prompt.md');
   const eventLoop = read('docs/ai-delivery/event-loop.md');
-
   assert.match(prompt, /unclaimable `Execution = Ready` route[\s\S]*Assignee belongs to a different executor pool/i);
   assert.match(prompt, /Never silently filter out that mismatch/i);
   assert.match(eventLoop, /Ready route whose Assignee belongs to another executor pool is a supervisory reconciliation obligation/i);
@@ -71,7 +94,7 @@ test('Local Codex can adopt an explicitly routed same-repository PR without dupl
   assert.match(worker, /adopted-continuation/);
   assert.match(worker, /reuse the exact same-repository open PR branch/i);
   assert.match(worker, /never adopt a fork or Dependabot branch/i);
-  assert.match(worker, /Do\s+not create a fresh branch or duplicate PR/i);
+  assert.match(worker, /do not create a fresh branch or duplicate PR/i);
   assert.match(dispatcher, /existing same-repository PR may be an adopted continuation/i);
   assert.match(dispatcher, /Reuse the exact branch and PR/i);
   assert.match(dispatcher, /Do not adopt fork or Dependabot branches/i);
@@ -93,7 +116,7 @@ test('Cloud does not turn arbitrary existing PRs into duplicate fresh work', () 
   const cloud = read('docs/ai-delivery/executors/codex-cloud.md');
   assert.match(cloud, /Do not route an arbitrary existing PR/i);
   assert.match(cloud, /Cloud must not open a duplicate branch\/PR/i);
-  assert.match(cloud, /existing-PR continuation normally goes to Local Codex/i);
+  assert.match(cloud, /existing-PR continuation\s+normally goes to Local Codex/i);
 });
 
 test('delivery executors require readable control comments with authoritative marked JSON', () => {
@@ -150,7 +173,6 @@ test('every implementation executor publishes a non-draft exact-head PR before R
   const worker = read('.codex/local/worker-task-prompt.md');
   const control = read('docs/ai-delivery/control-plane.md');
   const workflow = read('.github/workflows/delivery-control.yml');
-
   assert.match(prompt, /reviewPullRequest\.number.*reviewPullRequest\.head/is);
   assert.match(worker, /reviewPullRequest\.number.*reviewPullRequest\.head/is);
   assert.match(control, /reviewPullRequest/);
@@ -169,8 +191,8 @@ test('blocking Review always publishes feedback and completes a same-tick durabl
 
   assert.match(prompt, /reviewer is independent[\s\S]*comprehensive REQUEST_CHANGES/i);
   assert.match(prompt, /reviewer is the PR author[\s\S]*ordinary\s+PR\s+comment[\s\S]*identity limitation/i);
-  assert.match(prompt, /In either case, route the canonical item durably in this same tick/i);
-  assert.match(prompt, /never leave the reviewed exact head in Review \/ Ready \/ ChatGPT/i);
+  assert.match(prompt, /In either case route the canonical item durably in this same tick/i);
+  assert.match(prompt, /never leave the\s+reviewed exact head in Review \/ Ready \/ ChatGPT/i);
   assert.match(prompt, /do not wait for the formal-review return adapter/i);
   assert.match(prompt, /technically acceptable[\s\S]*Verification or Approval \/ Ready \/ Human/i);
 
@@ -198,11 +220,11 @@ test('Local Codex uses one bounded normalized Project snapshot per tick', () => 
   assert.match(dispatcher, /project-queue-snapshot\.sh` exactly once/i);
   assert.match(dispatcher, /only normal full-Project query/i);
   assert.match(dispatcher, /Do not run `gh project item-list`/i);
-  assert.match(dispatcher, /Do not switch to another\s+connector, combine stale snapshots/i);
-  assert.match(dispatcher, /Compute available capacity from `executors\.Local Codex\.maxConcurrentWorkers`[\s\S]*`ownedInProgress`/i);
-  assert.match(dispatcher, /Do not call `List projects`[\s\S]*provider-wide inventory on\s+the normal `Ready` claim path/i);
-  assert.match(dispatcher, /inventory is allowed only to recover one selected `In progress` item[\s\S]*claim token and generation/i);
-  assert.match(dispatcher, /Do not read the complete discussion, proof matrix, review submissions,[\s\S]*the lifecycle worker owns those reads/i);
+  assert.match(dispatcher, /do not switch to another connector, combine stale snapshots/i);
+  assert.match(dispatcher, /Compute available capacity[\s\S]*`executors\.Local Codex\.maxConcurrentWorkers`[\s\S]*`ownedInProgress`/i);
+  assert.match(dispatcher, /Do not call `List projects`[\s\S]*provider-wide inventory on the normal Ready path/i);
+  assert.match(dispatcher, /Targeted provider inventory is allowed only for that selected recovery[\s\S]*claim token\/generation/i);
+  assert.match(dispatcher, /Do not read the\s+complete discussion, proof matrix, review submissions, review threads, or CI before claim[\s\S]*lifecycle worker owns those reads/i);
   assert.equal((helper.match(/^\s*if ! gh project item-list\b/gm) || []).length, 1);
   assert.match(helper, /exit 75/);
 
@@ -212,47 +234,36 @@ test('Local Codex uses one bounded normalized Project snapshot per tick', () => 
     totalCount: 3,
     items: [
       {
-        id: 'READY',
-        title: 'Ready implementation',
+        id: 'READY', title: 'Ready implementation',
         content: {type: 'Issue', number: 762, url: 'https://github.com/sniffy/sniffy/issues/762', repository: 'sniffy/sniffy'},
-        status: 'Implementation',
-        execution: 'Ready',
-        executor: 'Local Codex',
-        implementer: 'Local Codex',
-        assignees: [],
-        priority: 'High'
+        status: 'Implementation', execution: 'Ready', executor: 'Local Codex', implementer: 'Local Codex',
+        assignees: [], priority: 'High'
       },
       {
-        id: 'OWNED',
-        title: 'Owned verification',
+        id: 'OWNED', title: 'Owned verification',
         content: {type: 'PullRequest', number: 700, url: 'https://github.com/sniffy/sniffy/pull/700', repository: {nameWithOwner: 'sniffy/sniffy'}},
-        status: 'Verification',
-        execution: 'In progress',
-        executor: 'Local Codex',
-        assignees: [{login: 'bedrin-codex-local'}],
-        'worker reference': 'worker-700'
+        status: 'Verification', execution: 'In progress', executor: 'Local Codex',
+        assignees: [{login: 'bedrin-codex-local'}], 'worker reference': 'worker-700; leaseUntil=2999-01-01T00:00:00Z'
       },
       {
-        id: 'OTHER',
-        title: 'ChatGPT work',
+        id: 'OTHER', title: 'ChatGPT work',
         content: {type: 'Issue', number: 701, url: 'https://github.com/sniffy/sniffy/issues/701', repository: 'sniffy/sniffy'},
-        status: 'Review',
-        execution: 'Ready',
-        executor: 'ChatGPT'
+        status: 'Review', execution: 'Ready', executor: 'ChatGPT'
       }
     ]
   }));
 
   try {
-    const output = execFileSync('bash', [path.join(root, '.codex/local/project-queue-snapshot.sh'), '--input', fixture], {
-      encoding: 'utf8'
-    });
+    const output = execFileSync('bash', [path.join(root, '.codex/local/project-queue-snapshot.sh'), '--input', fixture], {encoding: 'utf8'});
     const snapshot = JSON.parse(output);
     assert.equal(snapshot.totalCount, 3);
     assert.equal(snapshot.repositoryItemCount, 3);
     assert.deepEqual(snapshot.ownedInProgress.map(item => item.number), [700]);
     assert.deepEqual(snapshot.readyCandidates.map(item => item.number), [762]);
     assert.deepEqual(snapshot.ownedInProgress[0].assignees, ['bedrin-codex-local']);
+    assert.equal(snapshot.ownedInProgress[0].leaseUntil, '2999-01-01T00:00:00Z');
+    assert.deepEqual(snapshot.activeOwnedInProgress.map(item => item.number), [700]);
+    assert.deepEqual(snapshot.staleOwnedInProgress, []);
   } finally {
     fs.rmSync(directory, {recursive: true, force: true});
   }

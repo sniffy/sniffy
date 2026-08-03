@@ -2,7 +2,13 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const {buildDispatch, canonicalIdentity, exactHeads} = require('./delivery-dispatch-view');
+const {
+  buildDispatch,
+  canonicalIdentity,
+  exactHeads,
+  leaseUntilFrom,
+  staleOwnershipReason
+} = require('./delivery-dispatch-view');
 
 function projectItem(number, fields = {}, type = 'Issue') {
   return {
@@ -49,12 +55,8 @@ function rawItem(item, assignees = []) {
   return {id: item.projectItemId, assignees: assignees.map(login => ({login}))};
 }
 
-function snapshot(items, pullRequests = []) {
-  return {
-    generatedAt: '2026-08-03T00:00:00Z',
-    items,
-    pullRequests
-  };
+function snapshot(items, pullRequests = [], generatedAt = '2026-08-03T00:00:00Z') {
+  return {generatedAt, items, pullRequests};
 }
 
 test('canonicalizes PRs without asking the dispatcher model', () => {
@@ -69,36 +71,77 @@ test('canonicalizes PRs without asking the dispatcher model', () => {
   });
 });
 
-test('groups ready and in-progress work and detects route mismatch', () => {
+test('groups active and stale in-progress work and detects route mismatch', () => {
   const ready = projectItem(2, {
     Status: 'Review', Execution: 'Ready', Executor: 'ChatGPT', Priority: 'High'
   });
-  const owned = projectItem(3, {
+  const stale = projectItem(3, {
     Status: 'Implementation', Execution: 'In progress', Executor: 'Codex Cloud',
-    'Worker reference': 'task cloud-3; nextObservationAt=2026-08-02T23:30:00Z'
+    'Worker reference': 'task=cloud-3; claimToken=g3; leaseUntil=2026-08-02T23:30:00Z'
+  });
+  const active = projectItem(4, {
+    Status: 'Implementation', Execution: 'In progress', Executor: 'Codex Cloud',
+    'Worker reference': 'task=cloud-4; claimToken=g4; leaseUntil=2026-08-03T01:00:00Z'
   });
   const result = buildDispatch(
-    snapshot([ready, owned]),
-    {items: [rawItem(ready, ['bedrin-codex-local']), rawItem(owned, ['bedrin-codex-cloud'])]},
+    snapshot([ready, stale, active]),
+    {items: [
+      rawItem(ready, ['bedrin-codex-local']),
+      rawItem(stale, ['bedrin-codex-cloud']),
+      rawItem(active, ['bedrin-codex-cloud'])
+    ]},
     [],
     {executorAssignees: {ChatGPT: 'bedrin-gpt', 'Codex Cloud': 'bedrin-codex-cloud'}}
   );
 
   assert.deepEqual(result.readyByExecutor.ChatGPT.map(item => item.number), [2]);
-  assert.deepEqual(result.dueInProgressByExecutor['Codex Cloud'].map(item => item.number), [3]);
+  assert.deepEqual(result.activeInProgressByExecutor['Codex Cloud'].map(item => item.number), [4]);
+  assert.deepEqual(result.staleInProgressByExecutor['Codex Cloud'].map(item => item.number), [3]);
+  assert.equal(result.staleInProgressByExecutor['Codex Cloud'][0].staleReason, 'lease-expired');
   assert.deepEqual(result.routeMismatches.map(item => item.number), [2]);
   assert.equal(result.orderedCandidates[0].kind, 'route-mismatch');
+  assert.equal(result.orderedCandidates[1].kind, 'stale-owned-recovery');
 });
 
-test('does not select an in-progress observation before its durable due time', () => {
+test('ignores normal in-progress ownership until its lease expires', () => {
   const owned = projectItem(3, {
     Status: 'Implementation', Execution: 'In progress', Executor: 'Codex Cloud',
-    'Worker reference': 'nextObservationAt=2026-08-03T00:15:00Z'
+    'Worker reference': 'worker=cloud-3; leaseUntil=2026-08-03T00:15:00Z'
   });
   const result = buildDispatch(snapshot([owned]), {items: [rawItem(owned)]}, [], {});
   assert.equal(result.inProgressByExecutor['Codex Cloud'].length, 1);
-  assert.equal(result.dueInProgressByExecutor['Codex Cloud'], undefined);
+  assert.equal(result.activeInProgressByExecutor['Codex Cloud'].length, 1);
+  assert.equal(result.staleInProgressByExecutor['Codex Cloud'], undefined);
   assert.equal(result.orderedCandidates.length, 0);
+});
+
+test('treats missing or invalid lease evidence as stale recovery', () => {
+  const missingReference = projectItem(5, {
+    Status: 'Implementation', Execution: 'In progress', Executor: 'ChatGPT'
+  });
+  const missingLease = projectItem(6, {
+    Status: 'Implementation', Execution: 'In progress', Executor: 'ChatGPT',
+    'Worker reference': 'worker=chat-6; claimToken=g6'
+  });
+  const invalidLease = projectItem(7, {
+    Status: 'Implementation', Execution: 'In progress', Executor: 'ChatGPT',
+    'Worker reference': 'worker=chat-7; leaseUntil=tomorrowish'
+  });
+  const result = buildDispatch(
+    snapshot([missingReference, missingLease, invalidLease]),
+    {items: [rawItem(missingReference), rawItem(missingLease), rawItem(invalidLease)]},
+    [],
+    {}
+  );
+  assert.deepEqual(
+    result.staleInProgressByExecutor.ChatGPT.map(item => item.staleReason),
+    ['missing-worker-reference', 'missing-lease', 'invalid-lease']
+  );
+  assert.deepEqual(result.orderedCandidates.map(value => value.kind), [
+    'stale-owned-recovery', 'stale-owned-recovery', 'stale-owned-recovery'
+  ]);
+  assert.equal(leaseUntilFrom('{"leaseUntil":"2026-08-03T02:00:00Z"}'), '2026-08-03T02:00:00Z');
+  assert.equal(staleOwnershipReason(result.staleInProgressByExecutor.ChatGPT[1], Date.parse('2026-08-03T00:00:00Z')), 'missing-lease');
 });
 
 test('projects PR intake, duplicate representation, and conflicts', () => {

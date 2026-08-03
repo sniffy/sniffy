@@ -4,116 +4,94 @@ Baseline reviewed: `develop` at `790a990b9a7f1a51403ee43148a3c8daa3085233` (`gpt
 
 ## Entry points before this refactor
 
-| Adapter | Scheduler entry point | Worker entry point | Effective recurring load |
+| Adapter | Scheduler entry point | Worker entry point | Previous recurring load |
 | --- | --- | --- | --- |
-| ChatGPT Scheduled Tasks | `.chatgpt/scheduled-task-prompt.md` | the same scheduled occurrence or supervised Codex Cloud | the embedded event-loop prompt plus `AGENTS.md`, 10 AI-delivery documents, the ChatGPT runbook, and the snapshot supplement on every tick |
-| Local Codex app | `.codex/local/scheduled-task-prompt.md` | `.codex/local/worker-task-prompt.md` | `AGENTS.md`, nine AI-delivery documents, dispatcher prompt, worker template, Project snapshot, then a Sol/extra-high worker |
-| Local Codex CLI | `.codex/local/run-issue.sh` | its inline prompt plus repository instructions discovered by Codex | Sol/xhigh by default for every issue |
-| Codex Cloud | GitHub `@codex`/connector dispatch plus `docs/ai-delivery/executors/codex-cloud.md` | Cloud task | bounded fresh implementation, provider-managed model |
-| GitHub status workflow | `.github/workflows/delivery-status.yml` | `.github/scripts/delivery-status*.js` | programmatic Project, issue, PR, formal-closing-link, and mergeability snapshot |
+| ChatGPT Scheduled Tasks | `.chatgpt/scheduled-task-prompt.md` | same occurrence or supervised Codex Cloud | embedded event-loop policy plus many AI-delivery documents on every tick |
+| Local Codex app | `.codex/local/scheduled-task-prompt.md` | `.codex/local/worker-task-prompt.md` | many policy documents, full Project read, then Sol/xhigh worker |
+| Local Codex CLI | `.codex/local/run-issue.sh` | inline worker prompt | Sol/xhigh by default |
+| Codex Cloud | connector/GitHub trigger | Cloud task | bounded fresh implementation, provider-managed model |
+| GitHub status workflow | `.github/workflows/delivery-status.yml` | `.github/scripts/delivery-status*.js` | deterministic Project/issue/PR snapshot |
 
-The largest avoidable cost was not the lifecycle itself. It was repeating human documentation and asking an LLM to perform queue
-filtering that the status workflow or a local snapshot helper can perform deterministically.
+The largest avoidable cost was repeating human documentation and asking an LLM to perform queue filtering that trusted automation
+can perform deterministically. Periodic “is the worker still running?” polling was another avoidable cost once workers already own
+completion handoff.
 
 ## Instruction layers after this refactor
 
 ### Always loaded by a dispatcher
 
-- the scheduler's short adapter prompt;
+- short adapter prompt;
 - `docs/ai-delivery/runtime-contract.md`;
-- one normalized snapshot or local queue projection;
-- `profile.yml` only when a concrete adapter setting cannot be carried in the generated snapshot.
+- one normalized snapshot/local queue projection;
+- `profile.yml` only for adapter settings not already compiled into runtime data.
 
-### Loaded only after candidate selection
+### Loaded after candidate selection
 
-- current canonical issue/PR and formal links;
-- current exact branch/head/draft/ownership and Project route;
+- current canonical item and formal links;
+- exact branch/head/draft/ownership and Project route;
 - active control issue;
-- the selected executor's short runbook or worker template.
+- selected executor's short runbook/template.
 
-### Loaded only by the lifecycle worker
+### Loaded by the lifecycle worker
 
 - nearest `AGENTS.md` files;
-- complete relevant issue/PR discussion;
-- full exact-head diff, reviews, threads, CI, artifacts;
-- only the lifecycle, routing, supervision, verification, or environment sections needed for that status.
+- complete relevant discussion;
+- full exact-head diff, reviews, threads, CI, and artifacts;
+- only the detailed lifecycle/routing/verification/environment sections needed for that status.
 
-### Human/reference documentation
+Human/reference documents remain normative but are not a recurring dispatcher prefix.
 
-`README.md`, `lifecycle.md`, `control-plane.md`, `pull-request-intake.md`, `routing.md`, `supervision.md`, `verification.md`,
-retrospectives, architecture notes, and setup guides remain valuable. They are not a mandatory repeated prompt prefix.
+## What `profile.yml` does
 
-## What `profile.yml` really does
-
-The profile is useful and should stay. It is the project-specific declarative configuration for repository, Project, identities,
-routes, executor capacity, model defaults, snapshot settings, and scheduler policy. Before this refactor it was only partly consumed:
-several values were read by humans/prompts or protected by tests, while prompts still duplicated the same choices in prose.
-
-The realistic path is:
-
-1. keep shared lifecycle semantics in Markdown;
-2. keep project-specific values in `profile.yml`;
-3. have repository automation compile normalized queue and PR-attention projections into the status artifact;
-4. let each adapter consume those generated projections rather than interpreting raw Project state;
-5. later extract the generic scripts and schema into a reusable repository/tool, with one profile per project.
-
-This PR deliberately does not add a home-grown YAML parser to every dispatcher. The GitHub workflow currently passes the small
-runtime identity map explicitly, while the profile remains the reviewed source of configuration. A later framework extraction can
-compile YAML once in trusted automation and publish a versioned runtime JSON profile beside the queue snapshot.
+The profile remains useful as project-specific declarative configuration for repository, Project, identities, routes, capacity,
+model defaults, leases, snapshot settings, and scheduler policy. Shared lifecycle semantics remain Markdown. Trusted automation
+should compile the profile once into versioned runtime JSON beside the generated queue rather than asking every dispatcher to parse
+YAML and prose independently.
 
 ## Scheduler setup
 
 ### ChatGPT
 
-Create recurring dispatcher tasks in **Chat**, not **Work**. Work is reserved for a selected long-running investigation or
-lifecycle turn, not the heartbeat.
+Create recurring dispatcher tasks in **Chat**, not **Work**. Use one hourly budget clock or four compact hourly tasks at `:00`,
+`:15`, `:30`, and `:45` for 15-minute queue latency. Both use the same short prompt and generated snapshot.
 
-Two supported clocks:
-
-- budget clock: one compact Chat task hourly;
-- 15-minute clock: four compact Chat tasks hourly at `:00`, `:15`, `:30`, and `:45` when the faster queue latency justifies the
-  extra usage.
-
-Both use the same short prompt and generated snapshot. Do not copy the detailed documentation into the task definition. The
-15-minute worker-supervision rule still applies after a real dispatch; when using the budget clock, use explicit two 15-minute
-follow-up checks for the selected worker and then return to hourly monitoring.
+The 15-minute clock checks for new actionable GitHub/Project state. It does not poll every active worker. Valid leased ownership is
+ignored until the worker hands off or the lease becomes missing, invalid, or expired.
 
 ### Local Codex
 
-- dispatcher/heartbeat: `gpt-5.6-luna`, low reasoning;
-- normal implementation or verification worker: `gpt-5.6-terra`, medium reasoning;
-- explicit difficult-task escalation: `gpt-5.6-sol`, high reasoning;
-- xhigh is exceptional and requires a recorded reason.
+- dispatcher: `gpt-5.6-luna` / low;
+- normal worker: `gpt-5.6-terra` / medium;
+- explicit difficult-task escalation: `gpt-5.6-sol` / high;
+- xhigh only for an exceptional recorded reason.
 
-Model selection is an operational cost/capability setting, not a lifecycle role. Existing branches, claims, review independence,
-and proof requirements do not change when the model changes.
+Model selection is an operational cost/capability setting, not a lifecycle role.
+
+## Lease-based stale recovery
+
+Every claim records a concrete worker/task/process/branch reference, token/generation, `claimedAt`, and `leaseUntil`. The worker owns
+normal completion signalling and guarded handoff. It may renew the same claim before expiry.
+
+A dispatcher does not query a healthy worker. Only missing/invalid worker evidence or expired lease enters the attention queue.
+Targeted recovery preserves the exact generation and either extends the active lease, completes a lost handoff, recovers the same
+workspace/branch, or releases only when no active/recoverable work remains. There is no per-worker observation schedule and no
+separate monitoring task.
 
 ## Telemetry and token accounting
 
-Every tick and worker should report start/end time, duration, model/reasoning, snapshot generation, selected candidate, and outcome.
-Exact token counters should be included when the product/runtime exposes them. Otherwise report `null`; do not manufacture billing
-precision. Duration and candidate counts are always available and are sufficient to find runaway no-op loops.
-
-Recommended aggregation dimensions:
-
-- scheduler/adapter and repository profile;
-- no-op versus productive outcome;
-- model and reasoning effort;
-- number of full snapshots and targeted live reads;
-- selected lifecycle status/executor;
-- provider token counters when exposed;
-- failures, rate limits, guarded conflicts, and duplicate-generation recoveries.
+Every tick/worker reports start/end, duration, model/reasoning, snapshot generation, selected candidate, outcome, and provider token
+counters when exposed. Otherwise counters are `null`; billing precision is never manufactured. Useful aggregation dimensions are
+adapter/profile, no-op versus productive outcome, model/reasoning, snapshot/live-read counts, lifecycle/executor, failures,
+rate limits, guarded conflicts, and stale-recovery results.
 
 ## Preserved behavior
 
-The compact runtime contract retains universal PR intake, canonical issue/PR selection, exact-head validity, guarded Project
-mutations, non-draft Review publication, independent-review rules, existing same-repository PR continuation, fork/Dependabot
-boundaries, Codex Cloud supervised dispatch, 15/15/hourly monitoring, convergence checkpoints, truthful verification, human-only
-privileged actions, and the explicit no-merge boundary.
+The compact contract retains universal PR intake, canonical issue/PR selection, exact-head validity, guarded Project mutations,
+non-draft Review publication, independent-review rules, same-repository PR continuation, fork/Dependabot boundaries, Codex Cloud
+supervised dispatch, convergence checkpoints, truthful verification, human-only privileged actions, and the explicit no-merge
+boundary.
 
 ## Baseline tag
-
-Create the baseline annotated tag after verifying the target SHA:
 
 ```bash
 git fetch origin develop
@@ -123,5 +101,5 @@ git tag -a gptflow-v1 790a990b9a7f1a51403ee43148a3c8daa3085233 \
 git push origin refs/tags/gptflow-v1
 ```
 
-The connected GitHub tool used for this audit can create branches and commits but does not expose tag-ref creation, so the tag is a
-maintainer command rather than being silently approximated by a branch.
+The connected GitHub tool can create branches/commits/PRs but does not expose tag-ref creation, so the exact tag remains a
+maintainer command rather than being approximated by a branch.

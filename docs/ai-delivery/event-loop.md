@@ -20,140 +20,129 @@ A clock knows cadence and scheduler identity only. It must not embed lifecycle p
 - ChatGPT full-latency clock: four hourly Chat tasks at `:00`, `:15`, `:30`, and `:45`.
 - Local/headless clock: cron or systemd timer with host-local overlap protection.
 
-Create ChatGPT heartbeats in **Chat**, not **Work**. Work and strong coding models are reserved for selected work rather than empty
-queue checks.
+Create ChatGPT heartbeats in **Chat**, not **Work**. The 15-minute clock controls queue latency; it is not a command to poll every
+active worker every 15 minutes.
 
 ## Programmatic selection
 
-The GitHub status workflow publishes a normalized artifact with:
+The status workflow publishes active Project items, every open base-branch PR, formal closing links, exact heads, ownership,
+mergeability hints, and deterministic projections:
 
-- active Project items and every explicit field value;
-- every open base-branch PR, formal closing issues, exact head, draft/ownership, and mergeability hints;
-- `dispatch.readyByExecutor` and `dispatch.inProgressByExecutor`;
-- due observations, route mismatches, PR intake/conflict candidates, stale exact-head candidates, and one ordered attention list.
+- `readyByExecutor`;
+- `inProgressByExecutor`, split into active and stale ownership;
+- route/assignee mismatches;
+- PR conflict/intake/duplicate candidates;
+- stale exact-head candidates;
+- `orderedCandidates`.
 
-Local Codex uses `.codex/local/project-queue-snapshot.sh` once per tick for equivalent ready/in-progress selection. A future generic
-framework may compile `profile.yml` into versioned runtime JSON; dispatchers should consume generated JSON, not parse policy prose.
+Local Codex uses `.codex/local/project-queue-snapshot.sh` once per tick for equivalent selection. A future generic framework may
+compile `profile.yml` once into versioned runtime JSON. Dispatchers consume generated JSON instead of interpreting policy prose.
 
-Snapshot selection never authorizes mutation. After choosing one candidate, the dispatcher live-reads only that target and uses the
-guarded control workflow as the authoritative compare-and-set.
+Snapshot selection never authorizes mutation. After selecting one candidate, the dispatcher live-reads only that target and uses
+the guarded control workflow as the authoritative compare-and-set.
 
 ## Candidate order
 
 A dispatcher handles at most one outcome per tick:
 
 1. conflicting same-repository PR requiring deliberate routing;
-2. universal PR intake/canonicalization or duplicate representation;
+2. managed fork/Dependabot operation or universal PR intake/canonicalization;
 3. stale exact-head downstream state;
 4. Ready route/assignee mismatch;
-5. due owned `In progress` observation;
+5. stale `In progress` ownership with missing/invalid/expired lease;
 6. Ready work for a supervised executor;
 7. Ready work for the dispatcher itself.
 
-If no candidate remains actionable after the targeted re-read, return `NO_CHANGE`. Do not read whole discussions, diffs, review
+If no candidate remains actionable after targeted re-read, return `NO_CHANGE`. Do not load whole discussions, diffs, review
 threads, CI logs, artifacts, or detailed runbooks merely to prove the queue is empty.
 
-## Universal pull-request intake
+## Universal PR intake
 
 Every open PR targeting the configured base branch is represented in the generated snapshot regardless of author, label,
-bot/provider, branch creator, or whether an issue existed first. The programmatic projection identifies candidates; the dispatcher
-live-reads only the selected one.
-
-Canonicalization remains:
+bot/provider, or branch creator. Canonicalization remains:
 
 ```text
 one formal closing issue -> issue canonical
 no formal closing issue  -> PR canonical
-two or more closing issues -> PR canonical in Planning
+two or more issues       -> PR canonical in Planning
 ```
 
-Draft PRs are telemetry and possible implementation evidence but do not enter Review. If both an issue and PR are materialized,
-keep one canonical active lifecycle item and make the duplicate non-claimable. Same-repository corrections preserve the exact
-branch/PR. Fork and Dependabot branches remain contributor/bot-owned or are superseded by a deliberate internal task.
+Draft PRs do not enter Review. If issue and PR are both materialized, keep one canonical active lifecycle item. Same-repository
+corrections preserve the exact branch/PR. Fork and Dependabot branches remain contributor/bot-owned or are superseded by a
+deliberate internal task.
 
 ## Exact-head and route reconciliation
 
-Review, Verification, Approval, or a derived human handoff is valid only for the exact PR head named in durable evidence. When the
-current head differs, the generated projection flags it. A supervising tick live-verifies the new head, then uses one guarded
-transition to `Review / Ready / ChatGPT` with the new exact PR identity and cleared stale ownership.
+Review, Verification, Approval, or a derived human handoff is valid only for the exact PR head named in durable evidence. A changed
+head is programmatically flagged and routed back to `Review / Ready / ChatGPT` after targeted live verification.
 
-A configured Ready route whose Assignee belongs to another executor pool is a supervisory reconciliation obligation. Re-read the
-route and either correct assignment or deliberately route the lifecycle status/executor. Never silently filter out an otherwise
-Ready item and never infer a human blocker from stale assignment alone.
+A Ready route whose Assignee belongs to another executor pool is a supervisory reconciliation obligation. Correct assignment or
+route deliberately; never silently filter the item or infer a Human blocker from stale assignment alone.
 
 ## Supervised executors
 
-The current profile marks Codex Cloud `dispatchMode: supervised`, with ChatGPT as its dispatch owner. Cloud does not poll Project
-2. A ChatGPT tick may therefore select `Implementation / Ready / Codex Cloud`, claim while preserving Executor, submit exactly one
-Cloud trigger, require durable acknowledgement, record the generation and first observation, then stop.
+The current profile marks Codex Cloud `dispatchMode: supervised` with ChatGPT as its dispatch owner. Codex Cloud does not poll
+Project 2. A ChatGPT tick may select `Implementation / Ready / Codex Cloud`, claim while preserving Executor, submit one exact
+Cloud trigger, require durable acknowledgement, record generation plus lease, and stop.
 
 A trigger never submitted or definitively rejected is released to Ready. A submitted trigger with uncertain acknowledgement stays
-one provisional `In progress` generation for targeted recovery; never dispatch a duplicate. Arbitrary existing-PR continuation is
-routed to Local Codex unless it is an explicitly recoverable Cloud branch.
+one provisional generation under a shorter lease. Never dispatch a duplicate. Arbitrary existing-PR continuation normally routes
+to Local Codex unless it is an explicitly recoverable Cloud-owned branch.
 
-## Polling executors
+## Polling executors and capacity
 
-A polling dispatcher selects:
-
-```text
-Execution = Ready
-Executor = its executor pool
-Assignee = empty or the pool identity
-```
-
-Eligibility must not require optional Implementer/Verifier values outside the lifecycle status that uses them. A blank Implementer
-means no implementation route has yet been deliberately selected.
-
-Capacity is derived from owned `In progress` items in the retained snapshot and the profile's configured maximum. Provider-wide
-conversation/task inventory is not a normal capacity or duplicate-generation check; use it only for targeted recovery of one
-already-claimed ambiguous generation. Per-target guarded claims prevent duplicate ownership.
+A polling dispatcher selects `Execution = Ready`, its Executor pool, and an empty/pool Assignee. Capacity is derived from all owned
+`In progress` items in the retained snapshot, including stale ownership until recovery resolves it. Provider-wide task inventory is
+not a normal capacity or duplicate-generation check; it is allowed only for one targeted stale recovery.
 
 ## Guarded claim
 
 A claim:
 
 1. live-reads current canonical type, Status, Execution, Executor, assignment, worker reference, and exact PR head when applicable;
-2. creates a unique token, lease, owner, concrete/provisional worker reference, and next observation time;
-3. posts one `delivery-control/v1` command on the active control issue using the readable wrapper from `control-plane.md`;
-4. guards current type, Status, `Execution = Ready`, Executor, and exact PR head;
-5. sets `Execution = In progress` and Worker reference in the same command;
-6. inspects the terminal reaction and re-reads current state;
+2. creates a unique token/generation, owner, concrete/provisional worker reference, `claimedAt`, and `leaseUntil`;
+3. posts one `delivery-control/v1` command using the human-readable Markdown wrapper from `control-plane.md`;
+4. preserves exact start/end markers, lowercase `json` fence, and authoritative marked JSON;
+5. guards current type, Status, `Execution = Ready`, Executor, and exact PR head;
+6. sets `Execution = In progress` and ownership in the same command;
 7. starts work only for the verified winner.
 
-A guarded conflict is normal coordination. Make no source or work mutation from the stale view. If execution cannot start, release
-to Ready. Set `Blocked / Human` only for one exact Dmitry decision/action.
+A guarded conflict is normal coordination. Make no source mutation from a stale view. If execution cannot start, release to Ready;
+use `Blocked / Human` only for one exact Dmitry decision/action.
 
 ## Worker contract
 
-One worker owns one lifecycle turn. After claim it reads the complete canonical item and relevant comments, formal links, exact PR,
-nearest `AGENTS.md`, current reviews/threads/CI/artifacts, and only the detailed lifecycle/runbook sections it needs.
+One worker owns one lifecycle turn. It reads the complete canonical item, relevant comments/formal links, exact PR,
+nearest `AGENTS.md`, current reviews/threads/CI/artifacts, and only the detailed runbook sections it needs.
 
-- Planning resolves outcome, canonical scope, decisions, non-goals, risk, routes, and proof.
-- Implementation changes the repository, proves the change, publishes one intended non-draft exact-head PR, and hands to Review.
-- Review inspects the complete exact-head diff and publishes one comprehensive outcome with honest identity handling.
-- Verification proves observable behavior in a representative environment rather than trusting unit tests or summaries.
-- Approval and merge remain human-owned.
+Implementation publishes one intended ready-for-review/non-draft PR at the exact head and performs the guarded Review handoff.
+Review publishes one comprehensive exact-head outcome with honest identity handling. Verification proves observable behavior in a
+representative environment. Approval and merge remain human-owned.
 
-A transition to Review identifies the exact PR structurally. A canonical PR uses target plus `expected.head`; a canonical issue uses
-`reviewPullRequest.number/head`. The PR must be open, target the base branch, be ready/non-draft, and match the exact head.
+## Lease and stale recovery
 
-## Supervision and recovery
+A worker owns completion signalling and may renew its own lease before expiry. While `leaseUntil` is valid, scheduler ticks ignore
+the item and do not inspect the worker.
 
-After starting a worker, CI run, contributor operation, bot command, or draft publication, observe after 15 minutes, again after 15
-minutes, then hourly while incomplete. Store `nextObservationAt` in durable worker evidence. The same event-loop responsibility
-selects due observations; do not leave the first check until an hour later.
+Missing worker reference, missing/invalid lease, or expired `leaseUntil` creates one stale-recovery candidate. The dispatcher then:
 
-Before expiring a lease, inspect the concrete worker/task/branch/PR and latest observable evidence. Routine waiting remains
-`In progress`. Recover the exact existing worker/branch where possible; release only genuinely stale ownership.
+1. re-reads the exact worker/task/generation and branch/PR/head evidence;
+2. stops if handoff already completed;
+3. extends the same lease only when the same worker is demonstrably active;
+4. completes a lost deterministic handoff when evidence is sufficient;
+5. recovers the same workspace/branch/generation when possible;
+6. releases to Ready only when nothing active or recoverable remains;
+7. never starts a duplicate worker, generation, branch, or PR.
 
-## Telemetry
+External waits such as CI, contributors, bot operations, rebases, and draft publication use bounded operation leases. New GitHub
+state may create another actionable candidate before expiry; otherwise recovery waits for lease expiry. There is no separate
+monitoring scheduler or per-worker observation cadence.
+
+## Telemetry and profile
 
 Every tick emits start/end/duration, adapter/scheduler, model/reasoning, snapshot identity, selected candidate, outcome, and exact
-provider token counters when exposed. Missing counters are null with `usageSource: unavailable`; estimates must be explicitly
-labelled and derived from measured bytes rather than presented as billing facts.
+provider token counters when exposed. Missing counters are null with `usageSource: unavailable`.
 
-## Generic core and project profile
-
-Shared Markdown defines lifecycle semantics, canonicalization, guarded ownership, supervision, verification, and merge authority.
-`profile.yml` supplies repository/Project, identities, capacity, scheduler surface/cadence, model defaults, and routing choices.
-Generated dispatch JSON is the runtime form. A profile must not redefine lifecycle meaning or weaken exact-head/no-merge rules.
+Shared Markdown defines lifecycle semantics; `profile.yml` supplies repository/Project, identities, capacity, scheduler surface,
+model defaults, lease budgets, and routes. Generated dispatch JSON is the runtime form. A profile must not weaken exact-head,
+review-independence, verification, or no-merge rules.
