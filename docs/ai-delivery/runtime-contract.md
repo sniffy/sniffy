@@ -51,9 +51,9 @@ routing, and verifies assignment cleanup through the common guarded control impl
 
 The dispatcher is only the repair path:
 
-- `completion-drift` is emitted only when a canonical item remains in the normal pre-merge state
-  `Approval / Ready / Human` and its single linked PR, or the canonical PR itself, is already merged. This narrow predicate avoids
-  flooding the queue with historical closed items.
+- `completion-drift` is emitted when a canonical item remains in the normal pre-merge state `Approval / Ready / Human`, or is
+  already `Done` but retains active Execution, Executor, or Assignee after a built-in-workflow race, and its single linked PR (or
+  the canonical PR itself) is merged. Clean terminal Done and historical non-Approval states stay out of the queue.
 - `uninitialized-item` initializes an open non-technical issue with missing Status as `Planning / Ready`; a unique configured
   assignee determines Executor, otherwise ChatGPT is the default.
 - `default-planning-route` assigns `Planning / Ready` with no Executor using the same assignee rule and ChatGPT default.
