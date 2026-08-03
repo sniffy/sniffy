@@ -118,7 +118,7 @@ test('projects PR intake, duplicate representation, and conflicts', () => {
   assert.equal(result.orderedCandidates[0].kind, 'conflicting-pr');
 });
 
-test('keeps fork and Dependabot PRs out of direct conflict continuation', () => {
+test('keeps fork and Dependabot conflicts visible without direct branch adoption', () => {
   const fork = pullRequest(11, [], {repositoryOwnership: 'fork', mergeable: 'CONFLICTING'});
   const dependabot = pullRequest(12, [], {author: 'dependabot[bot]', mergeable: 'CONFLICTING'});
   const result = buildDispatch(
@@ -128,7 +128,12 @@ test('keeps fork and Dependabot PRs out of direct conflict continuation', () => 
     {}
   );
   assert.equal(result.pullRequests.conflicting.length, 0);
-  assert.deepEqual(result.pullRequests.intake.map(value => value.number), [11, 12]);
+  assert.deepEqual(result.pullRequests.managedConflicts.map(value => value.number), [11, 12]);
+  assert.deepEqual(result.pullRequests.managedConflicts.map(value => value.conflictMode), [
+    'contributor-feedback', 'dependabot-operation'
+  ]);
+  assert.equal(result.pullRequests.intake.length, 0);
+  assert.deepEqual(result.orderedCandidates.map(value => value.kind), ['managed-pr-conflict', 'managed-pr-conflict']);
 });
 
 test('does not treat a human dependency PR as Dependabot', () => {
@@ -143,11 +148,11 @@ test('does not treat a human dependency PR as Dependabot', () => {
   assert.equal(result.pullRequests.conflicting[0].isDependabot, false);
 });
 
-test('does not steal an explicit Local Codex correction route as PR intake', () => {
+test('does not steal an explicit Local Codex correction route as intake or conflict handling', () => {
   const canonicalPr = projectItem(14, {
     Status: 'Implementation', Execution: 'Ready', Executor: 'Local Codex', Implementer: 'Local Codex'
   }, 'PullRequest');
-  const pr = pullRequest(14);
+  const pr = pullRequest(14, [], {mergeable: 'CONFLICTING', mergeStateStatus: 'DIRTY'});
   const result = buildDispatch(
     snapshot([canonicalPr], [pr]),
     {items: [rawItem(canonicalPr)]},
@@ -155,6 +160,8 @@ test('does not steal an explicit Local Codex correction route as PR intake', () 
     {}
   );
   assert.equal(result.pullRequests.intake.length, 0);
+  assert.equal(result.pullRequests.conflicting.length, 0);
+  assert.equal(result.pullRequests.managedConflicts.length, 0);
   assert.equal(result.orderedCandidates.length, 0);
 });
 
