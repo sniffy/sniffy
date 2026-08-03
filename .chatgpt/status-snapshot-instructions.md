@@ -15,20 +15,31 @@ the whole Project or inspect every open PR.
    `ai-delivery-status/v1`, repository `sniffy/sniffy`, Project `sniffy/2`, artifact name `ai-delivery-status-project-2`, numeric
    artifact ID, snapshot file `project-2-status.json`, acceptable age, and `generatedAt` strictly later than the request. Normally
    require matching refresh comment provenance; a later serialized successful publication is acceptable when demonstrably newer.
-4. Download that artifact by numeric ID and validate matching identity, generation, provenance, complete counts, top-level `pullRequests` observations, and `dispatch` projections. Reject malformed, inconsistent, incomplete, stale, or inaccessible data.
+4. Download that artifact by numeric ID and validate matching identity, generation, provenance, complete counts, top-level
+   `pullRequests` observations, and `dispatch` projections. Reject malformed, inconsistent, incomplete, stale, or inaccessible data.
 5. Use `dispatch.orderedCandidates` as the normal attention queue and select at most its first entry. Do not ask the model to rebuild
-   executor queues, canonical PR identity, route mismatches, conflicts, stale exact-head state, or lease classification from raw
-   arrays. Raw files are diagnostics only.
-6. Top-level PR observations cover every open base-branch PR independently of Project item type. Always use `closingIssueNumbers` to resolve the canonical issue-versus-PR identity. Fork PRs wait for their contributor. Dependabot PRs use `@dependabot rebase`; never adopt or rewrite those branches through this rule.
+   executor queues, canonical PR identity, completion drift, route initialization/defaults, route mismatches, conflicts, stale
+   exact-head state, or lease classification from raw arrays. Raw files are diagnostics only.
+6. Top-level PR observations cover every open base-branch PR independently of Project item type. Always use
+   `closingIssueNumbers` to resolve the canonical issue-versus-PR identity. Fork PRs wait for their contributor. Dependabot PRs use
+   `@dependabot rebase`; never adopt or rewrite those branches through this rule.
 7. `dispatch.activeInProgressByExecutor` is capacity/diagnostic state. A valid future `leaseUntil` is not actionable and must not
    cause a worker/task lookup. Only `stale-owned-recovery` may inspect an existing worker, scoped to the exact claim/generation.
-8. Live-read only the selected candidate: current issue/PR state, exact branch/head, formal links, ownership, assignment, Project
-   route, worker reference/lease, reviews/threads/CI/mergeability when relevant, and active control issue. Snapshot values are
-   selection hints, not mutation authority.
-9. Construct guarded `delivery-control/v1` expected state from the snapshot, but act only after targeted live re-read. On
-   `confused`, make no work mutation or retry from the same snapshot. On `-1`, inspect the failed control run. On `+1`, the control
-   workflow's final verification is authoritative.
-10. Before a later dependent Project transition, request one snapshot generated after the preceding successful command. Do not add
+8. Treat deterministic reconciliation candidates as narrow, targeted work:
+   - `completion-drift`: verify the selected item is still `Approval / Ready / Human` and its selected PR is merged, then apply one
+     guarded Done transition and clear assignment; normal completion belongs to the event adapter;
+   - `uninitialized-item`: verify one open non-technical issue, then initialize only the suggested `Planning / Ready` route;
+   - `default-planning-route`: verify `Planning / Ready` still has no Executor, then apply the suggested unique-assignee route or
+     ChatGPT default;
+   - `route-ambiguity`: inspect only that item and fail closed or route to a precise human decision; never guess from unknown or
+     multiple assignees.
+9. Live-read only the selected candidate: current issue/PR state, exact branch/head or merged state, formal links, ownership,
+   assignment, Project route, worker reference/lease, reviews/threads/CI/mergeability when relevant, and active control issue.
+   Snapshot values are selection hints, not mutation authority.
+10. Construct guarded `delivery-control/v1` expected state from the snapshot, but act only after targeted live re-read. On
+    `confused`, make no work mutation or retry from the same snapshot. On `-1`, inspect the failed control run. On `+1`, the control
+    workflow's final verification is authoritative.
+11. Before a later dependent Project transition, request one snapshot generated after the preceding successful command. Do not add
     speculative refreshes or chain dependent Project writes from an older materialized view.
-11. If no candidate remains actionable after live re-read, return `NO_CHANGE` plus telemetry without target/source/worker/control
+12. If no candidate remains actionable after live re-read, return `NO_CHANGE` plus telemetry without target/source/worker/control
     mutation.
