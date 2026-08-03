@@ -406,6 +406,19 @@ test('routes uninitialized and unassigned Planning issues without whole-Project 
   assert.deepEqual(result.orderedCandidates.map(value => value.kind), ['default-planning-route', 'uninitialized-item']);
 });
 
+test('does not duplicate an uninitialized canonical issue already selected for PR intake', () => {
+  const issue = projectItem(806, {'Linked pull requests': ['https://github.com/sniffy/sniffy/pull/807']});
+  const pr = pullRequest(807, [806]);
+  const result = buildDispatch(
+    snapshot([issue], [pr]),
+    {items: [rawItem(issue, ['bedrin-gpt'])]},
+    [rawPullRequest(807)],
+    {executorAssignees: {ChatGPT: 'bedrin-gpt'}}
+  );
+  assert.deepEqual(result.orderedCandidates.map(value => value.kind), ['pr-intake']);
+  assert.equal(result.routingReconciliations.length, 0);
+});
+
 test('does not guess a route from unknown or conflicting assignees', () => {
   const unknown = projectItem(803);
   const multiple = projectItem(804);
