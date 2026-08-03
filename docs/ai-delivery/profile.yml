@@ -60,7 +60,10 @@ schedulers:
     fullCadenceSlots: [0, 15, 30, 45]
     prompt: .chatgpt/scheduled-task-prompt.md
   Local Codex:
+    adapter: codex-app-same-thread-v1
+    surface: Codex Automation
     prompt: .codex/local/scheduled-task-prompt.md
+    lifecycleTemplate: .codex/local/worker-task-prompt.md
     snapshotHelper: .codex/local/project-queue-snapshot.sh
 
 executors:
@@ -77,15 +80,17 @@ executors:
     dispatchOwner: ChatGPT
   Local Codex:
     assignee: bedrin-codex-local
-    dispatcherModel: gpt-5.6-luna
-    dispatcherReasoning: low
+    appNativeAdapter: codex-app-same-thread-v1
+    appNativeModel: gpt-5.6-terra
+    appNativeReasoning: medium
     workerModel: gpt-5.6-terra
     workerReasoning: medium
     escalationModel: gpt-5.6-sol
     escalationReasoning: high
     dispatchMode: polling
-    # App-native dispatch derives this scheduling limit from the retained Project snapshot.
-    # Provider-wide Codex project/task inventory is recovery evidence, not a normal capacity source.
+    # The app-native automation performs the lifecycle turn in its own persistent conversation.
+    # No nested child thread/task/worktree is part of this adapter.
+    appNativeSameThread: true
     maxConcurrentWorkers: 1
   Human:
     assignee: bedrin
