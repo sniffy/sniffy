@@ -149,6 +149,30 @@ test('ignores normal in-progress ownership until its lease expires', () => {
   assert.equal(result.orderedCandidates.length, 0);
 });
 
+test('queues expired Local Codex claims for ChatGPT-supervised stale recovery', () => {
+  const expired = projectItem(803, {
+    Status: 'Implementation', Execution: 'In progress', Executor: 'Local Codex',
+    'Worker reference': 'owner=bedrin-codex-local; task=client-new-thread:b59adedf-c70f-4a0a-b5cb-90675d99c37d; claimToken=implementation-803-ready-20260804T065005Z; leaseUntil=2026-08-04T10:50:05Z'
+  });
+  const active = projectItem(804, {
+    Status: 'Implementation', Execution: 'In progress', Executor: 'Local Codex',
+    'Worker reference': 'owner=bedrin-codex-local; task=client-new-thread:active; claimToken=implementation-804-ready; leaseUntil=2026-08-04T11:30:00Z'
+  });
+  const result = buildDispatch(
+    snapshot([expired, active], [], '2026-08-04T10:59:29Z'),
+    {items: [rawItem(expired), rawItem(active)]},
+    [],
+    {}
+  );
+
+  assert.deepEqual(result.staleInProgressByExecutor['Local Codex'].map(item => item.number), [803]);
+  assert.equal(result.staleInProgressByExecutor['Local Codex'][0].staleReason, 'lease-expired');
+  assert.deepEqual(result.activeInProgressByExecutor['Local Codex'].map(item => item.number), [804]);
+  assert.deepEqual(result.orderedCandidates.map(value => ({kind: value.kind, number: value.item.number})), [
+    {kind: 'stale-owned-recovery', number: 803}
+  ]);
+});
+
 test('treats missing or invalid lease evidence as stale recovery', () => {
   const missingReference = projectItem(5, {
     Status: 'Implementation', Execution: 'In progress', Executor: 'ChatGPT'

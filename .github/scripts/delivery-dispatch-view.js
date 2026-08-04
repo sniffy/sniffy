@@ -8,6 +8,7 @@ const SHA_PATTERN = /\b[0-9a-f]{40}\b/gi;
 const LEASE_UNTIL_PATTERN = /\b"?leaseUntil"?\s*[=:]\s*"?([^"\s;,}]+)/i;
 const SUPPRESSED_DUPLICATE_PATTERN = /^Suppressed duplicate lifecycle item\b/i;
 const TECHNICAL_LABELS = new Set(['ai-delivery-control', 'ai-delivery-status']);
+const STALE_RECOVERY_EXECUTORS = new Set(['ChatGPT', 'Codex Cloud', 'Local Codex']);
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -367,7 +368,7 @@ function buildDispatch(snapshot, rawItems, rawPullRequests, options = {}) {
     ...routingReconciliations,
     ...routeMismatches.map(value => ({kind: 'route-mismatch', item: value})),
     ...staleInProgress
-      .filter(value => value.executor === 'ChatGPT' || value.executor === 'Codex Cloud')
+      .filter(value => STALE_RECOVERY_EXECUTORS.has(value.executor))
       .sort(compareCandidates)
       .map(value => ({kind: 'stale-owned-recovery', item: value})),
     ...ready
