@@ -9,9 +9,10 @@ threads, worktrees, configuration, authentication, updates, and model selection.
 
 ## Recommended guest
 
-Use **Ubuntu Server 24.04 LTS x86_64** in a Hyper-V Generation 2 VM. It matches the CLI adapter's validation host, has mature
-systemd and Docker support, and remains supported for the expected life of this worker. Prefer the current 24.04 point-release ISO
-from [Ubuntu Server](https://ubuntu.com/download/server), not an unofficial appliance image.
+Use **Ubuntu Server 26.04 LTS x86_64** in a Hyper-V Generation 2 VM. It is the current LTS, has current systemd, Docker, and
+Playwright support, and receives standard security maintenance through May 2031. Prefer the current 26.04 point-release ISO from
+[Ubuntu Server](https://ubuntu.com/download/server), not an unofficial appliance image. Repository validation may remain on the
+GitHub-hosted `ubuntu-24.04` runner; that runner label does not constrain the dedicated worker guest.
 
 For the Ryzen 9 9900X / 64 GB host, start with:
 
@@ -32,7 +33,7 @@ Example elevated PowerShell on the Windows host:
 ```powershell
 $vmName = "sniffy-codex-linux"
 $vmRoot = "C:\work\vms\$vmName"
-$isoPath = "C:\work\iso\ubuntu-24.04-live-server-amd64.iso"
+$isoPath = "C:\work\iso\ubuntu-26.04-live-server-amd64.iso"
 
 New-Item -ItemType Directory -Force -Path $vmRoot
 New-VM `
@@ -312,4 +313,3 @@ publication, authentication failure, repeated recovery conflict, or Project/mani
 - Keep GitHub branch protection authoritative: no force-push, deletion, merge, or protection bypass for the worker identity.
 - Revoke both identities and rebuild the disposable VM after suspected compromise; do not repair an unknown credential-bearing
   guest in place.
-
