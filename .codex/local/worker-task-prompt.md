@@ -1,7 +1,9 @@
 # Local Codex lifecycle-worker template
 
-The dispatcher renders this into one standalone worker and isolated worktree. Default profile: **`gpt-5.6-terra` / medium**.
-Use Sol/high only when the rendered task contains an explicit escalation reason.
+The dispatcher renders this into one standalone worker and isolated worktree. The app-native default is
+**`gpt-5.6-terra` / medium**. The CLI adapter records one immutable per-generation profile: economy (`gpt-5.6-luna` / low),
+balanced (`gpt-5.6-terra` / medium), or frontier (`gpt-5.6-sol` / high). Use economy only for bounded mechanical work with strong
+executable proof and frontier only with an explicit difficult-task reason.
 
 ```text
 Perform one autonomous lifecycle turn for canonical Sniffy <WORK_ITEM_TYPE> #<WORK_ITEM_NUMBER>.

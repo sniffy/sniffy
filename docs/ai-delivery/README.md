@@ -75,9 +75,10 @@ Each tick reads the compact runtime contract and one fresh generated status arti
 
 ### Local Codex
 
-The persistent dispatcher uses `gpt-5.6-luna` / low. Normal implementation/verification workers use `gpt-5.6-terra` / medium.
-`gpt-5.6-sol` / high is an explicit difficult-task escalation; xhigh requires an exceptional recorded reason. The app prompt and
-worker template live under `.codex/local/`; the headless helper defaults to Terra/medium.
+The app-native dispatcher uses `gpt-5.6-luna` / low and standalone workers normally use `gpt-5.6-terra` / medium. The independent
+Linux CLI adapter uses a model-free systemd dispatcher and chooses `economy`, `balanced`, or `frontier` for each claimed generation;
+the exact model/reasoning pair is stored in its manifest before `codex exec`. The app prompt, shared worker template, and CLI
+runtime live under `.codex/local/`.
 
 Local Codex is preferred for complex/persistent work and exact same-repository existing-PR continuation. It never adopts a fork or
 Dependabot branch for direct correction.
@@ -119,6 +120,8 @@ usage is never fabricated.
 - [`routing.md`](routing.md) — executor/model/provenance separation, continuity, and convergence.
 - [`supervision.md`](supervision.md) — dispatch proof, lease recovery, review convergence, and merge boundary.
 - [`verification.md`](verification.md) — implementer, reviewer, verifier, CI, runtime/browser/system proof.
+- [`executors/codex-cli.md`](executors/codex-cli.md) — repository-owned CLI dispatch, acknowledgement, and recovery.
+- [`executors/codex-cli-linux-vm.md`](executors/codex-cli-linux-vm.md) — Ubuntu/Hyper-V installation and operations.
 - executor runbooks under [`executors/`](executors/) — environment-specific adapters.
 
 ## Authority
