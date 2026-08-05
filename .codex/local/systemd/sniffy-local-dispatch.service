@@ -1,0 +1,10 @@
+[Unit]
+Description=Sniffy Local Codex dispatcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-%h/.config/sniffy-local-executor.env
+WorkingDirectory=%h/src/sniffy/sniffy
+ExecStart=/usr/bin/env bash .codex/local/cli-dispatch.sh

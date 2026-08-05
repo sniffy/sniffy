@@ -60,9 +60,10 @@ ignored until the worker hands off or the lease becomes missing, invalid, or exp
 
 ### Local Codex
 
-- dispatcher: `gpt-5.6-luna` / low;
-- normal worker: `gpt-5.6-terra` / medium;
-- explicit difficult-task escalation: `gpt-5.6-sol` / high;
+- app-native dispatcher: `gpt-5.6-luna` / low;
+- repository-owned CLI dispatcher: deterministic shell, no model;
+- CLI worker: per-generation `economy` (Luna/low), `balanced` (Terra/medium), or `frontier` (Sol/high);
+- app-native worker and default CLI profile: `gpt-5.6-terra` / medium;
 - xhigh only for an exceptional recorded reason.
 
 Model selection is an operational cost/capability setting, not a lifecycle role.

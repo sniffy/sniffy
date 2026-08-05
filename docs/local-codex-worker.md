@@ -3,7 +3,7 @@
 This runbook provisions the optional app-native Local Codex executor: the native Codex app runs in a disposable Windows VM,
 while repository tools and app-managed worktrees run in WSL2. Use it when app-owned conversations, interactive steering, or
 Remote visibility add value. For unattended Linux `systemd`/cron workers, use
-[`docs/ai-delivery/executors/codex-local.md`](ai-delivery/executors/codex-local.md).
+[`docs/ai-delivery/executors/codex-cli-linux-vm.md`](ai-delivery/executors/codex-cli-linux-vm.md).
 
 Shared lifecycle, routing, claim, supervision, and verification semantics live in [`docs/ai-delivery/`](ai-delivery/README.md).
 This file covers only the Windows/WSL/app adapter.

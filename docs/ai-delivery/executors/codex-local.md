@@ -5,12 +5,16 @@ compact runtime contract, shared lifecycle/control protocol, exact PR continuity
 
 ## Model profiles
 
-- persistent dispatcher: `gpt-5.6-luna` / low;
-- normal implementation or verification worker: `gpt-5.6-terra` / medium;
-- explicit difficult-task escalation: `gpt-5.6-sol` / high;
+- app-native dispatcher: `gpt-5.6-luna` / low;
+- CLI dispatcher: deterministic shell, no model;
+- CLI worker: one recorded per-generation profile: `economy` (`gpt-5.6-luna` / low), `balanced`
+  (`gpt-5.6-terra` / medium), or `frontier` (`gpt-5.6-sol` / high);
+- app-native worker and default CLI profile: `gpt-5.6-terra` / medium;
 - xhigh only for an exceptional recorded need.
 
-Model choice does not change authority, claim ownership, branch continuity, review independence, or proof obligations.
+The CLI profile is resolved before claim, stored in the generation manifest, and passed explicitly to `codex exec`; a systemd-wide
+model setting is not authoritative. Model choice does not change authority, claim ownership, branch continuity, review
+independence, or proof obligations.
 
 ## Route to Local Codex
 
@@ -41,19 +45,27 @@ missing/invalid/expired lease.
 Canonical prompts are `.codex/local/scheduled-task-prompt.md` and `.codex/local/worker-task-prompt.md`. Repository merges do not
 rewrite embedded automations; replace and smoke-test them manually.
 
-## Headless topology
+## Repository-owned CLI topology
 
 ```text
-systemd timer or cron
-  -> flock prevents host overlap
-  -> one normalized queue snapshot and guarded claim
-  -> isolated worktree
-  -> codex exec with Terra/medium lifecycle prompt
-  -> exact branch/PR publication and guarded handoff
+systemd timer
+  -> deterministic shell dispatcher, one normalized Project snapshot
+  -> empty: no Codex invocation
+  -> guarded state=spawning claim with short lease
+  -> one generation manifest + isolated worktree
+  -> codex exec --json with the generation's selected profile
+  -> thread.started + turn.started strong acknowledgement
+  -> guarded state=running reference
+  -> worker-owned exact branch/PR publication and lifecycle handoff
 ```
 
-`.codex/local/run-issue.sh` defaults to Terra/medium. Override to Sol/high only for an exceptional task and record why normal worker
-capability was insufficient.
+The complete install, manifest, acknowledgement, recovery, and security contract is
+[`codex-cli.md`](codex-cli.md). `.codex/local/run-issue.sh` remains a legacy manually invoked one-shot helper; the systemd adapter is
+the recurring production path.
+
+The CLI dispatcher checks only the exact locally owned generation on later ticks. It never invokes a model for an empty queue and
+never performs provider-wide task discovery. An inactive acknowledged process is recovered immediately even when its nominal
+Project lease is still in the future, so process death cannot create a four-hour phantom worker.
 
 ## Dispatcher contract
 
@@ -70,8 +82,19 @@ The dispatcher:
 - preserves an ambiguous spawn as one provisional generation rather than redispatching;
 - creates no source/Project/worker mutation for an empty queue.
 
-Every autonomous command uses the control-plane human-readable Markdown wrapper, exact start/end markers, and lowercase `json` fence; the marked JSON is authoritative. Never emit bare JSON. Inspect the terminal reaction and re-read Project state before
-worker creation, recovery, or handoff.
+Branch authority is ordered:
+
+1. exact branch of a verified same-repository continuation PR;
+2. explicit branch in the authoritative issue, Project route, or maintainer decision;
+3. only if neither exists, deterministic fresh `agent/issue-<number>` derivation after the targeted read.
+
+An explicit branch always wins. A conflict returns to Planning or a precise maintainer decision; it never authorizes an invented
+replacement branch. The CLI adapter also checks the authoritative branch for an existing open PR or remote ref and resumes it
+instead of creating a duplicate.
+
+Every autonomous command uses the control-plane human-readable Markdown wrapper, exact start/end markers, and lowercase `json` fence;
+the marked JSON is authoritative. Never emit bare JSON. Inspect the terminal reaction and re-read Project state before source
+mutation, recovery, or handoff.
 
 ## Existing PR continuation
 
@@ -91,14 +114,19 @@ the PR ready for review and re-read it as open, targeting develop, non-draft, an
 and use one guarded handoff to `Review / Ready / ChatGPT`; a canonical issue includes `reviewPullRequest.number/head`, while a
 canonical PR guards `expected.head`. Verify reaction, Project state, bedrin-gpt assignment, and exact-head PR state.
 
-The worker owns completion signalling. It may renew the same claim/generation before lease expiry if still legitimately running; it
-must not merely wait for the dispatcher to discover completion.
+The lifecycle owner may renew the same claim/generation before lease expiry. It must perform its own completion signalling and must
+not leave finished work in In progress. A local `turn.completed` event is useful supervisor evidence but is not a substitute for the
+verified GitHub handoff.
 
-## Lease recovery
+## Recovery boundaries
 
-Normal ticks do not poll active workers. If a lease is missing/invalid/expired, target that exact generation. Extend only after
-proving the same worker remains active; complete a lost handoff when publication is sufficient; recover the same worktree/branch
-where possible; release only when no active/recoverable work remains. Never duplicate the task, generation, branch, or PR.
+App-native recovery remains task/reference scoped and follows the existing dispatcher contract. CLI recovery is independent from
+that app behavior and does not require its prompt, model, conversation, worktree, or worker API.
+
+CLI recovery is generation/process/worktree scoped: only `codex-cli-v1` references with an exact local manifest may be inspected.
+Active units are preserved; a strong acknowledgement may repair a lost running-reference update; inactive or failed generations
+are guardedly released to Ready unless a worker already completed the handoff. Neither adapter may adopt ownership from the other
+merely because the Executor field says Local Codex.
 
 ## Telemetry and security
 

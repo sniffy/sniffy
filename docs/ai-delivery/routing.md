@@ -20,9 +20,11 @@ Model selection is proportional to work, not fixed to the strongest model:
 
 | Purpose | Default |
 | --- | --- |
-| Local queue heartbeat/dispatcher | `gpt-5.6-luna` / low |
-| Normal Local Codex implementation or verification | `gpt-5.6-terra` / medium |
-| Explicit difficult-task escalation | `gpt-5.6-sol` / high |
+| App-native Local queue heartbeat/dispatcher | `gpt-5.6-luna` / low |
+| Repository-owned CLI dispatcher | deterministic shell / no model |
+| CLI `economy` worker | `gpt-5.6-luna` / low |
+| CLI `balanced` worker (default) | `gpt-5.6-terra` / medium |
+| CLI `frontier` worker | `gpt-5.6-sol` / high, with a recorded reason |
 | Exceptional unresolved frontier task | xhigh only with a recorded reason |
 | Codex Cloud | provider-managed unless the product exposes a verified selection |
 | ChatGPT scheduler | provider-managed Chat surface; never Work merely for heartbeat |
@@ -59,7 +61,8 @@ owner, and an explicit continuation/adoption route. Never infer capability from 
 4. Prefer Codex Cloud for bounded well-specified fresh work.
 5. Prefer Local Codex for complexity, persistent environments, cross-version proof, non-convergence, or same-repository existing PRs.
 6. Route product/risk/privilege/credential decisions to Dmitry.
-7. Choose Luna/Terra/Sol reasoning after executor/environment selection; do not use Sol merely because the worker is Local Codex.
+7. For the CLI adapter, record `economy`, `balanced`, or `frontier` on the authoritative item before claim; do not use Sol merely
+   because the worker is Local Codex. The model-free dispatcher stores that exact selection in the generation manifest.
 
 Fork and Dependabot branches remain contributor/bot-owned. Use contributor-facing findings, bot commands, or a deliberately linked
 internal replacement task rather than direct autonomous adoption.
@@ -99,7 +102,7 @@ Infrastructure noise is not a substantive correction round.
 
 ## Editable profile values
 
-`profile.yml` contains identities, scheduler surface/cadence, dispatcher/worker/escalation models, capacity, fresh/continuation
+`profile.yml` contains identities, scheduler surface/cadence, app and CLI model profiles, capacity, fresh/continuation
 executor defaults, intake/canonicalization settings, convergence policy, supervision cadence, telemetry fields, and control/status
 settings. Update shared policy only when lifecycle meaning, claim safety, canonicalization, review independence, verification, or
 merge authority changes.

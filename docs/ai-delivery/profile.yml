@@ -62,6 +62,15 @@ schedulers:
   Local Codex:
     prompt: .codex/local/scheduled-task-prompt.md
     snapshotHelper: .codex/local/project-queue-snapshot.sh
+  Local Codex CLI:
+    adapter: codex-cli-v1
+    surface: systemd user services
+    dispatcher: .codex/local/cli-dispatch.sh
+    launcher: .codex/local/cli-launch-worker.sh
+    recovery: .codex/local/cli-recover-worker.sh
+    lifecycleTemplate: .codex/local/worker-task-prompt.md
+    snapshotHelper: .codex/local/project-queue-snapshot.sh
+    timer: .codex/local/systemd/sniffy-local-dispatch.timer
 
 executors:
   ChatGPT:
@@ -79,12 +88,26 @@ executors:
     assignee: bedrin-codex-local
     dispatcherModel: gpt-5.6-luna
     dispatcherReasoning: low
+    cliAdapter: codex-cli-v1
+    cliDispatcherModel: none
+    cliDefaultWorkerProfile: balanced
+    cliWorkerProfiles:
+      economy:
+        model: gpt-5.6-luna
+        reasoning: low
+      balanced:
+        model: gpt-5.6-terra
+        reasoning: medium
+      frontier:
+        model: gpt-5.6-sol
+        reasoning: high
+    cliSpawnAcknowledgement: [thread.started, turn.started]
     workerModel: gpt-5.6-terra
     workerReasoning: medium
     escalationModel: gpt-5.6-sol
     escalationReasoning: high
     dispatchMode: polling
-    # App-native dispatch derives this scheduling limit from the retained Project snapshot.
+    # App-native and CLI dispatch share one Local Codex pool but never adopt one another's generation.
     # Provider-wide Codex project/task inventory is recovery evidence, not a normal capacity source.
     maxConcurrentWorkers: 1
   Human:
@@ -114,7 +137,7 @@ supervision:
     Codex Cloud: 120
     Local Codex: 240
     externalOperation: 60
-    provisionalDispatch: 30
+    provisionalDispatch: 5
 
 telemetry:
   required: true
