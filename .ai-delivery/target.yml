@@ -1,0 +1,30 @@
+schemaVersion: 1
+kind: ai-delivery-target/v1
+
+repository: sniffy/sniffy
+baseBranch: develop
+role: product-code
+
+capabilities:
+  required: [linux, node, java]
+  optional: [docker, browser]
+
+instructions:
+  root: AGENTS.md
+  nested: true
+
+checkout:
+  strategy: isolated-worktree
+  preserveExplicitBranch: true
+  requireExactPullRequestHead: true
+
+verification:
+  focusedFirst: true
+  fullCommand: mvn -T 1C -B clean verify --file pom.xml -U -P ci -Dgpg.skip=true -Dmaven.wagon.http.retryHandler.count=3
+  diffCheck: git diff --check
+
+delivery:
+  ledger: bedrin-management/ledger
+  deployment: sniffy
+  queue: sniffy-project-2
+  mergeOwner: human

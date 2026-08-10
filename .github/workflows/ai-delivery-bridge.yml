@@ -1,0 +1,42 @@
+name: AI delivery target event bridge
+
+on:
+  issues:
+    types: [opened, reopened, closed, assigned, unassigned, labeled, unlabeled]
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft, closed]
+
+permissions: {}
+
+jobs:
+  notify-ledger:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Request a trusted ledger refresh
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.AI_DELIVERY_LEDGER_TOKEN }}
+          script: |
+            const subject = context.payload.pull_request || context.payload.issue;
+            await github.rest.repos.createDispatchEvent({
+              owner: 'bedrin-management',
+              repo: 'ledger',
+              event_type: 'ai-delivery-target-event',
+              client_payload: {
+                schemaVersion: 1,
+                repository: context.payload.repository.full_name,
+                event: context.eventName,
+                action: context.payload.action,
+                number: subject.number,
+                headSha: context.payload.pull_request?.head?.sha || null,
+                baseBranch: context.payload.pull_request?.base?.ref || null,
+                sender: context.payload.sender.login,
+                sourceRunId: String(context.runId)
+              }
+            });

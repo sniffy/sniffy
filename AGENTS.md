@@ -11,10 +11,9 @@ constraints for their subtrees.
   editing. Product, compatibility, public-API, and privileged-operator decisions belong to the maintainer.
 - For autonomous work, implement the smallest coherent solution without routine clarification. Stop for missing authority,
   credentials, external infrastructure, destructive ambiguity, or contradictory requirements.
-- The roles, executors, routing rules, delivery state machine, and verification ownership model live under
-  [`docs/ai-delivery/`](docs/ai-delivery/README.md). They are operational guidance, not a replacement for repository policy.
-- Before executor-specific work, read the applicable runbook under `docs/ai-delivery/executors/`. Codex Cloud work must read
-  [`docs/ai-delivery/executors/codex-cloud.md`](docs/ai-delivery/executors/codex-cloud.md) before editing or publication.
+- The provider-neutral delivery control plane, executor registry, leases, and worker prompts live in the private
+  [`bedrin-management/ledger`](https://github.com/bedrin-management/ledger). This repository exposes only the target contract in
+  [`.ai-delivery/target.yml`](.ai-delivery/target.yml). Those operational contracts do not replace repository policy.
 
 ## Delivery and Git safety
 
@@ -24,7 +23,7 @@ constraints for their subtrees.
 - Before handing implementation to `Review`, ensure the intended pull request is open, targets `develop`, points at the exact
   published head, and is **not draft**. Mark it ready for review and re-read that state before submitting the guarded Project
   transition. When an issue is the canonical Project item, include the linked PR number and exact head required by
-  `delivery-control/v1`; do not rely on prose in `Worker reference` to identify the PR.
+  `delivery-control/v2`; do not rely on prose in `Worker reference` to identify the PR.
 - GitHub remote state is the publication source of truth. Before reporting delivery, verify the remote branch, full SHA,
   pull-request URL, base/head refs, draft state, and matching pull-request head.
 - An absent `origin` in an isolated Sniffy checkout is recoverable configuration, not by itself a publication blocker.
@@ -95,6 +94,6 @@ constraints for their subtrees.
   over serial discovery of independent findings.
 - Formal approval or Request Changes must use an identity independent from the PR author. When that is impossible, state
   the limitation and leave precise blocking or ready-for-human-review feedback without pretending a formal review occurred.
-- Returning work to an executor requires an explicit continuation dispatch and the monitoring cadence in
-  [`docs/ai-delivery/supervision.md`](docs/ai-delivery/supervision.md). A review comment alone does not prove work started.
+- Returning work to an executor requires an explicit continuation dispatch through the ledger. A review comment alone does not
+  prove work started.
 - Approval is not merge. Never merge or enable auto-merge without Dmitry's explicit instruction.

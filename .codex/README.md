@@ -1,40 +1,16 @@
-# Codex executor files
+# Codex target helpers
 
-This directory contains Codex-specific adapters, not a second repository policy. Every selected worker follows the canonical item,
-nearest `AGENTS.md`, and `docs/ai-delivery/runtime-contract.md`; it loads detailed lifecycle/runbook sections only after selection.
+This directory contains only Sniffy-specific Codex Cloud environment helpers:
 
-## Model profiles
+- `cloud/setup.sh`;
+- `cloud/maintenance.sh`;
+- `cloud/use-jdk.sh`;
+- `cloud/warm-maven-cache.sh`.
 
-- dispatcher heartbeat: `gpt-5.6-luna` / low;
-- normal lifecycle worker: `gpt-5.6-terra` / medium;
-- explicit difficult-task escalation: `gpt-5.6-sol` / high;
-- xhigh only with a recorded exceptional reason.
+Executor routing, scheduler state, model profiles, leases, job manifests, worker prompts, telemetry, and local CLI/App adapters live
+in the private [`bedrin-management/ledger`](https://github.com/bedrin-management/ledger). Do not recreate a repository-owned
+dispatcher here.
 
-## Cloud
-
-- `cloud/setup.sh`, `maintenance.sh`, `use-jdk.sh`, `warm-maven-cache.sh` — Cloud environment helpers.
-- `docs/ai-delivery/executors/codex-cloud.md` — Cloud runbook.
-
-## Local app
-
-- `local/scheduled-task-prompt.md` — persistent Luna/low dispatcher prompt;
-- `local/project-queue-snapshot.sh` — one bounded full-Project query and normalized Local Codex queue;
-- `local/worker-task-prompt.md` — rendered Terra/medium lifecycle worker;
-- `docs/local-codex-worker.md` — Windows/WSL/VM setup.
-
-The dispatcher runs the snapshot helper exactly once per tick, selects from retained normalized JSON, and live-reads only one
-candidate before the guarded claim. Do not repeatedly query ProjectV2 or enumerate all provider tasks on the normal Ready path.
-Provider inventory is only targeted recovery for one ambiguous already-claimed generation.
-
-Repository merges do not replace prompt text embedded in existing Codex automations. Copy the updated prompt, select the documented
-model/reasoning profile, and repeat the smoke test.
-
-## Headless
-
-- `local/run-issue.sh` — focused CLI worker, Terra/medium by default with explicit environment-variable escalation;
-- reusable unattended dispatch uses cron/systemd, `flock`, one normalized snapshot, guarded claims, isolated worktrees, and
-  `codex exec`;
-- `docs/ai-delivery/executors/codex-local.md` — topology, continuity, monitoring, telemetry, and security.
-
-Do not duplicate lifecycle, compatibility, review, verification, or merge rules here. Never merge or enable auto-merge without
-Dmitry's explicit instruction.
+Every Codex worker still follows the canonical issue/PR, root and nested `AGENTS.md`, and
+[`../.ai-delivery/target.yml`](../.ai-delivery/target.yml). Repository merges do not rewrite prompts already embedded in Codex or
+ChatGPT automations.
