@@ -1,3 +1,6 @@
+# Thin trusted event bridge: it forwards fixed issue/PR metadata only to wake the
+# ledger. It never checks out or executes target code, and the ledger must live-read
+# current GitHub state before using the notification.
 name: AI delivery target event bridge
 
 on:

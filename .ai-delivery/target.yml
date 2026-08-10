@@ -1,3 +1,6 @@
+# Repository-owned execution contract for Sniffy product code. Lifecycle policy and
+# worker routing stay in bedrin-management/ledger; this file declares only checkout,
+# capability, instruction, and verification facts specific to this repository.
 schemaVersion: 1
 kind: ai-delivery-target/v1
 
