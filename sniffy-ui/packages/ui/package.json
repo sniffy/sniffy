@@ -8,7 +8,7 @@
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
-    "@base-ui/react": "1.6.0",
+    "@base-ui/react": "1.8.0",
     "@sniffy/api": "0.0.0",
     "lucide-react": "1.27.0",
     "react": "19.2.8",
